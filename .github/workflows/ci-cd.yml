@@ -1,0 +1,114 @@
+name: Al-Mudeer CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  # ============ Backend Tests ============
+  test-backend:
+    runs-on: ubuntu-latest
+    
+    services:
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        working-directory: ./products/almudeer/backend
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
+      
+      - name: Run tests
+        working-directory: ./products/almudeer/backend
+        env:
+          REDIS_URL: redis://localhost:6379
+          DB_TYPE: sqlite
+        run: |
+          pytest --cov=. --cov-report=xml -v
+      
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./products/almudeer/backend/coverage.xml
+          fail_ci_if_error: false
+
+  # ============ Backend Lint ============
+  lint-backend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Install ruff
+        run: pip install ruff
+      
+      - name: Run linter
+        working-directory: ./products/almudeer/backend
+        run: ruff check . --output-format=github
+
+  # ============ Frontend Build ============
+  build-frontend:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './products/almudeer/frontend/package-lock.json'
+      
+      - name: Install dependencies
+        working-directory: ./products/almudeer/frontend
+        run: npm ci
+      
+      - name: Build
+        working-directory: ./products/almudeer/frontend
+        run: npm run build
+
+  # ============ Deploy to Railway ============
+  deploy:
+    needs: [test-backend, lint-backend, build-frontend]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+      
+      - name: Deploy Backend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd products/almudeer/backend
+          railway up --service almudeer-backend
+      
+      - name: Deploy Frontend
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd products/almudeer/frontend
+          railway up --service almudeer-frontend
