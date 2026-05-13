@@ -343,7 +343,7 @@ export function MobileMenu({
                         overscroll-contain
                     "
           >
-            {navLinks.map((link) =>
+            {navLinks.filter((link) => link.visible !== false).map((link) =>
               link.hasDropdown && link.dropdownKey ? renderDropdownItem(link) : renderNavItem(link)
             )}
           </nav>

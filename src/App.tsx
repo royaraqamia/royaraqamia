@@ -72,8 +72,8 @@ function AppContent() {
 
             {/* SEO عام للموقع */}
             <SEO
-              title="رؤية رقمية | المنصة العربية الأولى للتدريب الرقمي والاستشارات التقنية"
-              description="انضم إلى المنصة العربية الرائدة في التدريب التقني والاستشارات الرقمية. دورات برمجة، تسويق رقمي، تصميم، وذكاء اصطناعي مع شهادات معتمدة. ابدأ رحلتك الاحترافية اليوم."
+              title="رؤية رقمية"
+              description="نبني لك مواقع إلكترونيَّة وتطبيقات أو ندرِّبك على بنائها، ونزوِّدك بمنتجات رقميَّة ذكيَّة لتسعير منتجاتك وخدماتك أو لإدارة الصَّرافة والحوَّالات أو للرَّد على رسائل زبائنك بدقَّة واحترافيَّة. تواصل معنا الآن!"
               keywords={[
                 'رؤية رقمية',
                 'تدريب إلكتروني',
@@ -118,7 +118,7 @@ function AppContent() {
                 url: 'https://royaraqamia.com',
                 logo: 'https://royaraqamia.com/logo.png',
                 description:
-                  'المنصة العربية الرائدة في التدريب التقني والاستشارات الرقمية. نقدم دورات شاملة في البرمجة، التسويق الرقمي، التصميم، والذكاء الاصطناعي مع شهادات معتمدة. نربط المتعلمين بخبراء عرب ومستشارين تقنيين لبناء مستقبل رقمي ناجح.',
+                  'نبني لك مواقع إلكترونيَّة وتطبيقات أو ندرِّبك على بنائها، ونزوِّدك بمنتجات رقميَّة ذكيَّة لتسعير منتجاتك وخدماتك أو لإدارة الصَّرافة والحوَّالات أو للرَّد على رسائل زبائنك بدقَّة واحترافيَّة. تواصل معنا الآن!',
                 email: 'contact@royaraqamia.com',
                 telephone: '+963968478904',
                 address: {
@@ -141,7 +141,7 @@ function AppContent() {
                 name: 'رؤية رقمية',
                 url: 'https://royaraqamia.com',
                 logo: 'https://royaraqamia.com/logo.png',
-                description: 'المنصة العربية الرائدة في التدريب التقني والاستشارات الرقمية',
+                description: 'نبني لك مواقع إلكترونيَّة وتطبيقات أو ندرِّبك على بنائها، ونزوِّدك بمنتجات رقميَّة ذكيَّة لتسعير منتجاتك وخدماتك أو لإدارة الصَّرافة والحوَّالات أو للرَّد على رسائل زبائنك بدقَّة واحترافيَّة. تواصل معنا الآن!',
                 email: 'contact@royaraqamia.com',
                 telephone: '+963968478904',
                 address: {
@@ -199,23 +199,6 @@ function AppContent() {
                 provider: 'رؤية رقمية',
                 areaServed: 'العالم العربي',
                 category: 'Professional Networking',
-              }}
-            />
-
-            {/* Service Schema: Al-Modir App */}
-            <StructuredData
-              type="service"
-              data={{
-                name: 'تطبيق "المدير" الشامل - تطبيق إدارة متكامل',
-                description:
-                  'تطبيق شامل يجمع المحادثات، المهام، الملاحظات، الملفات، جهات الاتصال، قرآن، أذكار، مسبحة، متصفح، QR، حاسبة، ومشاركة مباشرة في مكان واحد. اشتراك شهري أو سنوي.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                category: 'Software Application',
-                offers: {
-                  price: '10',
-                  priceCurrency: 'USD',
-                },
               }}
             />
 
@@ -284,51 +267,6 @@ function AppContent() {
                   price: '100',
                   priceCurrency: 'USD',
                 },
-              }}
-            />
-
-            {/* Course Schema: Digital Marketing */}
-            <StructuredData
-              type="course"
-              data={{
-                name: 'دورة التسويق الرقمي وكتابة المحتوى الاحترافي',
-                description:
-                  'تعلم أساسيات التسويق الرقمي، إدارة منصات التواصل الاجتماعي، كتابة المحتوى الإبداعي، تحسين محركات البحث SEO، والإعلانات الممولة. دورة شاملة تؤهلك لسوق العمل.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                educationalCredential: 'شهادة إتمام معتمدة',
-                courseMode: 'Online',
-                inLanguage: 'Arabic',
-              }}
-            />
-
-            {/* Course Schema: Programming */}
-            <StructuredData
-              type="course"
-              data={{
-                name: 'دورة البرمجة والتطوير التقني الشاملة',
-                description:
-                  'مسار تعليمي متكامل لتعلم البرمجة من الصفر حتى الاحتراف. يشمل تطوير الويب (Frontend & Backend)، تطوير التطبيقات، قواعد البيانات، والنشر على السيرفرات.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                educationalCredential: 'شهادة إتمام معتمدة',
-                courseMode: 'Online',
-                inLanguage: 'Arabic',
-              }}
-            />
-
-            {/* Course Schema: Design */}
-            <StructuredData
-              type="course"
-              data={{
-                name: 'دورة التصميم الجرافيكي وتجربة المستخدم UI/UX',
-                description:
-                  'إتقان أدوات التصميم الجرافيكي الحديثة (Figma، Adobe)، مبادئ تصميم الواجهات، تجربة المستخدم UI/UX، وإنشاء تصاميم عصرية احترافية.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                educationalCredential: 'شهادة إتمام معتمدة',
-                courseMode: 'Online',
-                inLanguage: 'Arabic',
               }}
             />
 

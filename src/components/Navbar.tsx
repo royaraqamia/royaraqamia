@@ -125,13 +125,14 @@ export function Navbar() {
       icon: House,
       isRoute: false,
     },
-    {
+{
       href: isHomePage ? '#services' : '/#services',
-      label: 'ماذا نقدِّم',
+      label: 'ماذا نقدِّم',
       icon: Gift,
       isRoute: false,
       hasDropdown: true,
       dropdownKey: 'services',
+      visible: false,
       subItems: [
         {
           href: isHomePage ? '#training' : '/#training',

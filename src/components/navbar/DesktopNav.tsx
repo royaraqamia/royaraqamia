@@ -108,7 +108,7 @@ export function DesktopNav({
       </Link>
 
       <div className="hidden lg:flex items-center element-gap">
-        {navLinks.map((link) => {
+        {navLinks.filter((link) => link.visible !== false).map((link) => {
           const isActive = isLinkActive(link.href);
           if (link.hasDropdown) {
             const isDropdownOpen =
