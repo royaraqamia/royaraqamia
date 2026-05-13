@@ -4,7 +4,6 @@ import {
   CurrencyDollar,
   TrendUp,
   Calculator,
-  Sparkle,
   Users,
   Receipt,
 } from '@phosphor-icons/react';
@@ -98,12 +97,8 @@ export function ExchangeManagement() {
               <div className="relative z-10 p-6 md:p-8 rounded-3xl bg-white/5 backdrop-blur-xl">
                 {/* Price Display */}
                 <div className="text-center mb-6">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lime-500/10 border border-lime-500/20 mb-4">
-                    <Sparkle className="w-4 h-4 text-lime-400" weight="fill" />
-                    <span className="text-sm font-medium text-lime-400">دفعة واحدة فقط</span>
-                  </div>
-                  <div className="text-6xl font-bold text-lime-400 mb-2">$100</div>
-                  <p className="text-slate-400 text-sm">امتلاك دائم — بدون اشتراكات شهريَّة</p>
+                  <div className="text-6xl font-bold text-lime-400 mb-2">$50</div>
+                  <p className="text-slate-400 text-sm">اشتراك شهري</p>
                 </div>
 
                 {/* What You Get */}

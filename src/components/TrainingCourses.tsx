@@ -15,11 +15,11 @@ export function TrainingCourses() {
   const course = {
     title: 'بناء منتجات رقميَّة من الصِّفر',
     description:
-      'نظام عمل متكامل: استخدم Windsurf  لبناء مواقع وتطبيقات. أنت هنا المدير والأدوات هي فريق العمل.',
+      'نظام عمل متكامل: استخدم Windsurf  لبناء مواقع إلكترونيَّة وتطبيقات. أنت هنا المدير والأدوات هي فريق العمل.',
     trainer: 'م. أيْهَم العَلي',
-    duration: '12 ساعة',
+    duration: '18 ساعة',
     sessions: '12 جلسة',
-    price: '$36',
+    price: '$50',
   };
 
   const highlights = [
@@ -36,7 +36,7 @@ export function TrainingCourses() {
     {
       icon: Trophy,
       label: 'أدوات المستقبل',
-      description: 'إتقان عملي لـ Windsurf, Railway, Hostinger,... .',
+      description: 'إتقان عملي لـ Windsurf, Supabase, Hostinger,... .',
     },
   ];
 
@@ -133,7 +133,7 @@ export function TrainingCourses() {
                         {course.price}
                       </div>
                     </div>
-                    <div className="text-xs text-white/60 mt-1">للدورة كاملة</div>
+                    <div className="text-xs text-white/60 mt-1">للدَّورة كاملة</div>
                   </div>
                 </div>
               </div>

@@ -98,7 +98,7 @@ export function SmartPricing() {
                 {/* Price Display */}
                 <div className="text-center mb-6">
                   <div className="text-6xl font-bold text-emerald-400 mb-2">$50</div>
-                  <p className="text-slate-400 text-sm">امتلاك دائم — بدون اشتراكات شهريَّة</p>
+                  <p className="text-slate-400 text-sm">اشتراك شهري</p>
                 </div>
 
                 {/* What You Get */}

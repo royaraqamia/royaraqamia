@@ -1,7 +1,6 @@
 import { Button } from './ui/button';
 import {
   Robot,
-  Check,
   ChatCircle,
   Clock,
   GlobeSimple,
@@ -35,17 +34,17 @@ export function AutoReplySystem() {
     {
       icon: Clock,
       title: 'عمل متواصل',
-      description: 'لا يفوتك أي رسالة — ردود فوريَّة على مدار السَّاعة.',
+      description: 'لا يفوتك أي رسالة — ردود شبه فوريَّة على مدار اليوم.',
     },
     {
       icon: GlobeSimple,
       title: 'دعم متعدِّد المنصَّات',
-      description: 'يعمل على مختلف منصَّات التَّواصل الاجتماعي في مكانٍ واحد.',
+      description: 'يعمل على مختلف منصَّات المراسلة والتَّواصل الاجتماعي.',
     },
     {
       icon: ChatCircle,
       title: 'لغة طبيعيَّة سلسة',
-      description: 'ردود بشريَّة الطَّابع بدون أن يلاحظ الزَّبون أنَّها آليَّة.',
+      description: 'ردود بشريَّة 100%.',
     },
   ];
 
@@ -70,7 +69,7 @@ export function AutoReplySystem() {
               </span>
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-slate-300 leading-[1.8] sm:leading-[1.9]" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
-              نرد على جميع رسائلك عبر منصَّات المراسلة والتَّواصل الاجتماعي بشكل احترافي وبلغة طبيعيَّة.
+              نردُّ على رسائل زبائنك عبر منصَّات المراسلة والتَّواصل الاجتماعي بشكل احترافي وبلغة طبيعيَّة.
             </p>
           </div>
         </ScrollAnimation>
@@ -98,52 +97,56 @@ export function AutoReplySystem() {
 
         {/* Two Column Layout */}
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-          {/* Pricing & CTA Card - First on mobile for conversion */}
+{/* Pricing Cards - Three Subscription Options */}
           <ScrollAnimation animation="slide-left" duration={0.7} delay={0.2} className="lg:order-2">
-            <div className="relative p-[1px] rounded-3xl overflow-hidden group">
-              {/* Static Gradient Border */}
-              <div className="absolute inset-0 bg-gradient-to-br from-purple-500/30 via-purple-600/30 to-purple-500/30 opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute inset-[1px] bg-[#1a1f2e] rounded-3xl z-0" />
-
-              <div className="relative z-10 p-6 md:p-8 rounded-3xl bg-white/5 backdrop-blur-xl">
-                {/* Price Display */}
-                <div className="text-center mb-6">
-                  <div className="text-6xl font-bold text-white mb-2">$25</div>
-                  <p className="text-slate-300 text-sm">اشتراك شهري</p>
-                </div>
-
-                {/* What You Get */}
-                <div className="space-y-4 mb-6">
-                  <h4 className="text-sm font-bold text-white uppercase tracking-wider">
-                    ما ستحصل عليه:
-                  </h4>
-                  {[
-                    'ردود احترافيَّة على كل منصَّاتك',
-                    'لغة طبيعيَّة دون توقُّف',
-                    'إعداد وتخصيص كامل للنِّظام',
-                  ].map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-4">
-                      <div className="w-6 h-6 rounded-full bg-purple-500/20 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3.5 h-3.5 text-purple-300" weight="fill" />
-                      </div>
-                      <span className="text-sm text-slate-300">{item}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* CTA Button */}
-                <a
-                  href="https://wa.me/963968478904?text=السَّلام عليكم، أرغب في تفعيل نظام الرَّد الاحترافي."
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block"
+            <div className="space-y-4">
+              {[
+                {
+                  price: '$25',
+                  messages: '250',
+                },
+                {
+                  price: '$50',
+                  messages: '500',
+                },
+                {
+                  price: '$100',
+                  messages: '1,000',
+                },
+              ].map((plan, idx) => (
+                <div
+                  key={idx}
+                  className="relative p-[1px] rounded-2xl overflow-hidden group transition-all duration-300"
                 >
-                  <Button className="w-full h-14 text-base font-bold rounded-xl bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 hover:-translate-y-0.5 text-white shadow-lg shadow-purple-500/25 hover:shadow-purple-500/40 transition-all duration-300">
-                    <Robot className="w-5 h-5 ml-2" weight="fill" />
-                    فعِّل النِّظام الآن
-                  </Button>
-                </a>
-              </div>
+                  <div className="absolute inset-0 bg-gradient-to-br from-purple-500/20 via-purple-600/20 to-purple-500/20 opacity-60 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute inset-[1px] bg-[#1a1f2e] rounded-2xl z-0" />
+
+                  <div className="relative z-10 p-5 rounded-2xl bg-white/5 backdrop-blur-xl flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl font-bold text-white">{plan.price}</div>
+                        <div className="text-sm text-slate-400">/ شهر</div>
+                      </div>
+                      <p className="text-slate-300 text-sm mt-1">
+                        {plan.messages} رسالة شهريًّا
+                      </p>
+                    </div>
+
+                    <a
+                      href={`https://wa.me/963968478904?text=السَّلام عليكم، أرغب في تفعيل نظام الرَّد بـ ${plan.messages} رسالة.`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block"
+                    >
+                      <Button
+                        className="h-11 text-sm font-bold rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/30 hover:border-purple-500/50 transition-all duration-300"
+                      >
+                        اشترك الآن
+                      </Button>
+                    </a>
+                  </div>
+                </div>
+              ))}
             </div>
           </ScrollAnimation>
 
