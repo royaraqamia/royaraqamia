@@ -137,7 +137,7 @@ export function PaymentService() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-pink-400">$20</div>
+                    <div className="text-3xl font-bold text-pink-400">$25</div>
                     <div className="text-xs text-slate-500">رسوم ثابتة</div>
                   </div>
                 </div>
