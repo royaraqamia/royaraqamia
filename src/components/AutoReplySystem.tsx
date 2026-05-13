@@ -97,7 +97,32 @@ export function AutoReplySystem() {
 
         {/* Two Column Layout */}
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-{/* Pricing Cards - Three Subscription Options */}
+{/* Features */}
+          <ScrollAnimation animation="slide-right" duration={0.7} className="lg:order-1">
+            <div className="space-y-5">
+              {features.map((feature, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-4 p-6 rounded-2xl bg-purple-500/5 border border-purple-500/10 hover:border-purple-500/30 hover:bg-purple-500/10 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F19] transition-all duration-300 group"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300">
+                    <feature.icon className="w-6 h-6 text-white" weight="fill" />
+                  </div>
+                  <div>
+                    <h4
+                      className="text-lg font-bold text-white mb-1"
+                      style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
+                    >
+                      {feature.title}
+                    </h4>
+                    <p className="text-sm text-slate-300 leading-relaxed">{feature.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollAnimation>
+
+          {/* Pricing Cards - Three Subscription Options */}
           <ScrollAnimation animation="slide-left" duration={0.7} delay={0.2} className="lg:order-2">
             <div className="space-y-4">
               {[
@@ -124,7 +149,7 @@ export function AutoReplySystem() {
                   <div className="relative z-10 p-5 rounded-2xl bg-white/5 backdrop-blur-xl flex items-center justify-between">
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        <div className="text-3xl font-bold text-white">{plan.price}</div>
+                        <div className="text-3xl font-bold text-purple-400">{plan.price}</div>
                         <div className="text-sm text-slate-400">/ شهر</div>
                       </div>
                       <p className="text-slate-300 text-sm mt-1">
@@ -144,31 +169,6 @@ export function AutoReplySystem() {
                         اشترك الآن
                       </Button>
                     </a>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollAnimation>
-
-          {/* Features */}
-          <ScrollAnimation animation="slide-right" duration={0.7} className="lg:order-1">
-            <div className="space-y-5">
-              {features.map((feature, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-start gap-4 p-6 rounded-2xl bg-purple-500/5 border border-purple-500/10 hover:border-purple-500/30 hover:bg-purple-500/10 focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B0F19] transition-all duration-300 group"
-                >
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center flex-shrink-0 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-purple-500/30 transition-all duration-300">
-                    <feature.icon className="w-6 h-6 text-white" weight="fill" />
-                  </div>
-                  <div>
-                    <h4
-                      className="text-lg font-bold text-white mb-1"
-                      style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                    >
-                      {feature.title}
-                    </h4>
-                    <p className="text-sm text-slate-300 leading-relaxed">{feature.description}</p>
                   </div>
                 </div>
               ))}

@@ -91,16 +91,7 @@ export function ConsultationCards() {
                 <div className="flex flex-col-reverse sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                   {/* Price - Top Left (appears on right in RTL) */}
                   <div className="flex items-baseline gap-2">
-                    <span
-                      className="text-4xl md:text-5xl font-bold"
-                      style={{
-                        background:
-                          'linear-gradient(120deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
+                    <span className="text-4xl md:text-5xl font-bold text-rose-400">
                       $25
                     </span>
                     <span className="text-gray-400 text-lg">/ للسَّاعة</span>

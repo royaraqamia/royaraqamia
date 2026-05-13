@@ -120,16 +120,7 @@ export function TrainingCourses() {
                   {/* Price Badge */}
                   <div className="text-center md:text-start flex-shrink-0">
                     <div className="flex items-baseline gap-2 justify-center md:justify-start">
-                      <div
-                        className="text-4xl md:text-5xl font-bold tracking-tight"
-                        style={{
-                          background:
-                            'linear-gradient(120deg, #FFD700 0%, #FFA500 50%, #FF8C00 100%)',
-                          WebkitTextFillColor: 'transparent',
-                          WebkitBackgroundClip: 'text',
-                          backgroundClip: 'text',
-                        }}
-                      >
+                      <div className="text-4xl md:text-5xl font-bold tracking-tight text-teal-400">
                         {course.price}
                       </div>
                     </div>

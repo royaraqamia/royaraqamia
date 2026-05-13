@@ -74,7 +74,7 @@ export function NetworkingSection() {
                       </div>
                       <div className="text-right min-w-0">
                         <div className="text-white font-bold text-base md:text-lg truncate">
-                          انضم كصاحب عمل <span className="text-orange-400">(25$ لكل مطابقة)</span>
+                          انضم كصاحب عمل <span className="text-orange-400">(25$ لكل عمليَّة مطابقة)</span>
                         </div>
                         <div className="text-slate-400 text-xs font-normal truncate">
                           ابحث عن كفاءات ومشاريع
@@ -111,7 +111,7 @@ export function NetworkingSection() {
                       </div>
                       <div className="text-right min-w-0">
 <div className="text-white font-bold text-base md:text-lg truncate">
-                          انضم كخبير متخصِّص <span className="text-purple-400">(مجَّانًا)</span>
+                          انضم كخبير متخصِّص <span className="text-orange-400">(مجَّانًا)</span>
                         </div>
                         <div className="text-slate-400 text-xs font-normal truncate">
                           اعرض خدماتك وخبراتك
