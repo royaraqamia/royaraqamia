@@ -23,12 +23,8 @@ const ConsultationCards = lazy(() =>
 const NetworkingSection = lazy(() =>
   import('./components/NetworkingSection').then((m) => ({ default: m.NetworkingSection }))
 );
-// Almudeer hidden temporarily: const AlMudirApp = lazy(() => import('./components/AlMudirApp').then(m => ({ default: m.AlMudirApp })));
 const WebDevService = lazy(() =>
   import('./components/WebDevService').then((m) => ({ default: m.WebDevService }))
-);
-const PaymentService = lazy(() =>
-  import('./components/PaymentService').then((m) => ({ default: m.PaymentService }))
 );
 const SmartPricing = lazy(() =>
   import('./components/SmartPricing').then((m) => ({ default: m.SmartPricing }))
@@ -66,7 +62,7 @@ function AppContent() {
   const { activeServicesTab } = useUI();
 
   return (
-          <div className="min-h-screen bg-background text-foreground overflow-x-clip w-full max-w-full">
+          <div className="min-h-screen bg-background text-foreground overflow-x-hidden w-full max-w-full">
             {/* تحسين الوصول */}
             <SkipToContent />
 
@@ -176,49 +172,6 @@ function AppContent() {
               }}
             />
 
-            {/* Service Schema: Consultations */}
-            <StructuredData
-              type="service"
-              data={{
-                name: 'الاستشارات التعليمية والتقنية المتخصصة',
-                description:
-                  'جلسات استشارية فردية وجماعية عبر الإنترنت لتحليل الاحتياجات التقنية وتقديم حلول عملية مخصصة للشركات والأفراد في المجالات الرقمية.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                category: 'Professional Services',
-              }}
-            />
-
-            {/* Service Schema: Networking */}
-            <StructuredData
-              type="service"
-              data={{
-                name: 'مجتمع التشبيك الاحترافي للخبراء العرب',
-                description:
-                  'منصة تشبيك متقدمة تربط المتخصصين العرب بأصحاب العمل والفرص المهنية. نظام مطابقة ذكي لبناء شراكات استراتيجية ناجحة في جميع أنحاء العالم العربي.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                category: 'Professional Networking',
-              }}
-            />
-
-            {/* Service Schema: Direct E-Payment Service */}
-            <StructuredData
-              type="service"
-              data={{
-                name: 'خدمة الدَّفع الإلكتروني المُباشر',
-                description:
-                  'تنفيذ عمليات الدَّفع أونلاين نيابةً عن الزبون لتسهيل المشتريات والاشتراكات الرقمية. رسوم خدمة ثابتة وشفافة.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                category: 'Financial Services',
-                offers: {
-                  price: '10',
-                  priceCurrency: 'USD',
-                },
-              }}
-            />
-
             {/* Service Schema: Smart Pricing System */}
             <StructuredData
               type="service"
@@ -291,20 +244,6 @@ function AppContent() {
               }}
             />
 
-            {/* EducationalOccupationalProgram Schema */}
-            <StructuredData
-              type="EducationalOccupationalProgram"
-              data={{
-                name: 'البرنامج المتكامل للتدريب الرقمي',
-                description:
-                  'برنامج تعليمي شامل يجمع بين البرمجة، التصميم، التسويق الرقمي، والذكاء الاصطناعي في مسار واحد متكامل.',
-                provider: 'رؤية رقمية',
-                educationalCredential: 'شهادة إتمام البرنامج المتكامل',
-                courseMode: 'Online',
-                inLanguage: 'Arabic',
-              }}
-            />
-
             <Navbar />
 
             <Suspense fallback={<PageLoader />}>
@@ -346,13 +285,6 @@ function AppContent() {
                       {activeServicesTab === 'students' && (
                         <Suspense fallback={<div className="section-spacing" />}>
                           <NetworkingSection />
-                        </Suspense>
-                      )}
-
-                      {/* Payment Service - shown for merchants */}
-                      {activeServicesTab === 'merchants' && (
-                        <Suspense fallback={<div className="section-spacing" />}>
-                          <PaymentService />
                         </Suspense>
                       )}
 

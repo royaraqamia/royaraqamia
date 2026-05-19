@@ -116,7 +116,7 @@
     @apply bg-background text-foreground;
     font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
     direction: rtl;
-    overflow-x: clip;
+    overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
     background-color: hsl(var(--background)) !important;
@@ -124,12 +124,12 @@
   }
 
   html {
-    overflow-x: clip;
+    overflow-x: hidden;
     width: 100%;
   }
 
   #root {
-    overflow-x: clip;
+    overflow-x: hidden;
     width: 100%;
     max-width: 100vw;
   }

@@ -41,7 +41,7 @@ export function WebDevService() {
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
               <span className="text-blue-400">
-                تطوير المواقع والتَّطبيقات
+                بناء مواقع إلكترونيَّة وتطبيقات
               </span>{' '}
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
