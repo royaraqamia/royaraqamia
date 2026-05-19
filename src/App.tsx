@@ -66,7 +66,7 @@ function AppContent() {
   const { activeServicesTab } = useUI();
 
   return (
-          <div className="min-h-screen bg-background text-foreground overflow-x-hidden w-full max-w-full">
+          <div className="min-h-screen bg-background text-foreground overflow-x-clip w-full max-w-full">
             {/* تحسين الوصول */}
             <SkipToContent />
 
@@ -333,8 +333,8 @@ function AppContent() {
                         </section>
                       )}
 
-                      {/* Consultations Section - shown for merchants and students */}
-                      {(activeServicesTab === 'merchants' || activeServicesTab === 'students') && (
+                      {/* Consultations Section - shown only for students */}
+                      {activeServicesTab === 'students' && (
                         <section id="consultations">
                           <Suspense fallback={<div className="section-spacing" />}>
                             <ConsultationCards />
@@ -342,8 +342,8 @@ function AppContent() {
                         </section>
                       )}
 
-                      {/* التشبيك - shown for merchants and students */}
-                      {(activeServicesTab === 'merchants' || activeServicesTab === 'students') && (
+                      {/* التشبيك - shown only for students */}
+                      {activeServicesTab === 'students' && (
                         <Suspense fallback={<div className="section-spacing" />}>
                           <NetworkingSection />
                         </Suspense>

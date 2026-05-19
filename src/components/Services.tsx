@@ -162,7 +162,7 @@ export function Services() {
       shadowColor: 'shadow-rose-500/30',
       hoverShadow: 'group-hover/item:shadow-rose-500/50',
       href: '#consultation',
-      categories: ['merchants', 'students'],
+      categories: ['students'],
     },
     {
       icon: Graph,
@@ -180,7 +180,7 @@ export function Services() {
       shadowColor: 'shadow-orange-500/30',
       hoverShadow: 'group-hover/item:shadow-orange-500/50',
       href: '#networking',
-      categories: ['merchants', 'students'],
+      categories: ['students'],
     },
     {
       icon: CreditCard,
@@ -199,17 +199,17 @@ export function Services() {
       shadowColor: 'shadow-pink-500/30',
       hoverShadow: 'group-hover/item:shadow-pink-500/50',
       href: '#payment-service',
-      categories: ['merchants'],
+      categories: [''],
     },
     {
       icon: ChartBar,
-      title: 'نظام التَّسعير',
+      title: 'نظام إدارة الأعمال (Mini ERP)',
       description:
         'نظام عبر Google Sheets  يُتيح تحديث الأسعار وحساب التَّكاليف والأرباح تلقائيًّا عند تعديل سعر الصَّرف أو هامش الرِّبح.',
       features: [
         'تحديث تلقائي للأسعار والأرباح',
         'حساب دقيق للتَّكاليف',
-        'دفعة واحدة - استخدام دائم',
+        'دعم فنِّي متكامل',
       ],
       pricing: {
         cta: 'قراءة المزيد',
@@ -228,7 +228,7 @@ export function Services() {
       features: [
         'تتبُّع شامل لعمليَّات الصَّرافة والحوَّالات',
         'حساب تلقائي للأرباح والرُّسوم',
-        'دفعة واحدة - استخدام دائم',
+        'دعم فنِّي متكامل',
       ],
       pricing: {
         cta: 'قراءة المزيد',
@@ -295,8 +295,7 @@ export function Services() {
   return (
     <section
       id="services"
-      className="section-spacing relative"
-      style={{ contentVisibility: 'auto' }}
+      className="section-spacing"
     >
       {/* Animated Background Blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -322,7 +321,7 @@ export function Services() {
         />
       </div>
 
-      <div className="max-w-7xl mx-auto container-padding relative">
+<div className="max-w-7xl mx-auto container-padding">
         {/* Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center max-w-3xl mx-auto section-header">
@@ -330,20 +329,19 @@ export function Services() {
               className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
-               ماذا <span className="gradient-text">نقدِّم</span>؟
+               ماذا <span className="gradient-text">نقدِّم</span>؟
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
-              بُنية تحتيَّة شاملة للأفراد وأصحاب الأعمال تحت سقف واحد
+              بُنية تحتيَّة شاملة للأفراد وأصحاب الأعمال تحت سقف واحد
             </p>
           </div>
         </ScrollAnimation>
 
         {/* Tabs */}
-        <ScrollAnimation animation="slide-up" duration={0.6} delay={0.2}>
-          <div className="-mx-4 sm:mx-0 px-4 sm:px-0 relative">
-            {/* Mobile scroll fade indicator */}
-            <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none sm:hidden z-10" />
-            <div className="flex overflow-x-auto justify-start sm:justify-center gap-2 mb-12 p-2 scrollbar-hide sm:flex-wrap bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm">
+        <div className="py-2">
+          {/* Mobile scroll fade indicator */}
+          <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none sm:hidden z-10" />
+          <div className="flex overflow-x-auto justify-start sm:justify-center gap-2 p-2 scrollbar-hide sm:flex-wrap bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm max-w-7xl mx-auto container-padding">
               {tabs.map((tab) => {
                 const TabIcon = tab.icon;
                 const isActive = activeServicesTab === tab.id;
@@ -373,11 +371,10 @@ export function Services() {
                 );
               })}
             </div>
-          </div>
-        </ScrollAnimation>
+        </div>
 
-        {/* Services Grid */}
-        <div className="-mx-4 sm:mx-0 px-4 sm:px-0">
+        {/* Services Grid Container */}
+        <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mt-8">
           <div
             key={activeServicesTab}
             className="grid md:grid-cols-2 lg:grid-cols-3 gap-10 animate-in fade-in slide-in-from-bottom-4 duration-500"
@@ -498,8 +495,8 @@ export function Services() {
                 </div>
               </ScrollAnimation>
             );
-          })}
-        </div>
+})}
+          </div>
         </div>
       </div>
 

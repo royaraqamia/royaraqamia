@@ -50,7 +50,7 @@ export function SmartPricing() {
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
               <span className="text-emerald-400">
-                نظام التَّسعير
+                نظام إدارة الأعمال (Mini ERP)
               </span>
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
@@ -96,9 +96,14 @@ export function SmartPricing() {
 
               <div className="relative z-10 p-6 md:p-8 rounded-3xl bg-white/5 backdrop-blur-xl">
                 {/* Price Display */}
-                <div className="text-center mb-6">
+                <div className="text-center mb-6 space-y-4">
                   <div className="text-6xl font-bold text-emerald-400 mb-2">$50</div>
                   <p className="text-slate-400 text-sm">اشتراك شهري</p>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="text-emerald-400 font-bold text-lg">$450</span>
+                    <span className="text-slate-400 text-sm">/ سنة</span>
+                    <span className="text-xs text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full">خصم 25%</span>
+                  </div>
                 </div>
 
                 {/* What You Get */}
