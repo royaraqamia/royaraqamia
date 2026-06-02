@@ -51,6 +51,7 @@ import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
 import { NotificationAdmin } from './components/NotificationAdmin';
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Analytics } from '@vercel/analytics/react';
 
 // Loading Component
 const PageLoader = () => (
@@ -67,6 +68,7 @@ function AppContent() {
             {/* تحسين الوصول */}
             <SkipToContent />
             <SpeedInsights />
+            <Analytics />
 
             {/* SEO عام للموقع */}
             <SEO
