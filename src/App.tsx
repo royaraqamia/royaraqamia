@@ -50,6 +50,7 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
 import { NotificationAdmin } from './components/NotificationAdmin';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // Loading Component
 const PageLoader = () => (
@@ -65,6 +66,7 @@ function AppContent() {
           <div className="min-h-screen bg-background text-foreground overflow-x-hidden w-full max-w-full">
             {/* تحسين الوصول */}
             <SkipToContent />
+            <SpeedInsights />
 
             {/* SEO عام للموقع */}
             <SEO
