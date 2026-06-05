@@ -18,10 +18,10 @@ export function WebDevService() {
   ];
 
   const features = [
-    { title: 'Frontend', description: 'React مع واجهات UX/UI حديثة' },
-    { title: 'Backend', description: 'Node.js, Python مع بنية قابلة للتَّوسُّع' },
-    { title: 'Mobile Apps', description: 'Flutter لنظامي iOS و Android' },
-    { title: 'Database', description: 'حلول SQL و NoSQL للأداء الأمثل' },
+    { title: 'Frontend', description: 'Next.js مع واجهات UX/UI حديثة' },
+    { title: 'Backend', description: 'Supabase' },
+    { title: 'Mobile Apps', description: 'Flutter لنظامي Android و iOS' },
+    { title: 'Database', description: 'PostgreSQL' },
   ];
 
   return (
@@ -79,7 +79,7 @@ export function WebDevService() {
                     <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
                       <benefit.icon className="w-5 h-5 text-white" />
                     </div>
-                    <span className="text-sm md:text-base text-slate-200 group-hover:text-white transition-colors">
+                    <span className="flex flex-col justify-center items-center h-[5vh] text-sm md:text-base text-slate-200 group-hover:text-white transition-colors">
                       {benefit.text}
                     </span>
                   </div>
@@ -129,7 +129,7 @@ export function WebDevService() {
                       >
                         موقع بسيط
                       </h4>
-                      <p className="text-xs text-slate-400">5-10 صفحات</p>
+                      <p className="text-xs text-slate-400">Landing Page & Website</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -153,7 +153,7 @@ export function WebDevService() {
                       >
                         تطبيق ويب
                       </h4>
-                      <p className="text-xs text-slate-400">Full-stack مع قاعدة بيانات و API</p>
+                      <p className="text-xs text-slate-400">Full-Stack Web App</p>
                     </div>
                   </div>
                   <div className="text-right">
@@ -177,7 +177,7 @@ export function WebDevService() {
                       >
                         تطبيق موبايل
                       </h4>
-                      <p className="text-xs text-slate-400">تطوير لنظامي iOS و Android</p>
+                      <p className="text-xs text-slate-400">Mobile App for Android & iOS</p>
                     </div>
                   </div>
                   <div className="text-right">

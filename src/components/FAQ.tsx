@@ -14,7 +14,12 @@ export function FAQ() {
   const faqs: FAQItem[] = [
     {
       question: 'ما هي طرق الدَّفع المتاحة؟',
-      answer: 'تطبيق ShamCash داخل سوريا، وموقع MoneyGram خارج سوريا.',
+      answer: 'تطبيق ShamCash لِمَن هم داخل سوريا، ومنصَّة MoneyGram لِمَن هم خارج سوريا.',
+      category: 'عام',
+    },
+    {
+      question: 'ما العملات التي تقبلون الدَّفع بها؟',
+      answer: 'نقبل الدَّفع بالليرة السُّوريَّة الجديدة أو الدُّولار.',
       category: 'عام',
     },
     {

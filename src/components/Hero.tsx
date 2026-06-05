@@ -104,7 +104,7 @@ export function Hero() {
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
                   </span>
                   <span className="text-sm font-medium text-slate-200">
-                    ابدأ رحلتك الرَّقميَّة اليوم
+                    ابدأ رحلتك الرَّقميَّة
                   </span>
 
                   {/* Subtle sheen */}
@@ -127,7 +127,8 @@ export function Hero() {
                 variants={itemVariants}
                 className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed max-w-xl"
               >
-               نبني لك مواقع إلكترونيَّة وتطبيقات أو ندرِّبك على بنائها، ونزوِّدك بمنتجات رقميَّة ذكيَّة لإدارة أعمالك وزبائنك بدقَّة واحترافيَّة.
+              <p>نبني لك مواقع إلكترونيَّة وتطبيقات | + ندرِّبك على بنائها.</p> 
+              <p> ونزوِّدك بمنتجات رقميَّة ذكيَّة لإدارة أعمالك وزبائنك بدقَّة واحترافيَّة.</p>
               </motion.p>
 
               {/* CTA Button - Optimized */}

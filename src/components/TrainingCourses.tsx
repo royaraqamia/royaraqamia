@@ -15,7 +15,7 @@ export function TrainingCourses() {
   const course = {
     title: 'بناء منتجات رقميَّة من الصِّفر',
     description:
-      'نظام عمل متكامل: استخدم Windsurf  لبناء مواقع إلكترونيَّة وتطبيقات. أنت هنا المدير والأدوات هي فريق العمل.',
+      'نظام عمل متكامل: استخدم LLM Code Agent  لبناء مواقع إلكترونيَّة وتطبيقات. أنت هنا المدير والأدوات هي فريق العمل.',
     trainer: 'م. أيْهَم العَلي',
     duration: '18 ساعة',
     sessions: '12 جلسة',
@@ -26,17 +26,17 @@ export function TrainingCourses() {
     {
       icon: Target,
       label: 'مسار الـ Zero-Code',
-      description: 'ابنِ مشاريع معقَّدة دون كتابة سطر كود واحد بيدك.',
+      description: 'ابنِ مشاريع معقَّدة دون كتابة كود.',
     },
     {
       icon: Sparkle,
       label: 'مشروع جاهز للبيع',
-      description: 'لا نخرج بمجرَّد تطبيق، بل بمنتج كامل مع خطَّة إطلاق.',
+      description: 'لا نخرج بمجرَّد واجهة، بل بمنتج رقمي كامل.',
     },
     {
       icon: Trophy,
       label: 'أدوات المستقبل',
-      description: 'إتقان عملي لـ Windsurf, Supabase, Hostinger,... .',
+      description: 'إتقان عملي لـ Vercel ،Supabase ،GitHub، ... .',
     },
   ];
 
