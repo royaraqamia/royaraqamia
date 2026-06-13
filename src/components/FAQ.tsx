@@ -14,7 +14,7 @@ export function FAQ() {
   const faqs: FAQItem[] = [
     {
       question: 'ما هي طرق الدَّفع المتاحة؟',
-      answer: 'تطبيق ShamCash لِمَن هم داخل سوريا، ومنصَّة MoneyGram لِمَن هم خارج سوريا.',
+      answer: 'تطبيق ShamCash لِمَن هم داخل سوريا، أو منصَّة MoneyGram لِمَن هم خارج سوريا.',
       category: 'عام',
     },
     {
