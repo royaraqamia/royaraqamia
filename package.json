@@ -1,18 +1,14 @@
 {
-  "name": "roya",
+  "name": "royaraqamia",
   "version": "1.0.0",
-  "description": "منصة رؤية رقمية | الريادة في التدريب والاستشارات والتشبيك",
-  "author": "أيْهَم",
+  "description": "نبني لك مواقع إلكترونيَّة وتطبيقات | + ندرِّبك على بنائها. ونزوِّدك بمنتجات رقميَّة من صنع أيدينا لإدارة أعمالك وزبائنك بدقَّة واحترافيَّة.",
+  "author": "أيْهَم العَلي",
   "license": "MIT",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "build:analyze": "vite build --mode analyze",
     "preview": "vite preview",
-    "generate-sitemap": "node scripts/generate-sitemap.js",
-    "analyze-bundle": "node scripts/analyze-bundle.js",
-    "optimize-images": "node scripts/optimize-images.js",
-    "convert-images": "node scripts/convert-images-to-webp.js",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "format": "prettier --write ."
