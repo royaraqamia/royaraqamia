@@ -22,10 +22,18 @@ export default defineConfig({
     rollupOptions: {
       output: {
         // Optimized chunking for better caching and performance
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['framer-motion', 'lucide-react', '@phosphor-icons/react'],
-          forms: ['react-hook-form', '@radix-ui/react-select', '@radix-ui/react-dialog'],
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
+              return 'vendor';
+            }
+            if (id.includes('framer-motion') || id.includes('lucide-react') || id.includes('@phosphor-icons/react')) {
+              return 'ui';
+            }
+            if (id.includes('react-hook-form') || id.includes('@radix-ui/react-select') || id.includes('@radix-ui/react-dialog')) {
+              return 'forms';
+            }
+          }
         },
       },
     },
