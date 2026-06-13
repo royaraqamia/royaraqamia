@@ -79,7 +79,6 @@ Disallow: /.env
 Disallow: /.git/
 Disallow: /node_modules/
 Disallow: /backend/
-Disallow: /products/almudeer/backend/
 
 # Sitemap
 Sitemap: https://royaraqamia.com/sitemap.xml
