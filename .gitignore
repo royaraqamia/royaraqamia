@@ -15,22 +15,14 @@ Thumbs.db
 
 # Env
 .env
-.env.local
-.env.production
-.env.development
 
 # Security
 *.pem
 *.key
 *.crt
 
-# Editor
-.vscode/
-.idea/
-
 # TypeScript
 *.tsbuildinfo
 
 # Others
 coverage/
-.windsurf/
