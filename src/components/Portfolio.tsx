@@ -10,7 +10,10 @@ const IMAGE_FILENAME_PADDING = 2;
 // Generate portfolio image paths (moved outside component for performance)
 const PORTFOLIO_IMAGES = Array.from({ length: PORTFOLIO_IMAGE_COUNT }, (_, i) => {
   const num = (i + 1).toString().padStart(IMAGE_FILENAME_PADDING, '0');
-  return `/${num}.png`;
+  return {
+    webp: `/${num}.webp`,
+    png: `/${num}.png`,
+  };
 });
 
 export function Portfolio() {
@@ -171,13 +174,16 @@ export function Portfolio() {
                     className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[360px]"
                   >
                     <div className="relative group/card rounded-2xl overflow-hidden glass-card border border-white/10 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-500/30">
-                      <img
-                        src={imagePath}
-                        alt={`Portfolio project ${index + 1}`}
-                        loading="lazy"
-                        className="w-full object-contain"
-                        onError={() => handleImageError(index)}
-                      />       
+                      <picture>
+                        <source srcSet={imagePath.webp} type="image/webp" />
+                        <img
+                          src={imagePath.png}
+                          alt={`Portfolio project ${index + 1}`}
+                          loading="lazy"
+                          className="w-full object-contain"
+                          onError={() => handleImageError(index)}
+                        />
+                      </picture>       
                   </div>
                 </div>
               );
