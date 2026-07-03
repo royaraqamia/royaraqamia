@@ -36,7 +36,7 @@ export function TrainingCourses() {
     {
       icon: Trophy,
       label: 'أدوات المستقبل',
-      description: 'إتقان عملي لـ Vercel ،Supabase ،GitHub، ... .',
+      description: 'إتقان عملي لـ Vercel ،GitHub ،Devin، ... .',
     },
   ];
 

@@ -6,7 +6,6 @@ import { Button } from '../ui/button';
 // @ts-ignore
 // TODO: Fix import with new types.d.ts
 import logo from '../logo.png';
-import { AuthButton } from '../AuthButton';
 
 interface DesktopNavProps {
   navLinks: any[];
@@ -266,7 +265,6 @@ export function DesktopNav({
 
       {/* CTA Buttons */}
       <div className="hidden lg:flex items-center element-gap-sm">
-        <AuthButton />
         <a
           href="https://wa.me/963968478904?text=السَّلام عليكم ورحمة اللّٰه وبركاته."
           target="_blank"

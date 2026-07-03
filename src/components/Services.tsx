@@ -1,16 +1,16 @@
 import {
   ChatCircle,
-  Graph,
+//  Graph,
   Check,
-  CreditCard,
-  ChartBar,
-  Robot,
+//  CreditCard,
+//  ChartBar,
+//  Robot,
   Code,
-  CurrencyDollar,
+//  CurrencyDollar,
   Lightbulb,
   Storefront,
   GraduationCap,
-  Bank,
+//  Bank,
 } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useUI } from '../context/UIContext';
@@ -164,7 +164,7 @@ export function Services() {
       href: '#consultation',
       categories: ['students'],
     },
-    {
+/*    {
       icon: Graph,
       title: 'التَّشبيك',
       description: 'نربطك مع أصحاب المهارات أو أصحاب الأعمال المناسبين لاحتياجاتك ورغباتك.',
@@ -181,8 +181,8 @@ export function Services() {
       hoverShadow: 'group-hover/item:shadow-orange-500/50',
       href: '#networking',
       categories: ['students'],
-    },
-    {
+    },*/
+/*    {
       icon: CreditCard,
       title: 'الدَّفع الإلكتروني',
       description:
@@ -200,10 +200,10 @@ export function Services() {
       hoverShadow: 'group-hover/item:shadow-pink-500/50',
       href: '#payment-service',
       categories: [''],
-    },
-    {
+    },*/
+/*    {
       icon: ChartBar,
-      title: 'نظام إدارة الأعمال (Mini ERP)',
+      title: 'نظام إدارة الأعمال',
       description:
         'نظام مالي مُصمَّم خصِّيصًا لأتمتة التَّسعير، ضبط المخزون، وحساب الأرباح الصَّافية لحظيًّا مع كل تغيُّر في سعر الصَّرف.',
       features: [
@@ -219,8 +219,8 @@ export function Services() {
       hoverShadow: 'group-hover/item:shadow-emerald-500/50',
       href: '#smart-pricing',
       categories: ['merchants'],
-    },
-    {
+    },*/
+/*    {
       icon: CurrencyDollar,
       title: 'نظام الصَّرافة والحوَّالات',
       description:
@@ -238,8 +238,8 @@ export function Services() {
       hoverShadow: 'group-hover/item:shadow-lime-500/50',
       href: '#exchange-management',
       categories: ['exchange'],
-    },
-    {
+    },*/
+/*    {
       icon: Robot,
       title: 'نظام الرَّد',
       description:
@@ -253,7 +253,7 @@ export function Services() {
       hoverShadow: 'group-hover/item:shadow-purple-500/50',
       href: '#auto-reply',
       categories: ['merchants'],
-    },
+    },*/
     {
       icon: Code,
       title: 'بناء مواقع إلكترونيَّة وتطبيقات',
@@ -279,7 +279,7 @@ export function Services() {
   const tabs = [
     { id: 'merchants', label: 'للتُّجَّار ومقدِّمي الخدمات', icon: Storefront },
     { id: 'students', label: 'للطُّلاب والخرِّيجين الجدد', icon: GraduationCap },
-    { id: 'exchange', label: 'لشركات الصَّرافة والحوَّالات', icon: Bank },
+    // { id: 'exchange', label: 'لشركات الصَّرافة والحوَّالات', icon: Bank },
   ];
 
   const getTabCount = (tabId: string) => {

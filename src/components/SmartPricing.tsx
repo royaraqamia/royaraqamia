@@ -50,7 +50,7 @@ export function SmartPricing() {
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
               <span className="text-emerald-400">
-                نظام إدارة الأعمال (Mini ERP)
+                نظام إدارة الأعمال
               </span>
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">

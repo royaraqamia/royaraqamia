@@ -10,7 +10,6 @@ import { useFocusTrap } from '../../hooks/useFocusTrap';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import logo from '../logo.png';
-import { AuthButton } from '../AuthButton';
 
 // ============================================================================
 // Types
@@ -26,6 +25,7 @@ interface MobileMenuProps {
 }
 
 interface NavLink {
+  visible: boolean;
   href: string;
   label: string;
   isRoute?: boolean;
@@ -278,7 +278,7 @@ export function MobileMenu({
         onKeyDown={(e) => e.key === 'Escape' && handleClose()}
         className={`
                     absolute inset-0
-                    w-screen h-screen h-[100dvh]
+                    w-screen h-screen
                     bg-background
                     transition-all duration-200 ease-out
                     will-change-transform
@@ -352,7 +352,6 @@ export function MobileMenu({
           <footer className="px-5 pt-5 pb-10 shrink-0">
             {/* Auth Button */}
             <div className="mb-5">
-              <AuthButton />
             </div>
 
             {/* CTA Button */}

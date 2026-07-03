@@ -157,7 +157,7 @@ export function WebDevService() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-blue-400">$1,500</div>
+                    <div className="text-3xl font-bold text-blue-400">$1,000</div>
                     <div className="text-xs text-slate-500">بدءًا من</div>
                   </div>
                 </div>
@@ -181,7 +181,7 @@ export function WebDevService() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-3xl font-bold text-blue-400">$2,500</div>
+                    <div className="text-3xl font-bold text-blue-400">$2,000</div>
                     <div className="text-xs text-slate-500">بدءًا من</div>
                   </div>
                 </div>

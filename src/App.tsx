@@ -20,21 +20,21 @@ const Certificate = lazy(() =>
 const ConsultationCards = lazy(() =>
   import('./components/ConsultationCards').then((m) => ({ default: m.ConsultationCards }))
 );
-const NetworkingSection = lazy(() =>
+/*const NetworkingSection = lazy(() =>
   import('./components/NetworkingSection').then((m) => ({ default: m.NetworkingSection }))
-);
+);*/
 const WebDevService = lazy(() =>
   import('./components/WebDevService').then((m) => ({ default: m.WebDevService }))
 );
-const SmartPricing = lazy(() =>
+/*const SmartPricing = lazy(() =>
   import('./components/SmartPricing').then((m) => ({ default: m.SmartPricing }))
-);
-const AutoReplySystem = lazy(() =>
+);*/
+/*const AutoReplySystem = lazy(() =>
   import('./components/AutoReplySystem').then((m) => ({ default: m.AutoReplySystem }))
-);
-const ExchangeManagement = lazy(() =>
+);*/
+/*const ExchangeManagement = lazy(() =>
   import('./components/ExchangeManagement').then((m) => ({ default: m.ExchangeManagement }))
-);
+);*/
 const WhyUs = lazy(() => import('./components/WhyUs').then((m) => ({ default: m.WhyUs })));
 
 const FAQ = lazy(() => import('./components/FAQ').then((m) => ({ default: m.FAQ })));
@@ -47,9 +47,6 @@ import { StructuredData } from './components/StructuredData';
 import { UIProvider, useUI } from './context/UIContext';
 import { CircleNotch } from '@phosphor-icons/react';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { PWAInstallPrompt } from './components/PWAInstallPrompt';
-import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
-import { NotificationAdmin } from './components/NotificationAdmin';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 
@@ -159,95 +156,6 @@ function AppContent() {
               }}
             />
 
-            {/* Service Schema: Training */}
-            <StructuredData
-              type="service"
-              data={{
-                name: 'التدريب الإلكتروني المتقدم في البرمجة والتقنية',
-                description:
-                  'دورات تدريبية احترافية أونلاين في البرمجة، التسويق الرقمي، التصميم، والذكاء الاصطناعي. مسارات تعليمية واضحة من الصفر حتى الاحتراف مع شهادات معتمدة ومشاريع عملية.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                category: 'Education & Training',
-                offers: {
-                  price: '36',
-                  priceCurrency: 'USD',
-                },
-              }}
-            />
-
-            {/* Service Schema: Smart Pricing System */}
-            <StructuredData
-              type="service"
-              data={{
-                name: 'نظام التَّسعير الذَّكي عبر Google Sheets',
-                description:
-                  'نظام إلكتروني مبرمج يتيح تحديث الأسعار وحساب التكاليف والأرباح تلقائيًا عند تعديل سعر الصرف. دفعة واحدة - استخدام دائم.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                category: 'Business Tools',
-                offers: {
-                  price: '25',
-                  priceCurrency: 'USD',
-                },
-              }}
-            />
-
-            {/* Service Schema: Professional Reply System */}
-            <StructuredData
-              type="service"
-              data={{
-                name: 'نظام الرَّد الاحترافي التلقائي',
-                description:
-                  'نظام يستلم ويرد على رسائل الزبون عبر منصات التواصل الاجتماعي بشكل احترافي وبلغة طبيعية دون توقف 24/7.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                category: 'Automation & AI',
-                offers: {
-                  price: '25',
-                  priceCurrency: 'USD',
-                },
-              }}
-            />
-
-            {/* Service Schema: Exchange Management System */}
-            <StructuredData
-              type="service"
-              data={{
-                name: 'نظام إدارة الصَّرافة والحوَّالات',
-                description:
-                  'نظام متكامل عبر Google Sheets لإدارة عمليَّات الصَّرافة والحوالات الماليَّة، يُتيح تتبُّع المعاملات، حساب الأرباح، وإدارة الزَّبائن بسهولة.',
-                provider: 'رؤية رقمية',
-                areaServed: 'العالم العربي',
-                category: 'Business Tools',
-                offers: {
-                  price: '100',
-                  priceCurrency: 'USD',
-                },
-              }}
-            />
-
-            {/* Course Schema: AI & Zero-Code */}
-            <StructuredData
-              type="course"
-              data={{
-                name: 'دورة بناء منتجات رقمية بالذكاء الاصطناعي (Zero-Code)',
-                description:
-                  'تعلم بناء مواقع وتطبيقات كاملة باستخدام أدوات الذكاء الاصطناعي مثل Antigravity و Gemini دون كتابة كود. يشمل المشروع النهائي وخطة إطلاق المنتج.',
-                provider: 'رؤية رقمية - م. أيهم العلي',
-                areaServed: 'العالم العربي',
-                educationalCredential: 'شهادة إتمام معتمدة',
-                courseMode: 'Online',
-                inLanguage: 'Arabic',
-                offers: {
-                  price: '36',
-                  priceCurrency: 'USD',
-                },
-                totalHistory: '12 ساعة',
-                coursePrerequisites: 'لا يحتاج خبرة مسبقة',
-              }}
-            />
-
             <Navbar />
 
             <Suspense fallback={<PageLoader />}>
@@ -260,9 +168,11 @@ function AppContent() {
                       <Hero />
                       <MetricCards />
                       <Services />
-                      <Suspense fallback={<div className="section-spacing" />}>
-                        <Testimonials />
-                      </Suspense>
+                      {activeServicesTab === 'students' && (
+                        <Suspense fallback={<div className="section-spacing" />}>
+                          <Testimonials />
+                        </Suspense>
+                      )}
 
                       {/* Training Section - shown for students tab */}
                       {activeServicesTab === 'students' && (
@@ -284,35 +194,7 @@ function AppContent() {
                           </Suspense>
                         </section>
                       )}
-
-                      {/* التشبيك - shown only for students */}
-                      {activeServicesTab === 'students' && (
-                        <Suspense fallback={<div className="section-spacing" />}>
-                          <NetworkingSection />
-                        </Suspense>
-                      )}
-
-                      {/* Smart Pricing - shown for merchants */}
-                      {activeServicesTab === 'merchants' && (
-                        <Suspense fallback={<div className="section-spacing" />}>
-                          <SmartPricing />
-                        </Suspense>
-                      )}
-
-                      {/* Exchange Management - shown for exchange tab */}
-                      {activeServicesTab === 'exchange' && (
-                        <Suspense fallback={<div className="section-spacing" />}>
-                          <ExchangeManagement />
-                        </Suspense>
-                      )}
-
-                      {/* Auto Reply - shown for merchants */}
-                      {activeServicesTab === 'merchants' && (
-                        <Suspense fallback={<div className="section-spacing" />}>
-                          <AutoReplySystem />
-                        </Suspense>
-                      )}
-
+                      
                       {/* Web Development - shown for merchants */}
                       {activeServicesTab === 'merchants' && (
                         <Suspense fallback={<div className="section-spacing" />}>
@@ -320,9 +202,6 @@ function AppContent() {
                         </Suspense>
                       )}
 
-                      
-
-                     
                       <Suspense fallback={<div className="section-spacing" />}>
                         <WhyUs />
                       </Suspense>
@@ -333,14 +212,11 @@ function AppContent() {
                     </main>
                   }
                 />
-                {/* Admin Dashboard */}
-                <Route path="/admin/notifications" element={<NotificationAdmin />} />
+
               </Routes>
             </Suspense>
             <WhatsAppFloat phone="963968478904" message="السَّلام عليكم ورحمة اللّٰه وبركاته." />
             <GoUpButton />
-            <PWAInstallPrompt />
-            <PWAUpdatePrompt />
             <Footer />
             <Toaster position="top-center" richColors />
           </div>

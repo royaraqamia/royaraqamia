@@ -42,9 +42,9 @@ export function MetricCards() {
     },
     {
       icon: TrendUp,
-      value: '95%',
-      label: 'نسبة الرِّضا',
-      description: 'من المتدرِّبين والزَّبائن',
+      value: '100+',
+      label: 'مشروع رقمي',
+      description: 'ما بين مواقع وتطبيقات',
       colorKey: 'orange' as const,
     },
   ];

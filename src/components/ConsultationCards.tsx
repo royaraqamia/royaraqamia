@@ -1,25 +1,8 @@
-import { GraduationCap, Briefcase, FileText, Microphone } from '@phosphor-icons/react';
+import { Microphone } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import { ScrollAnimation } from './ScrollAnimations';
 
 export function ConsultationCards() {
-  const features = [
-    {
-      icon: GraduationCap,
-      title: 'للمتعلِّمين والطُّلاب',
-      description: 'رسم مسار تعليمي دقيق ومصادر موثوقة لتعلُّم المهارات التِّقنيَّة.',
-    },
-    {
-      icon: Briefcase,
-      title: 'لأصحاب المشاريع',
-      description: 'اختيار البنية التِّقنيَّة، الاستضافة، والتَّوظيف المناسب للميزانيَّة.',
-    },
-    {
-      icon: FileText,
-      title: 'الخلاصة العمليَّة',
-      description: 'خطَّة عمل وملف يحوي كافَّة الرَّوابط والأدوات.',
-    },
-  ];
 
   return (
     <section
@@ -127,48 +110,9 @@ export function ConsultationCards() {
                     className="text-slate-300 font-medium text-base md:text-lg leading-relaxed max-w-2xl"
                     style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif", lineHeight: '1.8' }}
                   >
-                    تحليل كامل لاحتياجاتك الرَّقميَّة. نُراجع ما لديك، نختار لك الأدوات، ونرسم لك
+                    تحليل كامل لاحتياجاتك الرَّقميَّة. نُراجع ما لديك، ونرسم لك
                     مسار التَّعليم أو التَّنفيذ خطوة بخطوة. استشارة تمنحك الوضوح التَّام.
                   </p>
-                </div>
-
-                {/* Feature Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
-                  {features.map((feature, idx) => (
-                    <div
-                      key={idx}
-                      className="p-6 rounded-2xl transition-all duration-300 hover:scale-[1.02] hover:bg-white/5 border border-white/10"
-                      style={{
-                        background: 'rgba(0, 0, 0, 0.3)',
-                      }}
-                    >
-                      <div
-                        className="w-12 h-12 rounded-xl flex items-center justify-center mb-4"
-                        style={{
-                          background:
-                            'linear-gradient(135deg, rgba(244, 63, 94, 0.2) 0%, rgba(251, 113, 133, 0.1) 100%)',
-                          border: '1px solid rgba(244, 63, 94, 0.25)',
-                        }}
-                      >
-                        <feature.icon className="w-6 h-6 text-rose-400" />
-                      </div>
-                      <h4
-                        className="text-white font-bold text-lg mb-2"
-                        style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                      >
-                        {feature.title}
-                      </h4>
-                      <p
-                        className="text-slate-300 font-normal text-sm leading-relaxed"
-                        style={{
-                          fontFamily: "'IBM Plex Sans Arabic', sans-serif",
-                          lineHeight: '1.7',
-                        }}
-                      >
-                        {feature.description}
-                      </p>
-                    </div>
-                  ))}
                 </div>
 
                 {/* Action Buttons */}

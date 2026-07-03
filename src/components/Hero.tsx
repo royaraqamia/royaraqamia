@@ -125,7 +125,7 @@ export function Hero() {
               {/* Description */}
               <motion.p
                 variants={itemVariants}
-                className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed max-w-xl"
+                className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
               >
               <p>نبني لك مواقع إلكترونيَّة وتطبيقات | + ندرِّبك على بنائها.</p> 
               <p> ونزوِّدك بمنتجات رقميَّة من صنع أيدينا لإدارة أعمالك وزبائنك بدقَّة واحترافيَّة.</p>
