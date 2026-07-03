@@ -353,21 +353,6 @@ export function Certificate() {
                 priority={true}
               />
             </motion.div>
-
-            {/* Premium Shine sweep effect on hover - respects reduced motion */}
-            {!prefersReducedMotion && (
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent rounded-3xl pointer-events-none z-50"
-                initial={{ x: '-100%' }}
-                animate={isHovered ? { x: '200%' } : { x: '-100%' }}
-                transition={{
-                  duration: 1.5,
-                  ease: 'easeInOut',
-                  repeat: isHovered ? Infinity : 0,
-                  repeatDelay: 2,
-                }}
-              />
-            )}
           </motion.div>
         </motion.div>
       </div>

@@ -26,6 +26,9 @@ const ConsultationCards = lazy(() =>
 const WebDevService = lazy(() =>
   import('./components/WebDevService').then((m) => ({ default: m.WebDevService }))
 );
+const Portfolio = lazy(() =>
+  import('./components/Portfolio').then((m) => ({ default: m.Portfolio }))
+);
 /*const SmartPricing = lazy(() =>
   import('./components/SmartPricing').then((m) => ({ default: m.SmartPricing }))
 );*/
@@ -168,6 +171,14 @@ function AppContent() {
                       <Hero />
                       <MetricCards />
                       <Services />
+                      
+                      {/* Portfolio Section - shown for merchants */}
+                      {activeServicesTab === 'merchants' && (
+                        <Suspense fallback={<div className="section-spacing" />}>
+                          <Portfolio />
+                        </Suspense>
+                      )}
+                      
                       {activeServicesTab === 'students' && (
                         <Suspense fallback={<div className="section-spacing" />}>
                           <Testimonials />
