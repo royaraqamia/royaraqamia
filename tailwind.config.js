@@ -1,8 +1,8 @@
 // tailwind.config.js
 module.exports = {
   content: [
-    './index.html',
-    './src/**/*.{js,ts,jsx,tsx}',
+    './app/**/*.{js,ts,jsx,tsx}',
+    './components/**/*.{js,ts,jsx,tsx}',
   ],
   // Note: Tailwind v3.4+ automatically ignores node_modules directories
   // The warning about matching node_modules is a false positive - Tailwind

@@ -1,0 +1,107 @@
+'use client';
+
+import { ScrollAnimation } from './ScrollAnimations';
+import { ArrowLeft } from '@phosphor-icons/react';
+
+export function CTA() {
+  return (
+    <>
+      <style>{`
+        .primary-cta-btn {
+          position: relative;
+        }
+        .primary-cta-btn:hover {
+          transform: scale(1.05);
+          box-shadow: 0 20px 60px rgba(119, 102, 238, 0.5), 0 0 40px rgba(119, 102, 238, 0.3);
+        }
+        .primary-cta-btn:hover .shine-effect {
+          transform: translateX(100%);
+        }
+        .primary-cta-btn:hover svg {
+          transform: translateX(-4px);
+        }
+        
+        @keyframes cta-pulse {
+          0%, 100% {
+            box-shadow: 0 8px 32px rgba(119, 102, 238, 0.4), 0 0 20px rgba(119, 102, 238, 0.2);
+          }
+          50% {
+            box-shadow: 0 12px 48px rgba(119, 102, 238, 0.6), 0 0 40px rgba(119, 102, 238, 0.4);
+          }
+        }
+        
+        .cta-glow {
+          animation: cta-pulse 2.5s ease-in-out infinite;
+        }
+        
+        .text-shadow-hero {
+          text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3), 0 4px 40px rgba(119, 102, 238, 0.15);
+        }
+      `}</style>
+      <section
+        id="cta"
+        className="relative py-24 md:py-32 overflow-hidden items-center justify-center flex"
+      >
+        {/* Background with Gradient - matching Hero section */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary-600/5 to-transparent" />
+          <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-primary-600 opacity-5 blur-[150px] rounded-full" />
+          <div className="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-primary-400 opacity-5 blur-[150px] rounded-full" />
+        </div>
+
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
+          <ScrollAnimation animation="slide-up" duration={0.8}>
+            <div className="relative max-w-5xl mx-auto">
+              <div className="relative px-6 py-12 md:px-12 md:py-20 lg:py-24 text-center">
+                {/* Badge component - Matching Hero style */}
+                <div className="inline-flex items-center gap-2 px-4 py-2 mb-4 rounded-full bg-slate-900/50 backdrop-blur-md text-white border border-slate-700/50 relative overflow-hidden group hover:border-primary-500/30 transition-colors duration-300">
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+                  </span>
+                  <span className="text-sm font-medium text-slate-200">متاحون للرَّد 24/7</span>
+
+                  {/* Subtle sheen */}
+                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shine-slide_1.5s_infinite]" />
+                </div>
+
+                {/* Title - Matching Hero Typography */}
+                <h2 className="text-[2.7rem] sm:text-6xl lg:text-7xl font-normal tracking-tight font-heading text-teal-300 mb-6 leading-snug md:leading-relaxed">
+                  لا تترك مستقبلك للصِّدفة
+                </h2>
+
+                {/* Description - Matching Hero Typography */}
+                <p
+                  className="text-sm sm:text-base lg:text-lg text-white/90 max-w-2xl mx-auto mb-10 leading-[1.8] sm:leading-[1.9] text-shadow-hero px-2 sm:px-0 font-light"
+                  style={{ letterSpacing: '0.01em' }}
+                >
+                  الفرص لا تنتظر، ابدأ الآن في بناء مسارك المهني أو مشروعك الخاص بدعم من نخبة
+                  الخبراء.
+                </p>
+
+                {/* Action Buttons - Matching Hero Button Style */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+                  <a
+                    href="https://wa.me/963968478904?text=السَّلام عليكم ورحمة اللّٰه وبركاته."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="primary-cta-btn cta-glow relative overflow-hidden h-14 sm:h-16 w-auto flex-shrink-0 flex items-center justify-center px-10 sm:px-12 rounded-full gradient-primary text-white text-lg sm:text-xl font-bold transition-all duration-300 whitespace-nowrap"
+                  >
+                    <span className="relative flex items-center gap-3 z-10">
+                      تواصل معنا الآن
+                      <ArrowLeft className="w-6 h-6 transition-transform duration-300 group-hover:-translate-x-1" />
+                    </span>
+                    {/* Shine effect on hover */}
+                    <span className="shine-effect absolute inset-0 -translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                  </a>
+                </div>
+              </div>
+
+              {/* No card background/border as per Hero style which is open on the background */}
+            </div>
+          </ScrollAnimation>
+        </div>
+      </section>
+    </>
+  );
+}
