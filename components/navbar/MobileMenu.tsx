@@ -9,9 +9,6 @@ import {
   Phone,
 } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import logo from '../logo.png';
 
 // ============================================================================
 // Types
@@ -69,7 +66,6 @@ export function MobileMenu({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const logoSrc = logoProp || (typeof logo === 'string' ? logo : logo.src);
 
   useFocusTrap(isOpen, mobileMenuRef);
 
@@ -298,7 +294,7 @@ export function MobileMenu({
               className="flex items-center gap-3 no-underline group"
             >
               <img
-                src={logoSrc}
+                src={logoProp}
                 alt="شعار رؤية رقمية"
                 className="h-10 w-10 logo-glow transition-transform duration-200 group-hover:scale-105"
               />

@@ -58,18 +58,6 @@ export function WebDevService() {
           {/* Left: Benefits & Features */}
           <ScrollAnimation animation="slide-right" duration={0.7}>
             <div className="space-y-8">
-              <div className="space-y-4">
-                <h3
-                  className="text-2xl md:text-3xl font-bold text-white"
-                  style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                >
-                  لماذا تختار خدمات التَّطوير لدينا؟
-                </h3>
-                <p className="text-slate-300 leading-relaxed">
-                  نقدِّم حلول تطوير متكاملة من البداية إلى النِّهاية باستخدام تقنيات حديثة، لضمان أن
-                  يكون منتجك الرَّقمي قابلًا للتَّوسُّع والأداء العالي.
-                </p>
-              </div>
 
               {/* Benefits List */}
               <div className="space-y-4">
@@ -90,12 +78,6 @@ export function WebDevService() {
 
               {/* Features Grid */}
               <div className="space-y-4">
-                <h4
-                  className="text-xl font-bold text-white"
-                  style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                >
-                  خبراتنا
-                </h4>
                 <div className="grid grid-cols-2 gap-4">
                   {features.map((feature, idx) => (
                     <div

@@ -4,10 +4,6 @@ import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CaretDown, Phone } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-// TODO: Fix import with new types.d.ts
-import logo from '../logo.png';
 
 interface DesktopNavProps {
   navLinks: any[];
@@ -38,7 +34,6 @@ export function DesktopNav({
   // Timeouts for hover delay
   const servicesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const productsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const logoSrc = logoProp || (typeof logo === 'string' ? logo : logo.src);
 
   // Close dropdowns when clicking outside (handled slightly differently inside component)
   useEffect(() => {
@@ -86,7 +81,7 @@ export function DesktopNav({
         onClick={scrollToHomeNode}
       >
         <img
-          src={logoSrc}
+          src={logoProp}
           alt="شعار رؤية رقمية"
           className={`transition-all duration-300 ${
             isScrolled ? 'h-8 w-8 lg:h-10 lg:w-10 logo-glow' : 'h-10 w-10 lg:h-12 lg:w-12'

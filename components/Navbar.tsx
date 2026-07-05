@@ -1,12 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { List, X, House, Gift } from '@phosphor-icons/react';
+import { List, X, House } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-// TODO: Fix after types are loaded
-import logo from './logo.png';
 import { useUI } from '../context/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
 import { MobileMenu } from './navbar/MobileMenu';
@@ -161,7 +157,7 @@ export function Navbar() {
               isScrolled={isScrolled}
               isLinkActive={isLinkActive}
               handleHashClick={handleHashClick}
-              logo={logo.src}
+              logo='/logo.webp'
               isHomePage={isHomePage}
               setIsMobileMenuOpen={setIsMobileMenuOpen}
             />
@@ -186,7 +182,7 @@ export function Navbar() {
           isLinkActive={isLinkActive}
           handleHashClick={handleHashClick}
           isHomePage={isHomePage}
-          logo={logo.src}
+          logo='/logo.webp'
         />
       </nav>
     </>

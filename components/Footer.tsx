@@ -1,9 +1,8 @@
 'use client';
 
-import { FacebookLogo, LinkedinLogo, InstagramLogo, MapPin, Envelope } from '@phosphor-icons/react';
+import { LinkedinLogoIcon, InstagramLogoIcon, MapPinIcon, EnvelopeIcon } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { formatHijriDate } from '../utils/formatters';
-import logo from './logo.png';
 import { LazyImage } from './LazyImage';
 
 export function Footer() {
@@ -20,7 +19,7 @@ export function Footer() {
           const navbar = document.querySelector('nav');
           const navbarHeight = navbar ? navbar.offsetHeight : 80;
           const offset = navbarHeight + 20;
-          const sectionTop = heroSection.getBoundingClientRect().top + window.pageYOffset;
+          const sectionTop = heroSection.getBoundingClientRect().top + window.scrollY;
           const offsetPosition = sectionTop - offset;
 
           window.scrollTo({
@@ -35,7 +34,7 @@ export function Footer() {
         const navbar = document.querySelector('nav');
         const navbarHeight = navbar ? navbar.offsetHeight : 80;
         const offset = navbarHeight + 20;
-        const sectionTop = heroSection.getBoundingClientRect().top + window.pageYOffset;
+        const sectionTop = heroSection.getBoundingClientRect().top + window.scrollY;
         const offsetPosition = sectionTop - offset;
 
         window.scrollTo({
@@ -68,25 +67,19 @@ export function Footer() {
       icon: TelegramIcon,
       href: 'https://t.me/royaraqamia',
       label: 'Telegram',
-      ariaLabel: 'تابعنا على تلجرام',
+      ariaLabel: 'تابعنا على Telegram',
     },
     {
-      icon: InstagramLogo,
+      icon: InstagramLogoIcon,
       href: 'https://instagram.com/royaraqamia',
       label: 'Instagram',
-      ariaLabel: 'تابعنا على إنستجرام',
+      ariaLabel: 'تابعنا على Instagram',
     },
     {
-      icon: LinkedinLogo,
+      icon: LinkedinLogoIcon,
       href: 'https://linkedin.com/company/royaraqamia',
       label: 'LinkedIn',
-      ariaLabel: 'تابعنا على لينكدإن',
-    },
-    {
-      icon: FacebookLogo,
-      href: 'https://facebook.com/royaraqamia',
-      label: 'Facebook',
-      ariaLabel: 'تابعنا على فيسبوك',
+      ariaLabel: 'تابعنا على LinkedIn',
     },
   ];
 
@@ -106,7 +99,7 @@ export function Footer() {
               <div className="h-14 w-14 relative">
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/30 to-violet-400/15 blur-lg group-hover:blur-xl group-hover:from-violet-500/40 group-hover:to-violet-400/25 transition-all duration-500"></div>
                 <LazyImage
-                  src={logo.src}
+                  src='/logo.png'
                   webpSrc="/logo.webp"
                   alt="رؤية رقمية"
                   priority={true}
@@ -129,12 +122,12 @@ export function Footer() {
             </p>
              <p className="text-sm text-gray-400 leading-relaxed max-w-md flex items-center justify-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
-                <MapPin className="w-4 h-4" />
-                حلب، سوريا
+                <MapPinIcon className="w-4 h-4" />
+                حَلَب، سوريا
               </span>
               <span className="text-violet-500/40">|</span>
               <a href="mailto:contact@royaraqamia.com" className="flex items-center gap-1 hover:text-violet-400 transition-colors">
-                <Envelope className="w-4 h-4" />
+                <EnvelopeIcon className="w-4 h-4" />
                 contact@royaraqamia.com
               </a>
             </p>
