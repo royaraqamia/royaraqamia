@@ -1,7 +1,7 @@
-# Security Policy for رؤية رقمية (Roya Raqamia)
+# Security Policy for رؤية رقمية
 # https://royaraqamia.com/.well-known/security.txt
 
-Contact: mailto:security@royaraqamia.com
+Contact: mailto:contact@royaraqamia.com
 Expires: 2027-12-31T23:59:59.000Z
 Preferred-Languages: ar, en
 Canonical: https://royaraqamia.com/.well-known/security.txt
@@ -9,9 +9,3 @@ Canonical: https://royaraqamia.com/.well-known/security.txt
 # Security Disclosure Policy
 # Please report security vulnerabilities responsibly by emailing the Contact above.
 # We appreciate your efforts to keep our platform secure.
-
-# Encryption
-Encryption: https://royaraqamia.com/.well-known/pgp-key.txt
-
-# Acknowledgments
-Acknowledgments: https://royaraqamia.com/security-acknowledgments

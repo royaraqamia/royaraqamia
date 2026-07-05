@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'رؤية رقمية',
-  description: 'نبني لك مواقع إلكترونيَّة وتطبيقات | + ندرِّبك على بنائها. ونزوِّدك بمنتجات رقميَّة من صنع أيدينا لإدارة أعمالك وزبائنك بدقَّة واحترافيَّة.',
+  description: 'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
   keywords: [
     'رؤية رقمية',
     'تدريب إلكتروني',
@@ -36,18 +36,46 @@ export const metadata: Metadata = {
     'online certification',
     'Roya Raqamia',
   ],
+  authors: [{ name: 'رؤية رقمية' }],
+  creator: 'رؤية رقمية',
+  publisher: 'رؤية رقمية',
   metadataBase: new URL('https://royaraqamia.com'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     title: 'رؤية رقمية',
-    description: 'نبني لك مواقع إلكترونيَّة وتطبيقات | + ندرِّبك على بنائها.',
+    description: 'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
     url: 'https://royaraqamia.com',
     siteName: 'رؤية رقمية',
     locale: 'ar_SY',
     type: 'website',
+    images: [
+      {
+        url: '/OG Image.webp',
+        width: 1200,
+        height: 630,
+        alt: 'رؤية رقمية',
+      },
+    ],
   },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'رؤية رقمية',
+    description: 'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
+    images: ['/OG Image.webp'],
+  },
+  other: {
+    'google-site-verification': '',
+  },
+  verification: {
+    google: '',
+  },
+};
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 };
       
 export default function RootLayout({

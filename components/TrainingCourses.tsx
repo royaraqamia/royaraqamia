@@ -225,7 +225,7 @@ export function TrainingCourses() {
 
                 {/* CTA Button */}
                 <a
-                  href={`https://wa.me/963968478904?text=${encodeURIComponent('السَّلام عليكم، أرغب في التَّسجيل في المسار التَّدريبي المتكامل.')}`}
+                  href={`https://wa.me/963968478904?text=${encodeURIComponent('السَّلام عليكم، أرغب في التَّسجيل في التَّدريب.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
