@@ -5,8 +5,19 @@ import Link from 'next/link';
 import { CaretDown, Phone } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 
+interface NavLink {
+  visible?: boolean;
+  href: string;
+  label: string;
+  isRoute?: boolean;
+  hasDropdown?: boolean;
+  dropdownKey?: string;
+  icon?: React.ComponentType<{ className?: string; weight?: string }>;
+  subItems?: NavLink[];
+}
+
 interface DesktopNavProps {
-  navLinks: any[];
+  navLinks: NavLink[];
   isScrolled: boolean;
   isLinkActive: (href: string) => boolean;
   handleHashClick: (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => void;
@@ -60,9 +71,14 @@ export function DesktopNav({
 
   useEffect(() => {
     return () => {
-      if (servicesTimeoutRef.current) clearTimeout(servicesTimeoutRef.current);
-      if (productsTimeoutRef.current) clearTimeout(productsTimeoutRef.current);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const servicesTimeout = servicesTimeoutRef.current;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      const productsTimeout = productsTimeoutRef.current;
+      if (servicesTimeout) clearTimeout(servicesTimeout);
+      if (productsTimeout) clearTimeout(productsTimeout);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const scrollToHomeNode = () => {
@@ -180,7 +196,7 @@ export function DesktopNav({
                       onMouseEnter={handleMouseEnter}
                       onMouseLeave={handleMouseLeave}
                     >
-                      {link.subItems?.map((sub: any, subIndex: number) => {
+                      {link.subItems?.map((sub: NavLink, subIndex: number) => {
                         const itemClasses = `block text-sm text-foreground/90 transition-all duration-200 whitespace-nowrap px-5 py-3.5 hover:bg-violet-500/10 hover:text-violet-400 focus-visible:bg-violet-500/10 focus-visible:text-violet-400 focus-visible:outline-none`;
                         const borderStyle =
                           subIndex < (link.subItems?.length || 0) - 1

@@ -1,7 +1,7 @@
 'use client';
 
 import { CaretRight, CaretLeft, X, UserCircle } from '@phosphor-icons/react';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useUI } from '../context/UIContext';
 
@@ -50,13 +50,13 @@ export function Testimonials() {
         setIsReviewSheetOpen(false);
       };
     }
-  }, [selectedReview]);
+  }, [selectedReview, setIsReviewSheetOpen]);
 
   // Handle closing the review sheet
-  const closeReviewSheet = () => {
+  const closeReviewSheet = useCallback(() => {
     setSelectedReview(null);
     setIsReviewSheetOpen(false);
-  };
+  }, [setIsReviewSheetOpen]);
 
   const checkScrollButtons = () => {
     if (scrollRef.current) {
@@ -135,7 +135,7 @@ export function Testimonials() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [selectedReview]);
+  }, [selectedReview, closeReviewSheet]);
 
   const testimonials = [
     {
@@ -454,7 +454,7 @@ export function Testimonials() {
                 onClick={() => setSelectedReview(index)}
               >
                 <p className="text-foreground/80 leading-relaxed line-clamp-3 whitespace-normal break-words group-hover:text-foreground transition-colors duration-300">
-                  "{testimonial.content}"
+                  &ldquo;{testimonial.content}&rdquo;
                 </p>
                 {/* Read More - Hidden on desktop, visible on hover; Always visible on mobile */}
                 <div className="flex items-center gap-1 text-[#7766EE] text-sm mt-2 font-medium md:opacity-0 md:group-hover:opacity-100 transition-all duration-300">
@@ -593,7 +593,7 @@ export function Testimonials() {
                   whiteSpace: 'pre-wrap',
                 }}
               >
-                "{testimonials[selectedReview].content}"
+                &ldquo;{testimonials[selectedReview].content}&rdquo;
               </p>
 
               {/* Author */}

@@ -26,7 +26,7 @@ interface NavLink {
   isRoute?: boolean;
   hasDropdown?: boolean;
   dropdownKey?: string;
-  icon?: any;
+  icon?: React.ComponentType<{ className?: string; weight?: string }>;
   subItems?: SubItem[];
 }
 

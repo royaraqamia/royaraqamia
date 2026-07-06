@@ -85,7 +85,6 @@ export function LazyImage({
 
   // Determine which image source to use
   const imageSrc = webpSrc && webpSupported ? webpSrc : src;
-  const imageSrcSet = webpSupported && srcSet ? srcSet : undefined;
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>

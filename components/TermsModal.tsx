@@ -92,8 +92,7 @@ export function TermsModal({ isOpen, onClose, modalRef }: TermsModalProps) {
             <section>
               <h3 className="font-bold text-base mb-2">6. إخلاء المسؤولية</h3>
               <p className="text-muted-foreground leading-relaxed">
-                يتم توفير المحتوى على المنصة "كما هي" دون أي ضمانات من أي نوع. نحن لا نضمن دقة أو
-                اكتمال أو موثوقية أي محتوى على المنصة.
+                يتم توفير المحتوى على المنصة &quot;كما هي&quot; دون أي ضمانات من أي نوع.
               </p>
             </section>
 

@@ -12,7 +12,7 @@ export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
-  const [activeSection, _setActiveSection] = useState<'hero' | 'cta' | 'default'>('hero');
+  const [activeSection] = useState<'hero' | 'cta' | 'default'>('hero');
 
   const pathname = usePathname();
   const router = useRouter();
