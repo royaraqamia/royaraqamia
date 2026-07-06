@@ -27,18 +27,18 @@ export function MetricCards() {
 
   const metrics = [
     {
-      icon: Clock,
-      value: '400+',
-      label: 'ساعة إجماليَّة',
-      description: 'في التَّدريب والاستشارات',
-      colorKey: 'teal' as const,
-    },
-    {
       icon: Trophy,
       value: '7+',
       label: 'سنوات من الخبرة',
       description: 'في السُّوق الرَّقمي',
       colorKey: 'purple' as const,
+    },
+    {
+      icon: Clock,
+      value: '400+',
+      label: 'ساعة إجماليَّة',
+      description: 'في التَّدريب والاستشارات',
+      colorKey: 'teal' as const,
     },
     {
       icon: TrendUp,

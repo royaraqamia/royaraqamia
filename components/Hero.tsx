@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { HeroVisual } from './HeroVisual';
+import { useState, useEffect } from 'react';
 
 export function Hero() {
   const containerVariants = {
@@ -21,14 +22,29 @@ export function Hero() {
   };
 
   // Floating particles data - REDUCED COUNT & OPACITY for less noise
-  const particles = Array.from({ length: 12 }, (_, i) => ({
-    id: i,
-    size: Math.random() * 3 + 1,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    duration: Math.random() * 20 + 15, // Slower
-    delay: Math.random() * 5,
-  }));
+  const [particles, setParticles] = useState<Array<{
+    id: number;
+    size: number;
+    x: number;
+    y: number;
+    duration: number;
+    delay: number;
+  }>>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    setParticles(
+      Array.from({ length: 12 }, (_, i) => ({
+        id: i,
+        size: Math.random() * 3 + 1,
+        x: Math.random() * 100,
+        y: Math.random() * 100,
+        duration: Math.random() * 20 + 15,
+        delay: Math.random() * 5,
+      }))
+    );
+  }, []);
 
   return (
     <>
@@ -58,7 +74,7 @@ export function Hero() {
           <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-primary-400 opacity-[0.03] blur-[120px] rounded-full" />
 
           {/* Floating Particles - Subtler */}
-          {particles.map((particle) => (
+          {isMounted && particles.map((particle) => (
             <motion.div
               key={particle.id}
               className="absolute rounded-full bg-white"

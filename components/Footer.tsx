@@ -2,8 +2,32 @@
 
 import { LinkedinLogoIcon, InstagramLogoIcon, MapPinIcon, EnvelopeIcon } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
-import { formatHijriDate } from '../utils/formatters';
 import { LazyImage } from './LazyImage';
+
+/**
+ * Formats a date to Hijri calendar using 'ar-SA' locale and 'latn' numbering system.
+ * @param date The date to format (Date object, string, or timestamp)
+ * @param options Optional Intl.DateTimeFormatOptions
+ * @returns Formatted Hijri date string
+ */
+export const formatHijriDate = (
+  date: Date | string | number,
+  options: Intl.DateTimeFormatOptions = {}
+): string => {
+  const dateObj = new Date(date);
+
+  // Default options for Hijri date
+  const defaultOptions: Intl.DateTimeFormatOptions = {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    calendar: 'islamic-umalqura',
+    numberingSystem: 'latn',
+    ...options,
+  };
+
+  return new Intl.DateTimeFormat('ar-SA', defaultOptions).format(dateObj);
+};
 
 export function Footer() {
   const pathname = usePathname();
