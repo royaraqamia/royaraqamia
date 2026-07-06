@@ -124,7 +124,7 @@ export function Navbar() {
       isRoute: false,
       visible: true,
     },
-  ]
+  ];
 
   const getNavbarClass = () => {
     if (isMobileMenuOpen) return 'bg-background/95 backdrop-blur-lg border-b border-border/10';
@@ -157,7 +157,7 @@ export function Navbar() {
               isScrolled={isScrolled}
               isLinkActive={isLinkActive}
               handleHashClick={handleHashClick}
-              logo='/logo.webp'
+              logo="/logo.webp"
               isHomePage={isHomePage}
               setIsMobileMenuOpen={setIsMobileMenuOpen}
             />
@@ -182,7 +182,7 @@ export function Navbar() {
           isLinkActive={isLinkActive}
           handleHashClick={handleHashClick}
           isHomePage={isHomePage}
-          logo='/logo.webp'
+          logo="/logo.webp"
         />
       </nav>
     </>

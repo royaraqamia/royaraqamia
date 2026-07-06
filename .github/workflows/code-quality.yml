@@ -1,10 +1,10 @@
-name: "Super-Linter"
+name: 'Super-Linter'
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 # Enforce least privilege access for security hardening
 permissions:
@@ -29,7 +29,7 @@ jobs:
           VALIDATE_ALL_CODEBASE: true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
+
           # Toggle these layout flags to enforce language-specific architecture rules
           VALIDATE_YAML: true
 

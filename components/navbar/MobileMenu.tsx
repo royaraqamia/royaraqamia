@@ -3,11 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import {
-  X,
-  CaretDown,
-  Phone,
-} from '@phosphor-icons/react';
+import { X, CaretDown, Phone } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 // ============================================================================
@@ -341,16 +337,19 @@ export function MobileMenu({
                         overscroll-contain
                     "
           >
-            {navLinks.filter((link) => link.visible !== false).map((link) =>
-              link.hasDropdown && link.dropdownKey ? renderDropdownItem(link) : renderNavItem(link)
-            )}
+            {navLinks
+              .filter((link) => link.visible !== false)
+              .map((link) =>
+                link.hasDropdown && link.dropdownKey
+                  ? renderDropdownItem(link)
+                  : renderNavItem(link)
+              )}
           </nav>
 
           {/* Footer */}
           <footer className="px-5 pt-5 pb-10 shrink-0">
             {/* Auth Button */}
-            <div className="mb-5">
-            </div>
+            <div className="mb-5"></div>
 
             {/* CTA Button */}
             <a
@@ -377,7 +376,6 @@ export function MobileMenu({
                 <span>تواصل معنا الآن</span>
               </span>
             </a>
-
           </footer>
         </div>
       </div>

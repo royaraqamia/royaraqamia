@@ -1,9 +1,6 @@
 // tailwind.config.js
 module.exports = {
-  content: [
-    './app/**/*.{js,ts,jsx,tsx}',
-    './components/**/*.{js,ts,jsx,tsx}',
-  ],
+  content: ['./app/**/*.{js,ts,jsx,tsx}', './components/**/*.{js,ts,jsx,tsx}'],
   // Note: Tailwind v3.4+ automatically ignores node_modules directories
   // The warning about matching node_modules is a false positive - Tailwind
   // will not actually process files in node_modules even if the pattern matches
@@ -67,7 +64,7 @@ module.exports = {
         },
         roya: {
           primary: '#6d28d9',
-          dark: '#0f172a'
+          dark: '#0f172a',
         },
       },
       fontFamily: {
@@ -77,21 +74,21 @@ module.exports = {
       },
       fontSize: {
         // Standardized typography scale with responsive variants
-        'h1': ['clamp(32px, 5vw, 48px)', { lineHeight: '1.1', fontWeight: '700' }],
-        'h2': ['clamp(28px, 4vw, 36px)', { lineHeight: '1.1', fontWeight: '700' }],
-        'h3': ['clamp(24px, 3vw, 30px)', { lineHeight: '1.2', fontWeight: '600' }],
-        'h4': ['clamp(20px, 2.5vw, 24px)', { lineHeight: '1.3', fontWeight: '600' }],
-        'body': ['clamp(14px, 1.5vw, 16px)', { lineHeight: '1.6', fontWeight: '400' }],
+        h1: ['clamp(32px, 5vw, 48px)', { lineHeight: '1.1', fontWeight: '700' }],
+        h2: ['clamp(28px, 4vw, 36px)', { lineHeight: '1.1', fontWeight: '700' }],
+        h3: ['clamp(24px, 3vw, 30px)', { lineHeight: '1.2', fontWeight: '600' }],
+        h4: ['clamp(20px, 2.5vw, 24px)', { lineHeight: '1.3', fontWeight: '600' }],
+        body: ['clamp(14px, 1.5vw, 16px)', { lineHeight: '1.6', fontWeight: '400' }],
         'body-lg': ['clamp(16px, 2vw, 18px)', { lineHeight: '1.7', fontWeight: '400' }],
         'body-sm': ['clamp(12px, 1.2vw, 14px)', { lineHeight: '1.5', fontWeight: '400' }],
       },
       spacing: {
         // Standardized spacing scale
-        'xs': '4px',
-        'sm': '8px',
-        'md': '16px',
-        'lg': '24px',
-        'xl': '32px',
+        xs: '4px',
+        sm: '8px',
+        md: '16px',
+        lg: '24px',
+        xl: '32px',
         '2xl': '48px',
         '3xl': '64px',
         '4xl': '96px',
@@ -103,11 +100,11 @@ module.exports = {
         'gradient-green': 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
       },
       animation: {
-        'float': 'float 6s ease-in-out infinite',
+        float: 'float 6s ease-in-out infinite',
         'float-delayed': 'float-delayed 3.5s ease-in-out infinite',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-        'shine': 'shine 2s linear infinite',
-        'gradient': 'gradient 15s ease infinite',
+        shine: 'shine 2s linear infinite',
+        gradient: 'gradient 15s ease infinite',
         'fade-in-up': 'fadeInUp 1s ease-out forwards',
         // Mobile idle animations for CTA buttons
         'shimmer-slide': 'shimmer-slide 5s ease-in-out infinite',
@@ -129,7 +126,7 @@ module.exports = {
         },
         shine: {
           '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' }
+          '100%': { transform: 'translateX(100%)' },
         },
         gradient: {
           '0%, 100%': { 'background-position': '0% 50%' },
@@ -139,7 +136,7 @@ module.exports = {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
-        'glow': {
+        glow: {
           '0%, 100%': { boxShadow: '0 0 20px rgba(38, 166, 154, 0.3)' },
           '50%': { boxShadow: '0 0 30px rgba(38, 166, 154, 0.5)' },
         },

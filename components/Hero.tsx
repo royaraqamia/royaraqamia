@@ -22,14 +22,16 @@ export function Hero() {
   };
 
   // Floating particles data - REDUCED COUNT & OPACITY for less noise
-  const [particles, setParticles] = useState<Array<{
-    id: number;
-    size: number;
-    x: number;
-    y: number;
-    duration: number;
-    delay: number;
-  }>>([]);
+  const [particles, setParticles] = useState<
+    Array<{
+      id: number;
+      size: number;
+      x: number;
+      y: number;
+      duration: number;
+      delay: number;
+    }>
+  >([]);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -74,29 +76,30 @@ export function Hero() {
           <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-primary-400 opacity-[0.03] blur-[120px] rounded-full" />
 
           {/* Floating Particles - Subtler */}
-          {isMounted && particles.map((particle) => (
-            <motion.div
-              key={particle.id}
-              className="absolute rounded-full bg-white"
-              style={{
-                width: particle.size,
-                height: particle.size,
-                left: `${particle.x}%`,
-                top: `${particle.y}%`,
-                opacity: 0.1, // Fixed low opacity base
-              }}
-              animate={{
-                y: [0, -40, 0],
-                opacity: [0.1, 0.3, 0.1],
-              }}
-              transition={{
-                duration: particle.duration,
-                delay: particle.delay,
-                repeat: Infinity,
-                ease: 'linear',
-              }}
-            />
-          ))}
+          {isMounted &&
+            particles.map((particle) => (
+              <motion.div
+                key={particle.id}
+                className="absolute rounded-full bg-white"
+                style={{
+                  width: particle.size,
+                  height: particle.size,
+                  left: `${particle.x}%`,
+                  top: `${particle.y}%`,
+                  opacity: 0.1, // Fixed low opacity base
+                }}
+                animate={{
+                  y: [0, -40, 0],
+                  opacity: [0.1, 0.3, 0.1],
+                }}
+                transition={{
+                  duration: particle.duration,
+                  delay: particle.delay,
+                  repeat: Infinity,
+                  ease: 'linear',
+                }}
+              />
+            ))}
         </div>
 
         <div className="max-w-7xl mx-auto container-padding relative z-10 w-full">
@@ -119,9 +122,7 @@ export function Hero() {
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
                     <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
                   </span>
-                  <span className="text-sm font-medium text-slate-200">
-                    ابدأ رحلتك الرَّقميَّة
-                  </span>
+                  <span className="text-sm font-medium text-slate-200">ابدأ رحلتك الرَّقميَّة</span>
 
                   {/* Subtle sheen */}
                   <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shine-slide_1.5s_infinite]" />
@@ -143,9 +144,10 @@ export function Hero() {
                 variants={itemVariants}
                 className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
               >
-             نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛<br />
-كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.
-              
+                نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛
+                <br />
+                كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع
+                والتَّطبيقات.
               </motion.p>
 
               {/* CTA Button - Optimized */}

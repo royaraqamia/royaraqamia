@@ -5,7 +5,6 @@ import { Button } from './ui/button';
 import { ScrollAnimation } from './ScrollAnimations';
 
 export function ConsultationCards() {
-
   return (
     <section
       id="consultation"
@@ -38,7 +37,6 @@ export function ConsultationCards() {
         {/* Header Section */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center mb-12 md:mb-16">
-
             {/* H1 Title */}
             <h2
               className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
@@ -76,9 +74,7 @@ export function ConsultationCards() {
                 <div className="flex flex-col-reverse sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                   {/* Price - Top Left (appears on right in RTL) */}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl md:text-5xl font-bold text-rose-400">
-                      $25
-                    </span>
+                    <span className="text-4xl md:text-5xl font-bold text-rose-400">$25</span>
                     <span className="text-gray-400 text-lg">/ للسَّاعة</span>
                   </div>
 
@@ -112,8 +108,8 @@ export function ConsultationCards() {
                     className="text-slate-300 font-medium text-base md:text-lg leading-relaxed max-w-2xl"
                     style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif", lineHeight: '1.8' }}
                   >
-                    تحليل كامل لاحتياجاتك الرَّقميَّة. نُراجع ما لديك، ونرسم لك
-                    مسار التَّعليم أو التَّنفيذ خطوة بخطوة. استشارة تمنحك الوضوح التَّام.
+                    تحليل كامل لاحتياجاتك الرَّقميَّة. نُراجع ما لديك، ونرسم لك مسار التَّعليم أو
+                    التَّنفيذ خطوة بخطوة. استشارة تمنحك الوضوح التَّام.
                   </p>
                 </div>
 

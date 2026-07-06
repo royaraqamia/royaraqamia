@@ -1,12 +1,5 @@
 import { Button } from './ui/button';
-import {
-  Check,
-  CurrencyDollar,
-  TrendUp,
-  Calculator,
-  Users,
-  Receipt,
-} from '@phosphor-icons/react';
+import { Check, CurrencyDollar, TrendUp, Calculator, Users, Receipt } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
 
 export function ExchangeManagement() {
@@ -49,13 +42,11 @@ export function ExchangeManagement() {
               className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
-              <span className="text-lime-400">
-نظام الصَّرافة والحوَّالات
-              </span>
+              <span className="text-lime-400">نظام الصَّرافة والحوَّالات</span>
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
-              نظام متكامل عبر Google Sheets لإدارة عمليَّات الصَّرافة والحوَّالات الماليَّة، يُتيح لك
-              تتبُّع المعاملات، حساب الأرباح، وإدارة الزَّبائن بسهولة وفعاليَّة.
+              نظام متكامل عبر Google Sheets لإدارة عمليَّات الصَّرافة والحوَّالات الماليَّة، يُتيح
+              لك تتبُّع المعاملات، حساب الأرباح، وإدارة الزَّبائن بسهولة وفعاليَّة.
             </p>
           </div>
         </ScrollAnimation>
@@ -102,7 +93,9 @@ export function ExchangeManagement() {
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-lime-500/10 border border-lime-500/20">
                     <span className="text-lime-400 font-bold text-lg">$450</span>
                     <span className="text-slate-400 text-sm">/ سنة</span>
-                    <span className="text-xs text-lime-300 bg-lime-500/20 px-2 py-0.5 rounded-full">خصم 25%</span>
+                    <span className="text-xs text-lime-300 bg-lime-500/20 px-2 py-0.5 rounded-full">
+                      خصم 25%
+                    </span>
                   </div>
                 </div>
 

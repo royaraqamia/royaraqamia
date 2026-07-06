@@ -64,12 +64,14 @@ export function AutoReplySystem() {
               className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
-              <span className="text-purple-400">
-                نظام الرَّد
-              </span>
+              <span className="text-purple-400">نظام الرَّد</span>
             </h2>
-            <p className="text-sm sm:text-base lg:text-lg text-slate-300 leading-[1.8] sm:leading-[1.9]" style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
-              نردُّ على رسائل زبائنك عبر منصَّات المراسلة والتَّواصل الاجتماعي بشكل احترافي وبلغة طبيعيَّة.
+            <p
+              className="text-sm sm:text-base lg:text-lg text-slate-300 leading-[1.8] sm:leading-[1.9]"
+              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
+            >
+              نردُّ على رسائل زبائنك عبر منصَّات المراسلة والتَّواصل الاجتماعي بشكل احترافي وبلغة
+              طبيعيَّة.
             </p>
           </div>
         </ScrollAnimation>
@@ -97,7 +99,7 @@ export function AutoReplySystem() {
 
         {/* Two Column Layout */}
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-{/* Features */}
+          {/* Features */}
           <ScrollAnimation animation="slide-right" duration={0.7} className="lg:order-1">
             <div className="space-y-5">
               {features.map((feature, idx) => (
@@ -152,9 +154,7 @@ export function AutoReplySystem() {
                         <div className="text-3xl font-bold text-purple-400">{plan.price}</div>
                         <div className="text-sm text-slate-400">/ شهر</div>
                       </div>
-                      <p className="text-slate-300 text-sm mt-1">
-                        {plan.messages} رسالة شهريًّا
-                      </p>
+                      <p className="text-slate-300 text-sm mt-1">{plan.messages} رسالة شهريًّا</p>
                     </div>
 
                     <a
@@ -163,9 +163,7 @@ export function AutoReplySystem() {
                       rel="noopener noreferrer"
                       className="block"
                     >
-                      <Button
-                        className="h-11 text-sm font-bold rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/30 hover:border-purple-500/50 transition-all duration-300"
-                      >
+                      <Button className="h-11 text-sm font-bold rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 hover:text-white border border-purple-500/30 hover:border-purple-500/50 transition-all duration-300">
                         اشترك الآن
                       </Button>
                     </a>

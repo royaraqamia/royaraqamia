@@ -1,14 +1,7 @@
 'use client';
 
 import { Button } from './ui/button';
-import {
-  Code,
-  Rocket,
-  ShieldCheck,
-  DeviceMobile,
-  Monitor,
-  Globe,
-} from '@phosphor-icons/react';
+import { Code, Rocket, ShieldCheck, DeviceMobile, Monitor, Globe } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
 
 export function WebDevService() {
@@ -42,9 +35,7 @@ export function WebDevService() {
               className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
-              <span className="text-blue-400">
-                بناء مواقع إلكترونيَّة وتطبيقات
-              </span>{' '}
+              <span className="text-blue-400">بناء مواقع إلكترونيَّة وتطبيقات</span>{' '}
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
               خدمات تطوير متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق. نبني حلول رقميَّة
@@ -58,7 +49,6 @@ export function WebDevService() {
           {/* Left: Benefits & Features */}
           <ScrollAnimation animation="slide-right" duration={0.7}>
             <div className="space-y-8">
-
               {/* Benefits List */}
               <div className="space-y-4">
                 {benefits.map((benefit, idx) => (
@@ -84,9 +74,7 @@ export function WebDevService() {
                       key={idx}
                       className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 hover:border-blue-500/30 transition-all duration-300"
                     >
-                      <h5 className="text-lg font-semibold text-blue-400 mb-2">
-                        {feature.title}
-                      </h5>
+                      <h5 className="text-lg font-semibold text-blue-400 mb-2">{feature.title}</h5>
                       <p className="text-sm text-slate-300">{feature.description}</p>
                     </div>
                   ))}
@@ -98,7 +86,6 @@ export function WebDevService() {
           {/* Right: Pricing & Process */}
           <ScrollAnimation animation="slide-left" duration={0.7} delay={0.2}>
             <div className="space-y-6">
-
               {/* Basic Website */}
               <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">

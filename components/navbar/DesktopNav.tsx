@@ -104,160 +104,162 @@ export function DesktopNav({
       </Link>
 
       <div className="hidden lg:flex items-center element-gap">
-        {navLinks.filter((link) => link.visible !== false).map((link) => {
-          const isActive = isLinkActive(link.href);
-          if (link.hasDropdown) {
-            const isDropdownOpen =
-              link.dropdownKey === 'services' ? isServicesDropdownOpen : isProductsDropdownOpen;
-            const setDropdownOpen =
-              link.dropdownKey === 'services'
-                ? setIsServicesDropdownOpen
-                : setIsProductsDropdownOpen;
-            const dropdownRefToUse =
-              link.dropdownKey === 'services' ? dropdownRef : productsDropdownRef;
-            const timeoutRef =
-              link.dropdownKey === 'services' ? servicesTimeoutRef : productsTimeoutRef;
+        {navLinks
+          .filter((link) => link.visible !== false)
+          .map((link) => {
+            const isActive = isLinkActive(link.href);
+            if (link.hasDropdown) {
+              const isDropdownOpen =
+                link.dropdownKey === 'services' ? isServicesDropdownOpen : isProductsDropdownOpen;
+              const setDropdownOpen =
+                link.dropdownKey === 'services'
+                  ? setIsServicesDropdownOpen
+                  : setIsProductsDropdownOpen;
+              const dropdownRefToUse =
+                link.dropdownKey === 'services' ? dropdownRef : productsDropdownRef;
+              const timeoutRef =
+                link.dropdownKey === 'services' ? servicesTimeoutRef : productsTimeoutRef;
 
-            const handleMouseEnter = () => {
-              if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-              }
-              setDropdownOpen(true);
-            };
+              const handleMouseEnter = () => {
+                if (timeoutRef.current) {
+                  clearTimeout(timeoutRef.current);
+                  timeoutRef.current = null;
+                }
+                setDropdownOpen(true);
+              };
 
-            const handleMouseLeave = () => {
-              timeoutRef.current = setTimeout(() => {
-                setDropdownOpen(false);
-                timeoutRef.current = null;
-              }, 200);
-            };
+              const handleMouseLeave = () => {
+                timeoutRef.current = setTimeout(() => {
+                  setDropdownOpen(false);
+                  timeoutRef.current = null;
+                }, 200);
+              };
 
-            return (
-              <div
-                key={link.label}
-                className="relative"
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-                ref={dropdownRefToUse}
-              >
-                <button
-                  className={`flex items-center gap-1.5 text-foreground transition-all duration-200 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary hover:bg-white/5'}`}
-                  aria-label={link.label}
-                  aria-haspopup="menu"
-                  aria-expanded={isDropdownOpen}
-                  onClick={() => setDropdownOpen(!isDropdownOpen)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      setDropdownOpen(!isDropdownOpen);
-                    } else if (e.key === 'Escape' && isDropdownOpen) {
-                      setDropdownOpen(false);
-                    }
-                  }}
+              return (
+                <div
+                  key={link.label}
+                  className="relative"
+                  onMouseEnter={handleMouseEnter}
+                  onMouseLeave={handleMouseLeave}
+                  ref={dropdownRefToUse}
                 >
+                  <button
+                    className={`flex items-center gap-1.5 text-foreground transition-all duration-200 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary hover:bg-white/5'}`}
+                    aria-label={link.label}
+                    aria-haspopup="menu"
+                    aria-expanded={isDropdownOpen}
+                    onClick={() => setDropdownOpen(!isDropdownOpen)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setDropdownOpen(!isDropdownOpen);
+                      } else if (e.key === 'Escape' && isDropdownOpen) {
+                        setDropdownOpen(false);
+                      }
+                    }}
+                  >
+                    {link.icon &&
+                      (() => {
+                        const Icon = link.icon;
+                        return <Icon className="w-4 h-4" weight="duotone" />;
+                      })()}
+                    <span>{link.label}</span>
+                    <CaretDown
+                      className={`w-3 h-3 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
+                    />
+                  </button>
+                  {isDropdownOpen && (
+                    <div
+                      className="absolute right-0 mt-2 w-56 bg-background/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/30 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-200"
+                      style={{
+                        boxShadow:
+                          '0 20px 60px rgba(119, 102, 238, 0.2), 0 0 0 1px rgba(167, 139, 250, 0.1)',
+                      }}
+                      role="menu"
+                      aria-orientation="vertical"
+                      onMouseEnter={handleMouseEnter}
+                      onMouseLeave={handleMouseLeave}
+                    >
+                      {link.subItems?.map((sub: any, subIndex: number) => {
+                        const itemClasses = `block text-sm text-foreground/90 transition-all duration-200 whitespace-nowrap px-5 py-3.5 hover:bg-violet-500/10 hover:text-violet-400 focus-visible:bg-violet-500/10 focus-visible:text-violet-400 focus-visible:outline-none`;
+                        const borderStyle =
+                          subIndex < (link.subItems?.length || 0) - 1
+                            ? '1px solid rgba(255, 255, 255, 0.05)'
+                            : 'none';
+
+                        const content = sub.isRoute ? (
+                          <Link
+                            key={sub.href}
+                            href={sub.href}
+                            className={itemClasses}
+                            style={{ borderBottom: borderStyle, textDecoration: 'none' }}
+                            role="menuitem"
+                            onClick={() => {
+                              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                            }}
+                          >
+                            {sub.label}
+                          </Link>
+                        ) : (
+                          <a
+                            key={sub.href}
+                            href={sub.href}
+                            onClick={(e) => {
+                              const hashMatch = sub.href.match(/#(.+)$/);
+                              if (hashMatch) {
+                                handleHashClick(e, `#${hashMatch[1]}`);
+                              }
+                            }}
+                            className={itemClasses}
+                            style={{ borderBottom: borderStyle }}
+                            role="menuitem"
+                          >
+                            {sub.label}
+                          </a>
+                        );
+                        return content;
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+            return link.isRoute ? (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`text-foreground transition-colors link-underline ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary'}`}
+                aria-label={link.label}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <span className="flex items-center gap-1.5">
                   {link.icon &&
                     (() => {
                       const Icon = link.icon;
-                      return <Icon className="w-4 h-4" weight="duotone" />;
+                      return <Icon className="w-4 h-4" />;
                     })()}
-                  <span>{link.label}</span>
-                  <CaretDown
-                    className={`w-3 h-3 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
-                  />
-                </button>
-                {isDropdownOpen && (
-                  <div
-                    className="absolute right-0 mt-2 w-56 bg-background/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/30 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-200"
-                    style={{
-                      boxShadow:
-                        '0 20px 60px rgba(119, 102, 238, 0.2), 0 0 0 1px rgba(167, 139, 250, 0.1)',
-                    }}
-                    role="menu"
-                    aria-orientation="vertical"
-                    onMouseEnter={handleMouseEnter}
-                    onMouseLeave={handleMouseLeave}
-                  >
-                    {link.subItems?.map((sub: any, subIndex: number) => {
-                      const itemClasses = `block text-sm text-foreground/90 transition-all duration-200 whitespace-nowrap px-5 py-3.5 hover:bg-violet-500/10 hover:text-violet-400 focus-visible:bg-violet-500/10 focus-visible:text-violet-400 focus-visible:outline-none`;
-                      const borderStyle =
-                        subIndex < (link.subItems?.length || 0) - 1
-                          ? '1px solid rgba(255, 255, 255, 0.05)'
-                          : 'none';
-
-                      const content = sub.isRoute ? (
-                        <Link
-                          key={sub.href}
-                          href={sub.href}
-                          className={itemClasses}
-                          style={{ borderBottom: borderStyle, textDecoration: 'none' }}
-                          role="menuitem"
-                          onClick={() => {
-                            window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-                          }}
-                        >
-                          {sub.label}
-                        </Link>
-                      ) : (
-                        <a
-                          key={sub.href}
-                          href={sub.href}
-                          onClick={(e) => {
-                            const hashMatch = sub.href.match(/#(.+)$/);
-                            if (hashMatch) {
-                              handleHashClick(e, `#${hashMatch[1]}`);
-                            }
-                          }}
-                          className={itemClasses}
-                          style={{ borderBottom: borderStyle }}
-                          role="menuitem"
-                        >
-                          {sub.label}
-                        </a>
-                      );
-                      return content;
-                    })}
-                  </div>
-                )}
-              </div>
+                  {link.label}
+                </span>
+              </Link>
+            ) : (
+              <a
+                key={link.href}
+                href={link.href}
+                className={`text-foreground transition-colors link-underline ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary'}`}
+                aria-label={link.label}
+                aria-current={isActive ? 'page' : undefined}
+              >
+                <span className="flex items-center gap-1.5">
+                  {link.icon &&
+                    (() => {
+                      const Icon = link.icon;
+                      return <Icon className="w-4 h-4" />;
+                    })()}
+                  {link.label}
+                </span>
+              </a>
             );
-          }
-          return link.isRoute ? (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`text-foreground transition-colors link-underline ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary'}`}
-              aria-label={link.label}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              <span className="flex items-center gap-1.5">
-                {link.icon &&
-                  (() => {
-                    const Icon = link.icon;
-                    return <Icon className="w-4 h-4" />;
-                  })()}
-                {link.label}
-              </span>
-            </Link>
-          ) : (
-            <a
-              key={link.href}
-              href={link.href}
-              className={`text-foreground transition-colors link-underline ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary'}`}
-              aria-label={link.label}
-              aria-current={isActive ? 'page' : undefined}
-            >
-              <span className="flex items-center gap-1.5">
-                {link.icon &&
-                  (() => {
-                    const Icon = link.icon;
-                    return <Icon className="w-4 h-4" />;
-                  })()}
-                {link.label}
-              </span>
-            </a>
-          );
-        })}
+          })}
       </div>
 
       {/* CTA Buttons */}

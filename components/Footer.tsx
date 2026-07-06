@@ -1,6 +1,11 @@
 'use client';
 
-import { LinkedinLogoIcon, InstagramLogoIcon, MapPinIcon, EnvelopeIcon } from '@phosphor-icons/react';
+import {
+  LinkedinLogoIcon,
+  InstagramLogoIcon,
+  MapPinIcon,
+  EnvelopeIcon,
+} from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { LazyImage } from './LazyImage';
 
@@ -123,7 +128,7 @@ export function Footer() {
               <div className="h-14 w-14 relative">
                 <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/30 to-violet-400/15 blur-lg group-hover:blur-xl group-hover:from-violet-500/40 group-hover:to-violet-400/25 transition-all duration-500"></div>
                 <LazyImage
-                  src='/logo.png'
+                  src="/logo.png"
                   webpSrc="/logo.webp"
                   alt="رؤية رقمية"
                   priority={true}
@@ -142,15 +147,18 @@ export function Footer() {
 
             {/* Tagline */}
             <p className="text-sm text-gray-400 leading-relaxed max-w-md">
-شريكك الاستراتيجي للتَّحوُّل الرَّقمي ومضاعفة نجاحك
+              شريكك الاستراتيجي للتَّحوُّل الرَّقمي ومضاعفة نجاحك
             </p>
-             <p className="text-sm text-gray-400 leading-relaxed max-w-md flex items-center justify-center gap-2 flex-wrap">
+            <p className="text-sm text-gray-400 leading-relaxed max-w-md flex items-center justify-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
                 <MapPinIcon className="w-4 h-4" />
                 حَلَب، سوريا
               </span>
               <span className="text-violet-500/40">|</span>
-              <a href="mailto:contact@royaraqamia.com" className="flex items-center gap-1 hover:text-violet-400 transition-colors">
+              <a
+                href="mailto:contact@royaraqamia.com"
+                className="flex items-center gap-1 hover:text-violet-400 transition-colors"
+              >
                 <EnvelopeIcon className="w-4 h-4" />
                 contact@royaraqamia.com
               </a>

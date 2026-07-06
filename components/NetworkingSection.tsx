@@ -43,9 +43,7 @@ export function NetworkingSection() {
 
               <div className="relative z-10 p-6 md:p-8 lg:p-10 rounded-3xl bg-white/5 backdrop-blur-xl h-full flex flex-col gap-6 md:gap-8">
                 <div className="text-center">
-                  <h3 className="text-xl md:text-2xl font-bold text-white mb-2">
-                    انضم إلى شبكتنا
-                  </h3>
+                  <h3 className="text-xl md:text-2xl font-bold text-white mb-2">انضم إلى شبكتنا</h3>
                   <p className="text-slate-400 text-sm">
                     وسنتواصل معك عند توفُّر التَّطابق المناسب
                   </p>
@@ -74,7 +72,8 @@ export function NetworkingSection() {
                       </div>
                       <div className="text-right min-w-0">
                         <div className="text-white font-bold text-base md:text-lg truncate">
-                          انضم كصاحب عمل <span className="text-orange-400">(25$ لكل عمليَّة مطابقة)</span>
+                          انضم كصاحب عمل{' '}
+                          <span className="text-orange-400">(25$ لكل عمليَّة مطابقة)</span>
                         </div>
                         <div className="text-slate-400 text-xs font-normal truncate">
                           ابحث عن كفاءات ومشاريع
@@ -110,7 +109,7 @@ export function NetworkingSection() {
                         <UserCircle className="w-5 h-5 md:w-6 md:h-6 group-hover/btn:scale-110 group-hover/btn:animate-pulse transition-transform duration-300" />
                       </div>
                       <div className="text-right min-w-0">
-<div className="text-white font-bold text-base md:text-lg truncate">
+                        <div className="text-white font-bold text-base md:text-lg truncate">
                           انضم كخبير متخصِّص <span className="text-orange-400">(مجَّانًا)</span>
                         </div>
                         <div className="text-slate-400 text-xs font-normal truncate">

@@ -79,7 +79,7 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
  */
 function getBaseUrl(): string {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://royaraqamia.com';
-  
+
   try {
     const url = new URL(baseUrl);
     return url.origin;
@@ -124,9 +124,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = getBaseUrl();
     const currentDate = new Date();
 
-    return SITEMAP_ENTRIES.map((config) => 
-      generateSitemapEntry(config, baseUrl, currentDate)
-    );
+    return SITEMAP_ENTRIES.map((config) => generateSitemapEntry(config, baseUrl, currentDate));
   } catch (error) {
     console.error('Error generating sitemap:', error);
     // Fallback to minimal sitemap in case of error

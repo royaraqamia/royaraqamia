@@ -95,7 +95,7 @@ export function Portfolio() {
               className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
-               نبذة عن <span className="gradient-text">أعمالنا</span>
+              نبذة عن <span className="gradient-text">أعمالنا</span>
             </h2>
           </div>
         </ScrollAnimation>
@@ -104,95 +104,92 @@ export function Portfolio() {
       {/* Portfolio Horizontal Scroll - Full Width with Edge Navigation */}
       <ScrollAnimation animation="slide-up" duration={0.7} delay={0.2}>
         <div className="relative w-full group/scroll">
-            {/* Left Navigation Arrow - Desktop */}
-            {canScrollLeft && (
-              <button
-                onClick={() => scroll('left')}
-                className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
-                style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                  borderColor: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(8px)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#7766EE';
-                  e.currentTarget.style.borderColor = '#7766EE';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                }}
-                aria-label="التالي"
-                type="button"
-              >
-                <CaretLeft className="w-6 h-6 text-white" />
-              </button>
-            )}
-
-            {/* Right Navigation Arrow - Desktop */}
-            {canScrollRight && (
-              <button
-                onClick={() => scroll('right')}
-                className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
-                style={{
-                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                  borderColor: 'rgba(255, 255, 255, 0.15)',
-                  backdropFilter: 'blur(8px)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#7766EE';
-                  e.currentTarget.style.borderColor = '#7766EE';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
-                }}
-                aria-label="السابق"
-                type="button"
-              >
-                <CaretRight className="w-6 h-6 text-white" />
-              </button>
-            )}
-
-            {/* Scroll Container */}
-            <div
-              ref={scrollContainerRef}
-              className="horizontal-scroll pt-2 md:pt-4 pb-12 flex"
+          {/* Left Navigation Arrow - Desktop */}
+          {canScrollLeft && (
+            <button
+              onClick={() => scroll('left')}
+              className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
               style={{
-                paddingLeft: 'max(24px, calc((100vw - 1280px) / 2 + 80px))',
-                paddingRight: 'max(24px, calc((100vw - 1280px) / 2 + 80px))',
-                scrollPaddingInline: '80px',
-                gap: '24px',
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
               }}
-              role="region"
-              aria-label="معرض الأعمال"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#7766EE';
+                e.currentTarget.style.borderColor = '#7766EE';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+              aria-label="التالي"
+              type="button"
             >
-              {PORTFOLIO_IMAGES.map((imagePath, index) => {
-                if (imageError.has(index)) return null;
+              <CaretLeft className="w-6 h-6 text-white" />
+            </button>
+          )}
 
-                return (
-                  <div
-                    key={index}
-                    className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[360px]"
-                  >
-                    <div className="relative group/card rounded-2xl overflow-hidden glass-card border border-white/10 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-500/30">
-                      <picture>
-                        <source srcSet={imagePath.webp} type="image/webp" />
-                        <img
-                          src={imagePath.png}
-                          alt={`Portfolio project ${index + 1}`}
-                          loading="lazy"
-                          className="w-full object-contain"
-                          onError={() => handleImageError(index)}
-                        />
-                      </picture>       
+          {/* Right Navigation Arrow - Desktop */}
+          {canScrollRight && (
+            <button
+              onClick={() => scroll('right')}
+              className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
+              style={{
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                borderColor: 'rgba(255, 255, 255, 0.15)',
+                backdropFilter: 'blur(8px)',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = '#7766EE';
+                e.currentTarget.style.borderColor = '#7766EE';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
+                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
+              }}
+              aria-label="السابق"
+              type="button"
+            >
+              <CaretRight className="w-6 h-6 text-white" />
+            </button>
+          )}
+
+          {/* Scroll Container */}
+          <div
+            ref={scrollContainerRef}
+            className="horizontal-scroll pt-2 md:pt-4 pb-12 flex"
+            style={{
+              paddingLeft: 'max(24px, calc((100vw - 1280px) / 2 + 80px))',
+              paddingRight: 'max(24px, calc((100vw - 1280px) / 2 + 80px))',
+              scrollPaddingInline: '80px',
+              gap: '24px',
+            }}
+            role="region"
+            aria-label="معرض الأعمال"
+          >
+            {PORTFOLIO_IMAGES.map((imagePath, index) => {
+              if (imageError.has(index)) return null;
+
+              return (
+                <div key={index} className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[360px]">
+                  <div className="relative group/card rounded-2xl overflow-hidden glass-card border border-white/10 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-500/30">
+                    <picture>
+                      <source srcSet={imagePath.webp} type="image/webp" />
+                      <img
+                        src={imagePath.png}
+                        alt={`Portfolio project ${index + 1}`}
+                        loading="lazy"
+                        className="w-full object-contain"
+                        onError={() => handleImageError(index)}
+                      />
+                    </picture>
                   </div>
                 </div>
               );
             })}
-            </div>
           </div>
-        </ScrollAnimation>
+        </div>
+      </ScrollAnimation>
 
       {/* CSS for shine animation */}
       <style>{`

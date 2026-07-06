@@ -1,12 +1,5 @@
 import { Button } from './ui/button';
-import {
-  CreditCard,
-  ShieldCheck,
-  Clock,
-  Globe,
-  Receipt,
-  ArrowRight,
-} from '@phosphor-icons/react';
+import { CreditCard, ShieldCheck, Clock, Globe, Receipt, ArrowRight } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
 
 export function PaymentService() {
@@ -33,9 +26,7 @@ export function PaymentService() {
               className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
-              <span className="text-pink-400">
-                الدَّفع الإلكتروني
-              </span>{' '}
+              <span className="text-pink-400">الدَّفع الإلكتروني</span>{' '}
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
               تنفيذ عمليَّات الدَّفع أونلاين نيابةً عنك لتسهيل المشتريات والاشتراكات الرَّقميَّة

@@ -1,12 +1,5 @@
 import { Button } from './ui/button';
-import {
-  ChartBar,
-  Check,
-  CurrencyDollar,
-  TrendUp,
-  Calculator,
-  Clock,
-} from '@phosphor-icons/react';
+import { ChartBar, Check, CurrencyDollar, TrendUp, Calculator, Clock } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
 
 export function SmartPricing() {
@@ -14,22 +7,26 @@ export function SmartPricing() {
     {
       icon: CurrencyDollar,
       title: 'تسعير ديناميكي بضغطة زر',
-      description: 'عدِّل سعر الصَّرف في الإعدادات، وشاهد أسعار محلَّك بالكامل (جملة ومفرَّق) تتحدَّث في ثانية واحدة.',
+      description:
+        'عدِّل سعر الصَّرف في الإعدادات، وشاهد أسعار محلَّك بالكامل (جملة ومفرَّق) تتحدَّث في ثانية واحدة.',
     },
     {
       icon: Calculator,
       title: 'أرباحك الحقيقيَّة بلا أوهام',
-      description: 'النِّظام يحسب متوسِّط التَّكلفة بدقَّة، ويخصم المصاريف التَّشغيليَّة تلقائيًّا ليعطيك صافي الرِّبح الحقيقي.',
+      description:
+        'النِّظام يحسب متوسِّط التَّكلفة بدقَّة، ويخصم المصاريف التَّشغيليَّة تلقائيًّا ليعطيك صافي الرِّبح الحقيقي.',
     },
     {
       icon: TrendUp,
       title: 'سيطرة تامَّة على الدُّيون',
-      description: 'كشوفات حساب لحظيَّة تراقب مسحوبات وتسديدات الزَّبائن والمورِّدين، لتعرف ما لك وما عليك فورًا.',
+      description:
+        'كشوفات حساب لحظيَّة تراقب مسحوبات وتسديدات الزَّبائن والمورِّدين، لتعرف ما لك وما عليك فورًا.',
     },
     {
       icon: Clock,
       title: 'وداعًا للأخطاء البشريَّة',
-      description: 'نظام ذكي مُبرمَج بالألوان يوجِّه الكاشير، يمنع بيع مواد غير متوفِّرة، ويوفِّر مئات السَّاعات من الجرد والمطابقات.',
+      description:
+        'نظام ذكي مُبرمَج بالألوان يوجِّه الكاشير، يمنع بيع مواد غير متوفِّرة، ويوفِّر مئات السَّاعات من الجرد والمطابقات.',
     },
   ];
 
@@ -49,12 +46,12 @@ export function SmartPricing() {
               className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
               style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
             >
-              <span className="text-emerald-400">
-                نظام إدارة الأعمال
-              </span>
+              <span className="text-emerald-400">نظام إدارة الأعمال</span>
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
-              أقوى نظام مالي سحابي مَبني على بيئة Google Sheets. مُصمَّم خصِّيصًا لأتمتة التَّسعير، ضبط المخزون، وحساب الأرباح الصَّافية لحظيًّا مع كل تغيُّر في سعر الصَّرف، لتُدير تجارتك بذكاء وبدون أخطاء.
+              أقوى نظام مالي سحابي مَبني على بيئة Google Sheets. مُصمَّم خصِّيصًا لأتمتة التَّسعير،
+              ضبط المخزون، وحساب الأرباح الصَّافية لحظيًّا مع كل تغيُّر في سعر الصَّرف، لتُدير
+              تجارتك بذكاء وبدون أخطاء.
             </p>
           </div>
         </ScrollAnimation>
@@ -101,7 +98,9 @@ export function SmartPricing() {
                   <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
                     <span className="text-emerald-400 font-bold text-lg">$450</span>
                     <span className="text-slate-400 text-sm">/ سنة</span>
-                    <span className="text-xs text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full">خصم 25%</span>
+                    <span className="text-xs text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full">
+                      خصم 25%
+                    </span>
                   </div>
                 </div>
 

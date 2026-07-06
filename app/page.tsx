@@ -55,13 +55,13 @@ export default function HomePage() {
           <Hero />
           <MetricCards />
           <Services />
-          
+
           {activeServicesTab === 'merchants' && (
             <Suspense fallback={<div className="section-spacing" />}>
               <Portfolio />
             </Suspense>
           )}
-          
+
           {activeServicesTab === 'students' && (
             <Suspense fallback={<div className="section-spacing" />}>
               <Testimonials />
@@ -86,7 +86,7 @@ export default function HomePage() {
               </Suspense>
             </section>
           )}
-          
+
           {activeServicesTab === 'merchants' && (
             <Suspense fallback={<div className="section-spacing" />}>
               <WebDevService />
@@ -102,7 +102,7 @@ export default function HomePage() {
           <CTA />
         </main>
       </Suspense>
-      
+
       <WhatsAppFloat phone="963968478904" message="السَّلام عليكم ورحمة اللّٰه وبركاته." />
       <GoUpButton />
       <Footer />
