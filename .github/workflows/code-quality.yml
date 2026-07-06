@@ -39,4 +39,4 @@ jobs:
           node-version: '24'
 
       - name: Next.js Lint
-        run: cd web && npm run lint
+        run: npm run lint
