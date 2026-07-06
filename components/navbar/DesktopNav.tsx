@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CaretDown, Phone } from '@phosphor-icons/react';
+import { CaretDown, Phone, type Icon } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 
 interface NavLink {
@@ -12,7 +12,7 @@ interface NavLink {
   isRoute?: boolean;
   hasDropdown?: boolean;
   dropdownKey?: string;
-  icon?: React.ComponentType<{ className?: string; weight?: string }>;
+  icon?: Icon;
   subItems?: NavLink[];
 }
 

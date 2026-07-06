@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { X, CaretDown, Phone } from '@phosphor-icons/react';
+import { X, CaretDown, Phone, type Icon } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 // ============================================================================
@@ -26,7 +26,7 @@ interface NavLink {
   isRoute?: boolean;
   hasDropdown?: boolean;
   dropdownKey?: string;
-  icon?: React.ComponentType<{ className?: string; weight?: string }>;
+  icon?: Icon;
   subItems?: SubItem[];
 }
 
