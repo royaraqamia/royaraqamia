@@ -1,0 +1,28 @@
+name: 'Setup Build Environment'
+description: 'Sets up Node.js environment for the monorepo'
+
+inputs:
+  node-version:
+    description: 'Node.js version to install'
+    required: false
+    default: '24'
+  install-web-deps:
+    description: 'Whether to install web dependencies'
+    required: false
+    default: 'true'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v6.4.0
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        cache-dependency-path: './package-lock.json'
+
+    - name: Install Web Dependencies
+      if: inputs.install-web-deps == 'true'
+      run: npm ci
+      working-directory: ./
+      shell: bash
