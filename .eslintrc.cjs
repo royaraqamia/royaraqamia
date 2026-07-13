@@ -26,6 +26,14 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['warn'],
     'prettier/prettier': ['warn'],
   },
+  overrides: [
+    {
+      files: ['*.js'],
+      rules: {
+        '@typescript-eslint/no-require-imports': 'off',
+      },
+    },
+  ],
   settings: {
     react: {
       version: 'detect',

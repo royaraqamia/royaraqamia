@@ -4,6 +4,7 @@ import './global.css';
 import './dark-theme-override.css';
 import { Toaster } from 'sonner';
 import { ErrorBoundary } from '../components/ErrorBoundary';
+import { MotionProvider } from '../components/MotionProvider';
 import { UIProvider } from '../context/UIContext';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
@@ -48,7 +49,7 @@ export const metadata: Metadata = {
     title: 'رؤية رقمية',
     description:
       'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
-    url: 'https://royaraqamia.com',
+    url: '/',
     siteName: 'رؤية رقمية',
     locale: 'ar_SY',
     type: 'website',
@@ -68,17 +69,13 @@ export const metadata: Metadata = {
       'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
     images: ['/OG Image.webp'],
   },
-  other: {
-    'google-site-verification': '',
-  },
-  verification: {
-    google: '',
-  },
+  other: {},
 };
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
+  themeColor: '#0f172a',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -86,12 +83,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl">
       <body className={inter.className}>
         <ErrorBoundary>
-          <UIProvider>
-            <SpeedInsights />
-            <Analytics />
-            {children}
-            <Toaster position="top-center" richColors />
-          </UIProvider>
+          <MotionProvider>
+            <UIProvider>
+              <SpeedInsights />
+              <Analytics />
+              {children}
+              <Toaster position="top-center" richColors />
+            </UIProvider>
+          </MotionProvider>
         </ErrorBoundary>
       </body>
     </html>

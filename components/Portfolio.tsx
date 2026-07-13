@@ -1,15 +1,13 @@
 'use client';
 
 import { ScrollAnimation } from './ScrollAnimations';
-import { useRef, useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
+import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 
-// Constants
-const PORTFOLIO_IMAGE_COUNT = 38;
-const SCROLL_AMOUNT = 400;
+const PORTFOLIO_IMAGE_COUNT = 25;
 const IMAGE_FILENAME_PADDING = 2;
 
-// Generate portfolio image paths (moved outside component for performance)
 const PORTFOLIO_IMAGES = Array.from({ length: PORTFOLIO_IMAGE_COUNT }, (_, i) => {
   const num = (i + 1).toString().padStart(IMAGE_FILENAME_PADDING, '0');
   return {
@@ -19,60 +17,9 @@ const PORTFOLIO_IMAGES = Array.from({ length: PORTFOLIO_IMAGE_COUNT }, (_, i) =>
 });
 
 export function Portfolio() {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(400);
   const [imageError, setImageError] = useState<Set<number>>(new Set());
-  const [canScrollLeft, setCanScrollLeft] = useState(true);
-  const [canScrollRight, setCanScrollRight] = useState(false);
-
-  const checkScrollButtons = () => {
-    if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
-      const maxScrollLeft = scrollWidth - clientWidth;
-
-      let isAtStartRight = false;
-      let isAtEndLeft = false;
-
-      if (scrollLeft > 5) {
-        isAtStartRight = Math.abs(scrollLeft - maxScrollLeft) < 10;
-        isAtEndLeft = scrollLeft < 10;
-      } else {
-        isAtStartRight = Math.abs(scrollLeft) < 10;
-        isAtEndLeft = Math.abs(scrollLeft) > maxScrollLeft - 10;
-      }
-
-      setCanScrollLeft(!isAtEndLeft);
-      setCanScrollRight(!isAtStartRight);
-    }
-  };
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-      const scrollAmount = SCROLL_AMOUNT;
-      const currentScroll = scrollContainerRef.current.scrollLeft;
-      const newScrollLeft = currentScroll + (direction === 'left' ? -scrollAmount : scrollAmount);
-      scrollContainerRef.current.scrollTo({
-        left: newScrollLeft,
-        behavior: 'smooth',
-      });
-      setTimeout(checkScrollButtons, 500);
-    }
-  };
-
-  useEffect(() => {
-    const timer = setTimeout(checkScrollButtons, 200);
-    const scrollContainer = scrollContainerRef.current;
-
-    if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', checkScrollButtons, { passive: true });
-      window.addEventListener('resize', checkScrollButtons);
-      return () => {
-        clearTimeout(timer);
-        scrollContainer.removeEventListener('scroll', checkScrollButtons);
-        window.removeEventListener('resize', checkScrollButtons);
-      };
-    }
-    return () => clearTimeout(timer);
-  }, []);
+  const [hoveredArrow, setHoveredArrow] = useState<'left' | 'right' | null>(null);
 
   const handleImageError = (index: number) => {
     setImageError((prev) => new Set(prev).add(index));
@@ -109,18 +56,12 @@ export function Portfolio() {
             <button
               onClick={() => scroll('left')}
               className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
+              onMouseEnter={() => setHoveredArrow('left')}
+              onMouseLeave={() => setHoveredArrow(null)}
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                borderColor: 'rgba(255, 255, 255, 0.15)',
+                backgroundColor: hoveredArrow === 'left' ? '#7766EE' : 'rgba(0, 0, 0, 0.6)',
+                borderColor: hoveredArrow === 'left' ? '#7766EE' : 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(8px)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#7766EE';
-                e.currentTarget.style.borderColor = '#7766EE';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
               }}
               aria-label="التالي"
               type="button"
@@ -134,18 +75,12 @@ export function Portfolio() {
             <button
               onClick={() => scroll('right')}
               className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
+              onMouseEnter={() => setHoveredArrow('right')}
+              onMouseLeave={() => setHoveredArrow(null)}
               style={{
-                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                borderColor: 'rgba(255, 255, 255, 0.15)',
+                backgroundColor: hoveredArrow === 'right' ? '#7766EE' : 'rgba(0, 0, 0, 0.6)',
+                borderColor: hoveredArrow === 'right' ? '#7766EE' : 'rgba(255, 255, 255, 0.15)',
                 backdropFilter: 'blur(8px)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#7766EE';
-                e.currentTarget.style.borderColor = '#7766EE';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-                e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
               }}
               aria-label="السابق"
               type="button"
@@ -179,7 +114,9 @@ export function Portfolio() {
                         src={imagePath.png}
                         alt={`Portfolio project ${index + 1}`}
                         loading="lazy"
-                        className="w-full object-contain"
+                        width={360}
+                        height={240}
+                        className="w-full h-auto object-contain"
                         onError={() => handleImageError(index)}
                       />
                     </picture>

@@ -1,5 +1,7 @@
+'use client';
+
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Lightning, TrendUp, ChartBar, Users, Sparkle } from '@phosphor-icons/react';
 
 export function HeroVisual() {
@@ -7,10 +9,18 @@ export function HeroVisual() {
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    let resizeTimer: ReturnType<typeof setTimeout>;
     const checkMobile = () => setIsMobile(window.innerWidth < 1024);
     checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
+    const debouncedResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(checkMobile, 150);
+    };
+    window.addEventListener('resize', debouncedResize);
+    return () => {
+      window.removeEventListener('resize', debouncedResize);
+      clearTimeout(resizeTimer);
+    };
   }, []);
 
   return (
@@ -20,7 +30,7 @@ export function HeroVisual() {
       onMouseLeave={() => setIsHoveringDashboard(false)}
     >
       {/* Floating icon - Top Right (Lightning bolt) */}
-      <motion.div
+      <m.div
         className="absolute -top-6 -right-6 lg:top-0 lg:right-0 lg:translate-x-1/2 lg:-translate-y-1/2 w-12 h-12 lg:w-16 lg:h-16 z-30"
         animate={{
           y: [0, -12, 0],
@@ -38,10 +48,10 @@ export function HeroVisual() {
         <div className="relative w-full h-full rounded-xl bg-gradient-to-br from-[#7766EE] via-[#8B7AFF] to-[#A78BFA] flex items-center justify-center shadow-lg border border-white/20">
           <Lightning className="w-6 h-6 lg:w-8 lg:h-8 text-white drop-shadow-md" weight="fill" />
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Dashboard mockup */}
-      <motion.div
+      <m.div
         className="relative bg-black/40 backdrop-blur-md rounded-3xl border border-white/10 z-10 overflow-hidden"
         animate={
           !isMobile
@@ -90,7 +100,7 @@ export function HeroVisual() {
                 {/* Bar chart - animating only on hover or slowly */}
                 <div className="flex-1 flex items-end justify-around gap-1.5 pb-2">
                   {[60, 85, 45, 95, 70, 55, 80].map((height, i) => (
-                    <motion.div
+                    <m.div
                       key={i}
                       className="w-3 rounded-t-sm bg-gradient-to-t from-teal-500/60 to-cyan-400/40"
                       initial={{ height: `${height * 0.7}%` }}
@@ -140,7 +150,7 @@ export function HeroVisual() {
                   </svg>
 
                   {/* Dot that only moves on hover */}
-                  <motion.div
+                  <m.div
                     className="absolute top-1/2 left-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)]"
                     animate={isHoveringDashboard ? { x: [-20, 20, -20] } : {}}
                     transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
@@ -167,7 +177,7 @@ export function HeroVisual() {
                     <item.icon className={`w-3 h-3 lg:w-4 lg:h-4 ${item.color}`} />
                   </div>
                   <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                    <motion.div
+                    <m.div
                       className={`h-full ${item.bg.replace('/20', '/60')}`}
                       initial={{ width: 0 }}
                       whileInView={{ width: `${item.progress}%` }}
@@ -180,10 +190,10 @@ export function HeroVisual() {
             </div>
           </div>
         </div>
-      </motion.div>
+      </m.div>
 
       {/* Floating indicator - Bottom Left */}
-      <motion.div
+      <m.div
         className="absolute -bottom-5 -left-5 lg:bottom-0 lg:left-0 lg:-translate-x-1/2 lg:translate-y-1/3 w-16 h-16 lg:w-20 lg:h-20 z-30"
         animate={{
           y: [0, -10, 0],
@@ -202,7 +212,7 @@ export function HeroVisual() {
             <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_white]" />
           </div>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

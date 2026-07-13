@@ -34,6 +34,43 @@ export const formatHijriDate = (
   return new Intl.DateTimeFormat('ar-SA', defaultOptions).format(dateObj);
 };
 
+const TelegramIcon = ({
+  size = '1em',
+  ...props
+}: React.SVGProps<SVGSVGElement> & { size?: number | string; weight?: string }) => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    height={size}
+    width={size}
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-1.02-2.4-1.63-1.06-.7.11-1.09.68-1.69.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.06-.14-.04-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.4-1.08.39-.35-.01-1.03-.2-1.54-.35-.62-.18-1.12-.28-1.08-.59.02-.16.24-.32.66-.49 2.58-1.12 4.31-1.87 5.18-2.22 2.48-1.03 2.99-1.21 3.32-1.21.07 0 .24.02.35.12.09.08.11.19.12.27 0 .1.01.21 0 .23z" />
+  </svg>
+);
+
+const socialLinks = [
+  {
+    icon: TelegramIcon,
+    href: 'https://t.me/royaraqamia',
+    label: 'Telegram',
+    ariaLabel: 'تابعنا على Telegram',
+  },
+  {
+    icon: InstagramLogoIcon,
+    href: 'https://instagram.com/royaraqamia',
+    label: 'Instagram',
+    ariaLabel: 'تابعنا على Instagram',
+  },
+  {
+    icon: LinkedinLogoIcon,
+    href: 'https://linkedin.com/company/royaraqamia',
+    label: 'LinkedIn',
+    ariaLabel: 'تابعنا على LinkedIn',
+  },
+];
+
 export function Footer() {
   const pathname = usePathname();
   const router = useRouter();
@@ -74,44 +111,6 @@ export function Footer() {
     }
   };
 
-  // Custom Telegram Icon - Fixed ViewBox and Path (Matching MobileMenu)
-  const TelegramIcon = ({
-    size = '1em',
-    ...props
-  }: React.SVGProps<SVGSVGElement> & { size?: number | string; weight?: string }) => (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      height={size}
-      width={size}
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.48-1.02-2.4-1.63-1.06-.7.11-1.09.68-1.69.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.06-.14-.04-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.4-1.08.39-.35-.01-1.03-.2-1.54-.35-.62-.18-1.12-.28-1.08-.59.02-.16.24-.32.66-.49 2.58-1.12 4.31-1.87 5.18-2.22 2.48-1.03 2.99-1.21 3.32-1.21.07 0 .24.02.35.12.09.08.11.19.12.27 0 .1.01.21 0 .23z" />
-    </svg>
-  );
-
-  const socialLinks = [
-    {
-      icon: TelegramIcon,
-      href: 'https://t.me/royaraqamia',
-      label: 'Telegram',
-      ariaLabel: 'تابعنا على Telegram',
-    },
-    {
-      icon: InstagramLogoIcon,
-      href: 'https://instagram.com/royaraqamia',
-      label: 'Instagram',
-      ariaLabel: 'تابعنا على Instagram',
-    },
-    {
-      icon: LinkedinLogoIcon,
-      href: 'https://linkedin.com/company/royaraqamia',
-      label: 'LinkedIn',
-      ariaLabel: 'تابعنا على LinkedIn',
-    },
-  ];
-
   return (
     <footer className="bg-[#0B0D11] relative border-t border-white/5" dir="rtl">
       <div className="max-w-4xl mx-auto px-6 py-12 md:py-16 relative z-10">
@@ -131,6 +130,8 @@ export function Footer() {
                   src="/logo.png"
                   webpSrc="/logo.webp"
                   alt="رؤية رقمية"
+                  width={56}
+                  height={56}
                   priority={true}
                   className="h-full w-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-500"
                 />

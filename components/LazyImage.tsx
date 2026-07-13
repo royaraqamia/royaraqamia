@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect, useRef } from 'react';
 
 interface LazyImageProps {
@@ -6,23 +8,43 @@ interface LazyImageProps {
   className?: string;
   width?: number;
   height?: number;
-  /** WebP version of the image (optional) */
   webpSrc?: string;
-  /** Responsive image srcset (optional) - e.g., "image-400w.webp 400w, image-800w.webp 800w" */
   srcSet?: string;
-  /** Sizes attribute for responsive images (optional) */
   sizes?: string;
-  /** Priority loading for above-the-fold images */
   priority?: boolean;
 }
 
-/**
- * Enhanced LazyImage component with WebP support and responsive images
- * - Lazy loads images with IntersectionObserver
- * - Supports WebP format with fallback
- * - Supports responsive images (srcset)
- * - Includes loading skeleton
- */
+let webpSupportedCache: boolean | null = null;
+let webpCheckInitiated = false;
+
+function getWebpSupport(): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (webpSupportedCache !== null) {
+      resolve(webpSupportedCache);
+      return;
+    }
+    if (webpCheckInitiated) {
+      const check = () => {
+        if (webpSupportedCache !== null) {
+          resolve(webpSupportedCache);
+        } else {
+          setTimeout(check, 50);
+        }
+      };
+      check();
+      return;
+    }
+    webpCheckInitiated = true;
+    const webP = new Image();
+    webP.onload = webP.onerror = () => {
+      webpSupportedCache = webP.height === 2;
+      resolve(webpSupportedCache);
+    };
+    webP.src =
+      'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
+  });
+}
+
 export function LazyImage({
   src,
   alt,
@@ -39,17 +61,8 @@ export function LazyImage({
   const [webpSupported, setWebpSupported] = useState<boolean | null>(null);
   const imgRef = useRef<HTMLDivElement>(null);
 
-  // Check WebP support
   useEffect(() => {
-    const checkWebPSupport = () => {
-      const webP = new Image();
-      webP.onload = webP.onerror = () => {
-        setWebpSupported(webP.height === 2);
-      };
-      webP.src =
-        'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
-    };
-    checkWebPSupport();
+    getWebpSupport().then(setWebpSupported);
   }, []);
 
   useEffect(() => {

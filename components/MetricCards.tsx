@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Clock, Trophy, TrendUp } from '@phosphor-icons/react';
 
 export function MetricCards() {
@@ -72,7 +72,7 @@ export function MetricCards() {
       </div>
 
       <div className="max-w-7xl mx-auto container-padding relative z-10">
-        <motion.div
+        <m.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -83,7 +83,7 @@ export function MetricCards() {
             const Icon = metric.icon;
             const colors = colorConfigs[metric.colorKey];
             return (
-              <motion.div
+              <m.div
                 key={index}
                 variants={itemVariants}
                 className="group relative glass-card rounded-2xl p-6 lg:p-8 glass-hover transition-all duration-500 border border-transparent hover:border-white/10 overflow-hidden"
@@ -136,10 +136,10 @@ export function MetricCards() {
                 <p className="text-sm lg:text-base text-foreground/70 leading-relaxed">
                   {metric.description}
                 </p>
-              </motion.div>
+              </m.div>
             );
           })}
-        </motion.div>
+        </m.div>
       </div>
 
       {/* CSS for shine animation */}

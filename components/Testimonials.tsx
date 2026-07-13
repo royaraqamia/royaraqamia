@@ -1,17 +1,21 @@
 'use client';
 
 import { CaretRight, CaretLeft, X, UserCircle } from '@phosphor-icons/react';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ScrollAnimation } from './ScrollAnimations';
+import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 import { useUI } from '../context/UIContext';
 
 export function Testimonials() {
-  // This component is lazy loaded, content-visibility handled by parent
   const { setIsReviewSheetOpen } = useUI();
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [canScrollLeft, setCanScrollLeft] = useState(true);
-  const [canScrollRight, setCanScrollRight] = useState(false);
+  const {
+    scrollContainerRef: scrollRef,
+    canScrollLeft,
+    canScrollRight,
+    scroll,
+  } = useHorizontalScroll(412);
   const [selectedReview, setSelectedReview] = useState<number | null>(null);
+  const [hoveredArrow, setHoveredArrow] = useState<'left' | 'right' | null>(null);
 
   // Sync with global UI state
   useEffect(() => {
@@ -20,105 +24,36 @@ export function Testimonials() {
 
   // Lock body scroll when bottom sheet is open
   useEffect(() => {
-    if (selectedReview !== null) {
-      // Calculate scrollbar width
-      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (selectedReview === null) return;
 
-      // Simply prevent scrolling without changing position
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
 
-      // Add padding to fixed navbar to prevent shift
-      const navbar = document.querySelector('nav[role="navigation"]');
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+    document.body.style.paddingRight = `${scrollbarWidth}px`;
+
+    const navbar = document.querySelector('nav[role="navigation"]');
+    if (navbar instanceof HTMLElement) {
+      navbar.style.paddingRight = `${scrollbarWidth}px`;
+    }
+
+    return () => {
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+
       if (navbar instanceof HTMLElement) {
-        navbar.style.paddingRight = `${scrollbarWidth}px`;
+        navbar.style.paddingRight = '';
       }
 
-      return () => {
-        // Restore everything
-        document.documentElement.style.overflow = '';
-        document.body.style.overflow = '';
-        document.body.style.paddingRight = '';
-
-        // Restore navbar padding
-        if (navbar instanceof HTMLElement) {
-          navbar.style.paddingRight = '';
-        }
-
-        // Clear the review sheet state
-        setIsReviewSheetOpen(false);
-      };
-    }
+      setIsReviewSheetOpen(false);
+    };
   }, [selectedReview, setIsReviewSheetOpen]);
 
-  // Handle closing the review sheet
   const closeReviewSheet = useCallback(() => {
     setSelectedReview(null);
     setIsReviewSheetOpen(false);
   }, [setIsReviewSheetOpen]);
-
-  const checkScrollButtons = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollRef.current;
-      const maxScrollLeft = scrollWidth - clientWidth;
-
-      // RTL scroll handling is inconsistent across browsers/engines:
-      // Type 1 (Standard/Blink): Start (Right) = 0, End (Left) = -Max (negative values)
-      // Type 2 (Positive): Start (Right) = Max, End (Left) = 0 (positive values decreasing)
-
-      let isAtStartRight = false; // Rightmost position - should hide Right Arrow
-      let isAtEndLeft = false; // Leftmost position - should hide Left Arrow
-
-      // Check if we are dealing with positive values (Type 2)
-      if (scrollLeft > 5) {
-        // We are likely in Type 2 (Start=Max, End=0)
-        isAtStartRight = Math.abs(scrollLeft - maxScrollLeft) < 10;
-        isAtEndLeft = scrollLeft < 10;
-      } else {
-        // We are likely in Type 1 (Start=0, End=-Max)
-        isAtStartRight = Math.abs(scrollLeft) < 10;
-        // Check absolute value against max
-        isAtEndLeft = Math.abs(scrollLeft) > maxScrollLeft - 10;
-      }
-
-      setCanScrollLeft(!isAtEndLeft);
-      setCanScrollRight(!isAtStartRight);
-    }
-  };
-
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollRef.current) {
-      const scrollAmount = 412;
-      const currentScroll = scrollRef.current.scrollLeft;
-      // Both RTL models decrease value to go Left and increase to go Right
-      // Type 1: 0 -> -412 (Left)
-      // Type 2: Max -> Max-412 (Left)
-      const newScrollLeft = currentScroll + (direction === 'left' ? -scrollAmount : scrollAmount);
-      scrollRef.current.scrollTo({
-        left: newScrollLeft,
-        behavior: 'smooth',
-      });
-      setTimeout(checkScrollButtons, 500);
-    }
-  };
-
-  // Set up scroll and resize event listeners
-  useEffect(() => {
-    const timer = setTimeout(checkScrollButtons, 200);
-    const scrollContainer = scrollRef.current;
-
-    if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', checkScrollButtons, { passive: true });
-      window.addEventListener('resize', checkScrollButtons);
-      return () => {
-        clearTimeout(timer);
-        scrollContainer.removeEventListener('scroll', checkScrollButtons);
-        window.removeEventListener('resize', checkScrollButtons);
-      };
-    }
-    return () => clearTimeout(timer);
-  }, []);
 
   // Handle keyboard events for closing the review sheet
   useEffect(() => {
@@ -365,18 +300,12 @@ export function Testimonials() {
           <button
             onClick={() => scroll('left')}
             className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
+            onMouseEnter={() => setHoveredArrow('left')}
+            onMouseLeave={() => setHoveredArrow(null)}
             style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              borderColor: 'rgba(255, 255, 255, 0.15)',
+              backgroundColor: hoveredArrow === 'left' ? '#7766EE' : 'rgba(0, 0, 0, 0.6)',
+              borderColor: hoveredArrow === 'left' ? '#7766EE' : 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(8px)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#7766EE';
-              e.currentTarget.style.borderColor = '#7766EE';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
             }}
             aria-label="التالي"
             type="button"
@@ -390,18 +319,12 @@ export function Testimonials() {
           <button
             onClick={() => scroll('right')}
             className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
+            onMouseEnter={() => setHoveredArrow('right')}
+            onMouseLeave={() => setHoveredArrow(null)}
             style={{
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              borderColor: 'rgba(255, 255, 255, 0.15)',
+              backgroundColor: hoveredArrow === 'right' ? '#7766EE' : 'rgba(0, 0, 0, 0.6)',
+              borderColor: hoveredArrow === 'right' ? '#7766EE' : 'rgba(255, 255, 255, 0.15)',
               backdropFilter: 'blur(8px)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = '#7766EE';
-              e.currentTarget.style.borderColor = '#7766EE';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.6)';
-              e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.15)';
             }}
             aria-label="السابق"
             type="button"
@@ -481,160 +404,167 @@ export function Testimonials() {
       </div>
 
       {/* Bottom Sheet */}
-      {selectedReview !== null && (
-        <>
-          {/* Overlay */}
-          <div
-            style={{
-              position: 'fixed',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.6)',
-              backdropFilter: 'blur(8px)',
-              zIndex: 9998,
-            }}
-            onClick={closeReviewSheet}
-          />
-
-          {/* Bottom Sheet */}
-          <div
-            className="review-bottom-sheet"
-            style={{
-              position: 'fixed',
-              bottom: '24px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              width: 'calc(100% - 48px)',
-              maxWidth: '327px',
-              maxHeight: 'calc(100vh - 100px)',
-              background: 'linear-gradient(135deg, #020617 0%, #3b0764 50%, #0f172a 100%)',
-              borderRadius: '24px',
-              boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-              zIndex: 9999,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-              animation: 'slideUpFromBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-            }}
-          >
-            {/* Header */}
-            <div
-              style={{
-                padding: '12px 16px',
-                borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                position: 'relative',
-                flexShrink: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'flex-start',
-                direction: 'ltr',
-              }}
-            >
-              {/* Drag handle */}
+      {selectedReview !== null &&
+        (() => {
+          const review = testimonials[selectedReview];
+          if (!review) return null;
+          return (
+            <>
+              {/* Overlay */}
               <div
                 style={{
-                  position: 'absolute',
-                  top: '8px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: '48px',
-                  height: '4px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                  borderRadius: '2px',
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                  backdropFilter: 'blur(8px)',
+                  zIndex: 9998,
                 }}
-                className="md:hidden"
+                onClick={closeReviewSheet}
               />
 
-              {/* Close button */}
-              <button
-                onClick={closeReviewSheet}
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 0,
-                  background: 'transparent',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: 'rgba(255, 255, 255, 0.8)',
-                  transition: 'color 0.2s',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'white';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
-                }}
-                type="button"
-                aria-label="إغلاق"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div
-              className="custom-review-scrollbar"
-              style={{
-                padding: '24px',
-                overflowY: 'auto',
-                flex: 1,
-                color: 'rgba(255, 255, 255, 0.9)',
-              }}
-            >
-              <p
-                style={{
-                  fontSize: '16px',
-                  lineHeight: '1.6',
-                  marginBottom: '24px',
-                  whiteSpace: 'pre-wrap',
-                }}
-              >
-                &ldquo;{testimonials[selectedReview].content}&rdquo;
-              </p>
-
-              {/* Author */}
+              {/* Bottom Sheet */}
               <div
+                className="review-bottom-sheet"
+                role="dialog"
+                aria-modal="true"
+                aria-label={`رأي ${review.name}`}
                 style={{
+                  position: 'fixed',
+                  bottom: '24px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  width: 'calc(100% - 48px)',
+                  maxWidth: '327px',
+                  maxHeight: 'calc(100vh - 100px)',
+                  background: 'linear-gradient(135deg, #020617 0%, #3b0764 50%, #0f172a 100%)',
+                  borderRadius: '24px',
+                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
+                  zIndex: 9999,
+                  overflow: 'hidden',
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: '16px',
-                  paddingTop: '16px',
-                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  flexDirection: 'column',
+                  animation: 'slideUpFromBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
                 }}
               >
+                {/* Header */}
                 <div
                   style={{
-                    width: '56px',
-                    height: '56px',
-                    borderRadius: '50%',
+                    padding: '12px 16px',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+                    position: 'relative',
+                    flexShrink: 0,
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    flexShrink: 0,
-                    background: 'linear-gradient(135deg, #7766EE 0%, #A78BFA 100%)',
-                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                    justifyContent: 'flex-start',
+                    direction: 'ltr',
                   }}
                 >
-                  <UserCircle className="w-7 h-7 text-white" />
-                </div>
-                <h4
-                  style={{
-                    fontWeight: 'bold',
-                    color: 'white',
-                  }}
-                >
-                  {testimonials[selectedReview].name}
-                </h4>
-              </div>
-            </div>
-          </div>
+                  {/* Drag handle */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '8px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '48px',
+                      height: '4px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                      borderRadius: '2px',
+                    }}
+                    className="md:hidden"
+                  />
 
-          {/* Custom Scrollbar & Desktop Styles */}
-          <style>{`
+                  {/* Close button */}
+                  <button
+                    onClick={closeReviewSheet}
+                    style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: 0,
+                      background: 'transparent',
+                      border: 'none',
+                      cursor: 'pointer',
+                      color: 'rgba(255, 255, 255, 0.8)',
+                      transition: 'color 0.2s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'white';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
+                    }}
+                    type="button"
+                    aria-label="إغلاق"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+
+                {/* Content */}
+                <div
+                  className="custom-review-scrollbar"
+                  style={{
+                    padding: '24px',
+                    overflowY: 'auto',
+                    flex: 1,
+                    color: 'rgba(255, 255, 255, 0.9)',
+                  }}
+                >
+                  <p
+                    style={{
+                      fontSize: '16px',
+                      lineHeight: '1.6',
+                      marginBottom: '24px',
+                      whiteSpace: 'pre-wrap',
+                    }}
+                  >
+                    &ldquo;{review.content}&rdquo;
+                  </p>
+
+                  {/* Author */}
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px',
+                      paddingTop: '16px',
+                      borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                    }}
+                  >
+                    <div
+                      style={{
+                        width: '56px',
+                        height: '56px',
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        background: 'linear-gradient(135deg, #7766EE 0%, #A78BFA 100%)',
+                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
+                      }}
+                    >
+                      <UserCircle className="w-7 h-7 text-white" />
+                    </div>
+                    <h4
+                      style={{
+                        fontWeight: 'bold',
+                        color: 'white',
+                      }}
+                    >
+                      {review.name}
+                    </h4>
+                  </div>
+                </div>
+              </div>
+
+              {/* Custom Scrollbar & Desktop Styles */}
+              <style>{`
             /* Slide up animation for mobile */
             @keyframes slideUpFromBottom {
               from {
@@ -698,8 +628,9 @@ export function Testimonials() {
 
 
           `}</style>
-        </>
-      )}
+            </>
+          );
+        })()}
       <style>{`
         .testimonial-card {
           width: 288px;

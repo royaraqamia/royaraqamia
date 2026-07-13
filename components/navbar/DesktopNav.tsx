@@ -99,6 +99,9 @@ export function DesktopNav({
         <img
           src={logoProp}
           alt="شعار رؤية رقمية"
+          width={48}
+          height={48}
+          loading="eager"
           className={`transition-all duration-300 ${
             isScrolled ? 'h-8 w-8 lg:h-10 lg:w-10 logo-glow' : 'h-10 w-10 lg:h-12 lg:w-12'
           }`}
@@ -164,6 +167,7 @@ export function DesktopNav({
                     aria-label={link.label}
                     aria-haspopup="menu"
                     aria-expanded={isDropdownOpen}
+                    aria-controls={link.dropdownKey ? `${link.dropdownKey}-dropdown` : undefined}
                     onClick={() => setDropdownOpen(!isDropdownOpen)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' || e.key === ' ') {
@@ -186,6 +190,7 @@ export function DesktopNav({
                   </button>
                   {isDropdownOpen && (
                     <div
+                      id={link.dropdownKey ? `${link.dropdownKey}-dropdown` : undefined}
                       className="absolute right-0 mt-2 w-56 bg-background/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/30 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-200"
                       style={{
                         boxShadow:

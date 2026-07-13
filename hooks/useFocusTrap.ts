@@ -1,10 +1,10 @@
 import { useEffect, RefObject } from 'react';
 
-/**
- * Custom hook to trap focus within a container element
- * Useful for modals, mobile menus, and other overlay components
- */
-export function useFocusTrap(isActive: boolean, containerRef: RefObject<HTMLElement>) {
+export function useFocusTrap<T extends HTMLElement>(
+  isActive: boolean,
+  containerRef: RefObject<T | null>,
+  onEscape?: () => void
+) {
   useEffect(() => {
     if (!isActive || !containerRef.current) return;
 
@@ -16,20 +16,17 @@ export function useFocusTrap(isActive: boolean, containerRef: RefObject<HTMLElem
     const firstElement = focusableElements[0];
     const lastElement = focusableElements[focusableElements.length - 1];
 
-    // Focus first element when trap activates
     firstElement?.focus();
 
     const handleTabKey = (e: KeyboardEvent) => {
       if (e.key !== 'Tab') return;
 
       if (e.shiftKey) {
-        // Shift + Tab
         if (document.activeElement === firstElement) {
           e.preventDefault();
           lastElement?.focus();
         }
       } else {
-        // Tab
         if (document.activeElement === lastElement) {
           e.preventDefault();
           firstElement?.focus();
@@ -39,8 +36,7 @@ export function useFocusTrap(isActive: boolean, containerRef: RefObject<HTMLElem
 
     const handleEscapeKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        // Let parent component handle escape
-        container.dispatchEvent(new CustomEvent('escapekeypressed'));
+        onEscape?.();
       }
     };
 
@@ -51,5 +47,5 @@ export function useFocusTrap(isActive: boolean, containerRef: RefObject<HTMLElem
       container.removeEventListener('keydown', handleTabKey);
       container.removeEventListener('keydown', handleEscapeKey);
     };
-  }, [isActive, containerRef]);
+  }, [isActive, containerRef, onEscape]);
 }

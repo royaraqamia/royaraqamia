@@ -2,104 +2,97 @@
 
 import {
   ChatCircle,
-  //  Graph,
   Check,
-  //  CreditCard,
-  //  ChartBar,
-  //  Robot,
   Code,
-  //  CurrencyDollar,
   Lightbulb,
   Storefront,
   GraduationCap,
-  //  Bank,
 } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useUI } from '../context/UIContext';
 
-export function Services() {
-  // Color configurations for each service
-  const colorConfigs = {
-    teal: {
-      gradient: 'linear-gradient(135deg, #14B8A6 0%, #0891B2 100%)',
-      accentBorder: '#14B8A6',
-      hoverGradient: 'linear-gradient(90deg, #14B8A6, #0891B2, #14B8A6)',
-      glowColor: 'rgba(20, 184, 166, 0.3)',
-    },
-    orange: {
-      gradient: 'linear-gradient(135deg, #F97316 0%, #D97706 100%)',
-      accentBorder: '#F97316',
-      hoverGradient: 'linear-gradient(90deg, #F97316, #D97706, #F97316)',
-      glowColor: 'rgba(249, 115, 22, 0.3)',
-    },
-    blue: {
-      gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-      accentBorder: '#3B82F6',
-      hoverGradient: 'linear-gradient(90deg, #3B82F6, #2563EB, #3B82F6)',
-      glowColor: 'rgba(59, 130, 246, 0.3)',
-    },
-    pink: {
-      gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
-      accentBorder: '#EC4899',
-      hoverGradient: 'linear-gradient(90deg, #EC4899, #DB2777, #EC4899)',
-      glowColor: 'rgba(236, 72, 153, 0.3)',
-    },
-    emerald: {
-      gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-      accentBorder: '#10B981',
-      hoverGradient: 'linear-gradient(90deg, #10B981, #059669, #10B981)',
-      glowColor: 'rgba(16, 185, 129, 0.3)',
-    },
-    violet: {
-      gradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-      accentBorder: '#8B5CF6',
-      hoverGradient: 'linear-gradient(90deg, #8B5CF6, #7C3AED, #8B5CF6)',
-      glowColor: 'rgba(139, 92, 246, 0.3)',
-    },
-    purple: {
-      gradient: 'linear-gradient(135deg, #A855F7 0%, #6366F1 100%)',
-      accentBorder: '#A855F7',
-      hoverGradient: 'linear-gradient(90deg, #A855F7, #6366F1, #A855F7)',
-      glowColor: 'rgba(168, 85, 247, 0.3)',
-    },
-    amber: {
-      gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-      accentBorder: '#F59E0B',
-      hoverGradient: 'linear-gradient(90deg, #F59E0B, #D97706, #F59E0B)',
-      glowColor: 'rgba(245, 158, 11, 0.3)',
-    },
-    rose: {
-      gradient: 'linear-gradient(135deg, #F43F5E 0%, #E11D48 100%)',
-      accentBorder: '#F43F5E',
-      hoverGradient: 'linear-gradient(90deg, #F43F5E, #E11D48, #F43F5E)',
-      glowColor: 'rgba(244, 63, 94, 0.3)',
-    },
-    cyan: {
-      gradient: 'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)',
-      accentBorder: '#06B6D4',
-      hoverGradient: 'linear-gradient(90deg, #06B6D4, #0891B2, #06B6D4)',
-      glowColor: 'rgba(6, 182, 212, 0.3)',
-    },
-    indigo: {
-      gradient: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
-      accentBorder: '#6366F1',
-      hoverGradient: 'linear-gradient(90deg, #6366F1, #4F46E5, #6366F1)',
-      glowColor: 'rgba(99, 102, 241, 0.3)',
-    },
-    lime: {
-      gradient: 'linear-gradient(135deg, #84CC16 0%, #65A30D 100%)',
-      accentBorder: '#84CC16',
-      hoverGradient: 'linear-gradient(90deg, #84CC16, #65A30D, #84CC16)',
-      glowColor: 'rgba(132, 204, 22, 0.3)',
-    },
-    coral: {
-      gradient: 'linear-gradient(135deg, #FB7185 0%, #F43F5E 100%)',
-      accentBorder: '#FB7185',
-      hoverGradient: 'linear-gradient(90deg, #FB7185, #F43F5E, #FB7185)',
-      glowColor: 'rgba(251, 113, 133, 0.3)',
-    },
-  };
+const colorConfigs = {
+  teal: {
+    gradient: 'linear-gradient(135deg, #14B8A6 0%, #0891B2 100%)',
+    accentBorder: '#14B8A6',
+    hoverGradient: 'linear-gradient(90deg, #14B8A6, #0891B2, #14B8A6)',
+    glowColor: 'rgba(20, 184, 166, 0.3)',
+  },
+  orange: {
+    gradient: 'linear-gradient(135deg, #F97316 0%, #D97706 100%)',
+    accentBorder: '#F97316',
+    hoverGradient: 'linear-gradient(90deg, #F97316, #D97706, #F97316)',
+    glowColor: 'rgba(249, 115, 22, 0.3)',
+  },
+  blue: {
+    gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+    accentBorder: '#3B82F6',
+    hoverGradient: 'linear-gradient(90deg, #3B82F6, #2563EB, #3B82F6)',
+    glowColor: 'rgba(59, 130, 246, 0.3)',
+  },
+  pink: {
+    gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+    accentBorder: '#EC4899',
+    hoverGradient: 'linear-gradient(90deg, #EC4899, #DB2777, #EC4899)',
+    glowColor: 'rgba(236, 72, 153, 0.3)',
+  },
+  emerald: {
+    gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+    accentBorder: '#10B981',
+    hoverGradient: 'linear-gradient(90deg, #10B981, #059669, #10B981)',
+    glowColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  violet: {
+    gradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
+    accentBorder: '#8B5CF6',
+    hoverGradient: 'linear-gradient(90deg, #8B5CF6, #7C3AED, #8B5CF6)',
+    glowColor: 'rgba(139, 92, 246, 0.3)',
+  },
+  purple: {
+    gradient: 'linear-gradient(135deg, #A855F7 0%, #6366F1 100%)',
+    accentBorder: '#A855F7',
+    hoverGradient: 'linear-gradient(90deg, #A855F7, #6366F1, #A855F7)',
+    glowColor: 'rgba(168, 85, 247, 0.3)',
+  },
+  amber: {
+    gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+    accentBorder: '#F59E0B',
+    hoverGradient: 'linear-gradient(90deg, #F59E0B, #D97706, #F59E0B)',
+    glowColor: 'rgba(245, 158, 11, 0.3)',
+  },
+  rose: {
+    gradient: 'linear-gradient(135deg, #F43F5E 0%, #E11D48 100%)',
+    accentBorder: '#F43F5E',
+    hoverGradient: 'linear-gradient(90deg, #F43F5E, #E11D48, #F43F5E)',
+    glowColor: 'rgba(244, 63, 94, 0.3)',
+  },
+  cyan: {
+    gradient: 'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)',
+    accentBorder: '#06B6D4',
+    hoverGradient: 'linear-gradient(90deg, #06B6D4, #0891B2, #06B6D4)',
+    glowColor: 'rgba(6, 182, 212, 0.3)',
+  },
+  indigo: {
+    gradient: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
+    accentBorder: '#6366F1',
+    hoverGradient: 'linear-gradient(90deg, #6366F1, #4F46E5, #6366F1)',
+    glowColor: 'rgba(99, 102, 241, 0.3)',
+  },
+  lime: {
+    gradient: 'linear-gradient(135deg, #84CC16 0%, #65A30D 100%)',
+    accentBorder: '#84CC16',
+    hoverGradient: 'linear-gradient(90deg, #84CC16, #65A30D, #84CC16)',
+    glowColor: 'rgba(132, 204, 22, 0.3)',
+  },
+  coral: {
+    gradient: 'linear-gradient(135deg, #FB7185 0%, #F43F5E 100%)',
+    accentBorder: '#FB7185',
+    hoverGradient: 'linear-gradient(90deg, #FB7185, #F43F5E, #FB7185)',
+    glowColor: 'rgba(251, 113, 133, 0.3)',
+  },
+};
 
+export function Services() {
   type ServiceType = {
     icon: typeof ChatCircle;
     title: string;
@@ -137,7 +130,7 @@ export function Services() {
     shadowColor: string;
     hoverShadow: string;
     href: string;
-    categories: string[];
+    categories: ('merchants' | 'students')[];
   };
 
   const services: ServiceType[] = [
@@ -178,96 +171,7 @@ export function Services() {
       href: '#consultation',
       categories: ['students'],
     },
-    /*    {
-      icon: Graph,
-      title: 'التَّشبيك',
-      description: 'نربطك مع أصحاب المهارات أو أصحاب الأعمال المناسبين لاحتياجاتك ورغباتك.',
-      features: [
-        'نطابق صاحب المهارة مع صاحب المال',
-        'شفافيَّة تامَّة مع الطَّرفين قبل التَّشبيك',
-        'نغطِّي التَّشبيك في كافَّة المجالات الرَّقميَّة',
-      ],
-      pricing: {
-        cta: 'قراءة المزيد',
-      },
-      colorKey: 'orange' as const,
-      shadowColor: 'shadow-orange-500/30',
-      hoverShadow: 'group-hover/item:shadow-orange-500/50',
-      href: '#networking',
-      categories: ['students'],
-    },*/
-    /*    {
-      icon: CreditCard,
-      title: 'الدَّفع الإلكتروني',
-      description:
-        'تنفيذ عمليَّات الدَّفع أونلاين نيابةً عنك لتسهيل المشتريات والاشتراكات الرَّقميَّة بسرعة وأمان.',
-      features: [
-        'دفع فوري وآمن للمشتريات',
-        'رسوم ثابتة وشفَّافة',
-        'دعم للعمليَّات الصَّغيرة والكبيرة',
-      ],
-      pricing: {
-        cta: 'قراءة المزيد',
-      },
-      colorKey: 'pink' as const,
-      shadowColor: 'shadow-pink-500/30',
-      hoverShadow: 'group-hover/item:shadow-pink-500/50',
-      href: '#payment-service',
-      categories: [''],
-    },*/
-    /*    {
-      icon: ChartBar,
-      title: 'نظام إدارة الأعمال',
-      description:
-        'نظام مالي مُصمَّم خصِّيصًا لأتمتة التَّسعير، ضبط المخزون، وحساب الأرباح الصَّافية لحظيًّا مع كل تغيُّر في سعر الصَّرف.',
-      features: [
-        'تسعير ديناميكي وتحديث لحظي للأرباح',
-        'حساب دقيق لمتوسِّط التَّكلفة والمصاريف',
-        'أتمتة الدُّيون وإدارة ذكيَّة للمخزون',
-      ],
-      pricing: {
-        cta: 'قراءة المزيد',
-      },
-      colorKey: 'emerald' as const,
-      shadowColor: 'shadow-emerald-500/30',
-      hoverShadow: 'group-hover/item:shadow-emerald-500/50',
-      href: '#smart-pricing',
-      categories: ['merchants'],
-    },*/
-    /*    {
-      icon: CurrencyDollar,
-      title: 'نظام الصَّرافة والحوَّالات',
-      description:
-        'نظام عبر Google Sheets لإدارة عمليَّات الصَّرافة والحوَّالات الماليَّة، يُتيح تتبُّع المعاملات، حساب الأرباح، وإدارة الزَّبائن بسهولة.',
-      features: [
-        'تتبُّع شامل لعمليَّات الصَّرافة والحوَّالات',
-        'حساب تلقائي للأرباح والرُّسوم',
-        'دعم فنِّي متكامل',
-      ],
-      pricing: {
-        cta: 'قراءة المزيد',
-      },
-      colorKey: 'lime' as const,
-      shadowColor: 'shadow-lime-500/30',
-      hoverShadow: 'group-hover/item:shadow-lime-500/50',
-      href: '#exchange-management',
-      categories: ['exchange'],
-    },*/
-    /*    {
-      icon: Robot,
-      title: 'نظام الرَّد',
-      description:
-        'نردُّ على رسائل زبائنك عبر منصَّات المراسلة والتَّواصل الاجتماعي بشكل احترافي وبلغة طبيعيَّة.',
-      features: ['ردود ذكيَّة واحترافيَّة', 'دعم متعدِّد المنصَّات', 'عمل مستمر دون توقُّف'],
-      pricing: {
-        cta: 'قراءة المزيد',
-      },
-      colorKey: 'purple' as const,
-      shadowColor: 'shadow-purple-500/30',
-      hoverShadow: 'group-hover/item:shadow-purple-500/50',
-      href: '#auto-reply',
-      categories: ['merchants'],
-    },*/
+
     {
       icon: Code,
       title: 'بناء مواقع إلكترونيَّة وتطبيقات',
@@ -289,13 +193,12 @@ export function Services() {
     },
   ];
 
-  const tabs = [
+  const tabs: { id: 'merchants' | 'students'; label: string; icon: React.ElementType }[] = [
     { id: 'merchants', label: 'للتُّجَّار ومقدِّمي الخدمات', icon: Storefront },
     { id: 'students', label: 'للطُّلاب والخرِّيجين الجدد', icon: GraduationCap },
-    // { id: 'exchange', label: 'لشركات الصَّرافة والحوَّالات', icon: Bank },
   ];
 
-  const getTabCount = (tabId: string) => {
+  const getTabCount = (tabId: 'merchants' | 'students') => {
     return services.filter((s) => s.categories.includes(tabId)).length;
   };
 

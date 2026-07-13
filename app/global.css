@@ -2,6 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    --background: 240 10% 8%;
+    --foreground: 0 0% 96%;
+    --card: 240 8% 11%;
+    --card-foreground: 0 0% 96%;
+    --popover: 240 8% 11%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 256 70% 67%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 6% 16%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 240 5% 18%;
+    --muted-foreground: 0 0% 68%;
+    --accent: 240 6% 16%;
+    --accent-foreground: 0 0% 96%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5% 22%;
+    --input: 240 5% 22%;
+    --ring: 256 70% 67%;
+    --radius: 0.5rem;
+    --section-spacing: clamp(3.75rem, 8vw, 6rem);
+    --section-spacing-sm: clamp(2.5rem, 6vw, 4rem);
+    --container-padding: clamp(1rem, 4vw, 2rem);
+    --card-padding: clamp(1.5rem, 3vw, 2rem);
+    --element-gap: clamp(1rem, 2vw, 1.5rem);
+    --element-gap-sm: clamp(0.75rem, 1.5vw, 1rem);
+
+    --success: 142 76% 36%;
+    --success-foreground: 0 0% 100%;
+    --warning: 45 100% 51%;
+    --warning-foreground: 0 0% 10%;
+    --accent-teal: 174 72% 56%;
+    --accent-teal-foreground: 0 0% 100%;
+    --accent-orange: 25 95% 53%;
+    --accent-orange-foreground: 0 0% 100%;
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+  }
+}
+
 @font-face {
   font-family: 'IBM Plex Sans Arabic';
   font-style: normal;
@@ -64,56 +106,7 @@
   unicode-range: U+0030-0039;
 }
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
 @layer base {
-  :root {
-    --background: 240 10% 8%;
-    --foreground: 0 0% 96%;
-    --card: 240 8% 11%;
-    --card-foreground: 0 0% 96%;
-    --popover: 240 8% 11%;
-    --popover-foreground: 0 0% 96%;
-    --primary: 256 70% 67%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 6% 16%;
-    --secondary-foreground: 0 0% 96%;
-    --muted: 240 5% 18%;
-    --muted-foreground: 0 0% 68%;
-    --accent: 240 6% 16%;
-    --accent-foreground: 0 0% 96%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5% 22%;
-    --input: 240 5% 22%;
-    --ring: 256 70% 67%;
-    --radius: 0.5rem;
-    --section-spacing: clamp(3.75rem, 8vw, 6rem);
-    --section-spacing-sm: clamp(2.5rem, 6vw, 4rem);
-    --container-padding: clamp(1rem, 4vw, 2rem);
-    --card-padding: clamp(1.5rem, 3vw, 2rem);
-    --element-gap: clamp(1rem, 2vw, 1.5rem);
-    --element-gap-sm: clamp(0.75rem, 1.5vw, 1rem);
-
-    /* Enhanced color palette */
-    --success: 142 76% 36%;
-    --success-foreground: 0 0% 100%;
-    --warning: 45 100% 51%;
-    --warning-foreground: 0 0% 10%;
-    --accent-teal: 174 72% 56%;
-    --accent-teal-foreground: 0 0% 100%;
-    --accent-orange: 25 95% 53%;
-    --accent-orange-foreground: 0 0% 100%;
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
-  }
-
-  /* Removed: global border apply (can cause unexpected behavior)
-  * { @apply border-border; }
-  */
-
   body {
     @apply bg-background text-foreground;
     font-family: 'IBM Plex Sans Arabic', system-ui, sans-serif;
@@ -274,14 +267,7 @@
     }
   }
 
-  /* Disable all shadows for dark theme */
-  *,
-  *::before,
-  *::after {
-    box-shadow: none !important;
-    text-shadow: none !important;
   }
-}
 
 @layer components {
   /* Enhanced Input & Button Styles */
@@ -295,14 +281,6 @@
 
   .input-loading {
     @apply cursor-wait opacity-70;
-  }
-
-  .input-error {
-    @apply border-destructive focus:ring-destructive/50;
-  }
-
-  .input-success {
-    @apply border-green-500 focus:ring-green-500/50;
   }
 
   /* Button spacing optimizations */

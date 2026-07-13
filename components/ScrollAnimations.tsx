@@ -1,4 +1,6 @@
-import { motion, useInView } from 'framer-motion';
+'use client';
+
+import { m, useInView } from 'framer-motion';
 import { useRef } from 'react';
 
 interface ScrollAnimationProps {
@@ -47,7 +49,7 @@ export function ScrollAnimation({
   };
 
   return (
-    <motion.div
+    <m.div
       ref={ref}
       initial="hidden"
       animate={isInView ? 'visible' : 'hidden'}
@@ -60,6 +62,6 @@ export function ScrollAnimation({
       className={className}
     >
       {children}
-    </motion.div>
+    </m.div>
   );
 }

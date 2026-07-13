@@ -1,37 +1,13 @@
 import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://royaraqamia.com';
+
   return {
-    rules: [
-      {
-        userAgent: '*',
-        allow: '/',
-      },
-      {
-        userAgent: 'GPTBot',
-        allow: '/',
-      },
-      {
-        userAgent: 'ChatGPT-User',
-        allow: '/',
-      },
-      {
-        userAgent: 'ClaudeBot',
-        allow: '/',
-      },
-      {
-        userAgent: 'Google-Extended',
-        allow: '/',
-      },
-      {
-        userAgent: 'anthropic-ai',
-        allow: '/',
-      },
-      {
-        userAgent: 'CCBot',
-        allow: '/',
-      },
-    ],
-    sitemap: 'https://royaraqamia.com/sitemap.xml',
+    rules: {
+      userAgent: '*',
+      allow: '/',
+    },
+    sitemap: `${baseUrl}/sitemap.xml`,
   };
 }

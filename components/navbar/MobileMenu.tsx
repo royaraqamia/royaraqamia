@@ -63,7 +63,7 @@ export function MobileMenu({
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  useFocusTrap(isOpen, mobileMenuRef);
+  useFocusTrap(isOpen, mobileMenuRef, () => setIsOpen(false));
 
   // Handle open/close with slight delay for CSS transition
   useEffect(() => {
@@ -292,6 +292,9 @@ export function MobileMenu({
               <img
                 src={logoProp}
                 alt="شعار رؤية رقمية"
+                width={40}
+                height={40}
+                loading="eager"
                 className="h-10 w-10 logo-glow transition-transform duration-200 group-hover:scale-105"
               />
               <span

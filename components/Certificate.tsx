@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Trophy } from '@phosphor-icons/react';
-import { motion, useInView, useScroll, useTransform } from 'framer-motion';
+import { m, useInView, useScroll, useTransform } from 'framer-motion';
 import { LazyImage } from './LazyImage';
 
 // Animation variants defined outside component to avoid recreation
@@ -168,7 +168,7 @@ export function Certificate() {
       className="section-spacing-sm bg-gradient-to-b from-muted/20 via-background to-muted/30 relative overflow-hidden"
     >
       {/* Premium Animated Background Elements with Parallax */}
-      <motion.div
+      <m.div
         className="absolute top-20 right-10 w-32 h-32 bg-[#7766EE] opacity-5 rounded-full blur-3xl pointer-events-none"
         style={{ y: backgroundY, opacity }}
         animate={{
@@ -181,7 +181,7 @@ export function Certificate() {
           ease: 'easeInOut',
         }}
       />
-      <motion.div
+      <m.div
         className="absolute bottom-40 left-20 w-40 h-40 bg-[#A78BFA] opacity-5 rounded-full blur-3xl pointer-events-none"
         style={{ y: secondBlobY }}
         animate={{
@@ -195,7 +195,7 @@ export function Certificate() {
           delay: 1,
         }}
       />
-      <motion.div
+      <m.div
         className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#6366F1] opacity-3 rounded-full blur-3xl pointer-events-none"
         style={{ y: thirdBlobY }}
         animate={{
@@ -212,23 +212,20 @@ export function Certificate() {
 
       <div className="max-w-5xl mx-auto container-padding relative z-10">
         {/* Section Header with Premium Animation */}
-        <motion.div
+        <m.div
           ref={headerRef}
           initial="hidden"
           animate={isHeaderInView ? 'visible' : 'hidden'}
           variants={headerVariants}
           className="text-center section-header mb-12"
         >
-          <motion.div
-            variants={iconVariants}
-            className="inline-flex items-center justify-center mb-6"
-          >
-            <motion.div
+          <m.div variants={iconVariants} className="inline-flex items-center justify-center mb-6">
+            <m.div
               className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7766EE] to-[#A78BFA] flex items-center justify-center shadow-lg shadow-primary/25 relative overflow-hidden"
               whileHover={{ scale: 1.1, rotate: 5 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
-              <motion.div
+              <m.div
                 className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                 animate={{
                   x: ['-100%', '100%'],
@@ -240,28 +237,28 @@ export function Certificate() {
                 }}
               />
               <Trophy className="w-8 h-8 text-white relative z-10" />
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
 
-          <motion.h2
+          <m.h2
             variants={textVariants}
             className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
             style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
           >
             <span className="text-teal-400">نموذج عن الشَّهادة</span>
-          </motion.h2>
+          </m.h2>
 
-          <motion.p
+          <m.p
             variants={descriptionVariants}
             className="text-sm sm:text-base lg:text-lg text-foreground/70 max-w-2xl mx-auto leading-[1.8] sm:leading-[1.9]"
           >
             وثيقة تُثبت جدارتك المهنيَّة، وتُعَد جواز مرورك لفرص وظيفيَّة ومشاريع حقيقيَّة في
             السُّوق الرَّقمي.
-          </motion.p>
-        </motion.div>
+          </m.p>
+        </m.div>
 
         {/* Certificate Image with Premium Scroll Animations */}
-        <motion.div
+        <m.div
           ref={certificateRef}
           initial="hidden"
           animate={isCertificateInView ? 'visible' : 'hidden'}
@@ -270,7 +267,7 @@ export function Certificate() {
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
-          <motion.div
+          <m.div
             variants={certificateCardVariants}
             whileHover={{
               scale: 1.03,
@@ -281,7 +278,7 @@ export function Certificate() {
             style={{ perspective: 1000 }}
           >
             {/* Premium Animated gradient overlay on hover */}
-            <motion.div
+            <m.div
               className="absolute inset-0 bg-gradient-to-br from-[#7766EE] via-[#A78BFA] to-[#6366F1] rounded-3xl pointer-events-none z-20"
               initial={{ opacity: 0 }}
               animate={{
@@ -291,7 +288,7 @@ export function Certificate() {
             />
 
             {/* Premium Animated border glow with pulse */}
-            <motion.div
+            <m.div
               className="absolute inset-0 rounded-3xl pointer-events-none z-30"
               animate={{
                 boxShadow: isHovered
@@ -312,24 +309,26 @@ export function Certificate() {
             {/* Enhanced Floating particles effect - respects reduced motion */}
             {!prefersReducedMotion && (
               <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none z-40">
-                {particleIndices.map((i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-2 h-2 bg-white/40 rounded-full"
-                    initial={particleAnimations[i].initial}
-                    animate={
-                      isHovered ? particleAnimations[i].animate : particleAnimations[i].hidden
-                    }
-                    transition={{
-                      ...particleAnimations[i].transition,
-                      repeat: isHovered ? Infinity : 0,
-                    }}
-                  />
-                ))}
+                {particleIndices.map((i) => {
+                  const anim = particleAnimations[i];
+                  if (!anim) return null;
+                  return (
+                    <m.div
+                      key={i}
+                      className="absolute w-2 h-2 bg-white/40 rounded-full"
+                      initial={anim.initial}
+                      animate={isHovered ? anim.animate : anim.hidden}
+                      transition={{
+                        ...anim.transition,
+                        repeat: isHovered ? Infinity : 0,
+                      }}
+                    />
+                  );
+                })}
               </div>
             )}
 
-            <motion.div
+            <m.div
               initial={{ opacity: 0 }}
               animate={
                 isCertificateInView
@@ -351,12 +350,14 @@ export function Certificate() {
                 src="/certificate.png"
                 webpSrc="/certificate.webp"
                 alt="نموذج شهادة إتمام الدورة التدريبية"
+                width={1200}
+                height={848}
                 className="w-full h-auto max-w-4xl relative z-10"
                 priority={true}
               />
-            </motion.div>
-          </motion.div>
-        </motion.div>
+            </m.div>
+          </m.div>
+        </m.div>
       </div>
 
       <style>{`

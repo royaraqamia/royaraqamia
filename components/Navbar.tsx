@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { List, X, House } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../context/UIContext';
@@ -11,14 +11,14 @@ export function Navbar() {
   const { isMobileMenuOpen, setIsMobileMenuOpen, isReviewSheetOpen } = useUI();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-  const [activeSection] = useState<'hero' | 'cta' | 'default'>('hero');
+  const lastScrollYRef = useRef(0);
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const postNavTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pathname = usePathname();
   const router = useRouter();
   const isHomePage = pathname === '/';
 
-  // SCROLL OPTIMIZATION: Debounce/Throttle
   useEffect(() => {
     let ticking = false;
     const threshold = 100;
@@ -34,13 +34,13 @@ export function Navbar() {
           const currentScrollY = window.scrollY;
           setIsScrolled(currentScrollY > 20);
 
-          if (currentScrollY > lastScrollY && currentScrollY > threshold) {
+          if (currentScrollY > lastScrollYRef.current && currentScrollY > threshold) {
             setIsVisible(false);
           } else {
             setIsVisible(true);
           }
 
-          setLastScrollY(currentScrollY);
+          lastScrollYRef.current = currentScrollY;
           ticking = false;
         });
         ticking = true;
@@ -48,8 +48,12 @@ export function Navbar() {
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [lastScrollY, isReviewSheetOpen]);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+      if (postNavTimeoutRef.current) clearTimeout(postNavTimeoutRef.current);
+    };
+  }, [isReviewSheetOpen]);
 
   // Section Visibility (Intersection Observer)
   // TODO: Implement IntersectionObserver for section detection if needed
@@ -79,17 +83,15 @@ export function Navbar() {
     const sectionId = cleanHash.replace('#', '');
 
     if (isHomePage) {
-      // Retry logic wrapped in a clear function
       const attemptScroll = (retries = 5) => {
         if (!scrollToSection(sectionId) && retries > 0) {
-          setTimeout(() => attemptScroll(retries - 1), 200);
+          scrollTimeoutRef.current = setTimeout(() => attemptScroll(retries - 1), 200);
         }
       };
       attemptScroll();
     } else {
       router.push('/');
-      // Post-navigation scroll
-      setTimeout(() => {
+      postNavTimeoutRef.current = setTimeout(() => {
         window.location.hash = sectionId;
         const attemptScroll = (retries = 10) => {
           const el = document.getElementById(sectionId);
@@ -100,7 +102,7 @@ export function Navbar() {
               behavior: 'smooth',
             });
           } else if (retries > 0) {
-            setTimeout(() => attemptScroll(retries - 1), 100);
+            postNavTimeoutRef.current = setTimeout(() => attemptScroll(retries - 1), 100);
           }
         };
         attemptScroll();
@@ -128,9 +130,7 @@ export function Navbar() {
 
   const getNavbarClass = () => {
     if (isMobileMenuOpen) return 'bg-background/95 backdrop-blur-lg border-b border-border/10';
-    if (activeSection === 'hero') return isScrolled ? 'glass-navbar-enhanced' : 'glass-navbar-hero';
-    if (activeSection === 'cta') return 'glass-navbar-cta';
-    return isScrolled ? 'glass-navbar-enhanced' : 'glass-navbar';
+    return isScrolled ? 'glass-navbar-enhanced' : 'glass-navbar-hero';
   };
 
   return (

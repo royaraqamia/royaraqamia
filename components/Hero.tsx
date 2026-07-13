@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { HeroVisual } from './HeroVisual';
 import { useState, useEffect } from 'react';
@@ -78,7 +78,7 @@ export function Hero() {
           {/* Floating Particles - Subtler */}
           {isMounted &&
             particles.map((particle) => (
-              <motion.div
+              <m.div
                 key={particle.id}
                 className="absolute rounded-full bg-white"
                 style={{
@@ -103,7 +103,7 @@ export function Hero() {
         </div>
 
         <div className="max-w-7xl mx-auto container-padding relative z-10 w-full">
-          <motion.div
+          <m.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
@@ -113,10 +113,7 @@ export function Hero() {
             {/* Left side - Content (RTL: will appear on right naturally in RTL layout) */}
             <div className="text-center lg:text-right space-y-6 order-1">
               {/* Badge - Static Glow for performance */}
-              <motion.div
-                variants={itemVariants}
-                className="flex justify-center lg:justify-start !mb-2"
-              >
+              <m.div variants={itemVariants} className="flex justify-center lg:justify-start !mb-2">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/50 backdrop-blur-md text-white border border-slate-700/50 relative overflow-hidden group hover:border-primary-500/30 transition-colors duration-300">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
@@ -127,20 +124,20 @@ export function Hero() {
                   {/* Subtle sheen */}
                   <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shine-slide_1.5s_infinite]" />
                 </div>
-              </motion.div>
+              </m.div>
 
               {/* Main Headline */}
-              <motion.div variants={itemVariants} className="space-y-4 !mt-2">
+              <m.div variants={itemVariants} className="space-y-4 !mt-2">
                 <h1 className="text-[2.50rem] sm:text-6xl lg:text-7xl font-normal tracking-tight font-heading leading-tight md:leading-relaxed">
                   <span className="block text-teal-300 mb-1 lg:mb-4">شريكك الاستراتيجي</span>
                   <span className="text-white drop-shadow-xl lg:whitespace-nowrap">
                     للتحول الرقمي ومضاعفة نجاحك
                   </span>
                 </h1>
-              </motion.div>
+              </m.div>
 
               {/* Description */}
-              <motion.p
+              <m.p
                 variants={itemVariants}
                 className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
               >
@@ -148,10 +145,10 @@ export function Hero() {
                 <br />
                 كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع
                 والتَّطبيقات.
-              </motion.p>
+              </m.p>
 
               {/* CTA Button - Optimized */}
-              <motion.div
+              <m.div
                 variants={itemVariants}
                 className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2 items-center w-full sm:w-auto"
               >
@@ -175,17 +172,17 @@ export function Hero() {
                   {/* Shine element */}
                   <span className="shine-element absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
                 </a>
-              </motion.div>
+              </m.div>
             </div>
 
             {/* Right side - Visual Element */}
-            <motion.div
+            <m.div
               variants={itemVariants}
               className="relative order-2 w-full flex justify-center lg:justify-end mt-8 lg:mt-0"
             >
               <HeroVisual />
-            </motion.div>
-          </motion.div>
+            </m.div>
+          </m.div>
         </div>
       </section>
     </>
