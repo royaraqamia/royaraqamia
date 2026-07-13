@@ -19,23 +19,18 @@
 
 - **Node.js** >= 18.x (recommended: 22.x)
 - **npm** >= 9.x
-- **Git**
 
 ## التثبيت والتشغيل (Setup)
 
 ```bash
-# 1. استنساخ المشروع
-git clone <repo-url>
-cd royaraqamia
-
-# 2. تثبيت الاعتماديات
+# 1. تثبيت الاعتماديات
 npm ci
 
-# 3. إعداد متغيرات البيئة
+# 2. إعداد متغيرات البيئة
 cp .env.example .env.local
 # عدّل .env.local حسب الحاجة
 
-# 4. تشغيل خادم التطوير
+# 3. تشغيل خادم التطوير
 npm run dev
 ```
 
