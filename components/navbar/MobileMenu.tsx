@@ -79,10 +79,12 @@ export function MobileMenu({
       });
       triggerHaptic();
     } else {
-      setIsVisible(false);
       document.body.style.overflow = 'unset';
       document.documentElement.style.overflow = 'unset';
-      setExpandedDropdown(null);
+      queueMicrotask(() => {
+        setIsVisible(false);
+        setExpandedDropdown(null);
+      });
     }
 
     return () => {

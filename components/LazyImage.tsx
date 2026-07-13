@@ -50,7 +50,7 @@ export function LazyImage({
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
-  const [isInView, setIsInView] = useState(false);
+  const [isInView, setIsInView] = useState(priority);
   const [webpSupported, setWebpSupported] = useState<boolean | null>(null);
   const imgRef = useRef<HTMLDivElement>(null);
 
@@ -59,10 +59,7 @@ export function LazyImage({
   }, []);
 
   useEffect(() => {
-    if (priority) {
-      setIsInView(true);
-      return;
-    }
+    if (priority) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
