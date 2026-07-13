@@ -3,6 +3,7 @@
 import { Button } from './ui/button';
 import { Code, Rocket, ShieldCheck, DeviceMobile, Monitor, Globe } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
+import { WHATSAPP_PHONE } from '../lib/constants';
 
 export function WebDevService() {
   const benefits = [
@@ -160,7 +161,7 @@ export function WebDevService() {
 
               {/* CTA Button */}
               <a
-                href="https://wa.me/963968478904?text=السَّلام عليكم، أنا مهتم بخدمة تطوير المواقع والتَّطبيقات."
+                href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('السَّلام عليكم، أنا مهتم بخدمة تطوير المواقع والتَّطبيقات.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block"

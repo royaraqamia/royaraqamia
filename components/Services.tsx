@@ -419,22 +419,6 @@ export function Services() {
           </div>
         </div>
       </div>
-
-      {/* CSS for shine animation */}
-      <style>{`
-        @keyframes shine {
-          0% { transform: translateX(-100%) skewX(-12deg); }
-          100% { transform: translateX(200%) skewX(-12deg); }
-        }
-        .group:hover .group-hover\\:animate-shine {
-          animation: shine 1.5s ease-in-out;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-pulse, .group-hover\\:animate-shine {
-            animation: none !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }

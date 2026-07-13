@@ -16,6 +16,7 @@ interface LazyImageProps {
 
 let webpSupportedCache: boolean | null = null;
 let webpCheckInitiated = false;
+const webpResolveQueue: Array<(value: boolean) => void> = [];
 
 function getWebpSupport(): Promise<boolean> {
   return new Promise((resolve) => {
@@ -23,22 +24,13 @@ function getWebpSupport(): Promise<boolean> {
       resolve(webpSupportedCache);
       return;
     }
-    if (webpCheckInitiated) {
-      const check = () => {
-        if (webpSupportedCache !== null) {
-          resolve(webpSupportedCache);
-        } else {
-          setTimeout(check, 50);
-        }
-      };
-      check();
-      return;
-    }
+    webpResolveQueue.push(resolve);
+    if (webpCheckInitiated) return;
     webpCheckInitiated = true;
     const webP = new Image();
     webP.onload = webP.onerror = () => {
       webpSupportedCache = webP.height === 2;
-      resolve(webpSupportedCache);
+      webpResolveQueue.splice(0).forEach((fn) => fn(webpSupportedCache!));
     };
     webP.src =
       'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
@@ -57,6 +49,7 @@ export function LazyImage({
   priority = false,
 }: LazyImageProps) {
   const [isLoaded, setIsLoaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [webpSupported, setWebpSupported] = useState<boolean | null>(null);
   const imgRef = useRef<HTMLDivElement>(null);
@@ -66,7 +59,6 @@ export function LazyImage({
   }, []);
 
   useEffect(() => {
-    // If priority is true, load immediately
     if (priority) {
       setIsInView(true);
       return;
@@ -96,22 +88,25 @@ export function LazyImage({
     };
   }, [priority]);
 
-  // Determine which image source to use
   const imageSrc = webpSrc && webpSupported ? webpSrc : src;
 
   return (
     <div ref={imgRef} className={`relative overflow-hidden ${className}`}>
-      {/* Skeleton Placeholder */}
-      {!isLoaded && <div className="absolute inset-0 skeleton animate-pulse bg-muted/20" />}
+      {!isLoaded && !hasError && (
+        <div className="absolute inset-0 skeleton animate-pulse bg-muted/20" />
+      )}
 
-      {/* Actual Image with WebP support */}
-      {isInView && (
+      {hasError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/30 text-muted-foreground text-xs">
+          تعذّر تحميل الصورة
+        </div>
+      )}
+
+      {isInView && !hasError && (
         <picture>
-          {/* WebP source if available and supported */}
           {webpSrc && webpSupported !== null && webpSupported && srcSet && (
             <source srcSet={srcSet} sizes={sizes} type="image/webp" />
           )}
-          {/* Fallback: JPEG/PNG source */}
           <img
             src={imageSrc}
             alt={alt}
@@ -122,6 +117,7 @@ export function LazyImage({
             loading={priority ? 'eager' : 'lazy'}
             decoding="async"
             onLoad={() => setIsLoaded(true)}
+            onError={() => setHasError(true)}
             className={`w-full h-full object-cover transition-opacity duration-500 ${
               isLoaded ? 'opacity-100' : 'opacity-0'
             }`}

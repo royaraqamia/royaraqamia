@@ -1,1 +1,10 @@
 next-env.d.ts
+node_modules/
+.next/
+build/
+out/
+coverage/
+.git/
+.vercel/
+public/
+*.min.js

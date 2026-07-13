@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../context/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
 import { MobileMenu } from './navbar/MobileMenu';
+import { scrollToSection } from '../lib/scroll';
 
 export function Navbar() {
   const { isMobileMenuOpen, setIsMobileMenuOpen, isReviewSheetOpen } = useUI();
@@ -60,23 +61,6 @@ export function Navbar() {
   // Currently relying on scroll position for navbar styling
 
   // Scroll Helpers
-  const scrollToSection = (sectionId: string) => {
-    // Refactor: Use window.scrollTo instead of getElementById if possible?
-    // Actually, to scroll TO an element, we DO need to find it.
-    // But we can do it safely.
-    const section = document.getElementById(sectionId);
-    if (section) {
-      const navbarHeight = 80;
-      const sectionTop = section.getBoundingClientRect().top + window.pageYOffset;
-      window.scrollTo({
-        top: sectionTop - navbarHeight - 20,
-        behavior: 'smooth',
-      });
-      return true;
-    }
-    return false;
-  };
-
   const handleHashClick = (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
     e.preventDefault();
     const cleanHash = hash.startsWith('/') ? hash.substring(1) : hash;

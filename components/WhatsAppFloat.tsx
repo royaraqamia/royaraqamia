@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUI } from '../context/UIContext';
+import { WHATSAPP_PHONE, WHATSAPP_MESSAGE } from '../lib/constants';
 
 interface WhatsAppFloatProps {
   phone?: string;
@@ -9,8 +10,8 @@ interface WhatsAppFloatProps {
 }
 
 export function WhatsAppFloat({
-  phone = '963968478904',
-  message = 'السَّلام عليكم ورحمة اللّٰه وبركاته.',
+  phone = WHATSAPP_PHONE,
+  message = WHATSAPP_MESSAGE,
 }: WhatsAppFloatProps) {
   const { isMobileMenuOpen, isReviewSheetOpen } = useUI();
   const [isVisible, setIsVisible] = useState(false);

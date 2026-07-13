@@ -127,29 +127,6 @@ export function Portfolio() {
           </div>
         </div>
       </ScrollAnimation>
-
-      {/* CSS for shine animation */}
-      <style>{`
-        @keyframes shine {
-          0% { transform: translateX(-100%) skewX(-12deg); }
-          100% { transform: translateX(200%) skewX(-12deg); }
-        }
-        .group-hover\\/card\\:animate-shine {
-          animation: shine 1.5s ease-in-out;
-        }
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-        .scrollbar-hide {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-pulse-slow, .group-hover\\/card\\:animate-shine {
-            animation: none !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }

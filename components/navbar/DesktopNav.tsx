@@ -4,6 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CaretDown, Phone, type Icon } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
+import { getWhatsAppUrl } from '../../lib/constants';
 
 interface NavLink {
   visible?: boolean;
@@ -175,6 +176,14 @@ export function DesktopNav({
                         setDropdownOpen(!isDropdownOpen);
                       } else if (e.key === 'Escape' && isDropdownOpen) {
                         setDropdownOpen(false);
+                        (e.currentTarget as HTMLElement).focus();
+                      } else if (e.key === 'ArrowDown' && isDropdownOpen) {
+                        e.preventDefault();
+                        const list = dropdownRefToUse.current?.querySelector('[role="menu"]');
+                        if (list) {
+                          const first = list.querySelector('[role="menuitem"]') as HTMLElement;
+                          first?.focus();
+                        }
                       }
                     }}
                   >
@@ -200,6 +209,45 @@ export function DesktopNav({
                       aria-orientation="vertical"
                       onMouseEnter={handleMouseEnter}
                       onMouseLeave={handleMouseLeave}
+                      onKeyDown={(e) => {
+                        if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          const items = Array.from(
+                            (e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>(
+                              '[role="menuitem"]'
+                            )
+                          );
+                          const currentIndex = items.indexOf(
+                            e.currentTarget.ownerDocument.activeElement as HTMLElement
+                          );
+                          const prev = items[currentIndex - 1];
+                          if (prev) prev.focus();
+                          else {
+                            (e.currentTarget as HTMLElement)
+                              .closest('[class*="relative"]')
+                              ?.querySelector('button')
+                              ?.focus();
+                          }
+                        } else if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          const items = Array.from(
+                            (e.currentTarget as HTMLElement).querySelectorAll<HTMLElement>(
+                              '[role="menuitem"]'
+                            )
+                          );
+                          const currentIndex = items.indexOf(
+                            e.currentTarget.ownerDocument.activeElement as HTMLElement
+                          );
+                          const next = items[currentIndex + 1];
+                          if (next) next.focus();
+                        } else if (e.key === 'Escape') {
+                          setDropdownOpen(false);
+                          (e.currentTarget as HTMLElement)
+                            .closest('[class*="relative"]')
+                            ?.querySelector('button')
+                            ?.focus();
+                        }
+                      }}
                     >
                       {link.subItems?.map((sub: NavLink, subIndex: number) => {
                         const itemClasses = `block text-sm text-foreground/90 transition-all duration-200 whitespace-nowrap px-5 py-3.5 hover:bg-violet-500/10 hover:text-violet-400 focus-visible:bg-violet-500/10 focus-visible:text-violet-400 focus-visible:outline-none`;
@@ -286,7 +334,7 @@ export function DesktopNav({
       {/* CTA Buttons */}
       <div className="hidden lg:flex items-center element-gap-sm">
         <a
-          href="https://wa.me/963968478904?text=السَّلام عليكم ورحمة اللّٰه وبركاته."
+          href={getWhatsAppUrl()}
           target="_blank"
           rel="noopener noreferrer"
           aria-label="احجز مكالمة مجانية عبر واتساب"

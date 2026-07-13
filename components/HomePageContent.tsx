@@ -8,6 +8,7 @@ import { CTA } from './CTA';
 import { WhatsAppFloat } from './WhatsAppFloat';
 import { GoUpButton } from './GoUpButton';
 import { useUI } from '../context/UIContext';
+import { WHATSAPP_MESSAGE } from '../lib/constants';
 import { CircleNotch } from '@phosphor-icons/react';
 
 const Testimonials = lazy(() =>
@@ -37,66 +38,58 @@ export function HomePageContent() {
   const { activeServicesTab } = useUI();
 
   return (
-    <Suspense
-      fallback={
-        <div className="flex h-screen w-full items-center justify-center bg-slate-950">
-          <CircleNotch className="h-10 w-10 animate-spin text-purple-500" />
-        </div>
-      }
-    >
-      <main id="main-content" className="overflow-x-hidden w-full max-w-full">
-        <Hero />
-        <MetricCards />
-        <Services />
+    <main id="main-content" className="overflow-x-hidden w-full max-w-full">
+      <Hero />
+      <MetricCards />
+      <Services />
 
-        {activeServicesTab === 'merchants' && (
-          <Suspense fallback={<SectionSpinner />}>
-            <Portfolio />
-          </Suspense>
-        )}
-
-        {activeServicesTab === 'students' && (
-          <Suspense fallback={<SectionSpinner />}>
-            <Testimonials />
-          </Suspense>
-        )}
-
-        {activeServicesTab === 'students' && (
-          <section id="training">
-            <Suspense fallback={<SectionSpinner />}>
-              <TrainingCourses />
-            </Suspense>
-            <Suspense fallback={<SectionSpinner />}>
-              <Certificate />
-            </Suspense>
-          </section>
-        )}
-
-        {activeServicesTab === 'students' && (
-          <section id="consultations">
-            <Suspense fallback={<SectionSpinner />}>
-              <ConsultationCards />
-            </Suspense>
-          </section>
-        )}
-
-        {activeServicesTab === 'merchants' && (
-          <Suspense fallback={<SectionSpinner />}>
-            <WebDevService />
-          </Suspense>
-        )}
-
+      {activeServicesTab === 'merchants' && (
         <Suspense fallback={<SectionSpinner />}>
-          <WhyUs />
+          <Portfolio />
         </Suspense>
-        <Suspense fallback={<SectionSpinner />}>
-          <FAQ />
-        </Suspense>
-        <CTA />
-      </main>
+      )}
 
-      <WhatsAppFloat phone="963968478904" message="السَّلام عليكم ورحمة اللّٰه وبركاته." />
+      {activeServicesTab === 'students' && (
+        <Suspense fallback={<SectionSpinner />}>
+          <Testimonials />
+        </Suspense>
+      )}
+
+      {activeServicesTab === 'students' && (
+        <section id="training">
+          <Suspense fallback={<SectionSpinner />}>
+            <TrainingCourses />
+          </Suspense>
+          <Suspense fallback={<SectionSpinner />}>
+            <Certificate />
+          </Suspense>
+        </section>
+      )}
+
+      {activeServicesTab === 'students' && (
+        <section id="consultations">
+          <Suspense fallback={<SectionSpinner />}>
+            <ConsultationCards />
+          </Suspense>
+        </section>
+      )}
+
+      {activeServicesTab === 'merchants' && (
+        <Suspense fallback={<SectionSpinner />}>
+          <WebDevService />
+        </Suspense>
+      )}
+
+      <Suspense fallback={<SectionSpinner />}>
+        <WhyUs />
+      </Suspense>
+      <Suspense fallback={<SectionSpinner />}>
+        <FAQ />
+      </Suspense>
+      <CTA />
+
+      <WhatsAppFloat message={WHATSAPP_MESSAGE} />
       <GoUpButton />
-    </Suspense>
+    </main>
   );
 }

@@ -562,90 +562,9 @@ export function Testimonials() {
                   </div>
                 </div>
               </div>
-
-              {/* Custom Scrollbar & Desktop Styles */}
-              <style>{`
-            /* Slide up animation for mobile */
-            @keyframes slideUpFromBottom {
-              from {
-                transform: translateX(-50%) translateY(100%);
-                opacity: 0;
-              }
-              to {
-                transform: translateX(-50%) translateY(0);
-                opacity: 1;
-              }
-            }
-
-            /* Custom Scrollbar */
-            .custom-review-scrollbar::-webkit-scrollbar {
-              width: 8px;
-            }
-            
-            .custom-review-scrollbar::-webkit-scrollbar-track {
-              background: rgba(255, 255, 255, 0.05);
-              border-radius: 4px;
-            }
-            
-            .custom-review-scrollbar::-webkit-scrollbar-thumb {
-              background: linear-gradient(135deg, #7766EE 0%, #A78BFA 100%);
-              border-radius: 4px;
-              transition: background 0.2s;
-            }
-            
-            .custom-review-scrollbar::-webkit-scrollbar-thumb:hover {
-              background: linear-gradient(135deg, #8B5CF6 0%, #C4B5FD 100%);
-            }
-            
-            /* Firefox scrollbar */
-            .custom-review-scrollbar {
-              scrollbar-width: thin;
-              scrollbar-color: #7766EE rgba(255, 255, 255, 0.05);
-            }
-            
-            /* Desktop responsive */
-            @media (min-width: 768px) {
-              .review-bottom-sheet {
-                top: 50% !important;
-                bottom: auto !important;
-                transform: translate(-50%, -50%) !important;
-                max-width: 600px !important;
-                max-height: 80vh !important;
-                animation: fadeIn 0.3s ease-out forwards !important;
-              }
-
-              @keyframes fadeIn {
-                from {
-                  opacity: 0;
-                  transform: translate(-50%, -50%) scale(0.95);
-                }
-                to {
-                  opacity: 1;
-                  transform: translate(-50%, -50%) scale(1);
-                }
-              }
-            }
-
-
-          `}</style>
             </>
           );
         })()}
-      <style>{`
-        .testimonial-card {
-          width: 288px;
-          min-width: 288px;
-          max-width: 288px;
-        }
-        
-        @media (min-width: 768px) {
-          .testimonial-card {
-            width: 400px;
-            min-width: 400px;
-            max-width: 400px;
-          }
-        }
-      `}</style>
     </section>
   );
 }

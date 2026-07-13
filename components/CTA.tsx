@@ -3,41 +3,11 @@
 import { ScrollAnimation } from './ScrollAnimations';
 import { ArrowLeft } from '@phosphor-icons/react';
 
+import { getWhatsAppUrl } from '../lib/constants';
+
 export function CTA() {
   return (
     <>
-      <style>{`
-        .primary-cta-btn {
-          position: relative;
-        }
-        .primary-cta-btn:hover {
-          transform: scale(1.05);
-          box-shadow: 0 20px 60px rgba(119, 102, 238, 0.5), 0 0 40px rgba(119, 102, 238, 0.3);
-        }
-        .primary-cta-btn:hover .shine-effect {
-          transform: translateX(100%);
-        }
-        .primary-cta-btn:hover svg {
-          transform: translateX(-4px);
-        }
-        
-        @keyframes cta-pulse {
-          0%, 100% {
-            box-shadow: 0 8px 32px rgba(119, 102, 238, 0.4), 0 0 20px rgba(119, 102, 238, 0.2);
-          }
-          50% {
-            box-shadow: 0 12px 48px rgba(119, 102, 238, 0.6), 0 0 40px rgba(119, 102, 238, 0.4);
-          }
-        }
-        
-        .cta-glow {
-          animation: cta-pulse 2.5s ease-in-out infinite;
-        }
-        
-        .text-shadow-hero {
-          text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3), 0 4px 40px rgba(119, 102, 238, 0.15);
-        }
-      `}</style>
       <section
         id="cta"
         className="relative py-24 md:py-32 overflow-hidden items-center justify-center flex"
@@ -82,7 +52,7 @@ export function CTA() {
                 {/* Action Buttons - Matching Hero Button Style */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
                   <a
-                    href="https://wa.me/963968478904?text=السَّلام عليكم ورحمة اللّٰه وبركاته."
+                    href={getWhatsAppUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="primary-cta-btn cta-glow relative overflow-hidden h-14 sm:h-16 w-auto flex-shrink-0 flex items-center justify-center px-10 sm:px-12 rounded-full gradient-primary text-white text-lg sm:text-xl font-bold transition-all duration-300 whitespace-nowrap"

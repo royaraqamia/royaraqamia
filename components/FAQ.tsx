@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { CaretDown } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
+import { WHATSAPP_PHONE } from '../lib/constants';
 
 interface FAQItem {
   question: string;
@@ -26,7 +27,7 @@ export function FAQ() {
     },
     {
       question: 'كيف يمكنني طلب أحد خدماتكم؟',
-      answer: 'من خلال التَّواصل معنا مباشرةً عبر واتساب (963968478904+).',
+      answer: `من خلال التَّواصل معنا مباشرةً عبر واتساب (${WHATSAPP_PHONE}+).`,
       category: 'عام',
     },
   ];

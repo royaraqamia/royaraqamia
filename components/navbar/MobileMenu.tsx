@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { X, CaretDown, Phone, type Icon } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { getWhatsAppUrl } from '../../lib/constants';
 
 // ============================================================================
 // Types
@@ -267,7 +268,9 @@ export function MobileMenu({
       {/* Menu Panel */}
       <div
         ref={mobileMenuRef}
-        role="menu"
+        role="dialog"
+        aria-modal="true"
+        aria-label="القائمة الرئيسية"
         dir="rtl"
         onKeyDown={(e) => e.key === 'Escape' && handleClose()}
         className={`
@@ -356,7 +359,7 @@ export function MobileMenu({
 
             {/* CTA Button */}
             <a
-              href="https://wa.me/963968478904?text=السَّلام عليكم ورحمة اللّٰه وبركاته."
+              href={getWhatsAppUrl()}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => {

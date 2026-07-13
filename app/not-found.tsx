@@ -1,4 +1,10 @@
 import Link from 'next/link';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: '404 - الصفحة غير موجودة | رؤية رقمية',
+  description: 'عذرًا، الصفحة التي تبحث عنها غير موجودة أو تم نقلها.',
+};
 
 export default function NotFound() {
   return (

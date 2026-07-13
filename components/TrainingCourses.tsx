@@ -12,6 +12,7 @@ import {
 } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import { ScrollAnimation } from './ScrollAnimations';
+import { WHATSAPP_PHONE } from '../lib/constants';
 
 export function TrainingCourses() {
   const course = {
@@ -225,7 +226,7 @@ export function TrainingCourses() {
 
                 {/* CTA Button */}
                 <a
-                  href={`https://wa.me/963968478904?text=${encodeURIComponent('السَّلام عليكم، أرغب في التَّسجيل في التَّدريب.')}`}
+                  href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('السَّلام عليكم، أرغب في التَّسجيل في التَّدريب.')}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
@@ -240,18 +241,6 @@ export function TrainingCourses() {
           </div>
         </ScrollAnimation>
       </div>
-
-      <style>{`
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-pulse {
-            animation: none !important;
-          }
-        }
-      `}</style>
     </section>
   );
 }

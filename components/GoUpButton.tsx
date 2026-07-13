@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { useUI } from '../context/UIContext';
+import { throttle } from '../lib/utils';
+import { scrollToTop } from '../lib/scroll';
 
 export function GoUpButton() {
   const { isMobileMenuOpen, isReviewSheetOpen } = useUI();
   const [isVisible, setIsVisible] = useState(false);
 
-  // Determine if button should be hidden due to overlay UI
   const shouldHide = isMobileMenuOpen || isReviewSheetOpen;
 
   useEffect(() => {
@@ -21,14 +22,6 @@ export function GoUpButton() {
     return () => window.removeEventListener('scroll', throttledToggle);
   }, []);
 
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth',
-    });
-  };
-
-  // If hidden or not yet visible, render nothing
   if (shouldHide || !isVisible) {
     return null;
   }
@@ -58,31 +51,4 @@ export function GoUpButton() {
       </svg>
     </button>
   );
-}
-
-// Throttle utility for performance
-function throttle<T extends (...args: unknown[]) => unknown>(
-  func: T,
-  delay: number
-): (...args: Parameters<T>) => void {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  let lastExecTime = 0;
-
-  return (...args: Parameters<T>) => {
-    const currentTime = Date.now();
-
-    if (currentTime - lastExecTime > delay) {
-      func(...args);
-      lastExecTime = currentTime;
-    } else {
-      if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(
-        () => {
-          func(...args);
-          lastExecTime = Date.now();
-        },
-        delay - (currentTime - lastExecTime)
-      );
-    }
-  };
 }

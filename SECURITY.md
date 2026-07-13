@@ -14,6 +14,7 @@ Do not create public issues for security concerns. Report them directly to:
 ## Disclosure Policy
 
 We follow a coordinated disclosure process:
+
 1. Reporter submits vulnerability via email
 2. We acknowledge receipt within 48 hours
 3. We investigate and develop a fix
@@ -29,6 +30,7 @@ We follow a coordinated disclosure process:
 ## Scope
 
 This policy applies to the production website and its source code. The following are considered in scope:
+
 - Cross-site scripting (XSS)
 - Cross-site request forgery (CSRF)
 - Remote code execution (RCE)

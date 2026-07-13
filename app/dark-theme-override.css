@@ -2,86 +2,86 @@
 html,
 body,
 #root {
-  background-color: hsl(240 10% 8%) !important;
-  color: hsl(0 0% 95%) !important;
+  background-color: hsl(240 10% 8%);
+  color: hsl(0 0% 95%);
 }
 
 /* Backgrounds */
 .bg-background {
-  background-color: hsl(240 10% 8%) !important;
+  background-color: hsl(240 10% 8%);
 }
 .bg-card {
-  background-color: hsl(240 8% 12%) !important;
+  background-color: hsl(240 8% 12%);
 }
 .bg-card\/50 {
-  background-color: hsl(240 8% 12% / 0.5) !important;
+  background-color: hsl(240 8% 12% / 0.5);
 }
 .bg-card\/40 {
-  background-color: hsl(240 8% 12% / 0.4) !important;
+  background-color: hsl(240 8% 12% / 0.4);
 }
 .bg-secondary {
-  background-color: hsl(240 6% 18%) !important;
+  background-color: hsl(240 6% 18%);
 }
 .bg-muted {
-  background-color: hsl(240 5% 20%) !important;
+  background-color: hsl(240 5% 20%);
 }
 .bg-muted\/50 {
-  background-color: hsl(240 5% 20% / 0.5) !important;
+  background-color: hsl(240 5% 20% / 0.5);
 }
 .bg-accent {
-  background-color: hsl(240 6% 18%) !important;
+  background-color: hsl(240 6% 18%);
 }
 .bg-popover {
-  background-color: hsl(240 8% 12%) !important;
+  background-color: hsl(240 8% 12%);
 }
 
 /* Text Colors */
 .text-foreground {
-  color: hsl(0 0% 95%) !important;
+  color: hsl(0 0% 95%);
 }
 .text-foreground\/80 {
-  color: hsl(0 0% 95% / 0.8) !important;
+  color: hsl(0 0% 95% / 0.8);
 }
 .text-foreground\/70 {
-  color: hsl(0 0% 95% / 0.7) !important;
+  color: hsl(0 0% 95% / 0.7);
 }
 .text-foreground\/60 {
-  color: hsl(0 0% 95% / 0.6) !important;
+  color: hsl(0 0% 95% / 0.6);
 }
 .text-foreground\/50 {
-  color: hsl(0 0% 95% / 0.5) !important;
+  color: hsl(0 0% 95% / 0.5);
 }
 .text-foreground\/40 {
-  color: hsl(0 0% 95% / 0.4) !important;
+  color: hsl(0 0% 95% / 0.4);
 }
 .text-muted-foreground {
-  color: hsl(0 0% 65%) !important;
+  color: hsl(0 0% 65%);
 }
 .text-card-foreground {
-  color: hsl(0 0% 95%) !important;
+  color: hsl(0 0% 95%);
 }
 .text-popover-foreground {
-  color: hsl(0 0% 95%) !important;
+  color: hsl(0 0% 95%);
 }
 .text-secondary-foreground {
-  color: hsl(0 0% 95%) !important;
+  color: hsl(0 0% 95%);
 }
 .text-accent-foreground {
-  color: hsl(0 0% 95%) !important;
+  color: hsl(0 0% 95%);
 }
 
 /* Borders */
 .border-border {
-  border-color: hsl(240 5% 22%) !important;
+  border-color: hsl(240 5% 22%);
 }
 .border-border\/50 {
-  border-color: hsl(240 5% 22% / 0.5) !important;
+  border-color: hsl(240 5% 22% / 0.5);
 }
 .border-border\/30 {
-  border-color: hsl(240 5% 22% / 0.3) !important;
+  border-color: hsl(240 5% 22% / 0.3);
 }
 .border-input {
-  border-color: hsl(240 5% 22%) !important;
+  border-color: hsl(240 5% 22%);
 }
 
 /* Form Elements */
@@ -89,62 +89,62 @@ input,
 textarea,
 select,
 [data-slot='select-trigger'] {
-  background-color: hsl(240 8% 12%) !important;
-  color: hsl(0 0% 95%) !important;
-  border-color: hsl(240 5% 22%) !important;
+  background-color: hsl(240 8% 12%);
+  color: hsl(0 0% 95%);
+  border-color: hsl(240 5% 22%);
 }
 
 input::placeholder,
 textarea::placeholder {
-  color: hsl(0 0% 65%) !important;
+  color: hsl(0 0% 65%);
 }
 
 /* Select Components */
 [data-slot='select-content'] {
-  background-color: hsl(240 8% 12%) !important;
-  border-color: hsl(240 5% 22%) !important;
+  background-color: hsl(240 8% 12%);
+  border-color: hsl(240 5% 22%);
 }
 
 [data-slot='select-item'] {
-  color: hsl(0 0% 95%) !important;
+  color: hsl(0 0% 95%);
 }
 
 [data-slot='select-item']:hover {
-  background-color: hsl(240 6% 18%) !important;
+  background-color: hsl(240 6% 18%);
 }
 
 /* Dialog Components */
 [data-slot='dialog-content'] {
-  background-color: hsl(240 8% 12%) !important;
-  border-color: hsl(240 5% 22%) !important;
+  background-color: hsl(240 8% 12%);
+  border-color: hsl(240 5% 22%);
 }
 
 /* Button Components */
 [data-slot='button'] {
-  border-color: hsl(240 5% 22%) !important;
+  border-color: hsl(240 5% 22%);
 }
 
 /* Sections and Containers */
 section {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 nav {
-  background-color: hsl(240 10% 8% / 0.95) !important;
+  background-color: hsl(240 10% 8% / 0.95);
 }
 footer {
-  background-color: hsl(240 8% 12% / 0.5) !important;
+  background-color: hsl(240 8% 12% / 0.5);
 }
 
 /* Cards */
 [class*='card'],
 [class*='Card'] {
-  background-color: hsl(240 8% 12%) !important;
-  border-color: hsl(240 5% 22%) !important;
+  background-color: hsl(240 8% 12%);
+  border-color: hsl(240 5% 22%);
 }
 
 /* Backdrop Elements */
 .backdrop-blur-xl,
 .backdrop-blur-lg,
 .backdrop-blur-sm {
-  background-color: hsl(240 10% 8% / 0.8) !important;
+  background-color: hsl(240 10% 8% / 0.8);
 }

@@ -359,52 +359,6 @@ export function Certificate() {
           </m.div>
         </m.div>
       </div>
-
-      <style>{`
-        .certificate-container {
-          position: relative;
-          transform-style: preserve-3d;
-        }
-
-        .certificate-container::before {
-          content: '';
-          position: absolute;
-          inset: -3px;
-          background: linear-gradient(135deg, #7766EE, #A78BFA, #6366F1, #7766EE);
-          background-size: 300% 300%;
-          border-radius: 3rem;
-          opacity: 0;
-          transition: opacity 0.7s;
-          z-index: -1;
-          animation: gradient-shift 3s ease infinite;
-        }
-
-        .certificate-container:hover::before {
-          opacity: 0.4;
-          filter: blur(25px);
-        }
-
-        @keyframes gradient-shift {
-          0%, 100% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-        }
-
-        /* Reduced motion preferences */
-        @media (prefers-reduced-motion: reduce) {
-          .certificate-container::before {
-            animation: none;
-          }
-          
-          .certificate-container:hover::before {
-            opacity: 0.3;
-            filter: blur(20px);
-          }
-        }
-      `}</style>
     </section>
   );
 }

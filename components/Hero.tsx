@@ -3,7 +3,7 @@
 import { m } from 'framer-motion';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { HeroVisual } from './HeroVisual';
-import { useState, useEffect } from 'react';
+import { getWhatsAppUrl } from '../lib/constants';
 
 export function Hero() {
   const containerVariants = {
@@ -21,49 +21,18 @@ export function Hero() {
     },
   };
 
-  // Floating particles data - REDUCED COUNT & OPACITY for less noise
-  const [particles, setParticles] = useState<
-    Array<{
-      id: number;
-      size: number;
-      x: number;
-      y: number;
-      duration: number;
-      delay: number;
-    }>
-  >([]);
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-    setParticles(
-      Array.from({ length: 12 }, (_, i) => ({
-        id: i,
-        size: Math.random() * 3 + 1,
-        x: Math.random() * 100,
-        y: Math.random() * 100,
-        duration: Math.random() * 20 + 15,
-        delay: Math.random() * 5,
-      }))
-    );
-  }, []);
+  // Floating particles data - deterministic positions to avoid hydration mismatch
+  const particles = Array.from({ length: 12 }, (_, i) => ({
+    id: i,
+    size: ((i * 7 + 3) % 3) + 1,
+    x: (i * 13 + 7) % 100,
+    y: (i * 17 + 11) % 100,
+    duration: ((i * 23 + 5) % 20) + 15,
+    delay: (i * 11 + 3) % 5,
+  }));
 
   return (
     <>
-      <style>{`
-        .perspective-3d {
-          perspective: 1000px;
-        }
-        
-        @keyframes shine-slide {
-          from { transform: translateX(-100%); }
-          to { transform: translateX(100%); }
-        }
-        
-        .cta-shine:hover .shine-element {
-          animation: shine-slide 0.75s forwards;
-        }
-      `}</style>
       <section
         id="home"
         className="relative min-h-[90vh] flex items-center overflow-hidden pt-32 pb-12 lg:py-0"
@@ -76,30 +45,29 @@ export function Hero() {
           <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-primary-400 opacity-[0.03] blur-[120px] rounded-full" />
 
           {/* Floating Particles - Subtler */}
-          {isMounted &&
-            particles.map((particle) => (
-              <m.div
-                key={particle.id}
-                className="absolute rounded-full bg-white"
-                style={{
-                  width: particle.size,
-                  height: particle.size,
-                  left: `${particle.x}%`,
-                  top: `${particle.y}%`,
-                  opacity: 0.1, // Fixed low opacity base
-                }}
-                animate={{
-                  y: [0, -40, 0],
-                  opacity: [0.1, 0.3, 0.1],
-                }}
-                transition={{
-                  duration: particle.duration,
-                  delay: particle.delay,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
-              />
-            ))}
+          {particles.map((particle) => (
+            <m.div
+              key={particle.id}
+              className="absolute rounded-full bg-white"
+              style={{
+                width: particle.size,
+                height: particle.size,
+                left: `${particle.x}%`,
+                top: `${particle.y}%`,
+                opacity: 0.1, // Fixed low opacity base
+              }}
+              animate={{
+                y: [0, -40, 0],
+                opacity: [0.1, 0.3, 0.1],
+              }}
+              transition={{
+                duration: particle.duration,
+                delay: particle.delay,
+                repeat: Infinity,
+                ease: 'linear',
+              }}
+            />
+          ))}
         </div>
 
         <div className="max-w-7xl mx-auto container-padding relative z-10 w-full">
@@ -153,7 +121,7 @@ export function Hero() {
                 className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2 items-center w-full sm:w-auto"
               >
                 <a
-                  href="https://wa.me/963968478904?text=السَّلام عليكم ورحمة اللّٰه وبركاته."
+                  href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="group relative h-14 w-auto min-w-[200px] flex items-center justify-center px-8 rounded-full gradient-primary text-white text-lg font-bold transition-transform active:scale-95 cta-shine overflow-hidden"
