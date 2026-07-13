@@ -2,6 +2,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { WarningCircle } from '@phosphor-icons/react';
+import * as Sentry from '@sentry/nextjs';
 
 interface Props {
   children: ReactNode;
@@ -13,39 +14,25 @@ interface State {
   error: Error | null;
 }
 
-/**
- * Error Boundary Component
- * Catches JavaScript errors in child components and displays a fallback UI
- */
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = {
-      hasError: false,
-      error: null,
-    };
+    this.state = { hasError: false, error: null };
   }
 
   static getDerivedStateFromError(error: Error): State {
-    return {
-      hasError: true,
-      error,
-    };
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    // Log error to error reporting service in production
     if (process.env.NODE_ENV === 'production') {
-      console.error('Error caught by boundary:', error, errorInfo);
-      // TODO: Send to error tracking service (e.g., Sentry)
+      Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
     }
   }
 
   render() {
     if (this.state.hasError) {
-      if (this.props.fallback) {
-        return this.props.fallback;
-      }
+      if (this.props.fallback) return this.props.fallback;
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -76,7 +63,6 @@ export class ErrorBoundary extends Component<Props, State> {
         </div>
       );
     }
-
     return this.props.children;
   }
 }

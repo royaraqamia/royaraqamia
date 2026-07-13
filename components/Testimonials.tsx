@@ -375,6 +375,7 @@ export function Testimonials() {
               <div
                 className="content-spacing relative z-10 cursor-pointer"
                 onClick={() => setSelectedReview(index)}
+                role="presentation"
               >
                 <p className="text-foreground/80 leading-relaxed line-clamp-3 whitespace-normal break-words group-hover:text-foreground transition-colors duration-300">
                   &ldquo;{testimonial.content}&rdquo;
@@ -412,92 +413,31 @@ export function Testimonials() {
             <>
               {/* Overlay */}
               <div
-                style={{
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                  backdropFilter: 'blur(8px)',
-                  zIndex: 9998,
-                }}
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
                 onClick={closeReviewSheet}
+                tabIndex={-1}
+                role="presentation"
               />
 
               {/* Bottom Sheet */}
               <div
-                className="review-bottom-sheet"
+                className="review-bottom-sheet fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-[327px] max-h-[calc(100vh-100px)] bg-gradient-to-br from-[#020617] via-[#3b0764] to-[#0f172a] rounded-3xl shadow-2xl shadow-black/50 z-[9999] overflow-hidden flex flex-col animate-slide-up-bottom"
                 role="dialog"
                 aria-modal="true"
                 aria-label={`رأي ${review.name}`}
-                style={{
-                  position: 'fixed',
-                  bottom: '24px',
-                  left: '50%',
-                  transform: 'translateX(-50%)',
-                  width: 'calc(100% - 48px)',
-                  maxWidth: '327px',
-                  maxHeight: 'calc(100vh - 100px)',
-                  background: 'linear-gradient(135deg, #020617 0%, #3b0764 50%, #0f172a 100%)',
-                  borderRadius: '24px',
-                  boxShadow: '0 20px 60px rgba(0, 0, 0, 0.5)',
-                  zIndex: 9999,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  animation: 'slideUpFromBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-                }}
               >
                 {/* Header */}
                 <div
-                  style={{
-                    padding: '12px 16px',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-                    position: 'relative',
-                    flexShrink: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    direction: 'ltr',
-                  }}
+                  className="px-4 py-3 border-b border-white/10 relative shrink-0 flex items-center justify-start"
+                  dir="ltr"
                 >
                   {/* Drag handle */}
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: '8px',
-                      left: '50%',
-                      transform: 'translateX(-50%)',
-                      width: '48px',
-                      height: '4px',
-                      backgroundColor: 'rgba(255, 255, 255, 0.2)',
-                      borderRadius: '2px',
-                    }}
-                    className="md:hidden"
-                  />
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/20 rounded md:hidden" />
 
                   {/* Close button */}
                   <button
                     onClick={closeReviewSheet}
-                    style={{
-                      position: 'relative',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      padding: 0,
-                      background: 'transparent',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: 'rgba(255, 255, 255, 0.8)',
-                      transition: 'color 0.2s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = 'white';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'rgba(255, 255, 255, 0.8)';
-                    }}
+                    className="relative flex items-center justify-center p-0 bg-transparent border-none cursor-pointer text-white/80 hover:text-white transition-colors duration-200"
                     type="button"
                     aria-label="إغلاق"
                   >
@@ -506,59 +446,17 @@ export function Testimonials() {
                 </div>
 
                 {/* Content */}
-                <div
-                  className="custom-review-scrollbar"
-                  style={{
-                    padding: '24px',
-                    overflowY: 'auto',
-                    flex: 1,
-                    color: 'rgba(255, 255, 255, 0.9)',
-                  }}
-                >
-                  <p
-                    style={{
-                      fontSize: '16px',
-                      lineHeight: '1.6',
-                      marginBottom: '24px',
-                      whiteSpace: 'pre-wrap',
-                    }}
-                  >
+                <div className="custom-review-scrollbar p-6 overflow-y-auto flex-1 text-white/90">
+                  <p className="text-base leading-relaxed mb-6 whitespace-pre-wrap">
                     &ldquo;{review.content}&rdquo;
                   </p>
 
                   {/* Author */}
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '16px',
-                      paddingTop: '16px',
-                      borderTop: '1px solid rgba(255, 255, 255, 0.1)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                        background: 'linear-gradient(135deg, #7766EE 0%, #A78BFA 100%)',
-                        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
-                      }}
-                    >
+                  <div className="flex items-center gap-4 pt-4 border-t border-white/10">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-black/30">
                       <UserCircle className="w-7 h-7 text-white" />
                     </div>
-                    <h4
-                      style={{
-                        fontWeight: 'bold',
-                        color: 'white',
-                      }}
-                    >
-                      {review.name}
-                    </h4>
+                    <h4 className="font-bold text-white">{review.name}</h4>
                   </div>
                 </div>
               </div>

@@ -263,6 +263,8 @@ export function MobileMenu({
       <div
         className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
         onClick={handleClose}
+        tabIndex={-1}
+        role="presentation"
       />
 
       {/* Menu Panel */}

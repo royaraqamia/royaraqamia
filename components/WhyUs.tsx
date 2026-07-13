@@ -24,7 +24,6 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
   return (
     <div
       dir="rtl"
-      role="listitem"
       aria-labelledby={`reason-title-${index}`}
       className="group relative h-full rounded-2xl p-6 lg:p-8 border border-white/5 border-t-white/10 hover:-translate-y-1 hover:border-violet-500/30 hover:border-t-white/20 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 flex flex-col sm:flex-row sm:items-center items-start text-right gap-4 sm:gap-5 bg-[rgba(25,25,32,0.7)] hover:bg-[rgba(35,35,45,0.85)] backdrop-blur-[12px] will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background gradient-border-hover"
     >
@@ -39,12 +38,12 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
 
       {/* Content - Right Aligned */}
       <div className="text-right flex-1">
-        <h4
+        <h3
           id={`reason-title-${index}`}
           className="text-lg md:text-xl font-semibold text-white text-right mb-2"
         >
           {reason.title}
-        </h4>
+        </h3>
         <p className="text-sm md:text-base text-slate-300 leading-[1.8] text-right">
           {reason.description}
         </p>
@@ -135,7 +134,7 @@ export function WhyUs() {
         </ScrollAnimation>
 
         {/* Reasons Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8" role="list">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {reasons.map((reason, index) => {
             const delay = prefersReducedMotion ? 0 : index * 0.15;
             return (

@@ -1,6 +1,4 @@
 {
-  "css.customData": [".vscode/css_custom_data.json"],
-  "css.validate": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "editor.formatOnSave": true,
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],

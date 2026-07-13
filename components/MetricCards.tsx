@@ -125,12 +125,12 @@ export function MetricCards() {
                 </div>
 
                 {/* Label */}
-                <h3
+                <h2
                   className="text-lg lg:text-xl font-bold text-white mb-2 transition-all duration-300"
                   style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
                 >
                   {metric.label}
-                </h3>
+                </h2>
 
                 {/* Description */}
                 <p className="text-sm lg:text-base text-foreground/70 leading-relaxed">

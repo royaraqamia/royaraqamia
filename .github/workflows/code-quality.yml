@@ -26,11 +26,17 @@ jobs:
         with:
           node-version: '22'
 
+      - name: Format Check
+        run: npx prettier --check .
+
       - name: Lint
         run: npm run lint
 
       - name: Type Check
         run: npx tsc --noEmit
+
+      - name: Test
+        run: npm test
 
       - name: Build
         run: npm run build

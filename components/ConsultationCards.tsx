@@ -75,7 +75,7 @@ export function ConsultationCards() {
                   {/* Price - Top Left (appears on right in RTL) */}
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl md:text-5xl font-bold text-rose-400">$25</span>
-                    <span className="text-gray-400 text-lg">/ للسَّاعة</span>
+                    <span className="text-gray-300 text-lg">/ للسَّاعة</span>
                   </div>
 
                   {/* Badge - Top Right (appears on left in RTL) */}

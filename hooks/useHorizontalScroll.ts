@@ -31,8 +31,7 @@ export function useHorizontalScroll(scrollAmount = 400) {
       const el = scrollContainerRef.current;
       if (!el) return;
       const currentScroll = el.scrollLeft;
-      const newScrollLeft =
-        currentScroll + (direction === 'left' ? -scrollAmount : scrollAmount);
+      const newScrollLeft = currentScroll + (direction === 'left' ? -scrollAmount : scrollAmount);
       el.scrollTo({
         left: newScrollLeft,
         behavior: 'smooth',

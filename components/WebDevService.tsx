@@ -75,7 +75,7 @@ export function WebDevService() {
                       key={idx}
                       className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 hover:border-blue-500/30 transition-all duration-300"
                     >
-                      <h5 className="text-lg font-semibold text-blue-400 mb-2">{feature.title}</h5>
+                      <h4 className="text-lg font-semibold text-blue-400 mb-2">{feature.title}</h4>
                       <p className="text-sm text-slate-300">{feature.description}</p>
                     </div>
                   ))}
@@ -95,18 +95,18 @@ export function WebDevService() {
                       <Monitor className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
-                      <h4
+                      <h3
                         className="text-lg font-bold text-white"
                         style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
                       >
                         موقع بسيط
-                      </h4>
+                      </h3>
                       <p className="text-xs text-slate-400">Landing Page & Website</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-bold text-blue-400">$500</div>
-                    <div className="text-xs text-slate-500">بدءًا من</div>
+                    <div className="text-xs text-slate-400">بدءًا من</div>
                   </div>
                 </div>
               </div>
@@ -119,18 +119,18 @@ export function WebDevService() {
                       <Globe className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
-                      <h4
+                      <h3
                         className="text-lg font-bold text-white"
                         style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
                       >
                         تطبيق ويب
-                      </h4>
+                      </h3>
                       <p className="text-xs text-slate-400">Full-Stack Web App</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-bold text-blue-400">$1,000</div>
-                    <div className="text-xs text-slate-500">بدءًا من</div>
+                    <div className="text-xs text-slate-400">بدءًا من</div>
                   </div>
                 </div>
               </div>
@@ -143,18 +143,18 @@ export function WebDevService() {
                       <DeviceMobile className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
-                      <h4
+                      <h3
                         className="text-lg font-bold text-white"
                         style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
                       >
                         تطبيق موبايل
-                      </h4>
+                      </h3>
                       <p className="text-xs text-slate-400">Mobile App for Android & iOS</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-bold text-blue-400">$2,000</div>
-                    <div className="text-xs text-slate-500">بدءًا من</div>
+                    <div className="text-xs text-slate-400">بدءًا من</div>
                   </div>
                 </div>
               </div>

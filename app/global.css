@@ -720,6 +720,7 @@
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
+  position: relative;
 }
 
 .horizontal-scroll::-webkit-scrollbar {
@@ -1606,6 +1607,9 @@
     transform: translateX(-50%) translateY(0);
     opacity: 1;
   }
+}
+.animate-slide-up-bottom {
+  animation: slideUpFromBottom 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 .custom-review-scrollbar::-webkit-scrollbar {
   width: 8px;

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useState } from 'react';
 import { CaretLeft, CaretRight } from '@phosphor-icons/react';
@@ -108,18 +109,14 @@ export function Portfolio() {
               return (
                 <div key={index} className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[360px]">
                   <div className="relative group/card rounded-2xl overflow-hidden glass-card border border-white/10 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-500/30">
-                    <picture>
-                      <source srcSet={imagePath.webp} type="image/webp" />
-                      <img
-                        src={imagePath.png}
-                        alt={`Portfolio project ${index + 1}`}
-                        loading="lazy"
-                        width={360}
-                        height={240}
-                        className="w-full h-auto object-contain"
-                        onError={() => handleImageError(index)}
-                      />
-                    </picture>
+                    <Image
+                      src={imagePath.png}
+                      alt={`معرض أعمال رؤية رقمية - مشروع ${index + 1}`}
+                      width={360}
+                      height={240}
+                      className="w-full h-auto object-contain"
+                      onError={() => handleImageError(index)}
+                    />
                   </div>
                 </div>
               );

@@ -8,6 +8,7 @@ import { MotionProvider } from '../components/MotionProvider';
 import { UIProvider } from '../context/UIContext';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
+import { AccessibilityCheck } from '../components/AccessibilityCheck';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -89,6 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Analytics />
               {children}
               <Toaster position="top-center" richColors />
+              {process.env.NODE_ENV === 'development' && <AccessibilityCheck />}
             </UIProvider>
           </MotionProvider>
         </ErrorBoundary>

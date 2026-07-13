@@ -105,7 +105,7 @@ export function Footer() {
                 <LazyImage
                   src="/logo.png"
                   webpSrc="/logo.webp"
-                  alt="رؤية رقمية"
+                  alt=""
                   width={56}
                   height={56}
                   priority={true}
@@ -123,10 +123,10 @@ export function Footer() {
             </button>
 
             {/* Tagline */}
-            <p className="text-sm text-gray-400 leading-relaxed max-w-md">
+            <p className="text-sm text-gray-300 leading-relaxed max-w-md">
               شريكك الاستراتيجي للتَّحوُّل الرَّقمي ومضاعفة نجاحك
             </p>
-            <p className="text-sm text-gray-400 leading-relaxed max-w-md flex items-center justify-center gap-2 flex-wrap">
+            <p className="text-sm text-gray-300 leading-relaxed max-w-md flex items-center justify-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
                 <MapPinIcon className="w-4 h-4" />
                 حَلَب، سوريا
@@ -154,7 +154,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   aria-label={social.ariaLabel}
                   title={social.ariaLabel}
-                  className="w-10 h-10 rounded-xl bg-white/5 hover:bg-violet-500/20 hover:text-violet-400 border border-white/10 hover:border-violet-500/30 flex items-center justify-center transition-all duration-300 text-gray-400"
+                  className="w-10 h-10 rounded-xl bg-white/5 hover:bg-violet-500/20 hover:text-violet-400 border border-white/10 hover:border-violet-500/30 flex items-center justify-center transition-all duration-300 text-gray-300"
                 >
                   <Icon className="w-5 h-5 transition-all duration-300" weight="fill" />
                 </a>
@@ -165,10 +165,10 @@ export function Footer() {
 
         {/* Bottom Bar - Copyright */}
         <div className="border-t border-white/10 mt-10 pt-6">
-          <p className="text-sm text-gray-500 font-medium text-center">
+          <p className="text-sm text-gray-400 font-medium text-center">
             © {formatHijriDate(new Date(), { year: 'numeric', month: undefined, day: undefined })}
             <span className="mx-2 text-violet-500/40">•</span>
-            <span className="text-gray-400">رؤية رقمية</span>
+            <span className="text-gray-300">رؤية رقمية</span>
             <span className="mx-2 text-violet-500/40">•</span>
             جميع الحقوق محفوظة
           </p>
