@@ -40,3 +40,5 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
