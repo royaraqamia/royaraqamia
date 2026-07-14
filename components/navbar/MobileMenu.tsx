@@ -358,9 +358,6 @@ export function MobileMenu({
 
           {/* Footer */}
           <footer className="px-5 pt-5 pb-10 shrink-0">
-            {/* Auth Button */}
-            <div className="mb-5"></div>
-
             {/* CTA Button */}
             <a
               href={getWhatsAppUrl()}

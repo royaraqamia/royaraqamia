@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Code, Rocket, ShieldCheck, DeviceMobile, Monitor, Globe } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { WHATSAPP_PHONE } from '../lib/constants';
+import { SectionBackground } from './SectionBackground';
 
 export function WebDevService() {
   const benefits = [
@@ -22,10 +23,32 @@ export function WebDevService() {
 
   return (
     <section id="web-dev-service" className="section-spacing relative overflow-hidden">
-      {/* Background with Blue Gradients */}
       <div className="absolute inset-0 bg-[#0B0F19] z-0">
-        <div className="absolute top-0 left-0 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-blue-500/10 rounded-full blur-[100px] -translate-y-1/2 -translate-x-1/4 animate-pulse-slow" />
-        <div className="absolute bottom-0 right-0 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-blue-600/10 rounded-full blur-[100px] translate-y-1/3 translate-x-1/4 animate-pulse-slow delay-1000" />
+        <SectionBackground
+          blobs={[
+            {
+              top: '0',
+              left: '0',
+              width: '400px',
+              height: '400px',
+              background: 'rgba(59, 130, 246, 0.1)',
+              filter: 'blur(100px)',
+              transform: 'translate(-25%, -50%)',
+              animation: 'pulse-slow 4s ease-in-out infinite',
+            },
+            {
+              bottom: '0',
+              right: '0',
+              width: '400px',
+              height: '400px',
+              background: 'rgba(37, 99, 235, 0.1)',
+              filter: 'blur(100px)',
+              transform: 'translate(25%, 33%)',
+              animation: 'pulse-slow 4s ease-in-out infinite',
+              animationDelay: '1s',
+            },
+          ]}
+        />
       </div>
 
       <div className="max-w-7xl mx-auto container-padding relative z-10">

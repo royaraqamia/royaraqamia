@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Component, ErrorInfo, ReactNode } from 'react';
 import { WarningCircle } from '@phosphor-icons/react';
 import * as Sentry from '@sentry/nextjs';
 

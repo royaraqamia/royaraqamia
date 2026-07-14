@@ -17,7 +17,7 @@
 
 ## المتطلبات (Prerequisites)
 
-- **Node.js** >= 18.x (recommended: 22.x)
+- **Node.js** >= 22.x (recommended: 22.x)
 - **npm** >= 9.x
 
 ## التثبيت والتشغيل (Setup)
@@ -38,14 +38,16 @@ npm run dev
 
 ## الأوامر المتاحة (Available Scripts)
 
-| الأمر              | الوصف                         |
-| ------------------ | ----------------------------- |
-| `npm run dev`      | تشغيل خادم التطوير            |
-| `npm run build`    | بناء المشروع للإنتاج          |
-| `npm start`        | تشغيل خادم الإنتاج            |
-| `npm run lint`     | فحص الكود باستخدام ESLint     |
-| `npm run lint:fix` | إصلاح أخطاء ESLint تلقائيًا   |
-| `npm run format`   | تنسيق الكود باستخدام Prettier |
+| الأمر                | الوصف                         |
+| -------------------- | ----------------------------- |
+| `npm run dev`        | تشغيل خادم التطوير            |
+| `npm run build`      | بناء المشروع للإنتاج          |
+| `npm start`          | تشغيل خادم الإنتاج            |
+| `npm run lint`       | فحص الكود باستخدام ESLint     |
+| `npm run lint:fix`   | إصلاح أخطاء ESLint تلقائيًا   |
+| `npm run format`     | تنسيق الكود باستخدام Prettier |
+| `npm test`           | تشغيل الاختبارات (مرة واحدة)  |
+| `npm run test:watch` | تشغيل الاختبارات بالمشاهدة    |
 
 ## متغيرات البيئة (Environment Variables)
 

@@ -1,6 +1,12 @@
+@import './fonts.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.font-aref-ruqaa {
+  font-family: 'Aref Ruqaa', serif;
+}
 
 @layer base {
   :root {
@@ -42,68 +48,6 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
   }
-}
-
-@font-face {
-  font-family: 'IBM Plex Sans Arabic';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/IBM Plex Sans Arabic/IBMPlexSansArabic-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'IBM Plex Sans Arabic';
-  font-style: normal;
-  font-weight: 600;
-  font-display: swap;
-  src: url('/fonts/IBM Plex Sans Arabic/IBMPlexSansArabic-SemiBold.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'IBM Plex Sans Arabic';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/IBM Plex Sans Arabic/IBMPlexSansArabic-Bold.ttf') format('truetype');
-}
-
-.font-aref-ruqaa {
-  font-family: 'Aref Ruqaa', serif;
-}
-
-@font-face {
-  font-family: 'Aref Ruqaa';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/Aref Ruqaa/ArefRuqaa-Regular.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Aref Ruqaa';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/Aref Ruqaa/ArefRuqaa-Bold.ttf') format('truetype');
-}
-
-@font-face {
-  font-family: 'Aref Ruqaa Numbers';
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url('/fonts/Aref Ruqaa/ArefRuqaa-Regular.ttf') format('truetype');
-  unicode-range: U+0030-0039;
-}
-
-@font-face {
-  font-family: 'Aref Ruqaa Numbers';
-  font-style: normal;
-  font-weight: 700;
-  font-display: swap;
-  src: url('/fonts/Aref Ruqaa/ArefRuqaa-Bold.ttf') format('truetype');
-  unicode-range: U+0030-0039;
 }
 
 @layer base {

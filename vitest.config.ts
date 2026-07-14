@@ -7,6 +7,9 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
+    env: {
+      NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904',
+    },
   },
   resolve: {
     alias: {

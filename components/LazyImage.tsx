@@ -14,28 +14,32 @@ interface LazyImageProps {
   priority?: boolean;
 }
 
-let webpSupportedCache: boolean | null = null;
-let webpCheckInitiated = false;
-const webpResolveQueue: Array<(value: boolean) => void> = [];
+const webpSupport = (() => {
+  let cached: boolean | null = null;
+  let initiated = false;
+  const queue: Array<(value: boolean) => void> = [];
 
-function getWebpSupport(): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (webpSupportedCache !== null) {
-      resolve(webpSupportedCache);
-      return;
-    }
-    webpResolveQueue.push(resolve);
-    if (webpCheckInitiated) return;
-    webpCheckInitiated = true;
-    const webP = new Image();
-    webP.onload = webP.onerror = () => {
-      webpSupportedCache = webP.height === 2;
-      webpResolveQueue.splice(0).forEach((fn) => fn(webpSupportedCache!));
-    };
-    webP.src =
-      'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
-  });
-}
+  return {
+    check(): Promise<boolean> {
+      return new Promise((resolve) => {
+        if (cached !== null) {
+          resolve(cached);
+          return;
+        }
+        queue.push(resolve);
+        if (initiated) return;
+        initiated = true;
+        const webP = new Image();
+        webP.onload = webP.onerror = () => {
+          cached = webP.height === 2;
+          queue.splice(0).forEach((fn) => fn(cached!));
+        };
+        webP.src =
+          'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
+      });
+    },
+  };
+})();
 
 export function LazyImage({
   src,
@@ -55,7 +59,7 @@ export function LazyImage({
   const imgRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    getWebpSupport().then(setWebpSupported);
+    webpSupport.check().then(setWebpSupported);
   }, []);
 
   useEffect(() => {

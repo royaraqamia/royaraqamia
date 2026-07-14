@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect } from 'react';
 import {
   LinkedinLogoIcon,
   InstagramLogoIcon,
@@ -9,6 +10,7 @@ import {
 import { usePathname, useRouter } from 'next/navigation';
 import { LazyImage } from './LazyImage';
 import { formatHijriDate } from '../lib/utils';
+import { scrollToSection, scrollToSectionAfterNavigation } from '../lib/scroll';
 
 const TelegramIcon = ({
   size = '1em',
@@ -50,40 +52,21 @@ const socialLinks = [
 export function Footer() {
   const pathname = usePathname();
   const router = useRouter();
+  const scrollCancelRef = useRef<{ cancel: () => void } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      scrollCancelRef.current?.cancel();
+    };
+  }, []);
 
   const scrollToHero = () => {
+    scrollCancelRef.current?.cancel();
+
     if (pathname !== '/') {
-      router.push('/');
-      // Wait for navigation to complete, then scroll
-      setTimeout(() => {
-        const heroSection = document.getElementById('home');
-        if (heroSection) {
-          const navbar = document.querySelector('nav');
-          const navbarHeight = navbar ? navbar.offsetHeight : 80;
-          const offset = navbarHeight + 20;
-          const sectionTop = heroSection.getBoundingClientRect().top + window.scrollY;
-          const offsetPosition = sectionTop - offset;
-
-          window.scrollTo({
-            top: offsetPosition,
-            behavior: 'smooth',
-          });
-        }
-      }, 300);
+      scrollCancelRef.current = scrollToSectionAfterNavigation('home', () => router.push('/'));
     } else {
-      const heroSection = document.getElementById('home');
-      if (heroSection) {
-        const navbar = document.querySelector('nav');
-        const navbarHeight = navbar ? navbar.offsetHeight : 80;
-        const offset = navbarHeight + 20;
-        const sectionTop = heroSection.getBoundingClientRect().top + window.scrollY;
-        const offsetPosition = sectionTop - offset;
-
-        window.scrollTo({
-          top: offsetPosition,
-          behavior: 'smooth',
-        });
-      }
+      scrollToSection('home');
     }
   };
 

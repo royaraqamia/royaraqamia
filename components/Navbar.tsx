@@ -6,19 +6,24 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../context/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
 import { MobileMenu } from './navbar/MobileMenu';
-import { scrollToSection } from '../lib/scroll';
+import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '../lib/scroll';
 
 export function Navbar() {
   const { isMobileMenuOpen, setIsMobileMenuOpen, isReviewSheetOpen } = useUI();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollYRef = useRef(0);
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const postNavTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollCancelRef = useRef<{ cancel: () => void } | null>(null);
 
   const pathname = usePathname();
   const router = useRouter();
   const isHomePage = pathname === '/';
+
+  useEffect(() => {
+    return () => {
+      scrollCancelRef.current?.cancel();
+    };
+  }, []);
 
   useEffect(() => {
     let ticking = false;
@@ -51,46 +56,26 @@ export function Navbar() {
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
-      if (postNavTimeoutRef.current) clearTimeout(postNavTimeoutRef.current);
     };
   }, [isReviewSheetOpen]);
-
-  // Section Visibility (Intersection Observer)
-  // TODO: Implement IntersectionObserver for section detection if needed
-  // Currently relying on scroll position for navbar styling
 
   // Scroll Helpers
   const handleHashClick = (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
     e.preventDefault();
+    scrollCancelRef.current?.cancel();
+
     const cleanHash = hash.startsWith('/') ? hash.substring(1) : hash;
     const sectionId = cleanHash.replace('#', '');
 
     if (isHomePage) {
-      const attemptScroll = (retries = 5) => {
-        if (!scrollToSection(sectionId) && retries > 0) {
-          scrollTimeoutRef.current = setTimeout(() => attemptScroll(retries - 1), 200);
-        }
-      };
-      attemptScroll();
+      scrollCancelRef.current = scrollToSectionWithRetry(sectionId, 5, 200);
     } else {
-      router.push('/');
-      postNavTimeoutRef.current = setTimeout(() => {
-        window.location.hash = sectionId;
-        const attemptScroll = (retries = 10) => {
-          const el = document.getElementById(sectionId);
-          if (el) {
-            const navbarHeight = 80;
-            window.scrollTo({
-              top: el.getBoundingClientRect().top + window.pageYOffset - (navbarHeight + 20),
-              behavior: 'smooth',
-            });
-          } else if (retries > 0) {
-            postNavTimeoutRef.current = setTimeout(() => attemptScroll(retries - 1), 100);
-          }
-        };
-        attemptScroll();
-      }, 300);
+      scrollCancelRef.current = scrollToSectionAfterNavigation(
+        sectionId,
+        () => router.push('/'),
+        10,
+        100
+      );
     }
 
     setIsMobileMenuOpen(false);

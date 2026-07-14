@@ -70,16 +70,14 @@ export function DesktopNav({
     };
   }, [isServicesDropdownOpen, isProductsDropdownOpen]);
 
+  // Flush timeout refs on unmount to prevent stale callbacks
   useEffect(() => {
     return () => {
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      const servicesTimeout = servicesTimeoutRef.current;
+      if (servicesTimeoutRef.current) clearTimeout(servicesTimeoutRef.current);
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      const productsTimeout = productsTimeoutRef.current;
-      if (servicesTimeout) clearTimeout(servicesTimeout);
-      if (productsTimeout) clearTimeout(productsTimeout);
+      if (productsTimeoutRef.current) clearTimeout(productsTimeoutRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const scrollToHomeNode = () => {

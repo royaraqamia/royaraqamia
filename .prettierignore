@@ -8,3 +8,4 @@ coverage/
 .vercel/
 public/
 *.min.js
+package-lock.json

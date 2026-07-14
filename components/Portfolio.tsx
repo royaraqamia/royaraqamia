@@ -3,8 +3,9 @@
 import Image from 'next/image';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useState } from 'react';
-import { CaretLeft, CaretRight } from '@phosphor-icons/react';
 import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
+import { HorizontalScrollArrows } from './HorizontalScrollArrows';
+import { SectionBackground } from './SectionBackground';
 
 const PORTFOLIO_IMAGE_COUNT = 25;
 const IMAGE_FILENAME_PADDING = 2;
@@ -20,7 +21,6 @@ const PORTFOLIO_IMAGES = Array.from({ length: PORTFOLIO_IMAGE_COUNT }, (_, i) =>
 export function Portfolio() {
   const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(400);
   const [imageError, setImageError] = useState<Set<number>>(new Set());
-  const [hoveredArrow, setHoveredArrow] = useState<'left' | 'right' | null>(null);
 
   const handleImageError = (index: number) => {
     setImageError((prev) => new Set(prev).add(index));
@@ -28,11 +28,43 @@ export function Portfolio() {
 
   return (
     <section id="portfolio" className="section-spacing relative overflow-hidden">
-      {/* Background with Purple/Blue Gradients */}
       <div className="absolute inset-0 bg-[#0B0F19] z-0">
-        <div className="absolute top-0 left-0 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-purple-500/10 rounded-full blur-[100px] -translate-y-1/2 -translate-x-1/4 animate-pulse-slow" />
-        <div className="absolute bottom-0 right-0 w-[400px] md:w-[600px] h-[400px] md:h-[600px] bg-blue-500/10 rounded-full blur-[100px] translate-y-1/3 translate-x-1/4 animate-pulse-slow delay-1000" />
-        <div className="absolute top-1/2 left-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-teal-500/5 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 animate-pulse-slow delay-2000" />
+        <SectionBackground
+          blobs={[
+            {
+              top: '0',
+              left: '0',
+              width: '400px',
+              height: '400px',
+              background: 'rgba(168, 85, 247, 0.1)',
+              filter: 'blur(100px)',
+              transform: 'translate(-25%, -50%)',
+              animation: 'pulse-slow 4s ease-in-out infinite',
+            },
+            {
+              bottom: '0',
+              right: '0',
+              width: '400px',
+              height: '400px',
+              background: 'rgba(59, 130, 246, 0.1)',
+              filter: 'blur(100px)',
+              transform: 'translate(25%, 33%)',
+              animation: 'pulse-slow 4s ease-in-out infinite',
+              animationDelay: '1s',
+            },
+            {
+              top: '50%',
+              left: '50%',
+              width: '300px',
+              height: '300px',
+              background: 'rgba(20, 184, 166, 0.05)',
+              filter: 'blur(120px)',
+              transform: 'translate(-50%, -50%)',
+              animation: 'pulse-slow 4s ease-in-out infinite',
+              animationDelay: '2s',
+            },
+          ]}
+        />
       </div>
 
       <div className="max-w-7xl mx-auto container-padding relative z-10">
@@ -52,43 +84,13 @@ export function Portfolio() {
       {/* Portfolio Horizontal Scroll - Full Width with Edge Navigation */}
       <ScrollAnimation animation="slide-up" duration={0.7} delay={0.2}>
         <div className="relative w-full group/scroll">
-          {/* Left Navigation Arrow - Desktop */}
-          {canScrollLeft && (
-            <button
-              onClick={() => scroll('left')}
-              className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
-              onMouseEnter={() => setHoveredArrow('left')}
-              onMouseLeave={() => setHoveredArrow(null)}
-              style={{
-                backgroundColor: hoveredArrow === 'left' ? '#7766EE' : 'rgba(0, 0, 0, 0.6)',
-                borderColor: hoveredArrow === 'left' ? '#7766EE' : 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(8px)',
-              }}
-              aria-label="التالي"
-              type="button"
-            >
-              <CaretLeft className="w-6 h-6 text-white" />
-            </button>
-          )}
-
-          {/* Right Navigation Arrow - Desktop */}
-          {canScrollRight && (
-            <button
-              onClick={() => scroll('right')}
-              className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110"
-              onMouseEnter={() => setHoveredArrow('right')}
-              onMouseLeave={() => setHoveredArrow(null)}
-              style={{
-                backgroundColor: hoveredArrow === 'right' ? '#7766EE' : 'rgba(0, 0, 0, 0.6)',
-                borderColor: hoveredArrow === 'right' ? '#7766EE' : 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(8px)',
-              }}
-              aria-label="السابق"
-              type="button"
-            >
-              <CaretRight className="w-6 h-6 text-white" />
-            </button>
-          )}
+          <HorizontalScrollArrows
+            onScroll={scroll}
+            canScrollLeft={canScrollLeft}
+            canScrollRight={canScrollRight}
+            ariaLabelLeft="التالي"
+            ariaLabelRight="السابق"
+          />
 
           {/* Scroll Container */}
           <div

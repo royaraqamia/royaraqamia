@@ -7,7 +7,7 @@ const { withSentryConfig } = require('@sentry/nextjs');
 /** @type {import('next').NextConfig} */
 const csp = `
 default-src 'self';
-script-src 'self' 'unsafe-inline' 'unsafe-eval';
+script-src 'self' 'unsafe-inline';
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com data:;
 img-src 'self' data: https: blob:;
@@ -22,7 +22,7 @@ upgrade-insecure-requests;
 const requiredEnvVars = ['NEXT_PUBLIC_WHATSAPP_PHONE'];
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {
-    console.warn(`⚠ Missing environment variable: ${envVar}`);
+    throw new Error(`Missing required environment variable: ${envVar}`);
   }
 }
 

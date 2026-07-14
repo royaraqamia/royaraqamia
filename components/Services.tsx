@@ -1,217 +1,91 @@
 'use client';
 
-import {
-  ChatCircle,
-  Check,
-  Code,
-  Lightbulb,
-  Storefront,
-  GraduationCap,
-} from '@phosphor-icons/react';
+import { ChatCircle, Code, Lightbulb, Storefront, GraduationCap } from '@phosphor-icons/react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useUI } from '../context/UIContext';
+import { ServiceCard } from './services/ServiceCard';
+import type { ColorKey } from './services/colorConfigs';
 
-const colorConfigs = {
-  teal: {
-    gradient: 'linear-gradient(135deg, #14B8A6 0%, #0891B2 100%)',
-    accentBorder: '#14B8A6',
-    hoverGradient: 'linear-gradient(90deg, #14B8A6, #0891B2, #14B8A6)',
-    glowColor: 'rgba(20, 184, 166, 0.3)',
+interface ServiceItem {
+  icon: typeof ChatCircle;
+  title: string;
+  description: string;
+  features: string[];
+  pricing: {
+    cta: string;
+  };
+  colorKey: ColorKey;
+  shadowColor: string;
+  hoverShadow: string;
+  href: string;
+  categories: ('merchants' | 'students')[];
+}
+
+const services: ServiceItem[] = [
+  {
+    icon: ChatCircle,
+    title: 'التَّدريب',
+    description:
+      'المسار التَّدريبي العربي المتكامل الذي يعلِّمك بناء موقع إلكتروني أو تطبيق دون كتابة كود.',
+    features: [
+      'يدرِّبك خبير متخصِّص في المجال',
+      'لا تحتاج لكتابة أي سطر كود',
+      'التَّدريب أونلاين مع مجموعة',
+    ],
+    pricing: { cta: 'قراءة المزيد' },
+    colorKey: 'teal',
+    shadowColor: 'shadow-teal-500/30',
+    hoverShadow: 'group-hover/item:shadow-teal-500/50',
+    href: '#training',
+    categories: ['students'],
   },
-  orange: {
-    gradient: 'linear-gradient(135deg, #F97316 0%, #D97706 100%)',
-    accentBorder: '#F97316',
-    hoverGradient: 'linear-gradient(90deg, #F97316, #D97706, #F97316)',
-    glowColor: 'rgba(249, 115, 22, 0.3)',
+  {
+    icon: Lightbulb,
+    title: 'الاستشارات',
+    description: 'نختصر عليك سنوات من البحث ونمنحك الخلاصة التِّقنيَّة والعمليَّة بصدق وأمانة.',
+    features: [
+      'استشارة متخصِّصة بالمواقع والتَّطبيقات',
+      'نُجنِّبك خسائر الوقت والمال',
+      'الاستشارة فرديَّة أونلاين صوتيَّة',
+    ],
+    pricing: { cta: 'قراءة المزيد' },
+    colorKey: 'rose',
+    shadowColor: 'shadow-rose-500/30',
+    hoverShadow: 'group-hover/item:shadow-rose-500/50',
+    href: '#consultation',
+    categories: ['students'],
   },
-  blue: {
-    gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
-    accentBorder: '#3B82F6',
-    hoverGradient: 'linear-gradient(90deg, #3B82F6, #2563EB, #3B82F6)',
-    glowColor: 'rgba(59, 130, 246, 0.3)',
+  {
+    icon: Code,
+    title: 'بناء مواقع إلكترونيَّة وتطبيقات',
+    description:
+      'خدمات تطوير متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق. نبني حلول رقميَّة قابلة للتَّوسُّع، آمنة، وسهلة الاستخدام.',
+    features: [
+      'تطوير متكامل من الألف إلى الياء',
+      'تقنيات حديثة وأفضل الممارسات',
+      'بنية آمنة وقابلة للتَّوسُّع',
+    ],
+    pricing: { cta: 'قراءة المزيد' },
+    colorKey: 'blue',
+    shadowColor: 'shadow-violet-500/30',
+    hoverShadow: 'group-hover/item:shadow-violet-500/50',
+    href: '#web-dev-service',
+    categories: ['merchants'],
   },
-  pink: {
-    gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
-    accentBorder: '#EC4899',
-    hoverGradient: 'linear-gradient(90deg, #EC4899, #DB2777, #EC4899)',
-    glowColor: 'rgba(236, 72, 153, 0.3)',
-  },
-  emerald: {
-    gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
-    accentBorder: '#10B981',
-    hoverGradient: 'linear-gradient(90deg, #10B981, #059669, #10B981)',
-    glowColor: 'rgba(16, 185, 129, 0.3)',
-  },
-  violet: {
-    gradient: 'linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%)',
-    accentBorder: '#8B5CF6',
-    hoverGradient: 'linear-gradient(90deg, #8B5CF6, #7C3AED, #8B5CF6)',
-    glowColor: 'rgba(139, 92, 246, 0.3)',
-  },
-  purple: {
-    gradient: 'linear-gradient(135deg, #A855F7 0%, #6366F1 100%)',
-    accentBorder: '#A855F7',
-    hoverGradient: 'linear-gradient(90deg, #A855F7, #6366F1, #A855F7)',
-    glowColor: 'rgba(168, 85, 247, 0.3)',
-  },
-  amber: {
-    gradient: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
-    accentBorder: '#F59E0B',
-    hoverGradient: 'linear-gradient(90deg, #F59E0B, #D97706, #F59E0B)',
-    glowColor: 'rgba(245, 158, 11, 0.3)',
-  },
-  rose: {
-    gradient: 'linear-gradient(135deg, #F43F5E 0%, #E11D48 100%)',
-    accentBorder: '#F43F5E',
-    hoverGradient: 'linear-gradient(90deg, #F43F5E, #E11D48, #F43F5E)',
-    glowColor: 'rgba(244, 63, 94, 0.3)',
-  },
-  cyan: {
-    gradient: 'linear-gradient(135deg, #06B6D4 0%, #0891B2 100%)',
-    accentBorder: '#06B6D4',
-    hoverGradient: 'linear-gradient(90deg, #06B6D4, #0891B2, #06B6D4)',
-    glowColor: 'rgba(6, 182, 212, 0.3)',
-  },
-  indigo: {
-    gradient: 'linear-gradient(135deg, #6366F1 0%, #4F46E5 100%)',
-    accentBorder: '#6366F1',
-    hoverGradient: 'linear-gradient(90deg, #6366F1, #4F46E5, #6366F1)',
-    glowColor: 'rgba(99, 102, 241, 0.3)',
-  },
-  lime: {
-    gradient: 'linear-gradient(135deg, #84CC16 0%, #65A30D 100%)',
-    accentBorder: '#84CC16',
-    hoverGradient: 'linear-gradient(90deg, #84CC16, #65A30D, #84CC16)',
-    glowColor: 'rgba(132, 204, 22, 0.3)',
-  },
-  coral: {
-    gradient: 'linear-gradient(135deg, #FB7185 0%, #F43F5E 100%)',
-    accentBorder: '#FB7185',
-    hoverGradient: 'linear-gradient(90deg, #FB7185, #F43F5E, #FB7185)',
-    glowColor: 'rgba(251, 113, 133, 0.3)',
-  },
-};
+];
+
+const tabs: { id: 'merchants' | 'students'; label: string; icon: React.ElementType }[] = [
+  { id: 'merchants', label: 'للتُّجَّار ومقدِّمي الخدمات', icon: Storefront },
+  { id: 'students', label: 'للطُّلاب والخرِّيجين الجدد', icon: GraduationCap },
+];
 
 export function Services() {
-  type ServiceType = {
-    icon: typeof ChatCircle;
-    title: string;
-    description: string;
-    features: string[];
-    pricing: {
-      cta: string;
-      monthly?: string;
-      yearly?: string;
-      training?: string;
-      consultation?: string;
-      free?: string;
-      employer?: string;
-      small?: string;
-      large?: string;
-      oneTime?: string;
-      basic?: string;
-      webapp?: string;
-      mobile?: string;
-    };
-    colorKey:
-      | 'teal'
-      | 'orange'
-      | 'blue'
-      | 'pink'
-      | 'emerald'
-      | 'violet'
-      | 'purple'
-      | 'amber'
-      | 'rose'
-      | 'cyan'
-      | 'indigo'
-      | 'lime'
-      | 'coral';
-    shadowColor: string;
-    hoverShadow: string;
-    href: string;
-    categories: ('merchants' | 'students')[];
-  };
-
-  const services: ServiceType[] = [
-    {
-      icon: ChatCircle,
-      title: 'التَّدريب',
-      description:
-        'المسار التَّدريبي العربي المتكامل الذي يعلِّمك بناء موقع إلكتروني أو تطبيق دون كتابة كود.',
-      features: [
-        'يدرِّبك خبير متخصِّص في المجال',
-        'لا تحتاج لكتابة أي سطر كود',
-        'التَّدريب أونلاين مع مجموعة',
-      ],
-      pricing: {
-        cta: 'قراءة المزيد',
-      },
-      colorKey: 'teal' as const,
-      shadowColor: 'shadow-teal-500/30',
-      hoverShadow: 'group-hover/item:shadow-teal-500/50',
-      href: '#training',
-      categories: ['students'],
-    },
-    {
-      icon: Lightbulb,
-      title: 'الاستشارات',
-      description: 'نختصر عليك سنوات من البحث ونمنحك الخلاصة التِّقنيَّة والعمليَّة بصدق وأمانة.',
-      features: [
-        'استشارة متخصِّصة بالمواقع والتَّطبيقات',
-        'نُجنِّبك خسائر الوقت والمال',
-        'الاستشارة فرديَّة أونلاين صوتيَّة',
-      ],
-      pricing: {
-        cta: 'قراءة المزيد',
-      },
-      colorKey: 'rose' as const,
-      shadowColor: 'shadow-rose-500/30',
-      hoverShadow: 'group-hover/item:shadow-rose-500/50',
-      href: '#consultation',
-      categories: ['students'],
-    },
-
-    {
-      icon: Code,
-      title: 'بناء مواقع إلكترونيَّة وتطبيقات',
-      description:
-        'خدمات تطوير متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق. نبني حلول رقميَّة قابلة للتَّوسُّع، آمنة، وسهلة الاستخدام.',
-      features: [
-        'تطوير متكامل من الألف إلى الياء',
-        'تقنيات حديثة وأفضل الممارسات',
-        'بنية آمنة وقابلة للتَّوسُّع',
-      ],
-      pricing: {
-        cta: 'قراءة المزيد',
-      },
-      colorKey: 'blue' as const,
-      shadowColor: 'shadow-violet-500/30',
-      hoverShadow: 'group-hover/item:shadow-violet-500/50',
-      href: '#web-dev-service',
-      categories: ['merchants'],
-    },
-  ];
-
-  const tabs: { id: 'merchants' | 'students'; label: string; icon: React.ElementType }[] = [
-    { id: 'merchants', label: 'للتُّجَّار ومقدِّمي الخدمات', icon: Storefront },
-    { id: 'students', label: 'للطُّلاب والخرِّيجين الجدد', icon: GraduationCap },
-  ];
-
-  const getTabCount = (tabId: 'merchants' | 'students') => {
-    return services.filter((s) => s.categories.includes(tabId)).length;
-  };
-
   const { activeServicesTab, setActiveServicesTab } = useUI();
-
-  const filteredServices = services.filter((service) =>
-    service.categories.includes(activeServicesTab)
-  );
+  const filteredServices = services.filter((s) => s.categories.includes(activeServicesTab));
 
   return (
     <section id="services" className="section-spacing">
-      {/* Animated Background Blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary-600 opacity-[0.07] rounded-full blur-3xl animate-pulse"
@@ -236,7 +110,6 @@ export function Services() {
       </div>
 
       <div className="max-w-7xl mx-auto container-padding">
-        {/* Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center max-w-3xl mx-auto section-header">
             <h2
@@ -251,15 +124,13 @@ export function Services() {
           </div>
         </ScrollAnimation>
 
-        {/* Tabs */}
         <div className="py-2">
-          {/* Mobile scroll fade indicator */}
           <div className="absolute left-0 top-0 bottom-0 w-12 bg-gradient-to-r from-background to-transparent pointer-events-none sm:hidden z-10" />
           <div className="flex overflow-x-auto justify-start sm:justify-center gap-2 p-2 scrollbar-hide sm:flex-wrap bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm max-w-7xl mx-auto container-padding">
             {tabs.map((tab) => {
               const TabIcon = tab.icon;
               const isActive = activeServicesTab === tab.id;
-              const count = getTabCount(tab.id);
+              const count = services.filter((s) => s.categories.includes(tab.id)).length;
               return (
                 <button
                   key={tab.id}
@@ -269,9 +140,7 @@ export function Services() {
                       ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30 scale-105 border border-primary-500/50'
                       : 'text-foreground/70 hover:bg-white/10 hover:text-foreground border border-transparent hover:border-white/20'
                   }`}
-                  style={{
-                    fontFamily: "'IBM Plex Sans Arabic', sans-serif",
-                  }}
+                  style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
                 >
                   <TabIcon
                     className={`w-4 h-4 sm:w-4 sm:h-4 transition-all duration-300 ${isActive ? 'drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]' : ''}`}
@@ -289,7 +158,6 @@ export function Services() {
           </div>
         </div>
 
-        {/* Services Grid Container */}
         <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mt-8">
           <AnimatePresence mode="wait">
             <motion.div
@@ -300,128 +168,9 @@ export function Services() {
               transition={{ duration: 0.4 }}
               className="grid md:grid-cols-2 lg:grid-cols-3 gap-10"
             >
-              {filteredServices.map((service, index) => {
-                const Icon = service.icon;
-                const colors = colorConfigs[service.colorKey];
-                return (
-                  <ScrollAnimation
-                    key={index}
-                    animation="slide-up"
-                    delay={index * 0.1}
-                    duration={0.6}
-                  >
-                    <div
-                      className="group relative glass-card rounded-3xl card-padding glass-hover transition-all duration-500 hover:-translate-y-2 hover:shadow-xl h-full flex flex-col border border-transparent hover:border-white/10 overflow-hidden"
-                      style={{ ['--accent-color' as string]: colors.accentBorder }}
-                    >
-                      {/* Colored Top Accent Border */}
-                      <div
-                        className="absolute top-0 left-0 right-0 h-1 opacity-80 group-hover:opacity-100 transition-opacity duration-300"
-                        style={{ background: colors.gradient }}
-                      />
-
-                      {/* Glass Shine Effect on Hover */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none overflow-hidden rounded-2xl">
-                        <div
-                          className="absolute -inset-full top-0 bg-gradient-to-r from-transparent via-white/[0.07] to-transparent transform -skew-x-12 group-hover:animate-shine"
-                          style={{ animationDuration: '1.5s' }}
-                        />
-                      </div>
-
-                      {/* Icon - Larger with hover animation */}
-                      <div
-                        className="w-16 h-16 md:w-18 md:h-18 rounded-xl flex items-center justify-center content-spacing shadow-lg group-hover:shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500"
-                        style={{ background: colors.gradient }}
-                      >
-                        <Icon className="w-7 h-7 md:w-8 md:h-8 text-white drop-shadow-md" />
-                      </div>
-
-                      {/* Content */}
-                      <h3
-                        className="content-spacing-sm text-h4 font-bold transition-all duration-300 group-hover:bg-clip-text group-hover:text-transparent"
-                        style={{
-                          fontFamily: "'IBM Plex Sans Arabic', sans-serif",
-                          backgroundImage: colors.hoverGradient,
-                          backgroundSize: '200% auto',
-                          WebkitBackgroundClip: 'text',
-                          backgroundClip: 'text',
-                        }}
-                      >
-                        <span className="group-hover:opacity-0 transition-opacity duration-300 absolute">
-                          {service.title}
-                        </span>
-                        <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          {service.title}
-                        </span>
-                      </h3>
-                      <p className="text-sm md:text-base text-foreground/70 content-spacing group-hover:text-foreground/80 transition-colors duration-300">
-                        {service.description}
-                      </p>
-
-                      {/* Features - Visually Distinct Box */}
-                      <div className="flex-grow">
-                        <div
-                          className="rounded-xl p-4 border border-border/30 group-hover:border-white/10 transition-colors duration-300"
-                          style={{
-                            background:
-                              'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
-                            backdropFilter: 'blur(10px)',
-                          }}
-                        >
-                          <ul className="space-y-5">
-                            {service.features.map((feature, idx) => (
-                              <li key={idx} className="flex items-start gap-4 group/item">
-                                <div
-                                  className={`
-                                relative flex items-center justify-center flex-shrink-0 mt-1
-                                w-6 h-6 rounded-full
-                                shadow-lg ${service.shadowColor}
-                                transition-all duration-300
-                                group-hover/item:scale-110 group-hover/item:shadow-xl ${service.hoverShadow}
-                              `}
-                                  style={{ background: colors.gradient }}
-                                >
-                                  <Check
-                                    className="w-4 h-4 text-white drop-shadow-lg"
-                                    strokeWidth={2.5}
-                                  />
-                                  <div
-                                    className={`absolute inset-0 rounded-full bg-white/20 blur-md opacity-0 group-hover/item:opacity-100 transition-opacity duration-300`}
-                                  />
-                                </div>
-                                <span className="text-sm md:text-base text-foreground/90 font-medium leading-6 md:leading-7 group-hover/item:text-foreground transition-colors duration-300">
-                                  {feature}
-                                </span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-
-                      {service.pricing && (
-                        <div className="mt-4">
-                          <div
-                            className="rounded-xl p-4 border-2 transition-all duration-300 group-hover:border-white/20"
-                            style={{
-                              background: `linear-gradient(135deg, ${colors.glowColor}, transparent)`,
-                              borderColor: colors.accentBorder + '40',
-                            }}
-                          >
-                            {/* CTA Button */}
-                            <a
-                              href={service.href}
-                              className="mt-1 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm text-white transition-all duration-300 hover:scale-105 hover:shadow-lg group/cta"
-                              style={{ background: colors.gradient }}
-                            >
-                              <span>{service.pricing.cta}</span>
-                            </a>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </ScrollAnimation>
-                );
-              })}
+              {filteredServices.map((service, index) => (
+                <ServiceCard key={index} service={service} index={index} />
+              ))}
             </motion.div>
           </AnimatePresence>
         </div>

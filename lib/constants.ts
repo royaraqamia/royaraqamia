@@ -1,4 +1,8 @@
-export const WHATSAPP_PHONE = process.env.NEXT_PUBLIC_WHATSAPP_PHONE || '963968478904';
+export const WHATSAPP_PHONE =
+  process.env.NEXT_PUBLIC_WHATSAPP_PHONE ??
+  (() => {
+    throw new Error('Missing required env var: NEXT_PUBLIC_WHATSAPP_PHONE');
+  })();
 
 export const WHATSAPP_MESSAGE = 'السَّلام عليكم ورحمة اللّٰه وبركاته.';
 
