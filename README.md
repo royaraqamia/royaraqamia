@@ -27,8 +27,8 @@
 npm ci
 
 # 2. إعداد متغيرات البيئة
-cp .env.example .env.local
-# عدّل .env.local حسب الحاجة
+cp .env.example .env
+# عدّل .env حسب الحاجة
 
 # 3. تشغيل خادم التطوير
 npm run dev
