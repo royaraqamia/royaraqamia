@@ -8,6 +8,7 @@ export default async function CategoriesPage() {
   const { user, supabase } = await getAuthUser();
   if (!user) redirect('/auth/login?redirect=/spendtrack');
 
+
   const { data: categories } = await supabase
     .from('categories')
     .select('*')

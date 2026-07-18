@@ -25,7 +25,7 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
-    path: '/blogpress/blog',
+    path: '/blog',
     changeFrequency: 'daily',
     priority: 0.9,
   },

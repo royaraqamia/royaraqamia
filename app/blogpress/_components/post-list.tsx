@@ -123,7 +123,7 @@ function PostRow({ post }: { post: Post }) {
     <div className="flex items-center gap-4 py-4 transition-smooth hover:bg-muted/30 -mx-2 px-2 rounded-lg">
       <div className="flex-1 min-w-0">
         <Link
-          href={`/blogpress/dashboard/editor/${post.id}`}
+          href={`/blogpress/editor/${post.id}`}
           className="text-sm font-medium hover:text-primary transition-smooth truncate block"
         >
           {post.title || 'بدون عنوان'}
@@ -159,7 +159,7 @@ function PostRow({ post }: { post: Post }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="transition-smooth">
             <DropdownMenuItem asChild>
-              <Link href={`/blogpress/dashboard/editor/${post.id}`} className="transition-smooth">
+              <Link href={`/blogpress/editor/${post.id}`} className="transition-smooth">
                 <PenLine className="ml-2 size-4" />
                 تعديل
               </Link>

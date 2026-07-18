@@ -37,7 +37,7 @@ export async function createExpense(_prevState: ActionState, formData: FormData)
   });
 
   if (error) return { error: error.message };
-  revalidatePath('/spendtrack/dashboard');
+  revalidatePath('/spendtrack');
   return { success: true };
 }
 
@@ -71,7 +71,7 @@ export async function updateExpense(
     .eq('user_id', user.id);
 
   if (error) return { error: error.message };
-  revalidatePath('/spendtrack/dashboard');
+  revalidatePath('/spendtrack');
   return { success: true };
 }
 
@@ -91,7 +91,7 @@ export async function deleteExpense(expenseId: string, _prevState: ActionState) 
     .eq('user_id', user.id);
 
   if (error) return { error: error.message };
-  revalidatePath('/spendtrack/dashboard');
+  revalidatePath('/spendtrack');
   return { success: true };
 }
 

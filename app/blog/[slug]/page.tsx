@@ -42,7 +42,7 @@ export async function generateMetadata(props: {
       ? { card: 'summary_large_image', images: [{ url: post.cover_image }] }
       : { card: 'summary' },
     alternates: {
-      canonical: `/blogpress/blog/${post.slug}`,
+      canonical: `/blog/${post.slug}`,
     },
   };
 }
@@ -73,7 +73,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
   return (
     <article className="max-w-3xl mx-auto" aria-label={p.title}>
       <header className="mb-10">
-        <Link href="/blogpress/blog">
+        <Link href="/blog">
           <Button variant="ghost" size="sm" className="mb-6 -ml-2 transition-smooth">
             <ArrowRight className="ml-2 size-4" />
             العودة إلى المدونة
@@ -138,7 +138,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
       </div>
 
       <footer className="mt-16 pt-8 border-t border-border/50" role="contentinfo">
-        <Link href="/blogpress/blog">
+        <Link href="/blog">
           <Button variant="outline" className="transition-smooth">
             <ArrowRight className="ml-2 size-4" />
             العودة إلى المدونة

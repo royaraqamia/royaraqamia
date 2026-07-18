@@ -11,7 +11,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { ThemeToggle } from '@/components/blogpress/theme-toggle';
 import { logout } from '@/lib/actions/auth';
 import { LogOut, FileText, Loader2 } from 'lucide-react';
 
@@ -26,8 +25,7 @@ export function HeaderActions() {
 
   return (
     <div className="flex items-center gap-1.5">
-      <ThemeToggle />
-      <Link href="/blogpress/blog">
+      <Link href="/blog">
         <Button variant="ghost" size="sm" className="transition-smooth">
           <FileText className="ml-2 size-4" />
           المدونة

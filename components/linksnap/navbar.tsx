@@ -5,9 +5,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowLeft, LogOut, Moon, Sun, Menu, X, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, LogOut, Menu, X, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
-import { useTheme } from '@/components/linksnap/theme-provider';
 import { ConfirmDialog } from '@/components/linksnap/confirm-dialog';
 import { useIsMobile } from '@/domains/linksnap/hooks/use-mobile';
 import { useSession } from '@/components/shared/session-provider';
@@ -16,7 +15,6 @@ import { Loader2 } from 'lucide-react';
 
 export function Navbar() {
   const { user, isLoading } = useSession();
-  const { theme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -117,20 +115,6 @@ export function Navbar() {
       </Link>
 
       <nav className="flex items-center gap-4">
-        {mounted && (
-          <button
-            onClick={toggleTheme}
-            className="p-2 text-muted-foreground hover:text-primary rounded-lg hover:bg-muted dark:hover:bg-card transition-colors cursor-pointer press-scale focus-ring"
-            aria-label={theme === 'dark' ? 'تفعيل الوضع النهاري' : 'تفعيل الوضع الليلي'}
-          >
-            {theme === 'dark' ? (
-              <Sun aria-hidden="true" className="w-4 h-4" />
-            ) : (
-              <Moon aria-hidden="true" className="w-4 h-4" />
-            )}
-          </button>
-        )}
-
         {isLoading ? (
           <Loader2 className="w-4 h-4 animate-spin text-primary" role="status" />
         ) : user ? (

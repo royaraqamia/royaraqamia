@@ -3,9 +3,9 @@ import { NextResponse, type NextRequest } from 'next/server';
 
 const protectedRoutes: Record<string, string> = {
   '/linksnap': '/auth/login',
-  '/blogpress/dashboard': '/auth/login',
+  '/blogpress': '/auth/login',
   '/habitflow': '/auth/login',
-  '/spendtrack/dashboard': '/auth/login',
+  '/spendtrack': '/auth/login',
 };
 
 const authRoutes: Record<string, string> = {

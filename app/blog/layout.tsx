@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '@/components/blogpress/theme-toggle';
 
 export const metadata: Metadata = {
   title: {
@@ -24,7 +23,7 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
       <header className="border-b border-border/50 sticky top-0 z-40 bg-background/80 backdrop-blur-md">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
           <Link
-            href="/blogpress"
+            href="/blog"
             className="flex items-center gap-2.5 transition-smooth hover:opacity-80"
           >
             <Image src="/logo.webp" alt="BlogPress" width={1000} height={1000} className="size-7" />
@@ -32,19 +31,12 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
           </Link>
           <nav className="flex items-center gap-1.5" aria-label="التنقل الرئيسي">
             <Link
-              href="/blogpress"
-              className="text-sm text-muted-foreground hover:text-foreground transition-smooth px-3 py-2 rounded-lg hover:bg-muted hidden sm:block"
-            >
-              الرئيسية
-            </Link>
-            <Link
-              href="/blogpress/blog"
+              href="/blog"
               className="text-sm text-muted-foreground hover:text-foreground transition-smooth px-3 py-2 rounded-lg hover:bg-muted"
             >
               المدونة
             </Link>
-            <ThemeToggle />
-            <Link href="/blogpress/dashboard">
+            <Link href="/blogpress">
               <Button variant="ghost" size="sm" className="transition-smooth">
                 لوحة التحكم
               </Button>

@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 
 const links = [
-  { href: '/blogpress/dashboard', label: 'المقالات' },
-  { href: '/blogpress/dashboard/profile', label: 'الملف الشخصي' },
+  { href: '/blogpress', label: 'المقالات' },
+  { href: '/blogpress/profile', label: 'الملف الشخصي' },
 ];
 
 export function DashboardNav() {

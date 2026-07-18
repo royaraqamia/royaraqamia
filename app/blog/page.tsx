@@ -59,7 +59,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
               <article key={post.id} className="group flex flex-col">
                 {post.cover_image ? (
                   <Link
-                    href={`/blogpress/blog/${post.slug}`}
+                    href={`/blog/${post.slug}`}
                     className="block relative aspect-video overflow-hidden rounded-xl mb-4 bg-muted transition-smooth hover:shadow-md"
                   >
                     <Image
@@ -71,7 +71,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
                   </Link>
                 ) : (
                   <Link
-                    href={`/blogpress/blog/${post.slug}`}
+                    href={`/blog/${post.slug}`}
                     className="block relative aspect-video overflow-hidden rounded-xl mb-4 bg-gradient-to-br from-primary/10 to-primary/5 transition-smooth hover:shadow-md"
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
@@ -82,7 +82,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
                 <div className="flex-1 flex flex-col">
                   <h2 className="text-lg font-semibold leading-snug">
                     <Link
-                      href={`/blogpress/blog/${post.slug}`}
+                      href={`/blog/${post.slug}`}
                       className="hover:text-primary transition-smooth"
                     >
                       {post.title}
@@ -116,7 +116,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-16">
               {page > 1 && (
-                <Link href={`/blogpress/blog?page=${page - 1}`}>
+                <Link href={`/blog?page=${page - 1}`}>
                   <Button variant="outline" size="sm" className="transition-smooth">
                     <ChevronRight className="size-4" />
                     السابق
@@ -146,7 +146,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
                       ...
                     </span>
                   ) : (
-                    <Link key={p} href={`/blogpress/blog?page=${p}`}>
+                    <Link key={p} href={`/blog?page=${p}`}>
                       <Button
                         variant={p === page ? 'default' : 'outline'}
                         size="sm"
@@ -159,7 +159,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
                 );
               })()}
               {page < totalPages && (
-                <Link href={`/blogpress/blog?page=${page + 1}`}>
+                <Link href={`/blog?page=${page + 1}`}>
                   <Button variant="outline" size="sm" className="transition-smooth">
                     التالي
                     <ChevronLeft className="size-4" />

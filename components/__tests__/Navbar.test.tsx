@@ -33,6 +33,6 @@ describe('Navbar', () => {
 
   it('renders the main nav link', () => {
     renderWithProviders(<Navbar />);
-    expect(screen.getByText('الرَّئيسيَّة')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'الرَّئيسيَّة' })).toBeInTheDocument();
   });
 });

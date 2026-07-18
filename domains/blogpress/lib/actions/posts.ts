@@ -24,8 +24,8 @@ export async function createPost() {
 
   if (error) throw new Error('فشل إنشاء المقال');
 
-  revalidatePath('/blogpress/dashboard');
-  redirect(`/blogpress/dashboard/editor/${data.id}`);
+  revalidatePath('/blogpress');
+  redirect(`/blogpress/editor/${data.id}`);
 }
 
 export async function updatePost(postId: string, _prevState: unknown, formData: FormData) {
@@ -56,8 +56,8 @@ export async function updatePost(postId: string, _prevState: unknown, formData: 
     return { message: error.message };
   }
 
-  revalidatePath('/blogpress/dashboard');
-  revalidatePath(`/blogpress/dashboard/editor/${postId}`);
+  revalidatePath('/blogpress');
+  revalidatePath(`/blogpress/editor/${postId}`);
   return { message: 'تم حفظ المقال' };
 }
 
@@ -91,8 +91,8 @@ export async function publishPost(postId: string) {
 
   if (error) throw new Error('فشل نشر المقال');
 
-  revalidatePath('/blogpress/dashboard');
-  revalidatePath('/blogpress/blog');
+  revalidatePath('/blogpress');
+  revalidatePath('/blog');
   revalidatePath('/sitemap.xml');
 }
 
@@ -112,8 +112,8 @@ export async function unpublishPost(postId: string) {
 
   if (error) throw new Error('فشل إلغاء نشر المقال');
 
-  revalidatePath('/blogpress/dashboard');
-  revalidatePath('/blogpress/blog');
+  revalidatePath('/blogpress');
+  revalidatePath('/blog');
   revalidatePath('/sitemap.xml');
 }
 
@@ -130,6 +130,6 @@ export async function deletePost(postId: string) {
 
   if (error) throw new Error('فشل حذف المقال');
 
-  revalidatePath('/blogpress/dashboard');
-  revalidatePath('/blogpress/blog');
+  revalidatePath('/blogpress');
+  revalidatePath('/blog');
 }

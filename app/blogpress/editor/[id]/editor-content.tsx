@@ -241,7 +241,7 @@ export function EditorContent({ post }: EditorContentProps) {
       isDirtyRef.current = false;
       toast.success('تم نشر المقال!');
       router.refresh();
-      router.push(`/blogpress/blog/${finalSlug}`);
+      router.push(`/blog/${finalSlug}`);
     });
   }, [
     post.id,
@@ -278,7 +278,7 @@ export function EditorContent({ post }: EditorContentProps) {
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={() => router.push('/blogpress/dashboard')}
+            onClick={() => router.push('/blogpress')}
             className="shrink-0 transition-smooth"
             aria-label="العودة إلى لوحة التحكم"
           >
@@ -369,7 +369,7 @@ export function EditorContent({ post }: EditorContentProps) {
                     />
                     <p className="text-xs text-muted-foreground">
                       <span className="text-muted-foreground/60">
-                        {new URL(SITE_URL).host}/blogpress/blog/
+                        {new URL(SITE_URL).host}/blog/
                       </span>
                       {slug || <span className="text-muted-foreground/40">رابط-المقال</span>}
                     </p>
@@ -516,7 +516,7 @@ export function EditorContent({ post }: EditorContentProps) {
                             {metaTitle || title || 'عنوان المقال'}
                           </p>
                           <p className="text-xs text-muted-foreground/60">
-                            {new URL(SITE_URL).host}/blogpress/blog/{slug || '...'}
+                            {new URL(SITE_URL).host}/blog/{slug || '...'}
                           </p>
                           <p className="text-xs text-muted-foreground line-clamp-2">
                             {metaDesc || 'وصف تلقائي سيظهر هنا بناءً على محتوى المقال...'}

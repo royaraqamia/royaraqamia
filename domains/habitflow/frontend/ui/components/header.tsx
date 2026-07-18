@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import { Sun, Moon } from 'lucide-react';
 import { useState, useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 interface HeaderProps {
@@ -26,13 +25,6 @@ export function Header({ rightContent }: HeaderProps) {
       sentinel.remove();
     };
   }, []);
-
-  const toggleTheme = () => {
-    const isDark = document.documentElement.classList.contains('dark');
-    const next = isDark ? 'light' : 'dark';
-    localStorage.setItem('theme', next);
-    document.documentElement.classList.toggle('dark');
-  };
 
   return (
     <header
@@ -60,15 +52,6 @@ export function Header({ rightContent }: HeaderProps) {
         </Link>
 
         <div className="flex items-center gap-3 flex-wrap">
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-xl transition-all duration-200 ease-out bg-muted text-muted-foreground hover:bg-accent active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            aria-label="تبديل السمة"
-          >
-            <Sun className="w-4 h-4 dark:hidden" />
-            <Moon className="w-4 h-4 hidden dark:block" />
-          </button>
-
           {rightContent}
         </div>
       </div>

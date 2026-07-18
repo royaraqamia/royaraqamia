@@ -97,17 +97,17 @@ export function Navbar() {
     },
     {
       href: '#projects',
-      label: 'مشاريعنا',
+      label: 'منتجاتنا',
       icon: House,
       isRoute: false,
       visible: true,
       hasDropdown: true,
       dropdownKey: 'projects',
       subItems: [
-        { href: '/linksnap', label: 'LinkSnap — اختصار الروابط', isRoute: true },
-        { href: '/blogpress', label: 'BlogPress — منصة المدونة', isRoute: true },
-        { href: '/habitflow', label: 'HabitFlow — تتبع العادات', isRoute: true },
-        { href: '/spendtrack', label: 'SpendTrack — تتبع المصروفات', isRoute: true },
+        { href: '/linksnap', label: 'LinkSnap', isRoute: true },
+        { href: '/blogpress', label: 'BlogPress', isRoute: true },
+        { href: '/habitflow', label: 'HabitFlow', isRoute: true },
+        { href: '/spendtrack', label: 'SpendTrack', isRoute: true },
       ],
     },
   ];
