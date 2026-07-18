@@ -1,6 +1,6 @@
 'use client';
 
-import { m, useInView } from 'framer-motion';
+import { m, useInView } from 'motion/react';
 import { useRef } from 'react';
 
 interface ScrollAnimationProps {

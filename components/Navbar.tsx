@@ -90,10 +90,25 @@ export function Navbar() {
   const navLinks = [
     {
       href: isHomePage ? '#home' : '/#home',
-      label: 'الرَّئيسيَّة',
+      label: 'الرَّئيسيَّة',
       icon: House,
       isRoute: false,
       visible: true,
+    },
+    {
+      href: '#projects',
+      label: 'مشاريعنا',
+      icon: House,
+      isRoute: false,
+      visible: true,
+      hasDropdown: true,
+      dropdownKey: 'projects',
+      subItems: [
+        { href: '/linksnap', label: 'LinkSnap — اختصار الروابط', isRoute: true },
+        { href: '/blogpress', label: 'BlogPress — منصة المدونة', isRoute: true },
+        { href: '/habitflow', label: 'HabitFlow — تتبع العادات', isRoute: true },
+        { href: '/spendtrack', label: 'SpendTrack — تتبع المصروفات', isRoute: true },
+      ],
     },
   ];
 

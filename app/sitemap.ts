@@ -14,6 +14,31 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 1,
     hasAlternates: true,
   },
+  {
+    path: '/linksnap',
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  },
+  {
+    path: '/blogpress',
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  },
+  {
+    path: '/blogpress/blog',
+    changeFrequency: 'daily',
+    priority: 0.9,
+  },
+  {
+    path: '/habitflow',
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  },
+  {
+    path: '/spendtrack',
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  },
 ];
 
 function getBaseUrl(): string {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { m } from 'framer-motion';
+import { m } from 'motion/react';
 import { Lightning, TrendUp, ChartBar, Users, Sparkle } from '@phosphor-icons/react';
 
 export function HeroVisual() {

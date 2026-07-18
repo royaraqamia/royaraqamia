@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { Trophy } from '@phosphor-icons/react';
-import { m, useInView, useScroll, useTransform } from 'framer-motion';
+import { m, useInView, useScroll, useTransform } from 'motion/react';
 import { LazyImage } from './LazyImage';
 
 // Animation variants defined outside component to avoid recreation

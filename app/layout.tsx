@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { MotionProvider } from '../components/MotionProvider';
 import { UIProvider } from '../context/UIContext';
+import { SessionProvider } from '../components/shared/session-provider';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { AccessibilityCheck } from '../components/AccessibilityCheck';
@@ -15,7 +16,7 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'رؤية رقمية',
   description:
-    'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
+    'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
   keywords: [
     'رؤية رقمية',
     'تدريب إلكتروني',
@@ -49,7 +50,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'رؤية رقمية',
     description:
-      'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
+      'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
     url: '/',
     siteName: 'رؤية رقمية',
     locale: 'ar_SY',
@@ -67,7 +68,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'رؤية رقمية',
     description:
-      'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
+      'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
     images: ['/OG Image.webp'],
   },
   other: {},
@@ -84,15 +85,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl">
       <body className={inter.className}>
         <ErrorBoundary>
-          <MotionProvider>
-            <UIProvider>
-              <SpeedInsights />
-              <Analytics />
-              {children}
-              <Toaster position="top-center" richColors />
-              {process.env.NODE_ENV === 'development' && <AccessibilityCheck />}
-            </UIProvider>
-          </MotionProvider>
+          <SessionProvider>
+            <MotionProvider>
+              <UIProvider>
+                <SpeedInsights />
+                <Analytics />
+                {children}
+                <Toaster position="top-center" richColors />
+                {process.env.NODE_ENV === 'development' && <AccessibilityCheck />}
+              </UIProvider>
+            </MotionProvider>
+          </SessionProvider>
         </ErrorBoundary>
       </body>
     </html>

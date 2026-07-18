@@ -2,7 +2,7 @@
 
 import { Trophy, Clock, Headphones, ShieldCheck, TrendUp, Users } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
-import { useReducedMotion } from 'framer-motion';
+import { useReducedMotion } from 'motion/react';
 
 interface Reason {
   icon: React.ElementType;

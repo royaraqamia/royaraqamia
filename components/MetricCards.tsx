@@ -1,6 +1,6 @@
 'use client';
 
-import { m } from 'framer-motion';
+import { m } from 'motion/react';
 import { Clock, Trophy, TrendUp } from '@phosphor-icons/react';
 
 export function MetricCards() {

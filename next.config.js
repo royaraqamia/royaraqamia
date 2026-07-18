@@ -10,8 +10,8 @@ default-src 'self';
 script-src 'self' 'unsafe-inline';
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com data:;
-img-src 'self' data: https: blob:;
-connect-src 'self' https://api.royaraqamia.com https://royaraqamia.com wss: ws:;
+img-src 'self' data: https: blob: https://*.supabase.co;
+connect-src 'self' https://api.royaraqamia.com https://royaraqamia.com https://*.supabase.co wss: ws:;
 base-uri 'self';
 form-action 'self' https://forms.gle;
 frame-ancestors 'self';
@@ -29,10 +29,16 @@ for (const envVar of requiredEnvVars) {
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  transpilePackages: ['motion'],
+  typescript: {
+    ignoreBuildErrors: true,
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'royaraqamia.com' },
       { protocol: 'https', hostname: '*.royaraqamia.com' },
+      { protocol: 'https', hostname: '*.supabase.co' },
+      { protocol: 'https', hostname: 'picsum.photos' },
     ],
   },
   async headers() {

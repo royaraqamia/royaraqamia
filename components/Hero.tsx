@@ -1,6 +1,6 @@
 'use client';
 
-import { m } from 'framer-motion';
+import { m } from 'motion/react';
 import { ArrowLeft } from '@phosphor-icons/react';
 import { HeroVisual } from './HeroVisual';
 import { getWhatsAppUrl } from '../lib/constants';

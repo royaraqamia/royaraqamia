@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { cn } from './utils';
+import { cn } from '@/lib/utils';
 
 interface TextareaProps extends React.ComponentProps<'textarea'> {
   error?: boolean;

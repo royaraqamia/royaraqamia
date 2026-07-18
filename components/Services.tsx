@@ -1,7 +1,7 @@
 'use client';
 
 import { ChatCircle, Code, Lightbulb, Storefront, GraduationCap } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'motion/react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useUI } from '../context/UIContext';
 import { ServiceCard } from './services/ServiceCard';

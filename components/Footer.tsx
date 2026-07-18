@@ -7,6 +7,7 @@ import {
   MapPinIcon,
   EnvelopeIcon,
 } from '@phosphor-icons/react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LazyImage } from './LazyImage';
 import { formatHijriDate } from '../lib/utils';
@@ -143,6 +144,37 @@ export function Footer() {
                 </a>
               );
             })}
+          </div>
+
+          {/* Project Links */}
+          <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
+            <Link
+              href="/linksnap"
+              className="text-gray-400 hover:text-violet-400 transition-colors"
+            >
+              LinkSnap
+            </Link>
+            <span className="text-violet-500/30">|</span>
+            <Link
+              href="/blogpress"
+              className="text-gray-400 hover:text-violet-400 transition-colors"
+            >
+              BlogPress
+            </Link>
+            <span className="text-violet-500/30">|</span>
+            <Link
+              href="/habitflow"
+              className="text-gray-400 hover:text-violet-400 transition-colors"
+            >
+              HabitFlow
+            </Link>
+            <span className="text-violet-500/30">|</span>
+            <Link
+              href="/spendtrack"
+              className="text-gray-400 hover:text-violet-400 transition-colors"
+            >
+              SpendTrack
+            </Link>
           </div>
         </div>
 
