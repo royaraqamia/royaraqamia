@@ -262,12 +262,13 @@ export function MobileMenu({
   // ========================================================================
   // Main Render
   // ========================================================================
-  if (!isOpen) return null;
+  if (!isOpen && !isLogoutDialogOpen) return null;
 
   return (
     <>
-      {createPortal(
-        <div className="fixed inset-0 z-99999 md:hidden" style={{ position: 'fixed' }}>
+      {isOpen &&
+        createPortal(
+          <div className="fixed inset-0 z-99999 md:hidden" style={{ position: 'fixed' }}>
           {/* Backdrop */}
           <div
             className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
@@ -368,10 +369,11 @@ export function MobileMenu({
                 {/* Login/Logout Button */}
                 {!isLoading && user ? (
                   <button
-                    onClick={() => {
-                      triggerHaptic();
-                      setIsLogoutDialogOpen(true);
-                    }}
+                  onClick={() => {
+                    triggerHaptic();
+                    setIsOpen(false);
+                    setIsLogoutDialogOpen(true);
+                  }}
                     className="
                   relative
                   w-full mb-3 h-14
