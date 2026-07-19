@@ -15,18 +15,17 @@ export default function SignupPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-foreground">إنشاء حساب</h1>
-          <p className="text-muted-foreground mt-2">انضم إلينا اليوم</p>
         </div>
 
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="redirectTo" value={redirectTo} />
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">الاسم</label>
+            <label className="block text-sm font-medium text-foreground mb-1.5">الاسم الكامل</label>
             <input
               name="name"
               type="text"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
               placeholder="الاسم الكامل"
             />
           </div>
@@ -39,7 +38,7 @@ export default function SignupPage() {
               name="email"
               type="email"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
               placeholder="email@example.com"
             />
           </div>
@@ -50,7 +49,7 @@ export default function SignupPage() {
               name="password"
               type="password"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
               placeholder="8 أحرف على الأقل"
             />
           </div>
@@ -99,12 +98,12 @@ export default function SignupPage() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          التسجيل بحساب Google
+          التَّسجيل بحساب Google
         </button>
 
         <div className="text-center">
           <Link href="/auth/login" className="text-sm text-primary hover:underline">
-            لديك حساب بالفعل؟ تسجيل الدخول
+            لديك حساب بالفعل؟ تسجيل الدُّخول
           </Link>
         </div>
       </div>

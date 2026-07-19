@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CaretDown, Phone, type Icon } from '@phosphor-icons/react';
+import { CaretDown, Phone, User, type Icon } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 import { getWhatsAppUrl } from '../../lib/constants';
 
@@ -331,6 +331,18 @@ export function DesktopNav({
 
       {/* CTA Buttons */}
       <div className="hidden lg:flex items-center element-gap-sm">
+        <a href="/auth/login" className="group">
+          <Button
+            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-white ${
+              isScrolled ? 'h-10 text-sm px-5' : 'h-12 text-base px-6'
+            }`}
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              <User className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
+              تسجيل الدُّخول
+            </span>
+          </Button>
+        </a>
         <a
           href={getWhatsAppUrl()}
           target="_blank"
@@ -356,7 +368,7 @@ export function DesktopNav({
               تواصل معنا الآن
             </span>
             {/* Shimmer effect */}
-            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 motion-reduce:hidden bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 motion-reduce:hidden bg-linear-to-r from-transparent via-white/20 to-transparent" />
           </Button>
         </a>
       </div>

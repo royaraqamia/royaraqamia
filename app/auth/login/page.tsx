@@ -14,8 +14,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">تسجيل الدخول</h1>
-          <p className="text-muted-foreground mt-2">مرحباً بعودتك</p>
+          <h1 className="text-2xl font-bold text-foreground">تسجيل الدُّخول</h1>
         </div>
 
         <form action={formAction} className="space-y-4">
@@ -28,7 +27,7 @@ export default function LoginPage() {
               name="email"
               type="email"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
               placeholder="email@example.com"
             />
           </div>
@@ -39,7 +38,7 @@ export default function LoginPage() {
               name="password"
               type="password"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
               placeholder="••••••••"
             />
           </div>
@@ -53,7 +52,7 @@ export default function LoginPage() {
             disabled={isPending}
             className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {isPending ? 'جاري الدخول...' : 'تسجيل الدخول'}
+            {isPending ? 'جاري الدُّخول...' : 'تسجيل الدُّخول'}
           </button>
         </form>
 
@@ -88,7 +87,7 @@ export default function LoginPage() {
               d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
             />
           </svg>
-          الدخول بحساب Google
+          الدُّخول بحساب Google
         </button>
 
         <div className="text-center space-y-2">

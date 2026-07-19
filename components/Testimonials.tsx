@@ -187,7 +187,7 @@ export function Testimonials() {
 
               {/* Bottom Sheet */}
               <div
-                className="review-bottom-sheet fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-[327px] max-h-[calc(100vh-100px)] bg-gradient-to-br from-[#020617] via-[#3b0764] to-[#0f172a] rounded-3xl shadow-2xl shadow-black/50 z-[9999] overflow-hidden flex flex-col animate-slide-up-bottom"
+                className="review-bottom-sheet fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-[327px] max-h-[calc(100vh-100px)] md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:max-w-md bg-gradient-to-br from-[#020617] via-[#3b0764] to-[#0f172a] rounded-3xl shadow-2xl shadow-black/50 z-[9999] overflow-hidden flex flex-col animate-slide-up-bottom"
                 role="dialog"
                 aria-modal="true"
                 aria-label={`رأي ${review.name}`}

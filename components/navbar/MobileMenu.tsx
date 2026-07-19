@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { X, CaretDown, Phone, type Icon } from '@phosphor-icons/react';
+import { X, CaretDown, Phone, User, type Icon } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { getWhatsAppUrl } from '../../lib/constants';
 
@@ -132,7 +132,7 @@ export function MobileMenu({
     if (!Icon) return null;
     return (
       <Icon
-        className={`w-5 h-5 shrink-0 translate-y-[1px] ${isActive ? 'text-violet-400' : 'text-violet-400/60'}`}
+        className={`w-5 h-5 shrink-0 translate-y-px ${isActive ? 'text-violet-400' : 'text-violet-400/60'}`}
         weight="duotone"
       />
     );
@@ -211,7 +211,7 @@ export function MobileMenu({
           className={`overflow-hidden transition-all duration-200 ease-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
         >
           <div className="relative mr-3 pr-5 pt-2 pb-1">
-            <div className="absolute right-2 top-0 bottom-2 w-px bg-gradient-to-b from-white/10 to-transparent" />
+            <div className="absolute right-2 top-0 bottom-2 w-px bg-linear-to-b from-white/10 to-transparent" />
             <div className="flex flex-col gap-0.5">
               {link.subItems?.map((sub) => (
                 <div key={sub.href} className="relative">
@@ -260,7 +260,7 @@ export function MobileMenu({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[99999] md:hidden" style={{ position: 'fixed' }}>
+    <div className="fixed inset-0 z-99999 md:hidden" style={{ position: 'fixed' }}>
       {/* Backdrop */}
       <div
         className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
@@ -326,7 +326,7 @@ export function MobileMenu({
               className="
                                 flex items-center justify-center
                                 w-11 h-11 rounded-xl
-                                bg-white/[0.03] border border-white/[0.08]
+                                bg-white/3 border border-white/8
                                 text-slate-400
                                 transition-colors duration-150
                                 hover:bg-violet-500/10 hover:border-violet-500/25 hover:text-violet-400
@@ -358,7 +358,29 @@ export function MobileMenu({
 
           {/* Footer */}
           <footer className="px-5 pt-5 pb-10 shrink-0">
-            {/* CTA Button */}
+            {/* Login Button - Secondary */}
+            <a
+              href="/auth/login"
+              onClick={() => {
+                triggerHaptic();
+                handleClose();
+              }}
+              className="
+                                relative
+                                w-full mb-3 h-14
+                                rounded-full
+                                bg-transparent
+                                text-white font-bold
+                                flex items-center justify-center gap-2
+                                transition-all duration-150
+                                active:scale-95
+                                hover:bg-white/10
+                            "
+            >
+              <User className="w-5 h-5" weight="bold" />
+              <span>تسجيل الدُّخول</span>
+            </a>
+            {/* CTA Button - Primary */}
             <a
               href={getWhatsAppUrl()}
               target="_blank"
