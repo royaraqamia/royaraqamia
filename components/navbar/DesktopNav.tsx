@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import { CaretDown, Phone, User, SignOut, type Icon } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
@@ -42,6 +42,7 @@ export function DesktopNav({
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [, startTransition] = useTransition();
 
   const { user, isLoading } = useSession();
 
@@ -404,7 +405,9 @@ export function DesktopNav({
         cancelLabel="إلغاء"
         onConfirm={() => {
           setIsLogoutDialogOpen(false);
-          logout();
+          startTransition(async () => {
+            await logout();
+          });
         }}
         onCancel={() => setIsLogoutDialogOpen(false)}
         variant="danger"

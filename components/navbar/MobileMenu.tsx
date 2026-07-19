@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useTransition } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { X, CaretDown, Phone, User, SignOut, type Icon } from '@phosphor-icons/react';
@@ -67,6 +67,7 @@ export function MobileMenu({
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+  const [, startTransition] = useTransition();
 
   const { user, isLoading } = useSession();
 
@@ -447,7 +448,9 @@ export function MobileMenu({
         cancelLabel="إلغاء"
         onConfirm={() => {
           setIsLogoutDialogOpen(false);
-          logout();
+          startTransition(async () => {
+            await logout();
+          });
         }}
         onCancel={() => setIsLogoutDialogOpen(false)}
         variant="danger"
