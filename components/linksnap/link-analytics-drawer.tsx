@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, Globe, Smartphone } from 'lucide-react';
 import { AnalyticsChart } from './analytics-chart';
-import { AnalyticsSkeleton } from '@/components/linksnap/ui/skeleton';
+import { AnalyticsSkeleton } from '@/components/linksnap/loading-skeletons';
 
 export interface AnalyticsData {
   totalClicks: number;

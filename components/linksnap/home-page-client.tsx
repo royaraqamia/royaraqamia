@@ -11,7 +11,7 @@ import { ViewSelector } from '@/components/linksnap/view-selector';
 import { MarketingHeader } from '@/components/linksnap/marketing-header';
 import { FeaturePillars } from '@/components/linksnap/feature-pillars';
 import { useSession } from '@/components/shared/session-provider';
-import { DashboardSkeleton } from '@/components/linksnap/ui/skeleton';
+import { DashboardSkeleton } from '@/components/linksnap/loading-skeletons';
 import { AdminValidator } from '@/domains/linksnap/domain/services/admin-validator';
 
 interface RedirectError {

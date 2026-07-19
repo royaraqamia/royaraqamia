@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import OtpInput from './otp-input';
+import { OtpInput } from '@/components/shared/otp-input';
 import { Button } from '@/components/ui/button';
 
 interface OtpVerifyStepProps {

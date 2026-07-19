@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { Header } from '@/domains/habitflow/frontend/ui/components/header';
-import { Button } from '@/components/habitflow/ui/button';
+import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   return (

@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Layers, FileText, AlertCircle, ArrowLeft, Copy, Check, RefreshCw } from 'lucide-react';
-import { getBaseUrl } from '@/domains/linksnap/lib/utils';
+import { getBaseUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface BulkShortenResultItem {

@@ -6,10 +6,11 @@ interface OtpInputProps {
   length?: number;
   value: string;
   onChange: (value: string) => void;
+  onComplete?: (value: string) => void;
   disabled?: boolean;
 }
 
-export function OtpInput({ length = 6, value, onChange, disabled }: OtpInputProps) {
+export function OtpInput({ length = 6, value, onChange, onComplete, disabled }: OtpInputProps) {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const [focusedIndex, setFocusedIndex] = useState(0);
 
@@ -22,11 +23,15 @@ export function OtpInput({ length = 6, value, onChange, disabled }: OtpInputProp
       const result = newValue.join('').slice(0, length);
       onChange(result);
 
+      if (result.length === length) {
+        onComplete?.(result);
+      }
+
       if (digit && index < length - 1) {
         inputRefs.current[index + 1]?.focus();
       }
     },
-    [value, length, onChange]
+    [value, length, onChange, onComplete]
   );
 
   const handleKeyDown = useCallback(

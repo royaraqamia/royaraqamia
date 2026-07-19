@@ -14,8 +14,8 @@ import {
 } from 'lucide-react';
 import { LinkEditForm } from './link-edit-form';
 import { LinkAnalyticsDrawer, AnalyticsData } from './link-analytics-drawer';
-import { ConfirmDialog } from './confirm-dialog';
-import { cn, getBaseUrl } from '@/domains/linksnap/lib/utils';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { cn, getBaseUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface LinkRowCardProps {

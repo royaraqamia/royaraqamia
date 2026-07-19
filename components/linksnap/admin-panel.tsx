@@ -14,10 +14,10 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { AdminSkeleton } from '@/components/linksnap/ui/skeleton';
-import { ConfirmDialog } from '@/components/linksnap/confirm-dialog';
-import { getBaseUrl } from '@/domains/linksnap/lib/utils';
-import { Badge } from '@/components/linksnap/ui/badge';
+import { AdminSkeleton } from '@/components/linksnap/loading-skeletons';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { getBaseUrl } from '@/lib/utils';
+import { Badge } from '@/components/ui/badge';
 import { useAnimatedCounter } from '@/domains/linksnap/hooks/use-animated-counter';
 import { toast } from 'sonner';
 
@@ -356,9 +356,14 @@ export function AdminPanel({ token }: AdminPanelProps) {
                         </td>
                         <td className="px-6 py-4 text-center">
                           {link.isBlocked ? (
-                            <Badge variant="danger">محظور</Badge>
+                            <Badge variant="destructive">محظور</Badge>
                           ) : (
-                            <Badge variant="success">آمن</Badge>
+                            <Badge
+                              variant="secondary"
+                              className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700"
+                            >
+                              آمن
+                            </Badge>
                           )}
                         </td>
                         <td className="px-6 py-4 text-right">
@@ -416,9 +421,14 @@ export function AdminPanel({ token }: AdminPanelProps) {
                         /{link.code}
                       </a>
                       {link.isBlocked ? (
-                        <Badge variant="danger">محظور</Badge>
+                        <Badge variant="destructive">محظور</Badge>
                       ) : (
-                        <Badge variant="success">آمن</Badge>
+                        <Badge
+                          variant="secondary"
+                          className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-700"
+                        >
+                          آمن
+                        </Badge>
                       )}
                     </div>
                     <p

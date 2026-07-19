@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowLeft, LogOut, Moon, Sun, Menu, X, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTheme } from '@/components/linksnap/theme-provider';
-import { ConfirmDialog } from '@/components/linksnap/confirm-dialog';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { useIsMobile } from '@/domains/linksnap/hooks/use-mobile';
 import { useSession } from '@/components/shared/session-provider';
 import { Loader2 } from 'lucide-react';

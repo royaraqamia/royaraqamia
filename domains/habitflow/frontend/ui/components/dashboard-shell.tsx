@@ -11,19 +11,19 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { ErrorBoundary } from '@/components/habitflow/ui/error-boundary';
+import { ErrorBoundary } from '@/components/shared/error-boundary';
 import { Habit, HabitLog } from '@/domains/habitflow/models';
 import { logout } from '@/lib/actions/auth';
 import { useDashboard } from '@/domains/habitflow/frontend/state/use-dashboard';
 import { useSession } from '@/domains/habitflow/frontend/state/session-provider';
-import { Button } from '@/components/habitflow/ui/button';
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { StatsCard } from '@/domains/habitflow/frontend/ui/components/stats-card';
 import { HabitCard } from '@/domains/habitflow/frontend/ui/components/habit-card';
 import { CalendarGrid } from '@/domains/habitflow/frontend/ui/components/calendar-grid';
 import { AddHabitModal } from '@/domains/habitflow/frontend/ui/components/add-habit-modal';
 import { EditHabitModal } from '@/domains/habitflow/frontend/ui/components/edit-habit-modal';
-import { ConfirmDialog } from '@/domains/habitflow/frontend/ui/components/confirm-dialog';
+import { ConfirmDialog } from '@/components/shared/confirm-dialog';
 import { Header } from '@/domains/habitflow/frontend/ui/components/header';
 
 interface DashboardShellProps {
@@ -376,7 +376,7 @@ export function DashboardShell({
         />
 
         <ConfirmDialog
-          isOpen={!!confirmArchiveHabitId}
+          open={!!confirmArchiveHabitId}
           title="أرشفة العادة"
           message="هل أنت متأكد من رغبتك في أرشفة هذه العادة؟ سيتم الاحتفاظ بسجلّاتك السابقة."
           confirmLabel="أرشفة"
@@ -386,7 +386,7 @@ export function DashboardShell({
         />
 
         <ConfirmDialog
-          isOpen={showLogoutConfirm}
+          open={showLogoutConfirm}
           title="تسجيل الخروج"
           message="هل أنت متأكد من رغبتك في تسجيل الخروج؟"
           confirmLabel={isLoggingOut ? 'جارٍ تسجيل الخروج...' : 'تسجيل الخروج'}

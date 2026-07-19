@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Link, Sparkles, Copy, Check, Share2, QrCode, ArrowLeft, RotateCcw } from 'lucide-react';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
-import { getBaseUrl } from '@/domains/linksnap/lib/utils';
+import { getBaseUrl } from '@/lib/utils';
 import { toast } from 'sonner';
 
 interface SingleUrlShortenerProps {

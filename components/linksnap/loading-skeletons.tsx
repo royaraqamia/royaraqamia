@@ -1,32 +1,4 @@
-import { cn } from '@/domains/linksnap/lib/utils';
-
-interface SkeletonProps {
-  className?: string;
-  variant?: 'text' | 'circular' | 'rectangular' | 'card';
-}
-
-export function Skeleton({ className, variant = 'text' }: SkeletonProps) {
-  const base = 'shimmer animate-pulse';
-
-  const variants = {
-    text: 'h-4 w-full rounded-md',
-    circular: 'rounded-full',
-    rectangular: 'rounded-xl',
-    card: 'h-32 rounded-2xl w-full',
-  };
-
-  return <div className={cn(base, variants[variant], className)} />;
-}
-
-export function SkeletonGroup({ count = 3, className }: { count?: number; className?: string }) {
-  return (
-    <div className={cn('space-y-3', className)}>
-      {Array.from({ length: count }).map((_, i) => (
-        <Skeleton key={i} />
-      ))}
-    </div>
-  );
-}
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function DashboardSkeleton() {
   return (
@@ -36,7 +8,7 @@ export function DashboardSkeleton() {
         <Skeleton className="h-8 w-8 rounded-lg" />
       </div>
       {Array.from({ length: 3 }).map((_, i) => (
-        <Skeleton key={i} variant="card" />
+        <Skeleton key={i} className="h-32 rounded-2xl w-full" />
       ))}
     </div>
   );

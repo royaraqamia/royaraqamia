@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 import { Link2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { LinkRowCard } from './link-row-card';
 import { DashboardEmptyState } from './dashboard-empty-state';
-import { DashboardSkeleton } from '@/components/linksnap/ui/skeleton';
+import { DashboardSkeleton } from '@/components/linksnap/loading-skeletons';
 
 interface LinkItem {
   code: string;
