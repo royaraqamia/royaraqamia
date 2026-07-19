@@ -337,21 +337,18 @@ export function DesktopNav({
       {/* CTA Buttons */}
       <div className="hidden lg:flex items-center element-gap-sm">
         {!isLoading && user ? (
-            <div
-              onClick={() => setIsLogoutDialogOpen(true)}
-              className="group cursor-pointer"
+          <div onClick={() => setIsLogoutDialogOpen(true)} className="group cursor-pointer">
+            <Button
+              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-white ${
+                isScrolled ? 'h-10 text-sm px-5' : 'h-12 text-base px-6'
+              }`}
             >
-              <Button
-                className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-white ${
-                  isScrolled ? 'h-10 text-sm px-5' : 'h-12 text-base px-6'
-                }`}
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  <SignOut className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
-                  تسجيل الخُروج
-                </span>
-              </Button>
-            </div>
+              <span className="relative z-10 flex items-center gap-2">
+                <SignOut className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
+                تسجيل الخُروج
+              </span>
+            </Button>
+          </div>
         ) : (
           <a href="/auth/login" className="group">
             <Button

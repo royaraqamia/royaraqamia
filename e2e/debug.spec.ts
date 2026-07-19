@@ -17,28 +17,32 @@ test('debug: session on homepage vs spendtrack', async ({ page }) => {
   await page.waitForLoadState('networkidle', { timeout: 30_000 });
 
   // Wait for session to be resolved
-  await page.waitForFunction(() => {
-    // Check if either login or logout button exists
-    const allBtns = document.querySelectorAll('button');
-    for (const b of allBtns) {
-      if (b.textContent?.includes('تسجيل الخُروج') || b.textContent?.includes('تسجيل الدُّخول')) return true;
-    }
-    return false;
-  }, { timeout: 30_000 });
+  await page.waitForFunction(
+    () => {
+      // Check if either login or logout button exists
+      const allBtns = document.querySelectorAll('button');
+      for (const b of allBtns) {
+        if (b.textContent?.includes('تسجيل الخُروج') || b.textContent?.includes('تسجيل الدُّخول'))
+          return true;
+      }
+      return false;
+    },
+    { timeout: 30_000 }
+  );
 
   // On homepage - check state
   const homepageState = await page.evaluate(async () => {
     // Directly read document.cookie
     const cookieString = document.cookie;
-    const cookieNames = cookieString.split(';').map(c => c.trim().split('=')[0]);
+    const cookieNames = cookieString.split(';').map((c) => c.trim().split('=')[0]);
 
     // Try to manually decode the session
-    const authKey = cookieNames.find(k => k.includes('auth-token'));
-    const authChunks = cookieNames.filter(k => k.includes('auth-token.'));
+    const authKey = cookieNames.find((k) => k?.includes('auth-token'));
+    const authChunks = cookieNames.filter((k) => k?.includes('auth-token.'));
 
     // Now try to instantiate supabase client and get session
-    const { createClient } = await import('@supabase/ssr');
-    const client = createClient(
+    const { createBrowserClient } = await import('@supabase/ssr');
+    const client = createBrowserClient(
       'https://ievboaylytxgtijconak.supabase.co',
       'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
     );
@@ -62,23 +66,27 @@ test('debug: session on homepage vs spendtrack', async ({ page }) => {
   await page.goto('/spendtrack', { waitUntil: 'networkidle', timeout: 60_000 });
 
   // Wait for session to be resolved
-  await page.waitForFunction(() => {
-    const allBtns = document.querySelectorAll('button');
-    for (const b of allBtns) {
-      if (b.textContent?.includes('تسجيل الخُروج') || b.textContent?.includes('تسجيل الدُّخول')) return true;
-    }
-    return false;
-  }, { timeout: 30_000 });
+  await page.waitForFunction(
+    () => {
+      const allBtns = document.querySelectorAll('button');
+      for (const b of allBtns) {
+        if (b.textContent?.includes('تسجيل الخُروج') || b.textContent?.includes('تسجيل الدُّخول'))
+          return true;
+      }
+      return false;
+    },
+    { timeout: 30_000 }
+  );
 
   const spendtrackState = await page.evaluate(async () => {
     const cookieString = document.cookie;
-    const cookieNames = cookieString.split(';').map(c => c.trim().split('=')[0]);
+    const cookieNames = cookieString.split(';').map((c) => c.trim().split('=')[0]);
 
-    const authKey = cookieNames.find(k => k.includes('auth-token'));
-    const authChunks = cookieNames.filter(k => k.includes('auth-token.'));
+    const authKey = cookieNames.find((k) => k?.includes('auth-token'));
+    const authChunks = cookieNames.filter((k) => k?.includes('auth-token.'));
 
-    const { createClient } = await import('@supabase/ssr');
-    const client = createClient(
+    const { createBrowserClient } = await import('@supabase/ssr');
+    const client = createBrowserClient(
       'https://ievboaylytxgtijconak.supabase.co',
       'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
     );

@@ -17,6 +17,7 @@ import { ProfileSchema } from '@/lib/schemas';
 import { Camera, Loader2, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
 import type { z } from 'zod';
+import type { User } from '@supabase/supabase-js';
 
 type ProfileFormData = z.infer<typeof ProfileSchema>;
 
@@ -39,7 +40,7 @@ export default function ProfilePage() {
   useEffect(() => {
     (async () => {
       const supabase = await createClient();
-      supabase.auth.getUser().then(({ data: { user } }) => {
+      supabase.auth.getUser().then(({ data: { user } }: { data: { user: User | null } }) => {
         if (user) {
           const bio = user.user_metadata?.bio ?? '';
           const name = user.user_metadata?.full_name ?? '';
