@@ -32,6 +32,9 @@ yarn-error.log*
 .pnpm-debug.log*
 *.log
 
+# tests
+/test-results
+
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example

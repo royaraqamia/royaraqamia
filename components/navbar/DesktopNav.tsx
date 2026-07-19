@@ -1,12 +1,11 @@
 'use client';
 
-import { useRef, useState, useEffect, useTransition } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CaretDown, Phone, User, SignOut, type Icon } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 import { getWhatsAppUrl } from '../../lib/constants';
 import { useSession } from '../shared/session-provider';
-import { logout } from '../../lib/actions/auth';
 import { ConfirmDialog } from '../shared/confirm-dialog';
 
 interface NavLink {
@@ -42,9 +41,8 @@ export function DesktopNav({
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-  const [, startTransition] = useTransition();
 
-  const { user, isLoading } = useSession();
+  const { user, isLoading, signOut } = useSession();
 
   // Refs for dropdowns
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -339,8 +337,10 @@ export function DesktopNav({
       {/* CTA Buttons */}
       <div className="hidden lg:flex items-center element-gap-sm">
         {!isLoading && user ? (
-          <>
-            <button onClick={() => setIsLogoutDialogOpen(true)} className="group">
+            <div
+              onClick={() => setIsLogoutDialogOpen(true)}
+              className="group cursor-pointer"
+            >
               <Button
                 className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-white ${
                   isScrolled ? 'h-10 text-sm px-5' : 'h-12 text-base px-6'
@@ -351,8 +351,7 @@ export function DesktopNav({
                   تسجيل الخُروج
                 </span>
               </Button>
-            </button>
-          </>
+            </div>
         ) : (
           <a href="/auth/login" className="group">
             <Button
@@ -405,8 +404,8 @@ export function DesktopNav({
         cancelLabel="إلغاء"
         onConfirm={() => {
           setIsLogoutDialogOpen(false);
-          startTransition(async () => {
-            await logout();
+          signOut().then(() => {
+            window.location.href = '/';
           });
         }}
         onCancel={() => setIsLogoutDialogOpen(false)}

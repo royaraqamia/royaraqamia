@@ -1,13 +1,12 @@
 'use client';
 
-import { useRef, useState, useEffect, useTransition } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { X, CaretDown, Phone, User, SignOut, type Icon } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { getWhatsAppUrl } from '../../lib/constants';
 import { useSession } from '../shared/session-provider';
-import { logout } from '../../lib/actions/auth';
 import { ConfirmDialog } from '../shared/confirm-dialog';
 
 // ============================================================================
@@ -67,9 +66,8 @@ export function MobileMenu({
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-  const [, startTransition] = useTransition();
 
-  const { user, isLoading } = useSession();
+  const { user, isLoading, signOut } = useSession();
 
   useFocusTrap(isOpen, mobileMenuRef, () => setIsOpen(false));
 
@@ -366,6 +364,24 @@ export function MobileMenu({
 
             {/* Footer */}
             <footer className="px-5 pt-5 pb-10 shrink-0">
+              {/* Legal Links */}
+              <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-slate-500 mb-4">
+                <Link
+                  href="/privacy"
+                  onClick={handleMainLinkClick}
+                  className="hover:text-violet-400 transition-colors"
+                >
+                  الخُصوصيَّة
+                </Link>
+                <span className="text-violet-500/20">|</span>
+                <Link
+                  href="/terms"
+                  onClick={handleMainLinkClick}
+                  className="hover:text-violet-400 transition-colors"
+                >
+                  الشُروط
+                </Link>
+              </div>
               {/* Login/Logout Button */}
               {!isLoading && user ? (
                 <button
@@ -448,8 +464,8 @@ export function MobileMenu({
         cancelLabel="إلغاء"
         onConfirm={() => {
           setIsLogoutDialogOpen(false);
-          startTransition(async () => {
-            await logout();
+          signOut().then(() => {
+            window.location.href = '/';
           });
         }}
         onCancel={() => setIsLogoutDialogOpen(false)}

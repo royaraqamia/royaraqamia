@@ -177,7 +177,15 @@ export function Footer() {
             </Link>
             <span className="text-violet-500/30">|</span>
             <Link href="/verify" className="text-gray-400 hover:text-violet-400 transition-colors">
-              التَّحقُّق من الشَّهادة
+              التَّحقُّق من الشَّهادة
+            </Link>
+            <span className="text-violet-500/30">|</span>
+            <Link href="/privacy" className="text-gray-400 hover:text-violet-400 transition-colors">
+              الخُصوصيَّة
+            </Link>
+            <span className="text-violet-500/30">|</span>
+            <Link href="/terms" className="text-gray-400 hover:text-violet-400 transition-colors">
+              الشُروط
             </Link>
           </div>
         </div>

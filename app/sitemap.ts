@@ -39,6 +39,16 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     changeFrequency: 'monthly',
     priority: 0.8,
   },
+  {
+    path: '/privacy',
+    changeFrequency: 'yearly',
+    priority: 0.3,
+  },
+  {
+    path: '/terms',
+    changeFrequency: 'yearly',
+    priority: 0.3,
+  },
 ];
 
 function getBaseUrl(): string {
