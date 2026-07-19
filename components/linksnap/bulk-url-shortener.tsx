@@ -147,7 +147,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
                 onChange={(e) => setBulkUrls(e.target.value)}
                 placeholder="https://google.com&#10;https://github.com&#10;https://example.com"
                 rows={6}
-                className="w-full pr-12 pl-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-2xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 dark:text-slate-200 leading-relaxed resize-y"
+                className="w-full pr-12 pl-4 py-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-2xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all text-slate-800 dark:text-slate-200 leading-relaxed resize-y"
               />
             </div>
           </div>
@@ -167,7 +167,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
           <button
             type="submit"
             disabled={loading || !bulkUrls.trim()}
-            className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 disabled:bg-indigo-400 disabled:shadow-none cursor-pointer group press-scale focus-ring"
+            className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer group press-scale focus-ring"
           >
             {loading ? (
               <>
@@ -199,7 +199,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
         >
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 flex items-center gap-1.5">
-              <Check aria-hidden="true" className="w-4 h-4 text-emerald-500 stroke-[3]" />
+              <Check aria-hidden="true" className="w-4 h-4 text-emerald-500 stroke-3" />
               <span>اكتمل الاختصار بالجملة</span>
             </h3>
             <div className="flex items-center gap-2">
@@ -295,7 +295,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
               </table>
             </div>
             {results.length > 5 && (
-              <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-slate-50 dark:from-slate-800 to-transparent pointer-events-none" />
+              <div className="absolute bottom-0 left-0 right-0 h-6 bg-linear-to-t from-slate-50 dark:from-slate-800 to-transparent pointer-events-none" />
             )}
           </div>
 

@@ -38,8 +38,8 @@ export function Hero() {
         className="relative min-h-[90vh] flex items-center overflow-hidden pt-32 pb-12 lg:py-0"
       >
         {/* Background with Gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950/80 to-slate-900 z-0">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary-600/5 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-purple-950/80 to-slate-900 z-0">
+          <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary-600/5 to-transparent" />
           {/* Reduced blur radius and opacity for cleaner look */}
           <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-primary-600 opacity-[0.03] blur-[120px] rounded-full" />
           <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-primary-400 opacity-[0.03] blur-[120px] rounded-full" />
@@ -81,7 +81,7 @@ export function Hero() {
             {/* Left side - Content (RTL: will appear on right naturally in RTL layout) */}
             <div className="text-center lg:text-right space-y-4 order-1">
               {/* Badge - Static Glow for performance */}
-              <m.div variants={itemVariants} className="flex justify-center lg:justify-start !mb-2">
+              <m.div variants={itemVariants} className="flex justify-center lg:justify-start mb-2!">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/50 backdrop-blur-md text-white border border-slate-700/50 relative overflow-hidden group hover:border-primary-500/30 transition-colors duration-300">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
@@ -90,12 +90,12 @@ export function Hero() {
                   <span className="text-sm font-medium text-slate-200">ابدأ رحلتك الرَّقميَّة</span>
 
                   {/* Subtle sheen */}
-                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shine-slide_1.5s_infinite]" />
+                  <div className="absolute inset-0 w-full h-full bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shine-slide_1.5s_infinite]" />
                 </div>
               </m.div>
 
               {/* Main Headline */}
-              <m.div variants={itemVariants} className="space-y-1 !mt-1">
+              <m.div variants={itemVariants} className="space-y-1 mt-1!">
                 <h1 className="text-[2.50rem] sm:text-6xl lg:text-7xl font-normal tracking-tight font-heading leading-tight">
                   <span className="block text-teal-300 mb-0.5 lg:mb-1">شريكك الاستراتيجي</span>
                   <span className="text-white drop-shadow-xl lg:whitespace-nowrap">
@@ -138,7 +138,7 @@ export function Hero() {
                   </span>
 
                   {/* Shine element */}
-                  <span className="shine-element absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12" />
+                  <span className="shine-element absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-12" />
                 </a>
               </m.div>
             </div>

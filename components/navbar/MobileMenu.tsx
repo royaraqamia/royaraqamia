@@ -3,9 +3,12 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { X, CaretDown, Phone, User, type Icon } from '@phosphor-icons/react';
+import { X, CaretDown, Phone, User, SignOut, type Icon } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { getWhatsAppUrl } from '../../lib/constants';
+import { useSession } from '../shared/session-provider';
+import { logout } from '../../lib/actions/auth';
+import { ConfirmDialog } from '../shared/confirm-dialog';
 
 // ============================================================================
 // Types
@@ -63,6 +66,9 @@ export function MobileMenu({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+
+  const { user, isLoading } = useSession();
 
   useFocusTrap(isOpen, mobileMenuRef, () => setIsOpen(false));
 
@@ -260,24 +266,25 @@ export function MobileMenu({
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-99999 md:hidden" style={{ position: 'fixed' }}>
-      {/* Backdrop */}
-      <div
-        className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-        onClick={handleClose}
-        tabIndex={-1}
-        role="presentation"
-      />
+    <>
+      <div className="fixed inset-0 z-99999 md:hidden" style={{ position: 'fixed' }}>
+        {/* Backdrop */}
+        <div
+          className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+          onClick={handleClose}
+          tabIndex={-1}
+          role="presentation"
+        />
 
-      {/* Menu Panel */}
-      <div
-        ref={mobileMenuRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="القائمة الرئيسية"
-        dir="rtl"
-        onKeyDown={(e) => e.key === 'Escape' && handleClose()}
-        className={`
+        {/* Menu Panel */}
+        <div
+          ref={mobileMenuRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="القائمة الرئيسية"
+          dir="rtl"
+          onKeyDown={(e) => e.key === 'Escape' && handleClose()}
+          className={`
                     absolute inset-0
                     w-screen h-screen
                     bg-background
@@ -285,45 +292,45 @@ export function MobileMenu({
                     will-change-transform
                     ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.98]'}
                 `}
-        style={{ transformOrigin: 'center top' }}
-      >
-        {/* Content Container */}
-        <div className="relative z-10 flex flex-col h-full">
-          {/* Header */}
-          <header className="flex items-center justify-between px-5 h-20 shrink-0">
-            <Link
-              href={isHomePage ? '#home' : '/'}
-              onClick={scrollToHome}
-              className="flex items-center gap-3 no-underline group"
-            >
-              <img
-                src={logoProp}
-                alt="شعار رؤية رقمية"
-                width={40}
-                height={40}
-                loading="eager"
-                className="h-10 w-10 logo-glow transition-transform duration-200 group-hover:scale-105"
-              />
-              <span
-                className="text-xl font-bold font-['Aref_Ruqaa']"
-                style={{
-                  background: 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
+          style={{ transformOrigin: 'center top' }}
+        >
+          {/* Content Container */}
+          <div className="relative z-10 flex flex-col h-full">
+            {/* Header */}
+            <header className="flex items-center justify-between px-5 h-20 shrink-0">
+              <Link
+                href={isHomePage ? '#home' : '/'}
+                onClick={scrollToHome}
+                className="flex items-center gap-3 no-underline group"
               >
-                رؤية رقمية
-              </span>
-            </Link>
+                <img
+                  src={logoProp}
+                  alt="شعار رؤية رقمية"
+                  width={40}
+                  height={40}
+                  loading="eager"
+                  className="h-10 w-10 logo-glow transition-transform duration-200 group-hover:scale-105"
+                />
+                <span
+                  className="text-xl font-bold font-['Aref_Ruqaa']"
+                  style={{
+                    background: 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text',
+                  }}
+                >
+                  رؤية رقمية
+                </span>
+              </Link>
 
-            <button
-              onClick={() => {
-                triggerHaptic();
-                handleClose();
-              }}
-              aria-label="إغلاق القائمة"
-              className="
+              <button
+                onClick={() => {
+                  triggerHaptic();
+                  handleClose();
+                }}
+                aria-label="إغلاق القائمة"
+                className="
                                 flex items-center justify-center
                                 w-11 h-11 rounded-xl
                                 bg-white/3 border border-white/8
@@ -333,82 +340,119 @@ export function MobileMenu({
                                 active:scale-95
                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
                             "
-            >
-              <X size={20} weight="bold" />
-            </button>
-          </header>
+              >
+                <X size={20} weight="bold" />
+              </button>
+            </header>
 
-          {/* Navigation */}
-          <nav
-            className="
+            {/* Navigation */}
+            <nav
+              className="
                         flex-1 overflow-y-auto
                         px-5 py-6
                         flex flex-col gap-1
                         overscroll-contain
                     "
-          >
-            {navLinks
-              .filter((link) => link.visible !== false)
-              .map((link) =>
-                link.hasDropdown && link.dropdownKey
-                  ? renderDropdownItem(link)
-                  : renderNavItem(link)
-              )}
-          </nav>
+            >
+              {navLinks
+                .filter((link) => link.visible !== false)
+                .map((link) =>
+                  link.hasDropdown && link.dropdownKey
+                    ? renderDropdownItem(link)
+                    : renderNavItem(link)
+                )}
+            </nav>
 
-          {/* Footer */}
-          <footer className="px-5 pt-5 pb-10 shrink-0">
-            {/* Login Button - Secondary */}
-            <a
-              href="/auth/login"
-              onClick={() => {
-                triggerHaptic();
-                handleClose();
-              }}
-              className="
-                                relative
-                                w-full mb-3 h-14
-                                rounded-full
-                                bg-transparent
-                                text-white font-bold
-                                flex items-center justify-center gap-2
-                                transition-all duration-150
-                                active:scale-95
-                                hover:bg-white/10
-                            "
-            >
-              <User className="w-5 h-5" weight="bold" />
-              <span>تسجيل الدُّخول</span>
-            </a>
-            {/* CTA Button - Primary */}
-            <a
-              href={getWhatsAppUrl()}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                triggerHaptic();
-                handleClose();
-              }}
-              className="
-                                relative
-                                w-full mb-5 h-14
-                                rounded-full
-                                gradient-primary text-white font-bold
-                                flex items-center justify-center
-                                transition-transform duration-150
-                                active:scale-95
-                                overflow-hidden
-                            "
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                <Phone className="w-5 h-5" weight="bold" />
-                <span>تواصل معنا الآن</span>
-              </span>
-            </a>
-          </footer>
+            {/* Footer */}
+            <footer className="px-5 pt-5 pb-10 shrink-0">
+              {/* Login/Logout Button */}
+              {!isLoading && user ? (
+                <button
+                  onClick={() => {
+                    triggerHaptic();
+                    setIsLogoutDialogOpen(true);
+                  }}
+                  className="
+                  relative
+                  w-full mb-3 h-14
+                  rounded-full
+                  bg-transparent
+                  text-white font-bold
+                  flex items-center justify-center gap-2
+                  transition-all duration-150
+                  active:scale-95
+                  hover:bg-white/10
+                "
+                >
+                  <SignOut className="w-5 h-5" weight="bold" />
+                  <span>تسجيل الخُروج</span>
+                </button>
+              ) : (
+                <a
+                  href="/auth/login"
+                  onClick={() => {
+                    triggerHaptic();
+                    handleClose();
+                  }}
+                  className="
+                  relative
+                  w-full mb-3 h-14
+                  rounded-full
+                  bg-transparent
+                  text-white font-bold
+                  flex items-center justify-center gap-2
+                  transition-all duration-150
+                  active:scale-95
+                  hover:bg-white/10
+                "
+                >
+                  <User className="w-5 h-5" weight="bold" />
+                  <span>تسجيل الدُّخول</span>
+                </a>
+              )}
+              {/* CTA Button - Primary */}
+              <a
+                href={getWhatsAppUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  triggerHaptic();
+                  handleClose();
+                }}
+                className="
+                relative
+                w-full mb-5 h-14
+                rounded-full
+                gradient-primary text-white font-bold
+                flex items-center justify-center
+                transition-transform duration-150
+                active:scale-95
+                overflow-hidden
+              "
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  <Phone className="w-5 h-5" weight="bold" />
+                  <span>تواصل معنا الآن</span>
+                </span>
+              </a>
+            </footer>
+          </div>
         </div>
       </div>
-    </div>,
+      <ConfirmDialog
+        open={isLogoutDialogOpen}
+        title="تسجيل الخُروج"
+        message="هل أنت متأكد أنك تريد تسجيل الخُروج؟"
+        confirmLabel="تسجيل الخُروج"
+        cancelLabel="إلغاء"
+        onConfirm={() => {
+          setIsLogoutDialogOpen(false);
+          logout();
+        }}
+        onCancel={() => setIsLogoutDialogOpen(false)}
+        variant="danger"
+      />
+    </>,
     document.body
   );
 }

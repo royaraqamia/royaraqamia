@@ -292,7 +292,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
               onChange={handleSearchChange}
               placeholder="بحث بالرمز أو الرابط..."
               aria-label="بحث بالرمز أو الرابط"
-              className="w-full pr-9 pl-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-800 dark:text-slate-200 placeholder:text-slate-500 transition-all"
+              className="w-full pr-9 pl-3 py-2 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:text-slate-200 placeholder:text-slate-500 transition-all"
             />
           </div>
         </div>
@@ -475,7 +475,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                   <button
                     onClick={() => setPage(Math.max(0, page - 1))}
                     disabled={page === 0}
-                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:text-slate-300 dark:disabled:text-slate-600 disabled:cursor-not-allowed rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer focus-ring"
+                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-ring"
                     aria-label="الصفحة السابقة"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -500,7 +500,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                   <button
                     onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                     disabled={page >= totalPages - 1}
-                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:text-slate-300 dark:disabled:text-slate-600 disabled:cursor-not-allowed rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer focus-ring"
+                    className="p-1.5 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 dark:disabled:text-slate-600 disabled:cursor-not-allowed rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus-ring"
                     aria-label="الصفحة التالية"
                   >
                     <ChevronLeft className="w-4 h-4" />

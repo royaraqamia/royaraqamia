@@ -5,7 +5,7 @@ import { AppError } from '@/domains/habitflow/shared/errors';
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getOptionalUser();
+    const { user, client } = await getOptionalUser();
     const { searchParams } = new URL(req.url);
     let startDate = searchParams.get('startDate');
     let endDate = searchParams.get('endDate');
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       endDate = endDate || today.toISOString().split('T')[0]!;
     }
 
-    const { service, mode } = createHabitService(user?.id);
+    const { service, mode } = createHabitService(user?.id, client ?? undefined);
     const logs = await service.getLogs(startDate, endDate);
     return jsonOk({ logs, mode });
   } catch (error) {
@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getOptionalUser();
+    const { user, client } = await getOptionalUser();
     const body = await req.json();
     const { habitId, date, completed } = body;
 
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
       return jsonError(new AppError('Completed status is required', 400), 400);
     }
 
-    const { service, mode } = createHabitService(user?.id);
+    const { service, mode } = createHabitService(user?.id, client ?? undefined);
     const log = await service.toggleHabitLog({ habitId, date, completed });
 
     return jsonOk({ log, mode });

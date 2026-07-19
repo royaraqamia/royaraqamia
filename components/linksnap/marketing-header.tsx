@@ -13,7 +13,7 @@ export function MarketingHeader({ isAuthenticated }: MarketingHeaderProps) {
       </div>
       <h1 className="text-3xl sm:text-4xl lg:text-5xl font-display font-extrabold text-slate-800 dark:text-slate-100 tracking-tight leading-tight">
         بسِّط روابطك، <br />
-        <span className="bg-gradient-to-l from-indigo-600 to-sky-500 bg-clip-text text-transparent">
+        <span className="bg-linear-to-l from-indigo-600 to-sky-500 bg-clip-text text-transparent">
           تتبَّع الأداء في الوقت الفعلي
         </span>
       </h1>

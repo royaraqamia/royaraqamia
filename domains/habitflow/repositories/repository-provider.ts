@@ -1,10 +1,14 @@
+import { SupabaseClient } from '@supabase/supabase-js';
 import { IHabitRepository } from '@/domains/habitflow/models';
 import { JsonFileHabitRepository } from './json-file-repository';
 import { SupabaseHabitRepository } from './supabase-repository';
 
 let cachedRepository: IHabitRepository | null = null;
 
-export function getHabitRepository(userId?: string): {
+export function getHabitRepository(
+  userId?: string,
+  client?: SupabaseClient
+): {
   repository: IHabitRepository;
   mode: 'supabase' | 'local';
 } {
@@ -13,7 +17,7 @@ export function getHabitRepository(userId?: string): {
 
   if (userId && url && key) {
     try {
-      return { repository: new SupabaseHabitRepository(userId), mode: 'supabase' };
+      return { repository: new SupabaseHabitRepository(userId, client), mode: 'supabase' };
     } catch (e) {
       console.warn('Supabase init failed, falling back to local storage:', e);
     }

@@ -45,7 +45,7 @@ export function HeroVisual() {
         {/* Glow - Opacity based animation instead of box-shadow */}
         <div className="absolute inset-0 rounded-xl bg-[#7766EE] blur-xl opacity-40 animate-pulse" />
 
-        <div className="relative w-full h-full rounded-xl bg-gradient-to-br from-[#7766EE] via-[#8B7AFF] to-[#A78BFA] flex items-center justify-center shadow-lg border border-white/20">
+        <div className="relative w-full h-full rounded-xl bg-linear-to-br from-[#7766EE] via-[#8B7AFF] to-[#A78BFA] flex items-center justify-center shadow-lg border border-white/20">
           <Lightning className="w-6 h-6 lg:w-8 lg:h-8 text-white drop-shadow-md" weight="fill" />
         </div>
       </m.div>
@@ -72,13 +72,13 @@ export function HeroVisual() {
         }}
       >
         {/* Glossy overlay */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none" />
+        <div className="absolute inset-0 bg-linear-to-tr from-white/5 to-transparent pointer-events-none" />
 
         <div className="p-4 lg:p-6 space-y-4">
           {/* Top bar - Header section */}
           <div className="space-y-2 mb-4">
             <div className="flex items-center gap-3 mb-3">
-              <div className="flex-1 h-px bg-gradient-to-r from-white/10 via-white/20 to-transparent" />
+              <div className="flex-1 h-px bg-linear-to-r from-white/10 via-white/20 to-transparent" />
             </div>
             {/* Skeletal lines - Static/Clean */}
             <div className="h-2 bg-white/10 rounded-full w-3/4" />
@@ -102,7 +102,7 @@ export function HeroVisual() {
                   {[60, 85, 45, 95, 70, 55, 80].map((height, i) => (
                     <m.div
                       key={i}
-                      className="w-3 rounded-t-sm bg-gradient-to-t from-teal-500/60 to-cyan-400/40"
+                      className="w-3 rounded-t-sm bg-linear-to-t from-teal-500/60 to-cyan-400/40"
                       initial={{ height: `${height * 0.7}%` }}
                       animate={
                         isHoveringDashboard
@@ -207,7 +207,7 @@ export function HeroVisual() {
         }}
       >
         <div className="absolute inset-0 rounded-full bg-[#7766EE] blur-xl opacity-30 animate-pulse" />
-        <div className="relative w-full h-full rounded-full bg-gradient-to-br from-[#7766EE] via-[#8B7AFF] to-[#A78BFA] flex items-center justify-center shadow-xl border border-white/20">
+        <div className="relative w-full h-full rounded-full bg-linear-to-br from-[#7766EE] via-[#8B7AFF] to-[#A78BFA] flex items-center justify-center shadow-xl border border-white/20">
           <div className="w-1/2 h-1/2 border-time border-2 border-white/80 rounded-full flex items-center justify-center">
             <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_white]" />
           </div>

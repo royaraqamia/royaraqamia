@@ -6,7 +6,7 @@ import { CreateCategoryDialog } from './create-category-dialog';
 
 export default async function CategoriesPage() {
   const { user, supabase } = await getAuthUser();
-  if (!user) redirect('/auth/login?redirect=/spendtrack');
+  if (!user) redirect('/auth/login?redirect=/spendtrack/categories');
 
   const { data: categories } = await supabase
     .from('categories')

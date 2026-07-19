@@ -1,7 +1,17 @@
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/lib/supabase/server';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 
-export default function HabitFlowLayout({ children }: { children: React.ReactNode }) {
+export default async function HabitFlowLayout({ children }: { children: React.ReactNode }) {
+  const cookieStore = await cookies();
+  const supabase = await createClient(cookieStore);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/auth/login?redirect=/habitflow');
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />

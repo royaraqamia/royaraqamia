@@ -14,8 +14,8 @@ export default async function AdminCertificatesLayout({ children }: { children: 
     if (err instanceof Error && err.message === 'FORBIDDEN') {
       redirect('/');
     }
-    // UNAUTHORIZED — middleware handles redirect to login
-    redirect('/auth/login');
+    // UNAUTHORIZED — redirect to login with return path
+    redirect('/auth/login?redirect=/admin/certificates');
   }
 
   return (

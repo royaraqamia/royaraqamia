@@ -19,15 +19,15 @@ type ToggleLogResult = ActionResult<{ log: HabitLog; mode: 'supabase' | 'local' 
 
 export async function fetchUser() {
   const supabase = await createClient();
-  if (!supabase) return null;
+  if (!supabase) return { user: null, client: null };
   const { data } = await supabase.auth.getUser();
-  return data?.user ?? null;
+  return { user: data?.user ?? null, client: supabase };
 }
 
 export async function fetchInitialData() {
   try {
-    const user = await fetchUser();
-    const { service, mode } = createHabitService(user?.id);
+    const { user, client } = await fetchUser();
+    const { service, mode } = createHabitService(user?.id, client ?? undefined);
     const habits = await service.getAllHabits();
     const logs = await service.getLogs(
       new Date(Date.now() - 35 * 86400000).toISOString().slice(0, 10),
@@ -42,7 +42,7 @@ export async function fetchInitialData() {
 
 export async function createHabit(formData: FormData): Promise<CreateHabitResult> {
   try {
-    const user = await fetchUser();
+    const { user, client } = await fetchUser();
     const parsed = createHabitSchema.safeParse({
       name: formData.get('name'),
       icon: formData.get('icon') || undefined,
@@ -54,7 +54,7 @@ export async function createHabit(formData: FormData): Promise<CreateHabitResult
       return { error: firstError };
     }
 
-    const { service, mode } = createHabitService(user?.id);
+    const { service, mode } = createHabitService(user?.id, client ?? undefined);
     const habit = await service.createHabit(parsed.data);
 
     revalidatePath('/habitflow');
@@ -68,7 +68,7 @@ export async function createHabit(formData: FormData): Promise<CreateHabitResult
 
 export async function updateHabit(formData: FormData): Promise<UpdateHabitResult> {
   try {
-    const user = await fetchUser();
+    const { user, client } = await fetchUser();
     const parsed = updateHabitSchema.safeParse({
       id: formData.get('id'),
       name: formData.get('name'),
@@ -81,7 +81,7 @@ export async function updateHabit(formData: FormData): Promise<UpdateHabitResult
       return { error: firstError };
     }
 
-    const { service, mode } = createHabitService(user?.id);
+    const { service, mode } = createHabitService(user?.id, client ?? undefined);
     const habit = await service.updateHabit(parsed.data.id, parsed.data);
 
     revalidatePath('/habitflow');
@@ -94,9 +94,9 @@ export async function updateHabit(formData: FormData): Promise<UpdateHabitResult
 
 export async function archiveHabit(habitId: string): Promise<ArchiveHabitResult> {
   try {
-    const user = await fetchUser();
+    const { user, client } = await fetchUser();
 
-    const { service, mode } = createHabitService(user?.id);
+    const { service, mode } = createHabitService(user?.id, client ?? undefined);
     const success = await service.deleteHabit(habitId);
 
     if (!success) {
@@ -117,7 +117,7 @@ export async function toggleLog(
   completed: boolean
 ): Promise<ToggleLogResult> {
   try {
-    const user = await fetchUser();
+    const { user, client } = await fetchUser();
     const parsed = toggleLogSchema.safeParse({ habitId, date, completed });
 
     if (!parsed.success) {
@@ -125,7 +125,7 @@ export async function toggleLog(
       return { error: firstError };
     }
 
-    const { service, mode } = createHabitService(user?.id);
+    const { service, mode } = createHabitService(user?.id, client ?? undefined);
     const log = await service.toggleHabitLog(parsed.data);
 
     revalidatePath('/habitflow');

@@ -91,7 +91,7 @@ export function HomePageClient() {
       id="main-content"
       className="relative min-h-screen py-10 px-4 sm:px-6 lg:px-8 flex flex-col justify-between max-w-5xl mx-auto overflow-hidden"
     >
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-gradient-to-br from-indigo-500/10 to-sky-500/5 blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-linear-to-br from-indigo-500/10 to-sky-500/5 blur-3xl pointer-events-none -z-10" />
 
       <Navbar />
 

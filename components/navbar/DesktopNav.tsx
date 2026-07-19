@@ -2,9 +2,12 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CaretDown, Phone, User, type Icon } from '@phosphor-icons/react';
+import { CaretDown, Phone, User, SignOut, type Icon } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 import { getWhatsAppUrl } from '../../lib/constants';
+import { useSession } from '../shared/session-provider';
+import { logout } from '../../lib/actions/auth';
+import { ConfirmDialog } from '../shared/confirm-dialog';
 
 interface NavLink {
   visible?: boolean;
@@ -38,6 +41,9 @@ export function DesktopNav({
 }: DesktopNavProps) {
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
+
+  const { user, isLoading } = useSession();
 
   // Refs for dropdowns
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -331,18 +337,35 @@ export function DesktopNav({
 
       {/* CTA Buttons */}
       <div className="hidden lg:flex items-center element-gap-sm">
-        <a href="/auth/login" className="group">
-          <Button
-            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-white ${
-              isScrolled ? 'h-10 text-sm px-5' : 'h-12 text-base px-6'
-            }`}
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              <User className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
-              تسجيل الدُّخول
-            </span>
-          </Button>
-        </a>
+        {!isLoading && user ? (
+          <>
+            <button onClick={() => setIsLogoutDialogOpen(true)} className="group">
+              <Button
+                className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-white ${
+                  isScrolled ? 'h-10 text-sm px-5' : 'h-12 text-base px-6'
+                }`}
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  <SignOut className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
+                  تسجيل الخُروج
+                </span>
+              </Button>
+            </button>
+          </>
+        ) : (
+          <a href="/auth/login" className="group">
+            <Button
+              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-white ${
+                isScrolled ? 'h-10 text-sm px-5' : 'h-12 text-base px-6'
+              }`}
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                <User className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
+                تسجيل الدُّخول
+              </span>
+            </Button>
+          </a>
+        )}
         <a
           href={getWhatsAppUrl()}
           target="_blank"
@@ -372,6 +395,20 @@ export function DesktopNav({
           </Button>
         </a>
       </div>
+
+      <ConfirmDialog
+        open={isLogoutDialogOpen}
+        title="تسجيل الخُروج"
+        message="هل أنت متأكد أنك تريد تسجيل الخُروج؟"
+        confirmLabel="تسجيل الخُروج"
+        cancelLabel="إلغاء"
+        onConfirm={() => {
+          setIsLogoutDialogOpen(false);
+          logout();
+        }}
+        onCancel={() => setIsLogoutDialogOpen(false)}
+        variant="danger"
+      />
     </>
   );
 }

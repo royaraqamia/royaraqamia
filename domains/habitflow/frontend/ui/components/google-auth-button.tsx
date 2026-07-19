@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { signInWithGoogle } from '@/lib/actions/auth';
 import { Button } from '@/components/ui/button';
 
-export default function GoogleAuthButton() {
+export default function GoogleAuthButton({ redirectTo }: { redirectTo?: string }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -12,7 +12,7 @@ export default function GoogleAuthButton() {
     setLoading(true);
     setError(null);
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(redirectTo);
     } catch (e: any) {
       if (e.message !== 'NEXT_REDIRECT') {
         setError(e.message || 'حدث خطأ غير متوقع');

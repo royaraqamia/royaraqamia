@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient, SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/server';
 import { AppError, getErrorMessage } from './errors';
 
@@ -8,18 +8,24 @@ export interface AuthenticatedUser {
   email?: string;
 }
 
-export async function getOptionalUser(): Promise<AuthenticatedUser | null> {
+export async function getOptionalUser(): Promise<{
+  user: AuthenticatedUser | null;
+  client: SupabaseClient | null;
+}> {
   try {
     const supabase = await createClient();
-    if (!supabase) return null;
+    if (!supabase) return { user: null, client: null };
     const { data } = await supabase.auth.getUser();
-    if (!data?.user) return null;
+    if (!data?.user) return { user: null, client: null };
     return {
-      id: data.user.id,
-      email: data.user.email ?? undefined,
+      user: {
+        id: data.user.id,
+        email: data.user.email ?? undefined,
+      },
+      client: supabase,
     };
   } catch {
-    return null;
+    return { user: null, client: null };
   }
 }
 

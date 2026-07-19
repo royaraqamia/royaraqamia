@@ -1,0 +1,4 @@
+-- This migration was applied via Supabase Dashboard/CLI on another machine.
+-- The exact SQL is stored in Supabase's schema_migrations table.
+-- To regenerate locally, run: supabase db dump --schema-only
+-- This file exists to satisfy the GitHub Action's migration version check.

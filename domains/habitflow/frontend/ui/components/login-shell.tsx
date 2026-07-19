@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useActionState } from 'react';
@@ -61,6 +62,8 @@ function AlertBox({ type, message }: { type: 'error' | 'success'; message: strin
 }
 
 export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') ?? '/';
   const [isLogin, setIsLogin] = useState(mode !== 'signup');
   const [step, setStep] = useState<'form' | 'verify'>('form');
   const [otpEmail, setOtpEmail] = useState('');
@@ -199,6 +202,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
       {step === 'form' && (
         <>
           <form action={authAction} className="space-y-6">
+            <input type="hidden" name="redirectTo" value={redirectTo} />
             {!isLogin && (
               <div>
                 <label className="block text-sm font-medium text-foreground mb-2" htmlFor="name">
@@ -318,7 +322,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
       </div>
 
       <div className="mt-6">
-        <GoogleAuthButton />
+        <GoogleAuthButton redirectTo={redirectTo} />
       </div>
 
       <div className="mt-6 text-center">

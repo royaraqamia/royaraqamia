@@ -162,7 +162,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 value={originalUrl}
                 onChange={(e) => setOriginalUrl(e.target.value)}
                 placeholder="https://example.com/very-long-url-path"
-                className="w-full pr-12 pl-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 dark:text-slate-200"
+                className="w-full pr-12 pl-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border dark:border-slate-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 dark:text-slate-200"
               />
             </div>
           </div>
@@ -180,7 +180,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 رمز مُخصَّص (اختياري)
               </label>
               <div
-                className="flex items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all"
+                className="flex items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all"
                 dir="ltr"
               >
                 <span className="shrink-0 pr-3 text-sm text-slate-500 dark:text-slate-400 font-semibold select-none whitespace-nowrap py-3.5 leading-snug">
@@ -195,7 +195,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   }
                   placeholder="my-promo"
                   maxLength={16}
-                  className="flex-1 bg-transparent px-3 py-3.5 text-sm focus:outline-none text-slate-800 dark:text-slate-200 placeholder:text-slate-500"
+                  className="flex-1 bg-transparent px-3 py-3.5 text-sm focus:outline-none dark:text-slate-200 placeholder:text-slate-500"
                 />
               </div>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
@@ -218,7 +218,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <button
             type="submit"
             disabled={loading || !originalUrl}
-            className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition-all shadow-md shadow-indigo-100 hover:shadow-indigo-200 flex items-center justify-center gap-2 disabled:bg-indigo-400 disabled:shadow-none cursor-pointer group press-scale focus-ring"
+            className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition-all shadow-md shadow-indigo-100 hover:shadow-indigo-200 flex items-center justify-center gap-2 cursor-pointer group press-scale focus-ring"
           >
             {loading ? (
               <>
@@ -250,7 +250,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
         >
           <div className="flex flex-col items-center justify-center space-y-2">
             <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-2">
-              <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-[3] stroke-indigo-600 fill-none">
+              <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-3 stroke-indigo-600 fill-none">
                 <motion.path
                   d="M5 13l4 4L19 7"
                   initial={{ pathLength: 0 }}
@@ -329,7 +329,6 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 className="flex flex-col items-center justify-center p-4 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100/50 dark:border-indigo-800/30"
               >
                 {qrDataUrl && (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={qrDataUrl}
                     alt="QR code for shortened URL"

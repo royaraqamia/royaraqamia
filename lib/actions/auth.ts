@@ -161,26 +161,36 @@ export async function logout() {
   redirect('/');
 }
 
-export async function signInWithGoogle() {
+export async function signInWithGoogle(redirectTo?: string) {
   const supabase = await createClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
 
+  const callbackUrl = new URL(`${siteUrl}/auth/callback`);
+  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+    callbackUrl.searchParams.set('next', redirectTo);
+  }
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: `${siteUrl}/auth/callback` },
+    options: { redirectTo: callbackUrl.toString() },
   });
 
   if (error) throw error;
   if (data.url) redirect(data.url);
 }
 
-export async function signInWithOAuth(provider: 'google') {
+export async function signInWithOAuth(provider: 'google', redirectTo?: string) {
   const supabase = await createClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
 
+  const callbackUrl = new URL(`${siteUrl}/auth/callback`);
+  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
+    callbackUrl.searchParams.set('next', redirectTo);
+  }
+
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider,
-    options: { redirectTo: `${siteUrl}/auth/callback` },
+    options: { redirectTo: callbackUrl.toString() },
   });
 
   if (error) throw error;

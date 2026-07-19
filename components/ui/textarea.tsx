@@ -37,14 +37,13 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             // Resize behavior
             'resize-y',
             // Error states
-            error &&
-              'border-destructive focus-visible:ring-destructive/50 focus-visible:border-destructive',
+            error && 'border-destructive focus-visible:ring-destructive/50',
             // Hover effects
             'hover:border-ring/50 transition-all duration-200 ease-in-out',
             // RTL support
             '[dir=rtl]:text-right',
             // Shadow for depth
-            'shadow-sm focus-visible:shadow-md',
+            'shadow-sm',
             className
           )}
           onChange={handleChange}

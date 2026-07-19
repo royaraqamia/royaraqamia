@@ -47,16 +47,21 @@ export class SupabaseHabitRepository implements IHabitRepository {
   private client: SupabaseClient;
   private userId: string | undefined;
 
-  constructor(userId?: string) {
+  constructor(userId?: string, client?: SupabaseClient) {
     this.userId = userId;
-    const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-    if (!url || !key) {
-      throw new Error('Supabase environment variables are not configured.');
+    if (client) {
+      this.client = client;
+    } else {
+      const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+      if (!url || !key) {
+        throw new Error('Supabase environment variables are not configured.');
+      }
+
+      this.client = createClient(url, key);
     }
-
-    this.client = createClient(url, key);
   }
 
   async getHabits(): Promise<Habit[]> {

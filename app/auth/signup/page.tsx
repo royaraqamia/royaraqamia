@@ -77,7 +77,7 @@ export default function SignupPage() {
         </div>
 
         <button
-          onClick={() => signInWithGoogle()}
+          onClick={() => signInWithGoogle(redirectTo)}
           className="w-full py-3 px-4 border border-border rounded-xl font-medium text-foreground hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

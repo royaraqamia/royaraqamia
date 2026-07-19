@@ -80,7 +80,7 @@ export function WebDevService() {
                     key={idx}
                     className="flex items-start gap-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 hover:border-blue-500/30 hover:bg-blue-500/10 transition-all duration-300 group"
                   >
-                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
                       <benefit.icon className="w-5 h-5 text-white" />
                     </div>
                     <span className="flex flex-col justify-center items-center h-[5vh] text-sm md:text-base text-slate-200 group-hover:text-white transition-colors">
@@ -114,7 +114,7 @@ export function WebDevService() {
               <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
                       <Monitor className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
@@ -138,7 +138,7 @@ export function WebDevService() {
               <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
                       <Globe className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
@@ -162,7 +162,7 @@ export function WebDevService() {
               <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
+                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
                       <DeviceMobile className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
@@ -189,7 +189,7 @@ export function WebDevService() {
                 rel="noopener noreferrer"
                 className="block"
               >
-                <Button className="w-full h-14 text-base font-bold rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300">
+                <Button className="w-full h-14 text-base font-bold rounded-xl bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300">
                   <Code className="w-5 h-5 ml-2" />
                   ابدأ البناء الآن
                 </Button>

@@ -9,8 +9,8 @@ const DB_FILE = getDbPath();
 
 export async function GET(_req: NextRequest) {
   try {
-    const user = await getOptionalUser();
-    const { repository } = getHabitRepository(user?.id);
+    const { user, client } = await getOptionalUser();
+    const { repository } = getHabitRepository(user?.id, client ?? undefined);
     const habits = await repository.getHabits();
     const today = new Date();
     const endDate = today.toISOString().split('T')[0] ?? today.toISOString().slice(0, 10);
@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getOptionalUser();
+    const { user, client } = await getOptionalUser();
     const body = await req.json();
     const { habits, logs } = body;
 
@@ -39,11 +39,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { repository, mode } = getHabitRepository(user?.id);
+    const { repository, mode } = getHabitRepository(user?.id, client ?? undefined);
 
     if (mode === 'supabase') {
-      if (!user) throw new AppError('Unauthorized for Supabase restore', 401);
-      await restoreToSupabase(repository, user.id, habits, logs);
+      if (!user || !client) throw new AppError('Unauthorized for Supabase restore', 401);
+      await restoreToSupabase(repository, user.id, habits, logs, client);
     } else {
       restoreToLocal(habits, logs);
     }
@@ -75,13 +75,9 @@ async function restoreToSupabase(
   _repository: ReturnType<typeof getHabitRepository>['repository'],
   userId: string,
   habits: BackupHabit[],
-  logs: BackupLog[]
+  logs: BackupLog[],
+  client: import('@supabase/supabase-js').SupabaseClient
 ): Promise<void> {
-  const { createClient } = await import('@supabase/supabase-js');
-  const url = process.env.SUPABASE_URL!;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
-  const client = createClient(url, key);
-
   const { error: clearLogsError } = await client.from('habit_logs').delete().eq('user_id', userId);
   const { error: clearHabitsError } = await client.from('habits').delete().eq('user_id', userId);
 
