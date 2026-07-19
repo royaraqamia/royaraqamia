@@ -129,7 +129,7 @@ export function Testimonials() {
             <div
               key={index}
               tabIndex={0}
-              className="scroll-snap-item testimonial-card group relative glass-card rounded-2xl card-padding glass-hover transition-all duration-300 flex-shrink-0 focus:outline-none focus:ring-2 focus:ring-[#7766EE] focus:ring-offset-2 focus:ring-offset-[#020617] flex flex-col"
+              className="scroll-snap-item testimonial-card group relative glass-card rounded-2xl card-padding glass-hover transition-all duration-300 shrink-0 focus:outline-none focus:ring-2 focus:ring-[#7766EE] focus:ring-offset-2 focus:ring-offset-[#020617] flex flex-col"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                   e.preventDefault();
@@ -143,7 +143,7 @@ export function Testimonials() {
                 onClick={() => setSelectedReview(index)}
                 role="presentation"
               >
-                <p className="text-foreground/80 leading-relaxed line-clamp-3 whitespace-normal break-words group-hover:text-foreground transition-colors duration-300">
+                <p className="text-foreground/80 leading-relaxed line-clamp-3 whitespace-normal wrap-break-word group-hover:text-foreground transition-colors duration-300">
                   &ldquo;{testimonial.content}&rdquo;
                 </p>
                 {/* Read More - Hidden on desktop, visible on hover; Always visible on mobile */}
@@ -156,7 +156,7 @@ export function Testimonials() {
               {/* Author */}
               <div className="flex items-center element-gap-sm relative z-10 mt-auto">
                 <div
-                  className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center flex-shrink-0 shadow-lg overflow-hidden border-none ring-0 outline-none"
+                  className="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shrink-0 shadow-lg overflow-hidden border-none ring-0 outline-none"
                   style={{
                     background: 'linear-gradient(135deg, #7766EE 0%, #A78BFA 100%)',
                   }}
@@ -179,7 +179,7 @@ export function Testimonials() {
             <>
               {/* Overlay */}
               <div
-                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998]"
+                className="fixed inset-0 bg-black/60 backdrop-blur-sm z-9998"
                 onClick={closeReviewSheet}
                 tabIndex={-1}
                 role="presentation"
@@ -187,7 +187,7 @@ export function Testimonials() {
 
               {/* Bottom Sheet */}
               <div
-                className="review-bottom-sheet fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-[327px] max-h-[calc(100vh-100px)] md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:max-w-md bg-gradient-to-br from-[#020617] via-[#3b0764] to-[#0f172a] rounded-3xl shadow-2xl shadow-black/50 z-[9999] overflow-hidden flex flex-col animate-slide-up-bottom"
+                className="review-bottom-sheet fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-[327px] max-h-[calc(100vh-100px)] md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:max-w-md bg-linear-to-br from-[#020617] via-[#3b0764] to-[#0f172a] rounded-3xl shadow-2xl shadow-black/50 z-9999 overflow-hidden flex flex-col animate-slide-up-bottom"
                 role="dialog"
                 aria-modal="true"
                 aria-label={`رأي ${review.name}`}
@@ -219,7 +219,7 @@ export function Testimonials() {
 
                   {/* Author */}
                   <div className="flex items-center gap-4 pt-4 border-t border-white/10">
-                    <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 bg-gradient-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-black/30">
+                    <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 bg-linear-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-black/30">
                       <UserCircle className="w-7 h-7 text-white" />
                     </div>
                     <h4 className="font-bold text-white">{review.name}</h4>

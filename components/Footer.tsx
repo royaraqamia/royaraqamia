@@ -85,7 +85,7 @@ export function Footer() {
               aria-label="العودة إلى الصفحة الرئيسية"
             >
               <div className="h-14 w-14 relative">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-violet-500/30 to-violet-400/15 blur-lg group-hover:blur-xl group-hover:from-violet-500/40 group-hover:to-violet-400/25 transition-all duration-500"></div>
+                <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-violet-500/30 to-violet-400/15 blur-lg group-hover:blur-xl group-hover:from-violet-500/40 group-hover:to-violet-400/25 transition-all duration-500"></div>
                 <LazyImage
                   src="/logo.png"
                   webpSrc="/logo.webp"
@@ -174,6 +174,10 @@ export function Footer() {
               className="text-gray-400 hover:text-violet-400 transition-colors"
             >
               SpendTrack
+            </Link>
+            <span className="text-violet-500/30">|</span>
+            <Link href="/verify" className="text-gray-400 hover:text-violet-400 transition-colors">
+              التَّحقُّق من الشَّهادة
             </Link>
           </div>
         </div>

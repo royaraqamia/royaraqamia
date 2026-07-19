@@ -51,7 +51,7 @@ async function TotalCard({
     p_user_id: userId,
     p_start: start,
     p_end: end,
-    p_categories: catFilter,
+    p_categories: catFilter ?? [],
   });
   return (
     <Card
@@ -105,7 +105,7 @@ async function CategoryPieSection({
     p_user_id: userId,
     p_start: start,
     p_end: end,
-    p_categories: catFilter,
+    p_categories: catFilter ?? [],
   });
   return <CategoryPieChart data={data ?? []} />;
 }
@@ -127,7 +127,7 @@ async function DailyBarSection({
     p_user_id: userId,
     p_start: start,
     p_end: end,
-    p_categories: catFilter,
+    p_categories: catFilter ?? [],
   });
   return <DailyBarChart data={data ?? []} />;
 }

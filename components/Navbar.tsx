@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { List, X, House } from '@phosphor-icons/react';
+import { List, X, House, Package, ShieldCheck } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../context/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
@@ -98,7 +98,7 @@ export function Navbar() {
     {
       href: '#projects',
       label: 'منتجاتنا',
-      icon: House,
+      icon: Package,
       isRoute: false,
       visible: true,
       hasDropdown: true,
@@ -109,6 +109,13 @@ export function Navbar() {
         { href: '/habitflow', label: 'HabitFlow', isRoute: true },
         { href: '/spendtrack', label: 'SpendTrack', isRoute: true },
       ],
+    },
+    {
+      href: '/verify',
+      label: 'التَّحقُّق من الشَّهادة',
+      icon: ShieldCheck,
+      isRoute: true,
+      visible: true,
     },
   ];
 
@@ -122,7 +129,7 @@ export function Navbar() {
       {/* Skip Navigation Link for Accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:right-4 focus:z-[100] focus:bg-violet-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:right-4 focus:z-100 focus:bg-violet-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
       >
         تخطي إلى المحتوى الرئيسي
       </a>

@@ -25,11 +25,11 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
     <div
       dir="rtl"
       aria-labelledby={`reason-title-${index}`}
-      className="group relative h-full rounded-2xl p-6 lg:p-8 border border-white/5 border-t-white/10 hover:-translate-y-1 hover:border-violet-500/30 hover:border-t-white/20 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 flex flex-col sm:flex-row sm:items-center items-start text-right gap-4 sm:gap-5 bg-[rgba(25,25,32,0.7)] hover:bg-[rgba(35,35,45,0.85)] backdrop-blur-[12px] will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background gradient-border-hover"
+      className="group relative h-full rounded-2xl p-6 lg:p-8 border border-white/5 border-t-white/10 hover:-translate-y-1 hover:border-violet-500/30 hover:border-t-white/20 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 flex flex-col sm:flex-row sm:items-center items-start text-right gap-4 sm:gap-5 bg-[rgba(25,25,32,0.7)] hover:bg-[rgba(35,35,45,0.85)] backdrop-blur-md will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background gradient-border-hover"
     >
       {/* Icon - Top Right (start in RTL) */}
       <div
-        className={`shrink-0 w-14 h-14 rounded-xl flex items-center justify-center group-hover:scale-105 transition-all duration-300 border border-white/10 ring-1 ring-inset ring-white/20 bg-gradient-to-br ${reason.iconGradient} ${reason.iconShadow} will-change-transform`}
+        className={`shrink-0 w-14 h-14 rounded-xl flex items-center justify-center group-hover:scale-105 transition-all duration-300 border border-white/10 ring-1 ring-inset ring-white/20 bg-linear-to-br ${reason.iconGradient} ${reason.iconShadow} will-change-transform`}
       >
         <Icon
           className={`w-7 h-7 ${reason.iconColor} group-hover:rotate-12 transition-transform duration-300 will-change-transform`}

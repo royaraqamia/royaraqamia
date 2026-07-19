@@ -6,6 +6,7 @@ const protectedRoutes: Record<string, string> = {
   '/blogpress': '/auth/login',
   '/habitflow': '/auth/login',
   '/spendtrack': '/auth/login',
+  '/admin': '/auth/login',
 };
 
 const authRoutes: Record<string, string> = {

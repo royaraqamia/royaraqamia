@@ -26,7 +26,7 @@ const ResizableHandle = ({
   <Separator
     data-slot="resizable-handle"
     className={cn(
-      'bg-border relative flex w-px items-center justify-center p-0 after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 data-[orientation=vertical]:h-px data-[orientation=vertical]:w-full data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:top-1/2 data-[orientation=vertical]:after:h-1 data-[orientation=vertical]:after:-translate-y-1/2 data-[state=drag]:bg-primary [&[data-state=drag]]:after:bg-primary',
+      'bg-border relative flex w-px items-center justify-center p-0 after:absolute after:inset-y-0 after:left-1/2 after:w-1 after:-translate-x-1/2 data-[orientation=vertical]:h-px data-[orientation=vertical]:after:inset-x-0 data-[orientation=vertical]:after:top-1/2 data-[orientation=vertical]:after:h-1 data-[orientation=vertical]:after:-translate-y-1/2 data-[state=drag]:after:bg-primary',
       className
     )}
     {...props}

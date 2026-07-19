@@ -43,7 +43,7 @@ export async function verifyOtpRecord(email: string, otp: string) {
 
   if (fetchError || !record) return { error: 'لم يتم العثور على رمز التحقق' };
 
-  const otpRecord = record as OtpRecord;
+  const otpRecord = record as unknown as OtpRecord;
 
   if (new Date(otpRecord.expires_at) < new Date()) return { error: 'انتهت صلاحية رمز التحقق' };
 

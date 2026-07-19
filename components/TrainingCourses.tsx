@@ -121,7 +121,7 @@ export function TrainingCourses() {
                   </div>
 
                   {/* Price Badge */}
-                  <div className="text-center md:text-start flex-shrink-0">
+                  <div className="text-center md:text-start shrink-0">
                     <div className="flex items-baseline gap-2 justify-center md:justify-start">
                       <div className="text-4xl md:text-5xl font-bold tracking-tight text-teal-400">
                         {course.price}
@@ -146,7 +146,7 @@ export function TrainingCourses() {
                       }`}
                     >
                       <div
-                        className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br from-[#14B8A6] to-[#0891B2] flex items-center justify-center shadow-lg shadow-[#14B8A6]/25 ${
+                        className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-linear-to-br from-[#14B8A6] to-[#0891B2] flex items-center justify-center shadow-lg shadow-[#14B8A6]/25 ${
                           idx === 1 ? 'w-14 h-14' : ''
                         }`}
                       >
@@ -215,7 +215,7 @@ export function TrainingCourses() {
                           idx === features.length - 1 ? 'md:col-span-2' : ''
                         }`}
                       >
-                        <div className="w-8 h-8 rounded-lg bg-[#14B8A6]/10 flex items-center justify-center flex-shrink-0 group-hover:bg-[#14B8A6]/20 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-[#14B8A6]/10 flex items-center justify-center shrink-0 group-hover:bg-[#14B8A6]/20 transition-colors">
                           <feature.icon className="w-4 h-4 text-[#14B8A6]" />
                         </div>
                         <span className="text-sm font-medium">{feature.text}</span>
