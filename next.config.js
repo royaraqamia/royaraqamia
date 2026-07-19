@@ -54,7 +54,6 @@ const nextConfig = {
             value: 'max-age=31536000; includeSubDomains; preload',
           },
           { key: 'Content-Security-Policy', value: csp.replace(/\s+/g, ' ').trim() },
-          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
           { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
           {

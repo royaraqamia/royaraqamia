@@ -10,6 +10,7 @@ import { SessionProvider } from '../components/shared/session-provider';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { AccessibilityCheck } from '../components/AccessibilityCheck';
+import { VersionChecker } from '../components/VersionChecker';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -90,6 +91,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <UIProvider>
                 <SpeedInsights />
                 <Analytics />
+                <VersionChecker />
                 {children}
                 <Toaster position="top-center" richColors />
                 {process.env.NODE_ENV === 'development' && <AccessibilityCheck />}

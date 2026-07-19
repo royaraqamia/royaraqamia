@@ -248,7 +248,6 @@ export default async function DashboardPage(props: {
   const { user } = await getAuthUser();
   if (!user) redirect('/auth/login?redirect=/spendtrack');
 
-
   const range = searchParams.range || 'this_month';
   const filterCategories = searchParams.categories
     ? searchParams.categories.split(',').filter(Boolean)
