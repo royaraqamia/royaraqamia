@@ -50,7 +50,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('/api/shorten', {
+      const res = await fetch('/linksnap/api/shorten', {
         method: 'POST',
         headers,
         body: JSON.stringify({ originalUrl, customCode: customCode || undefined }),

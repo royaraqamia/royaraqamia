@@ -28,7 +28,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/links', {
+      const res = await fetch('/linksnap/api/links', {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();

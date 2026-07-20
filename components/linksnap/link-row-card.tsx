@@ -65,7 +65,7 @@ export function LinkRowCard({
     setDeleteError(null);
 
     try {
-      const res = await fetch(`/api/links?code=${code}`, {
+      const res = await fetch(`/linksnap/api/links?code=${code}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -94,7 +94,7 @@ export function LinkRowCard({
     setAnalyticsError(null);
 
     try {
-      const res = await fetch(`/api/analytics/${code}`, {
+      const res = await fetch(`/linksnap/api/analytics/${code}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

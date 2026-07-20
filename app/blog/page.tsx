@@ -38,10 +38,8 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
   return (
     <div>
       <div className="mb-12">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">المدونة</h1>
-        <p className="mt-2.5 text-muted-foreground text-base">
-          أفكار، دروس، وقصص من مجتمع المطورين
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">المدوَّنة</h1>
+        <p className="mt-2.5 text-muted-foreground text-base">أفكار، دروس، وقصص</p>
       </div>
 
       {((posts as Post[]) ?? []).length === 0 ? (
@@ -50,7 +48,6 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
             <FileText className="size-7 text-muted-foreground/50" />
           </div>
           <h2 className="text-lg font-semibold">لا توجد مقالات بعد</h2>
-          <p className="text-sm text-muted-foreground mt-1.5">كن أول من ينشر مقالاً على المدونة</p>
         </div>
       ) : (
         <>
@@ -72,7 +69,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
                 ) : (
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="block relative aspect-video overflow-hidden rounded-xl mb-4 bg-gradient-to-br from-primary/10 to-primary/5 transition-smooth hover:shadow-md"
+                    className="block relative aspect-video overflow-hidden rounded-xl mb-4 bg-linear-to-br from-primary/10 to-primary/5 transition-smooth hover:shadow-md"
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-4xl font-bold text-primary/20">{post.title[0]}</span>
@@ -119,7 +116,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
                 <Link href={`/blog?page=${page - 1}`}>
                   <Button variant="outline" size="sm" className="transition-smooth">
                     <ChevronRight className="size-4" />
-                    السابق
+                    السَّابق
                   </Button>
                 </Link>
               )}
@@ -161,7 +158,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
               {page < totalPages && (
                 <Link href={`/blog?page=${page + 1}`}>
                   <Button variant="outline" size="sm" className="transition-smooth">
-                    التالي
+                    التَّالي
                     <ChevronLeft className="size-4" />
                   </Button>
                 </Link>

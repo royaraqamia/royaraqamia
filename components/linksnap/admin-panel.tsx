@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 interface AdminStats {
   totalLinks: number;
   totalClicks: number;
-  blockedCount: number;
+  blockedLinksCount: number;
   systemLinks: {
     code: string;
     originalUrl: string;
@@ -57,7 +57,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/api/admin/stats', {
+      const res = await fetch('/linksnap/api/admin/stats', {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -95,7 +95,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
 
   const animatedTotalLinks = useAnimatedCounter(stats?.totalLinks ?? 0);
   const animatedTotalClicks = useAnimatedCounter(stats?.totalClicks ?? 0);
-  const animatedBlockedCount = useAnimatedCounter(stats?.blockedCount ?? 0);
+  const animatedBlockedCount = useAnimatedCounter(stats?.blockedLinksCount ?? 0);
 
   const totalPages = Math.max(1, Math.ceil(filteredLinks.length / PAGE_SIZE));
   const paginatedLinks = filteredLinks.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
@@ -110,7 +110,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
     setModerateError(null);
     try {
       const targetState = !currentBlockedState;
-      const res = await fetch('/api/admin/moderate', {
+      const res = await fetch('/linksnap/api/admin/moderate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -136,7 +136,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
 
         setStats({
           ...stats,
-          blockedCount: stats.blockedCount + blockedDiff,
+          blockedLinksCount: stats.blockedLinksCount + blockedDiff,
           systemLinks: updatedLinks,
         });
         toast.success(targetState ? 'تم حظر الرابط بنجاح' : 'تم إلغاء حظر الرابط بنجاح');
@@ -249,7 +249,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
               <span
                 className="text-3xl font-black text-red-600 font-display mt-0.5 block"
                 aria-live="polite"
-                aria-label={`${stats.blockedCount} رابط محظور`}
+                aria-label={`${stats.blockedLinksCount} رابط محظور`}
               >
                 {animatedBlockedCount}
               </span>

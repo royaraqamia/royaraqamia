@@ -21,7 +21,7 @@ export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: Lin
     setUpdateLoading(true);
     setUpdateError(null);
     try {
-      const res = await fetch('/api/links', {
+      const res = await fetch('/linksnap/api/links', {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

@@ -144,6 +144,13 @@ export function Footer() {
           {/* Project Links */}
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
             <Link
+              href="/blog"
+              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            >
+              المدوَّنة
+            </Link>
+            <span className="text-muted-foreground/30">|</span>
+            <Link
               href="/linksnap"
               className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
             >

@@ -54,7 +54,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (token) headers['Authorization'] = `Bearer ${token}`;
 
-      const res = await fetch('/api/shorten/bulk', {
+      const res = await fetch('/linksnap/api/shorten/bulk', {
         method: 'POST',
         headers,
         body: JSON.stringify({ urls: parsedUrls }),
