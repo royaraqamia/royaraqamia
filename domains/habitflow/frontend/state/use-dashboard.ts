@@ -91,7 +91,7 @@ export function useDashboard(seed: SeedData) {
         const parsed = JSON.parse(raw);
         if (Array.isArray(parsed) && parsed.length > 0) {
           hasAutoSynced.current = true;
-          setTimeout(() => syncLocalToCloud(), 0);
+          setShowSyncConfirm(true);
         }
       } catch {
         /* ignore parse error */
@@ -100,11 +100,29 @@ export function useDashboard(seed: SeedData) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const confirmSyncToCloud = async () => {
+    setShowSyncConfirm(false);
+    try {
+      await syncLocalToCloud();
+    } catch (e) {
+      console.error('Failed to sync local data to cloud', e);
+    }
+  };
+
+  const cancelSyncToCloud = () => {
+    setShowSyncConfirm(false);
+    localStorage.removeItem('habitflow_habits');
+    localStorage.removeItem('habitflow_logs');
+  };
+
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string>('');
   const [confirmArchiveHabitId, setConfirmArchiveHabitId] = useState<string | null>(null);
   const [togglingHabitId, setTogglingHabitId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [pendingImportFile, setPendingImportFile] = useState<File | null>(null);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [showSyncConfirm, setShowSyncConfirm] = useState(false);
 
   const handleAddHabit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -340,6 +358,12 @@ export function useDashboard(seed: SeedData) {
   };
 
   const handleImportBackupFile = async (file: File) => {
+    setPendingImportFile(file);
+    setShowImportConfirm(true);
+  };
+
+  const confirmImport = async () => {
+    const file = pendingImportFile;
     if (!file) return;
 
     try {
@@ -358,7 +382,15 @@ export function useDashboard(seed: SeedData) {
       }, 1500);
     } catch (e: any) {
       toast.error(e.message || 'فشل في قراءة ملف النسخة الاحتياطية');
+    } finally {
+      setPendingImportFile(null);
+      setShowImportConfirm(false);
     }
+  };
+
+  const cancelImport = () => {
+    setPendingImportFile(null);
+    setShowImportConfirm(false);
   };
 
   async function refreshData() {
@@ -424,7 +456,7 @@ export function useDashboard(seed: SeedData) {
             if (raw) {
               const parsed = JSON.parse(raw);
               if (Array.isArray(parsed) && parsed.length > 0) {
-                await syncLocalToCloud();
+                setShowSyncConfirm(true);
               }
             }
           } catch (e) {
@@ -468,6 +500,12 @@ export function useDashboard(seed: SeedData) {
     handleToggleLog,
     handleDownloadBackup,
     handleImportBackupFile,
+    showImportConfirm,
+    confirmImport,
+    cancelImport,
+    showSyncConfirm,
+    confirmSyncToCloud,
+    cancelSyncToCloud,
     togglingHabitId,
     handleDateShift,
     getReadableActiveDate,

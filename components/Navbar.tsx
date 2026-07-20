@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { List, X, House, Package, ShieldCheck } from '@phosphor-icons/react';
+import { List, X, House, Package, ShieldCheck, BookOpenIcon } from '@phosphor-icons/react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../context/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
@@ -109,6 +109,13 @@ export function Navbar() {
         { href: '/habitflow', label: 'HabitFlow', isRoute: true },
         { href: '/spendtrack', label: 'SpendTrack', isRoute: true },
       ],
+    },
+    {
+      href: '/blog',
+      label: 'المدوَّنة',
+      icon: BookOpenIcon,
+      isRoute: true,
+      visible: true,
     },
     {
       href: '/verify',

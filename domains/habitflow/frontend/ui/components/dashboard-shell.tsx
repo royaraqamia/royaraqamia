@@ -70,6 +70,12 @@ export function DashboardShell({
     handleToggleLog,
     handleDownloadBackup,
     handleImportBackupFile,
+    showImportConfirm,
+    confirmImport,
+    cancelImport,
+    showSyncConfirm,
+    confirmSyncToCloud,
+    cancelSyncToCloud,
     handleDateShift,
     getReadableActiveDate,
     openEditModal,
@@ -375,6 +381,26 @@ export function DashboardShell({
           cancelLabel="إلغاء"
           onConfirm={() => startLogoutTransition(() => logout())}
           onCancel={() => setShowLogoutConfirm(false)}
+        />
+
+        <ConfirmDialog
+          open={showImportConfirm}
+          title="استعادة النسخة الاحتياطية"
+          message="استعادة نسخة احتياطية ستحلّ محل جميع العادات والسجلات الحالية. هذا الإجراء لا يمكن التراجع عنه. هل أنت متأكد؟"
+          confirmLabel="استعادة"
+          cancelLabel="إلغاء"
+          onConfirm={confirmImport}
+          onCancel={cancelImport}
+        />
+
+        <ConfirmDialog
+          open={showSyncConfirm}
+          title="مزامنة البيانات المحلية"
+          message="سيتم إرسال بياناتك المحلية إلى السحابة وحلّها محل البيانات السحابية الحالية. هل أنت متأكد؟"
+          confirmLabel="مزامنة"
+          cancelLabel="إلغاء"
+          onConfirm={confirmSyncToCloud}
+          onCancel={cancelSyncToCloud}
         />
       </div>
     </ErrorBoundary>

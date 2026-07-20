@@ -54,11 +54,5 @@ export const PostSchema = z.object({
   meta_desc: z.string().max(160).optional(),
 });
 
-export const ProfileSchema = z.object({
-  name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
-  bio: z.string().max(500).optional(),
-});
-
 export type UpdatePasswordInput = z.infer<typeof UpdatePasswordSchema>;
 export type PostInput = z.infer<typeof PostSchema>;
-export type ProfileInput = z.infer<typeof ProfileSchema>;

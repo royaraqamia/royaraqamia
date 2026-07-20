@@ -42,19 +42,3 @@ export async function uploadImage(formData: FormData) {
   const session = await verifySession();
   return uploadToBucket('post-images', formData, session.userId);
 }
-
-export async function uploadAvatar(formData: FormData) {
-  const session = await verifySession();
-  const result = await uploadToBucket('avatars', formData, session.userId);
-
-  if (result.url) {
-    const cookieStore = await cookies();
-    const supabase = await createClient(cookieStore);
-    await supabase.auth.updateUser({
-      data: { avatar_url: result.url },
-    });
-    await supabase.from('users').update({ avatar_url: result.url }).eq('id', session.userId);
-  }
-
-  return result;
-}

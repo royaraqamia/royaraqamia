@@ -8,7 +8,6 @@ import { createOtpRecord, verifyOtpRecord } from '@/lib/otp/repository';
 import { sendOtpEmail } from '@/infrastructure/email/resend';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { OTP_CONFIG } from '@/lib/otp/config';
-import { ProfileSchema } from '@/lib/schemas';
 
 function safeRedirect(to: string | null, fallback: string = '/'): string {
   if (!to || !to.startsWith('/') || to.startsWith('//')) return fallback;
@@ -195,38 +194,4 @@ export async function signInWithOAuth(provider: 'google', redirectTo?: string) {
 
   if (error) throw error;
   if (data.url) redirect(data.url);
-}
-
-export async function updateProfile(
-  _prevState: { message: string; success?: boolean } | undefined,
-  formData: FormData
-) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { message: 'غير مصرح' };
-
-  const name = formData.get('name') as string;
-  const bio = formData.get('bio') as string;
-
-  const validated = ProfileSchema.safeParse({ name, bio });
-  if (!validated.success) {
-    return { message: 'بيانات غير صالحة' };
-  }
-
-  const { error: authError } = await supabase.auth.updateUser({
-    data: { full_name: validated.data.name, bio: validated.data.bio },
-  });
-
-  if (authError) return { message: authError.message };
-
-  const { error: profileError } = await supabase
-    .from('users')
-    .update({ name: validated.data.name, bio: validated.data.bio })
-    .eq('id', user.id);
-
-  if (profileError) return { message: profileError.message };
-
-  return { message: 'تم تحديث الملف الشخصي', success: true };
 }

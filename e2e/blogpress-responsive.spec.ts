@@ -1,9 +1,8 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import {
   expectNoHorizontalOverflow,
   expectNoElementOverflow,
   expectTouchTargets,
-  expectMinFontSize,
   expectNoTextOverflow,
   takeScreenshot,
   loginAs,
@@ -26,31 +25,6 @@ test.describe('BlogPress - responsive', () => {
     await expectTouchTargets(page);
     await expectNoTextOverflow(page);
     await takeScreenshot(page, 'blogpress/dashboard');
-  });
-
-  test('profile page: no overflow, touch targets', async ({ page }) => {
-    await page.goto('/blogpress/profile', { waitUntil: 'networkidle', timeout: 60_000 });
-    await page.waitForLoadState('networkidle', { timeout: 60_000 });
-
-    await expectNoHorizontalOverflow(page);
-    await expectNoElementOverflow(page);
-    await expectTouchTargets(page);
-    await expectMinFontSize(page);
-    await takeScreenshot(page, 'blogpress/profile');
-  });
-
-  test('profile page: header stacks on mobile', async ({ page }) => {
-    await page.goto('/blogpress/profile', { waitUntil: 'networkidle', timeout: 60_000 });
-    await page.waitForLoadState('networkidle', { timeout: 60_000 });
-
-    const viewWidth = page.viewportSize()!.width;
-    const header = page.locator('[class*="flex"]').first();
-    if (await header.isVisible()) {
-      const box = await header.boundingBox();
-      if (box) {
-        expect(box.width).toBeLessThanOrEqual(viewWidth + 2);
-      }
-    }
   });
 
   test('editor page: no overflow, toolbar touch targets', async ({ page }) => {
