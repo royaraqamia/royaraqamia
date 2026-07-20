@@ -3,8 +3,6 @@ import Link from 'next/link';
 import { LazyImage } from '../../components/LazyImage';
 import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
-import { GoUpButton } from '../../components/GoUpButton';
-import { WhatsAppFloat } from '../../components/WhatsAppFloat';
 
 export const metadata: Metadata = {
   title: 'معلومات المنصَّة | رؤية رقمية',
@@ -132,8 +130,6 @@ export default function AppInfoPage() {
         </div>
       </main>
       <Footer />
-      <GoUpButton />
-      <WhatsAppFloat />
     </div>
   );
 }

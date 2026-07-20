@@ -4,8 +4,6 @@ import Link from 'next/link';
 import { requireAuth } from '@/lib/actions/admin-certificates';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { GoUpButton } from '@/components/GoUpButton';
-import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 import { Plus } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -47,8 +45,6 @@ export default async function AdminCertificatesLayout({ children }: { children: 
         </div>
       </main>
       <Footer />
-      <GoUpButton />
-      <WhatsAppFloat />
     </div>
   );
 }

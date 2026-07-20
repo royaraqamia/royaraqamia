@@ -5,10 +5,7 @@ import { Hero } from './Hero';
 import { MetricCards } from './MetricCards';
 import { Services } from './Services';
 import { CTA } from './CTA';
-import { WhatsAppFloat } from './WhatsAppFloat';
-import { GoUpButton } from './GoUpButton';
 import { useUI } from '../context/UIContext';
-import { WHATSAPP_MESSAGE } from '../lib/constants';
 import { CircleNotch } from '@phosphor-icons/react';
 
 const Testimonials = lazy(() =>
@@ -87,9 +84,6 @@ export function HomePageContent() {
         <FAQ />
       </Suspense>
       <CTA />
-
-      <WhatsAppFloat message={WHATSAPP_MESSAGE} />
-      <GoUpButton />
     </main>
   );
 }

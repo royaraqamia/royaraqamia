@@ -1,7 +1,5 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { GoUpButton } from '@/components/GoUpButton';
-import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 
 export default function TermsLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,8 +9,6 @@ export default function TermsLayout({ children }: { children: React.ReactNode })
         {children}
       </main>
       <Footer />
-      <GoUpButton />
-      <WhatsAppFloat />
     </div>
   );
 }

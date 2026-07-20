@@ -10,6 +10,8 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { AccessibilityCheck } from '../components/AccessibilityCheck';
 import { VersionChecker } from '../components/VersionChecker';
+import { GoUpButton } from '../components/GoUpButton';
+import { WhatsAppFloat } from '../components/WhatsAppFloat';
 
 export const metadata: Metadata = {
   title: 'رؤية رقمية',
@@ -94,6 +96,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Analytics />
                 <VersionChecker />
                 {children}
+                <GoUpButton />
+                <WhatsAppFloat />
                 <Toaster position="top-center" richColors />
                 {process.env.NODE_ENV === 'development' && <AccessibilityCheck />}
               </UIProvider>

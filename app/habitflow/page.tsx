@@ -24,7 +24,7 @@ export default async function HomePage() {
 
 function LoadingShell() {
   return (
-    <div className="min-h-[100dvh] pb-16 bg-background">
+    <div className="min-h-dvh pb-16 bg-background">
       <main className="max-w-6xl mx-auto px-6 space-y-8">
         <SkeletonStats />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

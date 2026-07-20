@@ -96,69 +96,79 @@ export interface VerifyResult {
  * Returns structured result with Sentry logging for monitoring.
  */
 export async function verifyCertificateByCode(code: string, ip: string): Promise<VerifyResult> {
-  const sanitized = code.trim().toUpperCase();
+  try {
+    const sanitized = code.trim().toUpperCase();
 
-  // Format validation
-  if (!CERT_CODE_REGEX.test(sanitized)) {
-    Sentry.captureMessage('Invalid certificate code format', {
-      level: 'warning',
-      extra: { code: sanitized, ip },
-    });
-    return {
-      success: false,
-      error: 'صيغة الرمز غير صالحة. الصيغة الصحيحة: COMP-YYYY-XXXXXXXX',
-    };
-  }
+    // Format validation
+    if (!CERT_CODE_REGEX.test(sanitized)) {
+      Sentry.captureMessage('Invalid certificate code format', {
+        level: 'warning',
+        extra: { code: sanitized, ip },
+      });
+      return {
+        success: false,
+        error: 'صيغة الرمز غير صالحة. الصيغة الصحيحة: COMP-YYYY-XXXXXXXX',
+      };
+    }
 
-  // Rate limiting - IP level
-  if (!(await checkRateLimit(`verify:${ip}`, 'ip'))) {
-    Sentry.captureMessage('Certificate verification IP rate limit exceeded', {
-      level: 'warning',
-      extra: { code: sanitized, ip },
-    });
-    return {
-      success: false,
-      error: 'تم تجاوز الحد المسموح. الرجاء المحاولة بعد دقيقة.',
-      rateLimited: true,
-    };
-  }
+    // Rate limiting - IP level
+    if (!(await checkRateLimit(`verify:${ip}`, 'ip'))) {
+      Sentry.captureMessage('Certificate verification IP rate limit exceeded', {
+        level: 'warning',
+        extra: { code: sanitized, ip },
+      });
+      return {
+        success: false,
+        error: 'تم تجاوز الحد المسموح. الرجاء المحاولة بعد دقيقة.',
+        rateLimited: true,
+      };
+    }
 
-  // Rate limiting - Code level (anti-enumeration)
-  if (!(await checkRateLimit(`verify:${sanitized}`, 'code'))) {
-    Sentry.captureMessage('Certificate verification code rate limit exceeded', {
-      level: 'warning',
-      extra: { code: sanitized, ip },
-    });
-    return {
-      success: false,
-      error: 'تم تجاوز الحد المسموح. الرجاء المحاولة بعد دقيقة.',
-      rateLimited: true,
-    };
-  }
+    // Rate limiting - Code level (anti-enumeration)
+    if (!(await checkRateLimit(`verify:${sanitized}`, 'code'))) {
+      Sentry.captureMessage('Certificate verification code rate limit exceeded', {
+        level: 'warning',
+        extra: { code: sanitized, ip },
+      });
+      return {
+        success: false,
+        error: 'تم تجاوز الحد المسموح. الرجاء المحاولة بعد دقيقة.',
+        rateLimited: true,
+      };
+    }
 
-  // Database lookup
-  const admin = getAdminSupabase();
-  const { data, error } = await admin
-    .from('certificates')
-    .select('*')
-    .eq('certificate_code', sanitized)
-    .single();
+    // Database lookup
+    const admin = getAdminSupabase();
+    const { data, error } = await admin
+      .from('certificates')
+      .select('*')
+      .eq('certificate_code', sanitized)
+      .single();
 
-  if (error || !data) {
-    Sentry.captureMessage('Certificate not found', {
+    if (error || !data) {
+      Sentry.captureMessage('Certificate not found', {
+        level: 'info',
+        extra: { code: sanitized, ip },
+      });
+      return {
+        success: false,
+        error: 'لم يتم العثور على شهادة بهذا الرمز أو أن الرمز غير صالح.',
+      };
+    }
+
+    Sentry.captureMessage('Certificate verified successfully', {
       level: 'info',
-      extra: { code: sanitized, ip },
+      extra: { code: sanitized, student: data.student_name, ip },
+    });
+
+    return { success: true, certificate: data };
+  } catch (e) {
+    Sentry.captureException(e, {
+      extra: { code, ip, source: 'verifyCertificateByCode' },
     });
     return {
       success: false,
-      error: 'لم يتم العثور على شهادة بهذا الرمز أو أن الرمز غير صالح.',
+      error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
     };
   }
-
-  Sentry.captureMessage('Certificate verified successfully', {
-    level: 'info',
-    extra: { code: sanitized, student: data.student_name, ip },
-  });
-
-  return { success: true, certificate: data };
 }

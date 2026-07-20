@@ -10,9 +10,16 @@ import { headers } from 'next/headers';
 export type { Certificate, VerifyResult };
 
 export async function verifyCertificate(code: string): Promise<VerifyResult> {
-  const headerStore = await headers();
-  const forwarded = headerStore.get('x-forwarded-for');
-  const ip = forwarded?.split(',')[0]?.trim() ?? 'unknown';
+  try {
+    const headerStore = await headers();
+    const forwarded = headerStore.get('x-forwarded-for');
+    const ip = forwarded?.split(',')[0]?.trim() ?? 'unknown';
 
-  return verifyCertificateByCode(code, ip);
+    return await verifyCertificateByCode(code, ip);
+  } catch (e) {
+    return {
+      success: false,
+      error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
+    };
+  }
 }

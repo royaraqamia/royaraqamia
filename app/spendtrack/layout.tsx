@@ -1,7 +1,5 @@
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { GoUpButton } from '@/components/GoUpButton';
-import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 import { SkipToContent } from '@/components/SkipToContent';
 
 export default function SpendTrackLayout({ children }: { children: React.ReactNode }) {
@@ -13,8 +11,6 @@ export default function SpendTrackLayout({ children }: { children: React.ReactNo
         {children}
       </main>
       <Footer />
-      <GoUpButton />
-      <WhatsAppFloat />
     </div>
   );
 }

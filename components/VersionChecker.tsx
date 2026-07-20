@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { UpdatePopup } from './UpdatePopup';
 
 const POLL_INTERVAL = 60_000;
 
 export function VersionChecker() {
   const currentVersion = useRef<string | null>(null);
+  const [showUpdate, setShowUpdate] = useState(false);
 
   const checkVersion = useCallback(async () => {
     try {
@@ -19,14 +20,7 @@ export function VersionChecker() {
       }
 
       if (version !== currentVersion.current) {
-        toast.info('Update available', {
-          description: 'A new version of the site is ready.',
-          duration: Infinity,
-          action: {
-            label: 'Reload',
-            onClick: () => window.location.reload(),
-          },
-        });
+        setShowUpdate(true);
       }
     } catch {
       // silent — network issues shouldn't annoy users
@@ -45,5 +39,5 @@ export function VersionChecker() {
     };
   }, [checkVersion]);
 
-  return null;
+  return showUpdate ? <UpdatePopup onDismiss={() => setShowUpdate(false)} /> : null;
 }

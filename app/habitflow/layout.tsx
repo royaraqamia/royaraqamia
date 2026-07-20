@@ -3,8 +3,6 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { GoUpButton } from '@/components/GoUpButton';
-import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 import { SkipToContent } from '@/components/SkipToContent';
 
 export default async function HabitFlowLayout({ children }: { children: React.ReactNode }) {
@@ -23,8 +21,6 @@ export default async function HabitFlowLayout({ children }: { children: React.Re
         {children}
       </main>
       <Footer />
-      <GoUpButton />
-      <WhatsAppFloat />
     </div>
   );
 }

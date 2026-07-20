@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { GoUpButton } from '@/components/GoUpButton';
-import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 
 export const metadata: Metadata = {
   title: {
@@ -23,8 +21,6 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
         {children}
       </main>
       <Footer />
-      <GoUpButton />
-      <WhatsAppFloat />
     </div>
   );
 }

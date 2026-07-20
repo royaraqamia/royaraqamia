@@ -4,8 +4,6 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { GoUpButton } from '@/components/GoUpButton';
-import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 import { SkipToContent } from '@/components/SkipToContent';
 
 export const metadata: Metadata = {
@@ -30,8 +28,6 @@ export default async function BlogPressLayout({ children }: { children: React.Re
         {children}
       </main>
       <Footer />
-      <GoUpButton />
-      <WhatsAppFloat />
     </div>
   );
 }
