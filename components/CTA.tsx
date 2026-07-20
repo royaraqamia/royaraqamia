@@ -13,10 +13,10 @@ export function CTA() {
         className="relative py-24 md:py-32 overflow-hidden items-center justify-center flex"
       >
         {/* Background with Gradient - matching Hero section */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900">
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary-600/5 to-transparent" />
-          <div className="absolute top-0 right-1/4 w-[600px] h-[600px] bg-primary-600 opacity-5 blur-[150px] rounded-full" />
-          <div className="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-primary-400 opacity-5 blur-[150px] rounded-full" />
+          <div className="absolute top-0 right-1/4 w-[min(600px,80vw)] h-[min(600px,80vw)] bg-primary-600 opacity-5 blur-[150px] rounded-full" />
+          <div className="absolute bottom-0 left-1/4 w-[min(600px,80vw)] h-[min(600px,80vw)] bg-primary-400 opacity-5 blur-[150px] rounded-full" />
         </div>
 
         <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
@@ -36,7 +36,7 @@ export function CTA() {
                 </div>
 
                 {/* Title - Matching Hero Typography */}
-                <h2 className="text-[2.7rem] sm:text-6xl lg:text-7xl font-normal tracking-tight font-heading text-teal-300 mb-6 leading-snug md:leading-relaxed">
+                <h2 className="text-[1.75rem] sm:text-4xl md:text-5xl lg:text-7xl font-normal tracking-tight font-heading text-teal-300 mb-6 leading-snug md:leading-relaxed">
                   لا تترك مستقبلك للصِّدفة
                 </h2>
 
@@ -55,7 +55,7 @@ export function CTA() {
                     href={getWhatsAppUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="primary-cta-btn cta-glow relative overflow-hidden h-14 sm:h-16 w-auto flex-shrink-0 flex items-center justify-center px-10 sm:px-12 rounded-full gradient-primary text-white text-lg sm:text-xl font-bold transition-all duration-300 whitespace-nowrap"
+                    className="primary-cta-btn cta-glow relative overflow-hidden h-14 sm:h-16 w-full sm:w-auto max-w-full flex-shrink-0 flex items-center justify-center px-6 sm:px-12 rounded-full gradient-primary text-white text-base sm:text-xl font-bold transition-all duration-300 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   >
                     <span className="relative flex items-center gap-3 z-10">
                       تواصل معنا الآن

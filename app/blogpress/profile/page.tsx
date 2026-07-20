@@ -92,7 +92,7 @@ export default function ProfilePage() {
             </div>
           ) : (
             <form action={action} className="grid gap-6">
-              <div className="flex items-center gap-5">
+              <div className="flex flex-col sm:flex-row items-center sm:items-center gap-4 sm:gap-5">
                 <div className="relative size-20 shrink-0">
                   {avatarUrl ? (
                     <Image
@@ -109,7 +109,7 @@ export default function ProfilePage() {
                   <label
                     htmlFor="avatar-upload"
                     aria-label="تغيير الصورة الشخصية"
-                    className="absolute bottom-0 right-0 flex size-9 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-smooth"
+                    className="absolute bottom-0 right-0 flex size-11 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md hover:bg-primary/90 transition-smooth"
                   >
                     <Camera className="size-4" />
                   </label>
@@ -186,7 +186,7 @@ export default function ProfilePage() {
                 >
                   {pending ? (
                     <>
-                      <Loader2 className="ml-2 size-4 animate-spin" />
+                      <Loader2 className="ms-2 size-4 animate-spin" />
                       جارٍ الحفظ...
                     </>
                   ) : (
@@ -199,7 +199,7 @@ export default function ProfilePage() {
                   onClick={() => logout()}
                   className="transition-smooth"
                 >
-                  <LogOut className="ml-2 size-4" />
+                  <LogOut className="ms-2 size-4" />
                   تسجيل الخروج
                 </Button>
               </div>

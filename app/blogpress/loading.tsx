@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function DashboardLoading() {
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
           <Skeleton className="h-8 w-24 rounded-lg" />
           <Skeleton className="h-4 w-36 mt-2 rounded-lg" />

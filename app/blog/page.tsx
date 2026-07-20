@@ -38,7 +38,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
   return (
     <div>
       <div className="mb-12">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">المدونة</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl font-heading">المدونة</h1>
         <p className="mt-2.5 text-muted-foreground text-base">
           أفكار، دروس، وقصص من مجتمع المطورين
         </p>
@@ -49,7 +49,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
           <div className="size-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
             <FileText className="size-7 text-muted-foreground/50" />
           </div>
-          <h3 className="text-lg font-semibold">لا توجد مقالات بعد</h3>
+          <h2 className="text-lg font-semibold">لا توجد مقالات بعد</h2>
           <p className="text-sm text-muted-foreground mt-1.5">كن أول من ينشر مقالاً على المدونة</p>
         </div>
       ) : (
@@ -114,7 +114,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-16">
+            <div className="flex flex-wrap items-center justify-center gap-2 mt-16">
               {page > 1 && (
                 <Link href={`/blog?page=${page - 1}`}>
                   <Button variant="outline" size="sm" className="transition-smooth">

@@ -310,12 +310,12 @@ export function EditorContent({ post }: EditorContentProps) {
             size="sm"
             disabled={isUploading}
             onClick={() => fileInputRef.current?.click()}
-            className="text-muted-foreground hover:text-foreground transition-smooth"
+            className="text-muted-foreground hover:text-foreground transition-smooth hidden sm:inline-flex min-h-[44px]"
           >
             {isUploading ? (
-              <Loader2 className="size-4 ml-1.5 animate-spin" />
+              <Loader2 className="size-4 ms-1.5 animate-spin" />
             ) : (
-              <Upload className="size-4 ml-1.5" />
+              <Upload className="size-4 ms-1.5" />
             )}
             {isUploading ? 'جارٍ الرفع...' : 'صورة'}
           </Button>
@@ -325,12 +325,12 @@ export function EditorContent({ post }: EditorContentProps) {
             onClick={() => setIsPreview(!isPreview)}
             className={
               isPreview
-                ? 'text-primary'
-                : 'text-muted-foreground hover:text-foreground transition-smooth'
+                ? 'text-primary min-h-[44px]'
+                : 'text-muted-foreground hover:text-foreground transition-smooth min-h-[44px]'
             }
           >
-            {isPreview ? <EyeOff className="size-4 ml-1.5" /> : <Eye className="size-4 ml-1.5" />}
-            {isPreview ? 'تعديل' : 'معاينة'}
+            {isPreview ? <EyeOff className="size-4 ms-1.5" /> : <Eye className="size-4 ms-1.5" />}
+            <span className="hidden sm:inline">{isPreview ? 'تعديل' : 'معاينة'}</span>
           </Button>
           <Sheet>
             <SheetTrigger asChild>
@@ -565,7 +565,7 @@ export function EditorContent({ post }: EditorContentProps) {
         role="status"
         aria-label="إحصائيات المقال"
       >
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <span
             className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-smooth ${
               post.status === 'published'
@@ -575,15 +575,17 @@ export function EditorContent({ post }: EditorContentProps) {
           >
             {post.status === 'published' ? 'منشور' : 'مسودة'}
           </span>
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
             {wordCount.toLocaleString('ar')} كلمة
           </span>
-          <span className="text-muted-foreground/40">·</span>
-          <span className="text-xs text-muted-foreground">{readingTimeMinutes} دقائق قراءة</span>
+          <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+          <span className="text-xs text-muted-foreground hidden sm:inline">
+            {readingTimeMinutes} دقائق قراءة
+          </span>
           {lastSaved && (
             <>
-              <span className="text-muted-foreground/40">·</span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline">
                 حُفظ {lastSaved.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </>
@@ -596,11 +598,11 @@ export function EditorContent({ post }: EditorContentProps) {
             size="sm"
             disabled={pending}
             onClick={() => handleSave()}
-            className="transition-smooth"
+            className="transition-smooth min-h-[44px]"
           >
             {pending ? (
               <>
-                <Loader2 className="ml-1.5 size-3.5 animate-spin" />
+                <Loader2 className="ms-1.5 size-3.5 animate-spin" />
                 جارٍ الحفظ...
               </>
             ) : (
@@ -612,11 +614,11 @@ export function EditorContent({ post }: EditorContentProps) {
               size="sm"
               onClick={handlePublish}
               disabled={pending}
-              className="transition-smooth shadow-sm hover:shadow-md"
+              className="transition-smooth shadow-sm hover:shadow-md min-h-[44px]"
             >
               {pending ? (
                 <>
-                  <Loader2 className="ml-1.5 size-3.5 animate-spin" />
+                  <Loader2 className="ms-1.5 size-3.5 animate-spin" />
                   جارٍ النشر...
                 </>
               ) : (

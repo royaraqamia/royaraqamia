@@ -56,12 +56,12 @@ export function CategoryList({ categories, userId }: { categories: Category[]; u
           className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-all duration-300 hover:premium-shadow-sm hover:bg-card animate-slide-up"
           style={{ animationDelay: `${index * 30}ms` }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
             <div
               className="size-3.5 rounded-full shrink-0 ring-2 ring-border transition-transform duration-200 group-hover/row:scale-110"
               style={{ backgroundColor: category.color_hex }}
             />
-            <span className="font-medium text-sm">{category.name}</span>
+            <span className="font-medium text-sm truncate">{category.name}</span>
             {category.user_id === null && (
               <span className="rounded-md bg-muted/80 px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                 افتراضي
@@ -149,7 +149,7 @@ function EditCategoryDialog({ category }: { category: Category }) {
               <Input
                 id="color_hex"
                 type="color"
-                className="w-12 h-9 p-1"
+                className="w-12 h-11 p-1"
                 {...colorRegister}
                 onChange={(e) => {
                   setColorValue(e.target.value);

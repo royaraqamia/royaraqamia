@@ -66,13 +66,13 @@ export function DailyBarChart({ data }: { data: DailySpending[] }) {
           <XAxis
             dataKey="date"
             className="text-xs text-muted-foreground"
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 12 }}
             tickLine={false}
             axisLine={false}
           />
           <YAxis
             className="text-xs text-muted-foreground"
-            tick={{ fontSize: 11 }}
+            tick={{ fontSize: 12 }}
             tickFormatter={(value: number) => `$${value}`}
             tickLine={false}
             axisLine={false}

@@ -29,7 +29,7 @@ export default function DashboardLoading() {
             <Skeleton className="h-5 w-32 skeleton-shimmer" />
           </CardHeader>
           <CardContent>
-            <Skeleton className="h-[300px] w-full rounded-xl skeleton-shimmer" />
+            <Skeleton className="h-[200px] sm:h-[300px] w-full rounded-xl skeleton-shimmer" />
           </CardContent>
         </Card>
         <Card>
@@ -37,7 +37,7 @@ export default function DashboardLoading() {
             <Skeleton className="h-5 w-32 skeleton-shimmer" />
           </CardHeader>
           <CardContent>
-            <Skeleton className="h-[300px] w-full rounded-xl skeleton-shimmer" />
+            <Skeleton className="h-[200px] sm:h-[300px] w-full rounded-xl skeleton-shimmer" />
           </CardContent>
         </Card>
       </div>

@@ -28,19 +28,27 @@ export default function EditCertificatePage({ params }: { params: Promise<{ id: 
   });
 
   useEffect(() => {
-    getCertificateById(id).then((data) => {
-      if (data) {
-        setCert(data);
-        setForm({
-          student_name: data.student_name,
-          course_name: data.course_name,
-          issue_date: data.issue_date,
-          expiration_date: data.expiration_date || '',
-          grade_or_status: data.grade_or_status || '',
-        });
-      }
-      setLoading(false);
-    });
+    let mounted = true;
+    getCertificateById(id)
+      .then((data) => {
+        if (mounted && data) {
+          setCert(data);
+          setForm({
+            student_name: data.student_name,
+            course_name: data.course_name,
+            issue_date: data.issue_date,
+            expiration_date: data.expiration_date || '',
+            grade_or_status: data.grade_or_status || '',
+          });
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
   }, [id]);
 
   function updateField(field: string, value: string) {
@@ -57,23 +65,27 @@ export default function EditCertificatePage({ params }: { params: Promise<{ id: 
     setSaving(true);
     setGlobalError('');
 
-    const result = await updateCertificate(id, {
-      student_name: form.student_name,
-      course_name: form.course_name,
-      issue_date: form.issue_date,
-      expiration_date: form.expiration_date || undefined,
-      grade_or_status: form.grade_or_status || undefined,
-    });
+    try {
+      const result = await updateCertificate(id, {
+        student_name: form.student_name,
+        course_name: form.course_name,
+        issue_date: form.issue_date,
+        expiration_date: form.expiration_date || undefined,
+        grade_or_status: form.grade_or_status || undefined,
+      });
 
-    if (result.success) {
-      router.push('/admin/certificates');
-      router.refresh();
-    } else {
-      setGlobalError(result.error || 'حدث خطأ');
-      if (result.fieldErrors) setErrors(result.fieldErrors);
+      if (result.success) {
+        router.push('/admin/certificates');
+        router.refresh();
+      } else {
+        setGlobalError(result.error || 'حدث خطأ');
+        if (result.fieldErrors) setErrors(result.fieldErrors);
+      }
+    } catch {
+      setGlobalError('حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.');
+    } finally {
+      setSaving(false);
     }
-
-    setSaving(false);
   }
 
   function copyLink() {

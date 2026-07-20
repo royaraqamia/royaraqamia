@@ -32,13 +32,15 @@ export default function VerifyOtpPage() {
           <OtpInput value={otp} onChange={setOtp} disabled={isPending} />
 
           {state?.message && (
-            <p className="text-sm text-destructive text-center">{state.message}</p>
+            <p role="alert" className="text-sm text-destructive text-center">
+              {state.message}
+            </p>
           )}
 
           <button
             type="submit"
             disabled={isPending || otp.length !== 6}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
           >
             {isPending ? 'جاري التحقق...' : 'تحقق'}
           </button>
@@ -48,7 +50,10 @@ export default function VerifyOtpPage() {
           <p className="text-sm text-muted-foreground">لم تتلقى الرمز؟</p>
           <form action={resendAction}>
             <input type="hidden" name="email" value={email} />
-            <button type="submit" className="text-sm text-primary hover:underline mt-1">
+            <button
+              type="submit"
+              className="text-sm text-primary hover:underline mt-1 cursor-pointer"
+            >
               إعادة الإرسال
             </button>
           </form>
@@ -58,7 +63,10 @@ export default function VerifyOtpPage() {
         </div>
 
         <div className="text-center">
-          <Link href="/auth/login" className="text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            href="/auth/login"
+            className="text-sm text-muted-foreground hover:text-foreground cursor-pointer transition-colors"
+          >
             العودة إلى تسجيل الدخول
           </Link>
         </div>

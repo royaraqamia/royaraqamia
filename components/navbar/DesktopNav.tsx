@@ -114,13 +114,7 @@ export function DesktopNav({
           }}
         />
         <span
-          className={`logo-text font-bold font-['Aref_Ruqaa'] transition-all duration-300 ${isScrolled ? 'text-lg lg:text-xl' : 'text-xl lg:text-2xl'}`}
-          style={{
-            background: 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text',
-          }}
+          className={`logo-text font-bold font-heading transition-all duration-300 ${isScrolled ? 'text-lg lg:text-xl' : 'text-xl lg:text-2xl'}`}
         >
           رؤية رقمية
         </span>
@@ -167,7 +161,7 @@ export function DesktopNav({
                   ref={dropdownRefToUse}
                 >
                   <button
-                    className={`flex items-center gap-1.5 text-foreground transition-all duration-200 rounded-lg px-3 py-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary hover:bg-white/5'}`}
+                    className={`flex items-center gap-1.5 text-foreground transition-all duration-200 rounded-lg px-3 py-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary hover:bg-white/5'}`}
                     aria-label={link.label}
                     aria-haspopup="menu"
                     aria-expanded={isDropdownOpen}
@@ -337,23 +331,22 @@ export function DesktopNav({
       {/* CTA Buttons */}
       <div className="hidden lg:flex items-center element-gap-sm">
         {!isLoading && user ? (
-          <div onClick={() => setIsLogoutDialogOpen(true)} className="group cursor-pointer">
-            <Button
-              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-white ${
-                isScrolled ? 'h-10 text-sm px-5' : 'h-12 text-base px-6'
-              }`}
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                <SignOut className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
-                تسجيل الخُروج
-              </span>
-            </Button>
-          </div>
+          <Button
+            onClick={() => setIsLogoutDialogOpen(true)}
+            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px] ${
+              isScrolled ? 'text-sm px-5' : 'text-base px-6'
+            }`}
+          >
+            <span className="relative z-10 flex items-center gap-2">
+              <SignOut className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
+              تسجيل الخروج
+            </span>
+          </Button>
         ) : (
           <a href="/auth/login" className="group">
             <Button
-              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-white ${
-                isScrolled ? 'h-10 text-sm px-5' : 'h-12 text-base px-6'
+              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px] ${
+                isScrolled ? 'text-sm px-5' : 'text-base px-6'
               }`}
             >
               <span className="relative z-10 flex items-center gap-2">
@@ -371,17 +364,9 @@ export function DesktopNav({
           className="group"
         >
           <Button
-            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover ${
-              isScrolled
-                ? 'h-10 text-sm px-5 gradient-primary text-white hover:opacity-90'
-                : 'h-12 text-base px-6 shadow-lg shadow-white/10'
+            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white hover:opacity-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px] ${
+              isScrolled ? 'text-sm px-5' : 'text-base px-6 shadow-lg shadow-primary/30'
             }`}
-            style={{
-              background: isScrolled
-                ? undefined
-                : 'linear-gradient(135deg, #FFFFFF 0%, #F1F5F9 100%)',
-              color: isScrolled ? undefined : '#7C3AED',
-            }}
           >
             <span className="relative z-10 flex items-center gap-2">
               <Phone className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />

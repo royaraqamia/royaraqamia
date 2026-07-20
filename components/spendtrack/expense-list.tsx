@@ -81,7 +81,7 @@ export function ExpenseList({
   }
 
   return (
-    <div className="space-y-2" role="list" aria-label="قائمة المصروفات">
+    <div className="space-y-2" role="list" aria-label="قائمة المصروفات" aria-live="polite">
       {expenses.map((expense, index) => (
         <ExpenseRow key={expense.id} expense={expense} categories={categories} index={index} />
       ))}
@@ -93,7 +93,7 @@ export function ExpenseList({
             disabled={loading}
             className="transition-all duration-200"
           >
-            {loading ? <Loader2 className="ml-1.5 size-4 animate-spin" /> : null}
+            {loading ? <Loader2 className="ms-1.5 size-4 animate-spin" /> : null}
             {loading ? 'جارٍ التحميل...' : 'تحميل المزيد'}
           </Button>
         </div>
@@ -146,12 +146,12 @@ function ExpenseRow({
         )}
         <div className="min-w-0 flex-1">
           <p className="font-medium text-sm truncate">{expense.description || 'بدون وصف'}</p>
-          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 truncate">
             {expense.categories?.name} &middot; {formattedDate}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-1 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <span className="font-semibold text-sm tabular-nums">
           ${Number(expense.amount).toFixed(2)}
         </span>

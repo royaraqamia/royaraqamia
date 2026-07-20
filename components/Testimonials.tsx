@@ -129,6 +129,7 @@ export function Testimonials() {
             <div
               key={index}
               tabIndex={0}
+              role="button"
               className="scroll-snap-item testimonial-card group relative glass-card rounded-2xl card-padding glass-hover transition-all duration-300 shrink-0 focus:outline-none focus:ring-2 focus:ring-[#7766EE] focus:ring-offset-2 focus:ring-offset-[#020617] flex flex-col"
               onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
@@ -203,7 +204,7 @@ export function Testimonials() {
                   {/* Close button */}
                   <button
                     onClick={closeReviewSheet}
-                    className="relative flex items-center justify-center p-0 bg-transparent border-none cursor-pointer text-white/80 hover:text-white transition-colors duration-200"
+                    className="relative flex items-center justify-center w-11 h-11 p-0 bg-transparent border-none cursor-pointer text-white/80 hover:text-white transition-colors duration-200"
                     type="button"
                     aria-label="إغلاق"
                   >
@@ -222,7 +223,7 @@ export function Testimonials() {
                     <div className="w-14 h-14 rounded-full flex items-center justify-center shrink-0 bg-linear-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-black/30">
                       <UserCircle className="w-7 h-7 text-white" />
                     </div>
-                    <h4 className="font-bold text-white">{review.name}</h4>
+                    <h3 className="font-bold text-white">{review.name}</h3>
                   </div>
                 </div>
               </div>

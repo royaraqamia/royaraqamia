@@ -1,5 +1,7 @@
 import type { Metadata } from 'next';
-import { getAdminSupabase } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
+import { type Certificate } from '@/lib/certificate-verification';
+import { formatDateArabic } from '@/lib/utils';
 import { VerifyClient } from './verify-client';
 
 interface PageProps {
@@ -18,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const title = ` التحقق من شهادة ${certificate.student_name} | رؤية رقمية`;
-  const description = `شهادة ${certificate.course_name} صادرة لـ ${certificate.student_name} في ${formatDate(certificate.issue_date)}. تم التحقق من أصالة هذه الشهادة عبر منصة رؤية رقمية.`;
+  const description = `شهادة ${certificate.course_name} صادرة لـ ${certificate.student_name} في ${formatDateArabic(certificate.issue_date)}. تم التحقق من أصالة هذه الشهادة عبر منصة رؤية رقمية.`;
 
   return {
     title,
@@ -55,34 +57,19 @@ export default async function VerifyCodePage({ params }: PageProps) {
   return <VerifyClient code={code.trim().toUpperCase()} certificate={certificate} />;
 }
 
-async function getCertificate(code: string) {
-  const admin = getAdminSupabase();
+async function getCertificate(code: string): Promise<Certificate | null> {
+  try {
+    const supabase = await createClient();
 
-  const { data, error } = await admin
-    .from('certificates')
-    .select('*')
-    .eq('certificate_code', code)
-    .single();
+    const { data, error } = await supabase
+      .from('certificates')
+      .select('*')
+      .eq('certificate_code', code)
+      .single();
 
-  if (error || !data) return null;
-  return data as CertificateData;
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('ar-EG', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
-
-interface CertificateData {
-  id: string;
-  certificate_code: string;
-  student_name: string;
-  course_name: string;
-  issue_date: string;
-  expiration_date: string | null;
-  grade_or_status: string | null;
-  created_at: string;
+    if (error || !data) return null;
+    return data;
+  } catch {
+    return null;
+  }
 }

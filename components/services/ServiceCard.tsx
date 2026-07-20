@@ -126,7 +126,7 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
             >
               <a
                 href={service.href}
-                className="mt-1 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm text-white transition-all duration-300 hover:scale-105 hover:shadow-lg group/cta"
+                className="mt-1 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-bold text-sm text-white transition-all duration-300 hover:scale-105 hover:shadow-lg group/cta cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]"
                 style={{ background: colors.gradient }}
               >
                 <span>{service.pricing.cta}</span>

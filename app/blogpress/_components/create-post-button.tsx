@@ -13,11 +13,13 @@ export function CreatePostButton() {
       disabled={pending}
       onClick={() => startTransition(() => createPost())}
       className="transition-smooth shadow-sm hover:shadow-md"
+      aria-busy={pending}
+      aria-live="polite"
     >
       {pending ? (
-        <Loader2 className="ml-2 size-4 animate-spin" />
+        <Loader2 className="ms-2 size-4 animate-spin" />
       ) : (
-        <Plus className="ml-2 size-4" />
+        <Plus className="ms-2 size-4" />
       )}
       {pending ? 'جارٍ الإنشاء...' : 'مقال جديد'}
     </Button>

@@ -59,7 +59,7 @@ export function CreateCategoryDialog() {
     >
       <DialogTrigger asChild>
         <Button className="transition-all duration-200">
-          <Plus className="ml-1 size-4" />
+          <Plus className="ms-1 size-4" />
           إضافة تصنيف
         </Button>
       </DialogTrigger>
@@ -98,7 +98,7 @@ export function CreateCategoryDialog() {
               <Input
                 id="color_hex"
                 type="color"
-                className="w-12 h-9 p-1"
+                className="w-12 h-11 p-1"
                 {...colorRegister}
                 onChange={(e) => {
                   setColorValue(e.target.value);

@@ -52,7 +52,7 @@ export function LinkAnalyticsDrawer({
               <div className="space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                       إجمالي النقرات
                     </span>
                     <span className="text-2xl font-bold text-slate-800 dark:text-slate-100 font-display mt-1">
@@ -60,7 +60,7 @@ export function LinkAnalyticsDrawer({
                     </span>
                   </div>
                   <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                       أعلى مصدر إحالة
                     </span>
                     <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate mt-2">
@@ -68,7 +68,7 @@ export function LinkAnalyticsDrawer({
                     </span>
                   </div>
                   <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between col-span-2 md:col-span-1">
-                    <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
                       حالة الرابط
                     </span>
                     <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800 px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1">
@@ -82,10 +82,10 @@ export function LinkAnalyticsDrawer({
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3.5">
-                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Globe aria-hidden="true" className="w-4 h-4 text-indigo-500" />
                       أهم مصادر الزيارات
-                    </h4>
+                    </p>
                     {analytics.topReferrers.length === 0 ? (
                       <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">
                         لم يتم جمع بيانات الإحالة بعد.
@@ -110,10 +110,10 @@ export function LinkAnalyticsDrawer({
                   </div>
 
                   <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3.5">
-                    <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
+                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                       <Smartphone aria-hidden="true" className="w-4 h-4 text-indigo-500" />
                       نشاط النقرات الأخيرة
-                    </h4>
+                    </p>
                     {analytics.recentClicks.length === 0 ? (
                       <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">
                         لا يوجد نشاط إعادة توجيه بعد.
@@ -123,7 +123,7 @@ export function LinkAnalyticsDrawer({
                         {analytics.recentClicks.map((click) => (
                           <div
                             key={click.id}
-                            className="flex items-center justify-between text-[10px] border-b border-slate-50 dark:border-slate-700 pb-1.5 last:border-none"
+                            className="flex items-center justify-between text-xs border-b border-slate-50 dark:border-slate-700 pb-1.5 last:border-none"
                           >
                             <span
                               className="text-slate-500 dark:text-slate-400 truncate max-w-[150px]"

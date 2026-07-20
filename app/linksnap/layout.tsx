@@ -6,6 +6,7 @@ import { Footer } from '@/components/Footer';
 import { ThemeProvider } from '@/components/linksnap/theme-provider';
 import { SessionProvider } from '@/components/shared/session-provider';
 import { ProgressBar } from '@/components/linksnap/progress-bar';
+import { SkipToContent } from '@/components/SkipToContent';
 import { Toaster } from 'sonner';
 
 export default async function LinkSnapLayout({ children }: { children: React.ReactNode }) {
@@ -18,6 +19,7 @@ export default async function LinkSnapLayout({ children }: { children: React.Rea
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <SkipToContent />
       <Navbar />
       <ProgressBar />
       <ThemeProvider>

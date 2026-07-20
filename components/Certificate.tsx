@@ -263,7 +263,7 @@ export function Certificate() {
           initial="hidden"
           animate={isCertificateInView ? 'visible' : 'hidden'}
           variants={certificateContainerVariants}
-          className="flex justify-center"
+          className="flex justify-center overflow-hidden"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >

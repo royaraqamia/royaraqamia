@@ -12,7 +12,9 @@ export default function TermsPage() {
     <main className="min-h-screen bg-background" dir="rtl">
       <div className="mx-auto max-w-3xl px-6 py-12 md:py-20">
         <header className="mb-10">
-          <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">شُروط الاستخدام</h1>
+          <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl font-heading">
+            شُروط الاستخدام
+          </h1>
           <p className="text-muted-foreground text-sm">آخر تحديث: ١٩ يوليوز ٢٠٢٦</p>
         </header>
 

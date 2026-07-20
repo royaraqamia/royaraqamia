@@ -5,6 +5,14 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function formatDateArabic(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString('ar-EG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
 export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number

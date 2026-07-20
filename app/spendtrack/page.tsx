@@ -65,10 +65,10 @@ async function TotalCard({
         </div>
       </CardHeader>
       <CardContent>
-        <p className="text-3xl font-bold tracking-tight" aria-live="polite">
+        <p className="text-2xl sm:text-3xl font-bold tracking-tight truncate" aria-live="polite">
           ${Number(data ?? 0).toFixed(2)}
         </p>
-        <p className="text-xs text-muted-foreground mt-1">
+        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           {format(new Date(start), 'd MMMM yyyy', { locale: ar })} إلى{' '}
           {format(new Date(end), 'd MMMM yyyy', { locale: ar })}
         </p>
@@ -217,7 +217,7 @@ function TotalSkeleton() {
 }
 
 function ChartSkeleton() {
-  return <Skeleton className="h-[300px] w-full rounded-xl" />;
+  return <Skeleton className="h-[200px] sm:h-[300px] w-full rounded-xl" />;
 }
 
 function TransactionsSkeleton() {
@@ -258,8 +258,8 @@ export default async function DashboardPage(props: {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between animate-slide-up">
-        <h1 className="text-2xl font-bold tracking-tight">لوحة التحكم</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
+        <h1 className="text-2xl font-bold tracking-tight font-heading">لوحة التحكم</h1>
         <CreateExpenseButton userId={user.id} />
       </div>
 

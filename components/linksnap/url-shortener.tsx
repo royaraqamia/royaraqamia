@@ -20,7 +20,7 @@ export function UrlShortener({ token, onLinkCreated }: UrlShortenerProps) {
   };
 
   return (
-    <div className="w-full bg-white dark:bg-slate-800 p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-xl shadow-slate-100/50 dark:shadow-slate-900/50">
+    <div className="w-full bg-white dark:bg-slate-800 p-5 sm:p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-xl shadow-slate-100/50 dark:shadow-slate-900/50">
       {token && (
         <div
           className="flex bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-1 rounded-xl mb-6"

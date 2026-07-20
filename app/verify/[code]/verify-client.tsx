@@ -15,24 +15,15 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
-
-interface CertificateData {
-  id: string;
-  certificate_code: string;
-  student_name: string;
-  course_name: string;
-  issue_date: string;
-  expiration_date: string | null;
-  grade_or_status: string | null;
-  created_at: string;
-}
+import type { Certificate } from '@/lib/certificate-verification';
+import { formatDateArabic } from '@/lib/utils';
 
 export function VerifyClient({
   code,
   certificate,
 }: {
   code: string;
-  certificate: CertificateData | null;
+  certificate: Certificate | null;
 }) {
   if (!certificate) {
     return (
@@ -126,13 +117,13 @@ export function VerifyClient({
               <DetailRow
                 icon={<CalendarDays className="size-4" />}
                 label="تاريخ الإصدار"
-                value={formatDate(certificate.issue_date)}
+                value={formatDateArabic(certificate.issue_date)}
               />
               {certificate.expiration_date && (
                 <DetailRow
                   icon={<Clock className="size-4" />}
                   label="تاريخ الانتهاء"
-                  value={formatDate(certificate.expiration_date)}
+                  value={formatDateArabic(certificate.expiration_date)}
                   danger={!!isExpired}
                 />
               )}
@@ -191,12 +182,4 @@ function DetailRow({
       </div>
     </div>
   );
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('ar-EG', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
 }

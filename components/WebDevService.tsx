@@ -23,7 +23,7 @@ export function WebDevService() {
 
   return (
     <section id="web-dev-service" className="section-spacing relative overflow-hidden">
-      <div className="absolute inset-0 bg-[#0B0F19] z-0">
+      <div className="absolute inset-0 bg-background z-0">
         <SectionBackground
           blobs={[
             {
@@ -83,7 +83,7 @@ export function WebDevService() {
                     <div className="w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
                       <benefit.icon className="w-5 h-5 text-white" />
                     </div>
-                    <span className="flex flex-col justify-center items-center h-[5vh] text-sm md:text-base text-slate-200 group-hover:text-white transition-colors">
+                    <span className="flex flex-col justify-center items-center py-2 text-sm md:text-base text-foreground/80 group-hover:text-foreground transition-colors">
                       {benefit.text}
                     </span>
                   </div>
@@ -92,14 +92,14 @@ export function WebDevService() {
 
               {/* Features Grid */}
               <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {features.map((feature, idx) => (
                     <div
                       key={idx}
                       className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 hover:border-blue-500/30 transition-all duration-300"
                     >
-                      <h4 className="text-lg font-semibold text-blue-400 mb-2">{feature.title}</h4>
-                      <p className="text-sm text-slate-300">{feature.description}</p>
+                      <h3 className="text-lg font-semibold text-blue-400 mb-2">{feature.title}</h3>
+                      <p className="text-sm text-foreground/70">{feature.description}</p>
                     </div>
                   ))}
                 </div>
@@ -111,8 +111,8 @@ export function WebDevService() {
           <ScrollAnimation animation="slide-left" duration={0.7} delay={0.2}>
             <div className="space-y-6">
               {/* Basic Website */}
-              <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
-                <div className="flex items-center justify-between mb-4">
+              <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
                       <Monitor className="w-6 h-6 text-blue-400" />
@@ -124,19 +124,19 @@ export function WebDevService() {
                       >
                         موقع بسيط
                       </h3>
-                      <p className="text-xs text-slate-400">Landing Page & Website</p>
+                      <p className="text-xs text-muted-foreground">Landing Page & Website</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-bold text-blue-400">$500</div>
-                    <div className="text-xs text-slate-400">بدءًا من</div>
+                    <div className="text-xs text-muted-foreground">بدءًا من</div>
                   </div>
                 </div>
               </div>
 
               {/* Web Application */}
-              <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
-                <div className="flex items-center justify-between mb-4">
+              <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
                       <Globe className="w-6 h-6 text-blue-400" />
@@ -148,19 +148,19 @@ export function WebDevService() {
                       >
                         تطبيق ويب
                       </h3>
-                      <p className="text-xs text-slate-400">Full-Stack Web App</p>
+                      <p className="text-xs text-muted-foreground">Full-Stack Web App</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-bold text-blue-400">$1,000</div>
-                    <div className="text-xs text-slate-400">بدءًا من</div>
+                    <div className="text-xs text-muted-foreground">بدءًا من</div>
                   </div>
                 </div>
               </div>
 
               {/* Mobile Application */}
-              <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300">
-                <div className="flex items-center justify-between mb-4">
+              <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 overflow-hidden">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
                       <DeviceMobile className="w-6 h-6 text-blue-400" />
@@ -172,12 +172,12 @@ export function WebDevService() {
                       >
                         تطبيق موبايل
                       </h3>
-                      <p className="text-xs text-slate-400">Mobile App for Android & iOS</p>
+                      <p className="text-xs text-muted-foreground">Mobile App for Android & iOS</p>
                     </div>
                   </div>
                   <div className="text-right">
                     <div className="text-3xl font-bold text-blue-400">$2,000</div>
-                    <div className="text-xs text-slate-400">بدءًا من</div>
+                    <div className="text-xs text-muted-foreground">بدءًا من</div>
                   </div>
                 </div>
               </div>
@@ -189,7 +189,7 @@ export function WebDevService() {
                 rel="noopener noreferrer"
                 className="block"
               >
-                <Button className="w-full h-14 text-base font-bold rounded-xl bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300">
+                <Button className="w-full h-14 text-base font-bold rounded-xl bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]">
                   <Code className="w-5 h-5 ml-2" />
                   ابدأ البناء الآن
                 </Button>

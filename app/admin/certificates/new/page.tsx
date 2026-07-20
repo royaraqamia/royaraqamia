@@ -36,23 +36,27 @@ export default function NewCertificatePage() {
     setLoading(true);
     setGlobalError('');
 
-    const result = await createCertificate({
-      student_name: form.student_name,
-      course_name: form.course_name,
-      issue_date: form.issue_date,
-      expiration_date: form.expiration_date || undefined,
-      grade_or_status: form.grade_or_status || undefined,
-    });
+    try {
+      const result = await createCertificate({
+        student_name: form.student_name,
+        course_name: form.course_name,
+        issue_date: form.issue_date,
+        expiration_date: form.expiration_date || undefined,
+        grade_or_status: form.grade_or_status || undefined,
+      });
 
-    if (result.success) {
-      router.push('/admin/certificates');
-      router.refresh();
-    } else {
-      setGlobalError(result.error || 'حدث خطأ');
-      if (result.fieldErrors) setErrors(result.fieldErrors);
+      if (result.success) {
+        router.push('/admin/certificates');
+        router.refresh();
+      } else {
+        setGlobalError(result.error || 'حدث خطأ');
+        if (result.fieldErrors) setErrors(result.fieldErrors);
+      }
+    } catch {
+      setGlobalError('حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.');
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   return (

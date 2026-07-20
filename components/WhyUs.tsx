@@ -25,7 +25,7 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
     <div
       dir="rtl"
       aria-labelledby={`reason-title-${index}`}
-      className="group relative h-full rounded-2xl p-6 lg:p-8 border border-white/5 border-t-white/10 hover:-translate-y-1 hover:border-violet-500/30 hover:border-t-white/20 hover:shadow-lg hover:shadow-violet-500/10 transition-all duration-300 flex flex-col sm:flex-row sm:items-center items-start text-right gap-4 sm:gap-5 bg-[rgba(25,25,32,0.7)] hover:bg-[rgba(35,35,45,0.85)] backdrop-blur-md will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background gradient-border-hover"
+      className="group relative h-full rounded-2xl p-6 lg:p-8 border border-border hover:-translate-y-1 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/10 transition-all duration-300 flex flex-col sm:flex-row sm:items-center items-start text-right gap-4 sm:gap-5 bg-card/70 hover:bg-card backdrop-blur-md will-change-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background gradient-border-hover cursor-default"
     >
       {/* Icon - Top Right (start in RTL) */}
       <div
@@ -111,9 +111,9 @@ export function WhyUs() {
     <section id="why-us" className="section-spacing relative overflow-hidden">
       {/* Background Decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#7766EE] opacity-5 blur-[150px] rounded-full" />
-        <div className="absolute top-20 right-16 w-24 h-24 bg-[#A78BFA] opacity-10 rounded-full blur-2xl" />
-        <div className="absolute bottom-32 left-12 w-32 h-32 bg-[#7766EE] opacity-10 rounded-full blur-2xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(800px,80vw)] h-[min(800px,80vw)] bg-primary opacity-5 blur-[150px] rounded-full" />
+        <div className="absolute top-20 right-16 w-24 h-24 bg-primary opacity-10 rounded-full blur-2xl" />
+        <div className="absolute bottom-32 left-12 w-32 h-32 bg-primary opacity-10 rounded-full blur-2xl" />
       </div>
 
       <div className="relative max-w-7xl mx-auto container-padding">

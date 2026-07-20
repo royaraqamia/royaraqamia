@@ -131,7 +131,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
               >
                 أدخل الروابط الوجهة (واحد لكل سطر)
               </label>
-              <span className="text-[10px] bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-full font-bold">
+              <span className="text-xs bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 px-2.5 py-1 rounded-full font-bold">
                 الحد الأقصى: 50 رابطًا
               </span>
             </div>
@@ -203,7 +203,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
               <span>اكتمل الاختصار بالجملة</span>
             </h3>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 نجاح {successCount}
                 {failCount > 0 ? `، فشل ${failCount}` : ''}
               </span>
@@ -229,7 +229,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
             </button>
           )}
 
-          <div className="relative border border-slate-100 dark:border-slate-700 rounded-xl text-xs">
+          <div className="relative border border-slate-100 dark:border-slate-700 rounded-xl text-xs overflow-x-auto">
             <div className="max-h-[300px] overflow-auto">
               <table className="w-full border-collapse">
                 <thead>
@@ -251,12 +251,12 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
                     const shortFull = res.shortLink ? `${getBaseUrl()}/${res.shortLink.code}` : '';
                     return (
                       <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20">
-                        <td className="px-3 py-2 max-w-[120px] truncate text-slate-600 dark:text-slate-400 font-mono">
+                        <td className="px-3 py-2 max-w-[140px] sm:max-w-[200px] truncate text-slate-600 dark:text-slate-400 font-mono">
                           {res.originalUrl}
                         </td>
                         <td className="px-3 py-2 font-mono font-bold">
                           {hasError ? (
-                            <span className="text-red-500 dark:text-red-400 font-sans font-normal text-[10px] bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded-md">
+                            <span className="text-red-500 dark:text-red-400 font-sans font-normal text-xs bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded-md">
                               {res.error}
                             </span>
                           ) : (

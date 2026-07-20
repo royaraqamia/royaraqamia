@@ -80,18 +80,15 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
       transition={{ duration: 0.25, ease: [0.33, 1, 0.68, 1] }}
       className="w-full bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm"
     >
-      <h4 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-wider">
+      <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-wider">
         أداء النقرات (آخر 7 أيام)
-      </h4>
+      </p>
       <div className="relative w-full overflow-x-auto">
-        <svg
-          viewBox={`0 0 ${width} ${height}`}
-          className="w-full min-w-[400px] h-auto overflow-visible"
-        >
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
           <defs>
             <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="rgb(79, 70, 229)" stopOpacity="0.2" />
-              <stop offset="100%" stopColor="rgb(79, 70, 229)" stopOpacity="0.0" />
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.0" />
             </linearGradient>
           </defs>
 
@@ -142,7 +139,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
             <path
               d={animate ? linePath : `M ${points[0]?.x ?? 0} ${paddingTop + chartHeight}`}
               fill="none"
-              stroke="rgb(79, 70, 229)"
+              stroke="hsl(var(--primary))"
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -158,7 +155,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                 cx={p.x}
                 cy={p.y}
                 r="4"
-                fill="rgb(79, 70, 229)"
+                fill="hsl(var(--primary))"
                 stroke="white"
                 strokeWidth="2"
                 className="transition-all duration-200"

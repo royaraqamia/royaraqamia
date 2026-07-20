@@ -93,7 +93,7 @@ export default function OtpVerifyStep({
           type="button"
           onClick={onResend}
           disabled={loading}
-          className="text-sm text-primary underline-offset-4 hover:underline active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50"
+          className="text-sm text-primary underline-offset-4 hover:underline active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 py-2 min-h-[44px]"
         >
           إعادة إرسال الرمز
         </button>
@@ -101,7 +101,7 @@ export default function OtpVerifyStep({
         <button
           type="button"
           onClick={onBack}
-          className="text-sm text-muted-foreground hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg transition-all duration-200 ease-out"
+          className="text-sm text-muted-foreground hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg transition-all duration-200 ease-out py-2 min-h-[44px]"
         >
           العودة إلى تسجيل الدخول
         </button>

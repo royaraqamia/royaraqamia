@@ -107,7 +107,7 @@ export function Navbar() {
   ) : null;
 
   return (
-    <header className="flex items-center justify-between py-4 border-b border-border/80 dark:border-border mb-10">
+    <header className="flex items-center justify-between px-4 sm:px-0 py-4 border-b border-border/80 dark:border-border mb-10">
       <Link href="/" className="flex items-center gap-2.5">
         <Image src="/logo.png" alt="LinkSnap" width={40} height={40} className="rounded-xl" />
         <span className="font-display font-extrabold text-xl tracking-tight text-foreground dark:text-foreground">

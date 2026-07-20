@@ -31,9 +31,18 @@ function AnimatedValue({ value: raw, reduce }: { value: string; reduce: boolean 
     return unsub;
   }, [target, springValue, motionValue, suffix, shouldAnimate]);
 
-  if (!shouldAnimate) return <p className="text-2xl font-bold text-foreground">{raw}</p>;
+  if (!shouldAnimate)
+    return (
+      <p className="text-2xl font-bold text-foreground" aria-live="polite">
+        {raw}
+      </p>
+    );
 
-  return <p className="text-2xl font-bold text-foreground">{display}</p>;
+  return (
+    <p className="text-2xl font-bold text-foreground" aria-live="polite">
+      {display}
+    </p>
+  );
 }
 
 export function StatsCard({
@@ -68,7 +77,7 @@ export function StatsCard({
           <Icon className="w-5 h-5" />
         </div>
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+          <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
             {label}
           </p>
           <AnimatedValue value={value} reduce={reduce} />

@@ -30,7 +30,7 @@ export default function Error({
           </p>
         </div>
         {error.digest && (
-          <p className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+          <p className="text-xs text-slate-400 dark:text-slate-500 font-mono">
             الرمز: {error.digest}
           </p>
         )}

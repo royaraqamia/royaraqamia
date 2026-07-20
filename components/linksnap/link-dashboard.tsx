@@ -60,10 +60,10 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-display font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+        <h2 className="text-lg font-display font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
           <Link2 aria-hidden="true" className="w-5 h-5 text-indigo-500" />
           <span>روابطك المختصرة</span>
-        </h3>
+        </h2>
         <button
           onClick={fetchLinks}
           disabled={loading}

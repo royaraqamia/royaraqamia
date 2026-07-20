@@ -60,7 +60,7 @@ function renderCustomLabel(props: PieLabelRenderProps) {
       fill="var(--primary-foreground)"
       textAnchor="middle"
       dominantBaseline="central"
-      className="text-[10px] font-medium pointer-events-none"
+      className="text-xs font-medium pointer-events-none"
     >
       {`${(percent * 100).toFixed(0)}%`}
     </text>
@@ -124,51 +124,61 @@ export function CategoryPieChart({ data }: { data: CategorySpending[] }) {
   }
 
   return (
-    <div
-      className="animate-scale-in"
-      role="img"
-      aria-label="رسم بياني يوضح توزيع الإنفاق حسب التصنيف"
-    >
-      <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
-          <Pie
-            data={data}
-            dataKey="total"
-            nameKey="name"
-            cx="50%"
-            cy="50%"
-            outerRadius={100}
-            innerRadius={60}
-            paddingAngle={2}
-            cursor="pointer"
-            label={renderCustomLabel}
-            labelLine={false}
+    <div className="animate-scale-in">
+      <div role="img" aria-label="رسم بياني يوضح توزيع الإنفاق حسب التصنيف">
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="total"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={100}
+              innerRadius={60}
+              paddingAngle={2}
+              cursor="pointer"
+              label={renderCustomLabel}
+              labelLine={false}
+            >
+              {data.map((entry, index) => (
+                <Cell
+                  key={index}
+                  fill={entry.color_hex}
+                  onClick={() => handleClick(entry)}
+                  stroke={
+                    entry.category_id &&
+                    searchParams.get('categories')?.split(',').includes(entry.category_id)
+                      ? 'var(--foreground)'
+                      : 'transparent'
+                  }
+                  strokeWidth={
+                    entry.category_id &&
+                    searchParams.get('categories')?.split(',').includes(entry.category_id)
+                      ? 2
+                      : 0
+                  }
+                  aria-label={`${entry.name}: $${Number(entry.total).toFixed(2)}`}
+                />
+              ))}
+            </Pie>
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="sr-only" role="list" aria-label="التصنيفات">
+        {data.map((entry, index) => (
+          <button
+            key={index}
+            role="listitem"
+            onClick={() => handleClick(entry)}
+            className="block w-full text-left px-2 py-1 text-sm hover:bg-accent rounded cursor-pointer"
           >
-            {data.map((entry, index) => (
-              <Cell
-                key={index}
-                fill={entry.color_hex}
-                onClick={() => handleClick(entry)}
-                stroke={
-                  entry.category_id &&
-                  searchParams.get('categories')?.split(',').includes(entry.category_id)
-                    ? 'var(--foreground)'
-                    : 'transparent'
-                }
-                strokeWidth={
-                  entry.category_id &&
-                  searchParams.get('categories')?.split(',').includes(entry.category_id)
-                    ? 2
-                    : 0
-                }
-                aria-label={`${entry.name}: $${Number(entry.total).toFixed(2)}`}
-              />
-            ))}
-          </Pie>
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-        </PieChart>
-      </ResponsiveContainer>
+            {entry.name}: ${Number(entry.total).toFixed(2)}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

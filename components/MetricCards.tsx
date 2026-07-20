@@ -67,8 +67,8 @@ export function MetricCards() {
   return (
     <section className="relative py-16 lg:py-24 overflow-hidden">
       {/* Background with subtle gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/95 to-slate-950 z-0">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary-600 opacity-[0.03] blur-[120px] rounded-full" />
+      <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-950/95 to-slate-950 z-0 overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(600px,80vw)] h-[min(600px,80vw)] bg-primary-600 opacity-[0.03] blur-[120px] rounded-full" />
       </div>
 
       <div className="max-w-7xl mx-auto container-padding relative z-10">

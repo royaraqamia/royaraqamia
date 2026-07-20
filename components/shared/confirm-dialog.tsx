@@ -54,7 +54,16 @@ export function ConfirmDialog({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onCancel} />
+      <div
+        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        onClick={onCancel}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') onCancel();
+        }}
+        role="button"
+        tabIndex={-1}
+        aria-label="إغلاق"
+      />
       <div
         ref={dialogRef}
         tabIndex={-1}
@@ -62,12 +71,12 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-message"
-        className="relative bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl w-full max-w-sm mx-4 p-6 focus:outline-none"
+        className="relative bg-background rounded-2xl border border-border shadow-2xl w-full max-w-sm mx-4 p-6 focus:outline-none"
       >
         <button
           onClick={onCancel}
           aria-label="إغلاق"
-          className="absolute top-4 left-4 p-1 text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer focus-ring"
+          className="absolute top-4 left-4 p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-ring"
         >
           <X aria-hidden="true" className="w-4 h-4" />
         </button>
@@ -78,22 +87,19 @@ export function ConfirmDialog({
           >
             <Icon aria-hidden="true" className="w-5 h-5" />
           </div>
-          <h3
-            id="confirm-dialog-title"
-            className="text-lg font-bold text-slate-800 dark:text-slate-100 mb-2"
-          >
+          <h3 id="confirm-dialog-title" className="text-lg font-bold text-foreground mb-2">
             {title}
           </h3>
           <p
             id="confirm-dialog-message"
-            className="text-sm text-slate-500 dark:text-slate-400 mb-6 leading-relaxed"
+            className="text-sm text-muted-foreground mb-6 leading-relaxed"
           >
             {message}
           </p>
           <div className="flex gap-3 w-full">
             <button
               onClick={onCancel}
-              className="flex-1 py-2.5 px-4 text-sm font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 rounded-xl transition-colors cursor-pointer focus-ring"
+              className="flex-1 py-2.5 px-4 text-sm font-semibold text-foreground bg-muted hover:bg-muted/80 rounded-xl transition-colors cursor-pointer focus-ring"
             >
               {cancelLabel}
             </button>

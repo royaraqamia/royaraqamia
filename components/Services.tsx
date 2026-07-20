@@ -85,7 +85,7 @@ export function Services() {
   const filteredServices = services.filter((s) => s.categories.includes(activeServicesTab));
 
   return (
-    <section id="services" className="section-spacing">
+    <section id="services" className="section-spacing overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div
           className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary-600 opacity-[0.07] rounded-full blur-3xl animate-pulse"
@@ -135,9 +135,9 @@ export function Services() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveServicesTab(tab.id)}
-                  className={`h-10 sm:h-10 px-3 sm:px-4 rounded-xl font-bold text-[12px] sm:text-[13px] transition-all duration-300 flex items-center justify-center gap-2 touch-target flex-shrink-0 ${
+                  className={`min-h-[44px] px-3 sm:px-4 rounded-xl font-bold text-[12px] sm:text-[13px] transition-all duration-300 flex items-center justify-center gap-2 touch-target flex-shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring ${
                     isActive
-                      ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/30 scale-105 border border-primary-500/50'
+                      ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105 border border-primary/50'
                       : 'text-foreground/70 hover:bg-white/10 hover:text-foreground border border-transparent hover:border-white/20'
                   }`}
                   style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
@@ -148,7 +148,7 @@ export function Services() {
                   />
                   <span>{tab.label}</span>
                   <span
-                    className={`px-1.5 py-0.5 rounded-md text-[10px] ${isActive ? 'bg-white/25' : 'bg-white/10'}`}
+                    className={`px-1.5 py-0.5 rounded-md text-xs ${isActive ? 'bg-white/25' : 'bg-white/10'}`}
                   >
                     {count}
                   </span>
@@ -158,7 +158,7 @@ export function Services() {
           </div>
         </div>
 
-        <div className="-mx-4 sm:mx-0 px-4 sm:px-0 mt-8">
+        <div className="mt-8 overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeServicesTab}

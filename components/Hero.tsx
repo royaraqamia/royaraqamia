@@ -35,14 +35,14 @@ export function Hero() {
     <>
       <section
         id="home"
-        className="relative min-h-[90vh] flex items-center overflow-hidden pt-32 pb-12 lg:py-0"
+        className="relative min-h-[90vh] flex items-center overflow-hidden pt-24 md:pt-32 pb-12 lg:py-0"
       >
         {/* Background with Gradient */}
-        <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-purple-950/80 to-slate-900 z-0">
+        <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-purple-950/80 to-slate-900 z-0 overflow-hidden">
           <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary-600/5 to-transparent" />
           {/* Reduced blur radius and opacity for cleaner look */}
-          <div className="absolute top-0 right-1/4 w-[500px] h-[500px] bg-primary-600 opacity-[0.03] blur-[120px] rounded-full" />
-          <div className="absolute bottom-0 left-1/4 w-[500px] h-[500px] bg-primary-400 opacity-[0.03] blur-[120px] rounded-full" />
+          <div className="absolute top-0 right-1/4 w-[min(500px,80vw)] h-[min(500px,80vw)] bg-primary-600 opacity-[0.03] blur-[120px] rounded-full" />
+          <div className="absolute bottom-0 left-1/4 w-[min(500px,80vw)] h-[min(500px,80vw)] bg-primary-400 opacity-[0.03] blur-[120px] rounded-full" />
 
           {/* Floating Particles - Subtler */}
           {particles.map((particle) => (
@@ -96,10 +96,10 @@ export function Hero() {
 
               {/* Main Headline */}
               <m.div variants={itemVariants} className="space-y-1 mt-1!">
-                <h1 className="text-[2.50rem] sm:text-6xl lg:text-7xl font-normal tracking-tight font-heading leading-tight">
+                <h1 className="text-[1.75rem] sm:text-6xl lg:text-7xl font-normal tracking-tight font-heading leading-tight">
                   <span className="block text-teal-300 mb-0.5 lg:mb-1">شريكك الاستراتيجي</span>
-                  <span className="text-white drop-shadow-xl lg:whitespace-nowrap">
-                    للتحول الرقمي ومضاعفة نجاحك
+                  <span className="text-white drop-shadow-xl whitespace-normal lg:whitespace-nowrap break-words">
+                    للتحوُّل الرَّقمي ومضاعفة نجاحك
                   </span>
                 </h1>
               </m.div>
@@ -124,7 +124,7 @@ export function Hero() {
                   href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="group relative h-14 w-auto min-w-[200px] flex items-center justify-center px-8 rounded-full gradient-primary text-white text-lg font-bold transition-transform active:scale-95 cta-shine overflow-hidden"
+                  className="group relative h-14 w-auto min-w-[200px] max-w-full flex items-center justify-center px-8 rounded-full gradient-primary text-white text-lg font-bold transition-transform active:scale-95 cta-shine overflow-hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
                   {/* Hover Glow via Opacity (Performant) - Adjusted for gradient */}
                   <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

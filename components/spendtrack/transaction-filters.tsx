@@ -118,7 +118,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
             <ChevronDown className="size-4 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[220px] p-2" align="start">
+        <PopoverContent className="w-full max-w-[220px] p-2" align="start">
           <div className="space-y-0.5">
             {categories.map((cat) => {
               const isSelected = selectedCategories.includes(cat.id);
@@ -151,6 +151,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                     checked={isSelected}
                     onChange={() => toggleCategory(cat.id)}
                     className="sr-only"
+                    aria-label={`تصنيف ${cat.name}`}
                   />
                   <div
                     className="size-3 rounded-full shrink-0 ring-2 ring-border"
@@ -182,13 +183,13 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
           variant="ghost"
           size="sm"
           onClick={() => router.push(pathname)}
-          className="gap-1.5"
+          className="gap-1.5 min-h-[44px]"
           aria-label="مسح الفلاتر"
         >
           <X className="size-3.5" />
           مسح
           {selectedCount > 0 && (
-            <span className="flex size-4 items-center justify-center rounded-full bg-primary/10 text-[10px] font-medium text-primary">
+            <span className="flex size-4 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
               {selectedCount}
             </span>
           )}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { getCertificates, deleteCertificate } from '@/lib/actions/admin-certificates';
 import type { AdminCertificate } from '@/lib/actions/admin-certificates';
@@ -25,17 +25,34 @@ export default function CertificatesListPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const debounceTimer = useRef<ReturnType<typeof setTimeout>>(null);
+
+  useEffect(() => {
+    debounceTimer.current = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => {
+      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+    };
+  }, [search]);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
-    const result = await getCertificates(page, 20, search);
-    setCertificates(result.data);
-    setTotal(result.total);
-    setLoading(false);
-  }, [page, search]);
+    try {
+      const result = await getCertificates(page, 20, debouncedSearch);
+      setCertificates(result.data);
+      setTotal(result.total);
+    } catch {
+      setCertificates([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, debouncedSearch]);
 
   useEffect(() => {
     fetchData();
@@ -44,15 +61,18 @@ export default function CertificatesListPage() {
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
     setPage(1);
-    fetchData();
+    setDebouncedSearch(search);
   }
 
   async function handleDelete(id: string, name: string) {
     if (!confirm(`هل أنت متأكد من حذف شهادة "${name}"؟`)) return;
     setDeleting(id);
-    await deleteCertificate(id);
-    await fetchData();
-    setDeleting(null);
+    try {
+      await deleteCertificate(id);
+      await fetchData();
+    } finally {
+      setDeleting(null);
+    }
   }
 
   function copyCode(code: string, id: string) {
@@ -109,7 +129,7 @@ export default function CertificatesListPage() {
 
             return (
               <Card key={cert.id} className="glass-card">
-                <CardContent className="flex items-center gap-4 py-4">
+                <CardContent className="flex flex-col sm:flex-row sm:items-center gap-4 py-4">
                   {/* Icon */}
                   <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-full">
                     <ShieldCheck className="text-primary size-5" />
@@ -130,12 +150,12 @@ export default function CertificatesListPage() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex shrink-0 gap-2">
+                  <div className="flex shrink-0 gap-2 sm:justify-end">
                     <Button
                       variant="ghost"
                       size="icon-sm"
                       onClick={() => copyCode(cert.certificate_code, cert.id)}
-                      title="نسخ الرابط"
+                      aria-label="نسخ الرابط"
                     >
                       {copiedId === cert.id ? (
                         <Check className="text-green-500 size-4" />
@@ -143,12 +163,12 @@ export default function CertificatesListPage() {
                         <Copy className="size-4" />
                       )}
                     </Button>
-                    <Button variant="ghost" size="icon-sm" asChild title="عرض صفحة التحقق">
+                    <Button variant="ghost" size="icon-sm" asChild aria-label="عرض صفحة التحقق">
                       <Link href={`/verify/${cert.certificate_code}`} target="_blank">
                         <ExternalLink className="size-4" />
                       </Link>
                     </Button>
-                    <Button variant="ghost" size="icon-sm" asChild title="تعديل">
+                    <Button variant="ghost" size="icon-sm" asChild aria-label="تعديل">
                       <Link href={`/admin/certificates/${cert.id}/edit`}>
                         <Pencil className="size-4" />
                       </Link>
@@ -158,7 +178,7 @@ export default function CertificatesListPage() {
                       size="icon-sm"
                       onClick={() => handleDelete(cert.id, cert.student_name)}
                       disabled={deleting === cert.id}
-                      title="حذف"
+                      aria-label="حذف"
                       className="text-destructive hover:text-destructive"
                     >
                       {deleting === cert.id ? (

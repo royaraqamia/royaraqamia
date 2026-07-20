@@ -312,17 +312,7 @@ export function MobileMenu({
                       loading="eager"
                       className="h-10 w-10 logo-glow transition-transform duration-200 group-hover:scale-105"
                     />
-                    <span
-                      className="text-xl font-bold font-['Aref_Ruqaa']"
-                      style={{
-                        background: 'linear-gradient(135deg, #a78bfa 0%, #c4b5fd 100%)',
-                        WebkitBackgroundClip: 'text',
-                        WebkitTextFillColor: 'transparent',
-                        backgroundClip: 'text',
-                      }}
-                    >
-                      رؤية رقمية
-                    </span>
+                    <span className="text-xl font-bold font-heading">رؤية رقمية</span>
                   </Link>
 
                   <button
@@ -379,15 +369,17 @@ export function MobileMenu({
                   w-full mb-3 h-14
                   rounded-full
                   bg-transparent
-                  text-white font-bold
+                  text-foreground font-bold
                   flex items-center justify-center gap-2
                   transition-all duration-150
                   active:scale-95
                   hover:bg-white/10
+                  cursor-pointer
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
                 "
                     >
                       <SignOut className="w-5 h-5" weight="bold" />
-                      <span>تسجيل الخُروج</span>
+                      <span>تسجيل الخروج</span>
                     </button>
                   ) : (
                     <a
@@ -401,11 +393,13 @@ export function MobileMenu({
                   w-full mb-3 h-14
                   rounded-full
                   bg-transparent
-                  text-white font-bold
+                  text-foreground font-bold
                   flex items-center justify-center gap-2
                   transition-all duration-150
                   active:scale-95
                   hover:bg-white/10
+                  cursor-pointer
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
                 "
                     >
                       <User className="w-5 h-5" weight="bold" />

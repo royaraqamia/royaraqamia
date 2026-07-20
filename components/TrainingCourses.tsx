@@ -52,7 +52,7 @@ export function TrainingCourses() {
   return (
     <section id="training" className="section-spacing bg-muted/30 relative overflow-hidden">
       {/* Enhanced Background Elements */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-gradient-radial from-[#14B8A6]/10 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(400px,80vw)] sm:w-[min(800px,80vw)] h-[min(400px,80vw)] sm:h-[min(800px,80vw)] bg-gradient-radial from-[#14B8A6]/10 via-transparent to-transparent pointer-events-none" />
       <div
         className="absolute top-20 right-10 w-48 h-48 bg-[#14B8A6] opacity-[0.05] rounded-full blur-3xl pointer-events-none motion-safe:animate-pulse"
         style={{ animationDuration: '4s' }}
@@ -232,7 +232,7 @@ export function TrainingCourses() {
                   className="block"
                   aria-label={`احجز مقعدك في دورة ${course.title} عبر واتساب`}
                 >
-                  <Button className="w-full gradient-primary text-white font-bold hover:opacity-90 motion-safe:hover:scale-[1.01] transition-all rounded-full h-14 text-lg shadow-xl shadow-primary/30">
+                  <Button className="w-full gradient-primary text-white font-bold hover:opacity-90 motion-safe:hover:scale-[1.01] transition-all rounded-full h-14 text-lg shadow-xl shadow-primary/30 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]">
                     احجز مقعدك الآن
                   </Button>
                 </a>

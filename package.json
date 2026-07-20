@@ -11,7 +11,7 @@
   "scripts": {
     "postinstall": "node -e \"const fs=require('fs'),p=require('path');const d=p.join('node_modules','typescript','lib');if(!fs.existsSync(d)){fs.mkdirSync(d,{recursive:true})}const f=p.join(d,'typescript.js');if(!fs.existsSync(f)){fs.writeFileSync(f,\\\"module.exports = require('typescript/unstable/sync');\\\\n\\\")}\"",
     "dev": "next dev",
-    "build": "next build",
+    "build": "tsc --noEmit && next build",
     "start": "next start",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

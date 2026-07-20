@@ -59,13 +59,21 @@ export function PostList({ posts }: PostListProps) {
 
   return (
     <div>
-      <div className="flex items-center gap-0.5 mb-5 border-b border-border/50">
+      <div
+        className="flex items-center gap-0.5 mb-5 border-b border-border/50"
+        role="tablist"
+        aria-label="تصفية المقالات"
+      >
         {filters.map((f) => (
           <button
             key={f.value}
+            role="tab"
+            aria-selected={activeFilter === f.value}
+            aria-controls="tabpanel-posts"
+            id={`tab-${f.value}`}
             onClick={() => setActiveFilter(f.value)}
             className={cn(
-              'px-3.5 py-2.5 text-sm border-b-2 transition-smooth -mb-px rounded-t-lg',
+              'px-3.5 py-2.5 text-sm border-b-2 transition-smooth -mb-px rounded-t-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]',
               activeFilter === f.value
                 ? 'border-primary text-foreground font-medium'
                 : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -73,7 +81,7 @@ export function PostList({ posts }: PostListProps) {
           >
             {f.label}
             {f.value !== 'all' && (
-              <span className="mr-1.5 text-xs text-muted-foreground">
+              <span className="me-1.5 text-xs text-muted-foreground" aria-hidden="true">
                 ({posts.filter((p) => p.status === f.value).length})
               </span>
             )}
@@ -81,7 +89,12 @@ export function PostList({ posts }: PostListProps) {
         ))}
       </div>
 
-      <div className="divide-y divide-border/50">
+      <div
+        className="divide-y divide-border/50"
+        role="tabpanel"
+        id="tabpanel-posts"
+        aria-labelledby={`tab-${activeFilter}`}
+      >
         {filteredPosts.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="size-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
@@ -98,11 +111,13 @@ export function PostList({ posts }: PostListProps) {
                 className="mt-5 transition-smooth shadow-sm hover:shadow-md"
                 disabled={pending}
                 onClick={() => startTransition(() => createPost())}
+                aria-busy={pending}
+                aria-live="polite"
               >
                 {pending ? (
-                  <Loader2 className="ml-2 size-4 animate-spin" />
+                  <Loader2 className="ms-2 size-4 animate-spin" />
                 ) : (
-                  <Plus className="ml-2 size-4" />
+                  <Plus className="ms-2 size-4" />
                 )}
                 {pending ? 'جارٍ الإنشاء...' : 'مقال جديد'}
               </Button>
@@ -120,7 +135,7 @@ function PostRow({ post }: { post: Post }) {
   const router = useRouter();
 
   return (
-    <div className="flex items-center gap-4 py-4 transition-smooth hover:bg-muted/30 -mx-2 px-2 rounded-lg">
+    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-4 transition-smooth hover:bg-muted/30 -mx-2 px-2 rounded-lg">
       <div className="flex-1 min-w-0">
         <Link
           href={`/blogpress/editor/${post.id}`}
@@ -160,7 +175,7 @@ function PostRow({ post }: { post: Post }) {
           <DropdownMenuContent align="end" className="transition-smooth">
             <DropdownMenuItem asChild>
               <Link href={`/blogpress/editor/${post.id}`} className="transition-smooth">
-                <PenLine className="ml-2 size-4" />
+                <PenLine className="ms-2 size-4" />
                 تعديل
               </Link>
             </DropdownMenuItem>
@@ -176,7 +191,7 @@ function PostRow({ post }: { post: Post }) {
                 }}
                 className="transition-smooth"
               >
-                <Eye className="ml-2 size-4" />
+                <Eye className="ms-2 size-4" />
                 نشر
               </DropdownMenuItem>
             ) : (
@@ -191,7 +206,7 @@ function PostRow({ post }: { post: Post }) {
                 }}
                 className="transition-smooth"
               >
-                <EyeOff className="ml-2 size-4" />
+                <EyeOff className="ms-2 size-4" />
                 إلغاء النشر
               </DropdownMenuItem>
             )}
@@ -202,7 +217,7 @@ function PostRow({ post }: { post: Post }) {
                   onSelect={(e) => e.preventDefault()}
                   className="transition-smooth"
                 >
-                  <Trash2 className="ml-2 size-4 text-destructive" />
+                  <Trash2 className="ms-2 size-4 text-destructive" />
                   <span className="text-destructive">حذف</span>
                 </DropdownMenuItem>
               </DialogTrigger>

@@ -198,7 +198,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   className="flex-1 bg-transparent px-3 py-3.5 text-sm focus:outline-none dark:text-slate-200 placeholder:text-slate-500"
                 />
               </div>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
                 3-16 حرفاً (أحرف، أرقام، - و _)
               </p>
             </motion.div>
@@ -337,7 +337,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                     className="w-44 h-44 bg-white dark:bg-slate-900 p-2 rounded-xl shadow-inner border border-indigo-100/30"
                   />
                 )}
-                <p className="text-[10px] text-indigo-600 font-semibold mt-2.5">
+                <p className="text-xs text-indigo-600 font-semibold mt-2.5">
                   امسح لعرض الرَّابط المُختصَر
                 </p>
               </motion.div>

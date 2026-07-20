@@ -92,7 +92,7 @@ export function CreateExpenseDialog({ categories }: { categories: Category[] }) 
     >
       <DialogTrigger asChild>
         <Button className="transition-all duration-200">
-          <Plus className="ml-1 size-4" />
+          <Plus className="ms-1 size-4" />
           إضافة مصروف
         </Button>
       </DialogTrigger>
@@ -315,7 +315,7 @@ function ExpenseForm({
         </p>
       )}
       <Button type="submit" className="w-full transition-all duration-200" disabled={pending}>
-        {pending ? <Loader2 className="ml-2 size-4 animate-spin" /> : null}
+        {pending ? <Loader2 className="ms-2 size-4 animate-spin" /> : null}
         {pending ? 'جارٍ الحفظ...' : 'إضافة مصروف'}
       </Button>
     </form>

@@ -47,7 +47,7 @@ export function HabitCard({
           disabled={isToggling}
           whileTap={reduce || isToggling ? undefined : { scale: 0.85 }}
           transition={reduce ? undefined : { type: 'spring', stiffness: 400, damping: 10 }}
-          className={`w-8 h-8 rounded-full border-2 flex items-center justify-center transition-all duration-200 ease-out shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+          className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all duration-200 ease-out shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
             isCompleted
               ? 'bg-primary border-primary text-primary-foreground shadow-sm'
               : 'border-input bg-background hover:border-muted-foreground'
@@ -77,16 +77,16 @@ export function HabitCard({
               {habit.name}
             </h4>
             <div className="flex items-center gap-2 mt-0.5">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {habit.frequency}
               </span>
-              <span className="text-[10px] text-border">•</span>
+              <span className="text-xs text-border">•</span>
               {stats.currentStreak > 0 ? (
-                <span className="text-[10px] font-bold text-destructive flex items-center gap-0.5">
+                <span className="text-xs font-bold text-destructive flex items-center gap-0.5">
                   <Flame className="w-3 h-3" /> {stats.currentStreak} أيام متتالية
                 </span>
               ) : (
-                <span className="text-[10px] text-muted-foreground">لم يبدأ التسلسل بعد</span>
+                <span className="text-xs text-muted-foreground">لم يبدأ التسلسل بعد</span>
               )}
             </div>
           </div>
@@ -99,6 +99,7 @@ export function HabitCard({
         onClick={() => onEdit(habit)}
         aria-label={`تعديل عادة ${habit.name}`}
         id={`edit-habit-${habit.id}`}
+        className="min-w-[44px] min-h-[44px]"
       >
         <Edit3 className="w-4 h-4" />
       </Button>

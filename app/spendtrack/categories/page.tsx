@@ -16,8 +16,8 @@ export default async function CategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between animate-slide-up">
-        <h1 className="text-2xl font-bold tracking-tight">التصنيفات</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
+        <h1 className="text-2xl font-bold tracking-tight font-heading">التصنيفات</h1>
         <CreateCategoryDialog />
       </div>
 

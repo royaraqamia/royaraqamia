@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { verifyCertificate, type Certificate } from '@/lib/actions/certificates';
+import { formatDateArabic } from '@/lib/utils';
 import {
   ShieldCheck,
   Search,
@@ -39,9 +40,17 @@ export default function VerifyPage() {
     setLoading(true);
     setResult(null);
 
-    const data = await verifyCertificate(code);
-    setResult(data);
-    setLoading(false);
+    try {
+      const data = await verifyCertificate(code);
+      setResult(data);
+    } catch {
+      setResult({
+        success: false,
+        error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleDirectLink() {
@@ -57,8 +66,8 @@ export default function VerifyPage() {
           <div className="mb-4 inline-flex items-center justify-center rounded-full bg-primary/10 p-4">
             <ShieldCheck className="size-10 text-primary" />
           </div>
-          <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">
-            التَّحقُّق من الشَّهادة
+          <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl font-heading">
+            التَّحقُّق من الشَّهادة
           </h1>
           <p className="text-muted-foreground mx-auto max-w-md text-base">
             أدخل رمز الشَّهادة للتَّحقُّق من صحَّتها وأصالتها.
@@ -76,13 +85,18 @@ export default function VerifyPage() {
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="COMP-2026-A1B2C"
-                  className="h-12 ps-10 text-base tracking-wider"
+                  className="h-12 min-h-[44px] ps-10 text-base tracking-wider"
                   maxLength={30}
                   autoFocus
                   required
                 />
               </div>
-              <Button type="submit" size="lg" isLoading={loading} className="sm:w-auto">
+              <Button
+                type="submit"
+                size="lg"
+                isLoading={loading}
+                className="sm:w-auto min-h-[44px]"
+              >
                 {!loading && <Search className="size-4" />}
                 تحقُّق
               </Button>
@@ -94,7 +108,7 @@ export default function VerifyPage() {
                 size="sm"
                 onClick={handleDirectLink}
                 disabled={!code.trim()}
-                className="text-muted-foreground text-xs"
+                className="text-muted-foreground text-xs min-h-[44px] py-2"
               >
                 أو افتح الرَّابط المباشر
                 <ArrowLeft className="size-3" />
@@ -136,7 +150,7 @@ function CertificateCard({ certificate }: { certificate: Certificate }) {
   return (
     <Card className="glass-card overflow-hidden">
       {/* Verified Header */}
-      <div className="bg-primary/10 flex items-center gap-3 border-b px-6 py-4">
+      <div className="bg-primary/10 flex flex-wrap items-center gap-3 border-b px-6 py-4">
         <div className="bg-primary flex size-10 items-center justify-center rounded-full">
           <ShieldCheck className="text-primary-foreground size-5" />
         </div>
@@ -171,13 +185,13 @@ function CertificateCard({ certificate }: { certificate: Certificate }) {
           <DetailRow
             icon={<CalendarDays className="size-4" />}
             label="تاريخ الإصدار"
-            value={formatDate(certificate.issue_date)}
+            value={formatDateArabic(certificate.issue_date)}
           />
           {certificate.expiration_date && (
             <DetailRow
               icon={<Clock className="size-4" />}
               label="تاريخ الانتهاء"
-              value={formatDate(certificate.expiration_date)}
+              value={formatDateArabic(certificate.expiration_date)}
               danger={!!isExpired}
             />
           )}
@@ -224,12 +238,4 @@ function DetailRow({
       </div>
     </div>
   );
-}
-
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('ar-EG', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
 }

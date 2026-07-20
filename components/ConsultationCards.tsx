@@ -9,25 +9,24 @@ export function ConsultationCards() {
     <section
       id="consultation"
       dir="rtl"
-      className="relative overflow-hidden py-20 md:py-28"
-      style={{ backgroundColor: '#0a0a0a' }}
+      className="relative overflow-hidden py-20 md:py-28 bg-background"
       aria-label="الاستشارة التقنية الشاملة"
     >
       {/* Ambient Glow Effects */}
       <div
-        className="absolute top-1/4 right-1/4 w-[600px] h-[600px] rounded-full pointer-events-none blur-[120px]"
+        className="absolute top-1/4 right-1/4 w-[min(300px,80vw)] sm:w-[min(600px,80vw)] h-[min(300px,80vw)] sm:h-[min(600px,80vw)] rounded-full pointer-events-none blur-[120px]"
         style={{
           background: 'radial-gradient(circle, rgba(244, 63, 94, 0.15) 0%, transparent 70%)',
         }}
       />
       <div
-        className="absolute bottom-0 left-1/4 w-[500px] h-[500px] rounded-full pointer-events-none blur-[100px]"
+        className="absolute bottom-0 left-1/4 w-[min(250px,80vw)] sm:w-[min(500px,80vw)] h-[min(250px,80vw)] sm:h-[min(500px,80vw)] rounded-full pointer-events-none blur-[100px]"
         style={{
           background: 'radial-gradient(circle, rgba(251, 113, 133, 0.1) 0%, transparent 70%)',
         }}
       />
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] rounded-full pointer-events-none blur-[150px]"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(400px,80vw)] sm:w-[min(800px,80vw)] h-[min(200px,80vw)] sm:h-[min(400px,80vw)] rounded-full pointer-events-none blur-[150px]"
         style={{
           background: 'radial-gradient(ellipse, rgba(225, 29, 72, 0.08) 0%, transparent 60%)',
         }}
@@ -75,7 +74,7 @@ export function ConsultationCards() {
                   {/* Price - Top Left (appears on right in RTL) */}
                   <div className="flex items-baseline gap-2">
                     <span className="text-4xl md:text-5xl font-bold text-rose-400">$25</span>
-                    <span className="text-gray-300 text-lg">/ للسَّاعة</span>
+                    <span className="text-muted-foreground text-lg">/ للسَّاعة</span>
                   </div>
 
                   {/* Badge - Top Right (appears on left in RTL) */}
@@ -105,7 +104,7 @@ export function ConsultationCards() {
                     توجيه تقني متكامل
                   </h3>
                   <p
-                    className="text-slate-300 font-medium text-base md:text-lg leading-relaxed max-w-2xl"
+                    className="text-foreground/70 font-medium text-base md:text-lg leading-relaxed max-w-2xl"
                     style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif", lineHeight: '1.8' }}
                   >
                     تحليل كامل لاحتياجاتك الرَّقميَّة. نُراجع ما لديك، ونرسم لك مسار التَّعليم أو
@@ -124,12 +123,10 @@ export function ConsultationCards() {
                     aria-label="احجز استشارتك الآن"
                   >
                     <Button
-                      className="w-full h-14 md:h-16 text-lg md:text-xl font-bold text-white rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-lg shadow-rose-600/40"
+                      className="w-full h-14 md:h-16 text-lg md:text-xl font-bold text-white rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-lg shadow-rose-600/40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]"
                       style={{
                         background:
                           'linear-gradient(135deg, #F43F5E 0%, #E11D48 50%, #FB7185 100%)',
-                        boxShadow:
-                          '0 10px 40px -10px rgba(244, 63, 94, 0.5), 0 0 60px -15px rgba(251, 113, 133, 0.3)',
                       }}
                     >
                       <span style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>

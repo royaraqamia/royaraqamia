@@ -56,13 +56,13 @@ export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: Lin
             required
             value={editingUrlValue}
             onChange={(e) => setEditingUrlValue(e.target.value)}
-            className="flex-1 px-3 py-1.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-800 dark:text-slate-200"
+            className="flex-1 px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-800 dark:text-slate-200"
             placeholder="الرَّابط الجديد"
           />
           <button
             type="submit"
             disabled={updateLoading}
-            className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-[10px] rounded-lg transition-all cursor-pointer press-scale inline-flex items-center gap-1"
+            className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg transition-all cursor-pointer press-scale inline-flex items-center gap-1 min-h-[44px]"
           >
             {updateLoading ? (
               <>
@@ -79,7 +79,7 @@ export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: Lin
           <button
             type="button"
             onClick={onCancel}
-            className="px-2.5 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-medium text-[10px] rounded-lg transition-all cursor-pointer press-scale"
+            className="px-3 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-medium text-xs rounded-lg transition-all cursor-pointer press-scale min-h-[44px]"
           >
             إلغاء
           </button>
@@ -87,7 +87,7 @@ export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: Lin
         {updateError && (
           <div
             aria-live="polite"
-            className="text-[10px] text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 px-2 py-1 rounded-md"
+            className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 px-2 py-1 rounded-md"
           >
             {updateError}
           </div>

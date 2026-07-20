@@ -44,7 +44,7 @@ export function AddHabitModal({
           <DialogTitle>إنشاء عادة روتينية</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="p-6 space-y-5">
+        <form onSubmit={onSubmit} className="p-4 sm:p-6 space-y-5">
           {formError && (
             <div
               className="bg-destructive/10 border border-destructive/30 text-destructive text-xs font-semibold rounded-lg px-4 py-2.5 text-center"
@@ -71,7 +71,7 @@ export function AddHabitModal({
                 autoFocus
               />
             </div>
-            <p className="text-[10px] text-muted-foreground text-left" dir="ltr">
+            <p className="text-xs text-muted-foreground text-left" dir="ltr">
               {habitName.length}/50
             </p>
           </div>
@@ -84,7 +84,7 @@ export function AddHabitModal({
               <button
                 type="button"
                 onClick={() => onFrequencyChange('daily')}
-                className={`py-2 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`py-3 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   habitFrequency === 'daily'
                     ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                     : 'border-input bg-background text-foreground hover:bg-accent'
@@ -95,7 +95,7 @@ export function AddHabitModal({
               <button
                 type="button"
                 onClick={() => onFrequencyChange('weekly')}
-                className={`py-2 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`py-3 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                   habitFrequency === 'weekly'
                     ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                     : 'border-input bg-background text-foreground hover:bg-accent'
@@ -119,13 +119,15 @@ export function AddHabitModal({
                     key={item.name}
                     type="button"
                     onClick={() => onIconChange(item.name)}
+                    aria-label={item.name}
+                    aria-pressed={isSelected}
                     className={`aspect-square rounded-xl flex items-center justify-center border transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
                       isSelected
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 text-primary'
                         : 'border-input bg-background text-muted-foreground hover:bg-accent hover:border-border'
                     }`}
                   >
-                    <IconComp className="w-5 h-5" />
+                    <IconComp className="w-5 h-5" aria-hidden="true" />
                   </button>
                 );
               })}

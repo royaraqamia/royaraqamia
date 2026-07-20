@@ -51,7 +51,7 @@ export function Header({ rightContent }: HeaderProps) {
           </div>
         </Link>
 
-        <div className="flex items-center gap-3 flex-wrap">{rightContent}</div>
+        <div className="flex items-center gap-3 flex-wrap overflow-hidden">{rightContent}</div>
       </div>
     </header>
   );

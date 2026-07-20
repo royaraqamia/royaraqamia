@@ -14,6 +14,10 @@ const authRoutes: Record<string, string> = {
   '/auth/signup': '/',
 };
 
+function isSafeRedirect(path: string): boolean {
+  return path.startsWith('/') && !path.startsWith('//');
+}
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -52,7 +56,10 @@ export async function proxy(request: NextRequest) {
     if (request.nextUrl.pathname.startsWith(path) && !user) {
       const url = request.nextUrl.clone();
       url.pathname = redirect;
-      url.searchParams.set('redirect', request.nextUrl.pathname);
+      const returnPath = request.nextUrl.pathname;
+      if (isSafeRedirect(returnPath)) {
+        url.searchParams.set('redirect', returnPath);
+      }
       return NextResponse.redirect(url);
     }
   }

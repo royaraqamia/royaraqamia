@@ -21,14 +21,12 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
           initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -15 }}
-          className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-lg flex items-start gap-3 relative"
+          className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3 relative"
         >
-          <XCircle aria-hidden="true" className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+          <XCircle aria-hidden="true" className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
           <div className="space-y-0.5">
-            <h4 className="text-sm font-bold text-slate-800 dark:text-slate-100">
-              فشل إعادة التوجيه
-            </h4>
-            <p className="text-xs text-slate-600 dark:text-slate-400">
+            <p className="text-sm font-bold text-foreground">فشل إعادة التوجيه</p>
+            <p className="text-xs text-muted-foreground">
               {error.type === 'oauth_failed'
                 ? `فشل تسجيل الدخول عبر Google. حاول مرة أخرى أو استخدم البريد الإلكتروني.${error.code ? ` (${error.code})` : ''}`
                 : error.type === 'blocked'
@@ -39,7 +37,7 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
           <button
             onClick={onDismiss}
             aria-label="إغلاق"
-            className="absolute top-3 left-3 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 cursor-pointer press-scale"
+            className="absolute top-3 left-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer press-scale focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           >
             <XCircle aria-hidden="true" className="w-4 h-4" />
           </button>

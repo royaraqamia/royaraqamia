@@ -22,7 +22,9 @@ export default function NotFound() {
             />
           </svg>
         </div>
-        <h1 className="text-4xl font-bold text-foreground mb-2">٤٠٤ - الصفحة غير موجودة</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
+          ٤٠٤ - الصفحة غير موجودة
+        </h1>
         <p className="text-muted-foreground mb-8">الصفحة التي تبحث عنها غير موجودة.</p>
         <Link href="/habitflow">
           <Button variant="default">العودة إلى الرئيسية</Button>

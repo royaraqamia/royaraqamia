@@ -14,45 +14,61 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">تسجيل الدُّخول</h1>
+          <h1 className="text-2xl font-bold text-foreground">تسجيل الدُّخول</h1>
         </div>
 
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="redirectTo" value={redirectTo} />
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
+            <label
+              htmlFor="login-email"
+              className="block text-sm font-medium text-foreground mb-1.5"
+            >
               البريد الإلكتروني
             </label>
             <input
+              id="login-email"
               name="email"
               type="email"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
+              autoComplete="email"
+              aria-describedby={state?.message ? 'login-error' : undefined}
+              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="email@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">كلمة المرور</label>
+            <label
+              htmlFor="login-password"
+              className="block text-sm font-medium text-foreground mb-1.5"
+            >
+              كلمة المرور
+            </label>
             <input
+              id="login-password"
               name="password"
               type="password"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
+              autoComplete="current-password"
+              aria-describedby={state?.message ? 'login-error' : undefined}
+              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="••••••••"
             />
           </div>
 
           {state?.message && (
-            <p className="text-sm text-destructive text-center">{state.message}</p>
+            <p id="login-error" role="alert" className="text-sm text-destructive text-center">
+              {state.message}
+            </p>
           )}
 
           <button
             type="submit"
             disabled={isPending}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
           >
-            {isPending ? 'جاري الدُّخول...' : 'تسجيل الدُّخول'}
+            {isPending ? 'جاري الدُّخول...' : 'تسجيل الدُّخول'}
           </button>
         </form>
 
@@ -67,7 +83,7 @@ export default function LoginPage() {
 
         <button
           onClick={() => signInWithGoogle(redirectTo)}
-          className="w-full py-3 px-4 border border-border rounded-xl font-medium text-foreground hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 px-4 border border-border rounded-xl font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -93,11 +109,14 @@ export default function LoginPage() {
         <div className="text-center space-y-2">
           <Link
             href="/auth/reset-password"
-            className="text-sm text-muted-foreground hover:text-foreground block"
+            className="text-sm text-muted-foreground hover:text-foreground block cursor-pointer transition-colors py-2"
           >
             نسيت كلمة المرور؟
           </Link>
-          <Link href="/auth/signup" className="text-sm text-primary hover:underline">
+          <Link
+            href="/auth/signup"
+            className="text-sm text-primary hover:underline cursor-pointer py-2 block"
+          >
             ليس لديك حساب؟ إنشاء حساب
           </Link>
         </div>

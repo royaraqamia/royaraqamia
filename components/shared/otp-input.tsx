@@ -70,7 +70,7 @@ export function OtpInput({ length = 6, value, onChange, onComplete, disabled }: 
           onPaste={handlePaste}
           onFocus={() => setFocusedIndex(i)}
           disabled={disabled}
-          className="w-12 h-14 text-center text-xl font-bold rounded-xl border-2 bg-white/5 text-foreground transition-all duration-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none disabled:opacity-50"
+          className="w-12 h-14 text-center text-xl font-bold rounded-xl border-2 bg-muted text-foreground transition-all duration-200 focus:ring-2 focus:ring-primary focus:border-primary outline-none disabled:opacity-50"
           style={{
             borderColor: focusedIndex === i ? 'hsl(var(--primary))' : 'hsl(var(--border))',
           }}

@@ -20,48 +20,72 @@ export default function SignupPage() {
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="redirectTo" value={redirectTo} />
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">الاسم الكامل</label>
+            <label
+              htmlFor="signup-name"
+              className="block text-sm font-medium text-foreground mb-1.5"
+            >
+              الاسم الكامل
+            </label>
             <input
+              id="signup-name"
               name="name"
               type="text"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
+              autoComplete="name"
+              aria-describedby={state?.message ? 'signup-error' : undefined}
+              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="الاسم الكامل"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
+            <label
+              htmlFor="signup-email"
+              className="block text-sm font-medium text-foreground mb-1.5"
+            >
               البريد الإلكتروني
             </label>
             <input
+              id="signup-email"
               name="email"
               type="email"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
+              autoComplete="email"
+              aria-describedby={state?.message ? 'signup-error' : undefined}
+              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="email@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">كلمة المرور</label>
+            <label
+              htmlFor="signup-password"
+              className="block text-sm font-medium text-foreground mb-1.5"
+            >
+              كلمة المرور
+            </label>
             <input
+              id="signup-password"
               name="password"
               type="password"
               required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 placeholder:text-muted-foreground focus:ring-2 focus:ring-primary outline-none"
+              autoComplete="new-password"
+              aria-describedby={state?.message ? 'signup-error' : undefined}
+              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="8 أحرف على الأقل"
             />
           </div>
 
           {state?.message && (
-            <p className="text-sm text-destructive text-center">{state.message}</p>
+            <p id="signup-error" role="alert" className="text-sm text-destructive text-center">
+              {state.message}
+            </p>
           )}
 
           <button
             type="submit"
             disabled={isPending}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
           >
             {isPending ? 'جاري الإنشاء...' : 'إنشاء حساب'}
           </button>
@@ -78,7 +102,7 @@ export default function SignupPage() {
 
         <button
           onClick={() => signInWithGoogle(redirectTo)}
-          className="w-full py-3 px-4 border border-border rounded-xl font-medium text-foreground hover:bg-white/5 transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 px-4 border border-border rounded-xl font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -102,8 +126,11 @@ export default function SignupPage() {
         </button>
 
         <div className="text-center">
-          <Link href="/auth/login" className="text-sm text-primary hover:underline">
-            لديك حساب بالفعل؟ تسجيل الدُّخول
+          <Link
+            href="/auth/login"
+            className="text-sm text-primary hover:underline cursor-pointer py-2 block"
+          >
+            لديك حساب بالفعل؟ تسجيل الدُّخول
           </Link>
         </div>
       </div>

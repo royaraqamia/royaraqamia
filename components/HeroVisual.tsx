@@ -43,16 +43,16 @@ export function HeroVisual() {
         }}
       >
         {/* Glow - Opacity based animation instead of box-shadow */}
-        <div className="absolute inset-0 rounded-xl bg-[#7766EE] blur-xl opacity-40 animate-pulse" />
+        <div className="absolute inset-0 rounded-xl bg-primary blur-xl opacity-40 animate-pulse" />
 
-        <div className="relative w-full h-full rounded-xl bg-linear-to-br from-[#7766EE] via-[#8B7AFF] to-[#A78BFA] flex items-center justify-center shadow-lg border border-white/20">
+        <div className="relative w-full h-full rounded-xl bg-linear-to-br from-primary via-primary to-accent flex items-center justify-center shadow-lg border border-white/20">
           <Lightning className="w-6 h-6 lg:w-8 lg:h-8 text-white drop-shadow-md" weight="fill" />
         </div>
       </m.div>
 
       {/* Dashboard mockup */}
       <m.div
-        className="relative bg-black/40 backdrop-blur-md rounded-3xl border border-white/10 z-10 overflow-hidden"
+        className="relative bg-background/40 backdrop-blur-md rounded-3xl border border-white/10 z-10 overflow-hidden"
         animate={
           !isMobile
             ? {
@@ -206,8 +206,8 @@ export function HeroVisual() {
           delay: 1,
         }}
       >
-        <div className="absolute inset-0 rounded-full bg-[#7766EE] blur-xl opacity-30 animate-pulse" />
-        <div className="relative w-full h-full rounded-full bg-linear-to-br from-[#7766EE] via-[#8B7AFF] to-[#A78BFA] flex items-center justify-center shadow-xl border border-white/20">
+        <div className="absolute inset-0 rounded-full bg-primary blur-xl opacity-30 animate-pulse" />
+        <div className="relative w-full h-full rounded-full bg-linear-to-br from-primary via-primary to-accent flex items-center justify-center shadow-xl border border-white/20">
           <div className="w-1/2 h-1/2 border-time border-2 border-white/80 rounded-full flex items-center justify-center">
             <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_white]" />
           </div>

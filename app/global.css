@@ -318,6 +318,11 @@
     border-color: hsl(var(--border) / 0.8);
   }
 
+  /* Mobile touch optimization — remove 300ms tap delay */
+  html {
+    touch-action: manipulation;
+  }
+
   /* Smooth scroll */
   html {
     scroll-behavior: smooth;
@@ -387,6 +392,14 @@
   .touch-target-lg {
     min-height: 48px;
     min-width: 48px;
+  }
+
+  /* Consistent focus ring for keyboard accessibility */
+  .focus-ring {
+    @apply outline-none;
+  }
+  .focus-ring:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
   }
 
   /* Form Field Enhancements */
@@ -1729,14 +1742,14 @@
 }
 
 .testimonial-card {
-  width: 288px;
-  min-width: 288px;
+  width: min(288px, 100vw - 3rem);
+  min-width: 0;
   max-width: 288px;
 }
 @media (min-width: 768px) {
   .testimonial-card {
     width: 400px;
-    min-width: 400px;
+    min-width: 0;
     max-width: 400px;
   }
 }
@@ -2005,7 +2018,16 @@
   .blob-rotate-reverse,
   .pulse-glow,
   .bar-fill,
-  .icon-benefit {
+  .icon-benefit,
+  .animate-float,
+  .animate-float-delayed,
+  .animate-pulse-slow,
+  .animate-shine,
+  .animate-gradient,
+  .animate-fade-in-up,
+  .animate-shimmer-slide,
+  .animate-border-pulse-orange,
+  .animate-border-pulse-purple {
     animation: none !important;
   }
 
@@ -2016,10 +2038,46 @@
 
   .text-reveal,
   .stagger-item,
-  .reveal-on-scroll {
+  .reveal-on-scroll,
+  .animate-in {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
+  }
+
+  .animate-slide-up,
+  .animate-fade-in,
+  .animate-scale-in,
+  .animate-slide-up-delay-1,
+  .animate-slide-up-delay-2,
+  .animate-slide-up-delay-3,
+  .animate-slide-up-delay-4,
+  .animate-fade-in-delay-1,
+  .animate-fade-in-delay-2,
+  .animate-scale-in-delay-1,
+  .animate-scale-in-delay-2,
+  .animate-pulse-subtle {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .card-hover:hover,
+  .glass-hover:hover,
+  .btn-hover-lift:hover,
+  .hover-lift:hover,
+  .whatsapp-float,
+  .whatsapp-float-btn {
+    transform: none !important;
+  }
+
+  .whatsapp-pulse {
+    animation: none !important;
+  }
+
+  .cta-glow,
+  .pulse-glow {
+    animation: none !important;
   }
 }
 

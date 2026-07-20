@@ -158,7 +158,7 @@ export function DashboardShell({
                   onClick={() => handleDateShift(-1)}
                   aria-label="اليوم السابق"
                   id="btn-prev-day"
-                  className="h-7 w-7"
+                  className="h-9 w-9"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -175,7 +175,7 @@ export function DashboardShell({
                   onClick={() => handleDateShift(1)}
                   aria-label="اليوم التالي"
                   id="btn-next-day"
-                  className="h-7 w-7"
+                  className="h-9 w-9"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
@@ -252,7 +252,7 @@ export function DashboardShell({
                     }}
                     id="btn-create-habit"
                   >
-                    <Plus className="w-4 h-4 ml-1.5" />
+                    <Plus className="w-4 h-4 ms-1.5" />
                     إضافة عادة
                   </Button>
                 </div>
@@ -275,7 +275,7 @@ export function DashboardShell({
                       }}
                       className="mt-2"
                     >
-                      <Plus className="w-4 h-4 ml-1.5" />
+                      <Plus className="w-4 h-4 ms-1.5" />
                       إنشاء عادة روتينية
                     </Button>
                   </Card>
@@ -317,7 +317,7 @@ export function DashboardShell({
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 النسخ الاحتياطي
               </h3>
-              <p className="text-[10px] text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-0.5">
                 تصدير أو استعادة جميع بيانات عاداتك
               </p>
             </div>
@@ -327,12 +327,18 @@ export function DashboardShell({
                 type="file"
                 accept=".json"
                 className="hidden"
+                aria-label="استيراد نسخة احتياطية"
                 onChange={(e) => {
                   if (e.target.files?.[0]) handleImportBackupFile(e.target.files[0]);
                   e.target.value = '';
                 }}
               />
-              <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                aria-controls="backup-file-input"
+              >
                 استيراد
               </Button>
               <Button variant="outline" size="sm" onClick={handleDownloadBackup}>

@@ -184,7 +184,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
       : null;
 
   return (
-    <div className="p-8">
+    <div className="p-6 sm:p-8">
       <div className="mb-1 text-center">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {step === 'verify'
@@ -262,13 +262,13 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
                     />
                   </div>
                   <p
-                    className={`text-[10px] font-medium ${passwordStrength.color.replace('bg-', 'text-')}`}
+                    className={`text-xs font-medium ${passwordStrength.color.replace('bg-', 'text-')}`}
                   >
                     قوة كلمة المرور: {passwordStrength.label}
                   </p>
                 </div>
               ) : (
-                <p id="password-hint" className="mt-1.5 text-[11px] text-muted-foreground">
+                <p id="password-hint" className="mt-1.5 text-xs text-muted-foreground">
                   يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل
                 </p>
               )}
@@ -290,7 +290,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
               <button
                 onClick={toggleAuthMode}
                 type="button"
-                className="block w-full text-sm text-primary underline-offset-4 hover:underline active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50"
+                className="block w-full text-sm text-primary underline-offset-4 hover:underline active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 py-2 min-h-[44px]"
               >
                 {isLogin ? 'ليس لديك حساب؟ إنشاء حساب' : 'لديك حساب بالفعل؟ تسجيل الدُّخول'}
               </button>
@@ -328,7 +328,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
       <div className="mt-6 text-center">
         <Link
           href="/"
-          className="block w-full text-sm text-muted-foreground hover:text-foreground active:scale-[0.98] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg"
+          className="block w-full text-sm text-muted-foreground hover:text-foreground active:scale-[0.98] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg py-2 min-h-[44px]"
         >
           ← العودة إلى التَّطبيق
         </Link>

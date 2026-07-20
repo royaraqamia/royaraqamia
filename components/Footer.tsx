@@ -72,7 +72,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="bg-[#0B0D11] relative border-t border-white/5" dir="rtl">
+    <footer className="bg-card relative border-t border-border" dir="rtl">
       <div className="max-w-4xl mx-auto px-6 py-12 md:py-16 relative z-10">
         {/* Main Footer Content - Centered Layout */}
         <div className="flex flex-col items-center text-center gap-8">
@@ -81,7 +81,7 @@ export function Footer() {
             {/* Logo + Name */}
             <button
               onClick={scrollToHero}
-              className="flex items-center gap-3 group cursor-pointer focus:outline-none focus:ring-2 focus:ring-violet-400/50 focus:ring-offset-2 focus:ring-offset-transparent rounded-2xl transition-all duration-300 overflow-visible"
+              className="flex items-center gap-3 group cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-2xl transition-all duration-300 overflow-visible min-h-[44px]"
               aria-label="العودة إلى الصفحة الرئيسية"
             >
               <div className="h-14 w-14 relative">
@@ -96,12 +96,7 @@ export function Footer() {
                   className="h-full w-full object-contain relative z-10 group-hover:scale-110 transition-transform duration-500"
                 />
               </div>
-              <span
-                className="logo-text font-['Aref_Ruqaa'] font-bold text-3xl lg:text-4xl group-hover:opacity-80 transition-opacity inline-block"
-                style={{
-                  color: '#c4b5fd',
-                }}
-              >
+              <span className="logo-text font-heading font-bold text-3xl lg:text-4xl group-hover:opacity-80 transition-opacity inline-block text-primary">
                 رؤية رقمية
               </span>
             </button>
@@ -110,15 +105,15 @@ export function Footer() {
             <p className="text-sm text-gray-300 leading-relaxed max-w-md">
               شريكك الاستراتيجي للتَّحوُّل الرَّقمي ومضاعفة نجاحك
             </p>
-            <p className="text-sm text-gray-300 leading-relaxed max-w-md flex items-center justify-center gap-2 flex-wrap">
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-md flex items-center justify-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
                 <MapPinIcon className="w-4 h-4" />
                 حَلَب، سوريا
               </span>
-              <span className="text-violet-500/40">|</span>
+              <span className="text-primary/40">|</span>
               <a
                 href="mailto:contact@royaraqamia.com"
-                className="flex items-center gap-1 hover:text-violet-400 transition-colors"
+                className="flex items-center gap-1 hover:text-primary transition-colors cursor-pointer"
               >
                 <EnvelopeIcon className="w-4 h-4" />
                 contact@royaraqamia.com
@@ -127,7 +122,7 @@ export function Footer() {
           </div>
 
           {/* Social Links */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {socialLinks.map((social, index) => {
               const Icon = social.icon;
               return (
@@ -138,7 +133,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   aria-label={social.ariaLabel}
                   title={social.ariaLabel}
-                  className="w-10 h-10 rounded-xl bg-white/5 hover:bg-violet-500/20 hover:text-violet-400 border border-white/10 hover:border-violet-500/30 flex items-center justify-center transition-all duration-300 text-gray-300"
+                  className="w-11 h-11 rounded-xl bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all duration-300 text-muted-foreground cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   <Icon className="w-5 h-5 transition-all duration-300" weight="fill" />
                 </a>
@@ -150,53 +145,62 @@ export function Footer() {
           <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
             <Link
               href="/linksnap"
-              className="text-gray-400 hover:text-violet-400 transition-colors"
+              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
             >
               LinkSnap
             </Link>
-            <span className="text-violet-500/30">|</span>
+            <span className="text-muted-foreground/30">|</span>
             <Link
               href="/blogpress"
-              className="text-gray-400 hover:text-violet-400 transition-colors"
+              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
             >
               BlogPress
             </Link>
-            <span className="text-violet-500/30">|</span>
+            <span className="text-muted-foreground/30">|</span>
             <Link
               href="/habitflow"
-              className="text-gray-400 hover:text-violet-400 transition-colors"
+              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
             >
               HabitFlow
             </Link>
-            <span className="text-violet-500/30">|</span>
+            <span className="text-muted-foreground/30">|</span>
             <Link
               href="/spendtrack"
-              className="text-gray-400 hover:text-violet-400 transition-colors"
+              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
             >
               SpendTrack
             </Link>
-            <span className="text-violet-500/30">|</span>
-            <Link href="/verify" className="text-gray-400 hover:text-violet-400 transition-colors">
+            <span className="text-muted-foreground/30">|</span>
+            <Link
+              href="/verify"
+              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            >
               التَّحقُّق من الشَّهادة
             </Link>
-            <span className="text-violet-500/30">|</span>
-            <Link href="/privacy" className="text-gray-400 hover:text-violet-400 transition-colors">
-              الخُصوصيَّة
+            <span className="text-muted-foreground/30">|</span>
+            <Link
+              href="/privacy"
+              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            >
+              الخصوصيَّة
             </Link>
-            <span className="text-violet-500/30">|</span>
-            <Link href="/terms" className="text-gray-400 hover:text-violet-400 transition-colors">
-              الشُروط
+            <span className="text-muted-foreground/30">|</span>
+            <Link
+              href="/terms"
+              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            >
+              الشُّروط
             </Link>
           </div>
         </div>
 
         {/* Bottom Bar - Copyright */}
-        <div className="border-t border-white/10 mt-10 pt-6">
-          <p className="text-sm text-gray-400 font-medium text-center">
+        <div className="border-t border-border mt-10 pt-6">
+          <p className="text-sm text-muted-foreground font-medium text-center">
             © {formatHijriDate(new Date(), { year: 'numeric', month: undefined, day: undefined })}
-            <span className="mx-2 text-violet-500/40">•</span>
-            <span className="text-gray-300">رؤية رقمية</span>
-            <span className="mx-2 text-violet-500/40">•</span>
+            <span className="mx-2 text-primary/40">•</span>
+            <span className="text-foreground">رؤية رقمية</span>
+            <span className="mx-2 text-primary/40">•</span>
             جميع الحقوق محفوظة
           </p>
         </div>

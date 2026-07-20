@@ -101,7 +101,7 @@ export function FAQ() {
 
                     <button
                       onClick={() => setOpenIndex(isOpen ? null : index)}
-                      className="relative w-full px-6 py-5 md:py-6 flex items-start md:items-center justify-between text-right gap-6 outline-none"
+                      className="relative w-full px-6 py-5 md:py-6 flex items-start md:items-center justify-between text-right gap-6 outline-none cursor-pointer min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                       aria-expanded={isOpen}
                       aria-controls={`faq-answer-${index}`}
                     >
@@ -139,7 +139,7 @@ export function FAQ() {
                           {/* Divider */}
                           <div className="w-full h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent mb-4" />
 
-                          <p className="text-slate-300 leading-relaxed text-sm md:text-base">
+                          <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
                             {faq.answer}
                           </p>
                         </div>

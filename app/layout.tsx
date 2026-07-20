@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './global.css';
 import './dark-theme-override.css';
 import { Toaster } from 'sonner';
@@ -11,8 +10,6 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { AccessibilityCheck } from '../components/AccessibilityCheck';
 import { VersionChecker } from '../components/VersionChecker';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'رؤية رقمية',
@@ -78,13 +75,17 @@ export const metadata: Metadata = {
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
-  themeColor: '#0f172a',
+  maximumScale: 5,
+  themeColor: [
+    { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
+    { media: '(prefers-color-scheme: light)', color: '#0f172a' },
+  ],
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
-      <body className={inter.className}>
+      <body>
         <ErrorBoundary>
           <SessionProvider>
             <MotionProvider>

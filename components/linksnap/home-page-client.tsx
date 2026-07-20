@@ -8,8 +8,6 @@ import { AdminPanel } from '@/components/linksnap/admin-panel';
 import { Navbar } from '@/components/linksnap/navbar';
 import { RedirectErrorBanner } from '@/components/linksnap/redirect-error-banner';
 import { ViewSelector } from '@/components/linksnap/view-selector';
-import { MarketingHeader } from '@/components/linksnap/marketing-header';
-import { FeaturePillars } from '@/components/linksnap/feature-pillars';
 import { useSession } from '@/components/shared/session-provider';
 import { DashboardSkeleton } from '@/components/linksnap/loading-skeletons';
 import { AdminValidator } from '@/domains/linksnap/domain/services/admin-validator';
@@ -104,8 +102,6 @@ export function HomePageClient() {
           animate={{ opacity: 1 }}
           className="space-y-8"
         >
-          <MarketingHeader isAuthenticated={!!user} />
-
           {user && (
             <ViewSelector
               selectedView={selectedView}
@@ -156,8 +152,6 @@ export function HomePageClient() {
             ) : null}
           </AnimatePresence>
         </motion.div>
-
-        {effectiveView === 'shorten' && <FeaturePillars />}
       </div>
     </main>
   );
