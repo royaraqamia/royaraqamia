@@ -31,7 +31,7 @@ export default function NotFound() {
               </svg>
             </div>
             <h1 className="mb-4 text-6xl font-bold text-foreground">404</h1>
-            <h2 className="mb-4 text-2xl font-bold text-primary font-heading">الصفحة غير موجودة</h2>
+            <h2 className="mb-4 text-2xl font-bold text-primary">الصفحة غير موجودة</h2>
             <p className="mx-auto mb-8 max-w-md text-muted-foreground">
               عذرًا، الصفحة التي تبحث عنها غير موجودة أو تم نقلها.
             </p>

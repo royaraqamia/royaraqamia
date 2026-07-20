@@ -7,6 +7,8 @@ import { ThemeProvider } from '@/components/linksnap/theme-provider';
 import { SessionProvider } from '@/components/shared/session-provider';
 import { ProgressBar } from '@/components/linksnap/progress-bar';
 import { SkipToContent } from '@/components/SkipToContent';
+import { GoUpButton } from '@/components/GoUpButton';
+import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 import { Toaster } from 'sonner';
 
 export default async function LinkSnapLayout({ children }: { children: React.ReactNode }) {
@@ -23,9 +25,13 @@ export default async function LinkSnapLayout({ children }: { children: React.Rea
       <Navbar />
       <ProgressBar />
       <ThemeProvider>
-        <SessionProvider>{children}</SessionProvider>
+        <SessionProvider>
+          <div className="pt-24">{children}</div>
+        </SessionProvider>
       </ThemeProvider>
       <Footer />
+      <GoUpButton />
+      <WhatsAppFloat />
       <Toaster
         position="top-center"
         richColors

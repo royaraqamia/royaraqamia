@@ -34,7 +34,7 @@ export default function Error({
             />
           </svg>
         </div>
-        <h2 className="mb-4 text-2xl font-bold text-destructive font-heading">حدث خطأ غير متوقع</h2>
+        <h2 className="mb-4 text-2xl font-bold text-destructive">حدث خطأ غير متوقع</h2>
         <p className="mx-auto mb-8 max-w-md text-muted-foreground">
           عذرًا، حدث خطأ أثناء تحميل الصفحة. يرجى المحاولة مرة أخرى.
         </p>

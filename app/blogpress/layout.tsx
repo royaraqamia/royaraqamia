@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
+import { GoUpButton } from '@/components/GoUpButton';
+import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 import { SkipToContent } from '@/components/SkipToContent';
 
 export const metadata: Metadata = {
@@ -24,10 +26,12 @@ export default async function BlogPressLayout({ children }: { children: React.Re
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <SkipToContent />
       <Navbar />
-      <main id="main-content" className="flex-1 container mx-auto px-4 sm:px-6 py-8">
+      <main id="main-content" className="flex-1 pt-24 container mx-auto px-4 sm:px-6 pb-8">
         {children}
       </main>
       <Footer />
+      <GoUpButton />
+      <WhatsAppFloat />
     </div>
   );
 }

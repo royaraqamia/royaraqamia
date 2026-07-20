@@ -1,11 +1,9 @@
 import Link from 'next/link';
-import { Header } from '@/domains/habitflow/frontend/ui/components/header';
 import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   return (
     <div className="min-h-[100dvh] bg-background">
-      <Header />
       <main id="main-content" className="flex flex-col items-center justify-center px-6 pt-24">
         <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-6">
           <svg

@@ -22,7 +22,7 @@ export default function Error({
           <AlertTriangle className="w-8 h-8 text-destructive" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold text-foreground font-heading">حدث خطأ غير متوقع</h1>
+          <h1 className="text-2xl font-bold text-foreground">حدث خطأ غير متوقع</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
             عذراً، حدث خطأ أثناء تحميل المقالات. يمكنك المحاولة مرة أخرى أو العودة إلى لوحة التحكم.
           </p>

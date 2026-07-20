@@ -3,11 +3,11 @@ import { Footer } from '@/components/Footer';
 import { GoUpButton } from '@/components/GoUpButton';
 import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
+export default function TermsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col">
       <Navbar />
-      <main id="main-content" className="flex-1 flex items-center justify-center pt-24 p-4">
+      <main id="main-content" className="flex-1 pt-24">
         {children}
       </main>
       <Footer />

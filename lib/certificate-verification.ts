@@ -65,8 +65,16 @@ async function checkRateLimit(identifier: string, type: 'ip' | 'code'): Promise<
   const limiter = type === 'ip' ? ipLimiter : codeLimiter;
 
   if (limiter) {
-    const { success } = await limiter.limit(identifier);
-    return success;
+    try {
+      const { success } = await limiter.limit(identifier);
+      return success;
+    } catch (e) {
+      Sentry.captureException(e, {
+        extra: { identifier, type },
+      });
+      // Fail open — allow the request if rate limiting is unreachable
+      return true;
+    }
   }
 
   // Fallback to in-memory when Upstash is not configured

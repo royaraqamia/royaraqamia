@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
+import { Navbar } from '@/components/Navbar';
+import { Footer } from '@/components/Footer';
+import { GoUpButton } from '@/components/GoUpButton';
+import { WhatsAppFloat } from '@/components/WhatsAppFloat';
 
 export const metadata: Metadata = {
   title: {
@@ -13,45 +14,17 @@ export const metadata: Metadata = {
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden">
-      <a
-        href="#main-content"
-        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:p-4 focus:bg-background focus:text-foreground focus:ring-2 focus:ring-ring"
+    <div className="min-h-screen bg-background text-foreground flex flex-col">
+      <Navbar />
+      <main
+        id="main-content"
+        className="flex-1 pt-24 container mx-auto px-4 sm:px-6 pb-10 sm:pb-14"
       >
-        تخطي إلى المحتوى
-      </a>
-      <header className="border-b border-border/50 sticky top-0 z-40 bg-background/80 backdrop-blur-md">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-          <Link
-            href="/blog"
-            className="flex items-center gap-2.5 transition-smooth hover:opacity-80"
-          >
-            <Image src="/logo.webp" alt="BlogPress" width={1000} height={1000} className="size-7" />
-            <span className="text-base font-bold tracking-tight hidden sm:inline">BlogPress</span>
-          </Link>
-          <nav className="flex items-center gap-1.5" aria-label="التنقل الرئيسي">
-            <Link
-              href="/blog"
-              className="text-sm text-muted-foreground hover:text-foreground transition-smooth px-3 py-2 rounded-lg hover:bg-muted"
-            >
-              المدونة
-            </Link>
-            <Link href="/blogpress">
-              <Button variant="ghost" size="sm" className="transition-smooth">
-                لوحة التحكم
-              </Button>
-            </Link>
-          </nav>
-        </div>
-      </header>
-      <main id="main-content" className="flex-1 container mx-auto px-4 sm:px-6 py-10 sm:py-14">
         {children}
       </main>
-      <footer className="border-t border-border/50 py-8" role="contentinfo">
-        <div className="container mx-auto px-4 sm:px-6 text-center text-sm text-muted-foreground">
-          &copy; {new Date().getFullYear()} BlogPress. مبني بـ Next.js.
-        </div>
-      </footer>
+      <Footer />
+      <GoUpButton />
+      <WhatsAppFloat />
     </div>
   );
 }

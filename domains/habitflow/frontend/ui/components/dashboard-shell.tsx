@@ -24,7 +24,6 @@ import { CalendarGrid } from '@/domains/habitflow/frontend/ui/components/calenda
 import { AddHabitModal } from '@/domains/habitflow/frontend/ui/components/add-habit-modal';
 import { EditHabitModal } from '@/domains/habitflow/frontend/ui/components/edit-habit-modal';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { Header } from '@/domains/habitflow/frontend/ui/components/header';
 
 interface DashboardShellProps {
   initialHabits: Habit[];
@@ -53,7 +52,6 @@ export function DashboardShell({
     habitName,
     habitIcon,
     habitFrequency,
-    user,
     fileInputRef,
     activeStats,
     calendarGrid,
@@ -89,8 +87,6 @@ export function DashboardShell({
   const shouldReduce = useReducedMotion();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [isLoggingOut, startLogoutTransition] = useTransition();
-  const effectiveUser = sessionUser ?? user;
-
   useEffect(() => {
     if (sessionUser) {
       syncUser(sessionUser);
@@ -115,27 +111,7 @@ export function DashboardShell({
   return (
     <ErrorBoundary>
       <div className="min-h-[100dvh] pb-16 bg-background">
-        <Header
-          rightContent={
-            effectiveUser ? (
-              <div className="flex items-center gap-3">
-                <Button variant="secondary" size="sm" onClick={() => setShowLogoutConfirm(true)}>
-                  تسجيل الخروج
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center">
-                <a href="/login">
-                  <Button variant="default" size="sm">
-                    تسجيل الدُّخول
-                  </Button>
-                </a>
-              </div>
-            )
-          }
-        />
-
-        <main id="main-content" className="max-w-6xl mx-auto px-6 mt-8">
+        <main id="main-content" className="max-w-6xl mx-auto px-6">
           <motion.div
             initial={shouldReduce ? false : { opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}

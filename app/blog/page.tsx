@@ -38,7 +38,7 @@ export default async function BlogPage(props: { searchParams: Promise<{ page?: s
   return (
     <div>
       <div className="mb-12">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl font-heading">المدونة</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">المدونة</h1>
         <p className="mt-2.5 text-muted-foreground text-base">
           أفكار، دروس، وقصص من مجتمع المطورين
         </p>

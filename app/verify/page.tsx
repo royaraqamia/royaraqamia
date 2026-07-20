@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,12 +18,10 @@ import {
   Hash,
   Clock,
   Trophy,
-  ArrowLeft,
   Loader2,
 } from 'lucide-react';
 
 export default function VerifyPage() {
-  const router = useRouter();
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -53,93 +50,68 @@ export default function VerifyPage() {
     }
   }
 
-  function handleDirectLink() {
-    if (!code.trim()) return;
-    router.push(`/verify/${code.trim().toUpperCase()}`);
-  }
-
   return (
-    <main className="min-h-screen bg-background">
-      <div className="container mx-auto max-w-3xl px-4 py-12 md:py-20">
-        {/* Header */}
-        <div className="mb-10 text-center">
-          <div className="mb-4 inline-flex items-center justify-center rounded-full bg-primary/10 p-4">
-            <ShieldCheck className="size-10 text-primary" />
-          </div>
-          <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl font-heading">
-            التَّحقُّق من الشَّهادة
-          </h1>
-          <p className="text-muted-foreground mx-auto max-w-md text-base">
-            أدخل رمز الشَّهادة للتَّحقُّق من صحَّتها وأصالتها.
-          </p>
+    <div className="container mx-auto max-w-3xl px-4 py-12 md:py-20">
+      {/* Header */}
+      <div className="mb-10 text-center">
+        <div className="mb-4 inline-flex items-center justify-center rounded-full bg-primary/10 p-4">
+          <ShieldCheck className="size-10 text-primary" />
         </div>
-
-        {/* Search Form */}
-        <Card className="glass-card mb-8">
-          <CardContent>
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row">
-              <div className="relative flex-1">
-                <Hash className="text-muted-foreground absolute top-1/2 inset-s-3 size-4 -translate-y-1/2" />
-                <Input
-                  type="text"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="COMP-2026-A1B2C"
-                  className="h-12 min-h-[44px] ps-10 text-base tracking-wider"
-                  maxLength={30}
-                  autoFocus
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                size="lg"
-                isLoading={loading}
-                className="sm:w-auto min-h-[44px]"
-              >
-                {!loading && <Search className="size-4" />}
-                تحقُّق
-              </Button>
-            </form>
-
-            <div className="mt-3 flex justify-center">
-              <Button
-                variant="link"
-                size="sm"
-                onClick={handleDirectLink}
-                disabled={!code.trim()}
-                className="text-muted-foreground text-xs min-h-[44px] py-2"
-              >
-                أو افتح الرَّابط المباشر
-                <ArrowLeft className="size-3" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Loading State */}
-        {loading && (
-          <div className="flex flex-col items-center gap-3 py-16">
-            <Loader2 className="text-primary size-8 animate-spin" />
-            <p className="text-muted-foreground text-sm">جارٍ التَّحقُّق...</p>
-          </div>
-        )}
-
-        {/* Error State */}
-        {!loading && result && !result.success && (
-          <Alert variant="destructive" className="glass-card">
-            <AlertCircle className="size-4" />
-            <AlertTitle className="font-bold">خطأ في التَّحقُّق</AlertTitle>
-            <AlertDescription>{result.error}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Success State */}
-        {!loading && result?.success && result.certificate && (
-          <CertificateCard certificate={result.certificate} />
-        )}
+        <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">
+          التَّحقُّق من الشَّهادة
+        </h1>
+        <p className="text-muted-foreground mx-auto max-w-md text-base">
+          أدخل رمز الشَّهادة للتَّحقُّق من صحَّتها وأصالتها.
+        </p>
       </div>
-    </main>
+
+      {/* Search Form */}
+      <Card className="glass-card mb-8">
+        <CardContent>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row">
+            <div className="relative flex-1">
+              <Hash className="text-muted-foreground absolute top-1/2 inset-s-3 size-4 -translate-y-1/2" />
+              <Input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="COMP-2026-A1B2C"
+                className="h-12 min-h-[44px] ps-10 text-base tracking-wider"
+                maxLength={30}
+                autoFocus
+                required
+              />
+            </div>
+            <Button type="submit" size="lg" isLoading={loading} className="sm:w-auto min-h-[44px]">
+              {!loading && <Search className="size-4" />}
+              تحقُّق
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="flex flex-col items-center gap-3 py-16">
+          <Loader2 className="text-primary size-8 animate-spin" />
+          <p className="text-muted-foreground text-sm">جارٍ التَّحقُّق...</p>
+        </div>
+      )}
+
+      {/* Error State */}
+      {!loading && result && !result.success && (
+        <Alert variant="destructive" className="glass-card">
+          <AlertCircle className="size-4" />
+          <AlertTitle className="font-bold">خطأ في التَّحقُّق</AlertTitle>
+          <AlertDescription>{result.error}</AlertDescription>
+        </Alert>
+      )}
+
+      {/* Success State */}
+      {!loading && result?.success && result.certificate && (
+        <CertificateCard certificate={result.certificate} />
+      )}
+    </div>
   );
 }
 

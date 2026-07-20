@@ -259,7 +259,7 @@ export default async function DashboardPage(props: {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
-        <h1 className="text-2xl font-bold tracking-tight font-heading">لوحة التحكم</h1>
+        <h1 className="text-2xl font-bold tracking-tight">لوحة التحكم</h1>
         <CreateExpenseButton userId={user.id} />
       </div>
 

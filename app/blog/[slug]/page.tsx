@@ -93,9 +93,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
           </div>
         )}
 
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl leading-tight font-heading">
-          {p.title}
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl leading-tight">{p.title}</h1>
 
         <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
           {author?.name && (

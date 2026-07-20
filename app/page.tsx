@@ -2,6 +2,8 @@ import { SkipToContent } from '../components/SkipToContent';
 import { Navbar } from '../components/Navbar';
 import { HomePageContent } from '../components/HomePageContent';
 import { Footer } from '../components/Footer';
+import { GoUpButton } from '../components/GoUpButton';
+import { WhatsAppFloat } from '../components/WhatsAppFloat';
 
 export default function HomePage() {
   return (
@@ -10,6 +12,8 @@ export default function HomePage() {
       <Navbar />
       <HomePageContent />
       <Footer />
+      <GoUpButton />
+      <WhatsAppFloat />
     </div>
   );
 }

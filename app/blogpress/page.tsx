@@ -20,7 +20,7 @@ export default async function DashboardPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight font-heading">المقالات</h1>
+          <h1 className="text-2xl font-bold tracking-tight">المقالات</h1>
           <p className="text-sm text-muted-foreground mt-1">إدارة ونشر مقالات المدونة</p>
         </div>
         <CreatePostButton />
