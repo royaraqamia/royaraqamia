@@ -106,7 +106,7 @@ export function UpdatePopup({ onDismiss }: UpdatePopupProps) {
                 </svg>
               </div>
 
-              <h2 className="mb-1.5 font-heading text-xl font-bold text-foreground">تحديث متاح</h2>
+              <h2 className="mb-1.5 font-arabic text-xl font-bold text-foreground">تحديث متاح</h2>
               <p className="text-sm leading-relaxed text-muted-foreground">
                 نسخة جديدة من الموقع جاهزة. يُرجَى تحديث الصَّفحة للحصول على أحدث الميِّزات وإصلاحات
                 الأخطاء.
