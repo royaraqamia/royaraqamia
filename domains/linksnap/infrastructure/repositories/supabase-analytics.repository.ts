@@ -4,7 +4,7 @@ import {
   LinkAnalyticsSummary,
   DailyClickStat,
 } from '@/domains/linksnap/domain/entities/analytics-event.entity';
-import { getAdminSupabase, getPublicSupabase } from '../supabase/client';
+import { getAdminSupabase } from '../supabase/client';
 
 interface AnalyticsEventDbRow {
   id: string;
@@ -33,7 +33,7 @@ export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
   }
 
   async recordClick(event: Omit<AnalyticsEvent, 'id' | 'clickedAt'>): Promise<AnalyticsEvent> {
-    const supabase = getPublicSupabase();
+    const supabase = getAdminSupabase();
     const { data, error } = await supabase
       .from('analytics_events')
       .insert({
