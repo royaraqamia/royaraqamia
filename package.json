@@ -85,7 +85,8 @@
     "zod": "^4.4.3"
   },
   "overrides": {
-    "minimatch": "^9.0.7"
+    "minimatch": "^9.0.7",
+    "postcss": ">=8.5.10"
   },
   "devDependencies": {
     "@axe-core/react": "^4.12.1",
