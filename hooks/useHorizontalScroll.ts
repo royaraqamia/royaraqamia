@@ -11,8 +11,8 @@ export function useHorizontalScroll(scrollAmount = 400) {
     const { scrollLeft, scrollWidth, clientWidth } = el;
     const maxScrollLeft = scrollWidth - clientWidth;
 
-    let isAtStartRight = false;
-    let isAtEndLeft = false;
+    let isAtStartRight;
+    let isAtEndLeft;
 
     if (scrollLeft > 5) {
       isAtStartRight = Math.abs(scrollLeft - maxScrollLeft) < 10;

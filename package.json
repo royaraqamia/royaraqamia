@@ -94,6 +94,7 @@
     "@babel/parser": "^8.0.4",
     "@babel/preset-react": "^8.0.1",
     "@babel/preset-typescript": "^8.0.1",
+    "@eslint/js": "^10.0.1",
     "@next/bundle-analyzer": "^16.2.10",
     "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4.1.11",
