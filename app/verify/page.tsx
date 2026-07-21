@@ -76,13 +76,13 @@ export default function VerifyPage() {
                 value={code}
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 placeholder="COMP-2026-A1B2C"
-                className="h-12 min-h-[44px] ps-10 text-base tracking-wider"
+                className="h-12 min-h-11 ps-10 text-base tracking-wider"
                 maxLength={30}
                 autoFocus
                 required
               />
             </div>
-            <Button type="submit" size="lg" isLoading={loading} className="sm:w-auto min-h-[44px]">
+            <Button type="submit" size="lg" isLoading={loading} className="sm:w-auto min-h-11">
               {!loading && <Search className="size-4" />}
               تحقُّق
             </Button>

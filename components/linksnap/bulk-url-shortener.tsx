@@ -230,7 +230,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
           )}
 
           <div className="relative border border-slate-100 dark:border-slate-700 rounded-xl text-xs overflow-x-auto">
-            <div className="max-h-[300px] overflow-auto">
+            <div className="max-h-75 overflow-auto">
               <table className="w-full border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-semibold sticky top-0">
@@ -251,7 +251,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
                     const shortFull = res.shortLink ? `${getBaseUrl()}/${res.shortLink.code}` : '';
                     return (
                       <tr key={index} className="hover:bg-slate-50/50 dark:hover:bg-slate-700/20">
-                        <td className="px-3 py-2 max-w-[140px] sm:max-w-[200px] truncate text-slate-600 dark:text-slate-400 font-mono">
+                        <td className="px-3 py-2 max-w-35 sm:max-w-50 truncate text-slate-600 dark:text-slate-400 font-mono">
                           {res.originalUrl}
                         </td>
                         <td className="px-3 py-2 font-mono font-bold">

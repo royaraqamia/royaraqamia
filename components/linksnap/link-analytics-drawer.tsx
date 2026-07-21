@@ -95,7 +95,7 @@ export function LinkAnalyticsDrawer({
                         {analytics.topReferrers.map((ref, idx) => (
                           <div key={idx} className="flex items-center justify-between text-xs">
                             <span
-                              className="text-slate-600 dark:text-slate-400 font-mono truncate max-w-[180px]"
+                              className="text-slate-600 dark:text-slate-400 font-mono truncate max-w-45"
                               title={ref.name}
                             >
                               {ref.name}
@@ -119,14 +119,14 @@ export function LinkAnalyticsDrawer({
                         لا يوجد نشاط إعادة توجيه بعد.
                       </p>
                     ) : (
-                      <div className="space-y-2 max-h-[140px] overflow-y-auto pr-1">
+                      <div className="space-y-2 max-h-35 overflow-y-auto pr-1">
                         {analytics.recentClicks.map((click) => (
                           <div
                             key={click.id}
                             className="flex items-center justify-between text-xs border-b border-slate-50 dark:border-slate-700 pb-1.5 last:border-none"
                           >
                             <span
-                              className="text-slate-500 dark:text-slate-400 truncate max-w-[150px]"
+                              className="text-slate-500 dark:text-slate-400 truncate max-w-37.5"
                               title={click.userAgent || 'جهاز غير معروف'}
                             >
                               {click.userAgent

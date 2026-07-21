@@ -88,7 +88,7 @@ export default function CertificatesListPage() {
       {/* Search */}
       <form onSubmit={handleSearch} className="mb-6 flex gap-3">
         <div className="relative flex-1">
-          <Search className="text-muted-foreground absolute top-1/2 start-3 size-4 -translate-y-1/2" />
+          <Search className="text-muted-foreground absolute top-1/2 inset-s-3 size-4 -translate-y-1/2" />
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
