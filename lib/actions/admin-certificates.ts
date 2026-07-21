@@ -1,6 +1,7 @@
 'use server';
 
 import * as Sentry from '@sentry/nextjs';
+import { randomInt } from 'crypto';
 import { getAdminSupabase } from '@/lib/supabase/admin';
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
@@ -75,7 +76,7 @@ function generateCode(): string {
   const charsArr = chars.split('');
   let random = '';
   for (let i = 0; i < 8; i++) {
-    const idx = Math.floor(Math.random() * charsArr.length);
+    const idx = randomInt(charsArr.length);
     random += charsArr[idx] ?? '';
   }
   return `COMP-${year}-${random}`;
