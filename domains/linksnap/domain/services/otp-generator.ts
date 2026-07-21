@@ -2,9 +2,15 @@ import { randomBytes, timingSafeEqual, scryptSync } from 'node:crypto';
 
 export class OtpGenerator {
   static generate(): string {
-    const buf = randomBytes(3);
-    const num = buf.readUIntBE(0, 3) % 1_000_000;
-    return num.toString().padStart(6, '0');
+    const max = 1_000_000;
+    const limit = 16_000_000; // largest multiple of 1_000_000 below 2^24
+
+    while (true) {
+      const num24 = randomBytes(3).readUIntBE(0, 3);
+      if (num24 >= limit) continue;
+      const num = num24 % max;
+      return num.toString().padStart(6, '0');
+    }
   }
 
   static generateSalt(): string {
