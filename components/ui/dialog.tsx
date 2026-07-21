@@ -51,17 +51,23 @@ const DialogContent = React.forwardRef<
       aria-labelledby="dialog-title"
       data-slot="dialog-content"
       className={cn(
-        'fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-48px)] sm:max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border bg-background p-6 shadow-lg duration-200 grid gap-4 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95',
+        'fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-48px)] sm:max-w-lg translate-x-[-50%] translate-y-[-50%]',
+        'rounded-2xl border border-border/50 bg-background/95 backdrop-blur-md',
+        'p-6 shadow-xl',
+        'duration-300 grid gap-4',
+        'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
+        'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
+        'ease-[cubic-bezier(0.16,1,0.3,1)]',
         className
       )}
       {...props}
     >
       {children}
       <DialogPrimitive.Close
-        className="absolute top-4 right-4 rounded-xs opacity-70 transition-opacity hover:opacity-100 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus:outline-none disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        className="absolute top-4 right-4 rounded-lg opacity-70 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:opacity-100 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
         aria-label="إغلاق"
       >
-        <XIcon />
+        <XIcon className="size-5" />
         <span className="sr-only">إغلاق</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>

@@ -28,7 +28,7 @@ function AlertBox({ type, message }: { type: 'error' | 'success'; message: strin
       <div className="flex items-start gap-3">
         {type === 'error' ? (
           <svg
-            className="w-5 h-5 shrink-0 mt-0.5"
+            className="w-5 h-5 shrink-0 mt-1"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -42,7 +42,7 @@ function AlertBox({ type, message }: { type: 'error' | 'success'; message: strin
           </svg>
         ) : (
           <svg
-            className="w-5 h-5 shrink-0 mt-0.5"
+            className="w-5 h-5 shrink-0 mt-1"
             fill="none"
             viewBox="0 0 24 24"
             strokeWidth={1.5}
@@ -254,8 +254,8 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
                 <p className="text-sm text-destructive mt-1">{errors.password.message}</p>
               )}
               {!isLogin && passwordValue ? (
-                <div className="mt-1.5 space-y-1">
-                  <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                <div className="mt-2 space-y-1">
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color}`}
                       style={{ width: passwordStrength.width }}
@@ -268,7 +268,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
                   </p>
                 </div>
               ) : (
-                <p id="password-hint" className="mt-1.5 text-xs text-muted-foreground">
+                <p id="password-hint" className="mt-2 text-xs text-muted-foreground">
                   يجب أن تحتوي كلمة المرور على 8 أحرف على الأقل
                 </p>
               )}

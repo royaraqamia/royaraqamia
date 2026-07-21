@@ -84,8 +84,8 @@ export function Hero() {
               <m.div variants={itemVariants} className="flex justify-center lg:justify-start mb-2!">
                 <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/50 backdrop-blur-md text-white border border-slate-700/50 relative overflow-hidden group hover:border-primary-500/30 transition-colors duration-300">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                   </span>
                   <span className="text-sm font-medium text-slate-200">ابدأ رحلتك الرَّقميَّة</span>
 
@@ -96,10 +96,10 @@ export function Hero() {
 
               {/* Main Headline */}
               <m.div variants={itemVariants} className="space-y-1 mt-1!">
-                <h1 className="text-[1.75rem] sm:text-6xl lg:text-7xl font-normal tracking-tight font-heading leading-tight">
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight">
                   <span className="block text-teal-300 mb-0.5 lg:mb-1">شريكك الاستراتيجي</span>
-                  <span className="text-white drop-shadow-xl whitespace-normal lg:whitespace-nowrap break-words">
-                    للتحوُّل الرَّقمي ومضاعفة نجاحك
+                  <span className="text-white drop-shadow-xl whitespace-normal lg:whitespace-nowrap wrap-break-word">
+                    للتَّحوُّل الرَّقمي
                   </span>
                 </h1>
               </m.div>
@@ -124,6 +124,7 @@ export function Hero() {
                   href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
+                  aria-label="تواصل معنا عبر واتساب"
                   className="group relative h-14 w-auto min-w-[200px] max-w-full flex items-center justify-center px-8 rounded-full gradient-primary text-white text-lg font-bold transition-transform active:scale-95 cta-shine overflow-hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
                   {/* Hover Glow via Opacity (Performant) - Adjusted for gradient */}

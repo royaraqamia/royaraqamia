@@ -54,7 +54,7 @@ export default function GoogleAuthButton({ redirectTo }: { redirectTo?: string }
         <div className="mt-3 p-3 bg-destructive/10 text-destructive text-sm rounded-xl border border-destructive/20">
           <div className="flex items-start gap-3">
             <svg
-              className="w-5 h-5 shrink-0 mt-0.5"
+              className="w-5 h-5 shrink-0 mt-1"
               fill="none"
               viewBox="0 0 24 24"
               strokeWidth={1.5}

@@ -76,13 +76,13 @@ export function HabitCard({
             >
               {habit.name}
             </h4>
-            <div className="flex items-center gap-2 mt-0.5">
+            <div className="flex items-center gap-2 mt-1">
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 {habit.frequency}
               </span>
               <span className="text-xs text-border">•</span>
               {stats.currentStreak > 0 ? (
-                <span className="text-xs font-bold text-destructive flex items-center gap-0.5">
+                <span className="text-xs font-bold text-destructive flex items-center gap-1">
                   <Flame className="w-3 h-3" /> {stats.currentStreak} أيام متتالية
                 </span>
               ) : (

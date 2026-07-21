@@ -3,6 +3,8 @@
 import { useActionState } from 'react';
 import Link from 'next/link';
 import { resetPassword } from '@/lib/actions/auth';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function ResetPasswordPage() {
   const [state, formAction, isPending] = useActionState(resetPassword, null);
@@ -11,28 +13,24 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">إعادة تعيين كلمة المرور</h1>
+          <h1 className="text-fluid-h2 font-bold text-foreground">إعادة تعيين كلمة المرور</h1>
           <p className="text-muted-foreground mt-2">
             أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة التعيين
           </p>
         </div>
 
         <form action={formAction} className="space-y-4">
-          <div>
-            <label
-              htmlFor="reset-email"
-              className="block text-sm font-medium text-foreground mb-1.5"
-            >
+          <div className="space-y-2">
+            <label htmlFor="reset-email" className="block text-sm font-medium text-foreground">
               البريد الإلكتروني
             </label>
-            <input
+            <Input
               id="reset-email"
               name="email"
               type="email"
               required
               autoComplete="email"
               aria-describedby={state?.message ? 'reset-message' : undefined}
-              className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="email@example.com"
             />
           </div>
@@ -47,13 +45,9 @@ export default function ResetPasswordPage() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
-          >
+          <Button type="submit" disabled={isPending} className="w-full">
             {isPending ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
-          </button>
+          </Button>
         </form>
 
         <div className="text-center">

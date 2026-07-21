@@ -1,0 +1,49 @@
+{
+  "version": "1.0.0",
+  "name": "Design System Configuration",
+  "description": "Centralized design system with tokens, colors, spacing, typography, shadows, and radii for consistent UI development",
+  "lastUpdated": "2026-07-21",
+  "designPrinciples": {
+    "typography": {
+      "scale": "major-third (1.250x)",
+      "lineHeights": {
+        "heading": "1.2",
+        "body": "1.6"
+      },
+      "fontWeights": {
+        "body": 400,
+        "emphasis": 500,
+        "headers": 600
+      },
+      "letterSpacing": {
+        "displayHeaders": "-0.02em",
+        "uppercaseLabels": "0.05em"
+      }
+    },
+    "spacing": {
+      "grid": "4px/8px",
+      "maxContentWidth": "70ch",
+      "containerPadding": "clamp(1rem, 4vw, 2rem)",
+      "componentSpacing": "var(--element-gap)"
+    },
+    "colors": {
+      "primary": "slate-900",
+      "background": "background",
+      "surface": "card",
+      "border": "border"
+    }
+  },
+  "components": [
+    "button",
+    "card",
+    "input",
+    "textarea",
+    "checkbox",
+    "radio",
+    "select",
+    "dialog",
+    "skeleton",
+    "progress",
+    "badge"
+  ]
+}

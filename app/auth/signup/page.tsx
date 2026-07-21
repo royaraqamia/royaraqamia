@@ -4,6 +4,8 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { signup, signInWithGoogle } from '@/lib/actions/auth';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
@@ -14,64 +16,52 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">إنشاء حساب</h1>
+          <h1 className="text-fluid-h2 font-bold text-foreground">إنشاء حساب</h1>
         </div>
 
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="redirectTo" value={redirectTo} />
-          <div>
-            <label
-              htmlFor="signup-name"
-              className="block text-sm font-medium text-foreground mb-1.5"
-            >
+          <div className="space-y-2">
+            <label htmlFor="signup-name" className="block text-sm font-medium text-foreground">
               الاسم الكامل
             </label>
-            <input
+            <Input
               id="signup-name"
               name="name"
               type="text"
               required
               autoComplete="name"
               aria-describedby={state?.message ? 'signup-error' : undefined}
-              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="الاسم الكامل"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="signup-email"
-              className="block text-sm font-medium text-foreground mb-1.5"
-            >
+          <div className="space-y-2">
+            <label htmlFor="signup-email" className="block text-sm font-medium text-foreground">
               البريد الإلكتروني
             </label>
-            <input
+            <Input
               id="signup-email"
               name="email"
               type="email"
               required
               autoComplete="email"
               aria-describedby={state?.message ? 'signup-error' : undefined}
-              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="email@example.com"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="signup-password"
-              className="block text-sm font-medium text-foreground mb-1.5"
-            >
+          <div className="space-y-2">
+            <label htmlFor="signup-password" className="block text-sm font-medium text-foreground">
               كلمة المرور
             </label>
-            <input
+            <Input
               id="signup-password"
               name="password"
               type="password"
               required
               autoComplete="new-password"
               aria-describedby={state?.message ? 'signup-error' : undefined}
-              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="8 أحرف على الأقل"
             />
           </div>
@@ -82,13 +72,9 @@ export default function SignupPage() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
-          >
+          <Button type="submit" disabled={isPending} className="w-full">
             {isPending ? 'جاري الإنشاء...' : 'إنشاء حساب'}
-          </button>
+          </Button>
         </form>
 
         <div className="relative">
@@ -100,9 +86,11 @@ export default function SignupPage() {
           </div>
         </div>
 
-        <button
+        <Button
+          type="button"
+          variant="outline"
           onClick={() => signInWithGoogle(redirectTo)}
-          className="w-full py-3 px-4 border border-border rounded-xl font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
+          className="w-full"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -123,7 +111,7 @@ export default function SignupPage() {
             />
           </svg>
           التَّسجيل بحساب Google
-        </button>
+        </Button>
 
         <div className="text-center">
           <Link

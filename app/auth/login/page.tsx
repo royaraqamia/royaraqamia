@@ -4,6 +4,8 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { login, signInWithGoogle } from '@/lib/actions/auth';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -14,45 +16,37 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">تسجيل الدُّخول</h1>
+          <h1 className="text-fluid-h2 font-bold text-foreground">تسجيل الدُّخول</h1>
         </div>
 
         <form action={formAction} className="space-y-4">
           <input type="hidden" name="redirectTo" value={redirectTo} />
-          <div>
-            <label
-              htmlFor="login-email"
-              className="block text-sm font-medium text-foreground mb-1.5"
-            >
+          <div className="space-y-2">
+            <label htmlFor="login-email" className="block text-sm font-medium text-foreground">
               البريد الإلكتروني
             </label>
-            <input
+            <Input
               id="login-email"
               name="email"
               type="email"
               required
               autoComplete="email"
               aria-describedby={state?.message ? 'login-error' : undefined}
-              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="email@example.com"
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="login-password"
-              className="block text-sm font-medium text-foreground mb-1.5"
-            >
+          <div className="space-y-2">
+            <label htmlFor="login-password" className="block text-sm font-medium text-foreground">
               كلمة المرور
             </label>
-            <input
+            <Input
               id="login-password"
               name="password"
               type="password"
               required
               autoComplete="current-password"
               aria-describedby={state?.message ? 'login-error' : undefined}
-              className="w-full px-4 py-3 min-h-[44px] rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="••••••••"
             />
           </div>
@@ -63,13 +57,9 @@ export default function LoginPage() {
             </p>
           )}
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
-          >
+          <Button type="submit" disabled={isPending} className="w-full">
             {isPending ? 'جاري الدُّخول...' : 'تسجيل الدُّخول'}
-          </button>
+          </Button>
         </form>
 
         <div className="relative">
@@ -81,9 +71,11 @@ export default function LoginPage() {
           </div>
         </div>
 
-        <button
+        <Button
+          type="button"
+          variant="outline"
           onClick={() => signInWithGoogle(redirectTo)}
-          className="w-full py-3 px-4 border border-border rounded-xl font-medium text-foreground hover:bg-muted transition-colors flex items-center justify-center gap-2 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-[44px]"
+          className="w-full"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -104,7 +96,7 @@ export default function LoginPage() {
             />
           </svg>
           الدُّخول بحساب Google
-        </button>
+        </Button>
 
         <div className="text-center space-y-2">
           <Link

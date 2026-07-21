@@ -32,14 +32,19 @@ function SelectTrigger({
       data-size={size}
       aria-label="اختر خيارًا"
       className={cn(
-        'flex h-11 w-full items-center justify-between rounded-lg border border-input bg-background px-3.5 py-2.5 text-sm placeholder:text-muted-foreground shadow-sm hover:border-ring/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-1 focus:border-ring focus:shadow-md disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/50 transition-all duration-200 [&>span]:line-clamp-1',
+        'flex h-12 w-full items-center justify-between rounded-xl border border-input bg-background px-3.5 py-2.5 text-base placeholder:text-muted-foreground shadow-sm',
+        'hover:border-ring/30 hover:shadow-sm',
+        'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-2 focus:border-ring focus:shadow-md',
+        'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/50',
+        'transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        '[&>span]:line-clamp-1',
         className
       )}
       {...props}
     >
       {children}
       <SelectPrimitive.Icon asChild>
-        <ChevronDownIcon className="size-4 opacity-50" />
+        <ChevronDownIcon className="size-4 opacity-50 transition-all duration-300 group-hover:opacity-70" />
       </SelectPrimitive.Icon>
     </SelectPrimitive.Trigger>
   );
@@ -58,7 +63,8 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          'bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-[--radix-select-content-available-height] min-w-[8rem] origin-[--radix-select-content-transform-origin] overflow-x-hidden overflow-y-auto rounded-md border shadow-md',
+          'bg-popover/95 backdrop-blur-md text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-[--radix-select-content-available-height] min-w-32 origin-[--radix-select-content-transform-origin] overflow-x-hidden overflow-y-auto rounded-xl border border-border/50',
+          'shadow-lg',
           position === 'popper' &&
             'data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1',
           className
@@ -71,11 +77,22 @@ function SelectContent({
           className={cn(
             'p-1',
             position === 'popper' &&
-              'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)] scroll-my-1'
+              'h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width) scroll-my-1'
           )}
         >
           {React.Children.count(children) > 0 ? (
-            children
+            React.Children.map(children, (child) => {
+              if (React.isValidElement(child) && child.type === SelectItem) {
+                return React.cloneElement(child as React.ReactElement, {
+                  ...(child.props as any),
+                  className: cn(
+                    (child.props as any).className as string | undefined,
+                    'rounded-lg mx-1 my-0.5'
+                  ),
+                });
+              }
+              return child;
+            })
           ) : (
             <div className="px-4 py-2 text-sm text-muted-foreground">لا توجد خيارات متاحة</div>
           )}
@@ -105,7 +122,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}

@@ -119,13 +119,13 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-full max-w-[220px] p-2" align="start">
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {categories.map((cat) => {
               const isSelected = selectedCategories.includes(cat.id);
               return (
                 <label
                   key={cat.id}
-                  className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm hover:bg-accent cursor-pointer transition-colors duration-150"
+                  className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-accent cursor-pointer transition-colors duration-150"
                 >
                   <span
                     className={`flex size-4 shrink-0 items-center justify-center rounded border transition-colors duration-150 ${
@@ -135,7 +135,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                     }`}
                   >
                     {isSelected && (
-                      <svg className="size-2.5" viewBox="0 0 12 12" fill="none">
+                      <svg className="size-3" viewBox="0 0 12 12" fill="none">
                         <path
                           d="M10 3L4.5 8.5L2 6"
                           stroke="currentColor"

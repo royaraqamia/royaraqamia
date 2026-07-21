@@ -95,17 +95,17 @@ export function CalendarGrid({
                     <span className="text-xs opacity-80 uppercase leading-none">
                       {gridItem.dayLabel}
                     </span>
-                    <span className="text-xs font-bold mt-0.5 leading-none">{dayNum}</span>
+                    <span className="text-xs font-bold mt-1 leading-none">{dayNum}</span>
                   </div>
                 );
               })}
             </div>
             <div className="pt-2 border-t border-border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <span className="w-2.5 h-2.5 rounded bg-muted border border-border shrink-0"></span>{' '}
+                <span className="w-2 h-2 rounded bg-muted border border-border shrink-0"></span>{' '}
                 بدون
               </span>
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">أقل</span>
                 {[15, 40, 65, 90].map((pct) => (
                   <span

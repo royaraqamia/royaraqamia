@@ -10,13 +10,37 @@ const Checkbox = React.forwardRef<
   <CheckboxPrimitive.Root
     ref={ref}
     className={cn(
-      'peer h-4 w-4 shrink-0 rounded-sm border border-primary ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground',
+      // Enhanced base styles with premium sizing and transitions
+      'peer h-5 w-5 shrink-0 rounded-md border border-input bg-background',
+      'ring-offset-background transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+      // Premium focus states
+      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2',
+      'focus-visible:border-ring',
+      // Hover states
+      'hover:border-primary/30 hover:bg-primary/5',
+      // Disabled states
+      'disabled:cursor-not-allowed disabled:opacity-50',
+      // Checked states with premium animation
+      'data-[state=checked]:bg-primary data-[state=checked]:border-primary',
+      'data-[state=checked]:hover:bg-primary/90',
+      // Indeterminate states
+      'data-[state=indeterminate]:bg-primary data-[state=indeterminate]:border-primary',
+      'data-[state=indeterminate]:hover:bg-primary/90',
+      // Shadow and depth
+      'shadow-sm',
       className
     )}
     {...props}
   >
-    <CheckboxPrimitive.Indicator className={cn('flex items-center justify-center text-current')}>
-      <Check className="h-4 w-4" />
+    <CheckboxPrimitive.Indicator
+      className={cn(
+        'flex items-center justify-center text-primary-foreground',
+        'transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'data-[state=checked]:scale-100',
+        'data-[state=indeterminate]:scale-100'
+      )}
+    >
+      <Check className="h-3.5 w-3.5 stroke-[2.5px]" />
     </CheckboxPrimitive.Indicator>
   </CheckboxPrimitive.Root>
 ));

@@ -9,36 +9,57 @@ interface InputProps extends React.ComponentProps<'input'> {
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, error, ...props }, ref) => {
     return (
-      <input
-        type={type}
-        ref={ref}
-        data-slot="input"
-        autoComplete={getAutoComplete(type, props.name)}
-        spellCheck={type === 'text' || type === 'textarea' ? 'true' : 'false'}
-        className={cn(
-          // Base styles - optimized touch target and spacing
-          'flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-base leading-tight',
-          // Typography and selection
-          'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
-          // Focus states - improved accessibility
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:border-ring',
-          // Disabled states
-          'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/50',
-          // File input styles
-          'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground file:mr-3',
-          // Error states
-          error &&
-            'border-destructive focus-visible:ring-destructive/50 focus-visible:border-destructive',
-          // Hover effects
-          'hover:border-ring/50 transition-all duration-200 ease-in-out',
-          // RTL support
-          '[dir=rtl]:text-right',
-          // Shadow for depth
-          'shadow-sm focus-visible:shadow-md',
-          className
+      <div className="relative">
+        <input
+          type={type}
+          ref={ref}
+          data-slot="input"
+          autoComplete={getAutoComplete(type, props.name)}
+          spellCheck={type === 'text' || type === 'textarea' ? 'true' : 'false'}
+          className={cn(
+            // Base styles - optimized touch target and spacing
+            'flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-base leading-tight',
+            // Typography and selection
+            'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
+            // Enhanced focus states with premium ring and transitions
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:border-ring',
+            'focus-visible:shadow-md',
+            // Disabled states
+            'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/50',
+            // File input styles
+            'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground file:mr-3',
+            // Enhanced error states with better visual feedback
+            error &&
+              'border-destructive/80 bg-destructive/5 focus-visible:border-destructive focus-visible:ring-destructive/30',
+            // Premium hover effects with subtle lift
+            'hover:border-ring/30 hover:shadow-sm',
+            // Premium transition for all state changes
+            'transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+            // RTL support
+            '[dir=rtl]:text-right',
+            // Enhanced shadow system
+            'shadow-sm',
+            className
+          )}
+          {...props}
+        />
+        {error && (
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-destructive">
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="12" />
+              <line x1="12" y1="16" x2="12.01" y2="16" />
+            </svg>
+          </div>
         )}
-        {...props}
-      />
+      </div>
     );
   }
 );

@@ -146,7 +146,7 @@ export function MobileMenu({
   const renderNavItem = (link: NavLink) => {
     const isActive = isLinkActive(link.href);
     const baseClasses = `
-            flex items-center gap-3 w-full px-4 py-3.5 rounded-xl
+            flex items-center gap-3 w-full px-4 py-4 rounded-xl
             font-semibold text-[17px] leading-relaxed
             transition-colors duration-150 ease-out
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
@@ -194,7 +194,7 @@ export function MobileMenu({
           onClick={() => toggleDropdown(link.dropdownKey!)}
           aria-expanded={isExpanded}
           className="
-                        flex items-center justify-between w-full px-4 py-3.5 rounded-xl
+                        flex items-center justify-between w-full px-4 py-4 rounded-xl
                         font-semibold text-[17px] text-slate-200
                         border border-transparent
                         transition-colors duration-150 ease-out
@@ -217,7 +217,7 @@ export function MobileMenu({
         >
           <div className="relative mr-3 pr-5 pt-2 pb-1">
             <div className="absolute right-2 top-0 bottom-2 w-px bg-linear-to-b from-white/10 to-transparent" />
-            <div className="flex flex-col gap-0.5">
+            <div className="flex flex-col gap-1">
               {link.subItems?.map((sub) => (
                 <div key={sub.href} className="relative">
                   <div className="absolute right-[-12px] top-1/2 -translate-y-1/2 w-3 h-px bg-white/10" />
@@ -226,7 +226,7 @@ export function MobileMenu({
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
                       className="
-                                                block pr-6 pl-4 py-2.5 rounded-lg
+                                                block pr-6 pl-4 py-3 rounded-lg
                                                 text-[15px] font-medium text-slate-400
                                                 transition-colors duration-150
                                                 hover:bg-violet-500/10 hover:text-violet-300
@@ -240,7 +240,7 @@ export function MobileMenu({
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
                       className="
-                                                block pr-6 pl-4 py-2.5 rounded-lg
+                                                block pr-6 pl-4 py-3 rounded-lg
                                                 text-[15px] font-medium text-slate-400
                                                 transition-colors duration-150
                                                 hover:bg-violet-500/10 hover:text-violet-300

@@ -53,13 +53,13 @@ export function EditHabitModal({
         <form onSubmit={onSubmit} className="p-4 sm:p-6 space-y-5">
           {formError && (
             <div
-              className="bg-destructive/10 border border-destructive/30 text-destructive text-xs font-semibold rounded-lg px-4 py-2.5 text-center"
+              className="bg-destructive/10 border border-destructive/30 text-destructive text-xs font-semibold rounded-lg px-4 py-3 text-center"
               role="alert"
             >
               {formError}
             </div>
           )}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               اسم العادة
             </label>
@@ -81,7 +81,7 @@ export function EditHabitModal({
             </p>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               وتيرة التتبع
             </label>
@@ -111,7 +111,7 @@ export function EditHabitModal({
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               أيقونة العادة
             </label>
@@ -144,7 +144,7 @@ export function EditHabitModal({
               type="button"
               variant="destructive"
               onClick={() => onArchive(habit!.id)}
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-2"
               id="btn-archive-habit"
             >
               <Trash2 className="w-3.5 h-3.5" />

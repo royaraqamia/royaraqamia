@@ -47,13 +47,13 @@ export function AddHabitModal({
         <form onSubmit={onSubmit} className="p-4 sm:p-6 space-y-5">
           {formError && (
             <div
-              className="bg-destructive/10 border border-destructive/30 text-destructive text-xs font-semibold rounded-lg px-4 py-2.5 text-center"
+              className="bg-destructive/10 border border-destructive/30 text-destructive text-xs font-semibold rounded-lg px-4 py-3 text-center"
               role="alert"
             >
               {formError}
             </div>
           )}
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               اسم العادة
             </label>
@@ -76,7 +76,7 @@ export function AddHabitModal({
             </p>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               وتيرة التتبع
             </label>
@@ -106,7 +106,7 @@ export function AddHabitModal({
             </div>
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2">
             <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               أيقونة العادة
             </label>

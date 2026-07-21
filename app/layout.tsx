@@ -87,6 +87,9 @@ export const viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
+      <head>
+        <link rel="stylesheet" href="/design-system/lib/design-tokens.css" />
+      </head>
       <body>
         <ErrorBoundary>
           <SessionProvider>

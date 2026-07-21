@@ -13,8 +13,8 @@ export function CTA() {
         className="relative py-24 md:py-32 overflow-hidden items-center justify-center flex"
       >
         {/* Background with Gradient - matching Hero section */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-purple-950 to-slate-900 overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary-600/5 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-purple-950 to-slate-900 overflow-hidden">
+          <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary-600/5 to-transparent" />
           <div className="absolute top-0 right-1/4 w-[min(600px,80vw)] h-[min(600px,80vw)] bg-primary-600 opacity-5 blur-[150px] rounded-full" />
           <div className="absolute bottom-0 left-1/4 w-[min(600px,80vw)] h-[min(600px,80vw)] bg-primary-400 opacity-5 blur-[150px] rounded-full" />
         </div>
@@ -26,18 +26,18 @@ export function CTA() {
                 {/* Badge component - Matching Hero style */}
                 <div className="inline-flex items-center gap-2 px-4 py-2 mb-4 rounded-full bg-slate-900/50 backdrop-blur-md text-white border border-slate-700/50 relative overflow-hidden group hover:border-primary-500/30 transition-colors duration-300">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
                   </span>
                   <span className="text-sm font-medium text-slate-200">متاحون للرَّد 24/7</span>
 
                   {/* Subtle sheen */}
-                  <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shine-slide_1.5s_infinite]" />
+                  <div className="absolute inset-0 w-full h-full bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shine-slide_1.5s_infinite]" />
                 </div>
 
                 {/* Title - Matching Hero Typography */}
-                <h2 className="text-[1.75rem] sm:text-4xl md:text-5xl lg:text-7xl font-normal tracking-tight font-heading text-teal-300 mb-6 leading-snug md:leading-relaxed">
-                  لا تترك مستقبلك للصِّدفة
+                <h2 className="text-5xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight font-arabic text-teal-300 mb-6 leading-snug md:leading-relaxed">
+                  لا تترك مستقبلك للصُّدفة
                 </h2>
 
                 {/* Description - Matching Hero Typography */}
@@ -55,14 +55,15 @@ export function CTA() {
                     href={getWhatsAppUrl()}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="primary-cta-btn cta-glow relative overflow-hidden h-14 sm:h-16 w-full sm:w-auto max-w-full flex-shrink-0 flex items-center justify-center px-6 sm:px-12 rounded-full gradient-primary text-white text-base sm:text-xl font-bold transition-all duration-300 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                    aria-label="تواصل معنا عبر واتساب"
+                    className="primary-cta-btn cta-glow relative overflow-hidden h-14 sm:h-16 w-full sm:w-auto max-w-full shrink-0 flex items-center justify-center px-6 sm:px-12 rounded-full gradient-primary text-white text-base sm:text-xl font-bold transition-all duration-300 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                   >
                     <span className="relative flex items-center gap-3 z-10">
                       تواصل معنا الآن
                       <ArrowLeft className="w-6 h-6 transition-transform duration-300 group-hover:-translate-x-1" />
                     </span>
                     {/* Shine effect on hover */}
-                    <span className="shine-effect absolute inset-0 -translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/25 to-transparent" />
+                    <span className="shine-effect absolute inset-0 -translate-x-full transition-transform duration-700 bg-linear-to-r from-transparent via-white/25 to-transparent" />
                   </a>
                 </div>
               </div>

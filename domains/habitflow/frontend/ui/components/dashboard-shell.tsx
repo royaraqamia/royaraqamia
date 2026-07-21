@@ -116,7 +116,7 @@ export function DashboardShell({
 
   return (
     <ErrorBoundary>
-      <div className="min-h-[100dvh] pb-16 bg-background">
+      <div className="min-h-dvh pb-16 bg-background">
         <main id="main-content" className="max-w-6xl mx-auto px-6">
           <motion.div
             initial={shouldReduce ? false : { opacity: 0, y: 15 }}
@@ -299,7 +299,7 @@ export function DashboardShell({
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 النسخ الاحتياطي
               </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-xs text-muted-foreground mt-1">
                 تصدير أو استعادة جميع بيانات عاداتك
               </p>
             </div>
