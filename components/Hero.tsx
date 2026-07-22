@@ -109,7 +109,7 @@ export function Hero() {
                 variants={itemVariants}
                 className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
               >
-                نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛
+                نبني مواقع وتطبيقات برؤية ريادية، تنفع الناس وتمكث في الأرض؛
                 <br />
                 كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع
                 والتَّطبيقات.
@@ -125,7 +125,7 @@ export function Hero() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="تواصل معنا عبر واتساب"
-                  className="group relative h-14 w-auto min-w-[200px] max-w-full flex items-center justify-center px-8 rounded-full gradient-primary text-white text-lg font-bold transition-transform active:scale-95 cta-shine overflow-hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className="group relative h-14 w-auto min-w-50 max-w-full flex items-center justify-center px-8 rounded-full gradient-primary text-white text-lg font-bold transition-transform active:scale-95 cta-shine overflow-hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
                 >
                   {/* Hover Glow via Opacity (Performant) - Adjusted for gradient */}
                   <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

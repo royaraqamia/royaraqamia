@@ -81,7 +81,7 @@ export function Footer() {
             {/* Logo + Name */}
             <button
               onClick={scrollToHero}
-              className="flex items-center gap-3 group cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-2xl transition-all duration-300 overflow-visible min-h-[44px]"
+              className="flex items-center gap-3 group cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-2xl transition-all duration-300 overflow-visible min-h-11"
               aria-label="العودة إلى الصفحة الرئيسية"
             >
               <div className="h-14 w-14 relative">
@@ -103,7 +103,7 @@ export function Footer() {
 
             {/* Tagline */}
             <p className="text-sm text-gray-300 leading-relaxed max-w-md">
-              شريكك الاستراتيجي للتَّحوُّل الرَّقمي ومضاعفة نجاحك
+              شريكك الاستراتيجي للتَّحوُّل الرَّقمي
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-md flex items-center justify-center gap-2 flex-wrap">
               <span className="flex items-center gap-1">
