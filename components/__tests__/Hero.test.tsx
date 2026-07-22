@@ -17,7 +17,7 @@ describe('Hero', () => {
 
   it('renders the description text', () => {
     render(<Hero />);
-    expect(screen.getByText(/نبني مواقع إلكترونيَّة وتطبيقات/)).toBeInTheDocument();
+    expect(screen.getByText(/نبني مواقع وتطبيقات/)).toBeInTheDocument();
   });
 
   it('renders the badge', () => {

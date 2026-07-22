@@ -109,7 +109,7 @@ export function Hero() {
                 variants={itemVariants}
                 className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
               >
-                نبني مواقع وتطبيقات برؤية ريادية، تنفع الناس وتمكث في الأرض؛
+                نبني مواقع وتطبيقات برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛
                 <br />
                 كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع
                 والتَّطبيقات.
