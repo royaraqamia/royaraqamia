@@ -109,10 +109,7 @@ export function Portfolio() {
               if (imageError.has(index)) return null;
 
               return (
-                <div
-                  key={index}
-                  className="flex-shrink-0 w-[280px] sm:w-[320px] md:w-[360px] min-w-0"
-                >
+                <div key={index} className="shrink-0 w-70 sm:w-[320px] md:w-90 min-w-0">
                   <div className="relative group/card rounded-2xl overflow-hidden glass-card border border-white/10 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-500/30 w-full">
                     <Image
                       src={imagePath.png}
