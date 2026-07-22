@@ -1,13 +1,8 @@
 'use server';
 
-import {
-  verifyCertificateByCode,
-  type Certificate,
-  type VerifyResult,
-} from '@/lib/certificate-verification';
+import { verifyCertificateByCode } from '@/lib/certificate-verification';
 import { headers } from 'next/headers';
-
-export type { Certificate, VerifyResult };
+import type { VerifyResult } from '@/lib/certificate-verification';
 
 export async function verifyCertificate(code: string): Promise<VerifyResult> {
   try {
