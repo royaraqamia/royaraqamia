@@ -220,7 +220,7 @@ export function MobileMenu({
             <div className="flex flex-col gap-1">
               {link.subItems?.map((sub) => (
                 <div key={sub.href} className="relative">
-                  <div className="absolute right-[-12px] top-1/2 -translate-y-1/2 w-3 h-px bg-white/10" />
+                  <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-3 h-px bg-white/10" />
                   {sub.isRoute ? (
                     <Link
                       href={sub.href}
@@ -440,9 +440,9 @@ export function MobileMenu({
       {createPortal(
         <ConfirmDialog
           open={isLogoutDialogOpen}
-          title="تسجيل الخُروج"
-          message="هل أنت متأكد أنك تريد تسجيل الخُروج؟"
-          confirmLabel="تسجيل الخُروج"
+          title="تسجيل الخروج"
+          message="هل أنت متأكِّد أنَّك تريد تسجيل الخروج؟"
+          confirmLabel="تسجيل الخروج"
           cancelLabel="إلغاء"
           onConfirm={() => {
             setIsLogoutDialogOpen(false);

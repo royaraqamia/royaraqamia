@@ -161,7 +161,7 @@ export function DesktopNav({
                   ref={dropdownRefToUse}
                 >
                   <button
-                    className={`flex items-center gap-1.5 text-foreground transition-all duration-200 rounded-lg px-3 py-2 min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary hover:bg-white/5'}`}
+                    className={`flex items-center gap-1.5 text-foreground transition-all duration-200 rounded-lg px-3 py-2 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary hover:bg-white/5'}`}
                     aria-label={link.label}
                     aria-haspopup="menu"
                     aria-expanded={isDropdownOpen}
@@ -333,7 +333,7 @@ export function DesktopNav({
         {!isLoading && user ? (
           <Button
             onClick={() => setIsLogoutDialogOpen(true)}
-            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px] ${
+            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
               isScrolled ? 'text-sm px-5' : 'text-base px-6'
             }`}
           >
@@ -345,7 +345,7 @@ export function DesktopNav({
         ) : (
           <a href="/auth/login" className="group">
             <Button
-              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px] ${
+              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
                 isScrolled ? 'text-sm px-5' : 'text-base px-6'
               }`}
             >
@@ -364,7 +364,7 @@ export function DesktopNav({
           className="group"
         >
           <Button
-            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white hover:opacity-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px] ${
+            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white hover:opacity-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
               isScrolled ? 'text-sm px-5' : 'text-base px-6 shadow-lg shadow-primary/30'
             }`}
           >
@@ -380,9 +380,9 @@ export function DesktopNav({
 
       <ConfirmDialog
         open={isLogoutDialogOpen}
-        title="تسجيل الخُروج"
-        message="هل أنت متأكد أنك تريد تسجيل الخُروج؟"
-        confirmLabel="تسجيل الخُروج"
+        title="تسجيل الخروج"
+        message="هل أنت متأكِّد أنَّك تريد تسجيل الخروج؟"
+        confirmLabel="تسجيل الخروج"
         cancelLabel="إلغاء"
         onConfirm={() => {
           setIsLogoutDialogOpen(false);

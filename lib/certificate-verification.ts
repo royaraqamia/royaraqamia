@@ -1,8 +1,8 @@
 import * as Sentry from '@sentry/nextjs';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
-import { getAdminSupabase } from '@/lib/supabase/admin';
-import type { Tables } from '@/lib/supabase/database.types';
+import { createClient } from '@supabase/supabase-js';
+import type { Database, Tables } from '@/lib/supabase/database.types';
 
 // ============================================================
 // Certificate Code Format: COMP-YYYY-XXXXXXXX (8 alphanumeric chars)
@@ -82,6 +82,33 @@ async function checkRateLimit(identifier: string, type: 'ip' | 'code'): Promise<
   return checkMemoryLimit(`${type}:${identifier}`, limit, 60_000);
 }
 
+/**
+ * Creates a Supabase client using the publishable (anon) key.
+ * Certificate verification is a public, read-only operation — the
+ * certificates table has an explicit RLS policy allowing public SELECT,
+ * so the service role key is not needed and should not be used here.
+ */
+function createVerificationClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!url) {
+    throw new Error('[createVerificationClient] Missing env var: NEXT_PUBLIC_SUPABASE_URL');
+  }
+  if (!publishableKey) {
+    throw new Error(
+      '[createVerificationClient] Missing env var: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
+    );
+  }
+
+  return createClient<Database>(url, publishableKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
+}
+
 export type Certificate = Tables<'certificates'>;
 
 export interface VerifyResult {
@@ -137,9 +164,9 @@ export async function verifyCertificateByCode(code: string, ip: string): Promise
       };
     }
 
-    // Database lookup
-    const admin = getAdminSupabase();
-    const { data, error } = await admin
+    // Database lookup — uses publishable key, not service role
+    const client = createVerificationClient();
+    const { data, error } = await client
       .from('certificates')
       .select('*')
       .eq('certificate_code', sanitized)
@@ -163,6 +190,7 @@ export async function verifyCertificateByCode(code: string, ip: string): Promise
 
     return { success: true, certificate: data };
   } catch (e) {
+    console.error('[verifyCertificateByCode] Unexpected error:', e);
     Sentry.captureException(e, {
       extra: { code, ip, source: 'verifyCertificateByCode' },
     });
