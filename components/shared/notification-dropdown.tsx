@@ -79,7 +79,7 @@ export function NotificationDropdown() {
 
       {isOpen && (
         <div
-          className="absolute top-full mt-2 w-80 sm:w-96 bg-popover border border-border rounded-lg shadow-lg z-50 sm:left-0 max-sm:right-0 max-sm:w-[calc(100vw-2rem)]"
+          className="absolute top-full mt-2 w-52 bg-popover border border-border rounded-lg shadow-lg z-50 py-1 sm:inset-s-0 max-sm:fixed max-sm:top-16 max-sm:inset-s-4 max-sm:w-[calc(100vw-2rem)]"
           onKeyDown={handleKeyDown}
           role="menu"
           aria-label="قائمة الإشعارات"

@@ -402,7 +402,7 @@ export type Database = {
       generate_certificate_code: { Args: never; Returns: string };
       get_category_breakdown: {
         Args: {
-          p_categories: string[];
+          p_categories: string[] | null;
           p_end: string;
           p_start: string;
           p_user_id: string;
@@ -416,7 +416,7 @@ export type Database = {
       };
       get_daily_totals: {
         Args: {
-          p_categories: string[];
+          p_categories: string[] | null;
           p_end: string;
           p_start: string;
           p_user_id: string;
@@ -428,7 +428,7 @@ export type Database = {
       };
       get_total_expenses: {
         Args: {
-          p_categories: string[];
+          p_categories: string[] | null;
           p_end: string;
           p_start: string;
           p_user_id: string;
