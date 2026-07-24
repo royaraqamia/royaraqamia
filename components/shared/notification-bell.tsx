@@ -20,7 +20,7 @@ export function NotificationBell({ onClick, className }: NotificationBellProps) 
     >
       <Bell size={22} className="text-foreground" />
       {unreadCount > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-bold text-white bg-red-500 rounded-full leading-none">
+        <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-4.5 h-4.5 px-1 text-[11px] font-bold text-white bg-red-500 rounded-full leading-none">
           {unreadCount > 99 ? '99+' : unreadCount}
         </span>
       )}

@@ -15,6 +15,8 @@ import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
 import { ar } from 'date-fns/locale';
 import type { Category, ExpenseWithCategory } from '@/domains/spendtrack/lib/database.types';
 
+export const dynamic = 'force-dynamic';
+
 const PAGE_SIZE = 20;
 
 function getDateRange(range: string, from?: string, to?: string) {

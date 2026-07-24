@@ -71,7 +71,7 @@ export function NotificationDropdown() {
       >
         <Bell size={22} className="text-foreground" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 text-[11px] font-bold text-white bg-red-500 rounded-full leading-none">
+          <span className="absolute -top-0.5 -right-0.5 flex items-center justify-center min-w-4.5 h-4.5 px-1 text-[11px] font-bold text-white bg-red-500 rounded-full leading-none">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -79,7 +79,7 @@ export function NotificationDropdown() {
 
       {isOpen && (
         <div
-          className="absolute left-0 top-full mt-2 w-80 sm:w-96 bg-popover border border-border rounded-lg shadow-lg z-50"
+          className="absolute top-full mt-2 w-80 sm:w-96 bg-popover border border-border rounded-lg shadow-lg z-50 max-sm:right-0 max-sm:left-auto sm:left-0"
           onKeyDown={handleKeyDown}
           role="menu"
           aria-label="قائمة الإشعارات"

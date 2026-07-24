@@ -28,8 +28,8 @@ export async function createCategory(_prevState: ActionState, formData: FormData
   });
 
   if (error) return { error: error.message };
-  revalidatePath('/spendtrack/categories');
-  revalidatePath('/spendtrack');
+  revalidatePath('/spendtrack/categories', 'layout');
+  revalidatePath('/spendtrack', 'layout');
   return { success: true };
 }
 
@@ -59,8 +59,8 @@ export async function updateCategory(
     .eq('user_id', user.id);
 
   if (error) return { error: error.message };
-  revalidatePath('/spendtrack/categories');
-  revalidatePath('/spendtrack');
+  revalidatePath('/spendtrack/categories', 'layout');
+  revalidatePath('/spendtrack', 'layout');
   return { success: true };
 }
 
@@ -80,7 +80,7 @@ export async function deleteCategory(categoryId: string, _prevState: ActionState
     .eq('user_id', user.id);
 
   if (error) return { error: error.message };
-  revalidatePath('/spendtrack/categories');
-  revalidatePath('/spendtrack');
+  revalidatePath('/spendtrack/categories', 'layout');
+  revalidatePath('/spendtrack', 'layout');
   return { success: true };
 }

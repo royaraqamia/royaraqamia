@@ -42,7 +42,7 @@ export function UserDropdown() {
 
       {isOpen && (
         <div
-          className="absolute left-0 top-full mt-2 w-52 bg-popover border border-border rounded-lg shadow-lg z-50 py-1"
+          className="absolute top-full mt-2 w-52 bg-popover border border-border rounded-lg shadow-lg z-50 py-1 max-sm:right-0 max-sm:left-auto sm:left-0"
           role="menu"
           aria-label="قائمة المستخدم"
           onKeyDown={(e) => {
@@ -71,7 +71,7 @@ export function UserDropdown() {
               role="menuitem"
             >
               <User size={18} />
-              تسجيل الدخول
+              تسجيل الدُّخول
             </a>
           )}
 
@@ -85,7 +85,7 @@ export function UserDropdown() {
               role="menuitem"
             >
               <Download size={18} />
-              تثبيت التطبيق
+              تثبيت التَّطبيق
             </button>
           )}
         </div>
