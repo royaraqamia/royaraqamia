@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { XCircle } from 'lucide-react';
 
 interface RedirectError {
@@ -14,13 +14,14 @@ interface RedirectErrorBannerProps {
 }
 
 export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerProps) {
+  const reducedMotion = useReducedMotion();
   return (
     <AnimatePresence>
       {error && (
         <motion.div
-          initial={{ opacity: 0, y: -15 }}
+          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -15 }}
+          exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -15 }}
           className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3 relative"
         >
           <XCircle aria-hidden="true" className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
@@ -37,7 +38,7 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
           <button
             onClick={onDismiss}
             aria-label="إغلاق"
-            className="absolute top-3 left-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer press-scale focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            className="absolute top-3 left-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer press-scale focus-ring touch-target"
           >
             <XCircle aria-hidden="true" className="w-4 h-4" />
           </button>

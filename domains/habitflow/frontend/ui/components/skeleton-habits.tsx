@@ -5,7 +5,7 @@ export function SkeletonHabits() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 3 }).map((_, i) => (
-        <Card key={i} className="p-4 flex items-center justify-between animate-pulse">
+        <Card key={i} className="skeleton p-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Skeleton className="w-8 h-8 rounded-full" />
             <div className="flex items-center gap-3">

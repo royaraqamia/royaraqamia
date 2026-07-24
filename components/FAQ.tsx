@@ -64,10 +64,7 @@ export function FAQ() {
           {/* Header */}
           <ScrollAnimation animation="slide-down" duration={0.7}>
             <div className="text-center section-header">
-              <h2
-                className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
-                style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-              >
+              <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
                 <span className="gradient-text">الأسئلة</span> الشَّائعة
               </h2>
             </div>

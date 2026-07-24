@@ -76,7 +76,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Select value={currentRange} onValueChange={(v) => updateParam('range', v)}>
-        <SelectTrigger className="w-full sm:w-[140px]" aria-label="نطاق التاريخ">
+        <SelectTrigger className="w-full sm:w-[140px] btn-press" aria-label="نطاق التاريخ">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -92,14 +92,14 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
         <>
           <Input
             type="date"
-            className="w-full sm:w-[140px]"
+            className="w-full sm:w-[140px] focus-ring"
             value={customStart}
             onChange={(e) => updateParam('from', e.target.value)}
             placeholder="من"
           />
           <Input
             type="date"
-            className="w-full sm:w-[140px]"
+            className="w-full sm:w-[140px] focus-ring"
             value={customEnd}
             onChange={(e) => updateParam('to', e.target.value)}
             placeholder="إلى"
@@ -111,7 +111,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="justify-between w-full sm:w-[160px]"
+            className="justify-between w-full sm:w-[160px] min-h-[44px] btn-press"
             aria-label={`التصنيفات${selectedCount > 0 ? ` (${selectedCount} محددة)` : ''}`}
           >
             <span>{selectedCount > 0 ? `التصنيفات (${selectedCount})` : 'جميع التصنيفات'}</span>
@@ -135,7 +135,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                     }`}
                   >
                     {isSelected && (
-                      <svg className="size-3" viewBox="0 0 12 12" fill="none">
+                      <svg className="size-3" viewBox="0 0 12 12" fill="none" aria-hidden="true">
                         <path
                           d="M10 3L4.5 8.5L2 6"
                           stroke="currentColor"
@@ -166,7 +166,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
       </Popover>
 
       <Select value={currentSort} onValueChange={(v) => updateParam('sort', v)}>
-        <SelectTrigger className="w-full sm:w-[160px]" aria-label="ترتيب المعاملات">
+        <SelectTrigger className="w-full sm:w-[160px] btn-press" aria-label="ترتيب المعاملات">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -183,7 +183,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
           variant="ghost"
           size="sm"
           onClick={() => router.push(pathname)}
-          className="gap-1.5 min-h-[44px]"
+          className="gap-1.5 min-h-[44px] btn-press touch-target"
           aria-label="مسح الفلاتر"
         >
           <X className="size-3.5" />

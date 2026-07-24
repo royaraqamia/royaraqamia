@@ -17,11 +17,11 @@ export default async function CategoriesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
-        <h1 className="text-2xl font-bold tracking-tight">التصنيفات</h1>
+        <h1 className="text-fluid-h2 font-display font-bold tracking-tight">التصنيفات</h1>
         <CreateCategoryDialog />
       </div>
 
-      <Card className="animate-slide-up stagger-2">
+      <Card className="animate-slide-up stagger-2 card-lift">
         <CardHeader>
           <CardTitle>جميع التصنيفات</CardTitle>
         </CardHeader>

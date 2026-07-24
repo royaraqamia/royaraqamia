@@ -120,10 +120,7 @@ export function WhyUs() {
         {/* Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center max-w-3xl mx-auto section-header">
-            <h2
-              className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
-              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-            >
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
               لماذا <span className="gradient-text">رؤية رقمية</span>؟
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">

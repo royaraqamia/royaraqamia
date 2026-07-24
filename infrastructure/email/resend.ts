@@ -2,13 +2,15 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
+const baseStyle = `font-family: 'IBM Plex Sans Arabic', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a; color: #f5f5f5;`;
+
 export async function sendOtpEmail(email: string, otp: string) {
   await resend.emails.send({
     from: `${process.env.RESEND_FROM_NAME} <${process.env.RESEND_FROM_EMAIL}>`,
     to: email,
     subject: 'رمز التحقق - رؤية رقمية',
     html: `
-      <div dir="rtl" style="font-family: 'IBM Plex Sans Arabic', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a; color: #f5f5f5;">
+      <div dir="rtl" style="${baseStyle}">
         <div style="text-align: center; margin-bottom: 32px;">
           <h1 style="color: #c4b5fd; font-size: 24px; margin: 0;">رؤية رقمية</h1>
         </div>
@@ -31,7 +33,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
     to: email,
     subject: 'إعادة تعيين كلمة المرور - رؤية رقمية',
     html: `
-      <div dir="rtl" style="font-family: 'IBM Plex Sans Arabic', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a; color: #f5f5f5;">
+      <div dir="rtl" style="${baseStyle}">
         <div style="text-align: center; margin-bottom: 32px;">
           <h1 style="color: #c4b5fd; font-size: 24px; margin: 0;">رؤية رقمية</h1>
         </div>

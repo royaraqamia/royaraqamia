@@ -88,7 +88,7 @@ export default function LinkSnapPage() {
       id="main-content"
       className="relative min-h-screen pb-10 px-4 sm:px-6 lg:px-8 flex flex-col justify-between max-w-5xl mx-auto overflow-hidden"
     >
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-linear-to-br from-indigo-500/10 to-sky-500/5 blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-linear-to-br from-primary/10 to-accent/5 blur-3xl pointer-events-none -z-10" />
 
       <div className="flex-1 flex flex-col justify-center max-w-xl w-full mx-auto space-y-8">
         <RedirectErrorBanner error={redirectError} onDismiss={() => setRedirectError(null)} />
@@ -107,7 +107,7 @@ export default function LinkSnapPage() {
             />
           )}
 
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" aria-live="polite">
             {effectiveView === 'shorten' ? (
               <motion.div
                 key="shorten-form"

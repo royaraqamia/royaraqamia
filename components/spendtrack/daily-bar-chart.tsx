@@ -19,7 +19,7 @@ function CustomTooltip({
   if (!active || !payload?.length || !payload[0]) return null;
   const item = payload[0];
   return (
-    <div className="rounded-lg border bg-popover px-3 py-2 premium-shadow-md">
+    <div className="rounded-lg border bg-popover px-3 py-2 shadow-elevated">
       <p className="text-sm font-medium">{label}</p>
       <p className="text-sm text-muted-foreground mt-1">${Number(item.value).toFixed(2)}</p>
     </div>
@@ -34,7 +34,7 @@ export function DailyBarChart({ data }: { data: DailySpending[] }) {
         role="img"
         aria-label="لا توجد بيانات إنفاق يومية"
       >
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 animate-pulse-subtle">
+        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 animate-pulse-slow">
           <svg
             className="size-6 text-primary"
             viewBox="0 0 24 24"

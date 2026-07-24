@@ -240,11 +240,7 @@ export function Certificate() {
             </m.div>
           </m.div>
 
-          <m.h2
-            variants={textVariants}
-            className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
-            style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-          >
+          <m.h2 variants={textVariants} className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
             <span className="text-teal-400">نموذج عن الشَّهادة</span>
           </m.h2>
 

@@ -30,7 +30,7 @@ export async function sendOtpEmail(email: string, otp: string): Promise<void> {
     to: email,
     subject: 'رمز التَّحقُّق الخاص بك - LinkSnap',
     html: `
-      <div dir="rtl" style="font-family: sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
+      <div dir="rtl" style="font-family: 'IBM Plex Sans Arabic', Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 32px 24px;">
         <h1 style="font-size: 22px; color: #1e1e2f; margin-bottom: 8px;">رمز التَّحقُّق من البريد الإلكتروني</h1>
         <p style="color: #475569; font-size: 14px; line-height: 1.6;">
           استخدم الرَّمز أدناه للتَّحقُّق من بريدك الإلكتروني في LinkSnap. الرَّمز صالح لمدَّة 5 دقائق.

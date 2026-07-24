@@ -2,20 +2,25 @@
 
 import { useEffect, useState } from 'react';
 import { DailyClickStat } from '@/domains/linksnap/domain/entities/analytics-event.entity';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 
 interface AnalyticsChartProps {
   stats: DailyClickStat[];
 }
 
 export function AnalyticsChart({ stats }: AnalyticsChartProps) {
-  const [animate, setAnimate] = useState(false);
+  const reducedMotion = useReducedMotion();
+  const [animate, setAnimate] = useState(reducedMotion ?? false);
   const [tooltipBg, setTooltipBg] = useState('15 23 42');
 
   useEffect(() => {
+    if (reducedMotion) {
+      setAnimate(true);
+      return;
+    }
     const timer = requestAnimationFrame(() => setAnimate(true));
     return () => cancelAnimationFrame(timer);
-  }, []);
+  }, [reducedMotion]);
 
   useEffect(() => {
     const update = () => {
@@ -37,11 +42,9 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: [0.33, 1, 0.68, 1] }}
-        className="h-64 flex items-center justify-center bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700"
+        className="h-64 flex items-center justify-center bg-muted/30 rounded-xl border border-dashed border-border"
       >
-        <p className="text-sm text-slate-400 dark:text-slate-500">
-          لا توجد بيانات متاحة لهذه الفترة
-        </p>
+        <p className="text-sm text-muted-foreground">لا توجد بيانات متاحة لهذه الفترة</p>
       </motion.div>
     );
   }
@@ -75,16 +78,21 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25, ease: [0.33, 1, 0.68, 1] }}
-      className="w-full bg-white dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm"
+      transition={reducedMotion ? { duration: 0 } : { duration: 0.25, ease: [0.33, 1, 0.68, 1] }}
+      className="w-full bg-card p-6 rounded-xl border border-border shadow-sm card-lift"
     >
-      <p className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-wider">
+      <p className="text-sm font-medium text-muted-foreground mb-4 uppercase tracking-wider">
         أداء النقرات (آخر 7 أيام)
       </p>
       <div className="relative w-full overflow-x-auto">
-        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+        <svg
+          viewBox={`0 0 ${width} ${height}`}
+          className="w-full h-auto overflow-visible"
+          role="img"
+          aria-label="رسم بياني لأداء النقرات خلال آخر 7 أيام"
+        >
           <defs>
             <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
@@ -104,7 +112,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                   x2={width - paddingRight}
                   y2={y}
                   stroke="currentColor"
-                  className="text-slate-200 dark:text-slate-700"
+                  className="text-border/50"
                   strokeWidth="1"
                   strokeDasharray="4 4"
                 />
@@ -112,7 +120,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                   x={paddingLeft - 10}
                   y={y + 4}
                   textAnchor="end"
-                  className="text-[10px] font-mono fill-slate-400 dark:fill-slate-500"
+                  className="text-[10px] font-mono fill-muted-foreground"
                 >
                   {label}
                 </text>
@@ -156,7 +164,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                 cy={p.y}
                 r="4"
                 fill="hsl(var(--primary))"
-                stroke="white"
+                stroke="hsl(var(--background))"
                 strokeWidth="2"
                 className="transition-all duration-200"
               />
@@ -202,7 +210,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                 x={x}
                 y={height - 10}
                 textAnchor="middle"
-                className="text-[9px] font-medium fill-slate-400 dark:fill-slate-500 font-mono"
+                className="text-[9px] font-medium fill-muted-foreground font-mono"
               >
                 {labelStr}
               </text>

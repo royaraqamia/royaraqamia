@@ -64,7 +64,7 @@ export function ExpenseList({
   if (expenses.length === 0) {
     return (
       <div className="flex flex-col items-center gap-4 py-12 animate-fade-in">
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 animate-pulse-subtle">
+        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 animate-pulse-slow">
           <Receipt className="size-6 text-primary" aria-hidden="true" />
         </div>
         <div className="text-center space-y-1">
@@ -91,7 +91,7 @@ export function ExpenseList({
             variant="outline"
             onClick={loadMore}
             disabled={loading}
-            className="transition-all duration-200"
+            className="transition-all duration-200 btn-press touch-target focus-ring"
           >
             {loading ? <Loader2 className="ms-1.5 size-4 animate-spin" /> : null}
             {loading ? 'جارٍ التحميل...' : 'تحميل المزيد'}
@@ -133,7 +133,7 @@ function ExpenseRow({
     <div
       role="listitem"
       aria-label={rowLabel}
-      className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-all duration-300 hover:premium-shadow-sm hover:bg-card animate-slide-up"
+      className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-all duration-300 hover:shadow-elevated hover:bg-card animate-slide-up card-lift"
       style={{ animationDelay: `${index * 30}ms` }}
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -161,7 +161,7 @@ function ExpenseRow({
           size="icon"
           type="button"
           aria-label="حذف المصروف"
-          className="min-w-[44px] min-h-[44px] opacity-100 sm:opacity-0 sm:group-hover/row:opacity-100 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive"
+          className="touch-target opacity-100 sm:opacity-0 sm:group-hover/row:opacity-100 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive btn-press focus-ring"
           onClick={() => setConfirmDeleteOpen(true)}
         >
           <Trash2 className="size-3.5" />
@@ -175,11 +175,20 @@ function ExpenseRow({
               </DialogDescription>
             </DialogHeader>
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setConfirmDeleteOpen(false)}
+                className="btn-press touch-target focus-ring"
+              >
                 إلغاء
               </Button>
               <form action={formAction}>
-                <Button type="submit" variant="destructive" disabled={pending}>
+                <Button
+                  type="submit"
+                  variant="destructive"
+                  disabled={pending}
+                  className="btn-press touch-target focus-ring"
+                >
                   {pending ? 'جارٍ الحذف...' : 'حذف'}
                 </Button>
               </form>

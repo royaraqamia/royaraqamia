@@ -37,10 +37,7 @@ export function ConsultationCards() {
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center mb-12 md:mb-16">
             {/* H1 Title */}
-            <h2
-              className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
-              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-            >
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
               <span className="text-rose-400">الاستشارات</span>
             </h2>
 
@@ -86,10 +83,7 @@ export function ConsultationCards() {
                     }}
                   >
                     <Microphone className="w-4 h-4 text-rose-400" />
-                    <span
-                      className="text-sm text-rose-300 font-medium"
-                      style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                    >
+                    <span className="text-sm text-rose-300 font-medium">
                       جلسة تفاعليَّة صوتيَّة
                     </span>
                   </div>
@@ -97,15 +91,12 @@ export function ConsultationCards() {
 
                 {/* Title and Description */}
                 <div className="mb-8">
-                  <h3
-                    className="text-2xl md:text-3xl font-bold text-white mb-4"
-                    style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                  >
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
                     توجيه تقني متكامل
                   </h3>
                   <p
                     className="text-foreground/70 font-medium text-base md:text-lg leading-relaxed max-w-2xl"
-                    style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif", lineHeight: '1.8' }}
+                    style={{ lineHeight: '1.8' }}
                   >
                     تحليل كامل لاحتياجاتك الرَّقميَّة. نُراجع ما لديك، ونرسم لك مسار التَّعليم أو
                     التَّنفيذ خطوة بخطوة. استشارة تمنحك الوضوح التَّام.
@@ -129,9 +120,7 @@ export function ConsultationCards() {
                           'linear-gradient(135deg, #F43F5E 0%, #E11D48 50%, #FB7185 100%)',
                       }}
                     >
-                      <span style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}>
-                        احجز استشارتك الآن
-                      </span>
+                      <span>احجز استشارتك الآن</span>
                     </Button>
                   </a>
                 </div>

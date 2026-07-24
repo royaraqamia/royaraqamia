@@ -20,24 +20,25 @@ export function UrlShortener({ token, onLinkCreated }: UrlShortenerProps) {
   };
 
   return (
-    <div className="w-full bg-white dark:bg-slate-800 p-5 sm:p-8 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-xl shadow-slate-100/50 dark:shadow-slate-900/50">
+    <div className="w-full bg-card p-5 sm:p-8 rounded-3xl border border-border shadow-elevated card-lift">
       {token && (
         <div
-          className="flex bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 p-1 rounded-xl mb-6"
+          className="flex bg-muted/50 border border-border p-1 rounded-xl mb-6"
           role="tablist"
+          aria-label="اختيار طريقة الاختصار"
         >
           <button
             type="button"
             role="tab"
             aria-selected={activeTab === 'single'}
             onClick={() => switchTab('single')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer press-scale focus-ring ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press ${
               activeTab === 'single'
-                ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50 font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium'
+                ? 'bg-card text-foreground shadow-sm border border-border/50 font-bold'
+                : 'text-muted-foreground hover:text-foreground font-medium'
             }`}
           >
-            <Link className="w-3.5 h-3.5 text-indigo-500" />
+            <Link className="w-3.5 h-3.5 text-primary" />
             <span>رابط واحد</span>
           </button>
           <button
@@ -45,13 +46,13 @@ export function UrlShortener({ token, onLinkCreated }: UrlShortenerProps) {
             role="tab"
             aria-selected={activeTab === 'bulk'}
             onClick={() => switchTab('bulk')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer press-scale focus-ring ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press ${
               activeTab === 'bulk'
-                ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 shadow-sm border border-slate-200/50 dark:border-slate-600/50 font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 font-medium'
+                ? 'bg-card text-foreground shadow-sm border border-border/50 font-bold'
+                : 'text-muted-foreground hover:text-foreground font-medium'
             }`}
           >
-            <Layers className="w-3.5 h-3.5 text-indigo-500" />
+            <Layers className="w-3.5 h-3.5 text-primary" />
             <span>اختصار بالجملة</span>
           </button>
         </div>

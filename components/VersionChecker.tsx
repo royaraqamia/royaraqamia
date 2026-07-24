@@ -2,12 +2,20 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { UpdatePopup } from './UpdatePopup';
+import { usePWAContext } from './PWAProvider';
 
 const POLL_INTERVAL = 60_000;
 
 export function VersionChecker() {
   const currentVersion = useRef<string | null>(null);
   const [showUpdate, setShowUpdate] = useState(false);
+  const { hasUpdate, registration } = usePWAContext();
+
+  useEffect(() => {
+    if (hasUpdate) {
+      setShowUpdate(true);
+    }
+  }, [hasUpdate]);
 
   const checkVersion = useCallback(async () => {
     try {
@@ -23,13 +31,14 @@ export function VersionChecker() {
         setShowUpdate(true);
       }
     } catch {
-      // silent — network issues shouldn't annoy users
+      // silent
     }
   }, []);
 
   useEffect(() => {
-    checkVersion();
+    if ('serviceWorker' in navigator) return;
 
+    checkVersion();
     const id = setInterval(checkVersion, POLL_INTERVAL);
     window.addEventListener('focus', checkVersion);
 
@@ -39,5 +48,17 @@ export function VersionChecker() {
     };
   }, [checkVersion]);
 
-  return showUpdate ? <UpdatePopup onDismiss={() => setShowUpdate(false)} /> : null;
+  const handleReload = useCallback(() => {
+    if (registration?.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    }
+    setShowUpdate(false);
+    window.location.reload();
+  }, [registration]);
+
+  const handleDismiss = useCallback(() => {
+    setShowUpdate(false);
+  }, []);
+
+  return showUpdate ? <UpdatePopup onReload={handleReload} onDismiss={handleDismiss} /> : null;
 }

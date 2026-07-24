@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { Link2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { LinkRowCard } from './link-row-card';
 import { DashboardEmptyState } from './dashboard-empty-state';
@@ -20,6 +20,7 @@ interface LinkDashboardProps {
 }
 
 export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
+  const reducedMotion = useReducedMotion();
   const [links, setLinks] = useState<LinkItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,15 +61,15 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-display font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-          <Link2 aria-hidden="true" className="w-5 h-5 text-indigo-500" />
+        <h2 className="text-fluid-h2 font-display font-bold text-foreground flex items-center gap-2">
+          <Link2 aria-hidden="true" className="w-5 h-5 text-primary" />
           <span>روابطك المختصرة</span>
         </h2>
         <button
           onClick={fetchLinks}
           disabled={loading}
           aria-label="تحديث القائمة"
-          className="p-2 text-slate-500 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer press-scale focus-ring"
+          className="p-2 text-muted-foreground hover:text-primary rounded-lg hover:bg-muted transition-colors cursor-pointer press-scale focus-ring touch-target btn-press"
           title="تحديث القائمة"
         >
           <RefreshCw
@@ -83,13 +84,13 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
       ) : error ? (
         <div
           aria-live="polite"
-          className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-xl flex items-center gap-2"
+          className="p-4 bg-destructive/10 border border-destructive/20 text-destructive text-sm rounded-xl flex items-center gap-2"
         >
           <AlertTriangle aria-hidden="true" className="w-4 h-4 shrink-0" />
           <span className="flex-1">{error}</span>
           <button
             onClick={fetchLinks}
-            className="px-3 py-1.5 bg-red-100 dark:bg-red-900/40 hover:bg-red-200 dark:hover:bg-red-800/60 text-red-700 dark:text-red-300 font-semibold text-xs rounded-lg transition-colors cursor-pointer press-scale shrink-0 focus-ring"
+            className="px-3 py-1.5 bg-destructive/20 hover:bg-destructive/30 text-destructive font-semibold text-xs rounded-lg transition-colors cursor-pointer btn-press shrink-0 focus-ring touch-target"
           >
             إعادة المحاولة
           </button>
@@ -98,11 +99,11 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
         <DashboardEmptyState />
       ) : (
         <motion.div
-          initial="hidden"
+          initial={reducedMotion ? 'visible' : 'hidden'}
           animate="visible"
           variants={{
             hidden: {},
-            visible: { transition: { staggerChildren: 0.06 } },
+            visible: { transition: { staggerChildren: reducedMotion ? 0 : 0.06 } },
           }}
           className="space-y-4"
         >
@@ -110,7 +111,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
             <motion.div
               key={link.code}
               variants={{
-                hidden: { opacity: 0, y: 12 },
+                hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 },
                 visible: { opacity: 1, y: 0 },
               }}
             >

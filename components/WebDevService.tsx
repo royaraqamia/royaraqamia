@@ -55,10 +55,7 @@ export function WebDevService() {
         {/* Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center max-w-3xl mx-auto section-header mb-12">
-            <h2
-              className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
-              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-            >
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
               <span className="text-blue-400">بناء مواقع إلكترونيَّة وتطبيقات</span>{' '}
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
@@ -118,12 +115,7 @@ export function WebDevService() {
                       <Monitor className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
-                      <h3
-                        className="text-lg font-bold text-white"
-                        style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                      >
-                        موقع بسيط
-                      </h3>
+                      <h3 className="text-lg font-bold text-white">موقع بسيط</h3>
                       <p className="text-xs text-muted-foreground">Landing Page & Website</p>
                     </div>
                   </div>
@@ -142,12 +134,7 @@ export function WebDevService() {
                       <Globe className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
-                      <h3
-                        className="text-lg font-bold text-white"
-                        style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                      >
-                        تطبيق ويب
-                      </h3>
+                      <h3 className="text-lg font-bold text-white">تطبيق ويب</h3>
                       <p className="text-xs text-muted-foreground">Full-Stack Web App</p>
                     </div>
                   </div>
@@ -166,12 +153,7 @@ export function WebDevService() {
                       <DeviceMobile className="w-6 h-6 text-blue-400" />
                     </div>
                     <div>
-                      <h3
-                        className="text-lg font-bold text-white"
-                        style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                      >
-                        تطبيق موبايل
-                      </h3>
+                      <h3 className="text-lg font-bold text-white">تطبيق موبايل</h3>
                       <p className="text-xs text-muted-foreground">Mobile App for Android & iOS</p>
                     </div>
                   </div>

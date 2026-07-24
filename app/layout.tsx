@@ -5,11 +5,13 @@ import { Toaster } from 'sonner';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { MotionProvider } from '../components/MotionProvider';
 import { UIProvider } from '../context/UIContext';
+import { NotificationProvider } from '../context/NotificationContext';
 import { SessionProvider } from '../components/shared/session-provider';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { AccessibilityCheck } from '../components/AccessibilityCheck';
 import { VersionChecker } from '../components/VersionChecker';
+import { PWAProvider } from '../components/PWAProvider';
 import { GoUpButton } from '../components/GoUpButton';
 import { WhatsAppFloat } from '../components/WhatsAppFloat';
 
@@ -71,7 +73,23 @@ export const metadata: Metadata = {
       'نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.',
     images: ['/OG Image.webp'],
   },
-  other: {},
+  other: {
+    'mobile-web-app-capable': 'yes',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'رؤية رقمية',
+  },
+  icons: [
+    { rel: 'icon', url: '/favicon.ico' },
+    { rel: 'icon', type: 'image/png', sizes: '192x192', url: '/icons/icon-192x192.png' },
+    { rel: 'icon', type: 'image/png', sizes: '512x512', url: '/icons/icon-512x512.png' },
+    { rel: 'apple-touch-icon', sizes: '152x152', url: '/icons/icon-152x152.png' },
+    { rel: 'apple-touch-icon', sizes: '192x192', url: '/icons/icon-192x192.png' },
+    { rel: 'apple-touch-icon', sizes: '512x512', url: '/icons/icon-512x512.png' },
+  ],
+  manifest: '/manifest.json',
 };
 
 export const viewport = {
@@ -89,20 +107,29 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ar" dir="rtl">
       <head>
         <link rel="stylesheet" href="/design-system/lib/design-tokens.css" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="application-name" content="رؤية رقمية" />
       </head>
       <body>
         <ErrorBoundary>
           <SessionProvider>
             <MotionProvider>
               <UIProvider>
-                <SpeedInsights />
-                <Analytics />
-                <VersionChecker />
-                {children}
-                <GoUpButton />
-                <WhatsAppFloat />
-                <Toaster position="top-center" richColors />
-                {process.env.NODE_ENV === 'development' && <AccessibilityCheck />}
+                <NotificationProvider>
+                  <SpeedInsights />
+                  <Analytics />
+                  <PWAProvider>
+                    <VersionChecker />
+                  </PWAProvider>
+                  {children}
+                  <GoUpButton />
+                  <WhatsAppFloat />
+                  <Toaster position="top-center" richColors />
+                  {process.env.NODE_ENV === 'development' && <AccessibilityCheck />}
+                </NotificationProvider>
               </UIProvider>
             </MotionProvider>
           </SessionProvider>

@@ -28,7 +28,7 @@ function CustomTooltip({
   if (!active || !payload?.length || !payload[0]) return null;
   const item = payload[0];
   return (
-    <div className="rounded-lg border bg-popover px-3 py-2 premium-shadow-md">
+    <div className="rounded-lg border bg-popover px-3 py-2 shadow-elevated">
       <div className="flex items-center gap-2">
         <div
           className="size-2.5 rounded-full"
@@ -79,7 +79,7 @@ export function CategoryPieChart({ data }: { data: CategorySpending[] }) {
         role="img"
         aria-label="لا توجد بيانات إنفاق حسب التصنيف"
       >
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 animate-pulse-subtle">
+        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 animate-pulse-slow">
           <svg
             className="size-6 text-primary"
             viewBox="0 0 24 24"
@@ -169,14 +169,9 @@ export function CategoryPieChart({ data }: { data: CategorySpending[] }) {
       </div>
       <div className="sr-only" role="list" aria-label="التصنيفات">
         {data.map((entry, index) => (
-          <button
-            key={index}
-            role="listitem"
-            onClick={() => handleClick(entry)}
-            className="block w-full text-left px-2 py-1 text-sm hover:bg-accent rounded cursor-pointer"
-          >
+          <div key={index} role="listitem">
             {entry.name}: ${Number(entry.total).toFixed(2)}
-          </button>
+          </div>
         ))}
       </div>
     </div>

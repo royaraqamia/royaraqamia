@@ -28,7 +28,7 @@ export default function GoogleAuthButton({ redirectTo }: { redirectTo?: string }
         onClick={handleGoogleSignIn}
         disabled={loading}
         variant="outline"
-        className="w-full py-3 h-auto flex items-center justify-center gap-3"
+        className="w-full py-3 h-auto flex items-center justify-center gap-3 touch-target btn-press focus-ring"
       >
         <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
           <path
@@ -51,7 +51,10 @@ export default function GoogleAuthButton({ redirectTo }: { redirectTo?: string }
         <span>{loading ? 'جارٍ الاتصال بـ Google...' : 'تسجيل الدخول بواسطة Google'}</span>
       </Button>
       {error && (
-        <div className="mt-3 p-3 bg-destructive/10 text-destructive text-sm rounded-xl border border-destructive/20">
+        <div
+          role="alert"
+          className="mt-3 p-3 bg-destructive/10 text-destructive text-sm rounded-xl border border-destructive/20"
+        >
           <div className="flex items-start gap-3">
             <svg
               className="w-5 h-5 shrink-0 mt-1"

@@ -114,7 +114,6 @@ export function MetricCards() {
                 <div
                   className="text-4xl lg:text-5xl font-bold mb-2 lg:mb-3"
                   style={{
-                    fontFamily: "'Aref Ruqaa Numbers', 'Aref Ruqaa', serif",
                     background: colors.gradient,
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
@@ -125,10 +124,7 @@ export function MetricCards() {
                 </div>
 
                 {/* Label */}
-                <h2
-                  className="text-lg lg:text-xl font-bold text-white mb-2 transition-all duration-300"
-                  style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                >
+                <h2 className="text-lg lg:text-xl font-bold text-white mb-2 transition-all duration-300">
                   {metric.label}
                 </h2>
 

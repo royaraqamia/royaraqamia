@@ -48,11 +48,11 @@ export const bioDesignTheme = {
     purple: '#a855f7',
   },
 
-  // Typography
+  // Typography — defined via CSS @theme in app/global.css (single source of truth)
   fontFamily: {
-    sans: ['"IBM Plex Sans Arabic"', 'system-ui', 'sans-serif'],
-    serif: ['"Aref Ruqaa"', 'serif'],
-    arabic: ['"IBM Plex Sans Arabic"', 'system-ui', 'sans-serif'],
+    sans: ['var(--font-sans)'],
+    serif: ['var(--font-heading)'],
+    arabic: ['var(--font-arabic)'],
   },
 
   fontSize: {

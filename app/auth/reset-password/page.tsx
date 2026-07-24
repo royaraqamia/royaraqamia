@@ -2,60 +2,84 @@
 
 import { useActionState } from 'react';
 import Link from 'next/link';
+import { motion } from 'motion/react';
+import { WarningCircle, CheckCircle, ArrowLeft } from '@phosphor-icons/react';
 import { resetPassword } from '@/lib/actions/auth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { AuthCard } from '@/components/auth/AuthCard';
+
+const isSuccessMessage = (msg: string) => msg.includes('تم إرسال');
 
 export default function ResetPasswordPage() {
   const [state, formAction, isPending] = useActionState(resetPassword, null);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-fluid-h2 font-bold text-foreground">إعادة تعيين كلمة المرور</h1>
-          <p className="text-muted-foreground mt-2">
-            أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة التعيين
-          </p>
+    <AuthCard
+      title="إعادة تعيين كلمة المرور"
+      description="أدخل بريدك الإلكتروني وسنرسل لك رابطاً لإعادة التعيين"
+    >
+      <form action={formAction} className="space-y-5">
+        <div className="space-y-2">
+          <label htmlFor="reset-email" className="block text-sm font-medium text-foreground">
+            البريد الإلكتروني
+          </label>
+          <Input
+            id="reset-email"
+            name="email"
+            type="email"
+            required
+            autoComplete="email"
+            placeholder="example@email.com"
+            aria-describedby={state?.message ? 'reset-message' : undefined}
+          />
         </div>
 
-        <form action={formAction} className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="reset-email" className="block text-sm font-medium text-foreground">
-              البريد الإلكتروني
-            </label>
-            <Input
-              id="reset-email"
-              name="email"
-              type="email"
-              required
-              autoComplete="email"
-              aria-describedby={state?.message ? 'reset-message' : undefined}
-              placeholder="email@example.com"
-            />
-          </div>
-
-          {state?.message && (
+        {state?.message && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex items-start gap-2.5 p-3 rounded-lg border ${
+              isSuccessMessage(state.message)
+                ? 'bg-success/10 border-success/20'
+                : 'bg-destructive/10 border-destructive/20'
+            }`}
+          >
+            {isSuccessMessage(state.message) ? (
+              <CheckCircle size={18} className="shrink-0 mt-0.5 text-success" />
+            ) : (
+              <WarningCircle size={18} className="shrink-0 mt-0.5 text-destructive" />
+            )}
             <p
               id="reset-message"
               role="alert"
-              className={`text-sm text-center ${state.message.includes('تم إرسال') ? 'text-success' : 'text-destructive'}`}
+              className={`text-sm ${
+                isSuccessMessage(state.message) ? 'text-success' : 'text-destructive'
+              }`}
             >
               {state.message}
             </p>
-          )}
+          </motion.div>
+        )}
 
-          <Button type="submit" disabled={isPending} className="w-full">
-            {isPending ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
-          </Button>
-        </form>
+        <Button
+          type="submit"
+          isLoading={isPending}
+          className="w-full h-12 gradient-primary text-white cta-glow"
+        >
+          {isPending ? 'جاري الإرسال...' : 'إرسال رابط إعادة التعيين'}
+        </Button>
+      </form>
 
-        <div className="text-center">
-          <Link href="/auth/login" className="text-sm text-primary hover:underline cursor-pointer">
-            العودة إلى تسجيل الدخول
-          </Link>
-        </div>
+      <div className="flex justify-center mt-6">
+        <Link
+          href="/auth/login"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <ArrowLeft size={16} />
+          العودة إلى تسجيل الدخول
+        </Link>
       </div>
-    </div>
+    </AuthCard>
   );
 }

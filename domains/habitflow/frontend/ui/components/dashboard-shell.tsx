@@ -117,7 +117,7 @@ export function DashboardShell({
   return (
     <ErrorBoundary>
       <div className="min-h-dvh pb-16 bg-background">
-        <main id="main-content" className="max-w-6xl mx-auto px-6">
+        <main id="main-content" className="max-w-6xl mx-auto container-padding">
           <motion.div
             initial={shouldReduce ? false : { opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -140,7 +140,7 @@ export function DashboardShell({
                   onClick={() => handleDateShift(-1)}
                   aria-label="اليوم السابق"
                   id="btn-prev-day"
-                  className="h-9 w-9"
+                  className="size-11 touch-target btn-press"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -157,7 +157,7 @@ export function DashboardShell({
                   onClick={() => handleDateShift(1)}
                   aria-label="اليوم التالي"
                   id="btn-next-day"
-                  className="h-9 w-9"
+                  className="size-11 touch-target btn-press"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
@@ -168,7 +168,7 @@ export function DashboardShell({
                   size="sm"
                   onClick={() => setActiveDate(todayDate)}
                   aria-label="العودة إلى اليوم"
-                  className="text-xs"
+                  className="text-xs touch-target btn-press focus-ring"
                 >
                   اليوم
                 </Button>
@@ -179,32 +179,24 @@ export function DashboardShell({
               <StatsCard
                 index={0}
                 icon={TrendingUp}
-                iconBg="bg-indigo-50 dark:bg-indigo-500/15"
-                iconColor="text-indigo-600 dark:text-indigo-400"
                 label="الاستمرارية (٣٠ يوم)"
                 value={`${activeStats.averageCompletionRate}%`}
               />
               <StatsCard
                 index={1}
                 icon={Flame}
-                iconBg="bg-orange-50 dark:bg-orange-500/15"
-                iconColor="text-orange-600 dark:text-orange-400"
                 label="أطول سلسلة نشطة"
                 value={`${activeStats.highestStreak} أيام`}
               />
               <StatsCard
                 index={2}
                 icon={CheckSquare}
-                iconBg="bg-emerald-50 dark:bg-emerald-500/15"
-                iconColor="text-emerald-600 dark:text-emerald-400"
                 label="المكتمل اليوم"
                 value={`${activeStats.totalHabitsCompletedToday} / ${habits.length}`}
               />
               <StatsCard
                 index={3}
                 icon={Heart}
-                iconBg="bg-rose-50 dark:bg-rose-500/15"
-                iconColor="text-rose-600 dark:text-rose-400"
                 label="معدل الإكمال اليومي"
                 value={`${activeStats.completedPercentageToday}%`}
               />
@@ -220,7 +212,7 @@ export function DashboardShell({
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-[clamp(1rem,2vw,1.125rem)] font-bold text-foreground leading-snug">
+                    <h2 className="text-fluid-h2 font-display font-bold text-foreground leading-snug">
                       قائمة عادات اليوم
                     </h2>
                     <p className="text-xs text-muted-foreground leading-relaxed">
@@ -233,6 +225,7 @@ export function DashboardShell({
                       setFormError('');
                     }}
                     id="btn-create-habit"
+                    className="touch-target btn-press focus-ring"
                   >
                     <Plus className="w-4 h-4 ms-1.5" />
                     إضافة عادة
@@ -240,7 +233,7 @@ export function DashboardShell({
                 </div>
 
                 {habits.length === 0 ? (
-                  <Card className="border-dashed p-12 text-center space-y-4">
+                  <Card className="border-dashed p-12 text-center space-y-4 card-lift">
                     <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mx-auto">
                       <CheckSquare className="w-8 h-8 text-primary/60" />
                     </div>
@@ -255,7 +248,7 @@ export function DashboardShell({
                         setIsAddModalOpen(true);
                         setFormError('');
                       }}
-                      className="mt-2"
+                      className="mt-2 touch-target btn-press focus-ring"
                     >
                       <Plus className="w-4 h-4 ms-1.5" />
                       إنشاء عادة روتينية
@@ -319,11 +312,17 @@ export function DashboardShell({
                 variant="outline"
                 size="sm"
                 onClick={() => fileInputRef.current?.click()}
-                aria-controls="backup-file-input"
+                aria-controls="file-input-ref"
+                className="touch-target btn-press focus-ring"
               >
                 استيراد
               </Button>
-              <Button variant="outline" size="sm" onClick={handleDownloadBackup}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadBackup}
+                className="touch-target btn-press focus-ring"
+              >
                 تصدير
               </Button>
             </div>

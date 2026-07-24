@@ -35,11 +35,6 @@
 --letter-spacing-wide: 0.05em;
 --letter-spacing-extra-wide: 0.1em;
 
-/* Font Families */
---font-family-arabic: "IBM Plex Sans Arabic", system-ui, sans-serif;
---font-family-heading: "Aref Ruqaa", serif;
---font-family-sans: "IBM Plex Sans Arabic", sans-serif;
-
 /* Color Tokens - Primary Palette */
 --color-primary-50: #f8fafc;
 --color-primary-100: #f1f5f9;

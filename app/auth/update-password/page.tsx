@@ -1,50 +1,95 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { motion } from 'motion/react';
+import { WarningCircle } from '@phosphor-icons/react';
 import { updatePassword } from '@/lib/actions/auth';
+import { Button } from '@/components/ui/button';
+import { PasswordInput } from '@/components/auth/PasswordInput';
+import { PasswordStrength } from '@/components/auth/PasswordStrength';
+import { AuthCard } from '@/components/auth/AuthCard';
 
 export default function UpdatePasswordPage() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
   const [state, formAction, isPending] = useActionState(updatePassword, null);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  const doPasswordsMatch = password && confirmPassword && password === confirmPassword;
+  const showMismatch = confirmPassword.length > 0 && !doPasswordsMatch;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">كلمة مرور جديدة</h1>
-          <p className="text-muted-foreground mt-2">أدخل كلمة المرور الجديدة</p>
-        </div>
+    <AuthCard title="كلمة مرور جديدة" description="أدخل كلمة المرور الجديدة التي ترغب في تعيينها">
+      <form action={formAction} className="space-y-5">
+        <input type="hidden" name="redirectTo" value={redirectTo} />
 
-        <form action={formAction} className="space-y-4">
-          <input type="hidden" name="redirectTo" value={redirectTo} />
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-1.5">
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <label
+              htmlFor="update-password"
+              className="form-label block text-sm font-medium text-foreground"
+            >
               كلمة المرور الجديدة
             </label>
-            <input
+            <PasswordInput
+              id="update-password"
               name="password"
-              type="password"
-              required
-              className="w-full px-4 py-3 rounded-xl border border-border bg-white/5 text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-primary focus:border-primary outline-none"
-              placeholder="8 أحرف على الأقل"
+              autoComplete="new-password"
+              onChange={setPassword}
             />
+            <PasswordStrength password={password} />
           </div>
 
-          {state?.message && (
-            <p className="text-sm text-destructive text-center">{state.message}</p>
-          )}
+          <div className="space-y-2">
+            <label
+              htmlFor="confirm-password"
+              className="form-label block text-sm font-medium text-foreground"
+            >
+              تأكيد كلمة المرور
+            </label>
+            <PasswordInput
+              id="confirm-password"
+              name="confirmPassword"
+              autoComplete="new-password"
+              error={showMismatch}
+              onChange={setConfirmPassword}
+            />
+            {showMismatch && (
+              <motion.p
+                initial={{ opacity: 0, y: -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-xs text-destructive"
+              >
+                كلمة المرور غير متطابقة
+              </motion.p>
+            )}
+          </div>
+        </div>
 
-          <button
-            type="submit"
-            disabled={isPending}
-            className="w-full py-3 px-4 bg-primary text-primary-foreground rounded-xl font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+        {state?.message && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex items-start gap-2.5 p-3 rounded-lg bg-destructive/10 border border-destructive/20"
           >
-            {isPending ? 'جاري التحديث...' : 'تحديث كلمة المرور'}
-          </button>
-        </form>
-      </div>
-    </div>
+            <WarningCircle size={18} className="shrink-0 mt-0.5 text-destructive" />
+            <p role="alert" className="text-sm text-destructive">
+              {state.message}
+            </p>
+          </motion.div>
+        )}
+
+        <Button
+          type="submit"
+          isLoading={isPending}
+          disabled={showMismatch}
+          className="w-full h-12 gradient-primary text-white cta-glow"
+        >
+          {isPending ? 'جاري التحديث...' : 'تحديث كلمة المرور'}
+        </Button>
+      </form>
+    </AuthCard>
   );
 }

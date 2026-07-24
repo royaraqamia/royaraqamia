@@ -13,7 +13,7 @@ export function ViewSelector({ selectedView, userEmail, onChange }: ViewSelector
 
   return (
     <div
-      className="bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex items-center justify-between gap-1 w-full max-w-[360px] mx-auto"
+      className="bg-card p-1 rounded-xl border border-border shadow-sm flex items-center justify-between gap-1 w-full max-w-[360px] mx-auto"
       role="tablist"
       aria-label="التنقل بين العروض"
     >
@@ -60,10 +60,10 @@ function ViewButton({
       id={id}
       tabIndex={active ? 0 : -1}
       onClick={onClick}
-      className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer press-scale focus-ring ${
+      className={`flex-1 py-2.5 px-3 rounded-lg text-xs font-semibold text-center transition-all cursor-pointer press-scale focus-ring touch-target btn-press ${
         active
-          ? 'bg-indigo-600 text-white shadow-sm'
-          : 'text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400'
+          ? 'bg-primary text-primary-foreground shadow-sm'
+          : 'text-muted-foreground hover:text-primary'
       }`}
     >
       {label}

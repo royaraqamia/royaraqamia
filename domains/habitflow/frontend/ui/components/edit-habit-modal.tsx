@@ -53,6 +53,7 @@ export function EditHabitModal({
         <form onSubmit={onSubmit} className="p-4 sm:p-6 space-y-5">
           {formError && (
             <div
+              id="edit-habit-error"
               className="bg-destructive/10 border border-destructive/30 text-destructive text-xs font-semibold rounded-lg px-4 py-3 text-center"
               role="alert"
             >
@@ -60,7 +61,10 @@ export function EditHabitModal({
             </div>
           )}
           <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+            <label
+              htmlFor="input-edit-habit-name"
+              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+            >
               اسم العادة
             </label>
             <div className="relative">
@@ -74,6 +78,8 @@ export function EditHabitModal({
                 maxLength={50}
                 id="input-edit-habit-name"
                 autoFocus
+                aria-describedby={formError ? 'edit-habit-error' : undefined}
+                className="touch-target"
               />
             </div>
             <p className="text-xs text-muted-foreground text-left" dir="ltr">
@@ -81,18 +87,18 @@ export function EditHabitModal({
             </p>
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               وتيرة التتبع
-            </label>
+            </legend>
             <div className="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 onClick={() => onFrequencyChange('daily')}
-                className={`py-3 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`py-3 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
                   habitFrequency === 'daily'
                     ? 'bg-primary border-primary text-primary-foreground shadow-sm'
-                    : 'border-input bg-background text-foreground hover:bg-accent'
+                    : 'border-border bg-muted text-foreground hover:bg-accent'
                 }`}
               >
                 يومية
@@ -100,21 +106,21 @@ export function EditHabitModal({
               <button
                 type="button"
                 onClick={() => onFrequencyChange('weekly')}
-                className={`py-3 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                className={`py-3 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
                   habitFrequency === 'weekly'
                     ? 'bg-primary border-primary text-primary-foreground shadow-sm'
-                    : 'border-input bg-background text-foreground hover:bg-accent'
+                    : 'border-border bg-muted text-foreground hover:bg-accent'
                 }`}
               >
                 أسبوعية
               </button>
             </div>
-          </div>
+          </fieldset>
 
-          <div className="space-y-2">
-            <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <fieldset className="space-y-2">
+            <legend className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               أيقونة العادة
-            </label>
+            </legend>
             <div className="grid grid-cols-4 gap-3 p-1">
               {HABIT_ICONS.map((item) => {
                 const IconComp = item.icon;
@@ -126,10 +132,10 @@ export function EditHabitModal({
                     onClick={() => onIconChange(item.name)}
                     aria-label={item.name}
                     aria-pressed={isSelected}
-                    className={`aspect-square rounded-xl flex items-center justify-center border transition-all duration-200 ease-out active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    className={`aspect-square rounded-xl flex items-center justify-center border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
                       isSelected
-                        ? 'border-primary ring-2 ring-primary/20 bg-primary/5 text-primary'
-                        : 'border-input bg-background text-muted-foreground hover:bg-accent hover:border-border'
+                        ? 'border-primary ring-2 ring-primary bg-primary/10 text-primary'
+                        : 'border-border bg-muted text-muted-foreground hover:bg-accent hover:border-border'
                     }`}
                   >
                     <IconComp className="w-5 h-5" aria-hidden="true" />
@@ -137,14 +143,13 @@ export function EditHabitModal({
                 );
               })}
             </div>
-          </div>
+          </fieldset>
 
           <div className="pt-2 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <Button
               type="button"
-              variant="destructive"
               onClick={() => onArchive(habit!.id)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 bg-destructive/10 text-destructive hover:bg-destructive/20 border-0 shadow-none touch-target btn-press focus-ring"
               id="btn-archive-habit"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -152,10 +157,20 @@ export function EditHabitModal({
             </Button>
 
             <div className="flex items-center gap-3">
-              <Button type="button" variant="outline" onClick={onClose}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="touch-target btn-press focus-ring"
+              >
                 إلغاء
               </Button>
-              <Button type="submit" disabled={isSubmitting} id="btn-submit-edit-habit">
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                id="btn-submit-edit-habit"
+                className="touch-target btn-press focus-ring"
+              >
                 {isSubmitting ? 'جارٍ التطبيق...' : 'تطبيق التغييرات'}
               </Button>
             </div>

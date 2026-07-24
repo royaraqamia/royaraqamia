@@ -56,12 +56,17 @@ export default function OtpVerifyStep({
           {email}
         </p>
         {!isExpired ? (
-          <p className="text-xs text-muted-foreground mt-2">
+          <p
+            aria-live="polite"
+            className={`text-xs mt-2 ${remainingSeconds < 60 ? 'text-warning' : 'text-muted-foreground'}`}
+          >
             ينتهي الصلاحية خلال {String(minutesLeft).padStart(2, '0')}:
             {String(secondsLeft).padStart(2, '0')}
           </p>
         ) : (
-          <p className="text-xs text-destructive mt-2">انتهت صلاحية الرمز. اطلب رمزًا جديدًا.</p>
+          <p role="alert" className="text-xs text-destructive mt-2">
+            انتهت صلاحية الرمز. اطلب رمزًا جديدًا.
+          </p>
         )}
       </div>
 
@@ -74,7 +79,10 @@ export default function OtpVerifyStep({
       />
 
       {successMessage && (
-        <div className="p-3 bg-primary/10 text-primary text-sm rounded-xl border border-primary/20 text-center">
+        <div
+          role="status"
+          className="p-3 bg-primary/10 text-primary text-sm rounded-xl border border-primary/20 text-center"
+        >
           {successMessage}
         </div>
       )}
@@ -83,7 +91,7 @@ export default function OtpVerifyStep({
         type="button"
         onClick={handleVerifyClick}
         disabled={loading || otpValue.length < 6 || isExpired}
-        className="w-full py-3 h-auto"
+        className="w-full py-3 h-auto touch-target btn-press focus-ring"
       >
         {loading ? 'جارٍ التحقق من الرمز...' : 'تحقق'}
       </Button>
@@ -93,7 +101,7 @@ export default function OtpVerifyStep({
           type="button"
           onClick={onResend}
           disabled={loading}
-          className="text-sm text-primary underline-offset-4 hover:underline active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 py-2 min-h-[44px]"
+          className="text-sm text-primary underline-offset-4 hover:underline cursor-pointer btn-press touch-target focus-ring rounded-lg transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 py-2"
         >
           إعادة إرسال الرمز
         </button>
@@ -101,7 +109,7 @@ export default function OtpVerifyStep({
         <button
           type="button"
           onClick={onBack}
-          className="text-sm text-muted-foreground hover:text-foreground active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg transition-all duration-200 ease-out py-2 min-h-[44px]"
+          className="text-sm text-muted-foreground hover:text-foreground cursor-pointer btn-press touch-target focus-ring rounded-lg transition-all duration-200 ease-out py-2"
         >
           العودة إلى تسجيل الدخول
         </button>

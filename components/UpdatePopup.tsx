@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface UpdatePopupProps {
+  onReload: () => void;
   onDismiss: () => void;
 }
 
-export function UpdatePopup({ onDismiss }: UpdatePopupProps) {
+export function UpdatePopup({ onReload, onDismiss }: UpdatePopupProps) {
   const [visible, setVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -51,10 +52,6 @@ export function UpdatePopup({ onDismiss }: UpdatePopupProps) {
     const first = focusable.item(0);
     first?.focus();
   }, [visible]);
-
-  const handleReload = useCallback(() => {
-    window.location.reload();
-  }, []);
 
   useEffect(() => {
     return () => {
@@ -121,7 +118,7 @@ export function UpdatePopup({ onDismiss }: UpdatePopupProps) {
                 لاحقًا
               </button>
               <button
-                onClick={handleReload}
+                onClick={onReload}
                 className="flex-1 rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card active:scale-[0.98]"
               >
                 تحديث الآن

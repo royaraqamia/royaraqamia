@@ -132,9 +132,9 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
     if (/[0-9]/.test(pwd)) score++;
     if (/[^A-Za-z0-9]/.test(pwd)) score++;
     if (score <= 1) return { label: 'ضعيف', color: 'bg-destructive', width: '20%' };
-    if (score <= 2) return { label: 'متوسط', color: 'bg-amber-500', width: '40%' };
+    if (score <= 2) return { label: 'متوسط', color: 'bg-warning', width: '40%' };
     if (score <= 3) return { label: 'جيد', color: 'bg-primary', width: '65%' };
-    return { label: 'قوي', color: 'bg-emerald-500', width: '100%' };
+    return { label: 'قوي', color: 'bg-success', width: '100%' };
   };
 
   const passwordStrength = getPasswordStrength(passwordValue);
@@ -184,7 +184,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
       : null;
 
   return (
-    <div className="p-6 sm:p-8">
+    <div className="bg-card border border-border shadow-elevated rounded-xl p-6 sm:p-8 card-lift">
       <div className="mb-1 text-center">
         <p className="text-sm text-muted-foreground leading-relaxed">
           {step === 'verify'
@@ -196,7 +196,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
       </div>
 
       {serverError && <AlertBox type="error" message={serverError} />}
-      {serverMessage && <AlertBox type="error" message={serverMessage} />}
+      {serverMessage && <AlertBox type="success" message={serverMessage} />}
       {resendSuccessMessage && <AlertBox type="success" message={resendSuccessMessage} />}
 
       {step === 'form' && (
@@ -274,7 +274,11 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
               )}
             </div>
 
-            <Button type="submit" disabled={pending} className="w-full py-3 h-auto">
+            <Button
+              type="submit"
+              disabled={pending}
+              className="w-full py-3 h-auto btn-lift touch-target btn-press focus-ring"
+            >
               {pending
                 ? isLogin
                   ? 'جارٍ تسجيل الدخول...'
@@ -290,7 +294,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
               <button
                 onClick={toggleAuthMode}
                 type="button"
-                className="block w-full text-sm text-primary underline-offset-4 hover:underline active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 py-2 min-h-[44px]"
+                className="block w-full text-sm bg-muted text-foreground hover:bg-muted/80 btn-press touch-target focus-ring rounded-lg transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 py-2"
               >
                 {isLogin ? 'ليس لديك حساب؟ إنشاء حساب' : 'لديك حساب بالفعل؟ تسجيل الدُّخول'}
               </button>
@@ -328,7 +332,7 @@ export function LoginShell({ mode }: { mode?: 'login' | 'signup' }) {
       <div className="mt-6 text-center">
         <Link
           href="/"
-          className="block w-full text-sm text-muted-foreground hover:text-foreground active:scale-[0.98] transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-lg py-2 min-h-[44px]"
+          className="block w-full text-sm text-muted-foreground hover:text-foreground btn-press touch-target focus-ring transition-all duration-200 ease-out rounded-lg py-2"
         >
           ← العودة إلى التَّطبيق
         </Link>

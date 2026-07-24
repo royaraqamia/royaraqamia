@@ -25,7 +25,9 @@ export default function NotFound() {
         </h1>
         <p className="text-muted-foreground mb-8">الصفحة التي تبحث عنها غير موجودة.</p>
         <Link href="/habitflow">
-          <Button variant="default">العودة إلى الرئيسية</Button>
+          <Button variant="default" className="touch-target btn-press focus-ring">
+            العودة إلى الرئيسية
+          </Button>
         </Link>
       </main>
     </div>

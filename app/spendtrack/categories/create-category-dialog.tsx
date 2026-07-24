@@ -8,6 +8,7 @@ import { createCategory } from '@/app/spendtrack/actions/categories';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +27,17 @@ type CategoryFormValues = z.input<typeof categorySchema>;
 
 export function CreateCategoryDialog() {
   const [state, formAction, pending] = useActionState(createCategory, undefined);
+
+  // Show toast on success/error
+  const prevStateRef = useState(state);
+  if (state && state !== prevStateRef[0]) {
+    prevStateRef[1](state);
+    if (state.success) {
+      toast.success('تم إنشاء التصنيف بنجاح');
+    } else if (state.error) {
+      toast.error(state.error);
+    }
+  }
 
   const {
     register,
@@ -58,12 +70,12 @@ export function CreateCategoryDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button className="transition-all duration-200">
+        <Button className="transition-all duration-200 btn-press touch-target focus-ring">
           <Plus className="ms-1 size-4" />
           إضافة تصنيف
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="bg-card border-border shadow-elevated">
         <DialogHeader>
           <DialogTitle>إنشاء تصنيف</DialogTitle>
         </DialogHeader>
@@ -78,11 +90,13 @@ export function CreateCategoryDialog() {
             <Input
               id="name"
               placeholder="مثال: بقالة"
+              className="bg-muted border-border focus-ring"
               {...register('name')}
               aria-invalid={errors.name ? true : undefined}
+              aria-describedby={errors.name ? 'create-name-error' : undefined}
             />
             {errors.name && (
-              <p className="text-sm text-destructive" role="alert">
+              <p id="create-name-error" className="text-sm text-destructive" role="alert">
                 {errors.name.message}
               </p>
             )}
@@ -100,6 +114,7 @@ export function CreateCategoryDialog() {
                 type="color"
                 className="w-12 h-11 p-1"
                 {...colorRegister}
+                aria-describedby={errors.color_hex ? 'create-color-error' : undefined}
                 onChange={(e) => {
                   setColorValue(e.target.value);
                   rhfColorOnChange(e);
@@ -108,7 +123,7 @@ export function CreateCategoryDialog() {
               <Input readOnly className="flex-1" value={colorValue} tabIndex={-1} />
             </div>
             {errors.color_hex && (
-              <p className="text-sm text-destructive" role="alert">
+              <p id="create-color-error" className="text-sm text-destructive" role="alert">
                 {errors.color_hex.message}
               </p>
             )}
@@ -118,7 +133,11 @@ export function CreateCategoryDialog() {
               {state.error}
             </p>
           )}
-          <Button type="submit" className="w-full transition-all duration-200" disabled={pending}>
+          <Button
+            type="submit"
+            className="btn-lift w-full transition-all duration-200 btn-press focus-ring touch-target"
+            disabled={pending}
+          >
             {pending ? 'جارٍ الإنشاء...' : 'إنشاء'}
           </Button>
         </form>

@@ -8,6 +8,7 @@ import { createOtpRecord, verifyOtpRecord } from '@/lib/otp/repository';
 import { sendOtpEmail } from '@/infrastructure/email/resend';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { OTP_CONFIG } from '@/lib/otp/config';
+import { SignupSchema, UpdatePasswordSchema } from '@/lib/schemas';
 
 function safeRedirect(to: string | null, fallback: string = '/'): string {
   if (!to || !to.startsWith('/') || to.startsWith('//')) return fallback;
@@ -19,6 +20,11 @@ export async function signup(_prevState: { message: string } | null, formData: F
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const redirectTo = formData.get('redirectTo') as string | null;
+
+  const parsed = SignupSchema.safeParse({ name, email, password });
+  if (!parsed.success) {
+    return { message: parsed.error.issues[0]?.message || 'بيانات غير صحيحة' };
+  }
 
   if (!checkRateLimit(`signup:${email}`, 3, 60 * 60 * 1000)) {
     return { message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
@@ -92,14 +98,25 @@ export async function verifyOtp(_prevState: { message: string } | null, formData
     return { message: result.error };
   }
 
+  const admin = getAdminSupabase();
+
+  // Try session-first (signup flow — user already has unconfirmed session)
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (user && user.email_confirmed_at === null) {
-    const admin = getAdminSupabase();
     await admin.auth.admin.updateUserById(user.id, { email_confirm: true });
+  } else {
+    // No session (login flow with unconfirmed email) — find user by email via admin API
+    const { data: users, error: listError } = await admin.auth.admin.listUsers();
+    if (!listError && users) {
+      const target = users.users.find((u) => u.email === email);
+      if (target && target.email_confirmed_at === null) {
+        await admin.auth.admin.updateUserById(target.id, { email_confirm: true });
+      }
+    }
   }
 
   redirect(safeRedirect(redirectTo));
@@ -125,6 +142,10 @@ export async function resendOtp(_prevState: { message: string } | null, formData
 export async function resetPassword(_prevState: { message: string } | null, formData: FormData) {
   const email = formData.get('email') as string;
 
+  if (!checkRateLimit(`reset:${email}`, 3, 60 * 60 * 1000)) {
+    return { message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
+  }
+
   const supabase = await createClient();
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
 
@@ -142,6 +163,11 @@ export async function resetPassword(_prevState: { message: string } | null, form
 export async function updatePassword(_prevState: { message: string } | null, formData: FormData) {
   const password = formData.get('password') as string;
   const redirectTo = formData.get('redirectTo') as string | null;
+
+  const parsed = UpdatePasswordSchema.safeParse({ password });
+  if (!parsed.success) {
+    return { message: parsed.error.issues[0]?.message || 'كلمة المرور غير صحيحة' };
+  }
 
   const supabase = await createClient();
 

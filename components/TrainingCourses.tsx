@@ -66,10 +66,7 @@ export function TrainingCourses() {
         {/* Section Header - Compelling Single Course Message */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center section-header mb-12">
-            <h2
-              className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
-              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-            >
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
               <span className="text-teal-400">التَّدريب</span>
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 max-w-2xl mx-auto leading-[1.8] sm:leading-[1.9]">
@@ -109,12 +106,7 @@ export function TrainingCourses() {
                       <div className="w-2 h-2 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
                       <span className="text-xs font-medium text-emerald-300">التَّسجيل مفتوح</span>
                     </div>
-                    <h3
-                      className="text-2xl md:text-3xl font-bold mb-2"
-                      style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-                    >
-                      {course.title}
-                    </h3>
+                    <h3 className="text-2xl md:text-3xl font-bold mb-2">{course.title}</h3>
                     <p className="text-white/80 text-sm md:text-base leading-relaxed max-w-lg">
                       {course.description}
                     </p>

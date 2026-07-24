@@ -63,7 +63,6 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
         <h3
           className="content-spacing-sm text-h4 font-bold transition-all duration-300 group-hover:bg-clip-text group-hover:text-transparent"
           style={{
-            fontFamily: "'IBM Plex Sans Arabic', sans-serif",
             backgroundImage: colors.hoverGradient,
             backgroundSize: '200% auto',
             WebkitBackgroundClip: 'text',

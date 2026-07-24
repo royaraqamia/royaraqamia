@@ -40,6 +40,17 @@ export async function proxy(request: NextRequest) {
     }
   );
 
+  // Exchange auth code for session (handles password reset + PKCE flows)
+  const code = request.nextUrl.searchParams.get('code');
+  if (code) {
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      const url = request.nextUrl.clone();
+      url.searchParams.delete('code');
+      return NextResponse.redirect(url);
+    }
+  }
+
   const {
     data: { user },
   } = await supabase.auth.getUser();

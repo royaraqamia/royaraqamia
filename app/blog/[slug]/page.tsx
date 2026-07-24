@@ -320,9 +320,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                       </div>
                     ) : (
                       <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
-                        <span className="text-2xl font-bold text-primary/20 font-heading">
-                          {rp.title[0]}
-                        </span>
+                        <span className="text-2xl font-bold text-primary/20">{rp.title[0]}</span>
                       </div>
                     )}
                     <div className="p-3.5">

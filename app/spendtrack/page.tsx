@@ -55,7 +55,7 @@ async function TotalCard({
   });
   return (
     <Card
-      className="group/card transition-all duration-300 hover:premium-shadow-lg hover:-translate-y-0.5"
+      className="group/card card-lift"
       aria-label={`إجمالي الإنفاق: ${Number(data ?? 0).toFixed(2)} دولار`}
     >
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -257,9 +257,9 @@ export default async function DashboardPage(props: {
   const catFilter: string[] | null = filterCategories.length > 0 ? filterCategories : null;
 
   return (
-    <div className="space-y-6">
+    <div className="section-spacing space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
-        <h1 className="text-2xl font-bold tracking-tight">لوحة التحكم</h1>
+        <h1 className="text-fluid-h2 font-display font-bold tracking-tight">لوحة التحكم</h1>
         <CreateExpenseButton userId={user.id} />
       </div>
 
@@ -271,7 +271,7 @@ export default async function DashboardPage(props: {
 
       <div className="grid gap-4 lg:grid-cols-2 animate-slide-up stagger-3">
         <Card
-          className="group/card transition-all duration-300 hover:premium-shadow-md"
+          className="group/card card-lift"
           aria-label="رسم بياني يوضح توزيع الإنفاق حسب التصنيف"
         >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -287,7 +287,7 @@ export default async function DashboardPage(props: {
           </CardContent>
         </Card>
         <Card
-          className="group/card transition-all duration-300 hover:premium-shadow-md"
+          className="group/card card-lift"
           aria-label="رسم بياني يوضح الاتجاهات اليومية للإنفاق"
         >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -305,7 +305,7 @@ export default async function DashboardPage(props: {
       </div>
 
       <div className="animate-slide-up stagger-4">
-        <Card>
+        <Card className="group/card card-lift">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">المعاملات</CardTitle>
             <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">

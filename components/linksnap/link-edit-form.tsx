@@ -47,22 +47,27 @@ export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: Lin
   return (
     <div className="space-y-1.5 flex-1 max-w-xl">
       <div className="flex items-center gap-2.5">
-        <span className="text-sm font-mono font-bold text-indigo-600">/{code}</span>
+        <span className="text-sm font-mono font-bold text-primary">/{code}</span>
       </div>
       <form onSubmit={handleSubmit} className="mt-1 space-y-1.5">
         <div className="flex items-center gap-2">
+          <label htmlFor="edit-url-input" className="sr-only">
+            الرابط الجديد
+          </label>
           <input
+            id="edit-url-input"
             type="url"
             required
             value={editingUrlValue}
             onChange={(e) => setEditingUrlValue(e.target.value)}
-            className="flex-1 px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-slate-800 dark:text-slate-200"
+            className="flex-1 px-3 py-2.5 bg-muted/50 border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground"
             placeholder="الرَّابط الجديد"
+            aria-describedby="edit-url-error"
           />
           <button
             type="submit"
             disabled={updateLoading}
-            className="px-3 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs rounded-lg transition-all cursor-pointer press-scale inline-flex items-center gap-1 min-h-[44px]"
+            className="px-3 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs rounded-lg transition-all cursor-pointer btn-press inline-flex items-center gap-1 touch-target focus-ring"
           >
             {updateLoading ? (
               <>
@@ -79,15 +84,17 @@ export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: Lin
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-600 dark:text-slate-300 font-medium text-xs rounded-lg transition-all cursor-pointer press-scale min-h-[44px]"
+            className="px-3 py-2.5 bg-muted hover:bg-muted/80 text-muted-foreground font-medium text-xs rounded-lg transition-all cursor-pointer btn-press touch-target focus-ring"
           >
             إلغاء
           </button>
         </div>
         {updateError && (
           <div
+            id="edit-url-error"
+            role="alert"
             aria-live="polite"
-            className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 px-2 py-1 rounded-md"
+            className="text-xs text-destructive bg-destructive/10 border border-destructive/20 px-2 py-1 rounded-md"
           >
             {updateError}
           </div>

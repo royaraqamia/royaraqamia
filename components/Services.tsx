@@ -112,10 +112,7 @@ export function Services() {
       <div className="max-w-7xl mx-auto container-padding">
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center max-w-3xl mx-auto section-header">
-            <h2
-              className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold"
-              style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
-            >
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
               ماذا <span className="gradient-text">نقدِّم</span>؟
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
@@ -140,7 +137,6 @@ export function Services() {
                       ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105 border border-primary/50'
                       : 'text-foreground/70 hover:bg-white/10 hover:text-foreground border border-transparent hover:border-white/20'
                   }`}
-                  style={{ fontFamily: "'IBM Plex Sans Arabic', sans-serif" }}
                 >
                   <TabIcon
                     className={`w-4 h-4 sm:w-4 sm:h-4 transition-all-smooth ${isActive ? 'drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]' : ''}`}

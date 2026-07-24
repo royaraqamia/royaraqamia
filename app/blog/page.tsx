@@ -64,7 +64,7 @@ export default async function BlogPage(props: {
             <span className="size-1.5 rounded-full bg-primary animate-pulse" />
             المقالات
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold tracking-tight font-heading">المدوَّنة</h1>
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight">المدوَّنة</h1>
           <p className="mt-2.5 text-muted-foreground text-base max-w-xl">
             أفكار، دروس، وقصص في عالم التقنية والتحول الرقمي
           </p>
@@ -149,9 +149,7 @@ export default async function BlogPage(props: {
                     className="block relative aspect-video overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5"
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="text-5xl font-bold text-primary/20 font-heading">
-                        {post.title[0]}
-                      </span>
+                      <span className="text-5xl font-bold text-primary/20">{post.title[0]}</span>
                     </div>
                     <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm text-[11px] text-muted-foreground font-medium">
                       <Clock className="size-3" />

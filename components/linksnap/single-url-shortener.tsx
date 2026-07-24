@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Link, Sparkles, Copy, Check, Share2, QrCode, ArrowLeft, RotateCcw } from 'lucide-react';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
@@ -23,6 +23,7 @@ function isValidUrl(url: string): boolean {
 }
 
 export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerProps) {
+  const reducedMotion = useReducedMotion();
   const [originalUrl, setOriginalUrl] = useState('');
   const [customCode, setCustomCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -62,12 +63,16 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
       const generatedCode = data.link.code;
       setShortenedUrl(`${getBaseUrl()}/${generatedCode}`);
       onLinkCreated();
+      const style = getComputedStyle(document.documentElement);
+      const primary = style.getPropertyValue('--primary').trim();
+      const accent = style.getPropertyValue('--accent').trim();
+      const warning = style.getPropertyValue('--warning').trim();
       confetti({
         particleCount: 60,
         spread: 70,
         origin: { y: 0.5, x: 0.5 },
         startVelocity: 20,
-        colors: ['#6366f1', '#818cf8', '#a5b4fc', '#f59e0b'],
+        colors: [`hsl(${primary})`, `hsl(${accent})`, `hsl(${warning})`],
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'حدث خطأ أثناء اختصار الرَّابط.');
@@ -110,10 +115,13 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     }
     if (!qrDataUrl && shortenedUrl) {
       try {
+        const style = getComputedStyle(document.documentElement);
+        const fg = style.getPropertyValue('--foreground').trim();
+        const bg = style.getPropertyValue('--background').trim();
         const dataUrl = await QRCode.toDataURL(shortenedUrl, {
           width: 180,
           margin: 1,
-          color: { dark: '#1e293b', light: '#ffffff' },
+          color: { dark: `hsl(${fg})`, light: `hsl(${bg})` },
         });
         setQrDataUrl(dataUrl);
       } catch {
@@ -146,14 +154,14 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <div>
             <label
               htmlFor="original-url"
-              className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2"
+              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2"
             >
               الرَّابط
             </label>
             <div className="relative">
               <Link
                 aria-hidden="true"
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-indigo-500"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary"
               />
               <input
                 id="original-url"
@@ -162,7 +170,9 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 value={originalUrl}
                 onChange={(e) => setOriginalUrl(e.target.value)}
                 placeholder="https://example.com/very-long-url-path"
-                className="w-full pr-12 pl-4 py-3.5 bg-slate-50 dark:bg-slate-900/50 border dark:border-slate-600 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-800 dark:text-slate-200"
+                autoFocus
+                aria-describedby="single-url-error"
+                className="w-full pr-12 pl-4 py-3.5 bg-muted/50 border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
               />
             </div>
           </div>
@@ -175,15 +185,15 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             >
               <label
                 htmlFor="custom-code"
-                className="block text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1"
+                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1"
               >
                 رمز مُخصَّص (اختياري)
               </label>
               <div
-                className="flex items-center bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-600 rounded-xl focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all"
+                className="flex items-center bg-muted/50 border border-border rounded-xl focus-within:ring-2 focus-within:ring-primary/20 transition-all"
                 dir="ltr"
               >
-                <span className="shrink-0 pr-3 text-sm text-slate-500 dark:text-slate-400 font-semibold select-none whitespace-nowrap py-3.5 leading-snug">
+                <span className="shrink-0 pr-3 text-sm text-muted-foreground font-semibold select-none whitespace-nowrap py-3.5 leading-snug">
                   {getBaseUrl()}/
                 </span>
                 <input
@@ -195,10 +205,10 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   }
                   placeholder="my-promo"
                   maxLength={16}
-                  className="flex-1 bg-transparent px-3 py-3.5 text-sm focus:outline-none dark:text-slate-200 placeholder:text-slate-500"
+                  className="flex-1 bg-transparent px-3 py-3.5 text-sm focus:outline-none text-foreground placeholder:text-muted-foreground"
                 />
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+              <p className="text-xs text-muted-foreground font-medium">
                 3-16 حرفاً (أحرف، أرقام، - و _)
               </p>
             </motion.div>
@@ -206,10 +216,12 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
           {error && (
             <motion.div
-              initial={{ opacity: 0, y: -10 }}
+              id="single-url-error"
+              role="alert"
+              initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               aria-live="polite"
-              className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-xs rounded-lg font-medium"
+              className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg font-medium"
             >
               {error}
             </motion.div>
@@ -218,7 +230,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <button
             type="submit"
             disabled={loading || !originalUrl}
-            className="w-full py-4 px-6 bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm rounded-xl transition-all shadow-md shadow-indigo-100 hover:shadow-indigo-200 flex items-center justify-center gap-2 cursor-pointer group press-scale focus-ring"
+            className="w-full py-4 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-xl transition-all shadow-md shadow-primary/20 hover:shadow-primary/30 flex items-center justify-center gap-2 cursor-pointer group btn-lift focus-ring touch-target btn-press"
           >
             {loading ? (
               <>
@@ -232,7 +244,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               <>
                 <Sparkles
                   aria-hidden="true"
-                  className="w-4 h-4 text-indigo-200 group-hover:scale-110 transition-transform"
+                  className="w-4 h-4 text-primary-foreground/60 group-hover:scale-110 transition-transform"
                 />
                 <span>اختصار الرَّابط</span>
                 <ArrowLeft aria-hidden="true" className="w-4 h-4 mr-1" />
@@ -243,14 +255,14 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
       ) : (
         <motion.div
           key="success-view"
-          initial={{ opacity: 0, scale: 0.95 }}
+          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
+          exit={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
           className="text-center py-4 space-y-6"
         >
           <div className="flex flex-col items-center justify-center space-y-2">
-            <div className="w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400 mb-2">
-              <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-3 stroke-indigo-600 fill-none">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
+              <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-3 stroke-primary fill-none">
                 <motion.path
                   d="M5 13l4 4L19 7"
                   initial={{ pathLength: 0 }}
@@ -261,36 +273,36 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 />
               </svg>
             </div>
-            <h3 className="text-xl font-display font-bold text-slate-800 dark:text-slate-100">
+            <h3 className="text-xl font-display font-bold text-foreground">
               رابطك المُختصَر جاهز!
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm truncate">
-              يُعيد التَّوجيه إلى: <span className="text-indigo-600">{originalUrl}</span>
+            <p className="text-xs text-muted-foreground max-w-sm truncate">
+              يُعيد التَّوجيه إلى: <span className="text-primary">{originalUrl}</span>
             </p>
           </div>
 
-          <div className="flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-700 rounded-xl select-all">
+          <div className="flex items-center gap-2 p-3 bg-muted/50 border border-border rounded-xl select-all">
             <input
               type="text"
               readOnly
               value={shortenedUrl}
-              className="flex-1 bg-transparent border-none text-sm text-slate-800 dark:text-slate-200 text-center font-bold focus:outline-none"
+              className="flex-1 bg-transparent border-none text-sm text-foreground text-center font-bold focus:outline-none"
             />
           </div>
 
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={copyToClipboard}
-              className="py-3 px-4 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-medium text-xs rounded-xl transition-all flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring"
+              className="py-3 px-4 bg-muted/50 hover:bg-muted text-foreground border border-border font-medium text-xs rounded-xl transition-all flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
             >
               {copied ? (
                 <>
-                  <Check aria-hidden="true" className="w-4 h-4 text-emerald-600" />
-                  <span className="text-emerald-600 font-semibold">تمَّ النَّسخ!</span>
+                  <Check aria-hidden="true" className="w-4 h-4 text-success" />
+                  <span className="text-success font-semibold">تمَّ النَّسخ!</span>
                 </>
               ) : (
                 <>
-                  <Copy aria-hidden="true" className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                  <Copy aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
                   <span>نسخ الرَّابط</span>
                 </>
               )}
@@ -298,23 +310,23 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
             <button
               onClick={shareUrl}
-              className="py-3 px-4 bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 font-medium text-xs rounded-xl transition-all flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring"
+              className="py-3 px-4 bg-muted/50 hover:bg-muted text-foreground border border-border font-medium text-xs rounded-xl transition-all flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
             >
-              <Share2 aria-hidden="true" className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+              <Share2 aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
               <span>مشاركة الرَّابط</span>
             </button>
 
             <button
               onClick={toggleQr}
-              className={`py-3 px-4 font-medium text-xs rounded-xl border transition-all flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring ${
+              className={`py-3 px-4 font-medium text-xs rounded-xl border transition-all flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press ${
                 showQr
-                  ? 'bg-indigo-50 dark:bg-indigo-900/30 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300'
-                  : 'bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-600'
+                  ? 'bg-primary/10 border-primary/30 text-primary'
+                  : 'bg-muted/50 hover:bg-muted text-foreground border-border'
               }`}
             >
               <QrCode
                 aria-hidden="true"
-                className={`w-4 h-4 ${showQr ? 'text-indigo-600' : 'text-slate-500 dark:text-slate-400'}`}
+                className={`w-4 h-4 ${showQr ? 'text-primary' : 'text-muted-foreground'}`}
               />
               <span>رمز الاستجابة السَّريعة</span>
             </button>
@@ -326,7 +338,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="flex flex-col items-center justify-center p-4 bg-indigo-50/50 dark:bg-indigo-900/20 rounded-2xl border border-indigo-100/50 dark:border-indigo-800/30"
+                className="flex flex-col items-center justify-center p-4 bg-primary/5 rounded-2xl border border-primary/20"
               >
                 {qrDataUrl && (
                   <img
@@ -334,10 +346,10 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                     alt="QR code for shortened URL"
                     width={180}
                     height={180}
-                    className="w-44 h-44 bg-white dark:bg-slate-900 p-2 rounded-xl shadow-inner border border-indigo-100/30"
+                    className="w-44 h-44 bg-background p-2 rounded-xl shadow-inner border border-primary/20"
                   />
                 )}
-                <p className="text-xs text-indigo-600 font-semibold mt-2.5">
+                <p className="text-xs text-primary font-semibold mt-2.5">
                   امسح لعرض الرَّابط المُختصَر
                 </p>
               </motion.div>
@@ -346,7 +358,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
           <button
             onClick={resetForm}
-            className="w-full py-3 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring"
+            className="w-full py-3 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
           >
             <RotateCcw aria-hidden="true" className="w-3.5 h-3.5" />
             <span>اختصار رابط آخر</span>

@@ -42,14 +42,13 @@ export function ConfirmDialog({
   if (!open) return null;
 
   const iconColors = {
-    danger: 'bg-red-50 dark:bg-red-900/20 text-red-500',
-    default: 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-500',
+    danger: 'bg-destructive/10 text-destructive',
+    default: 'bg-primary/10 text-primary',
   };
 
   const confirmColors = {
-    danger:
-      'bg-red-500 hover:bg-red-600 dark:bg-red-600 dark:hover:bg-red-700 shadow-red-200 dark:shadow-red-900/30',
-    default: 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-100',
+    danger: 'bg-destructive hover:bg-destructive/90 shadow-destructive/30',
+    default: 'bg-primary hover:bg-primary/90 shadow-primary/30',
   };
 
   return (
@@ -60,9 +59,7 @@ export function ConfirmDialog({
         onKeyDown={(e) => {
           if (e.key === 'Escape') onCancel();
         }}
-        role="button"
-        tabIndex={-1}
-        aria-label="إغلاق"
+        role="presentation"
       />
       <div
         ref={dialogRef}
@@ -76,7 +73,7 @@ export function ConfirmDialog({
         <button
           onClick={onCancel}
           aria-label="إغلاق"
-          className="absolute top-4 left-4 p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-ring"
+          className="absolute top-4 left-4 p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-ring touch-target btn-press"
         >
           <X aria-hidden="true" className="w-4 h-4" />
         </button>
@@ -99,13 +96,14 @@ export function ConfirmDialog({
           <div className="flex gap-3 w-full">
             <button
               onClick={onCancel}
-              className="flex-1 py-2.5 px-4 text-sm font-semibold text-foreground bg-muted hover:bg-muted/80 rounded-xl transition-colors cursor-pointer focus-ring"
+              className="flex-1 py-2.5 px-4 text-sm font-semibold text-foreground bg-muted hover:bg-muted/80 rounded-xl transition-colors cursor-pointer focus-ring touch-target btn-press"
             >
               {cancelLabel}
             </button>
             <button
               onClick={onConfirm}
-              className={`flex-1 py-2.5 px-4 text-sm font-semibold text-white rounded-xl transition-colors shadow-md cursor-pointer focus-ring ${confirmColors[variant]}`}
+              autoFocus
+              className={`flex-1 py-2.5 px-4 text-sm font-semibold text-primary-foreground rounded-xl transition-colors shadow-md cursor-pointer focus-ring btn-press touch-target ${confirmColors[variant]}`}
             >
               {confirmLabel}
             </button>

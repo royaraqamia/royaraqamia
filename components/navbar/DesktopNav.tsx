@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { getWhatsAppUrl } from '../../lib/constants';
 import { useSession } from '../shared/session-provider';
 import { ConfirmDialog } from '../shared/confirm-dialog';
+import { NotificationDropdown } from '../shared/notification-dropdown';
 
 interface NavLink {
   visible?: boolean;
@@ -331,17 +332,20 @@ export function DesktopNav({
       {/* CTA Buttons */}
       <div className="hidden lg:flex items-center element-gap-sm">
         {!isLoading && user ? (
-          <Button
-            onClick={() => setIsLogoutDialogOpen(true)}
-            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
-              isScrolled ? 'text-sm px-5' : 'text-base px-6'
-            }`}
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              <SignOut className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
-              تسجيل الخروج
-            </span>
-          </Button>
+          <>
+            <NotificationDropdown />
+            <Button
+              onClick={() => setIsLogoutDialogOpen(true)}
+              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
+                isScrolled ? 'text-sm px-5' : 'text-base px-6'
+              }`}
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                <SignOut className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
+                تسجيل الخروج
+              </span>
+            </Button>
+          </>
         ) : (
           <a href="/auth/login" className="group">
             <Button

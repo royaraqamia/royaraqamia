@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { AlertTriangle, Globe, Smartphone } from 'lucide-react';
 import { AnalyticsChart } from './analytics-chart';
 import { AnalyticsSkeleton } from '@/components/linksnap/loading-skeletons';
@@ -31,48 +31,49 @@ export function LinkAnalyticsDrawer({
   analyticsError,
   analytics,
 }: LinkAnalyticsDrawerProps) {
+  const reducedMotion = useReducedMotion();
   return (
     <AnimatePresence>
       {isExpanded && (
         <motion.div
-          initial={{ height: 0, opacity: 0 }}
+          initial={reducedMotion ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="border-t border-slate-50 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-900/50"
+          exit={reducedMotion ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+          className="border-t border-border/50 bg-muted/30"
         >
-          <div className="p-6 space-y-6">
+          <div className="p-6 space-y-6" aria-live="polite">
             {analyticsLoading ? (
               <AnalyticsSkeleton />
             ) : analyticsError ? (
-              <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 text-red-600 dark:text-red-400 text-xs rounded-lg flex items-center gap-1.5">
+              <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center gap-1.5">
                 <AlertTriangle aria-hidden="true" className="w-4 h-4 shrink-0" />
                 <span>{analyticsError}</span>
               </div>
             ) : analytics ? (
               <div className="space-y-6">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
-                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col justify-between card-lift">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       إجمالي النقرات
                     </span>
-                    <span className="text-2xl font-bold text-slate-800 dark:text-slate-100 font-display mt-1">
+                    <span className="text-2xl font-bold text-foreground font-display mt-1">
                       {analytics.totalClicks}
                     </span>
                   </div>
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between">
-                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col justify-between card-lift">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       أعلى مصدر إحالة
                     </span>
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300 truncate mt-2">
+                    <span className="text-sm font-semibold text-foreground truncate mt-2">
                       {analytics.topReferrers[0]?.name || 'مباشر / غير معروف'}
                     </span>
                   </div>
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-between col-span-2 md:col-span-1">
-                    <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                  <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col justify-between col-span-2 md:col-span-1 card-lift">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       حالة الرابط
                     </span>
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800 px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                    <span className="text-xs font-semibold text-success bg-success/10 border border-success/30 px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1">
+                      <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
                       نشط وسليم
                     </span>
                   </div>
@@ -81,13 +82,13 @@ export function LinkAnalyticsDrawer({
                 <AnalyticsChart stats={analytics.clicksByDate} />
 
                 <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3.5">
-                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <Globe aria-hidden="true" className="w-4 h-4 text-indigo-500" />
+                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Globe aria-hidden="true" className="w-4 h-4 text-primary" />
                       أهم مصادر الزيارات
                     </p>
                     {analytics.topReferrers.length === 0 ? (
-                      <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">
+                      <p className="text-xs text-muted-foreground text-center py-4">
                         لم يتم جمع بيانات الإحالة بعد.
                       </p>
                     ) : (
@@ -95,12 +96,12 @@ export function LinkAnalyticsDrawer({
                         {analytics.topReferrers.map((ref, idx) => (
                           <div key={idx} className="flex items-center justify-between text-xs">
                             <span
-                              className="text-slate-600 dark:text-slate-400 font-mono truncate max-w-45"
+                              className="text-muted-foreground font-mono truncate max-w-45"
                               title={ref.name}
                             >
                               {ref.name}
                             </span>
-                            <span className="font-mono font-bold text-slate-800 dark:text-slate-200 bg-slate-50 dark:bg-slate-700 px-2 py-0.5 rounded-md">
+                            <span className="font-mono font-bold text-foreground bg-muted/50 px-2 py-0.5 rounded-md">
                               {ref.count} نقرة
                             </span>
                           </div>
@@ -109,13 +110,13 @@ export function LinkAnalyticsDrawer({
                     )}
                   </div>
 
-                  <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-100 dark:border-slate-700 shadow-sm space-y-3.5">
-                    <p className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-                      <Smartphone aria-hidden="true" className="w-4 h-4 text-indigo-500" />
+                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Smartphone aria-hidden="true" className="w-4 h-4 text-primary" />
                       نشاط النقرات الأخيرة
                     </p>
                     {analytics.recentClicks.length === 0 ? (
-                      <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-4">
+                      <p className="text-xs text-muted-foreground text-center py-4">
                         لا يوجد نشاط إعادة توجيه بعد.
                       </p>
                     ) : (
@@ -123,10 +124,10 @@ export function LinkAnalyticsDrawer({
                         {analytics.recentClicks.map((click) => (
                           <div
                             key={click.id}
-                            className="flex items-center justify-between text-xs border-b border-slate-50 dark:border-slate-700 pb-1.5 last:border-none"
+                            className="flex items-center justify-between text-xs border-b border-border/50 pb-1.5 last:border-none"
                           >
                             <span
-                              className="text-slate-500 dark:text-slate-400 truncate max-w-37.5"
+                              className="text-muted-foreground truncate max-w-37.5"
                               title={click.userAgent || 'جهاز غير معروف'}
                             >
                               {click.userAgent
@@ -135,7 +136,7 @@ export function LinkAnalyticsDrawer({
                                   : click.userAgent
                                 : 'متصفح غير معروف'}
                             </span>
-                            <span className="font-mono text-slate-400 dark:text-slate-500">
+                            <span className="font-mono text-muted-foreground">
                               {new Date(click.clickedAt).toLocaleTimeString('ar-EG', {
                                 hour: '2-digit',
                                 minute: '2-digit',

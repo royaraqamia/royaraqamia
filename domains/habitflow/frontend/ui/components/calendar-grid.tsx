@@ -1,3 +1,6 @@
+'use client';
+
+import { useReducedMotion } from 'motion/react';
 import { HabitLog } from '@/domains/habitflow/models';
 import { Card } from '@/components/ui/card';
 import { CalendarDays } from 'lucide-react';
@@ -42,10 +45,11 @@ export function CalendarGrid({
   onDateSelect,
   activeDate,
 }: CalendarGridProps) {
+  const reducedMotion = useReducedMotion();
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-[clamp(1rem,2vw,1.125rem)] font-bold text-foreground leading-snug">
+        <h2 className="text-fluid-h2 font-display font-bold text-foreground leading-snug">
           سلسلة الإنجاز لآخر ٣٠ يوم
         </h2>
         <p className="text-xs text-muted-foreground leading-relaxed">
@@ -53,7 +57,7 @@ export function CalendarGrid({
         </p>
       </div>
 
-      <Card className="p-5 space-y-4">
+      <Card className="p-5 space-y-4 card-lift">
         {habitsCount === 0 ? (
           <div className="text-center py-8 space-y-2">
             <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mx-auto">
@@ -72,15 +76,19 @@ export function CalendarGrid({
                 const cellStyle = getCellStyle(completedCount, habitsCount);
                 const baseClass = completedCount === 0 ? 'bg-muted border-border' : 'border';
                 const todayClass = gridItem.isToday
-                  ? ' ring-2 ring-ring ring-offset-2 ring-offset-background'
+                  ? ' ring-2 ring-primary ring-offset-2 ring-offset-background'
                   : '';
+                const activeClass =
+                  gridItem.date === activeDate && !gridItem.isToday
+                    ? ' ring-2 ring-primary ring-offset-2 ring-offset-background'
+                    : '';
 
                 const dayNum = new Date(gridItem.date).getDate();
 
                 return (
                   <div
                     key={gridItem.date}
-                    className={`aspect-square rounded-xl flex flex-col items-center justify-center border text-center transition-all duration-200 ease-out cursor-pointer hover:scale-105 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 will-change-transform ${baseClass}${todayClass}`}
+                    className={`aspect-square rounded-xl flex flex-col items-center justify-center border text-center transition-all duration-200 ease-out cursor-pointer ${!reducedMotion ? 'hover:scale-105' : ''} btn-press touch-target focus-ring will-change-transform ${baseClass}${todayClass}${activeClass}`}
                     style={cellStyle}
                     onClick={() => onDateSelect(gridItem.date)}
                     role="button"
@@ -92,7 +100,7 @@ export function CalendarGrid({
                     aria-current={gridItem.isToday ? 'date' : undefined}
                     aria-pressed={gridItem.date === activeDate}
                   >
-                    <span className="text-xs opacity-80 uppercase leading-none">
+                    <span className="text-xs text-muted-foreground uppercase leading-none">
                       {gridItem.dayLabel}
                     </span>
                     <span className="text-xs font-bold mt-1 leading-none">{dayNum}</span>

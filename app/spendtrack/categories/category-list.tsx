@@ -53,7 +53,7 @@ export function CategoryList({ categories, userId }: { categories: Category[]; u
           key={category.id}
           role="listitem"
           aria-label={`${category.name}${category.user_id === null ? '، افتراضي' : ''}`}
-          className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-all duration-300 hover:premium-shadow-sm hover:bg-card animate-slide-up"
+          className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-all duration-300 hover:shadow-elevated hover:bg-card animate-slide-up card-lift"
           style={{ animationDelay: `${index * 30}ms` }}
         >
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -114,12 +114,12 @@ function EditCategoryDialog({ category }: { category: Category }) {
           variant="ghost"
           size="icon"
           aria-label="تعديل التصنيف"
-          className="min-w-[44px] min-h-[44px]"
+          className="touch-target btn-press focus-ring"
         >
           <Pencil className="size-4" />
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="bg-card border-border shadow-elevated">
         <DialogHeader>
           <DialogTitle>تعديل التصنيف</DialogTitle>
         </DialogHeader>
@@ -131,9 +131,15 @@ function EditCategoryDialog({ category }: { category: Category }) {
                 *
               </span>
             </Label>
-            <Input id="name" {...register('name')} aria-invalid={errors.name ? true : undefined} />
+            <Input
+              id="name"
+              className="focus-ring"
+              {...register('name')}
+              aria-invalid={errors.name ? true : undefined}
+              aria-describedby={errors.name ? 'edit-name-error' : undefined}
+            />
             {errors.name && (
-              <p className="text-sm text-destructive" role="alert">
+              <p id="edit-name-error" className="text-sm text-destructive" role="alert">
                 {errors.name.message}
               </p>
             )}
@@ -151,6 +157,7 @@ function EditCategoryDialog({ category }: { category: Category }) {
                 type="color"
                 className="w-12 h-11 p-1"
                 {...colorRegister}
+                aria-describedby={errors.color_hex ? 'edit-color-error' : undefined}
                 onChange={(e) => {
                   setColorValue(e.target.value);
                   rhfColorOnChange(e);
@@ -159,7 +166,7 @@ function EditCategoryDialog({ category }: { category: Category }) {
               <Input readOnly className="flex-1" value={colorValue} tabIndex={-1} />
             </div>
             {errors.color_hex && (
-              <p className="text-sm text-destructive" role="alert">
+              <p id="edit-color-error" className="text-sm text-destructive" role="alert">
                 {errors.color_hex.message}
               </p>
             )}
@@ -169,7 +176,11 @@ function EditCategoryDialog({ category }: { category: Category }) {
               {state.error}
             </p>
           )}
-          <Button type="submit" className="w-full transition-all duration-200" disabled={pending}>
+          <Button
+            type="submit"
+            className="w-full transition-all duration-200 btn-lift btn-press focus-ring touch-target"
+            disabled={pending}
+          >
             {pending ? 'جارٍ الحفظ...' : 'حفظ'}
           </Button>
         </form>
@@ -192,7 +203,7 @@ function DeleteCategoryButton({ categoryId }: { categoryId: string }) {
         size="icon"
         type="button"
         aria-label="حذف التصنيف"
-        className="min-w-[44px] min-h-[44px]"
+        className="touch-target btn-press focus-ring"
         onClick={() => setConfirmOpen(true)}
       >
         <Trash2 className="size-4 text-destructive" />
@@ -206,11 +217,20 @@ function DeleteCategoryButton({ categoryId }: { categoryId: string }) {
             هل أنت متأكد من حذف هذا التصنيف؟ لا يمكن التراجع عن هذا الإجراء.
           </p>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setConfirmOpen(false)}
+              className="btn-press touch-target focus-ring"
+            >
               إلغاء
             </Button>
             <form action={formAction}>
-              <Button type="submit" variant="destructive" disabled={pending}>
+              <Button
+                type="submit"
+                variant="destructive"
+                disabled={pending}
+                className="btn-press touch-target focus-ring"
+              >
                 {pending ? 'جارٍ الحذف...' : 'حذف'}
               </Button>
             </form>

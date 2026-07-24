@@ -5,8 +5,6 @@ import { Card } from '@/components/ui/card';
 
 interface StatsCardProps {
   icon: LucideIcon;
-  iconBg: string;
-  iconColor: string;
   label: string;
   value: string;
   index?: number;
@@ -33,26 +31,19 @@ function AnimatedValue({ value: raw, reduce }: { value: string; reduce: boolean 
 
   if (!shouldAnimate)
     return (
-      <p className="text-2xl font-bold text-foreground" aria-live="polite">
+      <p className="text-fluid-h2 font-display font-bold text-foreground" aria-live="polite">
         {raw}
       </p>
     );
 
   return (
-    <p className="text-2xl font-bold text-foreground" aria-live="polite">
+    <p className="text-fluid-h2 font-display font-bold text-foreground" aria-live="polite">
       {display}
     </p>
   );
 }
 
-export function StatsCard({
-  icon: Icon,
-  iconBg,
-  iconColor,
-  label,
-  value,
-  index = 0,
-}: StatsCardProps) {
+export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProps) {
   const prefersReduce = useReducedMotion();
   const reduce = prefersReduce === true;
   return (
@@ -70,9 +61,9 @@ export function StatsCard({
             }
       }
     >
-      <Card className="p-5 flex items-center gap-4 transition-shadow duration-200 hover:-translate-y-[1px] hover:shadow-[var(--shadow-card-hover)] group">
+      <Card className="card-lift p-5 flex items-center gap-4 group">
         <div
-          className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center ${iconColor} group-hover:scale-105 transition-transform duration-200`}
+          className={`w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center transition-transform duration-200 ${!reduce ? 'group-hover:scale-105' : ''}`}
         >
           <Icon className="w-5 h-5" />
         </div>

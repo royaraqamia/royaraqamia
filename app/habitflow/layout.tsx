@@ -14,7 +14,7 @@ export default async function HabitFlowLayout({ children }: { children: React.Re
   if (!user) redirect('/auth/login?redirect=/habitflow');
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col safe-area-inset-top">
       <SkipToContent />
       <Navbar />
       <main id="main-content" className="flex-1 pt-24">
