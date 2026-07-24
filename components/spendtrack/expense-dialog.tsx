@@ -75,7 +75,7 @@ export function CreateExpenseDialog({ categories }: { categories: Category[] }) 
         toast.success('تمت إضافة المصروف بنجاح');
         setIsOpen(false);
         reset();
-        router.refresh();
+        router.replace('/spendtrack');
       } else if (result?.error) {
         toast.error('حدث خطأ أثناء حفظ المصروف');
         setServerError(result.error);
@@ -161,7 +161,7 @@ export function EditExpenseDialog({
         toast.success('تم تحديث المصروف بنجاح');
         setIsOpen(false);
         reset();
-        router.refresh();
+        router.replace('/spendtrack');
       } else if (result?.error) {
         toast.error('حدث خطأ أثناء حفظ المصروف');
         setServerError(result.error);

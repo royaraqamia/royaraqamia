@@ -326,29 +326,29 @@ export function DesktopNav({
       </div>
 
       {/* CTA Buttons */}
-<div className="hidden lg:flex items-center gap-1">
-          <NotificationDropdown />
-          <UserDropdown />
-          <a
-            href={getWhatsAppUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            aria-label="احجز مكالمة مجانية عبر واتساب"
-            className="group"
+      <div className="hidden lg:flex items-center gap-1">
+        <NotificationDropdown />
+        <UserDropdown />
+        <a
+          href={getWhatsAppUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="احجز مكالمة مجانية عبر واتساب"
+          className="group"
+        >
+          <Button
+            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white hover:opacity-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
+              isScrolled ? 'text-sm px-5' : 'text-base px-6 shadow-lg shadow-primary/30'
+            }`}
           >
-            <Button
-              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white hover:opacity-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
-                isScrolled ? 'text-sm px-5' : 'text-base px-6 shadow-lg shadow-primary/30'
-              }`}
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                <Phone className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
-                تواصل معنا الآن
-              </span>
-              <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 motion-reduce:hidden bg-linear-to-r from-transparent via-white/20 to-transparent" />
-            </Button>
-          </a>
-        </div>
-      </>
-    );
-  }
+            <span className="relative z-10 flex items-center gap-2">
+              <Phone className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
+              تواصل معنا الآن
+            </span>
+            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 motion-reduce:hidden bg-linear-to-r from-transparent via-white/20 to-transparent" />
+          </Button>
+        </a>
+      </div>
+    </>
+  );
+}

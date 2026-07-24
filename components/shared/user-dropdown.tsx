@@ -42,7 +42,7 @@ export function UserDropdown() {
 
       {isOpen && (
         <div
-          className="absolute top-full mt-2 w-52 bg-popover border border-border rounded-lg shadow-lg z-50 py-1 max-sm:right-0 max-sm:left-auto sm:left-0"
+          className="absolute top-full mt-2 w-52 bg-popover border border-border rounded-lg shadow-lg z-50 py-1 sm:left-0 max-sm:right-4 max-sm:left-4 max-sm:w-auto"
           role="menu"
           aria-label="قائمة المستخدم"
           onKeyDown={(e) => {

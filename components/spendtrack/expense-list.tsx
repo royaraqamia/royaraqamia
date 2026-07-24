@@ -122,7 +122,7 @@ function ExpenseRow({
         description: `تم حذف "${expense.description || 'بدون وصف'}" بنجاح`,
         duration: 4000,
       });
-      router.refresh();
+      router.replace('/spendtrack');
     }
   }, [state, router, expense.description]);
 
