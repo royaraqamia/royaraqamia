@@ -16,6 +16,13 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   Settings,
   Eye,
   EyeOff,
@@ -25,6 +32,20 @@ import {
   ImageIcon,
   Link2,
   Search,
+  Bold,
+  Italic,
+  Heading2,
+  Heading3,
+  List,
+  Code2,
+  TextQuote,
+  HelpCircle,
+  ImagePlus,
+  Link,
+  Check,
+  X,
+  Save,
+  Send,
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -52,13 +73,22 @@ export function EditorContent({ post }: EditorContentProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pending, startTransition] = useTransition();
+  const [isDirty, setIsDirty] = useState(false);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
+  const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const autoSaveRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const contentRef = useRef(content);
+  const titleRef = useRef(title);
+  const slugRef = useRef(slug);
+  const coverImageRef = useRef(coverImage);
+  const metaTitleRef = useRef(metaTitle);
+  const metaDescRef = useRef(metaDesc);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isDirtyRef = useRef(false);
 
   const wordCount = useMemo(() => {
-    const text = content.replace(/[#*_`~>[\\]!|-]/g, '').trim();
+    const text = content.replace(/[#*_`~>[\]!|-]/g, '').trim();
     if (!text) return 0;
     return text.split(/\s+/).filter(Boolean).length;
   }, [content]);
@@ -70,31 +100,41 @@ export function EditorContent({ post }: EditorContentProps) {
   useEffect(() => {
     contentRef.current = content;
   }, [content]);
-
-  const allFieldsRef = useRef({ title, slug, content, coverImage, metaTitle, metaDesc });
-
   useEffect(() => {
-    allFieldsRef.current = { title, slug, content, coverImage, metaTitle, metaDesc };
-  }, [title, slug, content, coverImage, metaTitle, metaDesc]);
+    titleRef.current = title;
+  }, [title]);
+  useEffect(() => {
+    slugRef.current = slug;
+  }, [slug]);
+  useEffect(() => {
+    coverImageRef.current = coverImage;
+  }, [coverImage]);
+  useEffect(() => {
+    metaTitleRef.current = metaTitle;
+  }, [metaTitle]);
+  useEffect(() => {
+    metaDescRef.current = metaDesc;
+  }, [metaDesc]);
 
   useEffect(() => {
     isDirtyRef.current = true;
+    setIsDirty(true);
   }, [title, content, slug, coverImage, metaTitle, metaDesc]);
 
   const saveAllFields = useCallback(async () => {
     if (!isDirtyRef.current) return;
-    const f = allFieldsRef.current;
     const formData = new FormData();
-    formData.append('title', f.title);
-    formData.append('slug', f.slug);
-    formData.append('content', f.content);
-    formData.append('cover_image', f.coverImage);
-    formData.append('meta_title', f.metaTitle);
-    formData.append('meta_desc', f.metaDesc);
+    formData.append('title', titleRef.current);
+    formData.append('slug', slugRef.current);
+    formData.append('content', contentRef.current);
+    formData.append('cover_image', coverImageRef.current);
+    formData.append('meta_title', metaTitleRef.current);
+    formData.append('meta_desc', metaDescRef.current);
     try {
       const result = await updatePost(post.id, undefined, formData);
       if (result?.message === 'تم حفظ المقال') {
         isDirtyRef.current = false;
+        setIsDirty(false);
         setLastSaved(new Date());
       }
     } catch {
@@ -136,7 +176,20 @@ export function EditorContent({ post }: EditorContentProps) {
 
     if (result.url) {
       const markdown = `![${file.name}](${result.url})`;
-      setContent((prev) => prev + (prev ? '\n\n' : '') + markdown);
+      const ta = textareaRef.current;
+      if (ta && document.activeElement === ta) {
+        const start = ta.selectionStart;
+        const end = ta.selectionEnd;
+        const cur = contentRef.current;
+        const newContent = cur.substring(0, start) + markdown + cur.substring(end);
+        setContent(newContent);
+        setTimeout(() => {
+          ta.focus();
+          ta.setSelectionRange(start + markdown.length, start + markdown.length);
+        }, 0);
+      } else {
+        setContent((prev) => prev + (prev ? '\n\n' : '') + markdown);
+      }
       toast.success('تم رفع الصورة');
     }
   }, []);
@@ -145,9 +198,7 @@ export function EditorContent({ post }: EditorContentProps) {
     (e: React.DragEvent) => {
       e.preventDefault();
       const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) {
-        handleImageUpload(file);
-      }
+      if (file && file.type.startsWith('image/')) handleImageUpload(file);
     },
     [handleImageUpload]
   );
@@ -155,9 +206,7 @@ export function EditorContent({ post }: EditorContentProps) {
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (file) {
-        handleImageUpload(file);
-      }
+      if (file) handleImageUpload(file);
     },
     [handleImageUpload]
   );
@@ -172,10 +221,89 @@ export function EditorContent({ post }: EditorContentProps) {
       .slice(0, 200);
   }, []);
 
+  const insertMarkdown = useCallback(
+    (action: 'bold' | 'italic' | 'h2' | 'h3' | 'link' | 'image' | 'list' | 'code' | 'quote') => {
+      const ta = textareaRef.current;
+      if (!ta) return;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const cur = contentRef.current;
+      const selected = cur.substring(start, end);
+      let newContent = cur;
+      let cursorPos = start;
+
+      switch (action) {
+        case 'bold': {
+          const w = '**';
+          newContent = cur.substring(0, start) + w + (selected || 'نص') + w + cur.substring(end);
+          cursorPos = start + w.length + (selected || 'نص').length + w.length;
+          break;
+        }
+        case 'italic': {
+          const w = '*';
+          newContent = cur.substring(0, start) + w + (selected || 'نص') + w + cur.substring(end);
+          cursorPos = start + w.length + (selected || 'نص').length + w.length;
+          break;
+        }
+        case 'h2': {
+          const ls = cur.lastIndexOf('\n', start - 1) + 1;
+          newContent = cur.substring(0, ls) + '## ' + cur.substring(ls);
+          cursorPos = start + 3;
+          break;
+        }
+        case 'h3': {
+          const ls = cur.lastIndexOf('\n', start - 1) + 1;
+          newContent = cur.substring(0, ls) + '### ' + cur.substring(ls);
+          cursorPos = start + 4;
+          break;
+        }
+        case 'link': {
+          const s = selected ? `[${selected}](url)` : '[نص الرابط](url)';
+          newContent = cur.substring(0, start) + s + cur.substring(end);
+          cursorPos = start + s.length;
+          break;
+        }
+        case 'image': {
+          fileInputRef.current?.click();
+          return;
+        }
+        case 'list': {
+          const ls = cur.lastIndexOf('\n', start - 1) + 1;
+          newContent = cur.substring(0, ls) + '- ' + cur.substring(ls);
+          cursorPos = start + 2;
+          break;
+        }
+        case 'code': {
+          const w = '```\n';
+          const we = '\n```';
+          if (selected) {
+            newContent = cur.substring(0, start) + w + selected + we + cur.substring(end);
+            cursorPos = end + w.length + we.length;
+          } else {
+            newContent = cur.substring(0, start) + w + 'كود' + we + cur.substring(end);
+            cursorPos = start + w.length + 2 + we.length;
+          }
+          break;
+        }
+        case 'quote': {
+          const ls = cur.lastIndexOf('\n', start - 1) + 1;
+          newContent = cur.substring(0, ls) + '> ' + cur.substring(ls);
+          cursorPos = start + 2;
+          break;
+        }
+      }
+      setContent(newContent);
+      setTimeout(() => {
+        ta.focus();
+        ta.setSelectionRange(cursorPos, cursorPos);
+      }, 0);
+    },
+    []
+  );
+
   const handleSave = useCallback(async () => {
     const finalSlug = slug.startsWith('بدون-عنوان-') || slug === '' ? generateSlug(title) : slug;
     if (finalSlug !== slug) setSlug(finalSlug);
-
     const formData = new FormData();
     formData.append('title', title);
     formData.append('slug', finalSlug);
@@ -183,11 +311,12 @@ export function EditorContent({ post }: EditorContentProps) {
     formData.append('cover_image', coverImage);
     formData.append('meta_title', metaTitle);
     formData.append('meta_desc', metaDesc);
-
     startTransition(async () => {
       const result = await updatePost(post.id, undefined, formData);
       if (result?.message === 'تم حفظ المقال') {
         isDirtyRef.current = false;
+        setIsDirty(false);
+        setLastSaved(new Date());
         toast.success('تم حفظ المقال');
       } else if (result?.errors) {
         toast.error('خطأ في التحقق من البيانات');
@@ -196,25 +325,32 @@ export function EditorContent({ post }: EditorContentProps) {
   }, [post.id, title, slug, content, coverImage, metaTitle, metaDesc, generateSlug]);
 
   const handleTitleBlur = useCallback(() => {
-    if (title && (slug === '' || slug.startsWith('بدون-عنوان-'))) {
-      setSlug(generateSlug(title));
-    }
+    if (title && (slug === '' || slug.startsWith('بدون-عنوان-'))) setSlug(generateSlug(title));
   }, [title, slug, generateSlug]);
 
   useEffect(() => {
     autoSaveRef.current = setInterval(() => {
       saveAllFields();
     }, 1000);
-
     return () => {
       if (autoSaveRef.current) clearInterval(autoSaveRef.current);
     };
   }, [saveAllFields]);
 
+  const getPublishChecks = useCallback(
+    () => [
+      { label: 'عنوان المقال', passed: title.trim().length > 0 },
+      { label: 'محتوى المقال (أكثر من 50 كلمة)', passed: wordCount > 50 },
+      { label: 'رابط URL (Slug)', passed: !slug.startsWith('بدون-عنوان-') && slug.length > 0 },
+      { label: 'صورة الغلاف', passed: coverImage.length > 0, optional: true },
+      { label: 'وصف SEO', passed: metaDesc.length > 0, optional: true },
+    ],
+    [title, wordCount, slug, coverImage, metaDesc]
+  );
+
   const handlePublish = useCallback(async () => {
     const finalSlug = slug.startsWith('بدون-عنوان-') || slug === '' ? generateSlug(title) : slug;
     if (finalSlug !== slug) setSlug(finalSlug);
-
     const formData = new FormData();
     formData.append('title', title);
     formData.append('slug', finalSlug);
@@ -222,39 +358,38 @@ export function EditorContent({ post }: EditorContentProps) {
     formData.append('cover_image', coverImage);
     formData.append('meta_title', metaTitle);
     formData.append('meta_desc', metaDesc);
-
     startTransition(async () => {
       const result = await updatePost(post.id, undefined, formData);
-
       if (result?.errors) {
         toast.error('يرجى إصلاح أخطاء التحقق قبل النشر');
         return;
       }
-
       try {
         await publishPost(post.id);
       } catch {
         toast.error('فشل نشر المقال. حاول مرة أخرى.');
         return;
       }
-
       isDirtyRef.current = false;
+      setIsDirty(false);
+      setPublishDialogOpen(false);
       toast.success('تم نشر المقال!');
       router.refresh();
       router.push(`/blog/${finalSlug}`);
     });
-  }, [
-    post.id,
-    title,
-    slug,
-    content,
-    coverImage,
-    metaTitle,
-    metaDesc,
-    generateSlug,
-    startTransition,
-    router,
-  ]);
+  }, [post.id, title, slug, content, coverImage, metaTitle, metaDesc, generateSlug, router]);
+
+  const handlePublishClick = useCallback(() => {
+    const checks = getPublishChecks();
+    const failed = checks.filter((c) => !c.passed && !c.optional);
+    if (failed.length > 0) setPublishDialogOpen(true);
+    else handlePublish();
+  }, [getPublishChecks, handlePublish]);
+
+  const handlePublishAnyway = useCallback(() => {
+    setPublishDialogOpen(false);
+    setTimeout(() => handlePublish(), 200);
+  }, [handlePublish]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -266,10 +401,42 @@ export function EditorContent({ post }: EditorContentProps) {
         e.preventDefault();
         if (!pending && post.status === 'draft') handlePublish();
       }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+        e.preventDefault();
+        insertMarkdown('bold');
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+        e.preventDefault();
+        insertMarkdown('italic');
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        insertMarkdown('link');
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [pending, handleSave, handlePublish, post.status]);
+  }, [pending, handleSave, handlePublish, post.status, insertMarkdown]);
+
+  const publishChecks = getPublishChecks();
+
+  const toolbarButtons: {
+    action: string;
+    icon: React.ElementType;
+    label: string;
+    shortcut?: string;
+  }[] = [
+    { action: 'bold', icon: Bold, label: 'عريض', shortcut: 'Ctrl+B' },
+    { action: 'italic', icon: Italic, label: 'مائل', shortcut: 'Ctrl+I' },
+    { action: 'h2', icon: Heading2, label: 'عنوان 2' },
+    { action: 'h3', icon: Heading3, label: 'عنوان 3' },
+    { action: 'link', icon: Link, label: 'رابط', shortcut: 'Ctrl+K' },
+    { action: 'image', icon: ImagePlus, label: 'صورة' },
+    { action: 'list', icon: List, label: 'قائمة' },
+    { action: 'code', icon: Code2, label: 'كود' },
+    { action: 'quote', icon: TextQuote, label: 'اقتباس' },
+    { action: 'shortcuts', icon: HelpCircle, label: 'اختصارات' },
+  ];
 
   return (
     <div className="flex h-[100dvh] flex-col">
@@ -532,6 +699,41 @@ export function EditorContent({ post }: EditorContentProps) {
         </div>
       </div>
 
+      {!isPreview && (
+        <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-border/50 bg-muted/30 overflow-x-auto scrollbar-hide">
+          {toolbarButtons.map((btn) => {
+            if (btn.action === 'shortcuts') {
+              return (
+                <button
+                  key={btn.action}
+                  onClick={() => setShortcutsOpen(true)}
+                  className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shrink-0 cursor-pointer"
+                  aria-label={btn.label}
+                  title={btn.label}
+                >
+                  <btn.icon className="size-4" />
+                </button>
+              );
+            }
+            return (
+              <button
+                key={btn.action}
+                onClick={() => insertMarkdown(btn.action as any)}
+                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shrink-0 cursor-pointer"
+                aria-label={btn.label}
+                title={btn.shortcut ? `${btn.label} (${btn.shortcut})` : btn.label}
+              >
+                <btn.icon className="size-4" />
+              </button>
+            );
+          })}
+          <div className="mr-auto flex items-center gap-2 text-xs text-muted-foreground/50">
+            <kbd className="px-1.5 py-0.5 rounded bg-muted/50 text-[10px] font-mono">Ctrl+S</kbd>
+            <span>حفظ</span>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-1 overflow-hidden">
         <div
           className={`flex-1 flex-col min-w-0 ${isPreview ? 'hidden' : 'flex'} lg:!flex`}
@@ -540,6 +742,7 @@ export function EditorContent({ post }: EditorContentProps) {
         >
           <div className="flex-1 relative">
             <Textarea
+              ref={textareaRef}
               name="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -566,15 +769,27 @@ export function EditorContent({ post }: EditorContentProps) {
         aria-label="إحصائيات المقال"
       >
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-smooth ${
-              post.status === 'published'
-                ? 'bg-success/10 text-success dark:bg-success/20 dark:text-success'
-                : 'bg-warning/10 text-warning dark:bg-warning/20 dark:text-warning'
-            }`}
-          >
-            {post.status === 'published' ? 'منشور' : 'مسودة'}
-          </span>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-smooth ${
+                post.status === 'published'
+                  ? 'bg-success/10 text-success'
+                  : 'bg-warning/10 text-warning'
+              }`}
+            >
+              <span
+                className={`size-1.5 rounded-full ${post.status === 'published' ? 'bg-success' : 'bg-warning animate-pulse'}`}
+              />
+              {post.status === 'published' ? 'منشور' : 'مسودة'}
+            </span>
+            <span
+              className={`size-2 rounded-full transition-smooth ${isDirty ? 'bg-warning' : 'bg-success'}`}
+            />
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              {isDirty ? 'تغييرات غير محفوظة' : 'تم الحفظ'}
+            </span>
+          </div>
+          <span className="text-muted-foreground/40 hidden sm:inline">·</span>
           <span className="text-xs text-muted-foreground hidden sm:inline">
             {wordCount.toLocaleString('ar')} كلمة
           </span>
@@ -598,36 +813,117 @@ export function EditorContent({ post }: EditorContentProps) {
             size="sm"
             disabled={pending}
             onClick={() => handleSave()}
-            className="transition-smooth min-h-[44px]"
+            className="transition-smooth min-h-[44px] rounded-xl"
           >
             {pending ? (
               <>
-                <Loader2 className="ms-1.5 size-3.5 animate-spin" />
-                جارٍ الحفظ...
+                <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ الحفظ...
               </>
             ) : (
-              'حفظ'
+              <>
+                <Save className="ms-1.5 size-3.5" /> حفظ
+              </>
             )}
           </Button>
           {post.status === 'draft' && (
             <Button
               size="sm"
-              onClick={handlePublish}
+              onClick={handlePublishClick}
               disabled={pending}
-              className="transition-smooth shadow-sm hover:shadow-md min-h-[44px]"
+              className="transition-smooth shadow-sm hover:shadow-md min-h-[44px] rounded-xl"
             >
               {pending ? (
                 <>
-                  <Loader2 className="ms-1.5 size-3.5 animate-spin" />
-                  جارٍ النشر...
+                  <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ النشر...
                 </>
               ) : (
-                'نشر'
+                <>
+                  <Send className="ms-1.5 size-3.5" /> نشر
+                </>
               )}
             </Button>
           )}
         </div>
       </div>
+
+      {/* Keyboard Shortcuts Dialog */}
+      <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>اختصارات لوحة المفاتيح</DialogTitle>
+            <DialogDescription>استخدم هذه الاختصارات لتسريع عملية التحرير</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {[
+              { keys: 'Ctrl + S', label: 'حفظ المقال' },
+              { keys: 'Ctrl + Enter', label: 'نشر المقال (للمسودات)' },
+              { keys: 'Ctrl + B', label: 'عريض' },
+              { keys: 'Ctrl + I', label: 'مائل' },
+              { keys: 'Ctrl + K', label: 'إدراج رابط' },
+            ].map((shortcut) => (
+              <div key={shortcut.keys} className="flex items-center justify-between py-1.5">
+                <span className="text-sm text-muted-foreground">{shortcut.label}</span>
+                <kbd className="px-2 py-1 rounded-md bg-muted text-xs font-mono text-foreground border border-border/50">
+                  {shortcut.keys}
+                </kbd>
+              </div>
+            ))}
+            <div className="h-px bg-border/50 my-2" />
+            <p className="text-xs text-muted-foreground">
+              اسحب وأفلت الصور مباشرة في المحرر لرفعها تلقائياً
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Pre-publish Checklist Dialog */}
+      <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>التحقق قبل النشر</DialogTitle>
+            <DialogDescription>يرجى مراجعة العناصر التالية قبل نشر المقال</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 mt-2">
+            {publishChecks.map((check) => (
+              <div key={check.label} className="flex items-center gap-3">
+                <div
+                  className={`size-6 rounded-full flex items-center justify-center shrink-0 ${
+                    check.passed
+                      ? 'bg-success/10 text-success'
+                      : check.optional
+                        ? 'bg-muted text-muted-foreground/50'
+                        : 'bg-destructive/10 text-destructive'
+                  }`}
+                >
+                  {check.passed ? <Check className="size-3.5" /> : <X className="size-3.5" />}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className={`text-sm ${check.passed ? 'text-foreground' : check.optional ? 'text-muted-foreground/60' : 'text-destructive'}`}
+                  >
+                    {check.label}
+                    {check.optional && (
+                      <span className="text-xs text-muted-foreground/50 mr-1">(اختياري)</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between gap-2 pt-2">
+            <Button
+              variant="outline"
+              onClick={() => setPublishDialogOpen(false)}
+              className="rounded-xl"
+            >
+              العودة للتحرير
+            </Button>
+            <Button onClick={handlePublishAnyway} className="rounded-xl">
+              نشر على أي حال
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

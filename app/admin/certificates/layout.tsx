@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { requireAuth } from '@/lib/actions/admin-certificates';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
-import { Plus } from 'lucide-react';
+import { Plus, ShieldCheck } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'إدارة الشهادات | رؤية رقمية',
@@ -17,7 +17,6 @@ export default async function AdminCertificatesLayout({ children }: { children: 
     if (err instanceof Error && err.message === 'FORBIDDEN') {
       redirect('/');
     }
-    // UNAUTHORIZED — redirect to login with return path
     redirect('/auth/login?redirect=/admin/certificates');
   }
 
@@ -26,15 +25,19 @@ export default async function AdminCertificatesLayout({ children }: { children: 
       <Navbar />
       <main id="main-content" className="flex-1 pt-24">
         <div className="container mx-auto max-w-6xl px-4 pb-8">
-          {/* Admin Header */}
           <div className="mb-8 flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold">إدارة الشهادات</h1>
-              <p className="text-muted-foreground text-sm">إصدار وتعديل وحذف شهادات الطلاب</p>
+            <div className="flex items-center gap-4">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 shadow-sm">
+                <ShieldCheck className="text-primary size-6" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">إدارة الشهادات</h1>
+                <p className="text-muted-foreground text-sm">إصدار وتعديل وحذف شهادات الطلاب</p>
+              </div>
             </div>
             <Link
               href="/admin/certificates/new"
-              className="bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-primary-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
+              className="btn-hover-lift bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-primary-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
             >
               <Plus className="size-4" />
               شهادة جديدة
