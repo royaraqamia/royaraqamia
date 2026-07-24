@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,7 +38,6 @@ const expenseSchema = z.object({
 type ExpenseFormValues = z.input<typeof expenseSchema>;
 
 export function CreateExpenseDialog({ categories }: { categories: Category[] }) {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [serverError, setServerError] = useState<string>();
@@ -75,7 +73,7 @@ export function CreateExpenseDialog({ categories }: { categories: Category[] }) 
         toast.success('تمت إضافة المصروف بنجاح');
         setIsOpen(false);
         reset();
-        router.replace('/spendtrack');
+        window.location.href = '/spendtrack';
       } else if (result?.error) {
         toast.error('حدث خطأ أثناء حفظ المصروف');
         setServerError(result.error);
@@ -124,7 +122,6 @@ export function EditExpenseDialog({
   expense: Expense & { categories?: Pick<Category, 'name' | 'color_hex'> };
   categories: Category[];
 }) {
-  const router = useRouter();
   const updateWithId = updateExpense.bind(null, expense.id);
   const [isOpen, setIsOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -161,7 +158,7 @@ export function EditExpenseDialog({
         toast.success('تم تحديث المصروف بنجاح');
         setIsOpen(false);
         reset();
-        router.replace('/spendtrack');
+        window.location.href = '/spendtrack';
       } else if (result?.error) {
         toast.error('حدث خطأ أثناء حفظ المصروف');
         setServerError(result.error);

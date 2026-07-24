@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useActionState } from 'react';
-import { useRouter } from 'next/navigation';
 import { deleteExpense, getExpensesPage } from '@/app/spendtrack/actions/expenses';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -111,7 +110,6 @@ function ExpenseRow({
   categories: Category[];
   index: number;
 }) {
-  const router = useRouter();
   const deleteWithId = deleteExpense.bind(null, expense.id);
   const [state, formAction, pending] = useActionState(deleteWithId, undefined);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
@@ -122,9 +120,9 @@ function ExpenseRow({
         description: `تم حذف "${expense.description || 'بدون وصف'}" بنجاح`,
         duration: 4000,
       });
-      router.replace('/spendtrack');
+      window.location.href = '/spendtrack';
     }
-  }, [state, router, expense.description]);
+  }, [state, expense.description]);
 
   const formattedDate = format(parseISO(expense.date), 'd MMMM yyyy', { locale: ar });
   const rowLabel = `${expense.description || 'بدون وصف'}، ${Number(expense.amount).toFixed(2)} دولار، ${formattedDate}`;
