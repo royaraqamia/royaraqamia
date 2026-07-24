@@ -3,11 +3,9 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { X, CaretDown, Phone, User, SignOut, type Icon } from '@phosphor-icons/react';
+import { X, CaretDown, Phone, type Icon } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { getWhatsAppUrl } from '../../lib/constants';
-import { useSession } from '../shared/session-provider';
-import { ConfirmDialog } from '../shared/confirm-dialog';
 
 // ============================================================================
 // Types
@@ -65,9 +63,6 @@ export function MobileMenu({
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const [expandedDropdown, setExpandedDropdown] = useState<string | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-
-  const { user, isLoading, signOut } = useSession();
 
   useFocusTrap(isOpen, mobileMenuRef, () => setIsOpen(false));
 
@@ -262,7 +257,7 @@ export function MobileMenu({
   // ========================================================================
   // Main Render
   // ========================================================================
-  if (!isOpen && !isLogoutDialogOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <>
@@ -356,56 +351,6 @@ export function MobileMenu({
 
                 {/* Footer */}
                 <footer className="px-5 pt-5 pb-10 shrink-0">
-                  {/* Login/Logout Button */}
-                  {!isLoading && user ? (
-                    <button
-                      onClick={() => {
-                        triggerHaptic();
-                        setIsOpen(false);
-                        setIsLogoutDialogOpen(true);
-                      }}
-                      className="
-                  relative
-                  w-full mb-3 h-14
-                  rounded-full
-                  bg-transparent
-                  text-foreground font-bold
-                  flex items-center justify-center gap-2
-                  transition-all duration-150
-                  active:scale-95
-                  hover:bg-white/10
-                  cursor-pointer
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-                "
-                    >
-                      <SignOut className="w-5 h-5" weight="bold" />
-                      <span>تسجيل الخروج</span>
-                    </button>
-                  ) : (
-                    <a
-                      href="/auth/login"
-                      onClick={() => {
-                        triggerHaptic();
-                        handleClose();
-                      }}
-                      className="
-                  relative
-                  w-full mb-3 h-14
-                  rounded-full
-                  bg-transparent
-                  text-foreground font-bold
-                  flex items-center justify-center gap-2
-                  transition-all duration-150
-                  active:scale-95
-                  hover:bg-white/10
-                  cursor-pointer
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-                "
-                    >
-                      <User className="w-5 h-5" weight="bold" />
-                      <span>تسجيل الدُّخول</span>
-                    </a>
-                  )}
                   {/* CTA Button - Primary */}
                   <a
                     href={getWhatsAppUrl()}
@@ -437,24 +382,6 @@ export function MobileMenu({
           </div>,
           document.body
         )}
-      {createPortal(
-        <ConfirmDialog
-          open={isLogoutDialogOpen}
-          title="تسجيل الخروج"
-          message="هل أنت متأكِّد أنَّك تريد تسجيل الخروج؟"
-          confirmLabel="تسجيل الخروج"
-          cancelLabel="إلغاء"
-          onConfirm={() => {
-            setIsLogoutDialogOpen(false);
-            signOut().then(() => {
-              window.location.href = '/';
-            });
-          }}
-          onCancel={() => setIsLogoutDialogOpen(false)}
-          variant="danger"
-        />,
-        document.body
-      )}
     </>
   );
 }

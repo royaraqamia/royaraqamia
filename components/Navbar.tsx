@@ -6,6 +6,8 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../context/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
 import { MobileMenu } from './navbar/MobileMenu';
+import { NotificationDropdown } from './shared/notification-dropdown';
+import { UserDropdown } from './shared/user-dropdown';
 import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '../lib/scroll';
 
 export function Navbar() {
@@ -161,15 +163,23 @@ export function Navbar() {
             />
 
             {/* Mobile Menu Toggle - 44px touch target for accessibility */}
-            <button
-              className="lg:hidden flex items-center justify-center w-11 h-11 text-foreground hover:bg-muted rounded-lg transition-colors motion-reduce:transition-none"
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              aria-label={isMobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
-              aria-expanded={isMobileMenuOpen}
-              aria-controls="mobile-menu"
-            >
-              {isMobileMenuOpen ? <X size={24} weight="bold" /> : <List size={24} weight="bold" />}
-            </button>
+            <div className="lg:hidden flex items-center gap-1">
+              <NotificationDropdown />
+              <UserDropdown />
+              <button
+                className="flex items-center justify-center w-11 h-11 text-foreground hover:bg-muted rounded-lg transition-colors motion-reduce:transition-none"
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label={isMobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-menu"
+              >
+                {isMobileMenuOpen ? (
+                  <X size={24} weight="bold" />
+                ) : (
+                  <List size={24} weight="bold" />
+                )}
+              </button>
+            </div>
           </div>
         </div>
 

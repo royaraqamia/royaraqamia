@@ -51,13 +51,18 @@ const DialogContent = React.forwardRef<
       aria-labelledby="dialog-title"
       data-slot="dialog-content"
       className={cn(
-        'fixed top-1/2 left-1/2 z-50 w-full max-w-[calc(100%-48px)] sm:max-w-lg translate-x-[-50%] translate-y-[-50%]',
-        'rounded-2xl border border-border/50 bg-background/95 backdrop-blur-md',
-        'p-6 shadow-xl',
-        'duration-300 grid gap-4',
+        'fixed z-50 w-full grid gap-4 p-6 shadow-xl duration-300',
+        'ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'border border-border/50 bg-background/95 backdrop-blur-md',
+        'top-1/2 left-1/2 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
         'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-        'ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:top-auto',
+        'max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0',
+        'max-sm:rounded-t-2xl max-sm:rounded-b-none',
+        'max-sm:max-h-[85dvh] max-sm:overflow-y-auto',
+        'max-sm:data-[state=open]:slide-in-from-bottom-4',
+        'max-sm:data-[state=closed]:slide-out-to-bottom',
         className
       )}
       {...props}

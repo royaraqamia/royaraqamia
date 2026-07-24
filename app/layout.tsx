@@ -123,10 +123,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <Analytics />
                   <PWAProvider>
                     <VersionChecker />
+                    {children}
+                    <GoUpButton />
+                    <WhatsAppFloat />
                   </PWAProvider>
-                  {children}
-                  <GoUpButton />
-                  <WhatsAppFloat />
                   <Toaster position="top-center" richColors />
                   {process.env.NODE_ENV === 'development' && <AccessibilityCheck />}
                 </NotificationProvider>

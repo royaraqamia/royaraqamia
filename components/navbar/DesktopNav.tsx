@@ -2,12 +2,11 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CaretDown, Phone, User, SignOut, type Icon } from '@phosphor-icons/react';
+import { CaretDown, Phone, type Icon } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 import { getWhatsAppUrl } from '../../lib/constants';
-import { useSession } from '../shared/session-provider';
-import { ConfirmDialog } from '../shared/confirm-dialog';
 import { NotificationDropdown } from '../shared/notification-dropdown';
+import { UserDropdown } from '../shared/user-dropdown';
 
 interface NavLink {
   visible?: boolean;
@@ -41,9 +40,6 @@ export function DesktopNav({
 }: DesktopNavProps) {
   const [isServicesDropdownOpen, setIsServicesDropdownOpen] = useState(false);
   const [isProductsDropdownOpen, setIsProductsDropdownOpen] = useState(false);
-  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
-
-  const { user, isLoading, signOut } = useSession();
 
   // Refs for dropdowns
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -330,73 +326,29 @@ export function DesktopNav({
       </div>
 
       {/* CTA Buttons */}
-      <div className="hidden lg:flex items-center element-gap-sm">
-        {!isLoading && user ? (
-          <>
-            <NotificationDropdown />
+<div className="hidden lg:flex items-center gap-1">
+          <NotificationDropdown />
+          <UserDropdown />
+          <a
+            href={getWhatsAppUrl()}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="احجز مكالمة مجانية عبر واتساب"
+            className="group"
+          >
             <Button
-              onClick={() => setIsLogoutDialogOpen(true)}
-              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
-                isScrolled ? 'text-sm px-5' : 'text-base px-6'
+              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white hover:opacity-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
+                isScrolled ? 'text-sm px-5' : 'text-base px-6 shadow-lg shadow-primary/30'
               }`}
             >
               <span className="relative z-10 flex items-center gap-2">
-                <SignOut className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
-                تسجيل الخروج
+                <Phone className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
+                تواصل معنا الآن
               </span>
-            </Button>
-          </>
-        ) : (
-          <a href="/auth/login" className="group">
-            <Button
-              className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-transparent hover:bg-white/10 text-foreground cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
-                isScrolled ? 'text-sm px-5' : 'text-base px-6'
-              }`}
-            >
-              <span className="relative z-10 flex items-center gap-2">
-                <User className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
-                تسجيل الدُّخول
-              </span>
+              <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 motion-reduce:hidden bg-linear-to-r from-transparent via-white/20 to-transparent" />
             </Button>
           </a>
-        )}
-        <a
-          href={getWhatsAppUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="احجز مكالمة مجانية عبر واتساب"
-          className="group"
-        >
-          <Button
-            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white hover:opacity-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
-              isScrolled ? 'text-sm px-5' : 'text-base px-6 shadow-lg shadow-primary/30'
-            }`}
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              <Phone className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
-              تواصل معنا الآن
-            </span>
-            {/* Shimmer effect */}
-            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 motion-reduce:hidden bg-linear-to-r from-transparent via-white/20 to-transparent" />
-          </Button>
-        </a>
-      </div>
-
-      <ConfirmDialog
-        open={isLogoutDialogOpen}
-        title="تسجيل الخروج"
-        message="هل أنت متأكِّد أنَّك تريد تسجيل الخروج؟"
-        confirmLabel="تسجيل الخروج"
-        cancelLabel="إلغاء"
-        onConfirm={() => {
-          setIsLogoutDialogOpen(false);
-          signOut().then(() => {
-            window.location.href = '/';
-          });
-        }}
-        onCancel={() => setIsLogoutDialogOpen(false)}
-        variant="danger"
-      />
-    </>
-  );
-}
+        </div>
+      </>
+    );
+  }

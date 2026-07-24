@@ -52,7 +52,7 @@ export function ConfirmDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center max-sm:items-end">
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onCancel}
@@ -68,7 +68,10 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-message"
-        className="relative bg-background rounded-2xl border border-border shadow-2xl w-full max-w-sm mx-4 p-6 focus:outline-none"
+        className="relative bg-background border border-border shadow-2xl w-full p-6 focus:outline-none
+          max-w-sm mx-4 rounded-2xl
+          max-sm:mx-0 max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-2xl
+          max-sm:max-h-[85dvh] max-sm:overflow-y-auto"
       >
         <button
           onClick={onCancel}
