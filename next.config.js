@@ -74,7 +74,7 @@ const nextConfig = {
   },
 };
 
-module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), {
+const sentryWebpackPluginOptions = {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   silent: true,
@@ -87,4 +87,9 @@ module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), {
     automaticVercelMonitors: true,
     reactComponentAnnotation: { enabled: true },
   },
-});
+};
+
+const skipSentryPlugin = !process.env.CI && process.env.VERCEL !== '1';
+module.exports = skipSentryPlugin
+  ? withBundleAnalyzer(nextConfig)
+  : withSentryConfig(withBundleAnalyzer(nextConfig), sentryWebpackPluginOptions);

@@ -117,7 +117,7 @@ export function DashboardShell({
   return (
     <ErrorBoundary>
       <div className="min-h-dvh pb-16 bg-background">
-        <main id="main-content" className="max-w-6xl mx-auto container-padding">
+        <div className="max-w-6xl mx-auto container-padding">
           <motion.div
             initial={shouldReduce ? false : { opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -162,7 +162,15 @@ export function DashboardShell({
                   <ChevronRight className="w-4 h-4" />
                 </Button>
               </div>
-              {activeDate !== todayDate && (
+              <motion.div
+                initial={false}
+                animate={{
+                  opacity: activeDate !== todayDate ? 1 : 0,
+                  scale: activeDate !== todayDate ? 1 : 0.8,
+                }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className={activeDate !== todayDate ? '' : 'pointer-events-none'}
+              >
                 <Button
                   variant="outline"
                   size="sm"
@@ -172,7 +180,7 @@ export function DashboardShell({
                 >
                   اليوم
                 </Button>
-              )}
+              </motion.div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -229,6 +237,9 @@ export function DashboardShell({
                   >
                     <Plus className="w-4 h-4 ms-1.5" />
                     إضافة عادة
+                    <kbd className="hidden sm:inline-flex items-center justify-center w-5 h-5 rounded bg-primary-foreground/20 text-[10px] font-bold me-1">
+                      N
+                    </kbd>
                   </Button>
                 </div>
 
@@ -327,7 +338,7 @@ export function DashboardShell({
               </Button>
             </div>
           </motion.div>
-        </main>
+        </div>
 
         <AddHabitModal
           isOpen={isAddModalOpen}

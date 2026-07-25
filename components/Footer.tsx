@@ -151,34 +151,6 @@ export function Footer() {
             </Link>
             <span className="text-muted-foreground/30">|</span>
             <Link
-              href="/linksnap"
-              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-            >
-              LinkSnap
-            </Link>
-            <span className="text-muted-foreground/30">|</span>
-            <Link
-              href="/blogpress"
-              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-            >
-              BlogPress
-            </Link>
-            <span className="text-muted-foreground/30">|</span>
-            <Link
-              href="/habitflow"
-              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-            >
-              HabitFlow
-            </Link>
-            <span className="text-muted-foreground/30">|</span>
-            <Link
-              href="/spendtrack"
-              className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-            >
-              SpendTrack
-            </Link>
-            <span className="text-muted-foreground/30">|</span>
-            <Link
               href="/verify"
               className="text-muted-foreground hover:text-primary transition-colors cursor-pointer"
             >

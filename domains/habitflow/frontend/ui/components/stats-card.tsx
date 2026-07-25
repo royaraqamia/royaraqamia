@@ -17,7 +17,7 @@ function AnimatedValue({ value: raw, reduce }: { value: string; reduce: boolean 
   const suffix = match ? match[2] : '';
   const motionValue = useMotionValue(0);
   const springValue = useSpring(motionValue, { stiffness: 60, damping: 15 });
-  const [display, setDisplay] = useState('0' + suffix);
+  const [display, setDisplay] = useState(shouldAnimate ? '0' + suffix : raw);
 
   useEffect(() => {
     if (!shouldAnimate) return;
@@ -28,13 +28,6 @@ function AnimatedValue({ value: raw, reduce }: { value: string; reduce: boolean 
     motionValue.set(target);
     return unsub;
   }, [target, springValue, motionValue, suffix, shouldAnimate]);
-
-  if (!shouldAnimate)
-    return (
-      <p className="text-fluid-h2 font-display font-bold text-foreground" aria-live="polite">
-        {raw}
-      </p>
-    );
 
   return (
     <p className="text-fluid-h2 font-display font-bold text-foreground" aria-live="polite">

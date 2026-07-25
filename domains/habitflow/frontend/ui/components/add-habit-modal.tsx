@@ -116,7 +116,7 @@ export function AddHabitModal({
             <legend className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               أيقونة العادة
             </legend>
-            <div className="grid grid-cols-4 gap-3 p-1">
+            <div className="grid grid-cols-4 gap-2 sm:gap-3 p-1">
               {HABIT_ICONS.map((item) => {
                 const IconComp = item.icon;
                 const isSelected = habitIcon === item.name;

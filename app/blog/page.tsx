@@ -124,13 +124,13 @@ export default async function BlogPage(props: {
             {(posts as Post[]).map((post, index) => (
               <article
                 key={post.id}
-                className="group flex flex-col rounded-2xl border border-border/50 bg-card overflow-hidden card-lift opacity-0 animate-fade-in-up"
+                className="group flex flex-col rounded-2xl border border-border/50 bg-card card-lift opacity-0 animate-fade-in-up"
                 style={{ animationDelay: `${index * 80}ms` }}
               >
                 {post.cover_image ? (
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="block relative aspect-video overflow-hidden bg-muted"
+                    className="block relative aspect-video overflow-hidden rounded-t-2xl bg-muted"
                   >
                     <Image
                       src={post.cover_image}
@@ -146,7 +146,7 @@ export default async function BlogPage(props: {
                 ) : (
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="block relative aspect-video overflow-hidden bg-gradient-to-br from-primary/10 to-primary/5"
+                    className="block relative aspect-video overflow-hidden rounded-t-2xl bg-gradient-to-br from-primary/10 to-primary/5"
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-5xl font-bold text-primary/20">{post.title[0]}</span>

@@ -48,14 +48,14 @@ function AlertDialogContent({
         className={cn(
           'bg-background fixed z-50 grid w-full gap-4 border p-6 shadow-lg duration-200',
           'top-1/2 left-1/2 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg',
+          'max-h-[85dvh] overflow-y-auto',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           'data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-          'max-sm:bottom-0 max-sm:left-0 max-sm:right-0 max-sm:top-auto',
-          'max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0',
-          'max-sm:rounded-t-2xl max-sm:rounded-b-none',
-          'max-sm:max-h-[85dvh] max-sm:overflow-y-auto',
-          'max-sm:data-[state=open]:slide-in-from-bottom-4',
-          'max-sm:data-[state=closed]:slide-out-to-bottom',
+          'max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto',
+          'max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0',
+          'max-md:rounded-t-2xl max-md:rounded-b-none',
+          'max-md:data-[state=open]:slide-in-from-bottom-4',
+          'max-md:data-[state=closed]:slide-out-to-bottom',
           className
         )}
         {...props}

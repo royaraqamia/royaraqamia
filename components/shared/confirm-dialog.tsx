@@ -52,9 +52,9 @@ export function ConfirmDialog({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center max-sm:items-end">
+    <div className="fixed inset-0 z-50">
       <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onCancel}
         onKeyDown={(e) => {
           if (e.key === 'Escape') onCancel();
@@ -68,10 +68,12 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-message"
-        className="relative bg-background border border-border shadow-2xl w-full p-6 focus:outline-none
+        className="fixed bg-background border border-border shadow-2xl w-full p-6 focus:outline-none
           max-w-sm mx-4 rounded-2xl
-          max-sm:mx-0 max-sm:max-w-none max-sm:rounded-b-none max-sm:rounded-t-2xl
-          max-sm:max-h-[85dvh] max-sm:overflow-y-auto"
+          max-h-[85dvh] overflow-y-auto
+          max-md:mx-0 max-md:max-w-none max-md:rounded-b-none max-md:rounded-t-2xl
+          top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
+          max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto max-md:translate-x-0 max-md:translate-y-0"
       >
         <button
           onClick={onCancel}

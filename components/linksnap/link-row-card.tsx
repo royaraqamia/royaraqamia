@@ -127,7 +127,7 @@ export function LinkRowCard({
             <div className="flex items-center gap-2.5">
               <button
                 type="button"
-                className="text-sm font-mono font-bold text-primary hover:underline cursor-pointer shrink-0 bg-transparent border-none p-0 focus-ring press-scale touch-target btn-press"
+                className="text-sm font-mono font-bold text-primary hover:underline cursor-pointer shrink-0 bg-transparent border-none p-0 focus-ring touch-target btn-press"
                 onClick={() => window.open(fullShortUrl, '_blank')}
               >
                 /{code}
@@ -156,7 +156,7 @@ export function LinkRowCard({
           <button
             onClick={handleCopy}
             aria-label="نسخ الرابط"
-            className="p-3.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground hover:text-primary rounded-lg transition-colors cursor-pointer press-scale focus-ring touch-target"
+            className="p-3.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground hover:text-primary rounded-lg transition-colors cursor-pointer btn-press focus-ring touch-target"
             title="نسخ الرابط"
           >
             {copiedCode === code ? (
@@ -169,7 +169,7 @@ export function LinkRowCard({
           <button
             onClick={() => setEditingCode(code)}
             aria-label="تعديل الرابط الوجهة"
-            className="p-3.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground hover:text-primary rounded-lg transition-colors cursor-pointer press-scale focus-ring touch-target"
+            className="p-3.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground hover:text-primary rounded-lg transition-colors cursor-pointer btn-press focus-ring touch-target"
             title="تعديل الرابط الوجهة"
           >
             <Pencil aria-hidden="true" className="w-4 h-4" />
@@ -180,7 +180,7 @@ export function LinkRowCard({
             aria-expanded={isExpanded}
             aria-controls={`analytics-panel-${code}`}
             className={cn(
-              'px-3 py-2.5 border rounded-lg font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer press-scale focus-ring touch-target btn-press',
+              'px-3 py-2.5 border rounded-lg font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer focus-ring touch-target btn-press',
               isExpanded
                 ? 'bg-primary/10 border-primary/30 text-primary'
                 : 'bg-muted/50 hover:bg-primary/5 hover:border-primary/30 border-border text-muted-foreground'
@@ -198,7 +198,7 @@ export function LinkRowCard({
           <button
             onClick={() => setShowDeleteConfirm(true)}
             aria-label="حذف الرابط"
-            className="p-3.5 bg-muted/50 hover:bg-destructive/10 hover:border-destructive/30 border border-border text-muted-foreground hover:text-destructive rounded-lg transition-colors cursor-pointer press-scale focus-ring touch-target"
+            className="p-3.5 bg-muted/50 hover:bg-destructive/10 hover:border-destructive/30 border border-border text-muted-foreground hover:text-destructive rounded-lg transition-colors cursor-pointer btn-press focus-ring touch-target"
             title="حذف الرابط"
           >
             <Trash2 aria-hidden="true" className="w-4 h-4" />

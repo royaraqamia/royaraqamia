@@ -307,10 +307,10 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                   <Link
                     key={rp.id}
                     href={`/blog/${rp.slug}`}
-                    className="group block rounded-xl border border-border/50 bg-card overflow-hidden card-lift"
+                    className="group block rounded-xl border border-border/50 bg-card card-lift"
                   >
                     {rp.cover_image ? (
-                      <div className="relative aspect-video overflow-hidden bg-muted">
+                      <div className="relative aspect-video overflow-hidden rounded-t-xl bg-muted">
                         <Image
                           src={rp.cover_image}
                           alt={rp.title}
@@ -319,7 +319,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                         />
                       </div>
                     ) : (
-                      <div className="aspect-video bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                      <div className="aspect-video rounded-t-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                         <span className="text-2xl font-bold text-primary/20">{rp.title[0]}</span>
                       </div>
                     )}

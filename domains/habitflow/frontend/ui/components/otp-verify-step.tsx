@@ -23,6 +23,7 @@ export default function OtpVerifyStep({
 }: OtpVerifyStepProps) {
   const [otpValue, setOtpValue] = useState('');
   const [elapsed, setElapsed] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const EXPIRY_MINUTES = 5;
   const totalSeconds = EXPIRY_MINUTES * 60;
 
@@ -32,6 +33,19 @@ export default function OtpVerifyStep({
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((prev) => prev - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  function handleResend() {
+    if (resendCooldown > 0) return;
+    setResendCooldown(30);
+    setElapsed(0);
+    onResend();
+  }
 
   const remainingSeconds = Math.max(0, totalSeconds - elapsed);
   const minutesLeft = Math.floor(remainingSeconds / 60);
@@ -99,11 +113,11 @@ export default function OtpVerifyStep({
       <div className="text-center space-y-2">
         <button
           type="button"
-          onClick={onResend}
-          disabled={loading}
+          onClick={handleResend}
+          disabled={loading || resendCooldown > 0}
           className="text-sm text-primary underline-offset-4 hover:underline cursor-pointer btn-press touch-target focus-ring rounded-lg transition-all duration-200 ease-out disabled:pointer-events-none disabled:opacity-50 py-2"
         >
-          إعادة إرسال الرمز
+          {resendCooldown > 0 ? `إعادة الإرسال بعد ${resendCooldown}ث` : 'إعادة إرسال الرمز'}
         </button>
         <br />
         <button

@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { DashboardShell } from '@/domains/habitflow/frontend/ui/components/dashboard-shell';
 import { SkeletonStats } from '@/domains/habitflow/frontend/ui/components/skeleton-stats';
 import { SkeletonHabits } from '@/domains/habitflow/frontend/ui/components/skeleton-habits';
@@ -6,6 +7,11 @@ import { SkeletonCalendar } from '@/domains/habitflow/frontend/ui/components/ske
 import { fetchInitialData } from '@/app/habitflow/actions/habits';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'هابت فلو - تعقب العادات | رؤية رقمية',
+  description: 'تتبع عاداتك اليومية والأسبوعية، راقب تقدمك، وحافظ على استمراريتك مع هابت فلو.',
+};
 
 export default async function HomePage() {
   const data = await fetchInitialData();

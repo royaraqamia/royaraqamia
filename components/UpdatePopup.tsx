@@ -64,7 +64,7 @@ export function UpdatePopup({ onReload, onDismiss }: UpdatePopupProps) {
       {visible && (
         <div
           ref={containerRef}
-          className="fixed inset-0 z-9999 flex items-center justify-center p-4 max-sm:items-end max-sm:p-0"
+          className="fixed inset-0 z-9999 grid place-items-center p-4 max-md:items-end max-md:p-0"
           dir="rtl"
           role="dialog"
           aria-modal="true"
@@ -84,9 +84,10 @@ export function UpdatePopup({ onReload, onDismiss }: UpdatePopupProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full overflow-hidden border border-border bg-card shadow-2xl shadow-primary/5
+            className="relative w-full border border-border bg-card shadow-2xl shadow-primary/5
               max-w-sm rounded-2xl
-              max-sm:max-w-full max-sm:rounded-b-none max-sm:rounded-t-2xl"
+              max-h-[85dvh] overflow-y-auto
+              max-md:max-w-full max-md:rounded-b-none max-md:rounded-t-2xl"
           >
             <div className="relative flex flex-col items-center px-6 pt-8 pb-6 text-center">
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">

@@ -115,19 +115,22 @@ export function CalendarGrid({
               </span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground">أقل</span>
-                {[15, 40, 65, 90].map((pct) => (
-                  <span
-                    key={pct}
-                    className="w-4 h-4 rounded shrink-0"
-                    style={{
-                      background: `
-                        repeating-linear-gradient(45deg, transparent, transparent ${Math.max(1, 8 - Math.round(pct / 15))}px, color-mix(in srgb, var(--primary) ${Math.round(pct * 0.3)}%, transparent) ${Math.max(1, 8 - Math.round(pct / 15))}px, color-mix(in srgb, var(--primary) ${Math.round(pct * 0.3)}%, transparent) ${Math.max(2, 10 - Math.round(pct / 12))}px),
-                        color-mix(in srgb, var(--primary) ${pct}%, transparent)
-                      `,
-                      border: `1px solid color-mix(in srgb, var(--primary) ${Math.round(pct * 0.5)}%, transparent)`,
-                    }}
-                  />
-                ))}
+                {[0.15, 0.45, 0.7, 0.9].map((pct) => {
+                  const fill = Math.max(0.08, Math.min(1, pct * 0.85 + 0.15));
+                  return (
+                    <span
+                      key={pct}
+                      className="w-4 h-4 rounded shrink-0"
+                      style={{
+                        background: `
+                          repeating-linear-gradient(45deg, transparent, transparent ${Math.max(1, 10 - Math.round(fill * 8))}px, color-mix(in srgb, var(--primary) ${Math.round(fill * 30)}%, transparent) ${Math.max(1, 10 - Math.round(fill * 8))}px, color-mix(in srgb, var(--primary) ${Math.round(fill * 30)}%, transparent) ${Math.max(2, 10 - Math.round(fill * 8) + Math.max(1, Math.round(fill * 3)))}px),
+                          color-mix(in srgb, var(--primary) ${Math.round(fill * 100)}%, transparent)
+                        `,
+                        border: `1px solid color-mix(in srgb, var(--primary) ${Math.round(fill * 60)}%, transparent)`,
+                      }}
+                    />
+                  );
+                })}
                 <span className="text-xs text-muted-foreground">أكثر</span>
               </div>
             </div>

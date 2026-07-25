@@ -121,7 +121,7 @@ export function EditHabitModal({
             <legend className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
               أيقونة العادة
             </legend>
-            <div className="grid grid-cols-4 gap-3 p-1">
+            <div className="grid grid-cols-4 gap-2 sm:gap-3 p-1">
               {HABIT_ICONS.map((item) => {
                 const IconComp = item.icon;
                 const isSelected = habitIcon === item.name;
@@ -149,7 +149,7 @@ export function EditHabitModal({
             <Button
               type="button"
               onClick={() => onArchive(habit!.id)}
-              className="flex items-center gap-2 bg-destructive/10 text-destructive hover:bg-destructive/20 border-0 shadow-none touch-target btn-press focus-ring"
+              className="flex items-center gap-2 bg-warning/10 text-warning hover:bg-warning/20 border-0 shadow-none touch-target btn-press focus-ring"
               id="btn-archive-habit"
             >
               <Trash2 className="w-3.5 h-3.5" />

@@ -37,17 +37,17 @@ export function HabitCard({
 
   return (
     <Card
-      className={`card-lift flex items-center justify-between p-4 transition-all duration-200 ease-out ${
+      className={`card-lift flex flex-row items-center justify-between p-3 sm:p-4 gap-2 transition-all duration-200 ease-out ${
         isCompleted ? 'border-primary/20 bg-primary/5' : ''
       }`}
     >
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
         <motion.button
           onClick={() => onToggle(habit.id)}
           disabled={isToggling}
           whileTap={reduce || isToggling ? undefined : { scale: 0.85 }}
           transition={reduce ? undefined : { type: 'spring', stiffness: 400, damping: 10 }}
-          className={`w-11 h-11 rounded-full border-2 flex items-center justify-center transition-all duration-200 ease-out shrink-0 focus-ring touch-target btn-press ${
+          className={`w-10 sm:w-11 h-10 sm:h-11 rounded-full border-2 flex items-center justify-center transition-all duration-200 ease-out shrink-0 focus-ring touch-target btn-press ${
             isCompleted
               ? 'bg-primary border-primary text-primary-foreground shadow-sm'
               : 'border-border bg-card hover:border-muted-foreground'
@@ -67,27 +67,31 @@ export function HabitCard({
           )}
         </motion.button>
 
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorClass}`}>
-            {createElement(getIconComponent(habit.icon), { className: 'w-5 h-5' })}
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div
+            className={`w-9 sm:w-10 h-9 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${colorClass}`}
+          >
+            {createElement(getIconComponent(habit.icon), { className: 'w-4 sm:w-5 h-4 sm:h-5' })}
           </div>
-          <div>
+          <div className="min-w-0">
             <h4
-              className={`text-sm font-bold leading-tight line-clamp-1 ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}
+              className={`text-sm font-bold leading-tight truncate ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}
             >
               {habit.name}
             </h4>
-            <div className="flex items-center gap-2 mt-1">
-              <span className="text-xs font-semibold bg-muted text-muted-foreground uppercase tracking-wider px-2 py-0.5 rounded">
-                {habit.frequency}
+            <div className="flex items-center gap-1 mt-1 overflow-hidden">
+              <span className="text-[10px] sm:text-xs font-semibold bg-muted text-muted-foreground uppercase tracking-wider px-1.5 sm:px-2 py-0.5 rounded whitespace-nowrap">
+                {habit.frequency === 'daily' ? 'يومي' : 'أسبوعي'}
               </span>
-              <span className="text-xs text-border">•</span>
+              <span className="text-[10px] sm:text-xs text-border shrink-0">•</span>
               {stats.currentStreak > 0 ? (
-                <span className="text-xs font-bold bg-primary/10 text-primary flex items-center gap-1 px-1.5 py-0.5 rounded">
-                  <Flame className="w-3 h-3" /> {stats.currentStreak} أيام متتالية
+                <span className="text-[10px] sm:text-xs font-bold bg-primary/10 text-primary flex items-center gap-1 px-1.5 py-0.5 rounded whitespace-nowrap shrink-0">
+                  <Flame className="w-3 h-3" /> {stats.currentStreak}
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground">لم يبدأ التسلسل بعد</span>
+                <span className="text-[10px] sm:text-xs text-muted-foreground truncate">
+                  لا يوجد تسلسل
+                </span>
               )}
             </div>
           </div>
@@ -100,7 +104,7 @@ export function HabitCard({
         onClick={() => onEdit(habit)}
         aria-label={`تعديل عادة ${habit.name}`}
         id={`edit-habit-${habit.id}`}
-        className="touch-target focus-ring btn-press"
+        className="shrink-0 touch-target focus-ring btn-press"
       >
         <Edit3 className="w-4 h-4" />
       </Button>

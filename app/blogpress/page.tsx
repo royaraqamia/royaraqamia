@@ -67,7 +67,7 @@ export default async function DashboardPage() {
           return (
             <div
               key={stat.label}
-              className="rounded-xl border border-border/50 bg-card p-4 hover:border-border/80 transition-smooth"
+              className="rounded-xl border border-border/50 bg-card p-4 card-lift"
             >
               <div className="flex items-center gap-3">
                 <div

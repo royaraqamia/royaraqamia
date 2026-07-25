@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { AlertTriangle, RefreshCw, House } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 export default function Error({
@@ -28,10 +29,18 @@ export default function Error({
         {error.digest && (
           <p className="text-xs text-muted-foreground font-mono mb-8">الرمز: {error.digest}</p>
         )}
-        <Button onClick={reset} variant="default" className="btn-press touch-target focus-ring">
-          <RefreshCw className="w-4 h-4 ms-1.5" />
-          إعادة المحاولة
-        </Button>
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <Button onClick={reset} variant="default" className="btn-press touch-target focus-ring">
+            <RefreshCw className="w-4 h-4 ms-1.5" />
+            إعادة المحاولة
+          </Button>
+          <Link href="/habitflow">
+            <Button variant="outline" className="btn-press touch-target focus-ring">
+              <House className="w-4 h-4 ms-1.5" />
+              العودة إلى الرئيسية
+            </Button>
+          </Link>
+        </div>
       </main>
     </div>
   );
