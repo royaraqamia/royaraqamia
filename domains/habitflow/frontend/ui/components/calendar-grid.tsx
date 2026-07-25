@@ -49,7 +49,7 @@ export function CalendarGrid({
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-fluid-h2 font-display font-bold text-foreground leading-snug">
+        <h2 className="text-2xl font-display font-bold text-foreground leading-snug">
           سلسلة الإنجاز لآخر ٣٠ يوم
         </h2>
         <p className="text-xs text-muted-foreground leading-relaxed">

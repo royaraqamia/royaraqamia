@@ -1598,6 +1598,38 @@
   }
 }
 
+/* Dialog custom scrollbar — hidden by default, visible on hover/scroll */
+.dialog-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+.dialog-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dialog-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dialog-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.dialog-scrollbar:hover,
+.dialog-scrollbar:focus,
+.dialog-scrollbar:active,
+.dialog-scrollbar:has(> :focus) {
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.dialog-scrollbar:hover::-webkit-scrollbar-thumb,
+.dialog-scrollbar:focus::-webkit-scrollbar-thumb,
+.dialog-scrollbar:active::-webkit-scrollbar-thumb {
+  background: hsl(var(--border));
+}
+
 /* Custom Scrollbar Styling */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;

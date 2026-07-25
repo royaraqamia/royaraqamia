@@ -71,8 +71,8 @@ export function ConfirmDialog({
         aria-describedby="confirm-dialog-message"
         className="fixed bg-background border border-border shadow-2xl w-full p-6 focus:outline-none
           max-w-sm mx-4 rounded-3xl
-          max-h-[85dvh] overflow-y-auto
-          max-md:w-[calc(100%-48px)] max-md:mx-auto max-md:max-w-none max-md:rounded-t-3xl max-md:rounded-b-none
+          max-h-[85dvh] overflow-y-auto dialog-scrollbar
+          max-md:w-[calc(100%-48px)] max-md:mx-auto max-md:max-w-none max-md:rounded-3xl
           top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
           max-md:bottom-6 max-md:top-auto max-md:translate-y-0"
       >

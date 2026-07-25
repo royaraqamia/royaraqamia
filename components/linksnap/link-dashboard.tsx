@@ -61,7 +61,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-fluid-h2 font-display font-bold text-foreground flex items-center gap-2">
+        <h2 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <Link2 aria-hidden="true" className="w-5 h-5 text-primary" />
           <span>روابطك المختصرة</span>
         </h2>

@@ -436,17 +436,6 @@ function CertificateResultCard({
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.1 }}
         >
-          <m.div
-            className="absolute inset-0 rounded-full"
-            animate={{
-              boxShadow: [
-                '0 0 0px rgba(34,197,94,0.4)',
-                '0 0 20px rgba(34,197,94,0.6)',
-                '0 0 0px rgba(34,197,94,0.4)',
-              ],
-            }}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
           <ShieldCheck className="relative size-6 text-white" />
         </m.div>
         <div className="flex-1">

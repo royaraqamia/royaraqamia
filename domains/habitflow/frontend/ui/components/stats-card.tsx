@@ -30,7 +30,7 @@ function AnimatedValue({ value: raw, reduce }: { value: string; reduce: boolean 
   }, [target, springValue, motionValue, suffix, shouldAnimate]);
 
   return (
-    <p className="text-fluid-h2 font-display font-bold text-foreground" aria-live="polite">
+    <p className="text-3xl font-display font-bold text-foreground" aria-live="polite">
       {display}
     </p>
   );

@@ -177,7 +177,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-fluid-h2 font-display font-black text-foreground tracking-tight flex items-center gap-2">
+          <h2 className="text-2xl font-display font-black text-foreground tracking-tight flex items-center gap-2">
             <Shield className="w-6 h-6 text-primary stroke-[2.5]" />
             <span>لوحة الإدارة</span>
           </h2>

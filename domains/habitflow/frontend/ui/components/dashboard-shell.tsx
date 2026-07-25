@@ -220,7 +220,7 @@ export function DashboardShell({
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-fluid-h2 font-display font-bold text-foreground leading-snug">
+                    <h2 className="text-2xl font-display font-bold text-foreground leading-snug">
                       قائمة عادات اليوم
                     </h2>
                     <p className="text-xs text-muted-foreground leading-relaxed">

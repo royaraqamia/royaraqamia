@@ -48,13 +48,13 @@ function AlertDialogContent({
         className={cn(
           'bg-background fixed z-[10000] grid w-full gap-4 border p-6 shadow-lg duration-200',
           'top-1/2 left-1/2 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-3xl',
-          'max-h-[85dvh] overflow-y-auto',
+          'max-h-[85dvh] overflow-y-auto dialog-scrollbar',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           'data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
           'max-md:bottom-6 max-md:top-auto',
           'max-md:w-[calc(100%-48px)] max-md:max-w-none',
           'max-md:translate-y-0',
-          'max-md:rounded-t-3xl max-md:rounded-b-none',
+          'max-md:rounded-3xl',
           'max-md:data-[state=open]:slide-in-from-bottom-4',
           'max-md:data-[state=closed]:slide-out-to-bottom',
           className
@@ -69,7 +69,7 @@ function AlertDialogHeader({ className, ...props }: React.ComponentProps<'div'>)
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn('flex flex-col gap-2 text-center sm:text-left', className)}
+      className={cn('flex flex-col gap-2 text-center', className)}
       {...props}
     />
   );
