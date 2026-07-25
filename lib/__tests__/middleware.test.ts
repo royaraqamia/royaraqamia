@@ -93,13 +93,13 @@ beforeEach(() => {
   process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
 });
 
-describe('proxy middleware', () => {
+describe('middleware', () => {
   it('calls getSession to refresh tokens on every request', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockGetUser.mockResolvedValue({ data: { user: null } });
 
-    const { proxy } = await import('@/proxy');
-    await proxy(mockRequest as never);
+    const { middleware } = await import('@/middleware');
+    await middleware(mockRequest as never);
 
     expect(mockGetSession).toHaveBeenCalled();
   });
@@ -110,8 +110,8 @@ describe('proxy middleware', () => {
     mockNextUrl.pathname = '/auth/login';
     mockRequest.url = 'https://royaraqamia.com/auth/login';
 
-    const { proxy } = await import('@/proxy');
-    const result = await proxy(mockRequest as never);
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
     expect(result.status).toBe(307);
     expect(result.url).toBe('https://royaraqamia.com/');
   });
@@ -122,8 +122,8 @@ describe('proxy middleware', () => {
     mockNextUrl.pathname = '/linksnap/dashboard';
     mockRequest.url = 'https://royaraqamia.com/linksnap/dashboard';
 
-    const { proxy } = await import('@/proxy');
-    const result = await proxy(mockRequest as never);
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
     expect(result.status).toBe(307);
     expect(result.url).toContain('/auth/login');
   });
@@ -133,8 +133,8 @@ describe('proxy middleware', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
     mockNextUrl.pathname = '/habitflow';
 
-    const { proxy } = await import('@/proxy');
-    const result = await proxy(mockRequest as never);
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
     expect(result.status).toBeUndefined();
   });
 
@@ -143,8 +143,8 @@ describe('proxy middleware', () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     mockNextUrl.pathname = '/';
 
-    const { proxy } = await import('@/proxy');
-    const result = await proxy(mockRequest as never);
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
     expect(result.status).toBeUndefined();
   });
 
@@ -166,8 +166,8 @@ describe('proxy middleware', () => {
     mockNextUrl.searchParams = new URLSearchParams('code=auth-code&next=/spendtrack');
     mockRequest.url = 'https://royaraqamia.com/auth/callback?code=auth-code&next=/spendtrack';
 
-    const { proxy } = await import('@/proxy');
-    const result = await proxy(mockRequest as never);
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
     expect(mockExchangeCodeForSession).toHaveBeenCalled();
     expect(result.status).toBe(307);
     expect(result.url).toBe('https://royaraqamia.com/spendtrack');
@@ -179,8 +179,8 @@ describe('proxy middleware', () => {
     mockNextUrl.pathname = '/admin';
     mockRequest.url = 'https://royaraqamia.com/admin';
 
-    const { proxy } = await import('@/proxy');
-    const result = await proxy(mockRequest as never);
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
     expect(result.status).toBe(307);
     expect(result.url).toContain('/auth/login');
   });
@@ -191,8 +191,8 @@ describe('proxy middleware', () => {
     mockNextUrl.pathname = '/auth/signup';
     mockRequest.url = 'https://royaraqamia.com/auth/signup';
 
-    const { proxy } = await import('@/proxy');
-    const result = await proxy(mockRequest as never);
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
     expect(result.status).toBe(307);
     expect(result.url).toBe('https://royaraqamia.com/');
   });
@@ -202,8 +202,8 @@ describe('proxy middleware', () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     mockNextUrl.pathname = '/auth/signup';
 
-    const { proxy } = await import('@/proxy');
-    const result = await proxy(mockRequest as never);
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
     expect(result.status).toBeUndefined();
   });
 });

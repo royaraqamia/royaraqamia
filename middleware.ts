@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const protectedRoutes: Record<string, string> = {
@@ -30,8 +30,12 @@ function isSafeRedirect(path: string): boolean {
   }
 }
 
-export async function proxy(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+export async function middleware(request: NextRequest) {
+  const pendingCookies: {
+    name: string;
+    value: string;
+    options: CookieOptions;
+  }[] = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -42,15 +46,21 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          supabaseResponse = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            pendingCookies.push({ name, value, options: options ?? {} });
+          });
         },
       },
     }
   );
+
+  function applyCookies(response: NextResponse) {
+    pendingCookies.forEach(({ name, value, options }) => {
+      response.cookies.set(name, value, options);
+    });
+    return response;
+  }
 
   // Exchange auth code for session (handles password reset + PKCE flows)
   const code = request.nextUrl.searchParams.get('code');
@@ -81,7 +91,7 @@ export async function proxy(request: NextRequest) {
       }
       const next = request.nextUrl.searchParams.get('next') ?? '/';
       const redirectUrl = isSafeRedirect(next) ? next : '/';
-      return NextResponse.redirect(new URL(redirectUrl, request.url));
+      return applyCookies(NextResponse.redirect(new URL(redirectUrl, request.url)));
     }
   }
 
@@ -95,7 +105,7 @@ export async function proxy(request: NextRequest) {
   // Redirect logged-in users away from auth pages
   for (const [path, redirect] of Object.entries(authRoutes)) {
     if (request.nextUrl.pathname === path && user) {
-      return NextResponse.redirect(new URL(redirect, request.url));
+      return applyCookies(NextResponse.redirect(new URL(redirect, request.url)));
     }
   }
 
@@ -108,11 +118,11 @@ export async function proxy(request: NextRequest) {
       if (isSafeRedirect(returnPath)) {
         url.searchParams.set('redirect', returnPath);
       }
-      return NextResponse.redirect(url);
+      return applyCookies(NextResponse.redirect(url));
     }
   }
 
-  return supabaseResponse;
+  return applyCookies(NextResponse.next({ request }));
 }
 
 export const config = {
