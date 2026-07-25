@@ -116,21 +116,13 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
 
         {service.pricing && (
           <div className="mt-4">
-            <div
-              className="rounded-xl p-4 border-2 transition-all duration-300 group-hover:border-white/20"
-              style={{
-                background: `linear-gradient(135deg, ${colors.glowColor}, transparent)`,
-                borderColor: colors.accentBorder + '40',
-              }}
+            <a
+              href={service.href}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full font-bold text-sm text-white transition-all duration-300 hover:scale-105 hover:shadow-lg group/cta cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]"
+              style={{ background: colors.gradient }}
             >
-              <a
-                href={service.href}
-                className="mt-1 w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full font-bold text-sm text-white transition-all duration-300 hover:scale-105 hover:shadow-lg group/cta cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]"
-                style={{ background: colors.gradient }}
-              >
-                <span>{service.pricing.cta}</span>
-              </a>
-            </div>
+              <span>{service.pricing.cta}</span>
+            </a>
           </div>
         )}
       </div>

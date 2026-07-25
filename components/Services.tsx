@@ -1,9 +1,7 @@
 'use client';
 
-import { ChatCircle, Code, Lightbulb, Storefront, GraduationCap } from '@phosphor-icons/react';
-import { AnimatePresence, motion } from 'motion/react';
+import { ChatCircle, Code, Lightbulb } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
-import { useUI } from '../context/UIContext';
 import { ServiceCard } from './services/ServiceCard';
 import type { ColorKey } from './services/colorConfigs';
 
@@ -75,15 +73,7 @@ const services: ServiceItem[] = [
   },
 ];
 
-const tabs: { id: 'merchants' | 'students'; label: string; icon: React.ElementType }[] = [
-  { id: 'merchants', label: 'للتُّجَّار ومقدِّمي الخدمات', icon: Storefront },
-  { id: 'students', label: 'للطُّلاب والخرِّيجين الجدد', icon: GraduationCap },
-];
-
 export function Services() {
-  const { activeServicesTab, setActiveServicesTab } = useUI();
-  const filteredServices = services.filter((s) => s.categories.includes(activeServicesTab));
-
   return (
     <section id="services" className="section-spacing overflow-hidden">
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -121,54 +111,12 @@ export function Services() {
           </div>
         </ScrollAnimation>
 
-        <div className="py-2">
-          <div className="absolute left-0 top-0 bottom-0 w-12 bg-linear-to-r from-background to-transparent pointer-events-none sm:hidden z-10" />
-          <div className="flex overflow-x-auto justify-start sm:justify-center gap-2 p-2 scrollbar-hide sm:flex-wrap bg-white/5 rounded-2xl border border-white/10 backdrop-blur-sm max-w-7xl mx-auto container-padding">
-            {tabs.map((tab) => {
-              const TabIcon = tab.icon;
-              const isActive = activeServicesTab === tab.id;
-              const count = services.filter((s) => s.categories.includes(tab.id)).length;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveServicesTab(tab.id)}
-                  className={`min-h-[44px] px-3 sm:px-4 rounded-full font-bold text-fluid-xs transition-all-smooth flex items-center justify-center gap-2 touch-target shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring btn-press ${
-                    isActive
-                      ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105 border border-primary/50'
-                      : 'text-foreground/70 hover:bg-white/10 hover:text-foreground border border-transparent hover:border-white/20'
-                  }`}
-                >
-                  <TabIcon
-                    className={`w-4 h-4 sm:w-4 sm:h-4 transition-all-smooth ${isActive ? 'drop-shadow-[0_0_6px_rgba(255,255,255,0.6)]' : ''}`}
-                    weight={isActive ? 'fill' : 'regular'}
-                  />
-                  <span>{tab.label}</span>
-                  <span
-                    className={`px-1.5 py-0.5 rounded-md text-xs ${isActive ? 'bg-white/25' : 'bg-white/10'}`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
+        <div className="mt-8">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
+            {services.map((service, index) => (
+              <ServiceCard key={index} service={service} index={index} />
+            ))}
           </div>
-        </div>
-
-        <div className="mt-8 overflow-hidden">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeServicesTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4 }}
-              className="grid md:grid-cols-2 lg:grid-cols-3 gap-10"
-            >
-              {filteredServices.map((service, index) => (
-                <ServiceCard key={index} service={service} index={index} />
-              ))}
-            </motion.div>
-          </AnimatePresence>
         </div>
       </div>
     </section>

@@ -5,7 +5,6 @@ import { Hero } from './Hero';
 import { MetricCards } from './MetricCards';
 import { Services } from './Services';
 import { CTA } from './CTA';
-import { useUI } from '../context/UIContext';
 import { CircleNotch } from '@phosphor-icons/react';
 
 const Testimonials = lazy(() =>
@@ -32,50 +31,38 @@ const SectionSpinner = () => (
 );
 
 export function HomePageContent() {
-  const { activeServicesTab } = useUI();
-
   return (
     <main id="main-content" className="overflow-x-hidden w-full max-w-full">
       <Hero />
       <MetricCards />
       <Services />
 
-      {activeServicesTab === 'merchants' && (
+      <Suspense fallback={<SectionSpinner />}>
+        <Portfolio />
+      </Suspense>
+
+      <Suspense fallback={<SectionSpinner />}>
+        <Testimonials />
+      </Suspense>
+
+      <section id="training">
         <Suspense fallback={<SectionSpinner />}>
-          <Portfolio />
+          <TrainingCourses />
         </Suspense>
-      )}
-
-      {activeServicesTab === 'students' && (
         <Suspense fallback={<SectionSpinner />}>
-          <Testimonials />
+          <Certificate />
         </Suspense>
-      )}
+      </section>
 
-      {activeServicesTab === 'students' && (
-        <section id="training">
-          <Suspense fallback={<SectionSpinner />}>
-            <TrainingCourses />
-          </Suspense>
-          <Suspense fallback={<SectionSpinner />}>
-            <Certificate />
-          </Suspense>
-        </section>
-      )}
-
-      {activeServicesTab === 'students' && (
-        <section id="consultations">
-          <Suspense fallback={<SectionSpinner />}>
-            <ConsultationCards />
-          </Suspense>
-        </section>
-      )}
-
-      {activeServicesTab === 'merchants' && (
+      <section id="consultations">
         <Suspense fallback={<SectionSpinner />}>
-          <WebDevService />
+          <ConsultationCards />
         </Suspense>
-      )}
+      </section>
+
+      <Suspense fallback={<SectionSpinner />}>
+        <WebDevService />
+      </Suspense>
 
       <Suspense fallback={<SectionSpinner />}>
         <WhyUs />
