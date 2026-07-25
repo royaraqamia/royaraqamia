@@ -1,5 +1,6 @@
-const CACHE = 'royaraqamia-v1';
-const STATIC_CACHE = 'royaraqamia-static-v1';
+try { importScripts('/sw-version.js'); } catch { self.CACHE_VERSION = 'royaraqamia-dev'; }
+const CACHE = self.CACHE_VERSION;
+const STATIC_CACHE = 'royaraqamia-static-' + (self.CACHE_VERSION ? self.CACHE_VERSION.split('-').pop() : 'v1');
 const FALLBACK_URL = '/offline';
 
 const PRECACHE_URLS = [
@@ -133,7 +134,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isIcon(url)) {
-    event.respondWith(cacheFirst(request));
+    event.respondWith(staleWhileRevalidate(request));
     return;
   }
 

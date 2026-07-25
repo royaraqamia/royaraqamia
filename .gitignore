@@ -57,5 +57,8 @@ next-env.d.ts
 Desktop.ini
 $RECYCLE.BIN/
 
+# auto-generated
+public/sw-version.js
+
 # Sentry Config File
 .env.sentry-build-plugin

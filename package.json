@@ -11,6 +11,7 @@
   "scripts": {
     "postinstall": "node -e \"const fs=require('fs'),p=require('path');const d=p.join('node_modules','typescript','lib');if(!fs.existsSync(d)){fs.mkdirSync(d,{recursive:true})}const f=p.join(d,'typescript.js');if(!fs.existsSync(f)){fs.writeFileSync(f,\\\"module.exports = require('typescript/unstable/sync');\\\\n\\\")}\"",
     "dev": "next dev",
+    "prebuild": "node scripts/generate-icons.mjs",
     "build": "tsc --noEmit && next build",
     "start": "next start",
     "lint": "eslint .",
@@ -18,7 +19,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "npx playwright test"
+    "test:e2e": "npx playwright test",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",

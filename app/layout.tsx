@@ -89,9 +89,8 @@ export const metadata: Metadata = {
     { rel: 'icon', url: '/favicon.ico' },
     { rel: 'icon', type: 'image/png', sizes: '192x192', url: '/icons/icon-192x192.png' },
     { rel: 'icon', type: 'image/png', sizes: '512x512', url: '/icons/icon-512x512.png' },
-    { rel: 'apple-touch-icon', sizes: '152x152', url: '/icons/icon-152x152.png' },
-    { rel: 'apple-touch-icon', sizes: '192x192', url: '/icons/icon-192x192.png' },
-    { rel: 'apple-touch-icon', sizes: '512x512', url: '/icons/icon-512x512.png' },
+    { rel: 'apple-touch-icon', sizes: '152x152', url: '/icons/apple-touch-icon-152x152.png' },
+    { rel: 'apple-touch-icon', sizes: '180x180', url: '/icons/apple-touch-icon-180x180.png' },
   ],
   manifest: '/manifest.json',
 };
