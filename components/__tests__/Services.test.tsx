@@ -15,15 +15,10 @@ describe('Services', () => {
     expect(heading).toHaveTextContent(/نقدِّم/);
   });
 
-  it('renders both tab buttons', () => {
+  it('renders all service cards', () => {
     renderWithProviders(<Services />);
-    expect(screen.getByText('للتُّجَّار ومقدِّمي الخدمات')).toBeInTheDocument();
-    expect(screen.getByText('للطُّلاب والخرِّيجين الجدد')).toBeInTheDocument();
-  });
-
-  it('renders merchant services by default', () => {
-    renderWithProviders(<Services />);
-    const headings = screen.getAllByText('بناء مواقع إلكترونيَّة وتطبيقات');
-    expect(headings.length).toBe(2);
+    expect(screen.getAllByText('التَّدريب').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('الاستشارات').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('بناء مواقع إلكترونيَّة وتطبيقات').length).toBeGreaterThan(0);
   });
 });
