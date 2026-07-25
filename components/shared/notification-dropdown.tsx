@@ -64,7 +64,10 @@ export function NotificationDropdown() {
       <button
         ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-muted transition-colors"
+        className={cn(
+          'relative p-2 rounded-full hover:bg-muted transition-colors',
+          isOpen && 'bg-muted'
+        )}
         aria-label={`الإشعارات${unreadCount > 0 ? ` (${unreadCount} غير مقروء)` : ''}`}
         aria-haspopup="menu"
         aria-expanded={isOpen}

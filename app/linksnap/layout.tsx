@@ -10,7 +10,7 @@ import { SkipToContent } from '@/components/SkipToContent';
 import { Toaster } from 'sonner';
 
 export const metadata: Metadata = {
-  title: 'LinkSnap | رؤية رقمية',
+  title: 'LinkSnap',
   description: 'اختصر روابطك الطَّويلة وتتبَّع أداءها بسهولة مع LinkSnap من رؤية رقمية.',
 };
 

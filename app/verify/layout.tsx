@@ -4,7 +4,7 @@ import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'التَّحقُّق من الشَّهادات | رؤية رقمية',
+    default: 'التَّحقُّق من الشَّهادة',
     template: '%s | رؤية رقمية',
   },
   description: 'التَّحقُّق من صحَّة وأصالة الشَّهادات الصَّادرة عن رؤية رقمية.',

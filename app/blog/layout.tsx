@@ -4,7 +4,7 @@ import { Footer } from '@/components/Footer';
 
 export const metadata: Metadata = {
   title: {
-    default: 'المدونة',
+    default: 'المدوَّنة',
     template: '%s | BlogPress',
   },
   description: 'اقرأ أحدث المقالات من BlogPress.',

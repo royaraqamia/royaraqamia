@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { cn } from '@/lib/utils';
 import { User, SignOut, Download } from '@phosphor-icons/react';
 import { useSession } from './session-provider';
 import { usePWAContext } from '../PWAProvider';
@@ -38,7 +39,10 @@ export function UserDropdown() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 rounded-full hover:bg-muted transition-colors"
+        className={cn(
+          'relative p-2 rounded-full hover:bg-muted transition-colors',
+          isOpen && 'bg-muted'
+        )}
         aria-label="قائمة المستخدم"
         aria-haspopup="menu"
         aria-expanded={isOpen}
