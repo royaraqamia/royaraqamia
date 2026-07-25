@@ -1,6 +1,7 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 
@@ -26,13 +27,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [supabaseClient, setSupabaseClient] = useState<ReturnType<typeof createClient> | null>(
-    null
-  );
+  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
+  const pathname = usePathname();
 
   useEffect(() => {
     const supabase = createClient();
-    setSupabaseClient(supabase);
+    supabaseRef.current = supabase;
 
     supabase.auth
       .getSession()
@@ -40,15 +40,6 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
         setIsLoading(false);
-
-        if (!session) {
-          supabase.auth.getUser().then(({ data: { user } }: { data: { user: User | null } }) => {
-            if (user) {
-              setSession({ user, access_token: '' } as Session);
-              setUser(user);
-            }
-          });
-        }
       });
 
     const {
@@ -62,10 +53,25 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  const prevPathname = useRef(pathname);
+  useEffect(() => {
+    if (prevPathname.current === pathname) return;
+    prevPathname.current = pathname;
+
+    if (supabaseRef.current) {
+      supabaseRef.current.auth
+        .getSession()
+        .then(({ data: { session } }: { data: { session: Session | null } }) => {
+          setSession(session);
+          setUser(session?.user ?? null);
+        });
+    }
+  }, [pathname]);
+
   const signOut = useCallback(async () => {
-    if (!supabaseClient) return;
-    await supabaseClient.auth.signOut();
-  }, [supabaseClient]);
+    if (!supabaseRef.current) return;
+    await supabaseRef.current.auth.signOut();
+  }, []);
 
   return (
     <SessionContext.Provider value={{ user, session, isLoading, signOut }}>

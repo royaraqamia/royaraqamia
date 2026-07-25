@@ -9,7 +9,7 @@ const POLL_INTERVAL = 60_000;
 export function VersionChecker() {
   const currentVersion = useRef<string | null>(null);
   const [showUpdate, setShowUpdate] = useState(false);
-  const { hasUpdate, registration } = usePWAContext();
+  const { hasUpdate, registration, dismissUpdate } = usePWAContext();
 
   useEffect(() => {
     if (hasUpdate) {
@@ -36,8 +36,6 @@ export function VersionChecker() {
   }, []);
 
   useEffect(() => {
-    if ('serviceWorker' in navigator) return;
-
     checkVersion();
     const id = setInterval(checkVersion, POLL_INTERVAL);
     window.addEventListener('focus', checkVersion);
@@ -58,7 +56,8 @@ export function VersionChecker() {
 
   const handleDismiss = useCallback(() => {
     setShowUpdate(false);
-  }, []);
+    dismissUpdate();
+  }, [dismissUpdate]);
 
   return showUpdate ? <UpdatePopup onReload={handleReload} onDismiss={handleDismiss} /> : null;
 }

@@ -17,7 +17,6 @@ self.addEventListener('install', (event) => {
       await cache.addAll(PRECACHE_URLS);
     })()
   );
-  self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {

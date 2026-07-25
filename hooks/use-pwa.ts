@@ -73,17 +73,26 @@ export function usePWA(onUpdateAvailable?: PWAUpdateCallback) {
         };
       });
 
-      navigator.serviceWorker.addEventListener('controllerchange', () => {
+      const onControllerChange = () => {
         setState((prev) => ({ ...prev, hasUpdate: false }));
-      });
-    }
+      };
+      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
 
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-      window.removeEventListener('appinstalled', handleAppInstalled);
-    };
+      return () => {
+        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+        window.removeEventListener('appinstalled', handleAppInstalled);
+      };
+    } else {
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+        window.removeEventListener('appinstalled', handleAppInstalled);
+      };
+    }
   }, []);
 
   const promptInstall = useCallback(async () => {

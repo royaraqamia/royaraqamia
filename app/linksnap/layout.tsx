@@ -4,7 +4,6 @@ import { createClient } from '@/lib/supabase/server';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ThemeProvider } from '@/components/linksnap/theme-provider';
-import { SessionProvider } from '@/components/shared/session-provider';
 import { ProgressBar } from '@/components/linksnap/progress-bar';
 import { SkipToContent } from '@/components/SkipToContent';
 import { Toaster } from 'sonner';
@@ -23,9 +22,7 @@ export default async function LinkSnapLayout({ children }: { children: React.Rea
       <Navbar />
       <ProgressBar />
       <ThemeProvider>
-        <SessionProvider>
-          <div className="pt-24">{children}</div>
-        </SessionProvider>
+        <div className="pt-24">{children}</div>
       </ThemeProvider>
       <Footer />
       <Toaster
