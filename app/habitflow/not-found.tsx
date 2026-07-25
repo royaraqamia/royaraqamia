@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 
 export default function NotFound() {
   return (
-    <div className="min-h-[100dvh] bg-background">
+    <div className="min-h-dvh bg-background">
       <main id="main-content" className="flex flex-col items-center justify-center px-6 pt-24">
         <div className="w-16 h-16 rounded-2xl bg-destructive/10 flex items-center justify-center mb-6">
           <svg
@@ -21,12 +21,12 @@ export default function NotFound() {
           </svg>
         </div>
         <h1 className="text-3xl sm:text-4xl font-bold text-foreground mb-2">
-          ٤٠٤ - الصفحة غير موجودة
+          404 - الصَّفحة غير موجودة
         </h1>
-        <p className="text-muted-foreground mb-8">الصفحة التي تبحث عنها غير موجودة.</p>
+        <p className="text-muted-foreground mb-8">الصَّفحة التي تبحث عنها غير موجودة.</p>
         <Link href="/habitflow">
           <Button variant="default" className="touch-target btn-press focus-ring">
-            العودة إلى الرئيسية
+            العودة إلى الرَّئيسيَّة
           </Button>
         </Link>
       </main>

@@ -50,7 +50,7 @@ interface PostListProps {
 
 const filters: { label: string; value: PostStatus | 'all' }[] = [
   { label: 'الكل', value: 'all' },
-  { label: 'مسودة', value: 'draft' },
+  { label: 'مسودَّة', value: 'draft' },
   { label: 'منشور', value: 'published' },
 ];
 
@@ -102,7 +102,7 @@ export function PostList({ posts }: PostListProps) {
               id={`tab-${f.value}`}
               onClick={() => setActiveFilter(f.value)}
               className={cn(
-                'px-3.5 py-2.5 text-sm border-b-2 transition-smooth -mb-px rounded-t-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]',
+                'px-3.5 py-2.5 text-sm border-b-2 transition-smooth -mb-px rounded-t-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11',
                 activeFilter === f.value
                   ? 'border-primary text-foreground font-medium'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -118,7 +118,7 @@ export function PostList({ posts }: PostListProps) {
           ))}
         </div>
 
-        <div className="relative sm:mr-auto sm:min-w-[200px]">
+        <div className="relative sm:mr-auto sm:min-w-50">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40 pointer-events-none" />
           <input
             type="text"
@@ -148,8 +148,8 @@ export function PostList({ posts }: PostListProps) {
               {searchQuery
                 ? 'لم نعثر على مقالات تطابق بحثك.'
                 : activeFilter === 'all'
-                  ? 'أنشئ مقالك الأول للبدء في الكتابة.'
-                  : 'لا توجد مقالات في هذا التصنيف.'}
+                  ? 'أنشئ مقالك الأوَّل للبدء في الكتابة.'
+                  : 'لا توجد مقالات في هذا التَّصنيف.'}
             </p>
             {!searchQuery && activeFilter === 'all' && (
               <Button
@@ -196,7 +196,7 @@ function PostRow({ post }: { post: Post }) {
             />
           </div>
         ) : (
-          <div className="size-12 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center ring-1 ring-border/50">
+          <div className="size-12 rounded-lg bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center ring-1 ring-border/50">
             <FileText className="size-5 text-primary/40" />
           </div>
         )}
@@ -234,7 +234,7 @@ function PostRow({ post }: { post: Post }) {
               : 'bg-warning/10 text-warning'
           )}
         >
-          {post.status === 'published' ? 'منشور' : 'مسودة'}
+          {post.status === 'published' ? 'منشور' : 'مسودَّة'}
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -247,7 +247,7 @@ function PostRow({ post }: { post: Post }) {
               <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-[160px]">
+          <DropdownMenuContent align="end" className="min-w-40">
             <DropdownMenuItem asChild>
               <Link href={`/blogpress/editor/${post.id}`} className="cursor-pointer">
                 <PenLine className="ms-2 size-4" />
@@ -284,13 +284,13 @@ function PostRow({ post }: { post: Post }) {
                     await unpublishPost(post.id);
                     router.refresh();
                   } catch {
-                    toast.error('فشل إلغاء النشر');
+                    toast.error('فشل إلغاء النَّشر');
                   }
                 }}
                 className="cursor-pointer"
               >
                 <EyeOff className="ms-2 size-4" />
-                إلغاء النشر
+                إلغاء النَّشر
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
@@ -305,8 +305,8 @@ function PostRow({ post }: { post: Post }) {
                 <DialogHeader>
                   <DialogTitle>حذف المقال</DialogTitle>
                   <DialogDescription>
-                    هل أنت متأكد من حذف &ldquo;{post.title || 'بدون عنوان'}&rdquo;؟ لا يمكن التراجع
-                    عن هذا الإجراء.
+                    هل أنت متأكِّد من حذف &ldquo;{post.title || 'بدون عنوان'}&rdquo;؟ لا يمكن
+                    التَّراجع عن هذا الإجراء.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex justify-end gap-2">

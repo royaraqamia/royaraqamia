@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'الموقع غير متصل — رؤية رقمية',
+  title: 'غير متَّصل',
+  description: 'أنت غير متَّصل بالإنترنت. حاول مرَّة أخرى عندما تتوفَّر لديك شبكة.',
 };
 
 export default function OfflinePage() {
@@ -25,7 +26,7 @@ export default function OfflinePage() {
             </svg>
           </div>
         </div>
-        <h1 className="mb-2 font-arabic text-2xl font-bold text-foreground">الموقع غير متصل</h1>
+        <h1 className="mb-2 font-arabic text-2xl font-bold text-foreground">غير متَّصل</h1>
         <p className="text-sm leading-relaxed text-muted-foreground">
           يبدو أنَّك غير متَّصل بالإنترنت. حاول مرَّة أخرى عندما تتوفَّر لديك شبكة.
         </p>

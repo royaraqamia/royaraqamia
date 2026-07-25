@@ -28,7 +28,7 @@ function AlertDialogOverlay({
     <AlertDialogPrimitive.Overlay
       data-slot="alert-dialog-overlay"
       className={cn(
-        'data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50',
+        'data-[state=open]:animate-in data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-[10000] bg-black/50',
         className
       )}
       {...props}
@@ -46,14 +46,15 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          'bg-background fixed z-50 grid w-full gap-4 border p-6 shadow-lg duration-200',
-          'top-1/2 left-1/2 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg',
+          'bg-background fixed z-[10000] grid w-full gap-4 border p-6 shadow-lg duration-200',
+          'top-1/2 left-1/2 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-3xl',
           'max-h-[85dvh] overflow-y-auto',
           'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
           'data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-          'max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto',
-          'max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0',
-          'max-md:rounded-t-2xl max-md:rounded-b-none',
+          'max-md:bottom-6 max-md:top-auto',
+          'max-md:w-[calc(100%-48px)] max-md:max-w-none',
+          'max-md:translate-y-0',
+          'max-md:rounded-t-3xl max-md:rounded-b-none',
           'max-md:data-[state=open]:slide-in-from-bottom-4',
           'max-md:data-[state=closed]:slide-out-to-bottom',
           className

@@ -74,21 +74,12 @@ export default function LinkSnapPage() {
   const isAdmin = userEmail ? AdminValidator.isAdmin(userEmail) : false;
   const effectiveView = selectedView === 'admin' && !isAdmin ? 'shorten' : selectedView;
 
-  useEffect(() => {
-    const titles: Record<string, string> = {
-      shorten: 'LinkSnap',
-      dashboard: 'LinkSnap',
-      admin: 'LinkSnap',
-    };
-    document.title = titles[selectedView] || 'LinkSnap';
-  }, [selectedView]);
-
   return (
     <main
       id="main-content"
       className="relative min-h-screen pb-10 px-4 sm:px-6 lg:px-8 flex flex-col justify-between max-w-5xl mx-auto overflow-hidden"
     >
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-linear-to-br from-primary/10 to-accent/5 blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-125 h-75 bg-linear-to-br from-primary/10 to-accent/5 blur-3xl pointer-events-none -z-10" />
 
       <div className="flex-1 flex flex-col justify-center max-w-xl w-full mx-auto space-y-8">
         <RedirectErrorBanner error={redirectError} onDismiss={() => setRedirectError(null)} />

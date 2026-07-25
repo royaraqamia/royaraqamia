@@ -29,7 +29,7 @@ export default function DashboardLoading() {
             <div className="skeleton h-5 w-32 rounded-md" />
           </CardHeader>
           <CardContent>
-            <div className="skeleton h-[200px] sm:h-[300px] w-full rounded-xl" />
+            <div className="skeleton h-50 sm:h-75 w-full rounded-xl" />
           </CardContent>
         </Card>
         <Card>
@@ -37,7 +37,7 @@ export default function DashboardLoading() {
             <div className="skeleton h-5 w-32 rounded-md" />
           </CardHeader>
           <CardContent>
-            <div className="skeleton h-[200px] sm:h-[300px] w-full rounded-xl" />
+            <div className="skeleton h-50 sm:h-75 w-full rounded-xl" />
           </CardContent>
         </Card>
       </div>
@@ -48,7 +48,7 @@ export default function DashboardLoading() {
         </CardHeader>
         <CardContent className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="skeleton h-[52px] w-full rounded-xl" />
+            <div key={i} className="skeleton h-13 w-full rounded-xl" />
           ))}
         </CardContent>
       </Card>

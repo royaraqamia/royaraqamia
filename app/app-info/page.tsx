@@ -5,9 +5,24 @@ import { Navbar } from '../../components/Navbar';
 import { Footer } from '../../components/Footer';
 
 export const metadata: Metadata = {
-  title: 'معلومات المنصَّة | رؤية رقمية',
-  description: 'معلومات عن منصَّة رؤية رقمية – وصف الخدمات وغرض استخدام معلومات حساب Google.',
+  title: 'معلومات الشَّركة',
+  description: 'معلومات عن رؤية رقمية – وصف الخدمات وغرض استخدام معلومات حساب Google.',
   alternates: { canonical: '/app-info' },
+  openGraph: {
+    title: 'معلومات الشَّركة | رؤية رقمية',
+    description: 'معلومات عن رؤية رقمية – وصف الخدمات وغرض استخدام معلومات حساب Google.',
+    url: '/app-info',
+    siteName: 'رؤية رقمية',
+    locale: 'ar_SY',
+    type: 'website',
+    images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'معلومات المنصَّة' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'معلومات الشَّركة | رؤية رقمية',
+    description: 'معلومات عن رؤية رقمية – وصف الخدمات وغرض استخدام معلومات حساب Google.',
+    images: ['/OG Image.webp'],
+  },
 };
 
 export default function AppInfoPage() {
@@ -18,7 +33,7 @@ export default function AppInfoPage() {
         <div className="mx-auto max-w-3xl px-6 py-12 md:py-20">
           <header className="mb-10">
             <div className="flex items-center gap-4 mb-6">
-              <div className="h-16 w-16 relative flex-shrink-0">
+              <div className="h-16 w-16 relative shrink-0">
                 <LazyImage
                   src="/logo.png"
                   webpSrc="/logo.webp"
@@ -37,7 +52,7 @@ export default function AppInfoPage() {
 
           <div className="space-y-8 text-base leading-relaxed text-foreground/90">
             <section>
-              <h2 className="mb-3 text-xl font-bold">عن المنصَّة</h2>
+              <h2 className="mb-3 text-xl font-bold">عن الشَّركة</h2>
               <p>
                 <strong>رؤية رقمية</strong> منصَّة عربيَّة متخصِّصة في التدريب والتطوير الرقمي.
                 نُقدِّم خدمات متكاملة تشمل:

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense } from 'react';
@@ -9,6 +10,10 @@ import { BlogSearch } from './_components/blog-search';
 import type { Post } from '@/domains/blogpress/lib/definitions';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  description: 'أفكار، دروس، وقصص في عالم التقنية والتحول الرقمي',
+};
 
 const PAGE_SIZE = 9;
 
@@ -48,7 +53,7 @@ export default async function BlogPage(props: {
 
   return (
     <div>
-      <div className="relative overflow-hidden mb-14 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-border/50 p-8 md:p-12">
+      <div className="relative overflow-hidden mb-14 rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-background border border-border/50 p-8 md:p-12">
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{
@@ -90,15 +95,15 @@ export default async function BlogPage(props: {
             href="/blog"
             className="mr-auto text-xs text-primary hover:underline transition-smooth"
           >
-            إلغاء التصفية
+            إلغاء التَّصفية
           </Link>
         </div>
       )}
 
       {((posts as Post[]) ?? []).length === 0 ? (
-        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-gradient-to-b from-muted/50 to-background py-24 px-6">
+        <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-linear-to-b from-muted/50 to-background py-24 px-6">
           <div className="flex flex-col items-center justify-center text-center relative z-10">
-            <div className="size-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-6 shadow-sm">
+            <div className="size-20 rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 flex items-center justify-center mb-6 shadow-sm">
               <FileText className="size-8 text-primary/60" />
             </div>
             <h2 className="text-xl font-semibold">
@@ -146,7 +151,7 @@ export default async function BlogPage(props: {
                 ) : (
                   <Link
                     href={`/blog/${post.slug}`}
-                    className="block relative aspect-video overflow-hidden rounded-t-2xl bg-gradient-to-br from-primary/10 to-primary/5"
+                    className="block relative aspect-video overflow-hidden rounded-t-2xl bg-linear-to-br from-primary/10 to-primary/5"
                   >
                     <div className="absolute inset-0 flex items-center justify-center">
                       <span className="text-5xl font-bold text-primary/20">{post.title[0]}</span>
@@ -183,7 +188,7 @@ export default async function BlogPage(props: {
                     )}
                     <span className="text-primary/60 group-hover:text-primary transition-smooth text-[11px] font-medium">
                       اقرأ المزيد
-                      <span className="mr-1 inline-block transition-transform group-hover:translate-x-[-2px]">
+                      <span className="mr-1 inline-block transition-transform group-hover:-translate-x-0.5">
                         ←
                       </span>
                     </span>

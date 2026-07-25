@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
@@ -7,6 +8,11 @@ import { ThemeProvider } from '@/components/linksnap/theme-provider';
 import { ProgressBar } from '@/components/linksnap/progress-bar';
 import { SkipToContent } from '@/components/SkipToContent';
 import { Toaster } from 'sonner';
+
+export const metadata: Metadata = {
+  title: 'LinkSnap | رؤية رقمية',
+  description: 'اختصر روابطك الطَّويلة وتتبَّع أداءها بسهولة مع LinkSnap من رؤية رقمية.',
+};
 
 export default async function LinkSnapLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, X, type LucideIcon } from 'lucide-react';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 
@@ -51,8 +52,8 @@ export function ConfirmDialog({
     default: 'bg-primary hover:bg-primary/90 shadow-primary/30',
   };
 
-  return (
-    <div className="fixed inset-0 z-50">
+  return createPortal(
+    <div className="fixed inset-0 z-[10000]">
       <div
         className="fixed inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onCancel}
@@ -69,11 +70,11 @@ export function ConfirmDialog({
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-message"
         className="fixed bg-background border border-border shadow-2xl w-full p-6 focus:outline-none
-          max-w-sm mx-4 rounded-2xl
+          max-w-sm mx-4 rounded-3xl
           max-h-[85dvh] overflow-y-auto
-          max-md:mx-0 max-md:max-w-none max-md:rounded-b-none max-md:rounded-t-2xl
+          max-md:w-[calc(100%-48px)] max-md:mx-auto max-md:max-w-none max-md:rounded-t-3xl max-md:rounded-b-none
           top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2
-          max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto max-md:translate-x-0 max-md:translate-y-0"
+          max-md:bottom-6 max-md:top-auto max-md:translate-y-0"
       >
         <button
           onClick={onCancel}
@@ -115,6 +116,7 @@ export function ConfirmDialog({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

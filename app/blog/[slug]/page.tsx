@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import ReactMarkdown from 'react-markdown';
@@ -13,6 +14,18 @@ import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import type { Post } from '@/domains/blogpress/lib/definitions';
 import type { Metadata } from 'next';
+
+const getPublishedPost = cache(async (slug: string) => {
+  const cookieStore = await cookies();
+  const supabase = await createClient(cookieStore);
+  const { data } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('slug', slug)
+    .eq('status', 'published')
+    .single();
+  return data as Post | null;
+});
 
 function estimateReadingTime(content: string | null): number {
   if (!content) return 1;
@@ -57,17 +70,14 @@ export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await props.params;
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
+  const post = await getPublishedPost(slug);
 
-  const { data: post } = await supabase
-    .from('posts')
-    .select('title, meta_title, meta_desc, cover_image, slug')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
-
-  if (!post) return {};
+  if (!post) {
+    return {
+      title: 'المقال غير موجود',
+      description: 'عذراً، المقال الذي تبحث عنه غير موجود أو تم حذفه.',
+    };
+  }
 
   return {
     title: post.meta_title || post.title,
@@ -84,15 +94,8 @@ export async function generateMetadata(props: {
 
 export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-
-  const { data: post } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
+  const supabase = await createClient();
+  const post = await getPublishedPost(slug);
 
   if (!post) notFound();
 
@@ -142,11 +145,11 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
       <CodeBlockEnhancer />
 
       <article className="max-w-3xl mx-auto" aria-label={p.title}>
-        <nav aria-label="مسار التنقل" className="mb-8">
+        <nav aria-label="مسار التَّنقُّل" className="mb-8">
           <ol className="flex items-center gap-1.5 text-sm text-muted-foreground">
             <li>
               <Link href="/" className="hover:text-primary transition-smooth">
-                الرئيسية
+                الرَّئيسيَّة
               </Link>
             </li>
             <li className="text-muted-foreground/40">
@@ -154,13 +157,13 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
             </li>
             <li>
               <Link href="/blog" className="hover:text-primary transition-smooth">
-                المدونة
+                المدوَّنة
               </Link>
             </li>
             <li className="text-muted-foreground/40">
               <ChevronLeft className="size-3.5" />
             </li>
-            <li className="text-foreground/60 truncate max-w-[200px]" title={p.title}>
+            <li className="text-foreground/60 truncate max-w-50" title={p.title}>
               {p.title}
             </li>
           </ol>
@@ -265,14 +268,14 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
             <Link href="/blog">
               <Button variant="outline" className="rounded-xl transition-smooth">
                 <ArrowRight className="ml-2 size-4" />
-                العودة إلى المدونة
+                العودة إلى المدوَّنة
               </Button>
             </Link>
             <SocialShare url={postUrl} title={p.title} />
           </div>
 
           {author?.name && (
-            <div className="rounded-2xl border border-border/50 bg-gradient-to-br from-muted/50 to-background p-6">
+            <div className="rounded-2xl border border-border/50 bg-linear-to-br from-muted/50 to-background p-6">
               <div className="flex items-start gap-4">
                 {author.avatar_url ? (
                   <Image
@@ -319,7 +322,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                         />
                       </div>
                     ) : (
-                      <div className="aspect-video rounded-t-xl bg-gradient-to-br from-primary/10 to-primary/5 flex items-center justify-center">
+                      <div className="aspect-video rounded-t-xl bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center">
                         <span className="text-2xl font-bold text-primary/20">{rp.title[0]}</span>
                       </div>
                     )}
@@ -337,7 +340,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
             </div>
           )}
 
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-border/50 p-8 text-center">
+          <div className="relative overflow-hidden rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-background border border-border/50 p-8 text-center">
             <div
               className="absolute inset-0 opacity-[0.03]"
               style={{
@@ -350,7 +353,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
               <BookOpen className="size-8 text-primary/60 mx-auto mb-3" />
               <h2 className="text-lg font-semibold">هل أعجبك المقال؟</h2>
               <p className="text-sm text-muted-foreground mt-1.5 max-w-md mx-auto">
-                شاركه مع أصدقائك أو تصفح المزيد من المقالات في المدونة
+                شاركه مع أصدقائك أو تصفَّح المزيد من المقالات في المدوَّنة
               </p>
               <div className="flex items-center justify-center gap-3 mt-5">
                 <Link href="/blog">

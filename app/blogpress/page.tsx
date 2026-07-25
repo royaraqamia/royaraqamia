@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { verifySession } from '@/domains/blogpress/lib/dal';
@@ -5,6 +6,12 @@ import { PostList } from './_components/post-list';
 import { CreatePostButton } from './_components/create-post-button';
 import { FileText, Eye, PenLine, BookOpen } from 'lucide-react';
 import type { Post } from '@/domains/blogpress/lib/definitions';
+
+export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  description: 'لوحة تحكُّم BlogPress – إدارة المقالات وإنشاء محتوى جديد.',
+};
 
 function estimateWordCount(content: string | null): number {
   if (!content) return 0;
@@ -41,7 +48,13 @@ export default async function DashboardPage() {
       tx: 'text-primary',
     },
     { label: 'منشورة', value: stats.published, icon: Eye, bg: 'bg-success/10', tx: 'text-success' },
-    { label: 'مسودة', value: stats.drafts, icon: PenLine, bg: 'bg-warning/10', tx: 'text-warning' },
+    {
+      label: 'مسودَّة',
+      value: stats.drafts,
+      icon: PenLine,
+      bg: 'bg-warning/10',
+      tx: 'text-warning',
+    },
     {
       label: 'إجمالي الكلمات',
       value: stats.totalWords.toLocaleString('ar'),
@@ -56,7 +69,7 @@ export default async function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">المقالات</h1>
-          <p className="text-sm text-muted-foreground mt-1">إدارة ونشر مقالات المدونة</p>
+          <p className="text-sm text-muted-foreground mt-1">إدارة ونشر مقالات المدوَّنة</p>
         </div>
         <CreatePostButton />
       </div>

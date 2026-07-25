@@ -234,7 +234,7 @@ export default function CertificatesListPage() {
                   <Card className="card-hover glass-card border-primary/5 transition-all duration-300 hover:border-primary/20">
                     <CardContent className="flex flex-col gap-4 py-4 sm:flex-row sm:items-center">
                       {/* Avatar */}
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-primary/10">
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-primary/20 to-primary/10">
                         <ShieldCheck className="text-primary size-5" />
                       </div>
 
@@ -396,7 +396,7 @@ export default function CertificatesListPage() {
                   key={pageNum}
                   variant={page === pageNum ? 'default' : 'ghost'}
                   size="sm"
-                  className="min-w-[36px]"
+                  className="min-w-9"
                   onClick={() => setPage(pageNum)}
                 >
                   {pageNum}

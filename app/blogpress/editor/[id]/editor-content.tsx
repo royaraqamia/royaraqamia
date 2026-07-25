@@ -132,7 +132,7 @@ export function EditorContent({ post }: EditorContentProps) {
     formData.append('meta_desc', metaDescRef.current);
     try {
       const result = await updatePost(post.id, undefined, formData);
-      if (result?.message === 'تم حفظ المقال') {
+      if (result?.message === 'تمَّ حفظ المقال') {
         isDirtyRef.current = false;
         setIsDirty(false);
         setLastSaved(new Date());
@@ -190,7 +190,7 @@ export function EditorContent({ post }: EditorContentProps) {
       } else {
         setContent((prev) => prev + (prev ? '\n\n' : '') + markdown);
       }
-      toast.success('تم رفع الصورة');
+      toast.success('تمَّ رفع الصُّورة');
     }
   }, []);
 
@@ -258,7 +258,7 @@ export function EditorContent({ post }: EditorContentProps) {
           break;
         }
         case 'link': {
-          const s = selected ? `[${selected}](url)` : '[نص الرابط](url)';
+          const s = selected ? `[${selected}](url)` : '[نصُّ الرَّابط](url)';
           newContent = cur.substring(0, start) + s + cur.substring(end);
           cursorPos = start + s.length;
           break;
@@ -313,13 +313,13 @@ export function EditorContent({ post }: EditorContentProps) {
     formData.append('meta_desc', metaDesc);
     startTransition(async () => {
       const result = await updatePost(post.id, undefined, formData);
-      if (result?.message === 'تم حفظ المقال') {
+      if (result?.message === 'تمَّ حفظ المقال') {
         isDirtyRef.current = false;
         setIsDirty(false);
         setLastSaved(new Date());
-        toast.success('تم حفظ المقال');
+        toast.success('تمَّ حفظ المقال');
       } else if (result?.errors) {
-        toast.error('خطأ في التحقق من البيانات');
+        toast.error('خطأ في التَّحقُّق من البيانات');
       }
     });
   }, [post.id, title, slug, content, coverImage, metaTitle, metaDesc, generateSlug]);
@@ -361,19 +361,19 @@ export function EditorContent({ post }: EditorContentProps) {
     startTransition(async () => {
       const result = await updatePost(post.id, undefined, formData);
       if (result?.errors) {
-        toast.error('يرجى إصلاح أخطاء التحقق قبل النشر');
+        toast.error('يُرجَى إصلاح أخطاء التَّحقُّق قبل النَّشر');
         return;
       }
       try {
         await publishPost(post.id);
       } catch {
-        toast.error('فشل نشر المقال. حاول مرة أخرى.');
+        toast.error('فشل نشر المقال. حاول مرَّة أخرى.');
         return;
       }
       isDirtyRef.current = false;
       setIsDirty(false);
       setPublishDialogOpen(false);
-      toast.success('تم نشر المقال!');
+      toast.success('تمَّ نشر المقال!');
       router.refresh();
       router.push(`/blog/${finalSlug}`);
     });
@@ -439,7 +439,7 @@ export function EditorContent({ post }: EditorContentProps) {
   ];
 
   return (
-    <div className="flex h-[100dvh] flex-col">
+    <div className="flex h-dvh flex-col">
       <div className="flex items-center justify-between border-b border-border/50 px-4 py-2.5 bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Button
@@ -477,14 +477,14 @@ export function EditorContent({ post }: EditorContentProps) {
             size="sm"
             disabled={isUploading}
             onClick={() => fileInputRef.current?.click()}
-            className="text-muted-foreground hover:text-foreground transition-smooth hidden sm:inline-flex min-h-[44px]"
+            className="text-muted-foreground hover:text-foreground transition-smooth hidden sm:inline-flex min-h-11"
           >
             {isUploading ? (
               <Loader2 className="size-4 ms-1.5 animate-spin" />
             ) : (
               <Upload className="size-4 ms-1.5" />
             )}
-            {isUploading ? 'جارٍ الرفع...' : 'صورة'}
+            {isUploading ? 'جارٍ الرَّفع...' : 'صورة'}
           </Button>
           <Button
             variant="ghost"
@@ -492,8 +492,8 @@ export function EditorContent({ post }: EditorContentProps) {
             onClick={() => setIsPreview(!isPreview)}
             className={
               isPreview
-                ? 'text-primary min-h-[44px]'
-                : 'text-muted-foreground hover:text-foreground transition-smooth min-h-[44px]'
+                ? 'text-primary min-h-11'
+                : 'text-muted-foreground hover:text-foreground transition-smooth min-h-11'
             }
           >
             {isPreview ? <EyeOff className="size-4 ms-1.5" /> : <Eye className="size-4 ms-1.5" />}
@@ -513,13 +513,13 @@ export function EditorContent({ post }: EditorContentProps) {
             <SheetContent className="sm:max-w-md overflow-y-auto">
               <SheetHeader>
                 <SheetTitle>إعدادات المقال</SheetTitle>
-                <SheetDescription>تكوين بيانات SEO وخيارات النشر</SheetDescription>
+                <SheetDescription>تكوين بيانات SEO وخيارات النَّشر</SheetDescription>
               </SheetHeader>
               <div className="mt-6 grid gap-6">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <Link2 className="size-4 text-muted-foreground" />
-                    الرابط
+                    الرَّابط
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="slug" className="text-xs text-muted-foreground">
@@ -541,7 +541,7 @@ export function EditorContent({ post }: EditorContentProps) {
                       {slug || <span className="text-muted-foreground/40">رابط-المقال</span>}
                     </p>
                     <p className="text-xs text-muted-foreground/60">
-                      يتم إنشاؤه تلقائياً من العنوان عند ترك حقل العنوان
+                      يتمُّ إنشاؤه تلقائيًّا من العنوان عند ترك حقل العنوان
                     </p>
                   </div>
                 </div>
@@ -555,7 +555,7 @@ export function EditorContent({ post }: EditorContentProps) {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="cover_image" className="text-xs text-muted-foreground">
-                      رابط الصورة
+                      رابط الصُّورة
                     </Label>
                     <Input
                       id="cover_image"
@@ -567,7 +567,7 @@ export function EditorContent({ post }: EditorContentProps) {
                       dir="ltr"
                     />
                     <p className="text-xs text-muted-foreground/60">
-                      PNG أو JPG أو WebP. يُفضل أبعاد 1200×630 بكسل.
+                      PNG أو JPG أو WebP. يُفضَّل أبعاد 1200×630 بكسل.
                     </p>
                   </div>
                   {coverImage ? (
@@ -599,11 +599,11 @@ export function EditorContent({ post }: EditorContentProps) {
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <Search className="size-4 text-muted-foreground" />
-                    تحسين محركات البحث (SEO)
+                    تحسين محرِّكات البحث (SEO)
                   </div>
                   <div className="rounded-lg bg-muted/50 p-3 text-xs text-muted-foreground leading-relaxed">
-                    هذه البيانات تظهر في نتائج البحث وعند مشاركة المقال على وسائل التواصل. إذا
-                    تركتها فارغة، سيتم استخدام عنوان المقال ووصف تلقائي.
+                    هذه البيانات تظهر في نتائج البحث وعند مشاركة المقال على وسائل التَّواصل. إذا
+                    تركتها فارغة، سيتمُّ استخدام عنوان المقال ووصف تلقائي.
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="meta_title" className="text-xs text-muted-foreground">
@@ -632,7 +632,7 @@ export function EditorContent({ post }: EditorContentProps) {
                       )}
                       {metaTitle.length >= 70 && (
                         <p className="text-xs text-destructive font-medium">
-                          تم الوصول للحد الأقصى
+                          تمَّ الوصول للحدِّ الأقصى
                         </p>
                       )}
                     </div>
@@ -649,7 +649,7 @@ export function EditorContent({ post }: EditorContentProps) {
                       placeholder="وصف مختصر يظهر في نتائج البحث"
                       maxLength={160}
                       rows={3}
-                      className="transition-smooth resize-none min-h-[5.5rem]"
+                      className="transition-smooth resize-none min-h-22"
                     />
                     <div className="flex items-center justify-between">
                       <p
@@ -665,7 +665,7 @@ export function EditorContent({ post }: EditorContentProps) {
                       )}
                       {metaDesc.length >= 160 && (
                         <p className="text-xs text-destructive font-medium">
-                          تم الوصول للحد الأقصى
+                          تمَّ الوصول للحد الأقصى
                         </p>
                       )}
                     </div>
@@ -736,7 +736,7 @@ export function EditorContent({ post }: EditorContentProps) {
 
       <div className="flex flex-1 overflow-hidden">
         <div
-          className={`flex-1 flex-col min-w-0 ${isPreview ? 'hidden' : 'flex'} lg:!flex`}
+          className={`flex-1 flex-col min-w-0 ${isPreview ? 'hidden' : 'flex'} lg:flex!`}
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
         >
@@ -746,14 +746,14 @@ export function EditorContent({ post }: EditorContentProps) {
               name="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="اكتب المحتوى هنا...&#10;&#10;اسحب وأفلت الصور مباشرة في المحرر."
+              placeholder="اكتب المحتوى هنا...&#10;&#10;اسحب وأفلت الصُّور مباشرةً في المحرِّر."
               className="h-full w-full resize-none border-0 rounded-none p-6 focus-visible:ring-0 text-sm leading-relaxed transition-smooth"
             />
           </div>
         </div>
 
         <div
-          className={`flex-1 flex-col min-w-0 border-l border-border/50 overflow-y-auto ${isPreview ? 'flex' : 'hidden'} lg:!flex`}
+          className={`flex-1 flex-col min-w-0 border-l border-border/50 overflow-y-auto ${isPreview ? 'flex' : 'hidden'} lg:flex!`}
         >
           <div className="p-6 prose prose-sm dark:prose-invert max-w-none w-full prose-headings:font-bold prose-a:text-primary prose-img:rounded-xl prose-img:shadow-sm">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
@@ -766,7 +766,7 @@ export function EditorContent({ post }: EditorContentProps) {
       <div
         className="flex items-center justify-between border-t border-border/50 px-4 py-2.5 bg-background/80 backdrop-blur-sm"
         role="status"
-        aria-label="إحصائيات المقال"
+        aria-label="إحصائيَّات المقال"
       >
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
           <div className="flex items-center gap-2">
@@ -780,13 +780,13 @@ export function EditorContent({ post }: EditorContentProps) {
               <span
                 className={`size-1.5 rounded-full ${post.status === 'published' ? 'bg-success' : 'bg-warning animate-pulse'}`}
               />
-              {post.status === 'published' ? 'منشور' : 'مسودة'}
+              {post.status === 'published' ? 'منشور' : 'مسودَّة'}
             </span>
             <span
               className={`size-2 rounded-full transition-smooth ${isDirty ? 'bg-warning' : 'bg-success'}`}
             />
             <span className="text-xs text-muted-foreground hidden sm:inline">
-              {isDirty ? 'تغييرات غير محفوظة' : 'تم الحفظ'}
+              {isDirty ? 'تغييرات غير محفوظة' : 'تمَّ الحفظ'}
             </span>
           </div>
           <span className="text-muted-foreground/40 hidden sm:inline">·</span>
@@ -801,7 +801,7 @@ export function EditorContent({ post }: EditorContentProps) {
             <>
               <span className="text-muted-foreground/40 hidden sm:inline">·</span>
               <span className="text-xs text-muted-foreground hidden sm:inline">
-                حُفظ {lastSaved.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}
+                حفظ {lastSaved.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}
               </span>
             </>
           )}
@@ -813,7 +813,7 @@ export function EditorContent({ post }: EditorContentProps) {
             size="sm"
             disabled={pending}
             onClick={() => handleSave()}
-            className="transition-smooth min-h-[44px] rounded-xl"
+            className="transition-smooth min-h-11 rounded-xl"
           >
             {pending ? (
               <>
@@ -830,11 +830,11 @@ export function EditorContent({ post }: EditorContentProps) {
               size="sm"
               onClick={handlePublishClick}
               disabled={pending}
-              className="transition-smooth shadow-sm hover:shadow-md min-h-[44px] rounded-xl"
+              className="transition-smooth shadow-sm hover:shadow-md min-h-11 rounded-xl"
             >
               {pending ? (
                 <>
-                  <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ النشر...
+                  <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ النَّشر...
                 </>
               ) : (
                 <>
@@ -851,12 +851,12 @@ export function EditorContent({ post }: EditorContentProps) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>اختصارات لوحة المفاتيح</DialogTitle>
-            <DialogDescription>استخدم هذه الاختصارات لتسريع عملية التحرير</DialogDescription>
+            <DialogDescription>استخدم هذه الاختصارات لتسريع عمليَّة التَّحرير</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             {[
               { keys: 'Ctrl + S', label: 'حفظ المقال' },
-              { keys: 'Ctrl + Enter', label: 'نشر المقال (للمسودات)' },
+              { keys: 'Ctrl + Enter', label: 'نشر المقال (للمسودَّات)' },
               { keys: 'Ctrl + B', label: 'عريض' },
               { keys: 'Ctrl + I', label: 'مائل' },
               { keys: 'Ctrl + K', label: 'إدراج رابط' },
@@ -870,7 +870,7 @@ export function EditorContent({ post }: EditorContentProps) {
             ))}
             <div className="h-px bg-border/50 my-2" />
             <p className="text-xs text-muted-foreground">
-              اسحب وأفلت الصور مباشرة في المحرر لرفعها تلقائياً
+              اسحب وأفلت الصُّور مباشرةً في المحرِّر لرفعها تلقائيًّا
             </p>
           </div>
         </DialogContent>
@@ -880,8 +880,8 @@ export function EditorContent({ post }: EditorContentProps) {
       <Dialog open={publishDialogOpen} onOpenChange={setPublishDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>التحقق قبل النشر</DialogTitle>
-            <DialogDescription>يرجى مراجعة العناصر التالية قبل نشر المقال</DialogDescription>
+            <DialogTitle>التَّحقُّق قبل النَّشر</DialogTitle>
+            <DialogDescription>يُرجَى مراجعة العناصر التَّالية قبل نشر المقال</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             {publishChecks.map((check) => (
@@ -919,7 +919,7 @@ export function EditorContent({ post }: EditorContentProps) {
               العودة للتحرير
             </Button>
             <Button onClick={handlePublishAnyway} className="rounded-xl">
-              نشر على أي حال
+              نشر على أيِّ حال
             </Button>
           </div>
         </DialogContent>

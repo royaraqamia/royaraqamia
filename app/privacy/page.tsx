@@ -1,18 +1,35 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'سِياسة الخُصوصيَّة | رؤية رقمية',
+  title: 'سياسة الخصوصيَّة',
   description:
-    'سِياسة الخُصوصيَّة لمنصَّة رؤية رقمية – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشخصيَّة.',
+    'سياسة الخصوصيَّة لـ رؤية رقمية – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
   alternates: { canonical: '/privacy' },
+  openGraph: {
+    title: 'سياسة الخصوصيَّة | رؤية رقمية',
+    description:
+      'سياسة الخصوصيَّة لـ رؤية رقمية – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
+    url: '/privacy',
+    siteName: 'رؤية رقمية',
+    locale: 'ar_SY',
+    type: 'website',
+    images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'سياسة الخصوصيَّة' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'سياسة الخصوصيَّة | رؤية رقمية',
+    description:
+      'سياسة الخصوصيَّة لـ رؤية رقمية – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
+    images: ['/OG Image.webp'],
+  },
 };
 
 export default function PrivacyPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-12 md:py-20" dir="rtl">
       <header className="mb-10">
-        <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">سِياسة الخُصوصيَّة</h1>
-        <p className="text-muted-foreground text-sm">آخر تحديث: ١٩ يوليوز ٢٠٢٦</p>
+        <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">سياسة الخصوصيَّة</h1>
+        <p className="text-muted-foreground text-sm">آخر تحديث: 19 تمُّوز 2026</p>
       </header>
 
       <div className="space-y-8 text-base leading-relaxed text-foreground/90">

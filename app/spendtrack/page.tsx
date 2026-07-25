@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,6 +17,12 @@ import { ar } from 'date-fns/locale';
 import type { Category, ExpenseWithCategory } from '@/domains/spendtrack/lib/database.types';
 
 export const dynamic = 'force-dynamic';
+
+export const metadata: Metadata = {
+  title: 'SpendTrack',
+  description:
+    'تتبَّع مصروفاتك اليوميَّة، حلِّل أنماط إنفاقك، وتحكَّم في ميزانيَّتك مع SpendTrack.',
+};
 
 const PAGE_SIZE = 20;
 
@@ -219,7 +226,7 @@ function TotalSkeleton() {
 }
 
 function ChartSkeleton() {
-  return <Skeleton className="h-[200px] sm:h-[300px] w-full rounded-xl" />;
+  return <Skeleton className="h-50 sm:h-75 w-full rounded-xl" />;
 }
 
 function TransactionsSkeleton() {
@@ -230,7 +237,7 @@ function TransactionsSkeleton() {
       </CardHeader>
       <CardContent className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-[52px] w-full" />
+          <Skeleton key={i} className="h-13 w-full" />
         ))}
       </CardContent>
     </Card>

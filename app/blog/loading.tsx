@@ -3,7 +3,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function BlogLoading() {
   return (
     <div>
-      <div className="relative overflow-hidden mb-14 rounded-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-border/50 p-8 md:p-12">
+      <div className="relative overflow-hidden mb-14 rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-background border border-border/50 p-8 md:p-12">
         <div
           className="absolute inset-0 opacity-[0.03]"
           style={{

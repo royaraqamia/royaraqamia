@@ -1,18 +1,35 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'شُروط الاستخدام | رؤية رقمية',
+  title: 'شروط الاستخدام',
   description:
-    'شُروط الاستخدام لمنصَّة رؤية رقمية – اقرأ الشُروط والالتزامات المتعلقة باستخدام خدماتنا.',
+    'شروط الاستخدام لـ رؤية رقمية – اقرأ الشُّروط والالتزامات المتعلِّقة باستخدام خدماتنا.',
   alternates: { canonical: '/terms' },
+  openGraph: {
+    title: 'شُروط الاستخدام | رؤية رقمية',
+    description:
+      'شروط الاستخدام لـ رؤية رقمية – اقرأ الشُّروط والالتزامات المتعلِّقة باستخدام خدماتنا.',
+    url: '/terms',
+    siteName: 'رؤية رقمية',
+    locale: 'ar_SY',
+    type: 'website',
+    images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'شروط الاستخدام' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'شروط الاستخدام | رؤية رقمية',
+    description:
+      'شروط الاستخدام لـ رؤية رقمية – اقرأ الشُّروط والالتزامات المتعلِّقة باستخدام خدماتنا.',
+    images: ['/OG Image.webp'],
+  },
 };
 
 export default function TermsPage() {
   return (
     <div className="mx-auto max-w-3xl px-6 py-12 md:py-20" dir="rtl">
       <header className="mb-10">
-        <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">شُروط الاستخدام</h1>
-        <p className="text-muted-foreground text-sm">آخر تحديث: ١٩ يوليوز ٢٠٢٦</p>
+        <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">شروط الاستخدام</h1>
+        <p className="text-muted-foreground text-sm">آخر تحديث: 19 تمُّوز 2026</p>
       </header>
 
       <div className="space-y-8 text-base leading-relaxed text-foreground/90">

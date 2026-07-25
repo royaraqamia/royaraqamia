@@ -30,7 +30,7 @@ const DialogOverlay = React.forwardRef<
     ref={ref}
     data-slot="dialog-overlay"
     className={cn(
-      'fixed inset-0 z-50 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
+      'fixed inset-0 z-[10000] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
       className
     )}
     {...props}
@@ -51,16 +51,17 @@ const DialogContent = React.forwardRef<
       aria-labelledby="dialog-title"
       data-slot="dialog-content"
       className={cn(
-        'fixed z-50 w-full grid gap-4 p-6 shadow-xl duration-300',
+        'fixed z-[10000] w-full grid gap-4 p-6 shadow-xl duration-300',
         'ease-[cubic-bezier(0.16,1,0.3,1)]',
         'border border-border/50 bg-background/95 backdrop-blur-md',
-        'top-1/2 left-1/2 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl',
+        'top-1/2 left-1/2 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-3xl',
         'max-h-[85dvh] overflow-y-auto',
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
         'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-        'max-md:bottom-0 max-md:left-0 max-md:right-0 max-md:top-auto',
-        'max-md:max-w-none max-md:translate-x-0 max-md:translate-y-0',
-        'max-md:rounded-t-2xl max-md:rounded-b-none',
+        'max-md:bottom-6 max-md:top-auto',
+        'max-md:w-[calc(100%-48px)] max-md:max-w-none',
+        'max-md:translate-y-0',
+        'max-md:rounded-t-3xl max-md:rounded-b-none',
         'max-md:data-[state=open]:slide-in-from-bottom-4',
         'max-md:data-[state=closed]:slide-out-to-bottom',
         className

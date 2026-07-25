@@ -80,7 +80,7 @@ function NotFoundState({ code }: { code: string }) {
         >
           <m.div variants={fadeUp} className="mb-6 inline-flex">
             <m.div
-              className="flex size-20 items-center justify-center rounded-2xl bg-gradient-to-br from-destructive to-red-700 shadow-lg shadow-destructive/25"
+              className="flex size-20 items-center justify-center rounded-2xl bg-linear-to-br from-destructive to-red-700 shadow-lg shadow-destructive/25"
               initial={{ scale: 0, rotate: 180 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={{ type: 'spring', stiffness: 200, damping: 15 }}
@@ -102,7 +102,7 @@ function NotFoundState({ code }: { code: string }) {
           </m.p>
 
           <m.p variants={fadeUp} className="text-muted-foreground mt-2 text-sm">
-            تأكَّد من صحَّة الرَّمز وحاول مرة أخرى.
+            تأكَّد من صحَّة الرَّمز وحاول مرَّة أخرى.
           </m.p>
         </m.div>
 
@@ -126,7 +126,7 @@ function NotFoundState({ code }: { code: string }) {
                   الرَّمز الذي أدخلته غير صالح أو غير موجود في قاعدة البيانات.
                 </p>
                 <p className="text-muted-foreground mt-1 text-xs">
-                  تأكد من إدخال الرمز كاملاً مع الشرطات (COMP-YYYY-XXXXXXXX).
+                  تأكَّد من إدخال الرَّمز كاملًا مع الشَّرطات (COMP-YYYY-XXXXXXXX).
                 </p>
               </div>
               <div className="flex gap-3">
@@ -137,7 +137,7 @@ function NotFoundState({ code }: { code: string }) {
                   </Link>
                 </Button>
                 <Button asChild variant="ghost">
-                  <Link href="/">الصفحة الرئيسية</Link>
+                  <Link href="/">الصَّفحة الرَّئيسيَّة</Link>
                 </Button>
               </div>
             </CardContent>
@@ -156,13 +156,13 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
   const details = [
     {
       icon: <Hash className="size-4" />,
-      label: 'رمز الشهادة',
+      label: 'رمز الشَّهادة',
       value: certificate.certificate_code,
     },
-    { icon: <User className="size-4" />, label: 'اسم الطالب', value: certificate.student_name },
+    { icon: <User className="size-4" />, label: 'اسم الطَّالب', value: certificate.student_name },
     {
       icon: <GraduationCap className="size-4" />,
-      label: 'اسم الدورة',
+      label: 'اسم الدَّورة',
       value: certificate.course_name,
     },
     {
@@ -183,7 +183,7 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
       ? [
           {
             icon: <Trophy className="size-4" />,
-            label: 'الدرجة / الحالة',
+            label: 'الدَّرجة / الحالة',
             value: certificate.grade_or_status,
           },
         ]
@@ -245,13 +245,13 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
           <div className="mb-10 text-center">
             <m.div variants={fadeUp} className="mb-6 inline-flex">
               <m.div
-                className="relative flex size-20 items-center justify-center rounded-2xl bg-gradient-to-br from-green-500 to-emerald-700 shadow-lg shadow-green-500/25"
+                className="relative flex size-20 items-center justify-center rounded-2xl bg-linear-to-br from-green-500 to-emerald-700 shadow-lg shadow-green-500/25"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 15, duration: 0.8 }}
               >
                 <m.div
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  className="absolute inset-0 rounded-2xl bg-linear-to-r from-transparent via-white/20 to-transparent"
                   animate={{ x: ['-100%', '100%'] }}
                   transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                 />
@@ -288,13 +288,13 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
 
                 {/* Header */}
                 <m.div
-                  className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent flex flex-wrap items-center gap-3 border-b border-primary/10 px-6 py-5"
+                  className="bg-linear-to-l from-primary/10 via-primary/5 to-transparent flex flex-wrap items-center gap-3 border-b border-primary/10 px-6 py-5"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.4 }}
                 >
                   <m.div
-                    className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25"
+                    className="flex size-12 items-center justify-center rounded-full bg-linear-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25"
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
                     transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.15 }}
@@ -360,7 +360,7 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
                             <p className="text-muted-foreground text-xs">{detail.label}</p>
                             <p
                               className={`truncate text-sm font-semibold ${
-                                detail.label === 'رمز الشهادة'
+                                detail.label === 'رمز الشَّهادة'
                                   ? 'text-primary font-mono tracking-wider'
                                   : detail.label === 'تاريخ الانتهاء' && isExpired
                                     ? 'text-destructive'
@@ -384,10 +384,10 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
                       <CertificateQRCodeClient
                         code={certificate.certificate_code}
                         size={140}
-                        className="[&_svg]:w-[140px] [&_svg]:h-[140px]"
+                        className="[&_svg]:w-35 [&_svg]:h-35"
                       />
                       <div className="text-center">
-                        <p className="text-muted-foreground text-xs">امسح الرمز للتحقق</p>
+                        <p className="text-muted-foreground text-xs">امسح الرَّمز للتَّحقُّق</p>
                         <p className="text-muted-foreground mt-0.5 font-mono text-[10px] tracking-wider">
                           {certificate.certificate_code}
                         </p>
@@ -409,12 +409,12 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
             <Button asChild variant="outline" className="btn-hover-lift">
               <Link href="/verify">
                 <Search className="size-4" />
-                التحقق من شهادة أخرى
+                التَّحقُّق من شهادة أخرى
               </Link>
             </Button>
             <Button variant="outline" className="btn-hover-lift" onClick={copyLink}>
               {copied ? <Check className="size-4 text-green-500" /> : <Copy className="size-4" />}
-              {copied ? 'تم النسخ' : 'نسخ رابط التحقق'}
+              {copied ? 'تمَّ النَّسخ' : 'نسخ رابط التَّحقُّق'}
             </Button>
             <Button variant="outline" className="btn-hover-lift" onClick={handlePrint}>
               <Printer className="size-4" />

@@ -1,8 +1,14 @@
+import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { getAuthUser } from '@/domains/spendtrack/lib/auth-guard';
 import { CategoryList } from './category-list';
 import { CreateCategoryDialog } from './create-category-dialog';
+
+export const metadata: Metadata = {
+  title: 'تصنيفات المصروفات',
+  description: 'إدارة وتنظيم تصنيفات المصروفات في SpendTrack.',
+};
 
 export default async function CategoriesPage() {
   const { user, supabase } = await getAuthUser();
@@ -17,13 +23,13 @@ export default async function CategoriesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
-        <h1 className="text-fluid-h2 font-display font-bold tracking-tight">التصنيفات</h1>
+        <h1 className="text-fluid-h2 font-display font-bold tracking-tight">التَّصنيفات</h1>
         <CreateCategoryDialog />
       </div>
 
       <Card className="animate-slide-up stagger-2 card-lift">
         <CardHeader>
-          <CardTitle>جميع التصنيفات</CardTitle>
+          <CardTitle>جميع التَّصنيفات</CardTitle>
         </CardHeader>
         <CardContent>
           <CategoryList categories={categories ?? []} userId={user.id} />

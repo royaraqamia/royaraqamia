@@ -76,6 +76,7 @@ export default function VerifyPage() {
   const [copied, setCopied] = useState(false);
   const [isValidFormat, setIsValidFormat] = useState<boolean | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const copyTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
 
   useEffect(() => {
     if (code.length >= 5) {
@@ -94,7 +95,7 @@ export default function VerifyPage() {
       const data = await verifyCertificate(code);
       setResult(data);
     } catch {
-      setResult({ success: false, error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.' });
+      setResult({ success: false, error: 'حدث خطأ غير متوقَّع. الرجاء المحاولة مرَّة أخرى.' });
     } finally {
       setLoading(false);
     }
@@ -103,7 +104,8 @@ export default function VerifyPage() {
   function copyCode(val: string) {
     navigator.clipboard.writeText(val);
     setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (copyTimerRef.current) clearTimeout(copyTimerRef.current);
+    copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
   }
 
   return (
@@ -133,13 +135,13 @@ export default function VerifyPage() {
           <div className="mb-12 text-center">
             <m.div variants={itemVariants} className="mb-6 inline-flex">
               <m.div
-                className="relative flex size-20 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-primary/25"
+                className="relative flex size-20 items-center justify-center rounded-2xl bg-linear-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-primary/25"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={{ type: 'spring', stiffness: 200, damping: 15, duration: 0.8 }}
               >
                 <m.div
-                  className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                  className="absolute inset-0 rounded-2xl bg-linear-to-r from-transparent via-white/20 to-transparent"
                   animate={{ x: ['-100%', '100%'] }}
                   transition={{ duration: 3, repeat: Infinity, ease: 'linear' }}
                 />
@@ -423,13 +425,13 @@ function CertificateResultCard({
   return (
     <Card className="card-hover glass-card overflow-hidden border-primary/10">
       <m.div
-        className="bg-gradient-to-l from-primary/10 via-primary/5 to-transparent flex flex-wrap items-center gap-3 border-b border-primary/10 px-6 py-5"
+        className="bg-linear-to-l from-primary/10 via-primary/5 to-transparent flex flex-wrap items-center gap-3 border-b border-primary/10 px-6 py-5"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
       >
         <m.div
-          className="flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25"
+          className="flex size-12 items-center justify-center rounded-full bg-linear-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25"
           initial={{ scale: 0, rotate: -90 }}
           animate={{ scale: 1, rotate: 0 }}
           transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.1 }}
