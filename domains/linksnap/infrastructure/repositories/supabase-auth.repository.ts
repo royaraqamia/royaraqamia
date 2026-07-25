@@ -1,5 +1,5 @@
 import { AuthRepository } from '@/domains/linksnap/domain/interfaces/auth-repository.interface';
-import { getAdminSupabase } from '@/domains/linksnap/infrastructure/supabase/client';
+import { getAdminSupabase } from '@/lib/supabase/admin';
 
 export class SupabaseAuthRepository implements AuthRepository {
   async confirmUserEmail(email: string): Promise<{ userId: string; email: string }> {

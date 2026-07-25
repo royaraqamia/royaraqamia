@@ -12,12 +12,16 @@ import { PasswordInput } from '@/components/auth/PasswordInput';
 import { PasswordStrength } from '@/components/auth/PasswordStrength';
 import { AuthCard } from '@/components/auth/AuthCard';
 import { AuthDivider } from '@/components/auth/AuthDivider';
+import { Turnstile } from '@/components/auth/Turnstile';
 
 export default function SignupPage() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
   const [state, formAction, isPending] = useActionState(signup, null);
   const [password, setPassword] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   return (
     <AuthCard title="إنشاء حساب">
@@ -70,6 +74,10 @@ export default function SignupPage() {
           </div>
         </div>
 
+        <Turnstile onToken={setTurnstileToken} />
+
+        <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
+
         {state?.message && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
@@ -97,12 +105,34 @@ export default function SignupPage() {
       <Button
         type="button"
         variant="outline"
-        onClick={() => signInWithGoogle(redirectTo)}
+        isLoading={googleLoading}
+        onClick={async () => {
+          setGoogleLoading(true);
+          setGoogleError(null);
+          try {
+            await signInWithGoogle(redirectTo);
+          } catch (e) {
+            if (e instanceof Error && e.message !== 'NEXT_REDIRECT') {
+              setGoogleError('حدث خطأ أثناء الاتصال بـ Google. يرجى المحاولة لاحقاً');
+            }
+          } finally {
+            setGoogleLoading(false);
+          }
+        }}
         className="w-full h-12"
       >
         <GoogleLogo size={20} weight="bold" />
-        التسجيل بحساب Google
+        {googleLoading ? 'جارٍ الاتصال بـ Google...' : 'التسجيل بحساب Google'}
       </Button>
+      {googleError && (
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-sm text-destructive text-center mt-2"
+        >
+          {googleError}
+        </motion.p>
+      )}
 
       <p className="text-center text-sm text-muted-foreground mt-6">
         لديك حساب بالفعل؟{' '}

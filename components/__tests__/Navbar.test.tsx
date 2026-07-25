@@ -8,6 +8,14 @@ vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),
 }));
 
+vi.mock('../shared/notification-dropdown', () => ({
+  NotificationDropdown: () => null,
+}));
+
+vi.mock('../shared/user-dropdown', () => ({
+  UserDropdown: () => null,
+}));
+
 function renderWithProviders(ui: React.ReactElement) {
   return render(<UIProvider>{ui}</UIProvider>);
 }

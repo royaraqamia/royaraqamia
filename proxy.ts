@@ -12,10 +12,22 @@ const protectedRoutes: Record<string, string> = {
 const authRoutes: Record<string, string> = {
   '/auth/login': '/',
   '/auth/signup': '/',
+  '/auth/verify-otp': '/',
+  '/auth/reset-password': '/',
+  '/auth/update-password': '/',
 };
 
 function isSafeRedirect(path: string): boolean {
-  return path.startsWith('/') && !path.startsWith('//');
+  if (!path) return false;
+  try {
+    const decoded = decodeURIComponent(path);
+    if (!decoded.startsWith('/')) return false;
+    if (decoded.startsWith('//') || decoded.startsWith('\\\\')) return false;
+    if (/^(javascript|data|vbscript):/i.test(decoded)) return false;
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function proxy(request: NextRequest) {
@@ -45,11 +57,36 @@ export async function proxy(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const url = request.nextUrl.clone();
-      url.searchParams.delete('code');
-      return NextResponse.redirect(url);
+      // Ensure public.users record exists for Google OAuth users
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user && user.app_metadata?.provider === 'google') {
+        const { createClient } = await import('@supabase/supabase-js');
+        const admin = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL!,
+          process.env.SUPABASE_SERVICE_ROLE_KEY!,
+          { auth: { autoRefreshToken: false, persistSession: false } }
+        );
+        await admin
+          .from('users')
+          .upsert({
+            id: user.id,
+            email: user.email ?? '',
+            name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? '',
+            avatar_url: user.user_metadata?.avatar_url ?? null,
+            created_at: new Date().toISOString(),
+          })
+          .maybeSingle();
+      }
+      const next = request.nextUrl.searchParams.get('next') ?? '/';
+      const redirectUrl = isSafeRedirect(next) ? next : '/';
+      return NextResponse.redirect(new URL(redirectUrl, request.url));
     }
   }
+
+  // Refresh session if needed (uses refresh_token cookie)
+  await supabase.auth.getSession();
 
   const {
     data: { user },

@@ -1,4 +1,4 @@
-import { getAdminSupabase } from '@/domains/linksnap/infrastructure/supabase/client';
+import { getAdminSupabase } from '@/lib/supabase/admin';
 import {
   OtpRecord,
   OtpRepository,

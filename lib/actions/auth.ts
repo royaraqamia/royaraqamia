@@ -8,11 +8,21 @@ import { createOtpRecord, verifyOtpRecord } from '@/lib/otp/repository';
 import { sendOtpEmail } from '@/infrastructure/email/resend';
 import { checkRateLimit } from '@/lib/rate-limiter';
 import { OTP_CONFIG } from '@/lib/otp/config';
-import { SignupSchema, UpdatePasswordSchema } from '@/lib/schemas';
+import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/lib/schemas';
+import { verifyTurnstileToken } from '@/lib/turnstile';
 
-function safeRedirect(to: string | null, fallback: string = '/'): string {
-  if (!to || !to.startsWith('/') || to.startsWith('//')) return fallback;
-  return to;
+export function safeRedirect(to: string | null | undefined, fallback: string = '/'): string {
+  if (!to) return fallback;
+  try {
+    const decoded = decodeURIComponent(to);
+    if (!decoded.startsWith('/')) return fallback;
+    if (decoded.startsWith('//') || decoded.startsWith('\\\\')) return fallback;
+    if (/^\/\//.test(to)) return fallback;
+    if (/^(javascript|data|vbscript):/i.test(decoded)) return fallback;
+    return decoded;
+  } catch {
+    return fallback;
+  }
 }
 
 export async function signup(_prevState: { message: string } | null, formData: FormData) {
@@ -26,13 +36,19 @@ export async function signup(_prevState: { message: string } | null, formData: F
     return { message: parsed.error.issues[0]?.message || 'بيانات غير صحيحة' };
   }
 
-  if (!checkRateLimit(`signup:${email}`, 3, 60 * 60 * 1000)) {
+  const turnstileTokenSignup = formData.get('cf-turnstile-response') as string;
+  if (turnstileTokenSignup && !(await verifyTurnstileToken(turnstileTokenSignup))) {
+    return { message: 'فشل التحقق الأمني. يرجى تحديث الصفحة والمحاولة مرة أخرى' };
+  }
+
+  const signupRateOk = await checkRateLimit(`signup:${email}`, 3, 60 * 60 * 1000);
+  if (!signupRateOk) {
     return { message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
   }
 
   const supabase = await createClient();
 
-  const { error } = await supabase.auth.signUp({
+  const { data: signUpData, error } = await supabase.auth.signUp({
     email,
     password,
     options: { data: { name } },
@@ -47,12 +63,29 @@ export async function signup(_prevState: { message: string } | null, formData: F
     };
   }
 
+  if (signUpData.user?.id) {
+    const admin = getAdminSupabase();
+    await admin
+      .from('users')
+      .upsert({
+        id: signUpData.user.id,
+        email,
+        name,
+        created_at: new Date().toISOString(),
+      })
+      .maybeSingle();
+  }
+
   const otp = generateOtp();
   const { hash, salt } = hashOtp(otp);
   const expiresAt = new Date(Date.now() + OTP_CONFIG.TTL_MINUTES * 60 * 1000);
 
   await createOtpRecord(email, hash, salt, expiresAt);
-  await sendOtpEmail(email, otp);
+  try {
+    await sendOtpEmail(email, otp);
+  } catch {
+    // Email delivery failure — OTP is created, user can still resend from verify page
+  }
 
   const params = new URLSearchParams({ email });
   if (redirectTo) params.set('redirect', redirectTo);
@@ -63,6 +96,21 @@ export async function login(_prevState: { message: string } | null, formData: Fo
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const redirectTo = formData.get('redirectTo') as string | null;
+
+  const parsed = LoginSchema.safeParse({ email, password });
+  if (!parsed.success) {
+    return { message: parsed.error.issues[0]?.message || 'بيانات غير صحيحة' };
+  }
+
+  const turnstileTokenLogin = formData.get('cf-turnstile-response') as string;
+  if (turnstileTokenLogin && !(await verifyTurnstileToken(turnstileTokenLogin))) {
+    return { message: 'فشل التحقق الأمني. يرجى تحديث الصفحة والمحاولة مرة أخرى' };
+  }
+
+  const loginRateOk = await checkRateLimit(`login:${email}`, 5, 60 * 1000);
+  if (!loginRateOk) {
+    return { message: 'تم تجاوز الحد الأقصى لمحاولات الدخول. يرجى المحاولة بعد دقيقة' };
+  }
 
   const supabase = await createClient();
 
@@ -75,7 +123,22 @@ export async function login(_prevState: { message: string } | null, formData: Fo
       const expiresAt = new Date(Date.now() + OTP_CONFIG.TTL_MINUTES * 60 * 1000);
 
       await createOtpRecord(email, hash, salt, expiresAt);
-      await sendOtpEmail(email, otp);
+      try {
+        await sendOtpEmail(email, otp);
+      } catch {
+        // Email delivery failure — OTP is created, user can resend
+      }
+
+      // Store password temporarily so verifyOtp can auto-sign-in after confirmation
+      const { cookies } = await import('next/headers');
+      const cookieStore = await cookies();
+      cookieStore.set('pending_login', JSON.stringify({ password }), {
+        httpOnly: true,
+        secure: true,
+        sameSite: 'lax',
+        maxAge: 300,
+        path: '/',
+      });
 
       const params = new URLSearchParams({ email });
       if (redirectTo) params.set('redirect', redirectTo);
@@ -87,7 +150,12 @@ export async function login(_prevState: { message: string } | null, formData: Fo
   redirect(safeRedirect(redirectTo));
 }
 
-export async function verifyOtp(_prevState: { message: string } | null, formData: FormData) {
+type VerifyOtpResult = { message?: string; success?: boolean; redirectTo?: string } | null;
+
+export async function verifyOtp(
+  _prevState: VerifyOtpResult,
+  formData: FormData
+): Promise<VerifyOtpResult> {
   const email = formData.get('email') as string;
   const otp = formData.get('otp') as string;
   const redirectTo = formData.get('redirectTo') as string | null;
@@ -109,23 +177,44 @@ export async function verifyOtp(_prevState: { message: string } | null, formData
   if (user && user.email_confirmed_at === null) {
     await admin.auth.admin.updateUserById(user.id, { email_confirm: true });
   } else {
-    // No session (login flow with unconfirmed email) — find user by email via admin API
-    const { data: users, error: listError } = await admin.auth.admin.listUsers();
-    if (!listError && users) {
-      const target = users.users.find((u) => u.email === email);
-      if (target && target.email_confirmed_at === null) {
-        await admin.auth.admin.updateUserById(target.id, { email_confirm: true });
+    const { data: usersData, error: listError } = await admin.auth.admin.listUsers({
+      page: 1,
+      perPage: 10000,
+    });
+    if (!listError && usersData) {
+      const targetUser = usersData.users.find((u) => u.email === email);
+      if (targetUser && targetUser.email_confirmed_at === null) {
+        await admin.auth.admin.updateUserById(targetUser.id, { email_confirm: true });
+
+        // Auto-sign-in if user came from login flow (has pending_login cookie)
+        const { cookies } = await import('next/headers');
+        const cookieStore = await cookies();
+        const pending = cookieStore.get('pending_login');
+        if (pending) {
+          try {
+            const { password } = JSON.parse(pending.value);
+            await supabase.auth.signInWithPassword({ email, password });
+          } catch {
+            // Cookie expired or password changed — user will need to log in manually
+          }
+          cookieStore.delete('pending_login');
+        }
       }
     }
   }
 
-  redirect(safeRedirect(redirectTo));
+  return { success: true, redirectTo: safeRedirect(redirectTo) };
 }
 
 export async function resendOtp(_prevState: { message: string } | null, formData: FormData) {
   const email = formData.get('email') as string;
 
-  if (!checkRateLimit(`resend:${email}`, 1, OTP_CONFIG.RESEND_COOLDOWN_SECONDS * 1000)) {
+  const resendRateOk = await checkRateLimit(
+    `resend:${email}`,
+    1,
+    OTP_CONFIG.RESEND_COOLDOWN_SECONDS * 1000
+  );
+  if (!resendRateOk) {
     return { message: 'يرجى الانتظار قبل إعادة الإرسال' };
   }
 
@@ -134,7 +223,11 @@ export async function resendOtp(_prevState: { message: string } | null, formData
   const expiresAt = new Date(Date.now() + OTP_CONFIG.TTL_MINUTES * 60 * 1000);
 
   await createOtpRecord(email, hash, salt, expiresAt);
-  await sendOtpEmail(email, otp);
+  try {
+    await sendOtpEmail(email, otp);
+  } catch {
+    return { message: 'فشل إرسال رمز التحقق. يرجى المحاولة لاحقاً' };
+  }
 
   return { message: 'تم إعادة إرسال رمز التحقق' };
 }
@@ -142,7 +235,8 @@ export async function resendOtp(_prevState: { message: string } | null, formData
 export async function resetPassword(_prevState: { message: string } | null, formData: FormData) {
   const email = formData.get('email') as string;
 
-  if (!checkRateLimit(`reset:${email}`, 3, 60 * 60 * 1000)) {
+  const resetRateOk = await checkRateLimit(`reset:${email}`, 3, 60 * 60 * 1000);
+  if (!resetRateOk) {
     return { message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
   }
 
@@ -162,7 +256,12 @@ export async function resetPassword(_prevState: { message: string } | null, form
 
 export async function updatePassword(_prevState: { message: string } | null, formData: FormData) {
   const password = formData.get('password') as string;
+  const confirmPassword = formData.get('confirmPassword') as string;
   const redirectTo = formData.get('redirectTo') as string | null;
+
+  if (password !== confirmPassword) {
+    return { message: 'كلمة المرور غير متطابقة' };
+  }
 
   const parsed = UpdatePasswordSchema.safeParse({ password });
   if (!parsed.success) {
@@ -191,8 +290,9 @@ export async function signInWithGoogle(redirectTo?: string) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
 
   const callbackUrl = new URL(`${siteUrl}/auth/callback`);
-  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
-    callbackUrl.searchParams.set('next', redirectTo);
+  const safeNext = safeRedirect(redirectTo);
+  if (safeNext !== '/') {
+    callbackUrl.searchParams.set('next', safeNext);
   }
 
   const { data, error } = await supabase.auth.signInWithOAuth({
@@ -209,8 +309,9 @@ export async function signInWithOAuth(provider: 'google', redirectTo?: string) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
 
   const callbackUrl = new URL(`${siteUrl}/auth/callback`);
-  if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
-    callbackUrl.searchParams.set('next', redirectTo);
+  const safeNext = safeRedirect(redirectTo);
+  if (safeNext !== '/') {
+    callbackUrl.searchParams.set('next', safeNext);
   }
 
   const { data, error } = await supabase.auth.signInWithOAuth({

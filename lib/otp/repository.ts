@@ -1,17 +1,5 @@
 import { getAdminSupabase } from '@/lib/supabase/admin';
 
-interface OtpRecord {
-  id: string;
-  email: string;
-  otp_hash: string;
-  salt: string;
-  expires_at: string;
-  attempts: number;
-  max_attempts: number;
-  verified_at: string | null;
-  created_at: string;
-}
-
 export async function createOtpRecord(
   email: string,
   otpHash: string,
@@ -19,7 +7,7 @@ export async function createOtpRecord(
   expiresAt: Date
 ) {
   const supabase = getAdminSupabase();
-  const { error } = await (supabase.from('otp_codes' as any) as any).insert({
+  const { error } = await supabase.from('otp_codes').insert({
     email,
     otp_hash: otpHash,
     salt,
@@ -33,7 +21,7 @@ export async function verifyOtpRecord(email: string, otp: string) {
   const supabase = getAdminSupabase();
 
   const { data: record, error: fetchError } = await supabase
-    .from('otp_codes' as any)
+    .from('otp_codes')
     .select('*')
     .eq('email', email)
     .is('verified_at', null)
@@ -43,31 +31,26 @@ export async function verifyOtpRecord(email: string, otp: string) {
 
   if (fetchError || !record) return { error: 'لم يتم العثور على رمز التحقق' };
 
-  const otpRecord = record as unknown as OtpRecord;
+  if (new Date(record.expires_at) < new Date()) return { error: 'انتهت صلاحية رمز التحقق' };
 
-  if (new Date(otpRecord.expires_at) < new Date()) return { error: 'انتهت صلاحية رمز التحقق' };
-
-  if (otpRecord.attempts >= otpRecord.max_attempts)
+  if (record.attempts >= record.max_attempts)
     return { error: 'تم تجاوز الحد الأقصى لمحاولات التحقق' };
 
   const { verifyOtp: verifyOtpFn } = await import('@/lib/otp/generator');
-  const isValid = verifyOtpFn(otp, otpRecord.otp_hash, otpRecord.salt);
+  const isValid = verifyOtpFn(otp, record.otp_hash, record.salt);
 
   if (!isValid) {
-    const { data: row } = await supabase
-      .from('otp_codes' as any)
-      .select('attempts')
-      .eq('id', otpRecord.id)
-      .single();
-    await (supabase.from('otp_codes' as any) as any)
-      .update({ attempts: ((row as any)?.attempts ?? 0) + 1 })
-      .eq('id', otpRecord.id);
+    await supabase
+      .from('otp_codes')
+      .update({ attempts: record.attempts + 1 })
+      .eq('id', record.id);
     return { error: 'رمز التحقق غير صحيح' };
   }
 
-  await (supabase.from('otp_codes' as any) as any)
+  await supabase
+    .from('otp_codes')
     .update({ verified_at: new Date().toISOString() })
-    .eq('id', otpRecord.id);
+    .eq('id', record.id);
 
   return { success: true };
 }

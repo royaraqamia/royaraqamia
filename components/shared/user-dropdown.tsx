@@ -26,7 +26,13 @@ export function UserDropdown() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
-  if (isLoading) return null;
+  if (isLoading) {
+    return (
+      <div className="p-2">
+        <div className="size-[22px] rounded-full bg-muted animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div ref={ref} className="relative">
