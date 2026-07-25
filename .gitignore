@@ -56,3 +56,6 @@ next-env.d.ts
 # OS
 Desktop.ini
 $RECYCLE.BIN/
+
+# Sentry Config File
+.env.sentry-build-plugin

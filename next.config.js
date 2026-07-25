@@ -77,7 +77,8 @@ const nextConfig = {
 module.exports = withSentryConfig(withBundleAnalyzer(nextConfig), {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  silent: !process.env.CI,
+  silent: true,
+  dryRun: !process.env.CI && process.env.VERCEL !== '1',
   widenClientFileUpload: true,
   tunnelRoute: '/monitoring',
   hideSourceMaps: true,

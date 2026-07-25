@@ -10,20 +10,7 @@ import { checkRateLimit } from '@/lib/rate-limiter';
 import { OTP_CONFIG } from '@/lib/otp/config';
 import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/lib/schemas';
 import { verifyTurnstileToken } from '@/lib/turnstile';
-
-export function safeRedirect(to: string | null | undefined, fallback: string = '/'): string {
-  if (!to) return fallback;
-  try {
-    const decoded = decodeURIComponent(to);
-    if (!decoded.startsWith('/')) return fallback;
-    if (decoded.startsWith('//') || decoded.startsWith('\\\\')) return fallback;
-    if (/^\/\//.test(to)) return fallback;
-    if (/^(javascript|data|vbscript):/i.test(decoded)) return fallback;
-    return decoded;
-  } catch {
-    return fallback;
-  }
-}
+import { safeRedirect } from '@/lib/safe-redirect';
 
 export async function signup(_prevState: { message: string } | null, formData: FormData) {
   const name = formData.get('name') as string;

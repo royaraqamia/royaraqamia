@@ -183,7 +183,7 @@ function formData(entries: Record<string, string>): FormData {
 
 describe('safeRedirect', () => {
   async function safeRedirect(to: string | null | undefined, fallback?: string) {
-    const mod = await import('@/lib/actions/auth');
+    const mod = await import('@/lib/safe-redirect');
     return mod.safeRedirect(to, fallback ?? '/');
   }
 
