@@ -132,7 +132,7 @@ export function Services() {
                 <button
                   key={tab.id}
                   onClick={() => setActiveServicesTab(tab.id)}
-                  className={`min-h-[44px] px-3 sm:px-4 rounded-xl font-bold text-fluid-xs transition-all-smooth flex items-center justify-center gap-2 touch-target shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring btn-press ${
+                  className={`min-h-[44px] px-3 sm:px-4 rounded-full font-bold text-fluid-xs transition-all-smooth flex items-center justify-center gap-2 touch-target shrink-0 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring btn-press ${
                     isActive
                       ? 'bg-primary text-white shadow-lg shadow-primary/30 scale-105 border border-primary/50'
                       : 'text-foreground/70 hover:bg-white/10 hover:text-foreground border border-transparent hover:border-white/20'

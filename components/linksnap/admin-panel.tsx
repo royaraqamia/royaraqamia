@@ -164,7 +164,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
         </div>
         <button
           onClick={fetchAdminStats}
-          className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
+          className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           <span>إعادة محاولة التحقق</span>
@@ -188,7 +188,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
         <button
           onClick={fetchAdminStats}
           disabled={loading}
-          className="self-start md:self-auto px-4 py-2 bg-muted/50 hover:bg-muted text-muted-foreground border border-border font-semibold text-xs rounded-xl transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
+          className="self-start md:self-auto px-4 py-2 bg-muted/50 hover:bg-muted text-muted-foreground border border-border font-semibold text-xs rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
         >
           <RefreshCw
             className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}
@@ -268,7 +268,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
             <button
               onClick={() => setModerateError(null)}
               aria-label="إغلاق"
-              className="p-1 hover:bg-destructive/20 rounded transition-colors cursor-pointer focus-ring touch-target btn-press"
+              className="p-1 hover:bg-destructive/20 rounded-full transition-colors cursor-pointer focus-ring touch-target btn-press"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -363,7 +363,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                               setBlockConfirm({ code: link.code, isBlocked: link.isBlocked })
                             }
                             disabled={isModding}
-                            className={`px-3 py-2 font-bold text-xs rounded-lg border transition-all inline-flex items-center gap-1 cursor-pointer focus-ring btn-press touch-target ${
+                            className={`px-3 py-2 font-bold text-xs rounded-full border transition-all inline-flex items-center gap-1 cursor-pointer focus-ring btn-press touch-target ${
                               link.isBlocked
                                 ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
                                 : 'bg-destructive/10 hover:bg-destructive/20 border-destructive/30 text-destructive'
@@ -432,7 +432,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                           setBlockConfirm({ code: link.code, isBlocked: link.isBlocked })
                         }
                         disabled={isModding}
-                        className={`px-3 py-1.5 font-bold text-xs rounded-lg border transition-all inline-flex items-center gap-1 cursor-pointer focus-ring btn-press touch-target ${
+                        className={`px-3 py-1.5 font-bold text-xs rounded-full border transition-all inline-flex items-center gap-1 cursor-pointer focus-ring btn-press touch-target ${
                           link.isBlocked
                             ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
                             : 'bg-destructive/10 hover:bg-destructive/20 border-destructive/30 text-destructive'
@@ -471,7 +471,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                   <button
                     onClick={() => setPage(Math.max(0, page - 1))}
                     disabled={page === 0}
-                    className="p-1.5 text-muted-foreground hover:text-primary disabled:cursor-not-allowed rounded-lg hover:bg-muted transition-colors focus-ring touch-target btn-press"
+                    className="p-1.5 text-muted-foreground hover:text-primary disabled:cursor-not-allowed rounded-full hover:bg-muted transition-colors focus-ring touch-target btn-press"
                     aria-label="الصفحة السابقة"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -483,7 +483,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                       <button
                         key={pageNum}
                         onClick={() => setPage(pageNum)}
-                        className={`w-9 h-9 text-xs font-bold rounded-lg transition-colors cursor-pointer focus-ring touch-target btn-press ${
+                        className={`w-9 h-9 text-xs font-bold rounded-full transition-colors cursor-pointer focus-ring touch-target btn-press ${
                           pageNum === page
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-muted'
@@ -496,7 +496,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                   <button
                     onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
                     disabled={page >= totalPages - 1}
-                    className="p-1.5 text-muted-foreground hover:text-primary disabled:cursor-not-allowed rounded-lg hover:bg-muted transition-colors focus-ring touch-target btn-press"
+                    className="p-1.5 text-muted-foreground hover:text-primary disabled:cursor-not-allowed rounded-full hover:bg-muted transition-colors focus-ring touch-target btn-press"
                     aria-label="الصفحة التالية"
                   >
                     <ChevronLeft className="w-4 h-4" />

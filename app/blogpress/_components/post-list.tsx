@@ -102,7 +102,7 @@ export function PostList({ posts }: PostListProps) {
               id={`tab-${f.value}`}
               onClick={() => setActiveFilter(f.value)}
               className={cn(
-                'px-3.5 py-2.5 text-sm border-b-2 transition-smooth -mb-px rounded-t-lg cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11',
+                'px-3.5 py-2.5 text-sm border-b-2 transition-smooth -mb-px rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11',
                 activeFilter === f.value
                   ? 'border-primary text-foreground font-medium'
                   : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -153,7 +153,7 @@ export function PostList({ posts }: PostListProps) {
             </p>
             {!searchQuery && activeFilter === 'all' && (
               <Button
-                className="mt-5 transition-smooth shadow-sm hover:shadow-md rounded-xl"
+                className="mt-5 transition-smooth shadow-sm hover:shadow-md rounded-full"
                 disabled={pending}
                 onClick={() => startTransition(() => createPost())}
                 aria-busy={pending}
@@ -311,7 +311,7 @@ function PostRow({ post }: { post: Post }) {
                 </DialogHeader>
                 <div className="flex justify-end gap-2">
                   <DialogTrigger asChild>
-                    <Button variant="outline" type="button" className="rounded-xl">
+                    <Button variant="outline" type="button" className="rounded-full">
                       إلغاء
                     </Button>
                   </DialogTrigger>
@@ -326,7 +326,7 @@ function PostRow({ post }: { post: Post }) {
                           toast.error('فشل حذف المقال');
                         }
                       }}
-                      className="rounded-xl"
+                      className="rounded-full"
                     >
                       حذف
                     </Button>

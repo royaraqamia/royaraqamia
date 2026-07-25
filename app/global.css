@@ -322,7 +322,7 @@
       0 0 0 2px hsl(var(--background)),
       0 0 0 4px hsl(var(--ring)),
       0 0 0 6px hsl(var(--ring) / 0.3);
-    border-radius: 6px;
+    border-radius: 9999px;
     transition: box-shadow 0.15s ease-out;
   }
 
@@ -1132,7 +1132,7 @@
 .scroll-snap-item:focus-visible {
   outline: 3px solid #8b5cf6;
   outline-offset: 3px;
-  border-radius: 1rem;
+  border-radius: 9999px;
 }
 
 /* Animations */

@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
       return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
-          <div className="max-w-md w-full bg-card border border-destructive/20 rounded-lg p-6 text-center">
+          <div className="max-w-md w-full bg-card border border-destructive/20 rounded-full p-6 text-center">
             <WarningCircle className="w-12 h-12 text-destructive mx-auto mb-4" weight="duotone" />
             <h2 className="text-h3 font-bold text-foreground mb-2">حدث خطأ غير متوقع</h2>
             <p className="text-body text-muted-foreground mb-4">
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </p>
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className="px-6 py-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               تحديث الصفحة
             </button>

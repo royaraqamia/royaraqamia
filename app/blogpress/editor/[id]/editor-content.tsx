@@ -707,7 +707,7 @@ export function EditorContent({ post }: EditorContentProps) {
                 <button
                   key={btn.action}
                   onClick={() => setShortcutsOpen(true)}
-                  className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shrink-0 cursor-pointer"
+                  className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shrink-0 cursor-pointer"
                   aria-label={btn.label}
                   title={btn.label}
                 >
@@ -719,7 +719,7 @@ export function EditorContent({ post }: EditorContentProps) {
               <button
                 key={btn.action}
                 onClick={() => insertMarkdown(btn.action as any)}
-                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shrink-0 cursor-pointer"
+                className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shrink-0 cursor-pointer"
                 aria-label={btn.label}
                 title={btn.shortcut ? `${btn.label} (${btn.shortcut})` : btn.label}
               >
@@ -755,7 +755,7 @@ export function EditorContent({ post }: EditorContentProps) {
         <div
           className={`flex-1 flex-col min-w-0 border-l border-border/50 overflow-y-auto ${isPreview ? 'flex' : 'hidden'} lg:flex!`}
         >
-          <div className="p-6 prose prose-sm dark:prose-invert max-w-none w-full prose-headings:font-bold prose-a:text-primary prose-img:rounded-xl prose-img:shadow-sm">
+          <div className="p-6 prose prose-sm dark:prose-invert max-w-none w-full prose-headings:font-bold prose-a:text-primary prose-img:rounded-full prose-img:shadow-sm">
             <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
               {content || '*ابدأ الكتابة لرؤية المعاينة...*'}
             </ReactMarkdown>
@@ -813,7 +813,7 @@ export function EditorContent({ post }: EditorContentProps) {
             size="sm"
             disabled={pending}
             onClick={() => handleSave()}
-            className="transition-smooth min-h-11 rounded-xl"
+            className="transition-smooth min-h-11 rounded-full"
           >
             {pending ? (
               <>
@@ -830,7 +830,7 @@ export function EditorContent({ post }: EditorContentProps) {
               size="sm"
               onClick={handlePublishClick}
               disabled={pending}
-              className="transition-smooth shadow-sm hover:shadow-md min-h-11 rounded-xl"
+              className="transition-smooth shadow-sm hover:shadow-md min-h-11 rounded-full"
             >
               {pending ? (
                 <>
@@ -914,11 +914,11 @@ export function EditorContent({ post }: EditorContentProps) {
             <Button
               variant="outline"
               onClick={() => setPublishDialogOpen(false)}
-              className="rounded-xl"
+              className="rounded-full"
             >
               العودة للتحرير
             </Button>
-            <Button onClick={handlePublishAnyway} className="rounded-xl">
+            <Button onClick={handlePublishAnyway} className="rounded-full">
               نشر على أيِّ حال
             </Button>
           </div>

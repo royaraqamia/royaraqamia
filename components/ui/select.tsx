@@ -32,7 +32,7 @@ function SelectTrigger({
       data-size={size}
       aria-label="اختر خيارًا"
       className={cn(
-        'flex h-12 w-full items-center justify-between rounded-xl border border-input bg-background px-3.5 py-2.5 text-base placeholder:text-muted-foreground shadow-sm',
+        'flex h-12 w-full items-center justify-between rounded-full border border-input bg-background px-3.5 py-2.5 text-base placeholder:text-muted-foreground shadow-sm',
         'hover:border-ring/30 hover:shadow-sm',
         'focus:outline-none focus:ring-2 focus:ring-ring/50 focus:ring-offset-2 focus:border-ring focus:shadow-md',
         'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/50',
@@ -87,7 +87,7 @@ function SelectContent({
                   ...(child.props as any),
                   className: cn(
                     (child.props as any).className as string | undefined,
-                    'rounded-lg mx-1 my-0.5'
+                    'rounded-full mx-1 my-0.5'
                   ),
                 });
               }
@@ -122,7 +122,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-sm py-1.5 pr-8 pl-2 text-sm outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "focus:bg-accent focus:text-accent-foreground [&_svg:not([class*='text-'])]:text-muted-foreground relative flex w-full cursor-default items-center gap-2 rounded-full py-1.5 pr-8 pl-2 text-sm outline-none select-none data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}
       {...props}

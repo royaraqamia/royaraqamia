@@ -90,7 +90,7 @@ export function AddHabitModal({
               <button
                 type="button"
                 onClick={() => onFrequencyChange('daily')}
-                className={`py-3 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
+                className={`py-3 px-4 text-xs font-semibold rounded-full border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
                   habitFrequency === 'daily'
                     ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                     : 'border-border bg-muted text-foreground hover:bg-accent'
@@ -101,7 +101,7 @@ export function AddHabitModal({
               <button
                 type="button"
                 onClick={() => onFrequencyChange('weekly')}
-                className={`py-3 px-4 text-xs font-semibold rounded-xl border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
+                className={`py-3 px-4 text-xs font-semibold rounded-full border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
                   habitFrequency === 'weekly'
                     ? 'bg-primary border-primary text-primary-foreground shadow-sm'
                     : 'border-border bg-muted text-foreground hover:bg-accent'
@@ -127,7 +127,7 @@ export function AddHabitModal({
                     onClick={() => onIconChange(item.name)}
                     aria-label={item.name}
                     aria-pressed={isSelected}
-                    className={`aspect-square rounded-xl flex items-center justify-center border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
+                    className={`aspect-square rounded-full flex items-center justify-center border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
                       isSelected
                         ? 'border-primary ring-2 ring-primary bg-primary/10 text-primary'
                         : 'border-border bg-muted text-muted-foreground hover:bg-accent hover:border-border'

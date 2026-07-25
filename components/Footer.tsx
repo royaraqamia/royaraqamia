@@ -81,7 +81,7 @@ export function Footer() {
             {/* Logo + Name */}
             <button
               onClick={scrollToHero}
-              className="flex items-center gap-3 group cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-2xl transition-all duration-300 overflow-visible min-h-11"
+              className="flex items-center gap-3 group cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-full transition-all duration-300 overflow-visible min-h-11"
               aria-label="العودة إلى الصفحة الرئيسية"
             >
               <div className="h-14 w-14 relative">
@@ -133,7 +133,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   aria-label={social.ariaLabel}
                   title={social.ariaLabel}
-                  className="w-11 h-11 rounded-xl bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all duration-300 text-muted-foreground cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                  className="w-11 h-11 rounded-full bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all duration-300 text-muted-foreground cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   <Icon className="w-5 h-5 transition-all duration-300" weight="fill" />
                 </a>

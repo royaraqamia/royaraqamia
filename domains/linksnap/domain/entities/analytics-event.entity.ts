@@ -8,13 +8,6 @@ export interface AnalyticsEvent {
   ipCountry: string | null; // Location indicator (e.g. ISO code)
 }
 
-export interface AnalyticsEventInput {
-  linkCode: string;
-  referrer: string | null;
-  userAgent: string | null;
-  ipCountry: string | null;
-}
-
 export interface DailyClickStat {
   date: string; // ISO format date 'YYYY-MM-DD'
   clicks: number;

@@ -5,7 +5,7 @@ import { CodeGenerator } from '../../domain/services/code-generator';
 
 const MAX_CODE_ATTEMPTS = 5;
 
-export interface BulkShortenResult {
+interface BulkShortenResult {
   originalUrl: string;
   shortLink?: ShortLink;
   error?: string;

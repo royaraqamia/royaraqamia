@@ -40,7 +40,7 @@ export function SocialShare({ url, title }: SocialShareProps) {
     <div className="flex items-center gap-2">
       <button
         onClick={handleNativeShare}
-        className="size-9 rounded-xl bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all cursor-pointer"
+        className="size-9 rounded-full bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all cursor-pointer"
         aria-label="مشاركة المقال"
         title="مشاركة المقال"
       >
@@ -50,7 +50,7 @@ export function SocialShare({ url, title }: SocialShareProps) {
         href={`https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="size-9 rounded-xl bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all"
+        className="size-9 rounded-full bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all"
         aria-label="مشاركة على Telegram"
         title="مشاركة على Telegram"
       >
@@ -62,7 +62,7 @@ export function SocialShare({ url, title }: SocialShareProps) {
         href={`https://wa.me/?text=${encodedTitle}%20${encodedUrl}`}
         target="_blank"
         rel="noopener noreferrer"
-        className="size-9 rounded-xl bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all"
+        className="size-9 rounded-full bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all"
         aria-label="مشاركة على WhatsApp"
         title="مشاركة على WhatsApp"
       >
@@ -72,7 +72,7 @@ export function SocialShare({ url, title }: SocialShareProps) {
       </a>
       <button
         onClick={handleCopyLink}
-        className="size-9 rounded-xl bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all cursor-pointer"
+        className="size-9 rounded-full bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-all cursor-pointer"
         aria-label={copied ? 'تم نسخ الرابط' : 'نسخ الرابط'}
         title={copied ? 'تم نسخ الرابط' : 'نسخ الرابط'}
       >

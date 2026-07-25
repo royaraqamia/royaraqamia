@@ -4,7 +4,7 @@ import {
 } from '../../domain/interfaces/admin-repository.interface';
 import { AdminValidator } from '../../domain/services/admin-validator';
 
-export type SystemStatsReport = SystemStatsReportData;
+type SystemStatsReport = SystemStatsReportData;
 
 export class GetSystemStatsUseCase {
   constructor(private adminRepository: IAdminRepository) {}

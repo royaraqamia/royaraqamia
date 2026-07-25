@@ -88,7 +88,7 @@ export function CalendarGrid({
                 return (
                   <div
                     key={gridItem.date}
-                    className={`aspect-square rounded-xl flex flex-col items-center justify-center border text-center transition-all duration-200 ease-out cursor-pointer ${!reducedMotion ? 'hover:scale-105' : ''} btn-press touch-target focus-ring will-change-transform ${baseClass}${todayClass}${activeClass}`}
+                    className={`aspect-square rounded-full flex flex-col items-center justify-center border text-center transition-all duration-200 ease-out cursor-pointer ${!reducedMotion ? 'hover:scale-105' : ''} btn-press touch-target focus-ring will-change-transform ${baseClass}${todayClass}${activeClass}`}
                     style={cellStyle}
                     onClick={() => onDateSelect(gridItem.date)}
                     role="button"

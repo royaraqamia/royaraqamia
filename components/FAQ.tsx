@@ -98,7 +98,7 @@ export function FAQ() {
 
                     <button
                       onClick={() => setOpenIndex(isOpen ? null : index)}
-                      className="relative w-full px-6 py-5 md:py-6 flex items-start md:items-center justify-between text-right gap-6 outline-none cursor-pointer min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                      className="relative w-full px-6 py-5 md:py-6 flex items-start md:items-center justify-between text-right gap-6 outline-none cursor-pointer min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-full"
                       aria-expanded={isOpen}
                       aria-controls={`faq-answer-${index}`}
                     >

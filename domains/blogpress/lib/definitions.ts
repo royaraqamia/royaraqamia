@@ -14,13 +14,3 @@ export interface Post {
   created_at: string;
   updated_at: string;
 }
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-}
-
-export type ActionState = { errors?: Record<string, string[]>; message?: string } | undefined;

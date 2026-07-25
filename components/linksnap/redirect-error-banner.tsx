@@ -38,7 +38,7 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
           <button
             onClick={onDismiss}
             aria-label="إغلاق"
-            className="absolute top-3 left-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer press-scale focus-ring touch-target"
+            className="absolute top-3 left-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer press-scale focus-ring touch-target rounded-full"
           >
             <XCircle aria-hidden="true" className="w-4 h-4" />
           </button>

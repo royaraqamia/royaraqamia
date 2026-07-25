@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { getPublicSupabase } from '@/domains/linksnap/infrastructure/supabase/client';
 
-export interface AuthenticatedUser {
+interface AuthenticatedUser {
   id: string;
   email: string;
 }

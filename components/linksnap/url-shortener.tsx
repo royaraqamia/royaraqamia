@@ -32,7 +32,7 @@ export function UrlShortener({ token, onLinkCreated }: UrlShortenerProps) {
             role="tab"
             aria-selected={activeTab === 'single'}
             onClick={() => switchTab('single')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press ${
               activeTab === 'single'
                 ? 'bg-card text-foreground shadow-sm border border-border/50 font-bold'
                 : 'text-muted-foreground hover:text-foreground font-medium'
@@ -46,7 +46,7 @@ export function UrlShortener({ token, onLinkCreated }: UrlShortenerProps) {
             role="tab"
             aria-selected={activeTab === 'bulk'}
             onClick={() => switchTab('bulk')}
-            className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all flex items-center justify-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press ${
               activeTab === 'bulk'
                 ? 'bg-card text-foreground shadow-sm border border-border/50 font-bold'
                 : 'text-muted-foreground hover:text-foreground font-medium'

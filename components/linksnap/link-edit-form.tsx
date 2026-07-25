@@ -67,7 +67,7 @@ export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: Lin
           <button
             type="submit"
             disabled={updateLoading}
-            className="px-3 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs rounded-lg transition-all cursor-pointer btn-press inline-flex items-center gap-1 touch-target focus-ring"
+            className="px-3 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs rounded-full transition-all cursor-pointer btn-press inline-flex items-center gap-1 touch-target focus-ring"
           >
             {updateLoading ? (
               <>
@@ -84,7 +84,7 @@ export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: Lin
           <button
             type="button"
             onClick={onCancel}
-            className="px-3 py-2.5 bg-muted hover:bg-muted/80 text-muted-foreground font-medium text-xs rounded-lg transition-all cursor-pointer btn-press touch-target focus-ring"
+            className="px-3 py-2.5 bg-muted hover:bg-muted/80 text-muted-foreground font-medium text-xs rounded-full transition-all cursor-pointer btn-press touch-target focus-ring"
           >
             إلغاء
           </button>

@@ -21,8 +21,3 @@ export type Expense = {
 export type ExpenseWithCategory = Expense & {
   categories?: Pick<Category, 'name' | 'color_hex'>;
 };
-
-export type Tables = {
-  categories: Category;
-  expenses: Expense;
-};

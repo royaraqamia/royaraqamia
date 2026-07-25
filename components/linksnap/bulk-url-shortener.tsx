@@ -171,7 +171,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
           <button
             type="submit"
             disabled={loading || !bulkUrls.trim()}
-            className="w-full py-4 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-xl transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer group btn-lift focus-ring touch-target btn-press"
+            className="w-full py-4 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-full transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer group btn-lift focus-ring touch-target btn-press"
           >
             {loading ? (
               <>
@@ -217,7 +217,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
           {successCount > 0 && (
             <button
               onClick={copyAllToClipboard}
-              className="w-full py-2.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
+              className="w-full py-2.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
             >
               {allCopied ? (
                 <>
@@ -279,7 +279,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
                             <button
                               onClick={() => copyToClipboard(shortFull, index)}
                               aria-label="نسخ الرابط"
-                              className="p-1.5 hover:bg-muted rounded-lg text-muted-foreground hover:text-foreground transition-all cursor-pointer focus-ring touch-target btn-press"
+                              className="p-1.5 hover:bg-muted rounded-full text-muted-foreground hover:text-foreground transition-all cursor-pointer focus-ring touch-target btn-press"
                             >
                               {copiedIndexes[index] ? (
                                 <Check aria-hidden="true" className="w-3.5 h-3.5 text-success" />
@@ -302,7 +302,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
 
           <button
             onClick={resetForm}
-            className="w-full py-3 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-semibold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
+            className="w-full py-3 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
           >
             <RefreshCw aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground" />
             <span>اختصار دفعة أخرى</span>

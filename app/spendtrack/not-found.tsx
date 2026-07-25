@@ -16,7 +16,7 @@ export default function NotFound() {
         </div>
         <Link
           href="/spendtrack"
-          className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-xl px-5 py-2.5 transition-all shadow-md btn-press btn-lift focus-ring touch-target"
+          className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-full px-5 py-2.5 transition-all shadow-md btn-press btn-lift focus-ring touch-target"
         >
           <ArrowRight className="w-4 h-4" />
           العودة إلى لوحة التحكم

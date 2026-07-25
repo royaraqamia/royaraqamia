@@ -39,9 +39,3 @@ export interface AggregateStats {
   totalHabitsCompletedToday: number;
   completedPercentageToday: number;
 }
-
-export interface ApiResponse<T = unknown> {
-  data?: T;
-  error?: string;
-  mode?: 'supabase' | 'local';
-}

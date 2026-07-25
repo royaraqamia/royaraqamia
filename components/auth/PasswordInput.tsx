@@ -48,7 +48,7 @@ export function PasswordInput({
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') setShowPassword((prev) => !prev);
         }}
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:text-foreground"
+        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:text-foreground rounded-full"
         tabIndex={0}
         aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
       >

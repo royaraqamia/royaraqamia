@@ -79,7 +79,7 @@ export function ConfirmDialog({
         <button
           onClick={onCancel}
           aria-label="إغلاق"
-          className="absolute top-4 left-4 p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-ring touch-target btn-press"
+          className="absolute top-4 left-4 p-1 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-ring touch-target btn-press rounded-full"
         >
           <X aria-hidden="true" className="w-4 h-4" />
         </button>
@@ -102,14 +102,14 @@ export function ConfirmDialog({
           <div className="flex gap-3 w-full">
             <button
               onClick={onCancel}
-              className="flex-1 py-2.5 px-4 text-sm font-semibold text-foreground bg-muted hover:bg-muted/80 rounded-xl transition-colors cursor-pointer focus-ring touch-target btn-press"
+              className="flex-1 py-2.5 px-4 text-sm font-semibold text-foreground bg-muted hover:bg-muted/80 rounded-full transition-colors cursor-pointer focus-ring touch-target btn-press"
             >
               {cancelLabel}
             </button>
             <button
               onClick={onConfirm}
               autoFocus
-              className={`flex-1 py-2.5 px-4 text-sm font-semibold text-primary-foreground rounded-xl transition-colors shadow-md cursor-pointer focus-ring btn-press touch-target ${confirmColors[variant]}`}
+              className={`flex-1 py-2.5 px-4 text-sm font-semibold text-primary-foreground rounded-full transition-colors shadow-md cursor-pointer focus-ring btn-press touch-target ${confirmColors[variant]}`}
             >
               {confirmLabel}
             </button>

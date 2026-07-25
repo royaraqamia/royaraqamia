@@ -13,10 +13,6 @@ export const updateHabitSchema = z.object({
   frequency: z.enum(['daily', 'weekly']).optional(),
 });
 
-export const archiveHabitSchema = z.object({
-  habitId: z.string().min(1, 'معرّف العادة مطلوب'),
-});
-
 export const toggleLogSchema = z.object({
   habitId: z.string().min(1, 'معرّف العادة مطلوب'),
   date: z
@@ -25,7 +21,3 @@ export const toggleLogSchema = z.object({
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'صيغة التاريخ غير صالحة'),
   completed: z.boolean(),
 });
-
-export type CreateHabitInput = z.infer<typeof createHabitSchema>;
-export type UpdateHabitInput = z.infer<typeof updateHabitSchema>;
-export type ToggleLogInput = z.infer<typeof toggleLogSchema>;

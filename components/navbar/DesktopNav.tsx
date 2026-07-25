@@ -158,7 +158,7 @@ export function DesktopNav({
                   ref={dropdownRefToUse}
                 >
                   <button
-                    className={`flex items-center gap-1.5 text-foreground transition-all duration-200 rounded-lg px-3 py-2 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary hover:bg-white/5'}`}
+                    className={`flex items-center gap-1.5 text-foreground transition-all duration-200 rounded-full px-3 py-2 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary hover:bg-white/5'}`}
                     aria-label={link.label}
                     aria-haspopup="menu"
                     aria-expanded={isDropdownOpen}

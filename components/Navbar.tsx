@@ -138,7 +138,7 @@ export function Navbar() {
       {/* Skip Navigation Link for Accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:right-4 focus:z-100 focus:bg-violet-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-400"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:right-4 focus:z-100 focus:bg-violet-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-full focus:outline-none focus:ring-2 focus:ring-violet-400"
       >
         تخطي إلى المحتوى الرئيسي
       </a>
@@ -167,7 +167,7 @@ export function Navbar() {
               <NotificationDropdown />
               <UserDropdown />
               <button
-                className="flex items-center justify-center w-11 h-11 text-foreground hover:bg-muted rounded-lg transition-colors motion-reduce:transition-none"
+                className="flex items-center justify-center w-11 h-11 text-foreground hover:bg-muted rounded-full transition-colors motion-reduce:transition-none"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label={isMobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
                 aria-expanded={isMobileMenuOpen}

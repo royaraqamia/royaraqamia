@@ -125,7 +125,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
               return (
                 <label
                   key={cat.id}
-                  className="flex items-center gap-2 rounded-lg px-2 py-2 text-sm hover:bg-accent cursor-pointer transition-colors duration-150"
+                  className="flex items-center gap-2 rounded-full px-2 py-2 text-sm hover:bg-accent cursor-pointer transition-colors duration-150"
                 >
                   <span
                     className={`flex size-4 shrink-0 items-center justify-center rounded border transition-colors duration-150 ${

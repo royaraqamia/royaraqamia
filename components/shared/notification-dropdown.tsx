@@ -136,7 +136,7 @@ export function NotificationDropdown() {
                         e.stopPropagation();
                         deleteNotification(notification.id);
                       }}
-                      className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+                      className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full hover:bg-muted"
                       aria-label="حذف الإشعار"
                     >
                       <X size={14} className="text-muted-foreground" />

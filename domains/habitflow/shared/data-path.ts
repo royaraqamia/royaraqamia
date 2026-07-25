@@ -4,7 +4,7 @@ import os from 'os';
 
 let cachedDir: string | null = null;
 
-export function getDataDir(): string {
+function getDataDir(): string {
   if (cachedDir) return cachedDir;
 
   const envDir = process.env.DATA_DIR;
@@ -31,8 +31,4 @@ export function getDataDir(): string {
 
 export function getDbPath(): string {
   return path.join(getDataDir(), 'habits_db.json');
-}
-
-export function resetCache(): void {
-  cachedDir = null;
 }

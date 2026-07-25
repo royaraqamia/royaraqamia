@@ -61,20 +61,6 @@ export async function updatePost(postId: string, _prevState: unknown, formData: 
   return { message: 'تم حفظ المقال' };
 }
 
-export async function savePostContent(postId: string, content: string) {
-  const session = await verifySession();
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-
-  const { error } = await supabase
-    .from('posts')
-    .update({ content })
-    .eq('id', postId)
-    .eq('author_id', session.userId);
-
-  if (error) throw new Error('فشل حفظ المحتوى');
-}
-
 export async function publishPost(postId: string) {
   const session = await verifySession();
   const cookieStore = await cookies();

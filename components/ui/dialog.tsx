@@ -70,7 +70,7 @@ const DialogContent = React.forwardRef<
     >
       {children}
       <DialogPrimitive.Close
-        className="absolute top-4 right-4 rounded-lg opacity-70 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:opacity-100 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        className="absolute top-4 right-4 rounded-full opacity-70 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:opacity-100 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
         aria-label="إغلاق"
       >
         <XIcon className="size-5" />

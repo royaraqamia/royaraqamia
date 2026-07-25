@@ -6,8 +6,3 @@ export interface ShortLink {
   updatedAt: Date;
   isBlocked: boolean;
 }
-
-export interface ShortLinkInput {
-  originalUrl: string;
-  userId: string | null;
-}

@@ -33,14 +33,14 @@ export default function Error({
         <div className="flex items-center justify-center gap-3">
           <button
             onClick={reset}
-            className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-xl transition-all shadow-md flex items-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press"
+            className="px-5 py-2.5 bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-semibold rounded-full transition-all shadow-md flex items-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press"
           >
             <RefreshCw className="w-4 h-4" />
             <span>إعادة المحاولة</span>
           </button>
           <Link
             href="/linksnap"
-            className="px-5 py-2.5 bg-muted hover:bg-muted/80 text-muted-foreground text-sm font-semibold rounded-xl transition-all flex items-center gap-2 focus-ring touch-target btn-press"
+            className="px-5 py-2.5 bg-muted hover:bg-muted/80 text-muted-foreground text-sm font-semibold rounded-full transition-all flex items-center gap-2 focus-ring touch-target btn-press"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>الصفحة الرئيسية</span>

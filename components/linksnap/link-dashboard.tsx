@@ -69,7 +69,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
           onClick={fetchLinks}
           disabled={loading}
           aria-label="تحديث القائمة"
-          className="p-2 text-muted-foreground hover:text-primary rounded-lg hover:bg-muted transition-colors cursor-pointer press-scale focus-ring touch-target btn-press"
+          className="p-2 text-muted-foreground hover:text-primary rounded-full hover:bg-muted transition-colors cursor-pointer press-scale focus-ring touch-target btn-press"
           title="تحديث القائمة"
         >
           <RefreshCw
@@ -90,7 +90,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
           <span className="flex-1">{error}</span>
           <button
             onClick={fetchLinks}
-            className="px-3 py-1.5 bg-destructive/20 hover:bg-destructive/30 text-destructive font-semibold text-xs rounded-lg transition-colors cursor-pointer btn-press shrink-0 focus-ring touch-target"
+            className="px-3 py-1.5 bg-destructive/20 hover:bg-destructive/30 text-destructive font-semibold text-xs rounded-full transition-colors cursor-pointer btn-press shrink-0 focus-ring touch-target"
           >
             إعادة المحاولة
           </button>

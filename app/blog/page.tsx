@@ -116,7 +116,7 @@ export default async function BlogPage(props: {
             </p>
             {query && (
               <Link href="/blog">
-                <Button variant="outline" className="mt-6 rounded-xl">
+                <Button variant="outline" className="mt-6 rounded-full">
                   عرض جميع المقالات
                 </Button>
               </Link>

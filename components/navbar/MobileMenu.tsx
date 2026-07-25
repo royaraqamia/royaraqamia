@@ -141,7 +141,7 @@ export function MobileMenu({
   const renderNavItem = (link: NavLink) => {
     const isActive = isLinkActive(link.href);
     const baseClasses = `
-            flex items-center gap-3 w-full px-4 py-4 rounded-xl
+            flex items-center gap-3 w-full px-4 py-4 rounded-full
             font-semibold text-[17px] leading-relaxed
             transition-colors duration-150 ease-out
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
@@ -189,7 +189,7 @@ export function MobileMenu({
           onClick={() => toggleDropdown(link.dropdownKey!)}
           aria-expanded={isExpanded}
           className="
-                        flex items-center justify-between w-full px-4 py-4 rounded-xl
+                        flex items-center justify-between w-full px-4 py-4 rounded-full
                         font-semibold text-[17px] text-slate-200
                         border border-transparent
                         transition-colors duration-150 ease-out
@@ -221,7 +221,7 @@ export function MobileMenu({
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
                       className="
-                                                block pr-6 pl-4 py-3 rounded-lg
+                                                block pr-6 pl-4 py-3 rounded-full
                                                 text-[15px] font-medium text-slate-400
                                                 transition-colors duration-150
                                                 hover:bg-violet-500/10 hover:text-violet-300
@@ -235,7 +235,7 @@ export function MobileMenu({
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
                       className="
-                                                block pr-6 pl-4 py-3 rounded-lg
+                                                block pr-6 pl-4 py-3 rounded-full
                                                 text-[15px] font-medium text-slate-400
                                                 transition-colors duration-150
                                                 hover:bg-violet-500/10 hover:text-violet-300
@@ -318,7 +318,7 @@ export function MobileMenu({
                     aria-label="إغلاق القائمة"
                     className="
                                 flex items-center justify-center
-                                w-11 h-11 rounded-xl
+                                w-11 h-11 rounded-full
                                 bg-white/3 border border-white/8
                                 text-slate-400
                                 transition-colors duration-150

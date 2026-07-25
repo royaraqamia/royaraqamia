@@ -41,14 +41,16 @@ async function generate({ size, maskable }) {
       .png(PNG_OPTS)
       .toFile(fp);
   } else {
-    await sharp(MASTER).resize(size, size, { fit: 'cover', position: 'center' })
+    await sharp(MASTER)
+      .resize(size, size, { fit: 'cover', position: 'center' })
       .png(PNG_OPTS)
       .toFile(fp);
   }
 }
 
 async function generateAppleTouch(size) {
-  await sharp(MASTER).resize(size, size, { fit: 'cover', position: 'center' })
+  await sharp(MASTER)
+    .resize(size, size, { fit: 'cover', position: 'center' })
     .png(PNG_OPTS)
     .toFile(`${OUT_DIR}/apple-touch-icon-${size}x${size}.png`);
 }
@@ -57,11 +59,18 @@ async function validate() {
   let errors = 0;
   for (const { size, maskable } of ICONS) {
     const fp = `${OUT_DIR}/icon-${size}x${size}.png`;
-    if (!fs.existsSync(fp)) { console.error(`  ✗ Missing: ${size}x${size}`); errors++; continue; }
+    if (!fs.existsSync(fp)) {
+      console.error(`  ✗ Missing: ${size}x${size}`);
+      errors++;
+      continue;
+    }
 
     const meta = await sharp(fp).metadata();
-    if (meta.width !== size || meta.height !== size)
-      { console.error(`  ✗ ${size}x${size}: dimensions ${meta.width}x${meta.height}`); errors++; continue; }
+    if (meta.width !== size || meta.height !== size) {
+      console.error(`  ✗ ${size}x${size}: dimensions ${meta.width}x${meta.height}`);
+      errors++;
+      continue;
+    }
 
     const { data, info } = await sharp(fp).raw().toBuffer({ resolveWithObject: true });
     const c = info.channels;
@@ -69,22 +78,35 @@ async function validate() {
       const i = (y * size + x) * c;
       return { r: data[i], g: data[i + 1], b: data[i + 2], a: c > 3 ? data[i + 3] : 255 };
     };
-    const corners = { TL: px(0, 0), TR: px(size - 1, 0), BL: px(0, size - 1), BR: px(size - 1, size - 1) };
+    const corners = {
+      TL: px(0, 0),
+      TR: px(size - 1, 0),
+      BL: px(0, size - 1),
+      BR: px(size - 1, size - 1),
+    };
 
     for (const [label, p] of Object.entries(corners)) {
       if (maskable) {
-        if (p.r !== 15 || p.g !== 23 || p.b !== 42 || p.a !== 255)
-          { console.error(`  ✗ ${size}x${size} maskable: ${label} rgba(${p.r},${p.g},${p.b},${p.a}) ≠ (15,23,42,255)`); errors++; }
+        if (p.r !== 15 || p.g !== 23 || p.b !== 42 || p.a !== 255) {
+          console.error(
+            `  ✗ ${size}x${size} maskable: ${label} rgba(${p.r},${p.g},${p.b},${p.a}) ≠ (15,23,42,255)`
+          );
+          errors++;
+        }
       } else {
-        if (p.a !== 0)
-          { console.error(`  ✗ ${size}x${size} standard: ${label} alpha=${p.a} ≠ 0`); errors++; }
+        if (p.a !== 0) {
+          console.error(`  ✗ ${size}x${size} standard: ${label} alpha=${p.a} ≠ 0`);
+          errors++;
+        }
       }
     }
   }
 
   for (const size of APPLE_TOUCH_SIZES) {
-    if (!fs.existsSync(`${OUT_DIR}/apple-touch-icon-${size}x${size}.png`))
-      { console.error(`  ✗ Missing: apple-touch-icon-${size}x${size}`); errors++; }
+    if (!fs.existsSync(`${OUT_DIR}/apple-touch-icon-${size}x${size}.png`)) {
+      console.error(`  ✗ Missing: apple-touch-icon-${size}x${size}`);
+      errors++;
+    }
   }
 
   return errors;
@@ -104,16 +126,28 @@ function generateSwVersion() {
 
 async function main() {
   console.log('Generating icons...');
-  for (const icon of ICONS) { await generate(icon); console.log(`  ✓ ${icon.size}x${icon.size}${icon.maskable ? ' (maskable)' : ''}`); }
-  for (const size of APPLE_TOUCH_SIZES) { await generateAppleTouch(size); console.log(`  ✓ apple-touch-icon-${size}x${size}`); }
+  for (const icon of ICONS) {
+    await generate(icon);
+    console.log(`  ✓ ${icon.size}x${icon.size}${icon.maskable ? ' (maskable)' : ''}`);
+  }
+  for (const size of APPLE_TOUCH_SIZES) {
+    await generateAppleTouch(size);
+    console.log(`  ✓ apple-touch-icon-${size}x${size}`);
+  }
 
   console.log('\nValidating...');
   const errors = await validate();
-  if (errors) { console.error(`\n${errors} error(s) — fix and rerun`); process.exit(1); }
+  if (errors) {
+    console.error(`\n${errors} error(s) — fix and rerun`);
+    process.exit(1);
+  }
   console.log('  All icons validated ✓');
 
   console.log('\nGenerating SW version...');
   generateSwVersion();
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
