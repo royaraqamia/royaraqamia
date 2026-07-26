@@ -17,7 +17,7 @@ export async function createPost() {
     .insert({
       author_id: session.userId,
       title: '',
-      slug: `بدون-عنوان-${crypto.randomUUID().slice(0, 8)}`,
+      slug: `post-${crypto.randomUUID().slice(0, 8)}`,
     })
     .select('id')
     .single();

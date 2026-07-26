@@ -1,6 +1,14 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef, useTransition, useMemo } from 'react';
+import {
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  useTransition,
+  useMemo,
+  useReducer,
+} from 'react';
 import { useRouter } from 'next/navigation';
 import NextLink from 'next/link';
 import Image from 'next/image';
@@ -9,24 +17,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '@/components/ui/sheet';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Settings,
-  Eye,
-  EyeOff,
   Upload,
   ArrowRight,
   Loader2,
@@ -35,11 +34,20 @@ import {
   Search,
   Bold,
   Italic,
+  Heading1,
   Heading2,
   Heading3,
   List,
+  ListOrdered,
   Code2,
   TextQuote,
+  Strikethrough,
+  Minus,
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Undo2,
+  Redo2,
   HelpCircle,
   ImagePlus,
   Link,
@@ -48,12 +56,10 @@ import {
   Save,
   Send,
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypeHighlight from 'rehype-highlight';
 import { updatePost, saveAndPublishPost } from '@/domains/blogpress/lib/actions/posts';
 import { uploadImage } from '@/domains/blogpress/lib/actions/media';
 import { toast } from 'sonner';
+import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
 import type { Post } from '@/domains/blogpress/lib/definitions';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
@@ -70,7 +76,6 @@ export function EditorContent({ post }: EditorContentProps) {
   const [coverImage, setCoverImage] = useState(post.cover_image ?? '');
   const [metaTitle, setMetaTitle] = useState(post.meta_title ?? '');
   const [metaDesc, setMetaDesc] = useState(post.meta_desc ?? '');
-  const [isPreview, setIsPreview] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isCoverUploading, setIsCoverUploading] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -78,6 +83,7 @@ export function EditorContent({ post }: EditorContentProps) {
   const [isDirty, setIsDirty] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [, forceRender] = useReducer((x) => x + 1, 0);
   const autoSaveRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const contentRef = useRef(content);
   const titleRef = useRef(title);
@@ -85,7 +91,7 @@ export function EditorContent({ post }: EditorContentProps) {
   const coverImageRef = useRef(coverImage);
   const metaTitleRef = useRef(metaTitle);
   const metaDescRef = useRef(metaDesc);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const editorRef = useRef<TiptapEditorRef>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const isDirtyRef = useRef(false);
@@ -178,33 +184,10 @@ export function EditorContent({ post }: EditorContentProps) {
     }
 
     if (result.url) {
-      const markdown = `![${file.name}](${result.url})`;
-      const ta = textareaRef.current;
-      if (ta && document.activeElement === ta) {
-        const start = ta.selectionStart;
-        const end = ta.selectionEnd;
-        const cur = contentRef.current;
-        const newContent = cur.substring(0, start) + markdown + cur.substring(end);
-        setContent(newContent);
-        setTimeout(() => {
-          ta.focus();
-          ta.setSelectionRange(start + markdown.length, start + markdown.length);
-        }, 0);
-      } else {
-        setContent((prev) => prev + (prev ? '\n\n' : '') + markdown);
-      }
+      editorRef.current?.insertImage(result.url, file.name);
       toast.success('تمَّ رفع الصُّورة');
     }
   }, []);
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      const file = e.dataTransfer.files[0];
-      if (file && file.type.startsWith('image/')) handleImageUpload(file);
-    },
-    [handleImageUpload]
-  );
 
   const handleFileSelect = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -259,94 +242,14 @@ export function EditorContent({ post }: EditorContentProps) {
       .slice(0, 200);
   }, []);
 
-  const insertMarkdown = useCallback(
-    (action: 'bold' | 'italic' | 'h2' | 'h3' | 'link' | 'image' | 'list' | 'code' | 'quote') => {
-      const ta = textareaRef.current;
-      if (!ta) return;
-      const start = ta.selectionStart;
-      const end = ta.selectionEnd;
-      const cur = contentRef.current;
-      const selected = cur.substring(start, end);
-      let newContent = cur;
-      let cursorPos = start;
-
-      switch (action) {
-        case 'bold': {
-          const w = '**';
-          newContent = cur.substring(0, start) + w + (selected || 'نص') + w + cur.substring(end);
-          cursorPos = start + w.length + (selected || 'نص').length + w.length;
-          break;
-        }
-        case 'italic': {
-          const w = '*';
-          newContent = cur.substring(0, start) + w + (selected || 'نص') + w + cur.substring(end);
-          cursorPos = start + w.length + (selected || 'نص').length + w.length;
-          break;
-        }
-        case 'h2': {
-          const ls = cur.lastIndexOf('\n', start - 1) + 1;
-          newContent = cur.substring(0, ls) + '## ' + cur.substring(ls);
-          cursorPos = start + 3;
-          break;
-        }
-        case 'h3': {
-          const ls = cur.lastIndexOf('\n', start - 1) + 1;
-          newContent = cur.substring(0, ls) + '### ' + cur.substring(ls);
-          cursorPos = start + 4;
-          break;
-        }
-        case 'link': {
-          const s = selected ? `[${selected}](url)` : '[نصُّ الرَّابط](url)';
-          newContent = cur.substring(0, start) + s + cur.substring(end);
-          cursorPos = start + s.length;
-          break;
-        }
-        case 'image': {
-          fileInputRef.current?.click();
-          return;
-        }
-        case 'list': {
-          const ls = cur.lastIndexOf('\n', start - 1) + 1;
-          newContent = cur.substring(0, ls) + '- ' + cur.substring(ls);
-          cursorPos = start + 2;
-          break;
-        }
-        case 'code': {
-          const w = '```\n';
-          const we = '\n```';
-          if (selected) {
-            newContent = cur.substring(0, start) + w + selected + we + cur.substring(end);
-            cursorPos = end + w.length + we.length;
-          } else {
-            newContent = cur.substring(0, start) + w + 'كود' + we + cur.substring(end);
-            cursorPos = start + w.length + 2 + we.length;
-          }
-          break;
-        }
-        case 'quote': {
-          const ls = cur.lastIndexOf('\n', start - 1) + 1;
-          newContent = cur.substring(0, ls) + '> ' + cur.substring(ls);
-          cursorPos = start + 2;
-          break;
-        }
-      }
-      setContent(newContent);
-      setTimeout(() => {
-        ta.focus();
-        ta.setSelectionRange(cursorPos, cursorPos);
-      }, 0);
-    },
-    []
-  );
-
   const handleSave = useCallback(async () => {
-    const finalSlug =
-      slug.startsWith('بدون-عنوان-') || slug === '' ? generateSlug(title) : generateSlug(slug);
+    const finalSlug = generateSlug(slug);
     if (finalSlug !== slug) setSlug(finalSlug);
+    const currentContent = editorRef.current?.getMarkdown() ?? content;
     const formData = new FormData();
     formData.append('title', title);
     formData.append('slug', finalSlug);
-    formData.append('content', content);
+    formData.append('content', currentContent);
     formData.append('cover_image', coverImage);
     formData.append('meta_title', metaTitle);
     formData.append('meta_desc', metaDesc);
@@ -368,7 +271,8 @@ export function EditorContent({ post }: EditorContentProps) {
   }, [post.id, title, slug, content, coverImage, metaTitle, metaDesc, generateSlug]);
 
   const handleTitleBlur = useCallback(() => {
-    if (title && (slug === '' || slug.startsWith('بدون-عنوان-'))) setSlug(generateSlug(title));
+    if (slug === '' || slug.startsWith('post-')) return;
+    if (title && slug === generateSlug(title)) setSlug(generateSlug(title));
   }, [title, slug, generateSlug]);
 
   useEffect(() => {
@@ -384,7 +288,11 @@ export function EditorContent({ post }: EditorContentProps) {
     () => [
       { label: 'عنوان المقال', passed: title.trim().length > 0 },
       { label: 'محتوى المقال (أكثر من 50 كلمة)', passed: wordCount > 50 },
-      { label: 'رابط URL (Slug)', passed: !slug.startsWith('بدون-عنوان-') && slug.length > 0 },
+      {
+        label: 'رابط URL (Slug)',
+        passed: slug.length > 0 && !slug.startsWith('post-'),
+        optional: true,
+      },
       { label: 'صورة الغلاف', passed: coverImage.length > 0, optional: true },
       { label: 'وصف SEO', passed: metaDesc.length > 0, optional: true },
     ],
@@ -392,13 +300,13 @@ export function EditorContent({ post }: EditorContentProps) {
   );
 
   const handlePublish = useCallback(async () => {
-    const finalSlug =
-      slug.startsWith('بدون-عنوان-') || slug === '' ? generateSlug(title) : generateSlug(slug);
+    const finalSlug = generateSlug(slug);
     if (finalSlug !== slug) setSlug(finalSlug);
+    const currentContent = editorRef.current?.getMarkdown() ?? content;
     const formData = new FormData();
     formData.append('title', title);
     formData.append('slug', finalSlug);
-    formData.append('content', content);
+    formData.append('content', currentContent);
     formData.append('cover_image', coverImage);
     formData.append('meta_title', metaTitle);
     formData.append('meta_desc', metaDesc);
@@ -443,22 +351,10 @@ export function EditorContent({ post }: EditorContentProps) {
         e.preventDefault();
         if (!pending && post.status === 'draft') handlePublish();
       }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
-        e.preventDefault();
-        insertMarkdown('bold');
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
-        e.preventDefault();
-        insertMarkdown('italic');
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
-        insertMarkdown('link');
-      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [pending, handleSave, handlePublish, post.status, insertMarkdown]);
+  }, [pending, handleSave, handlePublish, post.status]);
 
   const publishChecks = getPublishChecks();
 
@@ -466,17 +362,26 @@ export function EditorContent({ post }: EditorContentProps) {
     action: string;
     icon: React.ElementType;
     label: string;
-    shortcut?: string;
+    group?: string;
   }[] = [
-    { action: 'bold', icon: Bold, label: 'عريض', shortcut: 'Ctrl+B' },
-    { action: 'italic', icon: Italic, label: 'مائل', shortcut: 'Ctrl+I' },
-    { action: 'h2', icon: Heading2, label: 'عنوان 2' },
-    { action: 'h3', icon: Heading3, label: 'عنوان 3' },
-    { action: 'link', icon: Link, label: 'رابط', shortcut: 'Ctrl+K' },
-    { action: 'image', icon: ImagePlus, label: 'صورة' },
-    { action: 'list', icon: List, label: 'قائمة' },
-    { action: 'code', icon: Code2, label: 'كود' },
-    { action: 'quote', icon: TextQuote, label: 'اقتباس' },
+    { action: 'undo', icon: Undo2, label: 'تراجع', group: 'history' },
+    { action: 'redo', icon: Redo2, label: 'إعادة', group: 'history' },
+    { action: 'bold', icon: Bold, label: 'عريض', group: 'format' },
+    { action: 'italic', icon: Italic, label: 'مائل', group: 'format' },
+    { action: 'strike', icon: Strikethrough, label: 'يتوسّط', group: 'format' },
+    { action: 'h1', icon: Heading1, label: 'عنوان 1', group: 'heading' },
+    { action: 'h2', icon: Heading2, label: 'عنوان 2', group: 'heading' },
+    { action: 'h3', icon: Heading3, label: 'عنوان 3', group: 'heading' },
+    { action: 'list', icon: List, label: 'قائمة نقطية', group: 'list' },
+    { action: 'orderedList', icon: ListOrdered, label: 'قائمة مرقّمة', group: 'list' },
+    { action: 'quote', icon: TextQuote, label: 'اقتباس', group: 'block' },
+    { action: 'code', icon: Code2, label: 'كود', group: 'block' },
+    { action: 'hr', icon: Minus, label: 'فاصل', group: 'insert' },
+    { action: 'link', icon: Link, label: 'رابط', group: 'insert' },
+    { action: 'image', icon: ImagePlus, label: 'صورة', group: 'insert' },
+    { action: 'alignLeft', icon: AlignLeft, label: 'محاذاة لليسار', group: 'align' },
+    { action: 'alignCenter', icon: AlignCenter, label: 'توسيط', group: 'align' },
+    { action: 'alignRight', icon: AlignRight, label: 'محاذاة لليمين', group: 'align' },
     { action: 'shortcuts', icon: HelpCircle, label: 'اختصارات' },
   ];
 
@@ -519,8 +424,8 @@ export function EditorContent({ post }: EditorContentProps) {
           <Button
             variant="ghost"
             size="sm"
-            disabled={isUploading}
             onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
             className="text-muted-foreground hover:text-foreground transition-smooth hidden sm:inline-flex min-h-11"
           >
             {isUploading ? (
@@ -530,21 +435,8 @@ export function EditorContent({ post }: EditorContentProps) {
             )}
             {isUploading ? 'جارٍ الرَّفع...' : 'صورة'}
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsPreview(!isPreview)}
-            className={
-              isPreview
-                ? 'text-primary min-h-11'
-                : 'text-muted-foreground hover:text-foreground transition-smooth min-h-11'
-            }
-          >
-            {isPreview ? <EyeOff className="size-4 ms-1.5" /> : <Eye className="size-4 ms-1.5" />}
-            <span className="hidden sm:inline">{isPreview ? 'تعديل' : 'معاينة'}</span>
-          </Button>
-          <Sheet>
-            <SheetTrigger asChild>
+          <Dialog>
+            <DialogTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
@@ -553,13 +445,13 @@ export function EditorContent({ post }: EditorContentProps) {
               >
                 <Settings className="size-4" />
               </Button>
-            </SheetTrigger>
-            <SheetContent className="sm:max-w-md overflow-y-auto">
-              <SheetHeader>
-                <SheetTitle>إعدادات المقال</SheetTitle>
-                <SheetDescription>تكوين بيانات SEO وخيارات النَّشر</SheetDescription>
-              </SheetHeader>
-              <div className="mt-6 grid gap-6">
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>إعدادات المقال</DialogTitle>
+                <DialogDescription>تكوين بيانات SEO وخيارات النَّشر</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-6">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <Link2 className="size-4 text-muted-foreground" />
@@ -585,7 +477,7 @@ export function EditorContent({ post }: EditorContentProps) {
                       {slug || <span className="text-muted-foreground/40">رابط-المقال</span>}
                     </p>
                     <p className="text-xs text-muted-foreground/60">
-                      يتمُّ إنشاؤه تلقائيًّا من العنوان عند ترك حقل العنوان
+                      أدخل رابطاً إنجليزيّاً قصيراً (مثل: my-first-post)
                     </p>
                   </div>
                 </div>
@@ -769,16 +661,58 @@ export function EditorContent({ post }: EditorContentProps) {
                   )}
                 </div>
               </div>
-            </SheetContent>
-          </Sheet>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
-      {!isPreview && (
-        <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-border/50 bg-muted/30 overflow-x-auto scrollbar-hide">
-          {toolbarButtons.map((btn) => {
+      <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-border/50 bg-muted/30 overflow-x-auto scrollbar-hide">
+        {(() => {
+          let lastGroup: string | undefined;
+          const elements: React.ReactNode[] = [];
+          toolbarButtons.forEach((btn) => {
+            const ed = editorRef.current?.editor;
+            const isActive =
+              ed &&
+              (btn.action === 'bold'
+                ? ed.isActive('bold')
+                : btn.action === 'italic'
+                  ? ed.isActive('italic')
+                  : btn.action === 'strike'
+                    ? ed.isActive('strike')
+                    : btn.action === 'h1'
+                      ? ed.isActive('heading', { level: 1 })
+                      : btn.action === 'h2'
+                        ? ed.isActive('heading', { level: 2 })
+                        : btn.action === 'h3'
+                          ? ed.isActive('heading', { level: 3 })
+                          : btn.action === 'list'
+                            ? ed.isActive('bulletList')
+                            : btn.action === 'orderedList'
+                              ? ed.isActive('orderedList')
+                              : btn.action === 'quote'
+                                ? ed.isActive('blockquote')
+                                : btn.action === 'code'
+                                  ? ed.isActive('codeBlock')
+                                  : btn.action === 'link'
+                                    ? ed.isActive('link')
+                                    : btn.action === 'alignLeft'
+                                      ? ed.isActive({ textAlign: 'left' })
+                                      : btn.action === 'alignCenter'
+                                        ? ed.isActive({ textAlign: 'center' })
+                                        : btn.action === 'alignRight'
+                                          ? ed.isActive({ textAlign: 'right' })
+                                          : false);
+
+            if (btn.group && lastGroup && btn.group !== lastGroup) {
+              elements.push(
+                <div key={`sep-${btn.action}`} className="w-px h-5 bg-border/40 mx-1 shrink-0" />
+              );
+            }
+            lastGroup = btn.group;
+
             if (btn.action === 'shortcuts') {
-              return (
+              elements.push(
                 <button
                   key={btn.action}
                   onClick={() => setShortcutsOpen(true)}
@@ -789,53 +723,102 @@ export function EditorContent({ post }: EditorContentProps) {
                   <btn.icon className="size-4" />
                 </button>
               );
+              return;
             }
-            return (
+
+            elements.push(
               <button
                 key={btn.action}
-                onClick={() => insertMarkdown(btn.action as any)}
-                className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shrink-0 cursor-pointer"
+                onClick={() => {
+                  if (!ed) return;
+                  if (btn.action === 'image') {
+                    fileInputRef.current?.click();
+                    return;
+                  }
+                  if (btn.action === 'link') {
+                    const url = window.prompt('أدخل رابط URL:');
+                    if (url) ed.chain().focus().setLink({ href: url }).run();
+                    return;
+                  }
+                  if (btn.action === 'undo') {
+                    ed.chain().focus().undo().run();
+                    return;
+                  }
+                  if (btn.action === 'redo') {
+                    ed.chain().focus().redo().run();
+                    return;
+                  }
+                  if (btn.action === 'h1') {
+                    ed.chain().focus().toggleHeading({ level: 1 }).run();
+                    return;
+                  }
+                  if (btn.action === 'h2') {
+                    ed.chain().focus().toggleHeading({ level: 2 }).run();
+                    return;
+                  }
+                  if (btn.action === 'h3') {
+                    ed.chain().focus().toggleHeading({ level: 3 }).run();
+                    return;
+                  }
+                  if (btn.action === 'orderedList') {
+                    ed.chain().focus().toggleOrderedList().run();
+                    return;
+                  }
+                  if (btn.action === 'hr') {
+                    ed.chain().focus().setHorizontalRule().run();
+                    return;
+                  }
+                  if (btn.action === 'alignLeft') {
+                    ed.chain().focus().setTextAlign('left').run();
+                    return;
+                  }
+                  if (btn.action === 'alignCenter') {
+                    ed.chain().focus().setTextAlign('center').run();
+                    return;
+                  }
+                  if (btn.action === 'alignRight') {
+                    ed.chain().focus().setTextAlign('right').run();
+                    return;
+                  }
+                  const actionMap: Record<string, () => void> = {
+                    bold: () => ed.chain().focus().toggleBold().run(),
+                    italic: () => ed.chain().focus().toggleItalic().run(),
+                    strike: () => ed.chain().focus().toggleStrike().run(),
+                    list: () => ed.chain().focus().toggleBulletList().run(),
+                    code: () => ed.chain().focus().toggleCodeBlock().run(),
+                    quote: () => ed.chain().focus().toggleBlockquote().run(),
+                  };
+                  actionMap[btn.action]?.();
+                }}
+                className={`size-8 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+                  isActive
+                    ? 'bg-primary/15 text-primary shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                }`}
                 aria-label={btn.label}
-                title={btn.shortcut ? `${btn.label} (${btn.shortcut})` : btn.label}
+                title={btn.label}
               >
                 <btn.icon className="size-4" />
               </button>
             );
-          })}
-          <div className="mr-auto flex items-center gap-2 text-xs text-muted-foreground/50">
-            <kbd className="px-1.5 py-0.5 rounded bg-muted/50 text-[10px] font-mono">Ctrl+S</kbd>
-            <span>حفظ</span>
-          </div>
+          });
+          return elements;
+        })()}
+        <div className="mr-auto flex items-center gap-2 text-xs text-muted-foreground/50">
+          <kbd className="px-1.5 py-0.5 rounded bg-muted/50 text-[10px] font-mono">Ctrl+S</kbd>
+          <span>حفظ</span>
         </div>
-      )}
+      </div>
 
       <div className="flex flex-1 overflow-hidden">
-        <div
-          className={`flex-1 flex-col min-w-0 ${isPreview ? 'hidden' : 'flex'} lg:flex!`}
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={handleDrop}
-        >
-          <div className="flex-1 relative">
-            <Textarea
-              ref={textareaRef}
-              name="content"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder="اكتب المحتوى هنا...&#10;&#10;اسحب وأفلت الصُّور مباشرةً في المحرِّر."
-              className="h-full w-full resize-none border-0 rounded-none p-6 focus-visible:ring-0 text-sm leading-relaxed transition-smooth"
-            />
-          </div>
-        </div>
-
-        <div
-          className={`flex-1 flex-col min-w-0 border-l border-border/50 overflow-y-auto ${isPreview ? 'flex' : 'hidden'} lg:flex!`}
-        >
-          <div className="p-6 prose prose-sm dark:prose-invert max-w-none w-full prose-headings:font-bold prose-a:text-primary prose-img:rounded-full prose-img:shadow-sm">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeHighlight]}>
-              {content || '*ابدأ الكتابة لرؤية المعاينة...*'}
-            </ReactMarkdown>
-          </div>
-        </div>
+        <TiptapEditor
+          ref={editorRef}
+          initialContent={content}
+          onUpdate={setContent}
+          onImageUpload={handleImageUpload}
+          onStateChange={() => forceRender()}
+          className="flex-1"
+        />
       </div>
 
       <div
@@ -932,9 +915,6 @@ export function EditorContent({ post }: EditorContentProps) {
             {[
               { keys: 'Ctrl + S', label: 'حفظ المقال' },
               { keys: 'Ctrl + Enter', label: 'نشر المقال (للمسودَّات)' },
-              { keys: 'Ctrl + B', label: 'عريض' },
-              { keys: 'Ctrl + I', label: 'مائل' },
-              { keys: 'Ctrl + K', label: 'إدراج رابط' },
             ].map((shortcut) => (
               <div key={shortcut.keys} className="flex items-center justify-between py-1.5">
                 <span className="text-sm text-muted-foreground">{shortcut.label}</span>

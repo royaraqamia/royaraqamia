@@ -28,7 +28,12 @@ export default async function LinkSnapLayout({ children }: { children: React.Rea
       <Navbar />
       <ProgressBar />
       <ThemeProvider>
-        <div className="pt-24">{children}</div>
+        <main
+          id="main-content"
+          className="flex-1 pt-24 mx-auto w-full max-w-6xl container-padding pb-8"
+        >
+          {children}
+        </main>
       </ThemeProvider>
       <Footer />
       <Toaster
