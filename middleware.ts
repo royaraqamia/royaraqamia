@@ -2,10 +2,10 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 const protectedRoutes: Record<string, string> = {
-  '/linksnap': '/auth/login',
-  '/blogpress': '/auth/login',
-  '/habitflow': '/auth/login',
-  '/spendtrack': '/auth/login',
+  '/linksnap/app': '/auth/login',
+  '/blogpress/app': '/auth/login',
+  '/habitflow/app': '/auth/login',
+  '/spendtrack/app': '/auth/login',
   '/admin': '/auth/login',
 };
 

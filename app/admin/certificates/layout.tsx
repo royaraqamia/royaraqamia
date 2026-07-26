@@ -7,7 +7,7 @@ import { Footer } from '@/components/Footer';
 import { Plus, ShieldCheck } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'إدارة الشَّهادات | رؤية رقمية',
+  title: 'إدارة الشَّهادات',
   description: 'إصدار وتعديل وحذف شهادات الطُّلاب في رؤية رقمية.',
 };
 

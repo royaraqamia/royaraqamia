@@ -23,7 +23,7 @@ interface ServiceItem {
 const services: ServiceItem[] = [
   {
     icon: ChatCircle,
-    title: 'التَّدريب',
+    title: 'تدريب',
     description:
       'المسار التَّدريبي العربي المتكامل الذي يعلِّمك بناء موقع إلكتروني أو تطبيق دون كتابة كود.',
     features: [
@@ -40,7 +40,7 @@ const services: ServiceItem[] = [
   },
   {
     icon: Lightbulb,
-    title: 'الاستشارات',
+    title: 'استشارات',
     description: 'نختصر عليك سنوات من البحث ونمنحك الخلاصة التِّقنيَّة والعمليَّة بصدق وأمانة.',
     features: [
       'استشارة متخصِّصة بالمواقع والتَّطبيقات',
@@ -56,7 +56,7 @@ const services: ServiceItem[] = [
   },
   {
     icon: Code,
-    title: 'بناء مواقع إلكترونيَّة وتطبيقات',
+    title: 'بناء',
     description:
       'خدمات تطوير متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق. نبني حلول رقميَّة قابلة للتَّوسُّع، آمنة، وسهلة الاستخدام.',
     features: [

@@ -18,7 +18,6 @@ export function WebDevService() {
     { title: 'Frontend', description: 'Next.js مع واجهات UX/UI حديثة' },
     { title: 'Backend', description: 'Supabase' },
     { title: 'Mobile Apps', description: 'Flutter لنظامي Android و iOS' },
-    { title: 'Database', description: 'PostgreSQL' },
   ];
 
   return (
@@ -56,7 +55,7 @@ export function WebDevService() {
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center max-w-3xl mx-auto section-header mb-12">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
-              <span className="text-blue-400">بناء مواقع إلكترونيَّة وتطبيقات</span>{' '}
+              <span className="text-blue-400">البناء</span>{' '}
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
               خدمات تطوير متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق. نبني حلول رقميَّة

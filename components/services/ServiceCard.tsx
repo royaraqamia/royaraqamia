@@ -1,5 +1,7 @@
+'use client';
+
 import type { ElementType } from 'react';
-import { Check } from '@phosphor-icons/react';
+import { Check, ArrowRight } from '@phosphor-icons/react';
 import { ScrollAnimation } from '../ScrollAnimations';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
@@ -36,95 +38,77 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
   const colors = colorConfigs[service.colorKey];
 
   return (
-    <ScrollAnimation key={index} animation="slide-up" delay={index * 0.1} duration={0.6}>
-      <div
-        className="group relative glass-card rounded-3xl card-padding glass-hover transition-all duration-500 hover:-translate-y-2 hover:shadow-xl h-full flex flex-col border border-transparent hover:border-white/10 overflow-hidden"
-        style={{ ['--accent-color' as string]: colors.accentBorder }}
-      >
-        <div
-          className="absolute top-0 left-0 right-0 h-1 opacity-80 group-hover:opacity-100 transition-opacity duration-300"
-          style={{ background: colors.gradient }}
-        />
-
-        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none overflow-hidden rounded-2xl">
+    <ScrollAnimation key={index} animation="slide-up" delay={index * 0.1} duration={0.8}>
+      <div className="group/card relative rounded-4xl p-8 lg:p-10 h-full flex flex-col transition-all duration-800 ease-[cubic-bezier(0.25,1,0.5,1)] overflow-hidden bg-white/2 border border-white/5 backdrop-blur-sm hover:border-white/15 hover:-translate-y-2 hover:shadow-2xl hover:shadow-black/50">
+        {/* Premium Ambient Glow (Replaces the harsh top border & skew shine) */}
+        <div className="absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-800 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none -z-10">
           <div
-            className="absolute -inset-full top-0 bg-gradient-to-r from-transparent via-white/[0.07] to-transparent transform -skew-x-12 group-hover:animate-shine"
-            style={{ animationDuration: '1.5s' }}
+            className="absolute top-0 left-0 right-0 h-32 opacity-20 blur-[50px] transition-all duration-800"
+            style={{ background: colors.gradient }}
           />
         </div>
 
-        <div
-          className="w-16 h-16 md:w-18 md:h-18 rounded-xl flex items-center justify-center content-spacing shadow-lg group-hover:shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-all duration-500"
-          style={{ background: colors.gradient }}
-        >
-          <Icon className="w-7 h-7 md:w-8 md:h-8 text-white drop-shadow-md" />
+        {/* Minimalist Glass Icon Container */}
+        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-all duration-800 ease-[cubic-bezier(0.25,1,0.5,1)] bg-white/5 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shrink-0">
+          <div
+            className="absolute inset-0 opacity-0 group-hover/card:opacity-20 transition-opacity duration-500"
+            style={{ background: colors.gradient }}
+          />
+          <Icon weight="light" className="w-7 h-7 text-white relative z-10 drop-shadow-sm" />
         </div>
 
-        <h3
-          className="content-spacing-sm text-h4 font-bold transition-all duration-300 group-hover:bg-clip-text group-hover:text-transparent"
-          style={{
-            backgroundImage: colors.hoverGradient,
-            backgroundSize: '200% auto',
-            WebkitBackgroundClip: 'text',
-            backgroundClip: 'text',
-          }}
-        >
-          <span className="group-hover:opacity-0 transition-opacity duration-300 absolute">
-            {service.title}
-          </span>
-          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            {service.title}
-          </span>
+        {/* Typography: Crisp, massive, and readable */}
+        <h3 className="text-2xl lg:text-3xl font-bold text-white tracking-tight mb-3 transition-transform duration-800 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:translate-x-1 rtl:group-hover/card:-translate-x-1">
+          {service.title}
         </h3>
-        <p className="text-sm md:text-base text-foreground/70 content-spacing group-hover:text-foreground/80 transition-colors duration-300">
+
+        <p className="text-sm md:text-base text-white/50 leading-relaxed mb-8 group-hover/card:text-white/70 transition-colors duration-500 font-medium">
           {service.description}
         </p>
 
-        <div className="flex-grow">
-          <div
-            className="rounded-xl p-4 border border-border/30 group-hover:border-white/10 transition-colors duration-300"
-            style={{
-              background:
-                'linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%)',
-              backdropFilter: 'blur(10px)',
-            }}
-          >
-            <ul className="space-y-5">
-              {service.features.map((feature, idx) => (
-                <li key={idx} className="flex items-start gap-4 group/item">
-                  <div
-                    className={`
-                      relative flex items-center justify-center flex-shrink-0 mt-1
-                      w-6 h-6 rounded-full
-                      shadow-lg ${service.shadowColor}
-                      transition-all duration-300
-                      group-hover/item:scale-110 group-hover/item:shadow-xl ${service.hoverShadow}
-                    `}
-                    style={{ background: colors.gradient }}
-                  >
-                    <Check className="w-4 h-4 text-white drop-shadow-lg" strokeWidth={2.5} />
-                    <div className="absolute inset-0 rounded-full bg-white/20 blur-md opacity-0 group-hover/item:opacity-100 transition-opacity duration-300" />
-                  </div>
-                  <span className="text-sm md:text-base text-foreground/90 font-medium leading-6 md:leading-7 group-hover/item:text-foreground transition-colors duration-300">
-                    {feature}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
+        {/* Features List: Freed from the internal box */}
+        <div className="grow flex flex-col">
+          <ul className="space-y-4 mb-10">
+            {service.features.map((feature, idx) => (
+              <li key={idx} className="flex items-start gap-4 group/item">
+                <div className="mt-1 w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-white/5 border border-white/10 transition-colors duration-500 group-hover/item:border-white/30 group-hover/card:bg-white/10">
+                  <Check
+                    weight="bold"
+                    className="w-3 h-3 text-white/40 group-hover/item:text-white transition-colors duration-300"
+                  />
+                </div>
+                <span className="text-sm md:text-base text-white/70 font-medium leading-relaxed group-hover/item:text-white transition-colors duration-300">
+                  {feature}
+                </span>
+              </li>
+            ))}
+          </ul>
 
-        {service.pricing && (
-          <div className="mt-4">
-            <a
-              href={service.href}
-              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-full font-bold text-sm text-white transition-all duration-300 hover:scale-105 hover:shadow-lg group/cta cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]"
-              style={{ background: colors.gradient }}
-            >
-              <span>{service.pricing.cta}</span>
-            </a>
-          </div>
-        )}
+          {/* Premium CTA Button: Glass to Solid transition */}
+          {service.pricing && (
+            <div className="mt-auto pt-6 border-t border-white/5">
+              <a
+                href={service.href}
+                className="group/cta relative w-full flex items-center justify-center gap-3 px-6 py-4 rounded-full font-bold text-sm md:text-base text-white overflow-hidden transition-all duration-600 ease-[cubic-bezier(0.25,1,0.5,1)] border border-white/10 bg-white/5 hover:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+              >
+                {/* Background injection on hover */}
+                <div
+                  className="absolute inset-0 opacity-0 group-hover/cta:opacity-100 transition-opacity duration-600 ease-[cubic-bezier(0.25,1,0.5,1)] -z-10"
+                  style={{ background: colors.gradient }}
+                />
+
+                <span className="relative z-10 transition-transform duration-500 group-hover/cta:-translate-x-1 rtl:group-hover/cta:translate-x-1">
+                  {service.pricing.cta}
+                </span>
+
+                <ArrowRight
+                  weight="bold"
+                  className="w-4 h-4 relative z-10 opacity-50 group-hover/cta:opacity-100 transition-all duration-500 group-hover/cta:translate-x-1 rtl:rotate-180 rtl:group-hover/cta:-translate-x-1"
+                />
+              </a>
+            </div>
+          )}
+        </div>
       </div>
     </ScrollAnimation>
   );

@@ -25,7 +25,7 @@ export function HeroVisual() {
 
   return (
     <div
-      className="relative w-full max-w-[500px] lg:max-w-none mx-auto perspective-3d"
+      className="relative w-full max-w-125 lg:max-w-none mx-auto perspective-3d"
       onMouseEnter={() => setIsHoveringDashboard(true)}
       onMouseLeave={() => setIsHoveringDashboard(false)}
     >

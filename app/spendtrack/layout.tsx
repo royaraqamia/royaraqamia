@@ -7,8 +7,8 @@ export default function SpendTrackLayout({ children }: { children: React.ReactNo
     <div className="min-h-screen bg-background text-foreground flex flex-col safe-area-inset-top">
       <SkipToContent />
       <Navbar />
-      <main id="main-content" className="flex-1 pt-24">
-        <div className="container-padding mx-auto max-w-6xl">{children}</div>
+      <main id="main-content" className="flex-1">
+        {children}
       </main>
       <Footer />
     </div>

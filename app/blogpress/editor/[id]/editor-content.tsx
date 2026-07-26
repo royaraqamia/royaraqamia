@@ -450,14 +450,14 @@ export function EditorContent({ post }: EditorContentProps) {
                 <Settings className="size-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md overflow-x-hidden">
+            <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>إعدادات المقال</DialogTitle>
                 <DialogDescription>تكوين بيانات SEO وخيارات النَّشر</DialogDescription>
               </DialogHeader>
-              <div className="grid gap-6 min-w-0">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <div className="grid gap-6">
+                <div className="space-y-3 min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground flex-wrap">
                     <Link2 className="size-4 text-muted-foreground" />
                     الرَّابط
                   </div>
@@ -488,8 +488,8 @@ export function EditorContent({ post }: EditorContentProps) {
 
                 <div className="h-px bg-border/50" />
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <div className="space-y-3 min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground flex-wrap">
                     <ImageIcon className="size-4 text-muted-foreground" />
                     صورة الغلاف
                   </div>
@@ -567,8 +567,8 @@ export function EditorContent({ post }: EditorContentProps) {
 
                 <div className="h-px bg-border/50" />
 
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <div className="space-y-3 min-w-0">
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground flex-wrap">
                     <Search className="size-4 text-muted-foreground" />
                     تحسين محرِّكات البحث (SEO)
                   </div>

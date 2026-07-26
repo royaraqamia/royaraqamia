@@ -119,8 +119,8 @@ describe('middleware', () => {
   it('redirects unauthenticated users from protected routes to login', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    mockNextUrl.pathname = '/linksnap/dashboard';
-    mockRequest.url = 'https://royaraqamia.com/linksnap/dashboard';
+    mockNextUrl.pathname = '/linksnap/app';
+    mockRequest.url = 'https://royaraqamia.com/linksnap/app';
 
     const { middleware } = await import('@/middleware');
     const result = await middleware(mockRequest as never);

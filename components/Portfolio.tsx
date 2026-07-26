@@ -36,7 +36,7 @@ export function Portfolio() {
               left: '0',
               width: '400px',
               height: '400px',
-              background: 'rgba(168, 85, 247, 0.1)',
+              background: 'rgba(168, 85, 247, 0.12)',
               filter: 'blur(100px)',
               transform: 'translate(-25%, -50%)',
               animation: 'pulse-slow 4s ease-in-out infinite',
@@ -46,7 +46,7 @@ export function Portfolio() {
               right: '0',
               width: '400px',
               height: '400px',
-              background: 'rgba(59, 130, 246, 0.1)',
+              background: 'rgba(59, 130, 246, 0.12)',
               filter: 'blur(100px)',
               transform: 'translate(25%, 33%)',
               animation: 'pulse-slow 4s ease-in-out infinite',
@@ -57,7 +57,7 @@ export function Portfolio() {
               left: '50%',
               width: '300px',
               height: '300px',
-              background: 'rgba(20, 184, 166, 0.05)',
+              background: 'rgba(20, 184, 166, 0.08)',
               filter: 'blur(120px)',
               transform: 'translate(-50%, -50%)',
               animation: 'pulse-slow 4s ease-in-out infinite',
@@ -68,10 +68,10 @@ export function Portfolio() {
       </div>
 
       <div className="max-w-7xl mx-auto container-padding relative z-10">
-        {/* Section Header */}
-        <ScrollAnimation animation="slide-down" duration={0.7}>
-          <div className="text-center max-w-3xl mx-auto section-header">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
+        {/* Section Header - Upgraded Typography */}
+        <ScrollAnimation animation="slide-down" duration={0.8}>
+          <div className="text-center max-w-3xl mx-auto section-header mb-12">
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl mb-4 font-bold tracking-tight text-white/95">
               نبذة عن <span className="gradient-text">أعمالنا</span>
             </h2>
           </div>
@@ -79,7 +79,7 @@ export function Portfolio() {
       </div>
 
       {/* Portfolio Horizontal Scroll - Full Width with Edge Navigation */}
-      <ScrollAnimation animation="slide-up" duration={0.7} delay={0.2}>
+      <ScrollAnimation animation="slide-up" duration={0.8} delay={0.2}>
         <div className="relative w-full group/scroll">
           <HorizontalScrollArrows
             onScroll={scroll}
@@ -89,15 +89,15 @@ export function Portfolio() {
             ariaLabelRight="السابق"
           />
 
-          {/* Scroll Container */}
+          {/* Scroll Container - Added snap scrolling and CSS hidden scrollbar */}
           <div
             ref={scrollContainerRef}
-            className="horizontal-scroll pt-2 md:pt-4 pb-12 flex"
+            className="horizontal-scroll pt-2 md:pt-4 pb-12 flex snap-x snap-mandatory [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none"
             style={{
               paddingLeft: 'max(24px, calc((100vw - 1280px) / 2 + 80px))',
               paddingRight: 'max(24px, calc((100vw - 1280px) / 2 + 80px))',
               scrollPaddingInline: '80px',
-              gap: '24px',
+              gap: '32px', // Slightly increased gap for premium breathing room
             }}
             role="region"
             aria-label="معرض الأعمال"
@@ -106,16 +106,41 @@ export function Portfolio() {
               if (imageError.has(index)) return null;
 
               return (
-                <div key={index} className="shrink-0 w-70 sm:w-[320px] md:w-90 min-w-0">
-                  <div className="relative group/card rounded-2xl overflow-hidden glass-card border border-white/10 transition-all duration-500 hover:scale-105 hover:shadow-2xl hover:shadow-purple-500/20 hover:border-purple-500/30 w-full">
+                <div key={index} className="shrink-0 w-70 sm:w-90 md:w-120 min-w-0 snap-center">
+                  {/* Card Container: Fixed bounds, subtle border, overflow hidden */}
+                  <div className="relative group/card rounded-3xl overflow-hidden bg-white/2 border border-white/5 transition-colors duration-500 hover:border-white/20 w-full aspect-4/3 shadow-2xl">
+                    {/* The Image: Object cover, inner scale on hover, premium cubic-bezier easing */}
                     <Image
                       src={imagePath.png}
                       alt={`معرض أعمال رؤية رقمية - مشروع ${index + 1}`}
-                      width={360}
-                      height={240}
-                      className="w-full h-auto object-contain"
+                      fill
+                      sizes="(max-width: 768px) 280px, (max-width: 1200px) 360px, 480px"
+                      className="object-cover transition-transform duration-800 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:scale-110 group-hover/card:-rotate-1"
                       onError={() => handleImageError(index)}
                     />
+
+                    {/* Premium Touch: Dark gradient overlay that fades in from the bottom on hover */}
+                    <div className="absolute inset-0 bg-linear-to-t from-[#0B0F19]/90 via-[#0B0F19]/20 to-transparent opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]" />
+
+                    {/* Premium Touch: "View Project" Pill. Using start-6 to support RTL naturally */}
+                    <div className="absolute bottom-6 inset-s-6 translate-y-6 opacity-0 group-hover/card:translate-y-0 group-hover/card:opacity-100 transition-all duration-600 ease-[cubic-bezier(0.25,1,0.5,1)] delay-75">
+                      <span className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-sm font-medium text-white shadow-xl">
+                        عرض العمل
+                        <svg
+                          className="w-4 h-4 rtl:rotate-180"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M14 5l7 7m0 0l-7 7m7-7H3"
+                          />
+                        </svg>
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
