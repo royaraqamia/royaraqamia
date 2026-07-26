@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Clock, FileText } from 'lucide-react';
 import { BlogSearch } from './_components/blog-search';
+import { estimateReadingTime, formatReadingTime } from '@/lib/reading-time';
 import type { Post } from '@/domains/blogpress/lib/definitions';
 
 export const dynamic = 'force-dynamic';
@@ -16,13 +17,6 @@ export const metadata: Metadata = {
 };
 
 const PAGE_SIZE = 9;
-
-function estimateReadingTime(content: string | null): number {
-  if (!content) return 1;
-  const text = content.replace(/[#*_`~>[\]!|-]/g, '').trim();
-  const words = text.split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 180));
-}
 
 export default async function BlogPage(props: {
   searchParams: Promise<{ page?: string; q?: string }>;
@@ -145,7 +139,7 @@ export default async function BlogPage(props: {
                     />
                     <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm text-[11px] text-muted-foreground font-medium">
                       <Clock className="size-3" />
-                      {estimateReadingTime(post.content)} د
+                      {formatReadingTime(estimateReadingTime(post.content))}
                     </div>
                   </Link>
                 ) : (
@@ -158,7 +152,7 @@ export default async function BlogPage(props: {
                     </div>
                     <div className="absolute top-3 left-3 inline-flex items-center gap-1 px-2 py-1 rounded-full bg-background/80 backdrop-blur-sm text-[11px] text-muted-foreground font-medium">
                       <Clock className="size-3" />
-                      {estimateReadingTime(post.content)} د
+                      {formatReadingTime(estimateReadingTime(post.content))}
                     </div>
                   </Link>
                 )}

@@ -11,6 +11,7 @@ import { ArrowRight, Clock, Calendar, BookOpen, User, ChevronLeft } from 'lucide
 import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
+import { estimateReadingTime, formatReadingTimeLong } from '@/lib/reading-time';
 import type { Post } from '@/domains/blogpress/lib/definitions';
 import type { Metadata } from 'next';
 
@@ -27,13 +28,6 @@ const getPublishedPost = async (slug: string) => {
     .single();
   return data as Post | null;
 };
-
-function estimateReadingTime(content: string | null): number {
-  if (!content) return 1;
-  const text = content.replace(/[#*_`~>[\]!|-]/g, '').trim();
-  const words = text.split(/\s+/).filter(Boolean).length;
-  return Math.max(1, Math.ceil(words / 180));
-}
 
 function extractHeadings(content: string): { level: number; text: string; id: string }[] {
   const headingRegex = /^(#{1,3})\s+(.+)$/gm;
@@ -223,7 +217,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
             )}
             <span className="flex items-center gap-1.5">
               <Clock className="size-3.5" />
-              {readingTime} دقائق قراءة
+              {formatReadingTimeLong(readingTime)}
             </span>
           </div>
         </header>
@@ -333,7 +327,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                         {rp.title}
                       </h3>
                       <p className="text-xs text-muted-foreground mt-1.5">
-                        {estimateReadingTime(rp.content)} دقائق قراءة
+                        {formatReadingTimeLong(estimateReadingTime(rp.content))}
                       </p>
                     </div>
                   </Link>

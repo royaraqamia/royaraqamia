@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
+import { useState, useTransition, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -15,6 +15,7 @@ import {
   Plus,
   Loader2,
   Search,
+  X,
   ExternalLink,
   Clock,
 } from 'lucide-react';
@@ -42,6 +43,7 @@ import {
 } from '@/domains/blogpress/lib/actions/posts';
 import type { Post, PostStatus } from '@/domains/blogpress/lib/definitions';
 import { cn } from '@/lib/utils';
+import { estimateWordCount, estimateReadingTime, formatReadingTime } from '@/lib/reading-time';
 import { toast } from 'sonner';
 
 interface PostListProps {
@@ -54,20 +56,22 @@ const filters: { label: string; value: PostStatus | 'all' }[] = [
   { label: 'منشور', value: 'published' },
 ];
 
-function estimateWordCount(content: string | null): number {
-  if (!content) return 0;
-  const text = content.replace(/[#*_`~>[\]!|-]/g, '').trim();
-  return text.split(/\s+/).filter(Boolean).length;
-}
-
-function estimateReadingTime(content: string | null): number {
-  return Math.max(1, Math.ceil(estimateWordCount(content) / 180));
-}
-
 export function PostList({ posts }: PostListProps) {
   const [activeFilter, setActiveFilter] = useState<PostStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [pending, startTransition] = useTransition();
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        searchRef.current?.focus();
+      }
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, []);
 
   const filteredPosts = useMemo(() => {
     let filtered = activeFilter === 'all' ? posts : posts.filter((p) => p.status === activeFilter);
@@ -85,11 +89,19 @@ export function PostList({ posts }: PostListProps) {
     return filtered;
   }, [posts, activeFilter, searchQuery]);
 
+  const countByStatus = useMemo(
+    () => ({
+      draft: posts.filter((p) => p.status === 'draft').length,
+      published: posts.filter((p) => p.status === 'published').length,
+    }),
+    [posts]
+  );
+
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
         <div
-          className="flex items-center gap-0.5 border-b border-border/50"
+          className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border/50"
           role="tablist"
           aria-label="تصفية المقالات"
         >
@@ -102,33 +114,65 @@ export function PostList({ posts }: PostListProps) {
               id={`tab-${f.value}`}
               onClick={() => setActiveFilter(f.value)}
               className={cn(
-                'px-3.5 py-2.5 text-sm border-b-2 transition-smooth -mb-px rounded-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11',
+                'relative inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-lg transition-smooth cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background',
                 activeFilter === f.value
-                  ? 'border-primary text-foreground font-medium'
-                  : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  ? 'bg-background text-foreground font-medium shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
               )}
             >
               {f.label}
               {f.value !== 'all' && (
-                <span className="me-1.5 text-xs text-muted-foreground">
-                  ({posts.filter((p) => p.status === f.value).length})
+                <span
+                  className={cn(
+                    'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[11px] font-normal rounded-full leading-none transition-smooth',
+                    activeFilter === f.value
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-muted-foreground/10 text-muted-foreground'
+                  )}
+                >
+                  {countByStatus[f.value]}
                 </span>
               )}
             </button>
           ))}
         </div>
 
-        <div className="relative sm:mr-auto sm:min-w-50">
+        <div className="relative sm:mr-auto sm:min-w-56">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40 pointer-events-none" />
           <input
+            ref={searchRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="بحث في المقالات..."
-            className="w-full h-9 pr-9 pl-3 rounded-lg bg-muted/50 border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs placeholder:text-muted-foreground/40 outline-none transition-all"
+            className="w-full h-9 pr-9 pl-8 rounded-lg bg-muted/50 border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs placeholder:text-muted-foreground/40 outline-none transition-all"
           />
+          {searchQuery ? (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                searchRef.current?.focus();
+              }}
+              className="absolute left-2 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full text-muted-foreground/40 hover:text-foreground hover:bg-muted transition-smooth cursor-pointer"
+              aria-label="مسح البحث"
+            >
+              <X className="size-3" />
+            </button>
+          ) : (
+            <kbd className="absolute left-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-muted-foreground/30 border border-border/50 bg-muted/30 leading-none pointer-events-none">
+              <span className="text-[9px]">⌘</span>K
+            </kbd>
+          )}
         </div>
       </div>
+
+      {searchQuery && (
+        <div className="mb-4 text-xs text-muted-foreground/60">
+          {filteredPosts.length === 0
+            ? 'لا توجد نتائج للبحث'
+            : `عُثر على ${filteredPosts.length} نتيجة`}
+        </div>
+      )}
 
       <div
         className="divide-y divide-border/50"
@@ -214,7 +258,7 @@ function PostRow({ post }: { post: Post }) {
           <span className="text-muted-foreground/30">&middot;</span>
           <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
             <Clock className="size-3" />
-            {wordCount.toLocaleString('ar')} كلمة &middot; {readingTime} د
+            {wordCount.toLocaleString('ar')} كلمة &middot; {formatReadingTime(readingTime)}
           </span>
           <span className="text-muted-foreground/30">&middot;</span>
           <span className="text-xs text-muted-foreground/60">

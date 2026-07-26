@@ -61,6 +61,7 @@ import { uploadImage } from '@/domains/blogpress/lib/actions/media';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
 import type { Post } from '@/domains/blogpress/lib/definitions';
+import { estimateWordCount, formatReadingTimeLong } from '@/lib/reading-time';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
 
@@ -96,15 +97,12 @@ export function EditorContent({ post }: EditorContentProps) {
   const coverFileInputRef = useRef<HTMLInputElement>(null);
   const isDirtyRef = useRef(false);
 
-  const wordCount = useMemo(() => {
-    const text = content.replace(/[#*_`~>[\]!|-]/g, '').trim();
-    if (!text) return 0;
-    return text.split(/\s+/).filter(Boolean).length;
-  }, [content]);
+  const wordCount = useMemo(() => estimateWordCount(content), [content]);
 
-  const readingTimeMinutes = useMemo(() => {
-    return Math.max(1, Math.ceil(wordCount / 180));
-  }, [wordCount]);
+  const readingTimeMinutes = useMemo(
+    () => formatReadingTimeLong(Math.ceil(wordCount / 180)),
+    [wordCount]
+  );
 
   useEffect(() => {
     contentRef.current = content;
@@ -243,7 +241,10 @@ export function EditorContent({ post }: EditorContentProps) {
   }, []);
 
   const handleSave = useCallback(async () => {
-    const finalSlug = generateSlug(slug);
+    let finalSlug = generateSlug(slug);
+    if (!finalSlug) {
+      finalSlug = generateSlug(title) || `post-${crypto.randomUUID().slice(0, 8)}`;
+    }
     if (finalSlug !== slug) setSlug(finalSlug);
     const currentContent = editorRef.current?.getMarkdown() ?? content;
     const formData = new FormData();
@@ -300,7 +301,10 @@ export function EditorContent({ post }: EditorContentProps) {
   );
 
   const handlePublish = useCallback(async () => {
-    const finalSlug = generateSlug(slug);
+    let finalSlug = generateSlug(slug);
+    if (!finalSlug) {
+      finalSlug = generateSlug(title) || `post-${crypto.randomUUID().slice(0, 8)}`;
+    }
     if (finalSlug !== slug) setSlug(finalSlug);
     const currentContent = editorRef.current?.getMarkdown() ?? content;
     const formData = new FormData();
@@ -446,12 +450,12 @@ export function EditorContent({ post }: EditorContentProps) {
                 <Settings className="size-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-md overflow-x-hidden">
               <DialogHeader>
                 <DialogTitle>إعدادات المقال</DialogTitle>
                 <DialogDescription>تكوين بيانات SEO وخيارات النَّشر</DialogDescription>
               </DialogHeader>
-              <div className="grid gap-6">
+              <div className="grid gap-6 min-w-0">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                     <Link2 className="size-4 text-muted-foreground" />
@@ -470,7 +474,7 @@ export function EditorContent({ post }: EditorContentProps) {
                       className="transition-smooth min-h-11"
                       dir="ltr"
                     />
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground truncate break-all">
                       <span className="text-muted-foreground/60">
                         {new URL(SITE_URL).host}/blog/
                       </span>
@@ -503,7 +507,7 @@ export function EditorContent({ post }: EditorContentProps) {
                           src={coverImage}
                           alt="معاينة صورة الغلاف"
                           fill
-                          sizes="100vw"
+                          sizes="(max-width: 640px) 100vw, 448px"
                           unoptimized
                           className="object-cover"
                           onError={(e) => {
@@ -649,7 +653,7 @@ export function EditorContent({ post }: EditorContentProps) {
                           <p className="text-sm font-medium text-primary truncate">
                             {metaTitle || title || 'عنوان المقال'}
                           </p>
-                          <p className="text-xs text-muted-foreground/60">
+                          <p className="text-xs text-muted-foreground/60 truncate break-all">
                             {new URL(SITE_URL).host}/blog/{slug || '...'}
                           </p>
                           <p className="text-xs text-muted-foreground line-clamp-2">
@@ -853,7 +857,7 @@ export function EditorContent({ post }: EditorContentProps) {
           </span>
           <span className="text-muted-foreground/40 hidden sm:inline">·</span>
           <span className="text-xs text-muted-foreground hidden sm:inline">
-            {readingTimeMinutes} دقائق قراءة
+            {readingTimeMinutes}
           </span>
           {lastSaved && (
             <>

@@ -5,6 +5,7 @@ import { verifySession } from '@/domains/blogpress/lib/dal';
 import { PostList } from './_components/post-list';
 import { CreatePostButton } from './_components/create-post-button';
 import { FileText, Eye, PenLine, BookOpen } from 'lucide-react';
+import { estimateWordCount } from '@/lib/reading-time';
 import type { Post } from '@/domains/blogpress/lib/definitions';
 
 export const dynamic = 'force-dynamic';
@@ -12,12 +13,6 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   description: 'لوحة تحكُّم BlogPress – إدارة المقالات وإنشاء محتوى جديد.',
 };
-
-function estimateWordCount(content: string | null): number {
-  if (!content) return 0;
-  const text = content.replace(/[#*_`~>[\]!|-]/g, '').trim();
-  return text.split(/\s+/).filter(Boolean).length;
-}
 
 export default async function DashboardPage() {
   const session = await verifySession();

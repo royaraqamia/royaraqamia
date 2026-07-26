@@ -48,6 +48,7 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
       extensions: [
         StarterKit.configure({
           heading: { levels: [1, 2, 3] },
+          link: false,
         }),
         ImageExtension,
         LinkExtension.configure({ openOnClick: false }),
