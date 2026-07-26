@@ -303,7 +303,8 @@ export function EditorContent({ post }: EditorContentProps) {
   );
 
   const handleSave = useCallback(async () => {
-    const finalSlug = slug.startsWith('بدون-عنوان-') || slug === '' ? generateSlug(title) : slug;
+    const finalSlug =
+      slug.startsWith('بدون-عنوان-') || slug === '' ? generateSlug(title) : generateSlug(slug);
     if (finalSlug !== slug) setSlug(finalSlug);
     const formData = new FormData();
     formData.append('title', title);
@@ -350,7 +351,8 @@ export function EditorContent({ post }: EditorContentProps) {
   );
 
   const handlePublish = useCallback(async () => {
-    const finalSlug = slug.startsWith('بدون-عنوان-') || slug === '' ? generateSlug(title) : slug;
+    const finalSlug =
+      slug.startsWith('بدون-عنوان-') || slug === '' ? generateSlug(title) : generateSlug(slug);
     if (finalSlug !== slug) setSlug(finalSlug);
     const formData = new FormData();
     formData.append('title', title);
@@ -532,7 +534,7 @@ export function EditorContent({ post }: EditorContentProps) {
                       id="slug"
                       name="slug"
                       value={slug}
-                      onChange={(e) => setSlug(e.target.value)}
+                      onChange={(e) => setSlug(generateSlug(e.target.value))}
                       placeholder="رابط-المقال"
                       className="transition-smooth min-h-11"
                       dir="ltr"

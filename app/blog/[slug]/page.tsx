@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import ReactMarkdown from 'react-markdown';
@@ -15,7 +14,9 @@ import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import type { Post } from '@/domains/blogpress/lib/definitions';
 import type { Metadata } from 'next';
 
-const getPublishedPost = cache(async (slug: string) => {
+export const revalidate = 60;
+
+const getPublishedPost = async (slug: string) => {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
   const { data } = await supabase
@@ -25,7 +26,7 @@ const getPublishedPost = cache(async (slug: string) => {
     .eq('status', 'published')
     .single();
   return data as Post | null;
-});
+};
 
 function estimateReadingTime(content: string | null): number {
   if (!content) return 1;

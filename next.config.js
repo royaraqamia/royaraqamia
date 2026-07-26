@@ -11,7 +11,7 @@ script-src 'self' 'unsafe-inline' ${process.env.NODE_ENV === 'development' ? "'u
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com data:;
 img-src 'self' data: https: blob: https://*.supabase.co;
-worker-src 'self';
+worker-src 'self' blob:;
 connect-src 'self' https://api.royaraqamia.com https://royaraqamia.com https://*.supabase.co wss: ws:;
 base-uri 'self';
 form-action 'self' https://forms.gle;

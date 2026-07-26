@@ -47,7 +47,10 @@ export type OtpInput = z.infer<typeof OtpSchema>;
 export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
 export const PostSchema = z.object({
   title: z.string().min(1, 'العنوان مطلوب'),
-  slug: z.string().min(1, 'الرابط مطلوب'),
+  slug: z
+    .string()
+    .min(1, 'الرابط مطلوب')
+    .regex(/^[\w\u0600-\u06FF-]+$/, 'الرابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط'),
   content: z.string().optional(),
   cover_image: z.string().optional(),
   meta_title: z.string().max(70).optional(),
