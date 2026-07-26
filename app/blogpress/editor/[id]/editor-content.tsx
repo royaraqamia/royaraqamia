@@ -51,7 +51,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { updatePost, publishPost } from '@/domains/blogpress/lib/actions/posts';
+import { updatePost, saveAndPublishPost } from '@/domains/blogpress/lib/actions/posts';
 import { uploadImage } from '@/domains/blogpress/lib/actions/media';
 import { toast } from 'sonner';
 import type { Post } from '@/domains/blogpress/lib/definitions';
@@ -72,6 +72,7 @@ export function EditorContent({ post }: EditorContentProps) {
   const [metaDesc, setMetaDesc] = useState(post.meta_desc ?? '');
   const [isPreview, setIsPreview] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isCoverUploading, setIsCoverUploading] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pending, startTransition] = useTransition();
   const [isDirty, setIsDirty] = useState(false);
@@ -86,6 +87,7 @@ export function EditorContent({ post }: EditorContentProps) {
   const metaDescRef = useRef(metaDesc);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
   const isDirtyRef = useRef(false);
 
   const wordCount = useMemo(() => {
@@ -212,10 +214,45 @@ export function EditorContent({ post }: EditorContentProps) {
     [handleImageUpload]
   );
 
+  const handleCoverUpload = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast.error('يجب أن يكون الملف صورة');
+      return;
+    }
+    setIsCoverUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      const result = await uploadImage(formData);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.url) {
+        setCoverImage(result.url);
+        toast.success('تمَّ رفع صورة الغلاف');
+      }
+    } catch {
+      toast.error('فشل رفع الصورة');
+    } finally {
+      setIsCoverUploading(false);
+    }
+  }, []);
+
+  const handleCoverFileSelect = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (file) handleCoverUpload(file);
+      e.target.value = '';
+    },
+    [handleCoverUpload]
+  );
+
   const generateSlug = useCallback((text: string) => {
     return text
       .toLowerCase()
       .replace(/[^\w\s\u0600-\u06FF-]/g, '')
+      .replace(/[\u060C\u061B\u061F\u0640\u066A\u066B\u066C\u066D\u06D4]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '')
@@ -314,14 +351,18 @@ export function EditorContent({ post }: EditorContentProps) {
     formData.append('meta_title', metaTitle);
     formData.append('meta_desc', metaDesc);
     startTransition(async () => {
-      const result = await updatePost(post.id, undefined, formData);
-      if (result?.message === 'تمَّ حفظ المقال') {
-        isDirtyRef.current = false;
-        setIsDirty(false);
-        setLastSaved(new Date());
-        toast.success('تمَّ حفظ المقال');
-      } else if (result?.errors) {
-        toast.error('خطأ في التَّحقُّق من البيانات');
+      try {
+        const result = await updatePost(post.id, undefined, formData);
+        if (result?.message === 'تمَّ حفظ المقال') {
+          isDirtyRef.current = false;
+          setIsDirty(false);
+          setLastSaved(new Date());
+          toast.success('تمَّ حفظ المقال');
+        } else if (result?.errors) {
+          toast.error('خطأ في التَّحقُّق من البيانات');
+        }
+      } catch {
+        toast.error('حدث خطأ في الحفظ');
       }
     });
   }, [post.id, title, slug, content, coverImage, metaTitle, metaDesc, generateSlug]);
@@ -362,23 +403,21 @@ export function EditorContent({ post }: EditorContentProps) {
     formData.append('meta_title', metaTitle);
     formData.append('meta_desc', metaDesc);
     startTransition(async () => {
-      const result = await updatePost(post.id, undefined, formData);
-      if (result?.errors) {
-        toast.error('يُرجَى إصلاح أخطاء التَّحقُّق قبل النَّشر');
-        return;
-      }
       try {
-        await publishPost(post.id);
+        const result = await saveAndPublishPost(post.id, formData);
+        if (result?.errors) {
+          toast.error('يُرجَى إصلاح أخطاء التَّحقُّق قبل النَّشر');
+          return;
+        }
+        isDirtyRef.current = false;
+        setIsDirty(false);
+        setPublishDialogOpen(false);
+        toast.success('تمَّ نشر المقال!');
+        router.refresh();
+        router.push(`/blog/${finalSlug}`);
       } catch {
         toast.error('فشل نشر المقال. حاول مرَّة أخرى.');
-        return;
       }
-      isDirtyRef.current = false;
-      setIsDirty(false);
-      setPublishDialogOpen(false);
-      toast.success('تمَّ نشر المقال!');
-      router.refresh();
-      router.push(`/blog/${finalSlug}`);
     });
   }, [post.id, title, slug, content, coverImage, metaTitle, metaDesc, generateSlug, router]);
 
@@ -559,44 +598,75 @@ export function EditorContent({ post }: EditorContentProps) {
                     صورة الغلاف
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="cover_image" className="text-xs text-muted-foreground">
-                      رابط الصُّورة
-                    </Label>
-                    <Input
-                      id="cover_image"
-                      name="cover_image"
-                      value={coverImage}
-                      onChange={(e) => setCoverImage(e.target.value)}
-                      placeholder="https://example.com/image.jpg"
-                      className="transition-smooth min-h-11"
-                      dir="ltr"
+                    <input
+                      ref={coverFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleCoverFileSelect}
                     />
-                    <p className="text-xs text-muted-foreground/60">
-                      PNG أو JPG أو WebP. يُفضَّل أبعاد 1200×630 بكسل.
-                    </p>
+                    {coverImage ? (
+                      <div className="relative aspect-video overflow-hidden rounded-lg border border-border/50 bg-muted group">
+                        <Image
+                          src={coverImage}
+                          alt="معاينة صورة الغلاف"
+                          fill
+                          sizes="100vw"
+                          unoptimized
+                          className="object-cover"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).style.display = 'none';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            className="rounded-full"
+                            disabled={isCoverUploading}
+                            onClick={() => coverFileInputRef.current?.click()}
+                          >
+                            {isCoverUploading ? (
+                              <Loader2 className="size-3.5 animate-spin" />
+                            ) : (
+                              <Upload className="size-3.5" />
+                            )}
+                            تغيير
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            className="rounded-full"
+                            onClick={() => setCoverImage('')}
+                          >
+                            <X className="size-3.5" />
+                            إزالة
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => coverFileInputRef.current?.click()}
+                        disabled={isCoverUploading}
+                        className="flex flex-col items-center justify-center aspect-video rounded-lg border border-dashed border-border/60 bg-muted/30 hover:bg-muted/50 hover:border-primary/40 transition-smooth text-center cursor-pointer disabled:opacity-50"
+                      >
+                        {isCoverUploading ? (
+                          <Loader2 className="size-8 text-muted-foreground/30 mb-2 animate-spin" />
+                        ) : (
+                          <ImageIcon className="size-8 text-muted-foreground/30 mb-2" />
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          {isCoverUploading ? 'جارٍ الرَّفع...' : 'انقر لرفع صورة الغلاف'}
+                        </p>
+                        <p className="text-xs text-muted-foreground/60 mt-1">
+                          PNG أو JPG أو WebP. يُفضَّل أبعاد 1200×630 بكسل.
+                        </p>
+                      </button>
+                    )}
                   </div>
-                  {coverImage ? (
-                    <div className="relative aspect-video overflow-hidden rounded-lg border border-border/50 bg-muted">
-                      <Image
-                        src={coverImage}
-                        alt="معاينة صورة الغلاف"
-                        fill
-                        sizes="100vw"
-                        unoptimized
-                        className="object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).style.display = 'none';
-                        }}
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center aspect-video rounded-lg border border-dashed border-border/60 bg-muted/30 text-center">
-                      <ImageIcon className="size-8 text-muted-foreground/30 mb-2" />
-                      <p className="text-xs text-muted-foreground">
-                        أضف رابط صورة الغلاف لمعاينتها هنا
-                      </p>
-                    </div>
-                  )}
                 </div>
 
                 <div className="h-px bg-border/50" />

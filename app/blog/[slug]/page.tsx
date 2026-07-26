@@ -44,6 +44,7 @@ function extractHeadings(content: string): { level: number; text: string; id: st
     const id = text
       .toLowerCase()
       .replace(/[^\w\s\u0600-\u06FF-]/g, '')
+      .replace(/[\u060C\u061B\u061F\u0640\u066A\u066B\u066C\u066D\u06D4]/g, '')
       .replace(/\s+/g, '-');
     headings.push({ level: (match[1] ?? '').length, text, id });
   }
