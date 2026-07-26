@@ -68,8 +68,7 @@ export default async function DashboardPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">المقالات</h1>
-          <p className="text-sm text-muted-foreground mt-1">إدارة ونشر مقالات المدوَّنة</p>
+          <h1 className="text-3xl font-display font-bold tracking-tight">إدارة المقالات</h1>
         </div>
         <CreatePostButton />
       </div>

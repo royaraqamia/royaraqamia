@@ -116,7 +116,7 @@ export function DashboardShell({
 
   return (
     <ErrorBoundary>
-      <div className="min-h-dvh pb-16 bg-background">
+      <div className="min-h-dvh pb-8 bg-background">
         <div className="max-w-6xl mx-auto container-padding">
           <motion.div
             initial={shouldReduce ? false : { opacity: 0, y: 15 }}
@@ -132,6 +132,8 @@ export function DashboardShell({
             }
             className="space-y-8 will-change-transform"
           >
+            <h1 className="text-3xl font-display font-bold tracking-tight">إدارة العادات</h1>
+
             <div className="flex items-center justify-between">
               <div className="flex items-center bg-muted border border-border rounded-lg p-1 gap-1">
                 <Button
@@ -223,9 +225,6 @@ export function DashboardShell({
                     <h2 className="text-2xl font-display font-bold text-foreground leading-snug">
                       قائمة عادات اليوم
                     </h2>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      اضغط على الدوائر لتبديل حالة التسجيل ليوم {activeDate}
-                    </p>
                   </div>
                   <Button
                     onClick={() => {

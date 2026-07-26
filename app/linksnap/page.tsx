@@ -77,7 +77,7 @@ export default function LinkSnapPage() {
   return (
     <main
       id="main-content"
-      className="relative min-h-screen pb-10 px-4 sm:px-6 lg:px-8 flex flex-col justify-between max-w-5xl mx-auto overflow-hidden"
+      className="relative min-h-screen pb-8 container-padding flex flex-col justify-between max-w-6xl mx-auto overflow-hidden"
     >
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-125 h-75 bg-linear-to-br from-primary/10 to-accent/5 blur-3xl pointer-events-none -z-10" />
 
@@ -90,6 +90,8 @@ export default function LinkSnapPage() {
           animate={{ opacity: 1 }}
           className="space-y-8"
         >
+          <h1 className="text-3xl font-display font-bold tracking-tight">إدارة الرَّوابط</h1>
+
           {user && (
             <ViewSelector
               selectedView={selectedView}

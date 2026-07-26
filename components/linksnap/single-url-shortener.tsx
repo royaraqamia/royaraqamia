@@ -190,7 +190,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 رمز مُخصَّص (اختياري)
               </label>
               <div
-                className="flex items-center bg-muted/50 border border-border rounded-full focus-within:ring-2 focus-within:ring-primary/20 transition-all"
+                className="flex items-center w-full overflow-hidden bg-muted/50 border border-border rounded-full focus-within:ring-2 focus-within:ring-primary/20 transition-all"
                 dir="ltr"
               >
                 <span className="shrink-0 pr-3 text-sm text-muted-foreground font-semibold select-none whitespace-nowrap py-3.5 leading-snug">
@@ -205,7 +205,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   }
                   placeholder="my-promo"
                   maxLength={16}
-                  className="flex-1 bg-transparent px-3 py-3.5 text-sm focus:outline-none text-foreground placeholder:text-muted-foreground"
+                  className="flex-1 min-w-0 bg-transparent px-3 py-3.5 text-sm focus:outline-none text-foreground placeholder:text-muted-foreground"
                 />
               </div>
               <p className="text-xs text-muted-foreground font-medium">

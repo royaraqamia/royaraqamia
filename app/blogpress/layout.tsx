@@ -21,10 +21,13 @@ export default async function BlogPressLayout({ children }: { children: React.Re
   } = await supabase.auth.getUser();
   if (!user) redirect('/auth/login?redirect=/blogpress');
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col safe-area-inset-top">
       <SkipToContent />
       <Navbar />
-      <main id="main-content" className="flex-1 pt-24 container mx-auto px-4 sm:px-6 pb-8">
+      <main
+        id="main-content"
+        className="flex-1 pt-24 mx-auto w-full max-w-6xl container-padding pb-8"
+      >
         {children}
       </main>
       <Footer />

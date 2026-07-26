@@ -228,6 +228,7 @@ export function useDashboard(seed: SeedData) {
   };
 
   const handleArchiveHabit = async (habitId: string) => {
+    setIsEditModalOpen(false);
     setConfirmArchiveHabitId(habitId);
   };
 
@@ -274,6 +275,7 @@ export function useDashboard(seed: SeedData) {
   };
 
   const cancelArchive = () => {
+    setIsEditModalOpen(true);
     setConfirmArchiveHabitId(null);
   };
 

@@ -340,7 +340,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                           </a>
                         </td>
                         <td
-                          className="px-6 py-4 max-w-[220px] md:max-w-xs truncate text-muted-foreground font-mono"
+                          className="px-6 py-4 max-w-55 md:max-w-xs truncate text-muted-foreground font-mono"
                           title={link.originalUrl}
                         >
                           {link.originalUrl}

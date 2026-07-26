@@ -23,7 +23,7 @@ export default async function LinkSnapLayout({ children }: { children: React.Rea
   if (!user) redirect('/auth/login?redirect=/linksnap');
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-screen bg-background text-foreground flex flex-col safe-area-inset-top">
       <SkipToContent />
       <Navbar />
       <ProgressBar />

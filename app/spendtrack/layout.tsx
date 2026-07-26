@@ -8,7 +8,7 @@ export default function SpendTrackLayout({ children }: { children: React.ReactNo
       <SkipToContent />
       <Navbar />
       <main id="main-content" className="flex-1 pt-24">
-        <div className="container-padding mx-auto max-w-7xl">{children}</div>
+        <div className="container-padding mx-auto max-w-6xl">{children}</div>
       </main>
       <Footer />
     </div>

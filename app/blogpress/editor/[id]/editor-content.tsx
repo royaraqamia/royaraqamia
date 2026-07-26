@@ -506,7 +506,7 @@ export function EditorContent({ post }: EditorContentProps) {
             <SheetTrigger asChild>
               <Button
                 variant="ghost"
-                size="icon-sm"
+                size="icon"
                 className="text-muted-foreground hover:text-foreground transition-smooth"
                 aria-label="إعدادات المقال"
               >
