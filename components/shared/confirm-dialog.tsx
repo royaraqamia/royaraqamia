@@ -53,7 +53,7 @@ export function ConfirmDialog({
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[10000]">
+    <div className="fixed inset-0 z-[10002]">
       <div
         className="fixed inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onCancel}

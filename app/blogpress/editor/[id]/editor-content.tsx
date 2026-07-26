@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useRef, useTransition, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import NextLink from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -445,11 +446,13 @@ export function EditorContent({ post }: EditorContentProps) {
           <Button
             variant="ghost"
             size="icon-sm"
-            onClick={() => router.push('/blogpress')}
+            asChild
             className="shrink-0 transition-smooth"
             aria-label="العودة إلى لوحة التحكم"
           >
-            <ArrowRight className="size-4" />
+            <NextLink href="/blogpress">
+              <ArrowRight className="size-4" />
+            </NextLink>
           </Button>
           <Label htmlFor="editor-title" className="sr-only">
             عنوان المقال

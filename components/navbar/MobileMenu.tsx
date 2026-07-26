@@ -66,6 +66,16 @@ export function MobileMenu({
 
   useFocusTrap(isOpen, mobileMenuRef, () => setIsOpen(false));
 
+  // Close menu when viewport crosses md breakpoint
+  useEffect(() => {
+    if (!isOpen) return;
+    const onResize = () => {
+      if (window.innerWidth >= 768) setIsOpen(false);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [isOpen, setIsOpen]);
+
   // Handle open/close with slight delay for CSS transition
   useEffect(() => {
     if (isOpen) {
@@ -263,7 +273,7 @@ export function MobileMenu({
     <>
       {isOpen &&
         createPortal(
-          <div className="fixed inset-0 z-99999 md:hidden" style={{ position: 'fixed' }}>
+          <div className="fixed inset-0 z-[10001] md:hidden" style={{ position: 'fixed' }}>
             {/* Backdrop */}
             <div
               className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
