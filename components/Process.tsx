@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { MagnifyingGlass, PencilLine, Palette, Code, RocketLaunch } from '@phosphor-icons/react';
 import { motion } from 'motion/react';
 import { ScrollAnimation } from './ScrollAnimations';
@@ -50,7 +51,7 @@ const steps: ProcessStep[] = [
   },
 ];
 
-export function Process() {
+export const Process = memo(function Process() {
   return (
     <section id="process" className="relative py-24 lg:py-32 overflow-hidden bg-[#050810]">
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -127,4 +128,4 @@ export function Process() {
       </div>
     </section>
   );
-}
+});

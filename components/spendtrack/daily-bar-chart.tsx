@@ -21,7 +21,9 @@ function CustomTooltip({
   return (
     <div className="rounded-lg border bg-popover px-3 py-2 shadow-elevated">
       <p className="text-sm font-medium">{label}</p>
-      <p className="text-sm text-muted-foreground mt-1">${Number(item.value).toFixed(2)}</p>
+      <p className="text-sm text-muted-foreground mt-1">
+        {Number(item.value).toLocaleString('ar-SA')} ل.س
+      </p>
     </div>
   );
 }
@@ -69,13 +71,26 @@ export function DailyBarChart({ data }: { data: DailySpending[] }) {
             tick={{ fontSize: 12 }}
             tickLine={false}
             axisLine={false}
+            label={{
+              value: 'التاريخ',
+              position: 'insideBottomRight',
+              offset: -5,
+              style: { fontSize: 11, fill: 'var(--color-muted-foreground)' },
+            }}
           />
           <YAxis
             className="text-xs text-muted-foreground"
             tick={{ fontSize: 12 }}
-            tickFormatter={(value: number) => `$${value}`}
+            tickFormatter={(value: number) => `${value.toLocaleString('ar-SA')} ل.س`}
             tickLine={false}
             axisLine={false}
+            label={{
+              value: 'المبلغ (ل.س)',
+              angle: -90,
+              position: 'insideLeft',
+              offset: 10,
+              style: { fontSize: 11, fill: 'var(--color-muted-foreground)' },
+            }}
           />
           <Tooltip content={<CustomTooltip />} />
           <Bar dataKey="total" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />

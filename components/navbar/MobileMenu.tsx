@@ -15,6 +15,7 @@ interface MobileMenuProps {
   setIsOpen: (val: boolean) => void;
   navLinks: NavLink[];
   isLinkActive: (href: string) => boolean;
+  isSubItemActive: (subItems?: SubItem[]) => boolean;
   handleHashClick: (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => void;
   isHomePage: boolean;
   logo?: string;
@@ -56,6 +57,7 @@ export function MobileMenu({
   setIsOpen,
   navLinks,
   isLinkActive,
+  isSubItemActive,
   handleHashClick,
   isHomePage,
   logo: logoProp,
@@ -149,7 +151,9 @@ export function MobileMenu({
   };
 
   const renderNavItem = (link: NavLink) => {
-    const isActive = isLinkActive(link.href);
+    const isActive = link.hasDropdown
+      ? isLinkActive(link.href) || isSubItemActive(link.subItems)
+      : isLinkActive(link.href);
     const baseClasses = `
             flex items-center gap-3 w-full px-4 py-4 rounded-full
             font-semibold text-[17px] leading-relaxed

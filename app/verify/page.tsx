@@ -220,7 +220,7 @@ export default function VerifyPage() {
                 key="loading"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+                exit={{ opacity: 0, transition: { duration: 0.15 } }}
                 className="flex flex-col items-center gap-4 py-16"
               >
                 <div className="relative">
@@ -260,7 +260,7 @@ export default function VerifyPage() {
                 variants={resultVariants}
                 initial="hidden"
                 animate="visible"
-                exit={{ opacity: 0, y: -20 }}
+                exit={{ opacity: 0, y: -20, transition: { duration: 0.15 } }}
               >
                 <Card className="overflow-hidden border-destructive/20">
                   <m.div
@@ -331,7 +331,7 @@ export default function VerifyPage() {
                 variants={resultVariants}
                 initial="hidden"
                 animate="visible"
-                exit={{ opacity: 0, y: -20 }}
+                exit={{ opacity: 0, y: -20, transition: { duration: 0.15 } }}
               >
                 <CertificateResultCard
                   certificate={result.certificate}

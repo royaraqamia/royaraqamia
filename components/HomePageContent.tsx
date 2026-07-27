@@ -4,7 +4,6 @@ import { Suspense, lazy } from 'react';
 import { Hero } from './Hero';
 import { MetricCards } from './MetricCards';
 import { Services } from './Services';
-import { Process } from './Process';
 import { CTA } from './CTA';
 import { CircleNotch } from '@phosphor-icons/react';
 
@@ -40,7 +39,6 @@ export function HomePageContent() {
       <Hero />
       <MetricCards />
       <Services />
-      <Process />
 
       <Suspense fallback={<SectionSpinner />}>
         <Portfolio />

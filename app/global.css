@@ -1,4 +1,3 @@
-@import './fonts.css';
 @import 'tailwindcss';
 @plugin "@tailwindcss/typography";
 @import 'tw-animate-css';
@@ -39,10 +38,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
 
-  --font-arabic: 'IBM Plex Sans Arabic', system-ui, sans-serif;
-  --font-heading: 'Aref Ruqaa', serif;
-  --font-sans: 'IBM Plex Sans Arabic', system-ui, sans-serif;
-
+  --font-sans: var(--font-arabic);
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-delayed: float-delayed 3.5s ease-in-out infinite;
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -1939,29 +1935,43 @@
 .primary-cta-btn {
   position: relative;
 }
-.primary-cta-btn:hover {
-  transform: scale(1.05);
-  box-shadow:
-    0 20px 60px rgba(119, 102, 238, 0.5),
-    0 0 40px rgba(119, 102, 238, 0.3);
+@media (prefers-reduced-motion: no-preference) {
+  .primary-cta-btn:hover {
+    transform: scale(1.05);
+    box-shadow:
+      0 20px 60px rgba(119, 102, 238, 0.5),
+      0 0 40px rgba(119, 102, 238, 0.3);
+  }
+  .primary-cta-btn:hover .shine-effect {
+    transform: translateX(100%);
+  }
+  .primary-cta-btn:hover svg {
+    transform: translateX(-4px);
+  }
 }
-.primary-cta-btn:hover .shine-effect {
-  transform: translateX(100%);
-}
-.primary-cta-btn:hover svg {
-  transform: translateX(-4px);
-}
+
 @keyframes cta-pulse {
   0%,
+  50%,
   100% {
     box-shadow:
       0 8px 32px rgba(119, 102, 238, 0.4),
       0 0 20px rgba(119, 102, 238, 0.2);
   }
-  50% {
-    box-shadow:
-      0 12px 48px rgba(119, 102, 238, 0.6),
-      0 0 40px rgba(119, 102, 238, 0.4);
+}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes cta-pulse {
+    0%,
+    100% {
+      box-shadow:
+        0 8px 32px rgba(119, 102, 238, 0.4),
+        0 0 20px rgba(119, 102, 238, 0.2);
+    }
+    50% {
+      box-shadow:
+        0 12px 48px rgba(119, 102, 238, 0.6),
+        0 0 40px rgba(119, 102, 238, 0.4);
+    }
   }
 }
 .cta-glow {

@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { getWhatsAppUrl } from '../../lib/constants';
 import { NotificationDropdown } from '../shared/notification-dropdown';
 import { UserDropdown } from '../shared/user-dropdown';
+import NextImage from 'next/image';
 
 interface NavLink {
   visible?: boolean;
@@ -23,6 +24,7 @@ interface DesktopNavProps {
   navLinks: NavLink[];
   isScrolled: boolean;
   isLinkActive: (href: string) => boolean;
+  isSubItemActive: (subItems?: NavLink[]) => boolean;
   handleHashClick: (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => void;
   logo?: string;
   isHomePage: boolean;
@@ -33,6 +35,7 @@ export function DesktopNav({
   navLinks,
   isScrolled,
   isLinkActive,
+  isSubItemActive,
   handleHashClick,
   logo: logoProp,
   isHomePage,
@@ -97,12 +100,12 @@ export function DesktopNav({
         aria-label="رؤية رقمية - الصفحة الرئيسية"
         onClick={scrollToHomeNode}
       >
-        <img
-          src={logoProp}
+        <NextImage
+          src={logoProp ?? ''}
           alt="شعار رؤية رقمية"
           width={48}
           height={48}
-          loading="eager"
+          priority
           className={`transition-all duration-300 ${
             isScrolled ? 'h-8 w-8 lg:h-10 lg:w-10 logo-glow' : 'h-10 w-10 lg:h-12 lg:w-12'
           }`}
@@ -121,7 +124,9 @@ export function DesktopNav({
         {navLinks
           .filter((link) => link.visible !== false)
           .map((link) => {
-            const isActive = isLinkActive(link.href);
+            const isActive = link.hasDropdown
+              ? isLinkActive(link.href) || isSubItemActive(link.subItems)
+              : isLinkActive(link.href);
             if (link.hasDropdown) {
               const isDropdownOpen =
                 link.dropdownKey === 'services' ? isServicesDropdownOpen : isProductsDropdownOpen;

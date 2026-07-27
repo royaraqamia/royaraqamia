@@ -115,17 +115,11 @@ export function Services() {
           variants={headerVariant}
           className="text-center max-w-3xl mx-auto mb-20"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
-            <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
-            <span className="text-sm font-medium text-white/80">خدماتنا الشاملة</span>
-          </div>
-
           <h2 className="text-4xl sm:text-5xl lg:text-6xl mb-6 font-extrabold tracking-tight text-white">
             ماذا <span className="gradient-text">نقدِّم</span>؟
           </h2>
           <p className="text-base sm:text-lg lg:text-xl text-white/60 leading-relaxed font-medium">
-            بُنية تحتيَّة شاملة للأفراد وأصحاب الأعمال تحت سقف واحد، نرافقك من بلورة الفكرة وحتى
-            إطلاقها بنجاح.
+            بُنية تحتيَّة شاملة للأفراد وأصحاب الأعمال تحت سقف واحد.
           </p>
         </motion.div>
 

@@ -51,7 +51,7 @@ export function WebDevService() {
               width: '500px',
               height: '500px',
               background: 'rgba(139, 92, 246, 0.08)',
-              filter: 'blur(120px)',
+              filter: 'blur(60px)',
               transform: 'translate(-20%, -30%)',
               animation: 'pulse-slow 8s ease-in-out infinite',
             },
@@ -61,7 +61,7 @@ export function WebDevService() {
               width: '500px',
               height: '500px',
               background: 'rgba(124, 58, 237, 0.08)',
-              filter: 'blur(120px)',
+              filter: 'blur(60px)',
               transform: 'translate(20%, 20%)',
               animation: 'pulse-slow 8s ease-in-out infinite',
               animationDelay: '2s',
@@ -87,8 +87,7 @@ export function WebDevService() {
             </span>
           </h2>
           <p className="text-base sm:text-lg lg:text-xl text-foreground/70 leading-relaxed font-medium">
-            خدمات تطوير متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق. نبني حلول رقميَّة
-            قابلة للتَّوسُّع، آمنة، وسهلة الاستخدام.
+            خدمات هندسيَّة وإداريَّة متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق.
           </p>
         </motion.div>
 

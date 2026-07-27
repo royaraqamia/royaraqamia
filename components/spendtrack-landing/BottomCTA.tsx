@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { motion } from 'motion/react';
 import { ArrowLeft, Sparkle } from '@phosphor-icons/react';
@@ -59,7 +59,7 @@ export function BottomCTA() {
           >
             <Button size="xl" onClick={handleCTA} className="cta-glow text-lg px-12 h-16">
               {user ? 'اذهب إلى لوحة التحكم' : 'أنشئ حسابك'}
-              <ArrowLeft size={22} weight="bold" className="arrow-bounce" />
+              <ArrowLeft size={20} weight="bold" className="arrow-bounce" />
             </Button>
             <Button
               size="xl"

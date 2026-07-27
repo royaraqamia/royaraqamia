@@ -15,6 +15,8 @@ import { PWAProvider } from '../components/PWAProvider';
 import { GoUpButton } from '../components/GoUpButton';
 import { WhatsAppFloat } from '../components/WhatsAppFloat';
 import { SITE_NAME } from '@/lib/metadata';
+import { ibmPlexSansArabic, arefRuqaa } from '@/lib/fonts';
+import { RouteChangeFocus } from '@/components/RouteChangeFocus';
 
 export const metadata: Metadata = {
   title: {
@@ -107,7 +109,7 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="ar" dir="rtl" className={`${ibmPlexSansArabic.variable} ${arefRuqaa.variable}`}>
       <head>
         <link rel="stylesheet" href="/design-system/lib/design-tokens.css" />
         <link rel="manifest" href="/manifest.json" />
@@ -126,6 +128,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <Analytics />
                   <PWAProvider>
                     <VersionChecker />
+                    <RouteChangeFocus />
                     {children}
                     <GoUpButton />
                     <WhatsAppFloat />

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ArrowLeft, CheckCircle } from '@phosphor-icons/react';
+import { ArrowLeft, CheckCircle, Fire } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/components/shared/session-provider';
@@ -136,7 +136,9 @@ export function Hero() {
 
                 <div className="flex items-center justify-between mb-6">
                   <span className="text-sm font-medium">هذا الأسبوع</span>
-                  <span className="text-2xl font-bold gradient-text">🔥 12</span>
+                  <span className="text-2xl font-bold gradient-text inline-flex items-center gap-1">
+                    <Fire size={24} weight="fill" className="text-primary" /> 12
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between mb-5 px-1">
@@ -170,7 +172,7 @@ export function Hero() {
                               done ? `${habit.color} text-white` : 'bg-muted text-muted-foreground'
                             }`}
                           >
-                            {done ? '✓' : '·'}
+                            {done ? <CheckCircle size={16} weight="fill" /> : <span>·</span>}
                           </div>
                         ))}
                       </div>

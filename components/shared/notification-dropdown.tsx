@@ -1,18 +1,28 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Check, Bell } from '@phosphor-icons/react';
+import {
+  X,
+  Check,
+  Bell,
+  Certificate,
+  NotePencil,
+  CheckCircle,
+  CurrencyDollar,
+  LinkSimple,
+  Megaphone,
+} from '@phosphor-icons/react';
 import { useNotifications } from '@/context/NotificationContext';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-const typeIcons: Record<string, string> = {
-  certificate_issued: '🎓',
-  post_published: '📝',
-  habit_reminder: '✅',
-  expense_alert: '💰',
-  link_clicked: '🔗',
-  system_announcement: '📢',
+const typeIcons: Record<string, React.ReactNode> = {
+  certificate_issued: <Certificate size={18} />,
+  post_published: <NotePencil size={18} />,
+  habit_reminder: <CheckCircle size={18} />,
+  expense_alert: <CurrencyDollar size={18} />,
+  link_clicked: <LinkSimple size={18} />,
+  system_announcement: <Megaphone size={18} />,
 };
 
 export function NotificationDropdown() {
@@ -143,8 +153,8 @@ export function NotificationDropdown() {
                     </button>
 
                     <div className="flex items-start gap-3">
-                      <span className="text-lg leading-none mt-0.5">
-                        {typeIcons[notification.type] ?? '🔔'}
+                      <span className="text-lg leading-none mt-0.5 text-primary">
+                        {typeIcons[notification.type] ?? <Bell size={18} />}
                       </span>
                       <div className="flex-1 min-w-0">
                         <p

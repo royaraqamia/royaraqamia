@@ -2,7 +2,7 @@
 
 import { useRef, useState, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { CalendarCheck, ChartLineUp, Fire } from '@phosphor-icons/react';
+import { CalendarCheck, ChartLineUp, Fire, CheckCircle } from '@phosphor-icons/react';
 
 interface BentoCardProps {
   title: string;
@@ -109,9 +109,9 @@ function HabitTracker() {
               }`}
             >
               {habit.done ? (
-                <span className="text-primary text-sm font-bold">✓</span>
+                <CheckCircle size={16} weight="fill" className="text-primary" />
               ) : (
-                <span className="text-muted-foreground text-sm">○</span>
+                <span className="w-4 h-4 rounded-full border-2 border-muted-foreground/40 block" />
               )}
             </div>
             <span className="text-sm font-medium">{habit.name}</span>
@@ -164,7 +164,11 @@ function StreakCalendar() {
                       : 'bg-muted text-muted-foreground'
                   }`}
                 >
-                  {j < (streakData[i] ?? 0) ? '✓' : '·'}
+                  {j < (streakData[i] ?? 0) ? (
+                    <CheckCircle size={12} weight="fill" />
+                  ) : (
+                    <span>·</span>
+                  )}
                 </div>
               ))}
             </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { Key, useState } from 'react';
+import { memo, Key, useState } from 'react';
 import Image from 'next/image';
 import { motion, useScroll, useSpring } from 'motion/react';
 import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
@@ -120,7 +120,7 @@ const cardVariant = {
   show: { opacity: 1, scale: 1, x: 0, transition: { type: 'spring', stiffness: 80, damping: 20 } },
 } as const;
 
-export function Portfolio() {
+export const Portfolio = memo(function Portfolio() {
   const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(400);
   const [imageError, setImageError] = useState<Set<number>>(new Set());
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
@@ -145,7 +145,7 @@ export function Portfolio() {
               width: '500px',
               height: '500px',
               background: 'rgba(168, 85, 247, 0.08)',
-              filter: 'blur(120px)',
+              filter: 'blur(60px)',
               transform: 'translate(-25%, -50%)',
               animation: 'pulse-slow 6s ease-in-out infinite',
             },
@@ -155,7 +155,7 @@ export function Portfolio() {
               width: '500px',
               height: '500px',
               background: 'rgba(59, 130, 246, 0.08)',
-              filter: 'blur(120px)',
+              filter: 'blur(60px)',
               transform: 'translate(25%, 33%)',
               animation: 'pulse-slow 6s ease-in-out infinite',
               animationDelay: '1.5s',
@@ -309,4 +309,4 @@ export function Portfolio() {
       </Dialog>
     </section>
   );
-}
+});

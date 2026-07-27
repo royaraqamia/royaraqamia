@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { ThemeProvider } from '@/components/linksnap/theme-provider';
 import { ProgressBar } from '@/components/linksnap/progress-bar';
 import { Toaster } from 'sonner';
+import { Navbar } from '@/components/Navbar';
 
 export default async function LinkSnapAppLayout({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
@@ -15,6 +16,7 @@ export default async function LinkSnapAppLayout({ children }: { children: React.
 
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">
+      <Navbar />
       <ProgressBar />
       <ThemeProvider>
         <main className="flex-1 pt-24 mx-auto w-full max-w-6xl container-padding pb-8">

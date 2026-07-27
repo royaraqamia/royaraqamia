@@ -73,7 +73,7 @@ export function UpdatePopup({ onReload, onDismiss }: UpdatePopupProps) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
             transition={{ duration: 0.3 }}
             className="absolute inset-0 bg-black/40 backdrop-blur-sm"
             onClick={handleDismiss}
@@ -82,7 +82,12 @@ export function UpdatePopup({ onReload, onDismiss }: UpdatePopupProps) {
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            exit={{
+              opacity: 0,
+              scale: 0.95,
+              y: 10,
+              transition: { duration: 0.15, ease: 'easeIn' },
+            }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
             className="relative w-full border border-border bg-card shadow-2xl shadow-primary/5
               max-w-sm rounded-3xl

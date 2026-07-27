@@ -84,10 +84,18 @@ export function Navbar() {
   };
 
   const isLinkActive = (href: string) => {
+    if (href.startsWith('#')) return false;
     if (href === '/') return pathname === '/';
-    // Logic for sections?
+    if (href.startsWith('/')) return pathname === href || pathname.startsWith(href + '/');
     return false;
   };
+
+  const isSubItemActive = (subItems?: { href: string }[]) =>
+    subItems?.some(
+      (item) =>
+        item.href.startsWith('/') &&
+        (pathname === item.href || pathname.startsWith(item.href + '/'))
+    ) ?? false;
 
   const navLinks = [
     {
@@ -156,6 +164,7 @@ export function Navbar() {
               navLinks={navLinks}
               isScrolled={isScrolled}
               isLinkActive={isLinkActive}
+              isSubItemActive={isSubItemActive}
               handleHashClick={handleHashClick}
               logo="/logo.webp"
               isHomePage={isHomePage}
@@ -188,6 +197,7 @@ export function Navbar() {
           setIsOpen={setIsMobileMenuOpen}
           navLinks={navLinks}
           isLinkActive={isLinkActive}
+          isSubItemActive={isSubItemActive}
           handleHashClick={handleHashClick}
           isHomePage={isHomePage}
           logo="/logo.webp"

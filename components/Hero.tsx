@@ -1,11 +1,12 @@
 'use client';
 
+import { memo } from 'react';
 import { m } from 'motion/react';
-import { ArrowLeft } from '@phosphor-icons/react';
+import { ArrowLeft, Star } from '@phosphor-icons/react';
 import { HeroVisual } from './HeroVisual';
 import { getWhatsAppUrl } from '../lib/constants';
 
-export function Hero() {
+export const Hero = memo(function Hero() {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -41,8 +42,8 @@ export function Hero() {
         <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-purple-950/80 to-slate-900 z-0 overflow-hidden">
           <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary-600/5 to-transparent" />
           {/* Reduced blur radius and opacity for cleaner look */}
-          <div className="absolute top-0 right-1/4 w-[min(500px,80vw)] h-[min(500px,80vw)] bg-primary-600 opacity-[0.03] blur-[120px] rounded-full" />
-          <div className="absolute bottom-0 left-1/4 w-[min(500px,80vw)] h-[min(500px,80vw)] bg-primary-400 opacity-[0.03] blur-[120px] rounded-full" />
+          <div className="absolute top-0 right-1/4 w-[min(500px,80vw)] h-[min(500px,80vw)] bg-primary-600 opacity-[0.03] blur-[60px] rounded-full" />
+          <div className="absolute bottom-0 left-1/4 w-[min(500px,80vw)] h-[min(500px,80vw)] bg-primary-400 opacity-[0.03] blur-[60px] rounded-full" />
 
           {/* Floating Particles - Subtler */}
           {particles.map((particle) => (
@@ -116,18 +117,20 @@ export function Hero() {
               </m.p>
 
               {/* Social Proof Strip - Trust Signals */}
-              <m.div
+              <m.a
                 variants={itemVariants}
-                className="flex flex-wrap items-center justify-center lg:justify-start gap-6 pt-2"
+                href="#testimonials"
+                className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-2 group cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white rounded-full"
+                aria-label="انتقل إلى آراء العملاء"
               >
-                <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
-                  <div className="flex -space-x-2 rtl:space-x-reverse">
-                    {[1, 2, 3].map((i) => (
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm transition-all duration-300 group-hover:bg-white/10 group-hover:border-white/30">
+                  <div className="flex -space-x-2">
+                    {['أ', 'ز', 'ك'].map((letter, i) => (
                       <div
                         key={i}
                         className="w-7 h-7 rounded-full bg-linear-to-br from-indigo-400 to-purple-600 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white"
                       >
-                        {['أ', 'ز', 'ك'][i - 1]}
+                        <span className="leading-none">{letter}</span>
                       </div>
                     ))}
                   </div>
@@ -135,13 +138,19 @@ export function Hero() {
                     ثقة <span className="font-bold text-white">30+</span> شخص
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-300">
-                  <span className="text-purple-400">★★★★★</span>
+                <div className="flex items-center gap-2 text-slate-300 transition-all duration-300 group-hover:text-slate-200">
+                  <span className="flex gap-0.5 text-purple-400">
+                    <Star size={14} weight="fill" />
+                    <Star size={14} weight="fill" />
+                    <Star size={14} weight="fill" />
+                    <Star size={14} weight="fill" />
+                    <Star size={14} weight="fill" />
+                  </span>
                   <span className="text-xs sm:text-sm">
                     <span className="font-bold text-white">4.9</span>/5
                   </span>
                 </div>
-              </m.div>
+              </m.a>
 
               {/* CTA Buttons */}
               <m.div
@@ -191,4 +200,4 @@ export function Hero() {
       </section>
     </>
   );
-}
+});

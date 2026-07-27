@@ -45,7 +45,7 @@ export function HabitCard({
         <motion.button
           onClick={() => onToggle(habit.id)}
           disabled={isToggling}
-          whileTap={reduce || isToggling ? undefined : { scale: 0.85 }}
+          whileTap={reduce || isToggling ? undefined : { scale: 0.95 }}
           transition={reduce ? undefined : { type: 'spring', stiffness: 400, damping: 10 }}
           className={`w-10 sm:w-11 h-10 sm:h-11 rounded-full border-2 flex items-center justify-center transition-all duration-200 ease-out shrink-0 focus-ring touch-target btn-press ${
             isCompleted

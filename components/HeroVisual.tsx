@@ -99,21 +99,22 @@ export function HeroVisual() {
 
                 {/* Bar chart - animating only on hover or slowly */}
                 <div className="flex-1 flex items-end justify-around gap-1.5 pb-2">
-                  {[60, 85, 45, 95, 70, 55, 80].map((height, i) => (
+                  {[60, 85, 45, 95, 70, 55, 80].map((v, i) => (
                     <m.div
                       key={i}
-                      className="w-3 rounded-t-sm bg-linear-to-t from-purple-500/60 to-violet-400/40"
-                      initial={{ height: `${height * 0.7}%` }}
+                      className="w-3 h-full rounded-t-sm bg-linear-to-t from-purple-500/60 to-violet-400/40 origin-bottom"
+                      initial={{ scaleY: (v / 100) * 0.7 }}
                       animate={
                         isHoveringDashboard
-                          ? { height: [`${height * 0.7}%`, `${height}%`, `${height * 0.7}%`] }
-                          : { height: `${height * 0.7}%` }
+                          ? { scaleY: [(v / 100) * 0.7, v / 100, (v / 100) * 0.7] }
+                          : { scaleY: (v / 100) * 0.7 }
                       }
                       transition={{
                         duration: 2,
                         repeat: isHoveringDashboard ? Infinity : 0,
                         delay: i * 0.1,
                       }}
+                      style={{ height: '100%' }}
                     />
                   ))}
                 </div>
@@ -178,9 +179,9 @@ export function HeroVisual() {
                   </div>
                   <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                     <m.div
-                      className={`h-full ${item.bg.replace('/20', '/60')}`}
-                      initial={{ width: 0 }}
-                      whileInView={{ width: `${item.progress}%` }}
+                      className={`h-full w-full ${item.bg.replace('/20', '/60')} origin-right`}
+                      initial={{ scaleX: 0 }}
+                      whileInView={{ scaleX: 1 }}
                       viewport={{ once: true }}
                       transition={{ duration: 1, delay: idx * 0.1 }}
                     />

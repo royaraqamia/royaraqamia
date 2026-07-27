@@ -314,6 +314,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                           src={rp.cover_image}
                           alt={rp.title}
                           fill
+                          sizes="(max-width: 768px) 100vw, 33vw"
                           className="object-cover transition-smooth-slow group-hover:scale-105"
                         />
                       </div>

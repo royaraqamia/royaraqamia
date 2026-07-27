@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { motion, useInView, animate } from 'motion/react';
 import { Clock, Trophy, TrendUp } from '@phosphor-icons/react';
 
@@ -30,7 +30,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
   );
 }
 
-export function MetricCards() {
+export const MetricCards = memo(function MetricCards() {
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -189,4 +189,4 @@ export function MetricCards() {
       </div>
     </section>
   );
-}
+});
