@@ -13,7 +13,7 @@ export function ViewSelector({ selectedView, userEmail, onChange }: ViewSelector
 
   return (
     <div
-      className="bg-card p-1 rounded-xl border border-border shadow-sm flex items-center justify-between gap-1 w-full max-w-[360px] mx-auto"
+      className="bg-card p-1 rounded-xl border border-border shadow-sm flex items-center justify-between gap-1 w-full max-w-90 mx-auto"
       role="tablist"
       aria-label="التنقل بين العروض"
     >

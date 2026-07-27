@@ -10,7 +10,7 @@ export default function NotFound() {
   return (
     <html lang="ar" dir="rtl">
       <body>
-        <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
+        <div className="flex min-h-dvh flex-col items-center justify-center bg-background px-4 text-center">
           <div className="mb-8">
             <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-primary/10 shadow-lg shadow-primary/10">
               <svg

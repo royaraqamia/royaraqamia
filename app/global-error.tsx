@@ -15,9 +15,9 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-4 text-center">
+    <div className="flex min-h-dvh flex-col items-center justify-center bg-slate-950 px-4 text-center">
       <div className="mb-8">
-        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-linear-to-br from-red-600 to-orange-400 shadow-lg shadow-red-500/25">
+        <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-linear-to-br from-purple-700 to-violet-500 shadow-lg shadow-purple-500/25">
           <svg
             width="48"
             height="48"
@@ -35,7 +35,7 @@ export default function GlobalError({
           </svg>
         </div>
         <h2 className="mb-4 text-2xl font-bold text-red-300">حدث خطأ غير متوقع</h2>
-        <p className="mx-auto mb-8 max-w-md text-gray-400">
+        <p className="mx-auto mb-8 max-w-md text-gray-300">
           عذرًا، حدث خطأ جذري في التطبيق. يرجى تحديث الصفحة.
         </p>
       </div>

@@ -205,7 +205,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   }
                   placeholder="my-promo"
                   maxLength={16}
-                  className="flex-1 min-w-0 bg-transparent px-3 py-3.5 text-sm focus:outline-none text-foreground placeholder:text-muted-foreground"
+                  className="flex-1 min-w-0 bg-transparent px-3 py-3.5 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring text-foreground placeholder:text-muted-foreground"
                 />
               </div>
               <p className="text-xs text-muted-foreground font-medium">
@@ -247,7 +247,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   className="w-4 h-4 text-primary-foreground/60 group-hover:scale-110 transition-transform"
                 />
                 <span>اختصار الرَّابط</span>
-                <ArrowLeft aria-hidden="true" className="w-4 h-4 mr-1" />
+                <ArrowLeft aria-hidden="true" className="w-4 h-4 ms-1" />
               </>
             )}
           </button>
@@ -286,7 +286,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               type="text"
               readOnly
               value={shortenedUrl}
-              className="flex-1 bg-transparent border-none text-sm text-foreground text-center font-bold focus:outline-none"
+              className="flex-1 bg-transparent border-none text-sm text-foreground text-center font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
           </div>
 

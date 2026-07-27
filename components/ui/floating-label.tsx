@@ -61,7 +61,7 @@ const FloatingLabel = React.forwardRef<HTMLDivElement, FloatingLabelProps>(
           )}
         >
           {label}
-          {required && <span className="text-destructive mr-1">*</span>}
+          {required && <span className="text-destructive ms-1">*</span>}
         </label>
       </div>
     );

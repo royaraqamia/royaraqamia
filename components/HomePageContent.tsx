@@ -4,6 +4,7 @@ import { Suspense, lazy } from 'react';
 import { Hero } from './Hero';
 import { MetricCards } from './MetricCards';
 import { Services } from './Services';
+import { Process } from './Process';
 import { CTA } from './CTA';
 import { CircleNotch } from '@phosphor-icons/react';
 
@@ -21,6 +22,9 @@ const WebDevService = lazy(() =>
   import('./WebDevService').then((m) => ({ default: m.WebDevService }))
 );
 const Portfolio = lazy(() => import('./Portfolio').then((m) => ({ default: m.Portfolio })));
+const VerifySection = lazy(() =>
+  import('./VerifySection').then((m) => ({ default: m.VerifySection }))
+);
 const WhyUs = lazy(() => import('./WhyUs').then((m) => ({ default: m.WhyUs })));
 const FAQ = lazy(() => import('./FAQ').then((m) => ({ default: m.FAQ })));
 
@@ -36,6 +40,7 @@ export function HomePageContent() {
       <Hero />
       <MetricCards />
       <Services />
+      <Process />
 
       <Suspense fallback={<SectionSpinner />}>
         <Portfolio />
@@ -43,6 +48,10 @@ export function HomePageContent() {
 
       <Suspense fallback={<SectionSpinner />}>
         <Testimonials />
+      </Suspense>
+
+      <Suspense fallback={<SectionSpinner />}>
+        <WebDevService />
       </Suspense>
 
       <section id="training">
@@ -54,15 +63,15 @@ export function HomePageContent() {
         </Suspense>
       </section>
 
+      <Suspense fallback={<SectionSpinner />}>
+        <VerifySection />
+      </Suspense>
+
       <section id="consultations">
         <Suspense fallback={<SectionSpinner />}>
           <ConsultationCards />
         </Suspense>
       </section>
-
-      <Suspense fallback={<SectionSpinner />}>
-        <WebDevService />
-      </Suspense>
 
       <Suspense fallback={<SectionSpinner />}>
         <WhyUs />

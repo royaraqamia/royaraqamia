@@ -22,11 +22,11 @@ function GlowOrb({
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const habitData = [
   { name: 'تأمُّل', done: [true, true, true, true, false, true, true], color: 'bg-primary' },
-  { name: 'تمارين', done: [true, false, true, true, true, false, true], color: 'bg-accent-teal' },
+  { name: 'تمارين', done: [true, false, true, true, true, false, true], color: 'bg-accent-indigo' },
   {
     name: 'قراءة',
     done: [true, true, false, true, true, true, false],
-    color: 'bg-accent-orange',
+    color: 'bg-accent-purple',
   },
 ];
 
@@ -43,10 +43,10 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden">
       <GlowOrb className="w-96 h-96 bg-primary/20 top-1/4 -left-48 animate-pulse-slow" />
       <GlowOrb
-        className="w-80 h-80 bg-accent-teal/10 bottom-1/4 -right-40 animate-pulse-slow"
+        className="w-80 h-80 bg-accent-indigo/10 bottom-1/4 -right-40 animate-pulse-slow"
         style={{ animationDelay: '2s' }}
       />
 
@@ -131,7 +131,7 @@ export function Hero() {
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
                   <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <div className="mr-auto text-xs text-muted-foreground">habitflow.app</div>
+                  <div className="ms-auto text-xs text-muted-foreground">habitflow.app</div>
                 </div>
 
                 <div className="flex items-center justify-between mb-6">
@@ -185,10 +185,10 @@ export function Hero() {
                   className="mt-5 pt-4 border-t border-border/50 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-2">
-                    <CheckCircle size={16} className="text-success" />
+                    <CheckCircle size={16} className="text-primary" />
                     <span className="text-sm text-muted-foreground">أفضل سلسلة</span>
                   </div>
-                  <span className="text-lg font-bold text-accent-teal">21 days</span>
+                  <span className="text-lg font-bold text-accent-indigo">21 days</span>
                 </motion.div>
               </motion.div>
             </div>

@@ -16,19 +16,19 @@ export function ConsultationCards() {
       <div
         className="absolute top-1/4 right-1/4 w-[min(300px,80vw)] sm:w-[min(600px,80vw)] h-[min(300px,80vw)] sm:h-[min(600px,80vw)] rounded-full pointer-events-none blur-[120px]"
         style={{
-          background: 'radial-gradient(circle, rgba(244, 63, 94, 0.15) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.15) 0%, transparent 70%)',
         }}
       />
       <div
         className="absolute bottom-0 left-1/4 w-[min(250px,80vw)] sm:w-[min(500px,80vw)] h-[min(250px,80vw)] sm:h-[min(500px,80vw)] rounded-full pointer-events-none blur-[100px]"
         style={{
-          background: 'radial-gradient(circle, rgba(251, 113, 133, 0.1) 0%, transparent 70%)',
+          background: 'radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, transparent 70%)',
         }}
       />
       <div
         className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(400px,80vw)] sm:w-[min(800px,80vw)] h-[min(200px,80vw)] sm:h-[min(400px,80vw)] rounded-full pointer-events-none blur-[150px]"
         style={{
-          background: 'radial-gradient(ellipse, rgba(225, 29, 72, 0.08) 0%, transparent 60%)',
+          background: 'radial-gradient(ellipse, rgba(124, 58, 237, 0.08) 0%, transparent 60%)',
         }}
       />
 
@@ -38,7 +38,7 @@ export function ConsultationCards() {
           <div className="text-center mb-12 md:mb-16">
             {/* H1 Title */}
             <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
-              <span className="text-rose-400">الاستشارات</span>
+              <span className="text-purple-400">الاستشارات</span>
             </h2>
 
             {/* Subtitle */}
@@ -53,15 +53,15 @@ export function ConsultationCards() {
           <div className="relative">
             {/* Glassmorphism Card */}
             <div
-              className="relative rounded-3xl overflow-hidden shadow-[0_0_60px_-10px_rgba(244,63,94,0.4)]"
+              className="relative rounded-3xl overflow-hidden shadow-[0_0_60px_-10px_rgba(139,92,246,0.4)]"
               style={{
                 background:
                   'linear-gradient(135deg, rgba(88, 28, 87, 0.4) 0%, rgba(59, 7, 59, 0.5) 50%, rgba(30, 27, 75, 0.6) 100%)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(244, 63, 94, 0.25)',
+                border: '1px solid rgba(139, 92, 246, 0.25)',
                 boxShadow:
-                  '0 25px 50px -12px rgba(244, 63, 94, 0.25), 0 0 100px -20px rgba(251, 113, 133, 0.35), 0 0 40px -10px rgba(244, 63, 94, 0.3)',
+                  '0 25px 50px -12px rgba(139, 92, 246, 0.25), 0 0 100px -20px rgba(168, 85, 247, 0.35), 0 0 40px -10px rgba(139, 92, 246, 0.3)',
               }}
             >
               {/* Card Header */}
@@ -70,7 +70,7 @@ export function ConsultationCards() {
                 <div className="flex flex-col-reverse sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
                   {/* Price - Top Left (appears on right in RTL) */}
                   <div className="flex items-baseline gap-2">
-                    <span className="text-4xl md:text-5xl font-bold text-rose-400">$25</span>
+                    <span className="text-4xl md:text-5xl font-bold text-purple-400">$25</span>
                     <span className="text-muted-foreground text-lg">/ للسَّاعة</span>
                   </div>
 
@@ -78,12 +78,12 @@ export function ConsultationCards() {
                   <div
                     className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full self-start"
                     style={{
-                      background: 'rgba(244, 63, 94, 0.15)',
-                      border: '1px solid rgba(244, 63, 94, 0.3)',
+                      background: 'rgba(139, 92, 246, 0.15)',
+                      border: '1px solid rgba(139, 92, 246, 0.3)',
                     }}
                   >
-                    <Microphone className="w-4 h-4 text-rose-400" />
-                    <span className="text-sm text-rose-300 font-medium">
+                    <Microphone className="w-4 h-4 text-purple-400" />
+                    <span className="text-sm text-purple-300 font-medium">
                       جلسة تفاعليَّة صوتيَّة
                     </span>
                   </div>
@@ -114,10 +114,10 @@ export function ConsultationCards() {
                     aria-label="احجز استشارتك الآن"
                   >
                     <Button
-                      className="w-full h-14 md:h-16 text-lg md:text-xl font-bold text-white rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-lg shadow-rose-600/40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-[44px]"
+                      className="w-full h-14 md:h-16 text-lg md:text-xl font-bold text-white rounded-full transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl shadow-lg shadow-purple-600/40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11"
                       style={{
                         background:
-                          'linear-gradient(135deg, #F43F5E 0%, #E11D48 50%, #FB7185 100%)',
+                          'linear-gradient(135deg, #7C3AED 0%, #6D28D9 50%, #8B5CF6 100%)',
                       }}
                     >
                       <span>احجز استشارتك الآن</span>
@@ -130,11 +130,11 @@ export function ConsultationCards() {
             {/* Decorative Elements Behind Card */}
             <div
               className="absolute -top-4 -right-4 w-24 h-24 rounded-full blur-2xl pointer-events-none -z-10"
-              style={{ background: 'rgba(244, 63, 94, 0.3)' }}
+              style={{ background: 'rgba(139, 92, 246, 0.3)' }}
             />
             <div
               className="absolute -bottom-4 -left-4 w-32 h-32 rounded-full blur-2xl pointer-events-none -z-10"
-              style={{ background: 'rgba(251, 113, 133, 0.2)' }}
+              style={{ background: 'rgba(168, 85, 247, 0.2)' }}
             />
           </div>
         </ScrollAnimation>

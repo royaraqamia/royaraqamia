@@ -29,10 +29,10 @@
   --color-warning-foreground: hsl(var(--warning-foreground));
   --color-info: hsl(var(--info));
   --color-info-foreground: hsl(var(--info-foreground));
-  --color-accent-teal: hsl(var(--accent-teal));
-  --color-accent-teal-foreground: hsl(var(--accent-teal-foreground));
-  --color-accent-orange: hsl(var(--accent-orange));
-  --color-accent-orange-foreground: hsl(var(--accent-orange-foreground));
+  --color-accent-indigo: hsl(var(--accent-indigo));
+  --color-accent-indigo-foreground: hsl(var(--accent-indigo-foreground));
+  --color-accent-purple: hsl(var(--accent-purple));
+  --color-accent-purple-foreground: hsl(var(--accent-purple-foreground));
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
@@ -50,7 +50,6 @@
   --animate-gradient: gradient 15s ease infinite;
   --animate-fade-in-up: fadeInUp 1s ease-out forwards;
   --animate-shimmer-slide: shimmer-slide 5s ease-in-out infinite;
-  --animate-border-pulse-orange: border-pulse-orange 3s ease-in-out infinite;
   --animate-border-pulse-purple: border-pulse-purple 3s ease-in-out infinite;
 }
 
@@ -115,16 +114,6 @@
   }
 }
 
-@keyframes border-pulse-orange {
-  0%,
-  100% {
-    border-color: rgba(249, 115, 22, 0.2);
-  }
-  50% {
-    border-color: rgba(249, 115, 22, 0.45);
-  }
-}
-
 @keyframes border-pulse-purple {
   0%,
   100% {
@@ -172,10 +161,10 @@
     --success-foreground: 0 0% 100%;
     --warning: 45 100% 51%;
     --warning-foreground: 0 0% 10%;
-    --accent-teal: 174 72% 56%;
-    --accent-teal-foreground: 0 0% 100%;
-    --accent-orange: 25 95% 53%;
-    --accent-orange-foreground: 0 0% 100%;
+    --accent-indigo: 239 84% 67%;
+    --accent-indigo-foreground: 0 0% 100%;
+    --accent-purple: 256 80% 55%;
+    --accent-purple-foreground: 0 0% 100%;
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
@@ -768,28 +757,28 @@
   }
 
   /* Accent color utilities */
-  .bg-accent-teal {
-    background-color: hsl(var(--accent-teal));
+  .bg-accent-indigo {
+    background-color: hsl(var(--accent-indigo));
   }
 
-  .text-accent-teal {
-    color: hsl(var(--accent-teal));
+  .text-accent-indigo {
+    color: hsl(var(--accent-indigo));
   }
 
-  .border-accent-teal {
-    border-color: hsl(var(--accent-teal));
+  .border-accent-indigo {
+    border-color: hsl(var(--accent-indigo));
   }
 
-  .bg-accent-orange {
-    background-color: hsl(var(--accent-orange));
+  .bg-accent-purple {
+    background-color: hsl(var(--accent-purple));
   }
 
-  .text-accent-orange {
-    color: hsl(var(--accent-orange));
+  .text-accent-purple {
+    color: hsl(var(--accent-purple));
   }
 
-  .border-accent-orange {
-    border-color: hsl(var(--accent-orange));
+  .border-accent-purple {
+    border-color: hsl(var(--accent-purple));
   }
 
   .bg-info {
@@ -2357,7 +2346,6 @@
   .animate-gradient,
   .animate-fade-in-up,
   .animate-shimmer-slide,
-  .animate-border-pulse-orange,
   .animate-border-pulse-purple {
     animation: none !important;
   }

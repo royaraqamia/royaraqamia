@@ -78,10 +78,10 @@ function BentoCard({
 }
 
 const expenseEntries = [
-  { cat: 'طعام ومشروبات', amount: 520, color: 'bg-accent-orange', pct: 35 },
-  { cat: 'مواصلات', amount: 280, color: 'bg-accent-teal', pct: 19 },
+  { cat: 'طعام ومشروبات', amount: 520, color: 'bg-accent-purple', pct: 35 },
+  { cat: 'مواصلات', amount: 280, color: 'bg-accent-indigo', pct: 19 },
   { cat: 'ترفيه', amount: 150, color: 'bg-primary', pct: 10 },
-  { cat: 'فواتير', amount: 340, color: 'bg-info', pct: 23 },
+  { cat: 'فواتير', amount: 340, color: 'bg-primary', pct: 23 },
   { cat: 'أخرى', amount: 190, color: 'bg-muted-foreground', pct: 13 },
 ];
 
@@ -112,7 +112,7 @@ function ExpenseLogger() {
             </div>
             <div className="flex items-center gap-3">
               <span className="text-xs text-muted-foreground">{item.cat}</span>
-              <span className="text-sm font-medium text-accent-orange">{item.amount}</span>
+              <span className="text-sm font-medium text-accent-purple">{item.amount}</span>
             </div>
           </motion.div>
         ))}
@@ -175,7 +175,7 @@ function MonthlyTrend() {
     <div className="glass rounded-xl p-5">
       <div className="flex items-center justify-between mb-5">
         <span className="text-sm font-medium">الاتجاهات الشهرية</span>
-        <span className="flex items-center gap-1 text-xs text-accent-teal">
+        <span className="flex items-center gap-1 text-xs text-accent-indigo">
           <TrendUp size={14} />
           -12% مقابل الشهر الماضي
         </span>
@@ -240,7 +240,7 @@ export function FeaturesBento() {
             title="تحليل التصنيفات"
             description="صوِّر المصروفات حسب التصنيف بأشرطة ملونة ونسب مئوية في لمحة."
             icon={ChartPieSlice}
-            gradient="rgba(45,212,191,1)"
+            gradient="rgba(129,140,248,1)"
             className="lg:col-span-2"
             delay={0.2}
           >
@@ -251,7 +251,7 @@ export function FeaturesBento() {
             title="الاتجاهات الشهرية"
             description="تتبَّع أنماط إنفاقك بمرور الوقت من خلال رسوم بيانية شهرية ورؤى مقارنة."
             icon={TrendUp}
-            gradient="rgba(251,146,60,1)"
+            gradient="rgba(167,139,250,1)"
             className="lg:col-span-2"
             delay={0.3}
           >

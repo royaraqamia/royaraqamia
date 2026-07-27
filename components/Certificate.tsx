@@ -1,360 +1,266 @@
 'use client';
 
-import { useState, useRef, useEffect, useMemo } from 'react';
-import { Trophy } from '@phosphor-icons/react';
-import { m, useInView, useScroll, useTransform } from 'motion/react';
+import { useRef, useState, MouseEvent, TouchEvent } from 'react';
+import {
+  motion,
+  useInView,
+  useScroll,
+  useTransform,
+  useMotionValue,
+  useSpring,
+  useMotionTemplate,
+} from 'motion/react';
+import { Trophy, SealCheck, HandPointing } from '@phosphor-icons/react';
 import { LazyImage } from './LazyImage';
 
-// Animation variants defined outside component to avoid recreation
+// --- Framer Motion Variants ---
 const headerVariants = {
-  hidden: { opacity: 0, y: -50 },
+  hidden: { opacity: 0, y: -20 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.8,
-      ease: [0.25, 0.4, 0.25, 1] as const,
-      staggerChildren: 0.2,
-    },
+    transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1], staggerChildren: 0.12 },
   },
 } as const;
 
-const iconVariants = {
-  hidden: { opacity: 0, scale: 0, rotate: -180 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    rotate: 0,
-    transition: {
-      type: 'spring' as const,
-      stiffness: 200,
-      damping: 15,
-      duration: 0.8,
-    },
-  },
-} as const;
-
-const textVariants = {
+const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.4, 0.25, 1] as const,
-    },
+    transition: { type: 'spring', stiffness: 80, damping: 20 },
   },
 } as const;
-
-const descriptionVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      delay: 0.2,
-      ease: [0.25, 0.4, 0.25, 1] as const,
-    },
-  },
-} as const;
-
-const certificateContainerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 1,
-      ease: [0.25, 0.4, 0.25, 1] as const,
-    },
-  },
-} as const;
-
-const certificateCardVariants = {
-  hidden: {
-    opacity: 0,
-    scale: 0.95,
-    y: 30,
-  },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.4, 0.25, 1] as const,
-    },
-  },
-} as const;
-
-// Floating particles array defined outside to avoid recreation
-const PARTICLE_COUNT = 8;
-const particleIndices = [...Array(PARTICLE_COUNT)].map((_, i) => i);
 
 export function Certificate() {
-  const [isHovered, setIsHovered] = useState(false);
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(
-    () =>
-      typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-  );
   const sectionRef = useRef<HTMLElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
   const certificateRef = useRef<HTMLDivElement>(null);
 
-  // Listen for reduced motion preference changes
-  useEffect(() => {
-    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const handleChange = (e: MediaQueryListEvent) => {
-      setPrefersReducedMotion(e.matches);
-    };
-
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
   const isHeaderInView = useInView(headerRef, { once: true, margin: '-50px' });
-  const isCertificateInView = useInView(certificateRef, { once: true, margin: '200px' });
+  const isCertificateInView = useInView(certificateRef, { once: true, margin: '-80px' });
 
+  // State to track if the user has interacted (to hide the interactive hint)
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const [isPressed, setIsPressed] = useState(false);
+
+  // 3D Physics Tracking Values
+  const mouseX = useMotionValue(0.5);
+  const mouseY = useMotionValue(0.5);
+
+  // High-precision smooth spring mechanics
+  const smoothX = useSpring(mouseX, { stiffness: 180, damping: 22 });
+  const smoothY = useSpring(mouseY, { stiffness: 180, damping: 22 });
+
+  // 3D Rotation Mapping (-10deg to 10deg)
+  const rotateX = useTransform(smoothY, [0, 1], [10, -10]);
+  const rotateY = useTransform(smoothX, [0, 1], [-10, 10]);
+
+  // Dynamic Glare Position Mapping
+  const glareX = useTransform(smoothX, [0, 1], [-100, 200]);
+  const glareY = useTransform(smoothY, [0, 1], [-100, 200]);
+
+  // Unified position handler for both Mouse & Touch
+  const updatePointerPosition = (clientX: number, clientY: number, currentTarget: HTMLElement) => {
+    const { left, top, width, height } = currentTarget.getBoundingClientRect();
+    const x = Math.max(0, Math.min(1, (clientX - left) / width));
+    const y = Math.max(0, Math.min(1, (clientY - top) / height));
+    mouseX.set(x);
+    mouseY.set(y);
+    if (!hasInteracted) setHasInteracted(true);
+  };
+
+  // --- Desktop Handlers ---
+  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+    updatePointerPosition(e.clientX, e.clientY, e.currentTarget);
+  };
+
+  const handleMouseLeave = () => {
+    setIsPressed(false);
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  };
+
+  // --- Mobile Touch & Hold Handlers ---
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    setIsPressed(true);
+    const touch = e.touches[0];
+    if (touch) {
+      updatePointerPosition(touch.clientX, touch.clientY, e.currentTarget);
+    }
+  };
+
+  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    if (touch) {
+      updatePointerPosition(touch.clientX, touch.clientY, e.currentTarget);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsPressed(false);
+    // Smoothly snap back to center when user releases finger
+    mouseX.set(0.5);
+    mouseY.set(0.5);
+  };
+
+  // Background Parallax Scroll
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start end', 'end start'],
   });
-
-  // All useTransform hooks at component top level (React hooks rules)
-  const backgroundY = useTransform(scrollYProgress, [0, 1], [0, 100]);
-  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0, 1, 1, 0.5]);
-  const secondBlobY = useTransform(scrollYProgress, [0, 1], [0, -80]);
-  const thirdBlobY = useTransform(scrollYProgress, [0, 1], [0, 60]);
-
-  // Memoize particle animations to avoid recreation on every render
-  const particleAnimations = useMemo(
-    () =>
-      particleIndices.map((i) => ({
-        initial: {
-          opacity: 0,
-          scale: 0,
-          x: `${20 + i * 12}%`,
-          y: `${15 + (i % 3) * 30}%`,
-        },
-        animate: {
-          opacity: [0, 1, 0.8, 0],
-          scale: [0, 1.5, 1, 0],
-          y: [
-            `${15 + (i % 3) * 30}%`,
-            `${15 + (i % 3) * 30 - 40}%`,
-            `${15 + (i % 3) * 30 - 20}%`,
-            `${15 + (i % 3) * 30 - 50}%`,
-          ],
-          x: [
-            `${20 + i * 12}%`,
-            `${20 + i * 12 + 10}%`,
-            `${20 + i * 12 - 5}%`,
-            `${20 + i * 12 + 15}%`,
-          ],
-        },
-        hidden: { opacity: 0, scale: 0 },
-        transition: {
-          duration: 3,
-          delay: i * 0.3,
-          ease: 'easeInOut' as const,
-        },
-      })),
-    []
-  );
+  const backgroundY = useTransform(scrollYProgress, [0, 1], [0, 120]);
 
   return (
     <section
       ref={sectionRef}
       id="certificate"
-      className="section-spacing-sm bg-gradient-to-b from-muted/20 via-background to-muted/30 relative overflow-hidden"
+      aria-labelledby="certificate-heading"
+      className="py-24 lg:py-36 bg-[#040711] relative overflow-hidden select-none"
     >
-      {/* Premium Animated Background Elements with Parallax */}
-      <m.div
-        className="absolute top-20 right-10 w-32 h-32 bg-[#7766EE] opacity-5 rounded-full blur-3xl pointer-events-none"
-        style={{ y: backgroundY, opacity }}
-        animate={{
-          scale: [1, 1.2, 1],
-          opacity: [0.05, 0.1, 0.05],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-      />
-      <m.div
-        className="absolute bottom-40 left-20 w-40 h-40 bg-[#A78BFA] opacity-5 rounded-full blur-3xl pointer-events-none"
-        style={{ y: secondBlobY }}
-        animate={{
-          scale: [1, 1.3, 1],
-          opacity: [0.05, 0.12, 0.05],
-        }}
-        transition={{
-          duration: 5,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 1,
-        }}
-      />
-      <m.div
-        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-[#6366F1] opacity-3 rounded-full blur-3xl pointer-events-none"
-        style={{ y: thirdBlobY }}
-        animate={{
-          scale: [1, 1.4, 1],
-          opacity: [0.03, 0.08, 0.03],
-        }}
-        transition={{
-          duration: 6,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 2,
-        }}
-      />
+      {/* Background Lighting & Grid Effects */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        {/* Subtle Tech Grid Pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(#ffffff0a_1px,transparent_1px)] bg-size-[24px_24px] opacity-40" />
 
-      <div className="max-w-5xl mx-auto container-padding relative z-10">
-        {/* Section Header with Premium Animation */}
-        <m.div
+        {/* Parallax Amber Glow */}
+        <motion.div
+          style={{ y: backgroundY }}
+          className="absolute top-1/4 -right-20 w-112.5 h-112.5 bg-purple-500/10 rounded-full blur-[140px] pointer-events-none"
+        />
+
+        {/* Indigo Ambient Glow */}
+        <motion.div
+          animate={{ scale: [1, 1.15, 1], opacity: [0.08, 0.15, 0.08] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute bottom-10 -left-20 w-125 h-125 bg-indigo-600/10 rounded-full blur-[160px] pointer-events-none"
+        />
+      </div>
+
+      <div className="max-w-5xl mx-auto px-5 sm:px-8 md:px-12 relative z-10">
+        {/* Section Header */}
+        <motion.div
           ref={headerRef}
           initial="hidden"
           animate={isHeaderInView ? 'visible' : 'hidden'}
           variants={headerVariants}
-          className="text-center section-header mb-12"
+          className="text-center mb-16 flex flex-col items-center"
         >
-          <m.div variants={iconVariants} className="inline-flex items-center justify-center mb-6">
-            <m.div
-              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#7766EE] to-[#A78BFA] flex items-center justify-center shadow-lg shadow-primary/25 relative overflow-hidden"
-              whileHover={{ scale: 1.1, rotate: 5 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-            >
-              <m.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                animate={{
-                  x: ['-100%', '100%'],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  ease: 'linear',
-                }}
+          {/* Trophy Badge */}
+          <motion.div variants={itemVariants} className="mb-6 relative group cursor-pointer">
+            <div className="absolute -inset-1 bg-linear-to-r from-purple-500 to-violet-500 rounded-3xl blur-md opacity-40 group-hover:opacity-80 transition duration-500" />
+
+            <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-purple-400 via-violet-500 to-purple-600 flex items-center justify-center shadow-2xl shadow-purple-500/30 relative overflow-hidden group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-500 border border-purple-300/30">
+              {/* Internal shimmer effect */}
+              <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-linear-to-r from-transparent via-white/40 to-transparent w-1/2 -skew-x-12 z-0" />
+              <Trophy
+                className="w-10 h-10 text-white relative z-10 drop-shadow-md"
+                weight="duotone"
               />
-              <Trophy className="w-8 h-8 text-white relative z-10" />
-            </m.div>
-          </m.div>
+            </div>
+          </motion.div>
 
-          <m.h2 variants={textVariants} className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
-            <span className="text-teal-400">نموذج عن الشَّهادة</span>
-          </m.h2>
+          <motion.h2
+            id="certificate-heading"
+            variants={itemVariants}
+            className="text-3xl sm:text-5xl lg:text-6xl mb-5 font-black tracking-tight text-white leading-tight"
+          >
+            نموذج عن{' '}
+            <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-300 via-violet-400 to-indigo-400">
+              الشَّهادة
+            </span>
+          </motion.h2>
 
-          <m.p
-            variants={descriptionVariants}
-            className="text-sm sm:text-base lg:text-lg text-foreground/70 max-w-2xl mx-auto leading-[1.8] sm:leading-[1.9]"
+          <motion.p
+            variants={itemVariants}
+            className="text-base sm:text-lg text-slate-300/80 max-w-2xl mx-auto leading-relaxed font-normal"
           >
             وثيقة تُثبت جدارتك المهنيَّة، وتُعَد جواز مرورك لفرص وظيفيَّة ومشاريع حقيقيَّة في
             السُّوق الرَّقمي.
-          </m.p>
-        </m.div>
+          </motion.p>
+        </motion.div>
 
-        {/* Certificate Image with Premium Scroll Animations */}
-        <m.div
+        {/* 
+          3D Certificate Container (Desktop Hover + Mobile Touch Tracking)
+        */}
+        <motion.div
           ref={certificateRef}
-          initial="hidden"
-          animate={isCertificateInView ? 'visible' : 'hidden'}
-          variants={certificateContainerVariants}
-          className="flex justify-center overflow-hidden"
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
+          initial={{ opacity: 0, y: 50, scale: 0.96 }}
+          animate={
+            isCertificateInView
+              ? { opacity: 1, y: 0, scale: 1 }
+              : { opacity: 0, y: 50, scale: 0.96 }
+          }
+          transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col items-center justify-center perspective-[2000px]"
         >
-          <m.div
-            variants={certificateCardVariants}
-            whileHover={{
-              scale: 1.03,
-              y: -8,
-              transition: { duration: 0.5, ease: 'easeOut' },
-            }}
-            className="certificate-container glass-card rounded-3xl overflow-hidden shadow-2xl shadow-primary/10 group relative"
-            style={{ perspective: 1000 }}
+          {/* Interactive Hint Banner (fades out after user touches or hovers) */}
+          <motion.div
+            animate={{ opacity: hasInteracted ? 0 : 1, y: hasInteracted ? -10 : 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-4 flex items-center gap-2 text-xs text-purple-400/90 bg-purple-500/10 border border-purple-500/20 px-3.5 py-1.5 rounded-full backdrop-blur-md pointer-events-none"
           >
-            {/* Premium Animated gradient overlay on hover */}
-            <m.div
-              className="absolute inset-0 bg-gradient-to-br from-[#7766EE] via-[#A78BFA] to-[#6366F1] rounded-3xl pointer-events-none z-20"
-              initial={{ opacity: 0 }}
-              animate={{
-                opacity: isHovered ? 0.15 : 0,
+            <HandPointing className="w-4 h-4 animate-bounce" weight="duotone" />
+            <span>حرك المؤشر أو اضغط لمسًا للمعاينة التفاعلية ثلاثية الأبعاد</span>
+          </motion.div>
+
+          {/* Interactive Card */}
+          <motion.div
+            onMouseMove={handleMouseMove}
+            onMouseLeave={handleMouseLeave}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{
+              rotateX,
+              rotateY,
+              transformStyle: 'preserve-3d',
+            }}
+            animate={{
+              scale: isPressed ? 1.02 : 1,
+            }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="relative w-full max-w-4xl rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/15 bg-slate-900/40 cursor-grab active:cursor-grabbing group touch-pan-y"
+          >
+            {/* Dynamic Light Glare Overlay */}
+            <motion.div
+              className={`absolute inset-0 z-20 pointer-events-none mix-blend-overlay transition-opacity duration-300 ${
+                isPressed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+              }`}
+              style={{
+                background: useMotionTemplate`radial-gradient(circle at ${glareX}% ${glareY}%, rgba(255,255,255,0.45) 0%, transparent 60%)`,
               }}
-              transition={{ duration: 0.7 }}
             />
 
-            {/* Premium Animated border glow with pulse */}
-            <m.div
-              className="absolute inset-0 rounded-3xl pointer-events-none z-30"
-              animate={{
-                boxShadow: isHovered
-                  ? [
-                      '0_0_60px_rgba(119,102,238,0.6),inset_0_0_60px_rgba(167,139,250,0.2)',
-                      '0_0_80px_rgba(119,102,238,0.8),inset_0_0_80px_rgba(167,139,250,0.3)',
-                      '0_0_60px_rgba(119,102,238,0.6),inset_0_0_60px_rgba(167,139,250,0.2)',
-                    ]
-                  : '0_0_0px_rgba(119,102,238,0),inset_0_0_0px_rgba(167,139,250,0)',
-              }}
-              transition={{
-                duration: 2,
-                repeat: isHovered ? Infinity : 0,
-                ease: 'easeInOut',
-              }}
+            {/* Glowing Active Border */}
+            <div
+              className={`absolute inset-0 z-10 pointer-events-none border-2 rounded-2xl md:rounded-3xl transition-all duration-500 ${
+                isPressed
+                  ? 'border-purple-400/60 shadow-[inset_0_0_60px_rgba(168,85,247,0.25)]'
+                  : 'border-purple-500/0 group-hover:border-purple-400/40 group-hover:shadow-[inset_0_0_60px_rgba(168,85,247,0.15)]'
+              }`}
             />
 
-            {/* Enhanced Floating particles effect - respects reduced motion */}
-            {!prefersReducedMotion && (
-              <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none z-40">
-                {particleIndices.map((i) => {
-                  const anim = particleAnimations[i];
-                  if (!anim) return null;
-                  return (
-                    <m.div
-                      key={i}
-                      className="absolute w-2 h-2 bg-white/40 rounded-full"
-                      initial={anim.initial}
-                      animate={isHovered ? anim.animate : anim.hidden}
-                      transition={{
-                        ...anim.transition,
-                        repeat: isHovered ? Infinity : 0,
-                      }}
-                    />
-                  );
-                })}
-              </div>
-            )}
+            {/* Floating Trust Verification Badge */}
+            <div className="absolute top-4 inset-e-4 md:top-6 md:inset-e-6 z-30 flex items-center gap-2 bg-slate-950/70 border border-white/10 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-lg">
+              <SealCheck className="w-4 h-4 md:w-5 md:h-5 text-purple-400" weight="fill" />
+              <span className="text-[11px] md:text-xs font-semibold text-white/90">
+                وثيقة معتمدة وموثقة
+              </span>
+            </div>
 
-            <m.div
-              initial={{ opacity: 0 }}
-              animate={
-                isCertificateInView
-                  ? {
-                      opacity: 1,
-                      transition: {
-                        duration: 0.4,
-                        ease: 'easeOut',
-                      },
-                    }
-                  : {}
-              }
-              whileHover={{
-                scale: 1.02,
-                transition: { duration: 0.5 },
-              }}
-            >
-              <LazyImage
-                src="/certificate.png"
-                webpSrc="/certificate.webp"
-                alt="نموذج شهادة إتمام الدورة التدريبية"
-                width={1200}
-                height={848}
-                className="w-full h-auto max-w-4xl relative z-10"
-                priority={true}
-              />
-            </m.div>
-          </m.div>
-        </m.div>
+            {/* Certificate Image Component */}
+            <LazyImage
+              src="/certificate.png"
+              webpSrc="/certificate.webp"
+              alt="نموذج شهادة إتمام الدورة التدريبية معتمدة من رؤية رقمية"
+              width={1200}
+              height={848}
+              className="w-full h-auto relative z-0 object-cover transform transition-transform duration-700"
+              priority={true}
+            />
+          </motion.div>
+        </motion.div>
       </div>
     </section>
   );

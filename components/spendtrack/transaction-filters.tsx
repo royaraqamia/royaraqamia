@@ -96,6 +96,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
             value={customStart}
             onChange={(e) => updateParam('from', e.target.value)}
             placeholder="من"
+            aria-label="تاريخ البداية"
           />
           <Input
             type="date"
@@ -103,6 +104,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
             value={customEnd}
             onChange={(e) => updateParam('to', e.target.value)}
             placeholder="إلى"
+            aria-label="تاريخ النهاية"
           />
         </>
       )}

@@ -52,13 +52,13 @@ export function TrainingCourses() {
   return (
     <section id="training" className="section-spacing bg-muted/30 relative overflow-hidden">
       {/* Enhanced Background Elements */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(400px,80vw)] sm:w-[min(800px,80vw)] h-[min(400px,80vw)] sm:h-[min(800px,80vw)] bg-gradient-radial from-[#14B8A6]/10 via-transparent to-transparent pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(400px,80vw)] sm:w-[min(800px,80vw)] h-[min(400px,80vw)] sm:h-[min(800px,80vw)] bg-radial from-purple-600/10 via-transparent to-transparent pointer-events-none" />
       <div
-        className="absolute top-20 right-10 w-48 h-48 bg-[#14B8A6] opacity-[0.05] rounded-full blur-3xl pointer-events-none motion-safe:animate-pulse"
+        className="absolute top-20 right-10 w-48 h-48 bg-purple-600 opacity-[0.05] rounded-full blur-3xl pointer-events-none motion-safe:animate-pulse"
         style={{ animationDuration: '4s' }}
       />
       <div
-        className="absolute bottom-20 left-10 w-56 h-56 bg-[#0891B2] opacity-[0.04] rounded-full blur-3xl pointer-events-none motion-safe:animate-pulse"
+        className="absolute bottom-20 left-10 w-56 h-56 bg-violet-600 opacity-[0.04] rounded-full blur-3xl pointer-events-none motion-safe:animate-pulse"
         style={{ animationDuration: '6s', animationDelay: '1s' }}
       />
 
@@ -67,7 +67,7 @@ export function TrainingCourses() {
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center section-header mb-12">
             <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
-              <span className="text-teal-400">التَّدريب</span>
+              <span className="text-purple-400">التَّدريب</span>
             </h2>
             <p className="text-sm sm:text-base lg:text-lg text-foreground/70 max-w-2xl mx-auto leading-[1.8] sm:leading-[1.9]">
               المسار التَّدريبي العربي المتكامل الذي ينقلك من فكرة إلى مشروع قائم دون كتابة كود.
@@ -79,7 +79,7 @@ export function TrainingCourses() {
         <ScrollAnimation animation="slide-up" duration={0.8} delay={0.2}>
           <div className="relative">
             {/* Main Card */}
-            <div className="glass-card rounded-3xl md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl shadow-[#14B8A6]/10">
+            <div className="glass-card rounded-3xl md:rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl shadow-purple-700/10">
               {/* Card Header with Gradient */}
               <div
                 className="p-6 md:p-8 text-white relative overflow-hidden"
@@ -89,8 +89,8 @@ export function TrainingCourses() {
                 }}
               >
                 {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-[#14B8A6]/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-48 h-48 bg-[#0891B2]/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                <div className="absolute bottom-0 left-0 w-48 h-48 bg-violet-500/15 rounded-full blur-3xl translate-y-1/2 -translate-x-1/4" />
 
                 <div className="relative flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                   {/* Course Title & Level */}
@@ -99,12 +99,12 @@ export function TrainingCourses() {
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-sm border mb-4"
                       style={{
                         background:
-                          'linear-gradient(90deg, rgba(16, 185, 129, 0.15) 0%, rgba(52, 211, 153, 0.1) 100%)',
-                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                          'linear-gradient(90deg, rgba(139, 92, 246, 0.15) 0%, rgba(167, 139, 250, 0.1) 100%)',
+                        border: '1px solid rgba(139, 92, 246, 0.3)',
                       }}
                     >
-                      <div className="w-2 h-2 rounded-full bg-emerald-400 motion-safe:animate-pulse" />
-                      <span className="text-xs font-medium text-emerald-300">التَّسجيل مفتوح</span>
+                      <div className="w-2 h-2 rounded-full bg-purple-400 motion-safe:animate-pulse" />
+                      <span className="text-xs font-medium text-purple-300">التَّسجيل مفتوح</span>
                     </div>
                     <h3 className="text-2xl md:text-3xl font-bold mb-2">{course.title}</h3>
                     <p className="text-white/80 text-sm md:text-base leading-relaxed max-w-lg">
@@ -115,7 +115,7 @@ export function TrainingCourses() {
                   {/* Price Badge */}
                   <div className="text-center md:text-start shrink-0">
                     <div className="flex items-baseline gap-2 justify-center md:justify-start">
-                      <div className="text-4xl md:text-5xl font-bold tracking-tight text-teal-400">
+                      <div className="text-4xl md:text-5xl font-bold tracking-tight text-purple-400">
                         {course.price}
                       </div>
                     </div>
@@ -131,14 +131,14 @@ export function TrainingCourses() {
                   {highlights.map((highlight, idx) => (
                     <div
                       key={idx}
-                      className={`text-center p-4 rounded-2xl bg-[#14B8A6]/5 border border-[#14B8A6]/10 transition-all duration-300 ${
+                      className={`text-center p-4 rounded-2xl bg-purple-700/5 border border-purple-700/10 transition-all duration-300 ${
                         idx === 1
-                          ? 'sm:scale-105 sm:shadow-xl sm:shadow-[#14B8A6]/15 sm:border-[#14B8A6]/25 sm:bg-[#14B8A6]/10'
+                          ? 'sm:scale-105 sm:shadow-xl sm:shadow-purple-700/15 sm:border-purple-700/25 sm:bg-purple-700/10'
                           : ''
                       }`}
                     >
                       <div
-                        className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-linear-to-br from-[#14B8A6] to-[#0891B2] flex items-center justify-center shadow-lg shadow-[#14B8A6]/25 ${
+                        className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-linear-to-br from-purple-600 to-violet-600 flex items-center justify-center shadow-lg shadow-purple-700/25 ${
                           idx === 1 ? 'w-14 h-14' : ''
                         }`}
                       >
@@ -156,8 +156,8 @@ export function TrainingCourses() {
                 <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6 mb-8 py-6 border-y border-border/30">
                   {/* Trainer - own row on mobile */}
                   <div className="flex items-center gap-2 sm:gap-3">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#14B8A6]/10 flex items-center justify-center">
-                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#14B8A6]" />
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-700/10 flex items-center justify-center">
+                      <User className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                     </div>
                     <div>
                       <div className="text-xs text-foreground/50">المدرِّب</div>
@@ -171,8 +171,8 @@ export function TrainingCourses() {
                   <div className="flex items-center gap-4 sm:gap-6">
                     {/* Duration */}
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#14B8A6]/10 flex items-center justify-center">
-                        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[#14B8A6]" />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-700/10 flex items-center justify-center">
+                        <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                       </div>
                       <div>
                         <div className="text-xs text-foreground/50">المدَّة الكلِّيَّة</div>
@@ -183,8 +183,8 @@ export function TrainingCourses() {
                     <div className="hidden sm:block w-px h-12 bg-border/30" />
                     {/* Sessions */}
                     <div className="flex items-center gap-2 sm:gap-3">
-                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#14B8A6]/10 flex items-center justify-center">
-                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-[#14B8A6]" />
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-purple-700/10 flex items-center justify-center">
+                        <Trophy className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
                       </div>
                       <div>
                         <div className="text-xs text-foreground/50">عدد الجلسات</div>
@@ -203,12 +203,12 @@ export function TrainingCourses() {
                     {features.map((feature, idx) => (
                       <div
                         key={idx}
-                        className={`flex items-center gap-3 p-3 rounded-xl bg-background/50 border border-border/20 group hover:border-[#14B8A6]/30 hover:bg-[#14B8A6]/5 transition-colors duration-200 ${
+                        className={`flex items-center gap-3 p-3 rounded-xl bg-background/50 border border-border/20 group hover:border-purple-600/30 hover:bg-purple-700/5 transition-colors duration-200 ${
                           idx === features.length - 1 ? 'md:col-span-2' : ''
                         }`}
                       >
-                        <div className="w-8 h-8 rounded-lg bg-[#14B8A6]/10 flex items-center justify-center shrink-0 group-hover:bg-[#14B8A6]/20 transition-colors">
-                          <feature.icon className="w-4 h-4 text-[#14B8A6]" />
+                        <div className="w-8 h-8 rounded-lg bg-purple-700/10 flex items-center justify-center shrink-0 group-hover:bg-purple-700/20 transition-colors">
+                          <feature.icon className="w-4 h-4 text-purple-600" />
                         </div>
                         <span className="text-sm font-medium">{feature.text}</span>
                       </div>

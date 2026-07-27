@@ -263,7 +263,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-8 border-t border-border/50">
             <Link href="/blog">
               <Button variant="outline" className="rounded-full transition-smooth">
-                <ArrowRight className="ml-2 size-4" />
+                <ArrowRight className="ms-2 size-4" />
                 العودة إلى المدوَّنة
               </Button>
             </Link>
@@ -354,7 +354,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
               <div className="flex items-center justify-center gap-3 mt-5">
                 <Link href="/blog">
                   <Button variant="outline" className="rounded-full transition-smooth">
-                    <ArrowRight className="ml-2 size-4" />
+                    <ArrowRight className="ms-2 size-4" />
                     جميع المقالات
                   </Button>
                 </Link>

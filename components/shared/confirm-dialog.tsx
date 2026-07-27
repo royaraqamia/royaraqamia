@@ -69,7 +69,7 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="confirm-dialog-title"
         aria-describedby="confirm-dialog-message"
-        className="fixed bg-background border border-border shadow-2xl w-full p-6 focus:outline-none
+        className="fixed bg-background border border-border shadow-2xl w-full p-6 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring
           max-w-sm mx-4 rounded-3xl
           max-h-[85dvh] overflow-y-auto dialog-scrollbar
           max-md:w-[calc(100%-48px)] max-md:mx-auto max-md:max-w-none max-md:rounded-3xl

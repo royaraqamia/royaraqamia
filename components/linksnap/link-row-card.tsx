@@ -189,9 +189,9 @@ export function LinkRowCard({
             <BarChart3 aria-hidden="true" className="w-3.5 h-3.5" />
             <span>التَّحليلات</span>
             {isExpanded ? (
-              <ChevronUp aria-hidden="true" className="w-3 h-3 mr-0.5" />
+              <ChevronUp aria-hidden="true" className="w-3 h-3 ms-0.5" />
             ) : (
-              <ChevronDown aria-hidden="true" className="w-3 h-3 mr-0.5" />
+              <ChevronDown aria-hidden="true" className="w-3 h-3 ms-0.5" />
             )}
           </button>
 

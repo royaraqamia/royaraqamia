@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { X, CaretDown, Phone, type Icon } from '@phosphor-icons/react';
+import { X, CaretDown, type Icon } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 import { getWhatsAppUrl } from '../../lib/constants';
 
@@ -220,19 +220,19 @@ export function MobileMenu({
         <div
           className={`overflow-hidden transition-all duration-200 ease-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
         >
-          <div className="relative mr-3 pr-5 pt-2 pb-1">
-            <div className="absolute right-2 top-0 bottom-2 w-px bg-linear-to-b from-white/10 to-transparent" />
+          <div className="relative ms-3 pr-5 pt-2 pb-1">
+            <div className="absolute inset-e-2 top-0 bottom-2 w-px bg-linear-to-b from-white/10 to-transparent" />
             <div className="flex flex-col gap-1">
               {link.subItems?.map((sub) => (
                 <div key={sub.href} className="relative">
-                  <div className="absolute -right-3 top-1/2 -translate-y-1/2 w-3 h-px bg-white/10" />
+                  <div className="absolute -inset-e-3 top-1/2 -translate-y-1/2 w-3 h-px bg-white/10" />
                   {sub.isRoute ? (
                     <Link
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
                       className="
                                                 block pr-6 pl-4 py-3 rounded-full
-                                                text-[15px] font-medium text-slate-400
+                                                text-[15px] font-medium text-slate-300
                                                 transition-colors duration-150
                                                 hover:bg-violet-500/10 hover:text-violet-300
                                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
@@ -246,7 +246,7 @@ export function MobileMenu({
                       onClick={(e) => handleSubClick(e, sub)}
                       className="
                                                 block pr-6 pl-4 py-3 rounded-full
-                                                text-[15px] font-medium text-slate-400
+                                                text-[15px] font-medium text-slate-300
                                                 transition-colors duration-150
                                                 hover:bg-violet-500/10 hover:text-violet-300
                                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
@@ -273,7 +273,7 @@ export function MobileMenu({
     <>
       {isOpen &&
         createPortal(
-          <div className="fixed inset-0 z-[10001] md:hidden" style={{ position: 'fixed' }}>
+          <div className="fixed inset-0 z-10001 md:hidden" style={{ position: 'fixed' }}>
             {/* Backdrop */}
             <div
               className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
@@ -330,7 +330,7 @@ export function MobileMenu({
                                 flex items-center justify-center
                                 w-11 h-11 rounded-full
                                 bg-white/3 border border-white/8
-                                text-slate-400
+                                text-slate-300
                                 transition-colors duration-150
                                 hover:bg-violet-500/10 hover:border-violet-500/25 hover:text-violet-400
                                 active:scale-95
@@ -382,7 +382,6 @@ export function MobileMenu({
               "
                   >
                     <span className="relative z-10 flex items-center gap-2">
-                      <Phone className="w-5 h-5" weight="bold" />
                       <span>تواصل معنا الآن</span>
                     </span>
                   </a>

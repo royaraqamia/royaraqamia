@@ -32,10 +32,10 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden">
       <GlowOrb className="w-96 h-96 bg-primary/20 top-1/4 -right-48 animate-pulse-slow" />
       <GlowOrb
-        className="w-80 h-80 bg-accent-teal/10 bottom-1/4 -left-40 animate-pulse-slow"
+        className="w-80 h-80 bg-accent-indigo/10 bottom-1/4 -left-40 animate-pulse-slow"
         style={{ animationDelay: '2s' }}
       />
 
@@ -120,7 +120,7 @@ export function Hero() {
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
                   <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <div className="ml-auto text-xs text-muted-foreground">blogpress.app</div>
+                  <div className="me-auto text-xs text-muted-foreground">blogpress.app</div>
                 </div>
 
                 <div className="flex gap-4">
@@ -128,7 +128,7 @@ export function Hero() {
                     <div className="glass rounded-xl p-4">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-xs font-medium text-primary">editor.md</span>
-                        <span className="text-xs text-muted-foreground ml-auto">مسوَّدة</span>
+                        <span className="text-xs text-muted-foreground me-auto">مسوَّدة</span>
                       </div>
                       <div className="space-y-2">
                         <div className="h-3 bg-muted rounded w-3/4" />
@@ -159,10 +159,10 @@ export function Hero() {
                       className="glass rounded-xl p-4 flex items-center justify-between"
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-success" />
+                        <div className="w-2 h-2 rounded-full bg-primary" />
                         <span className="text-xs text-muted-foreground">تحسين محركات البحث</span>
                       </div>
-                      <span className="text-sm font-bold text-accent-teal">92/100</span>
+                      <span className="text-sm font-bold text-primary">92/100</span>
                     </motion.div>
                   </div>
                 </div>

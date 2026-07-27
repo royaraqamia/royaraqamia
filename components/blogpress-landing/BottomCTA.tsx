@@ -20,7 +20,7 @@ export function BottomCTA() {
 
   return (
     <section className="relative overflow-hidden border-t border-border/50">
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent" />
+      <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-primary/10 to-transparent" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/10 rounded-full blur-3xl pointer-events-none" />
 
       <div className="relative z-10 max-w-4xl mx-auto container-padding py-32 text-center">

@@ -63,7 +63,7 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
       editorProps: {
         attributes: {
           class:
-            'prose prose-sm dark:prose-invert max-w-none w-full focus:outline-none min-h-full p-6 selection:bg-primary/20',
+            'prose prose-sm dark:prose-invert max-w-none w-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 rounded-lg min-h-full p-6 selection:bg-primary/20',
           dir: 'auto',
         },
         handleDrop: (_view, event, _slice, moved) => {
@@ -72,6 +72,21 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
             if (file?.type.startsWith('image/')) {
               event.preventDefault();
               onImageUploadRef.current?.(file);
+              return true;
+            }
+          }
+          return false;
+        },
+        handlePaste: (_view, event) => {
+          const items = event.clipboardData?.items;
+          if (!items) return false;
+          for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (!item) continue;
+            if (item.type.startsWith('image/')) {
+              event.preventDefault();
+              const file = item.getAsFile();
+              if (file) onImageUploadRef.current?.(file);
               return true;
             }
           }
@@ -129,13 +144,24 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
       [editor]
     );
 
-    if (!editor) return null;
+    if (!editor) {
+      return (
+        <div className={`flex flex-col gap-4 p-6 ${className ?? 'flex-1'}`}>
+          <div className="h-4 bg-muted/30 rounded-lg animate-pulse w-3/4" />
+          <div className="h-4 bg-muted/30 rounded-lg animate-pulse w-1/2" />
+          <div className="h-4 bg-muted/30 rounded-lg animate-pulse w-5/6" />
+          <div className="h-4 bg-muted/30 rounded-lg animate-pulse w-2/3" />
+          <div className="h-4 bg-muted/30 rounded-lg animate-pulse w-3/4" />
+          <div className="h-4 bg-muted/30 rounded-lg animate-pulse w-1/3" />
+        </div>
+      );
+    }
 
     return (
       <div className={className ?? 'flex-1'}>
         <EditorContent
           editor={editor}
-          className="h-full [&_.tiptap-ProseMirror]:h-full [&_.tiptap-ProseMirror]:overflow-y-auto [&_.tiptap-ProseMirror]:outline-none"
+          className="h-full [&_.ProseMirror]:h-full [&_.ProseMirror]:overflow-y-auto [&_.ProseMirror]:outline-none"
         />
       </div>
     );

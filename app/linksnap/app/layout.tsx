@@ -14,7 +14,7 @@ export default async function LinkSnapAppLayout({ children }: { children: React.
   if (!user) redirect('/auth/login?redirect=/linksnap');
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-dvh bg-background text-foreground flex flex-col">
       <ProgressBar />
       <ThemeProvider>
         <main className="flex-1 pt-24 mx-auto w-full max-w-6xl container-padding pb-8">

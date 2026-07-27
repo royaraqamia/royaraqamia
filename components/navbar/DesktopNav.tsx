@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CaretDown, Phone, type Icon } from '@phosphor-icons/react';
+import { CaretDown, type Icon } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
 import { getWhatsAppUrl } from '../../lib/constants';
 import { NotificationDropdown } from '../shared/notification-dropdown';
@@ -194,7 +194,7 @@ export function DesktopNav({
                   {isDropdownOpen && (
                     <div
                       id={link.dropdownKey ? `${link.dropdownKey}-dropdown` : undefined}
-                      className="absolute right-0 mt-2 w-56 bg-background/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/30 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-200"
+                      className="absolute inset-e-0 mt-2 w-56 bg-background/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/30 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-200"
                       style={{
                         boxShadow:
                           '0 20px 60px rgba(119, 102, 238, 0.2), 0 0 0 1px rgba(167, 139, 250, 0.1)',
@@ -341,10 +341,7 @@ export function DesktopNav({
               isScrolled ? 'text-sm px-5' : 'text-base px-6 shadow-lg shadow-primary/30'
             }`}
           >
-            <span className="relative z-10 flex items-center gap-2">
-              <Phone className={`${isScrolled ? 'w-4 h-4' : 'w-5 h-5'}`} weight="bold" />
-              تواصل معنا الآن
-            </span>
+            <span className="relative z-10 flex items-center gap-2">تواصل معنا الآن</span>
             <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 motion-reduce:hidden bg-linear-to-r from-transparent via-white/20 to-transparent" />
           </Button>
         </a>

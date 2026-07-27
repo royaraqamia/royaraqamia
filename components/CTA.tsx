@@ -36,7 +36,7 @@ export function CTA() {
                 </div>
 
                 {/* Title - Matching Hero Typography */}
-                <h2 className="text-5xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight font-arabic text-teal-300 mb-6 leading-snug md:leading-relaxed">
+                <h2 className="text-5xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight font-arabic gradient-text mb-6 leading-snug md:leading-relaxed">
                   لا تترك مستقبلك للصُّدفة
                 </h2>
 

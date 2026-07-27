@@ -1,10 +1,11 @@
 'use client';
 
-import type { ElementType } from 'react';
+import { ElementType, MouseEvent } from 'react';
+import { motion, useMotionTemplate, useMotionValue } from 'motion/react';
 import { Check, ArrowRight } from '@phosphor-icons/react';
-import { ScrollAnimation } from '../ScrollAnimations';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
+// Types remain the same for perfect drop-in compatibility
 interface ServicePricing {
   cta: string;
   monthly?: string;
@@ -33,67 +34,135 @@ interface Service {
   href: string;
 }
 
+// Framer Motion Entrance Variant
+const cardVariant = {
+  hidden: { opacity: 0, y: 40, scale: 0.95 },
+  show: (index: number) =>
+    ({
+      opacity: 1,
+      y: 0,
+      scale: 1,
+      transition: {
+        type: 'spring',
+        stiffness: 80,
+        damping: 20,
+        delay: index * 0.1,
+      },
+    }) as const,
+} as const;
+
 export function ServiceCard({ service, index }: { service: Service; index: number }) {
   const Icon = service.icon;
   const colors = colorConfigs[service.colorKey];
 
+  // Elite Detail: Mouse Tracking Spotlight
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  function handleMouseMove({ currentTarget, clientX, clientY }: MouseEvent<HTMLDivElement>) {
+    const { left, top } = currentTarget.getBoundingClientRect();
+    mouseX.set(clientX - left);
+    mouseY.set(clientY - top);
+  }
+
   return (
-    <ScrollAnimation key={index} animation="slide-up" delay={index * 0.1} duration={0.8}>
-      <div className="group/card relative rounded-4xl p-8 lg:p-10 h-full flex flex-col transition-all duration-800 ease-[cubic-bezier(0.25,1,0.5,1)] overflow-hidden bg-white/2 border border-white/5 backdrop-blur-sm hover:border-white/15 hover:-translate-y-2 hover:shadow-2xl hover:shadow-black/50">
-        {/* Premium Ambient Glow (Replaces the harsh top border & skew shine) */}
-        <div className="absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-800 ease-[cubic-bezier(0.25,1,0.5,1)] pointer-events-none -z-10">
-          <div
-            className="absolute top-0 left-0 right-0 h-32 opacity-20 blur-[50px] transition-all duration-800"
-            style={{ background: colors.gradient }}
-          />
-        </div>
+    <motion.div
+      custom={index}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: '-50px' }}
+      variants={cardVariant}
+      onMouseMove={handleMouseMove}
+      className="group/card relative rounded-[2.5rem] p-8 lg:p-10 h-full flex flex-col overflow-hidden bg-white/2 border border-white/5 backdrop-blur-md transition-all duration-500 hover:border-white/10 hover:-translate-y-2 hover:shadow-2xl z-10"
+      style={{
+        boxShadow: `0 0 0 0 ${service.shadowColor}`, // Fallback
+      }}
+    >
+      {/* 
+        The Magic: Mouse-tracking spotlight background. 
+        It injects the specific service color gradient but bound to the cursor position. 
+      */}
+      <motion.div
+        className="absolute inset-0 z-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none mix-blend-screen"
+        style={{
+          background: useMotionTemplate`
+            radial-gradient(
+              600px circle at ${mouseX}px ${mouseY}px,
+              ${colors.gradient}25, 
+              transparent 80%
+            )
+          `,
+        }}
+      />
 
+      {/* Static ambient top glow (retained but softened) */}
+      <div
+        className="absolute top-0 inset-x-0 h-40 opacity-0 group-hover/card:opacity-20 blur-[60px] transition-opacity duration-1000 -z-10 pointer-events-none"
+        style={{ background: colors.gradient }}
+      />
+
+      <div className="relative z-10 flex flex-col h-full">
         {/* Minimalist Glass Icon Container */}
-        <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-8 transition-all duration-800 ease-[cubic-bezier(0.25,1,0.5,1)] bg-white/5 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shrink-0">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 bg-white/3 border border-white/10 transition-transform duration-700 ease-out group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shrink-0 shadow-lg">
           <div
-            className="absolute inset-0 opacity-0 group-hover/card:opacity-20 transition-opacity duration-500"
+            className="absolute inset-0 opacity-0 group-hover/card:opacity-30 transition-opacity duration-500"
             style={{ background: colors.gradient }}
           />
-          <Icon weight="light" className="w-7 h-7 text-white relative z-10 drop-shadow-sm" />
+          <Icon weight="duotone" className="w-8 h-8 text-white relative z-10" />
         </div>
 
-        {/* Typography: Crisp, massive, and readable */}
-        <h3 className="text-2xl lg:text-3xl font-bold text-white tracking-tight mb-3 transition-transform duration-800 ease-[cubic-bezier(0.25,1,0.5,1)] group-hover/card:translate-x-1 rtl:group-hover/card:-translate-x-1">
+        {/* Typography */}
+        <h3 className="text-2xl lg:text-3xl font-extrabold text-white tracking-tight mb-3 transition-transform duration-500 group-hover/card:translate-x-2 rtl:group-hover/card:-translate-x-2">
           {service.title}
         </h3>
 
-        <p className="text-sm md:text-base text-white/50 leading-relaxed mb-8 group-hover/card:text-white/70 transition-colors duration-500 font-medium">
+        <p className="text-base text-white/50 leading-relaxed mb-8 group-hover/card:text-white/70 transition-colors duration-500 font-medium">
           {service.description}
         </p>
 
-        {/* Features List: Freed from the internal box */}
+        {/* Features List */}
         <div className="grow flex flex-col">
           <ul className="space-y-4 mb-10">
             {service.features.map((feature, idx) => (
               <li key={idx} className="flex items-start gap-4 group/item">
-                <div className="mt-1 w-5 h-5 rounded-full flex items-center justify-center shrink-0 bg-white/5 border border-white/10 transition-colors duration-500 group-hover/item:border-white/30 group-hover/card:bg-white/10">
+                <div className="mt-1 w-6 h-6 rounded-full flex items-center justify-center shrink-0 bg-white/5 border border-white/10 transition-all duration-500 group-hover/item:border-white/30 group-hover/item:scale-110">
+                  {/* Elite Detail: Checkmark adopts the service's primary color on hover */}
                   <Check
                     weight="bold"
-                    className="w-3 h-3 text-white/40 group-hover/item:text-white transition-colors duration-300"
+                    className="w-3.5 h-3.5 text-white/30 transition-colors duration-500"
+                    style={{ color: 'inherit' }}
                   />
+                  {/* Hidden gradient text to apply to checkmark via sibling selector logic in React */}
+                  <div
+                    className="absolute inset-0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 flex items-center justify-center"
+                    style={{
+                      color:
+                        colors.gradient
+                          .split(',')[0]
+                          ?.replace('linear-gradient(to right, ', '')
+                          .trim() ?? '#fff',
+                    }}
+                  >
+                    <Check weight="bold" className="w-3.5 h-3.5" />
+                  </div>
                 </div>
-                <span className="text-sm md:text-base text-white/70 font-medium leading-relaxed group-hover/item:text-white transition-colors duration-300">
+                <span className="text-sm md:text-base text-white/60 font-medium leading-relaxed group-hover/item:text-white transition-colors duration-300">
                   {feature}
                 </span>
               </li>
             ))}
           </ul>
 
-          {/* Premium CTA Button: Glass to Solid transition */}
+          {/* Premium CTA Button */}
           {service.pricing && (
-            <div className="mt-auto pt-6 border-t border-white/5">
+            <div className="mt-auto pt-8 border-t border-white/10 relative">
               <a
                 href={service.href}
-                className="group/cta relative w-full flex items-center justify-center gap-3 px-6 py-4 rounded-full font-bold text-sm md:text-base text-white overflow-hidden transition-all duration-600 ease-[cubic-bezier(0.25,1,0.5,1)] border border-white/10 bg-white/5 hover:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50"
+                className="group/cta relative w-full flex items-center justify-center gap-3 px-6 py-4 rounded-full font-bold text-base text-white overflow-hidden transition-all duration-500 border border-white/10 bg-white/5 hover:border-transparent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 hover:shadow-xl shadow-black/20"
               >
-                {/* Background injection on hover */}
+                {/* Background gradient injection */}
                 <div
-                  className="absolute inset-0 opacity-0 group-hover/cta:opacity-100 transition-opacity duration-600 ease-[cubic-bezier(0.25,1,0.5,1)] -z-10"
+                  className="absolute inset-0 opacity-0 group-hover/cta:opacity-100 transition-opacity duration-500 -z-10"
                   style={{ background: colors.gradient }}
                 />
 
@@ -101,15 +170,21 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
                   {service.pricing.cta}
                 </span>
 
-                <ArrowRight
-                  weight="bold"
-                  className="w-4 h-4 relative z-10 opacity-50 group-hover/cta:opacity-100 transition-all duration-500 group-hover/cta:translate-x-1 rtl:rotate-180 rtl:group-hover/cta:-translate-x-1"
-                />
+                <div className="relative z-10 overflow-hidden w-5 h-5 flex items-center justify-center">
+                  <ArrowRight
+                    weight="bold"
+                    className="absolute w-5 h-5 opacity-50 group-hover/cta:opacity-100 transition-all duration-500 -translate-x-full group-hover/cta:translate-x-0 rtl:rotate-180 rtl:translate-x-full rtl:group-hover/cta:translate-x-0"
+                  />
+                  <ArrowRight
+                    weight="bold"
+                    className="absolute w-5 h-5 opacity-50 group-hover/cta:opacity-0 transition-all duration-500 translate-x-0 group-hover/cta:translate-x-full rtl:rotate-180 rtl:translate-x-0 rtl:group-hover/cta:-translate-x-full"
+                  />
+                </div>
               </a>
             </div>
           )}
         </div>
       </div>
-    </ScrollAnimation>
+    </motion.div>
   );
 }

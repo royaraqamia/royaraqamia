@@ -109,9 +109,9 @@ function MiniChart() {
 }
 
 const analyticsMetrics = [
-  { label: 'معدل النقر', value: '4.8%', color: 'text-accent-teal' },
+  { label: 'معدل النقر', value: '4.8%', color: 'text-accent-indigo' },
   { label: 'الزوار الفريدون', value: '3.2k', color: 'text-primary' },
-  { label: 'الدول المستهدفة', value: '24', color: 'text-accent-orange' },
+  { label: 'الدول المستهدفة', value: '24', color: 'text-accent-purple' },
 ];
 
 function AnalyticsPreview() {
@@ -134,7 +134,7 @@ function AnalyticsPreview() {
       <div className="pt-3 border-t border-border/40">
         <div className="flex items-center justify-between text-xs text-muted-foreground">
           <span>آخر 24 ساعة</span>
-          <span className="text-accent-teal font-medium">+12.5% ↑</span>
+          <span className="text-accent-indigo font-medium">+12.5% ↑</span>
         </div>
       </div>
     </div>
@@ -194,7 +194,7 @@ export function FeaturesBento() {
             title="تتبُّع النقرات"
             description="اعرف بالضبط كم مرة تم النقر على كل رابط بتتبُّع دقيق وفوري."
             icon={ChartBar}
-            gradient="rgba(45,212,191,1)"
+            gradient="rgba(129,140,248,1)"
             className="lg:col-span-2"
             delay={0.2}
           >
@@ -205,7 +205,7 @@ export function FeaturesBento() {
             title="تحليلات متقدمة"
             description="افهم جمهورك من خلال تحليلات مفصلة عن أداء الروابط والمواقع الجغرافية والاتجاهات."
             icon={MagnifyingGlass}
-            gradient="rgba(251,146,60,1)"
+            gradient="rgba(167,139,250,1)"
             className="lg:col-span-2"
             delay={0.3}
           >

@@ -17,7 +17,7 @@ function getStrength(password: string): { score: number; label: string; color: s
 
   if (score <= 1) return { score, label: 'ضعيفة', color: 'bg-destructive' };
   if (score <= 2) return { score, label: 'متوسطة', color: 'bg-warning' };
-  if (score <= 3) return { score, label: 'جيدة', color: 'bg-accent-teal' };
+  if (score <= 3) return { score, label: 'جيدة', color: 'bg-accent-indigo' };
   return { score, label: 'قوية', color: 'bg-success' };
 }
 

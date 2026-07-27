@@ -1,10 +1,29 @@
 'use client';
 
+import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Code, Rocket, ShieldCheck, DeviceMobile, Monitor, Globe } from '@phosphor-icons/react';
-import { ScrollAnimation } from './ScrollAnimations';
 import { WHATSAPP_PHONE } from '../lib/constants';
 import { SectionBackground } from './SectionBackground';
+
+// --- Framer Motion Variants ---
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.15, delayChildren: 0.1 },
+  },
+};
+
+const fadeUpVariant = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 80, damping: 20 } },
+} as const;
+
+const scaleInVariant = {
+  hidden: { opacity: 0, scale: 0.95 },
+  show: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 100, damping: 20 } },
+} as const;
 
 export function WebDevService() {
   const benefits = [
@@ -21,162 +40,191 @@ export function WebDevService() {
   ];
 
   return (
-    <section id="web-dev-service" className="section-spacing relative overflow-hidden">
-      <div className="absolute inset-0 bg-background z-0">
+    <section id="web-dev-service" className="relative py-24 overflow-hidden bg-background">
+      {/* Background with optimized z-index and subtle overlay */}
+      <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
         <SectionBackground
           blobs={[
             {
               top: '0',
               left: '0',
-              width: '400px',
-              height: '400px',
-              background: 'rgba(59, 130, 246, 0.1)',
-              filter: 'blur(100px)',
-              transform: 'translate(-25%, -50%)',
-              animation: 'pulse-slow 4s ease-in-out infinite',
+              width: '500px',
+              height: '500px',
+              background: 'rgba(139, 92, 246, 0.08)',
+              filter: 'blur(120px)',
+              transform: 'translate(-20%, -30%)',
+              animation: 'pulse-slow 8s ease-in-out infinite',
             },
             {
               bottom: '0',
               right: '0',
-              width: '400px',
-              height: '400px',
-              background: 'rgba(37, 99, 235, 0.1)',
-              filter: 'blur(100px)',
-              transform: 'translate(25%, 33%)',
-              animation: 'pulse-slow 4s ease-in-out infinite',
-              animationDelay: '1s',
+              width: '500px',
+              height: '500px',
+              background: 'rgba(124, 58, 237, 0.08)',
+              filter: 'blur(120px)',
+              transform: 'translate(20%, 20%)',
+              animation: 'pulse-slow 8s ease-in-out infinite',
+              animationDelay: '2s',
             },
           ]}
         />
+        {/* Adds a premium noise/grain texture overlay (Optional but highly recommended for high-end feel) */}
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto container-padding relative z-10">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
         {/* Section Header */}
-        <ScrollAnimation animation="slide-down" duration={0.7}>
-          <div className="text-center max-w-3xl mx-auto section-header mb-12">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
-              <span className="text-blue-400">البناء</span>{' '}
-            </h2>
-            <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
-              خدمات تطوير متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق. نبني حلول رقميَّة
-              قابلة للتَّوسُّع، آمنة، وسهلة الاستخدام.
-            </p>
-          </div>
-        </ScrollAnimation>
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-100px' }}
+          variants={fadeUpVariant}
+          className="text-center max-w-3xl mx-auto mb-20"
+        >
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl mb-6 font-extrabold tracking-tight">
+            <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 via-violet-500 to-indigo-400">
+              البناء
+            </span>
+          </h2>
+          <p className="text-base sm:text-lg lg:text-xl text-foreground/70 leading-relaxed font-medium">
+            خدمات تطوير متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق. نبني حلول رقميَّة
+            قابلة للتَّوسُّع، آمنة، وسهلة الاستخدام.
+          </p>
+        </motion.div>
 
-        {/* Two Column Layout */}
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-          {/* Left: Benefits & Features */}
-          <ScrollAnimation animation="slide-right" duration={0.7}>
-            <div className="space-y-8">
-              {/* Benefits List */}
-              <div className="space-y-4">
-                {benefits.map((benefit, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-start gap-4 p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 hover:border-blue-500/30 hover:bg-blue-500/10 transition-all duration-300 group"
-                  >
-                    <div className="w-10 h-10 rounded-lg bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300">
-                      <benefit.icon className="w-5 h-5 text-white" />
-                    </div>
-                    <span className="flex flex-col justify-center items-center py-2 text-sm md:text-base text-foreground/80 group-hover:text-foreground transition-colors">
+        {/* Grid Layout */}
+        <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-start">
+          {/* Left: Benefits & Features (Spans 7 cols) */}
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={staggerContainer}
+            className="lg:col-span-7 space-y-10"
+          >
+            {/* Benefits List */}
+            <div className="flex flex-col gap-4">
+              {benefits.map((benefit, idx) => (
+                <motion.div
+                  key={idx}
+                  variants={fadeUpVariant}
+                  className="group flex items-start gap-5 p-5 rounded-2xl bg-white/5 dark:bg-white/2 border border-white/10 hover:border-purple-500/30 hover:bg-purple-500/5 transition-all duration-500 ease-out backdrop-blur-sm shadow-sm"
+                >
+                  <div className="w-12 h-12 rounded-xl bg-linear-to-br from-purple-600 to-violet-700 flex items-center justify-center shrink-0 shadow-lg shadow-purple-600/20 group-hover:scale-110 group-hover:rotate-3 transition-transform duration-500">
+                    <benefit.icon
+                      className="w-6 h-6 text-white"
+                      aria-hidden="true"
+                      weight="duotone"
+                    />
+                  </div>
+                  <div className="flex flex-1 flex-col justify-center h-12">
+                    <span className="text-base md:text-lg font-medium text-foreground/80 group-hover:text-foreground transition-colors text-start leading-snug">
                       {benefit.text}
                     </span>
                   </div>
-                ))}
-              </div>
-
-              {/* Features Grid */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {features.map((feature, idx) => (
-                    <div
-                      key={idx}
-                      className="p-4 rounded-xl bg-blue-500/5 border border-blue-500/10 hover:border-blue-500/30 transition-all duration-300"
-                    >
-                      <h3 className="text-lg font-semibold text-blue-400 mb-2">{feature.title}</h3>
-                      <p className="text-sm text-foreground/70">{feature.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                </motion.div>
+              ))}
             </div>
-          </ScrollAnimation>
 
-          {/* Right: Pricing & Process */}
-          <ScrollAnimation animation="slide-left" duration={0.7} delay={0.2}>
-            <div className="space-y-6">
-              {/* Basic Website */}
-              <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
-                      <Monitor className="w-6 h-6 text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">موقع بسيط</h3>
-                      <p className="text-xs text-muted-foreground">Landing Page & Website</p>
-                    </div>
+            {/* Features Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              {features.map((feature, idx) => (
+                <motion.div
+                  key={idx}
+                  variants={fadeUpVariant}
+                  className="relative p-6 rounded-2xl bg-purple-600/3 border border-purple-600/10 hover:border-purple-500/40 transition-all duration-300 group overflow-hidden"
+                >
+                  {/* Subtle hover glow effect */}
+                  <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                  <h3 className="relative text-xl font-bold text-purple-400 mb-2 group-hover:text-purple-300 transition-colors">
+                    {feature.title}
+                  </h3>
+                  <p className="relative text-sm text-foreground/70 leading-relaxed">
+                    {feature.description}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Right: Pricing & Process (Spans 5 cols) */}
+          <motion.div
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: '-50px' }}
+            variants={staggerContainer}
+            className="lg:col-span-5 space-y-6 lg:sticky lg:top-32"
+          >
+            {/* Pricing Card 1 */}
+            <motion.div
+              variants={scaleInVariant}
+              className="group relative p-7 rounded-3xl bg-background border border-white/10 hover:border-purple-500/50 shadow-xl shadow-black/5 hover:shadow-purple-600/10 transition-all duration-500 overflow-hidden z-10"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 rounded-full blur-3xl -z-10 group-hover:bg-purple-600/20 transition-colors duration-500"></div>
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-purple-600/10 border border-purple-600/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                    <Monitor className="w-7 h-7 text-purple-400" weight="duotone" />
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-blue-400">$500</div>
-                    <div className="text-xs text-muted-foreground">بدءًا من</div>
+                  <div className="text-start">
+                    <h3 className="text-xl font-bold text-foreground">موقع Web</h3>
+                    <p className="text-sm text-foreground/50 mt-1">بدون Backend</p>
+                  </div>
+                </div>
+                <div className="text-end">
+                  <div className="text-4xl font-extrabold text-purple-400 tracking-tight">$100</div>
+                  <div className="text-xs font-medium text-foreground/50 uppercase tracking-wider mt-1">
+                    اشتراك شهري
                   </div>
                 </div>
               </div>
+            </motion.div>
 
-              {/* Web Application */}
-              <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
-                      <Globe className="w-6 h-6 text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">تطبيق ويب</h3>
-                      <p className="text-xs text-muted-foreground">Full-Stack Web App</p>
-                    </div>
+            {/* Pricing Card 2 (Premium Highlight) */}
+            <motion.div
+              variants={scaleInVariant}
+              className="group relative p-7 rounded-3xl bg-linear-to-b from-purple-900/20 to-background border border-purple-500/30 hover:border-purple-400/60 shadow-2xl shadow-purple-900/20 transition-all duration-500 overflow-hidden z-10"
+            >
+              {/* Animated subtle gradient line at the top */}
+              <div className="absolute top-0 inset-x-0 h-0.5 bg-linear-to-r from-transparent via-purple-400 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+              <div className="flex items-center justify-between gap-4 mb-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-purple-500/20 border border-purple-400/30 flex items-center justify-center group-hover:scale-105 transition-transform duration-300">
+                    <Globe className="w-7 h-7 text-purple-400" weight="duotone" />
                   </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-blue-400">$1,000</div>
-                    <div className="text-xs text-muted-foreground">بدءًا من</div>
+                  <div className="text-start">
+                    <h3 className="text-xl font-bold text-foreground">تطبيق Web أو Mobile</h3>
+                    <p className="text-sm text-purple-300/70 mt-1">مع Backend</p>
+                  </div>
+                </div>
+                <div className="text-end">
+                  <div className="text-4xl font-extrabold text-purple-400 tracking-tight">$200</div>
+                  <div className="text-xs font-medium text-foreground/50 uppercase tracking-wider mt-1">
+                    اشتراك شهري
                   </div>
                 </div>
               </div>
+            </motion.div>
 
-              {/* Mobile Application */}
-              <div className="p-6 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:border-blue-500/40 transition-all duration-300 overflow-hidden">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-600/20 flex items-center justify-center">
-                      <DeviceMobile className="w-6 h-6 text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-lg font-bold text-white">تطبيق موبايل</h3>
-                      <p className="text-xs text-muted-foreground">Mobile App for Android & iOS</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-3xl font-bold text-blue-400">$2,000</div>
-                    <div className="text-xs text-muted-foreground">بدءًا من</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* CTA Button */}
+            {/* CTA Button */}
+            <motion.div variants={fadeUpVariant} className="pt-4">
               <a
-                href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('السَّلام عليكم، أنا مهتم بخدمة تطوير المواقع والتَّطبيقات.')}`}
+                href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('السَّلام عليكم، أنا مهتم بخدمة بناء المواقع والتَّطبيقات.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block"
+                className="block group"
               >
-                <Button className="w-full h-14 text-base font-bold rounded-full bg-linear-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11">
-                  <Code className="w-5 h-5 ml-2" />
-                  ابدأ البناء الآن
+                <Button className="relative w-full h-16 text-lg font-bold rounded-2xl bg-purple-600 hover:bg-purple-500 text-white shadow-[0_0_40px_-10px_rgba(147,51,234,0.5)] hover:shadow-[0_0_60px_-15px_rgba(168,85,247,0.7)] transition-all duration-300 overflow-hidden">
+                  {/* Button hover shine effect */}
+                  <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-linear-to-r from-transparent via-white/20 to-transparent w-1/2 -skew-x-12 z-0"></div>
+                  <span className="relative z-10 flex items-center justify-center gap-2">
+                    ابدأ البناء الآن
+                  </span>
                 </Button>
               </a>
-            </div>
-          </ScrollAnimation>
+            </motion.div>
+          </motion.div>
         </div>
       </div>
     </section>

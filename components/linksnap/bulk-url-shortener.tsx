@@ -188,7 +188,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
                   className="w-4 h-4 text-primary-foreground/60 group-hover:scale-110 transition-transform"
                 />
                 <span>اختصار القائمة بالجملة</span>
-                <ArrowLeft aria-hidden="true" className="w-4 h-4 mr-1" />
+                <ArrowLeft aria-hidden="true" className="w-4 h-4 ms-1" />
               </>
             )}
           </button>

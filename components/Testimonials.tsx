@@ -99,13 +99,13 @@ export function Testimonials() {
         {/* Edge Fade Gradients - Desktop (only show when there's content in that direction) */}
         {canScrollLeft && (
           <div
-            className="hidden md:block absolute left-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
+            className="hidden md:block absolute inset-s-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
             style={{ background: 'linear-gradient(to right, rgba(2, 6, 23, 0.9), transparent)' }}
           />
         )}
         {canScrollRight && (
           <div
-            className="hidden md:block absolute right-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
+            className="hidden md:block absolute inset-e-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
             style={{ background: 'linear-gradient(to left, rgba(2, 6, 23, 0.9), transparent)' }}
           />
         )}
@@ -185,7 +185,7 @@ export function Testimonials() {
 
               {/* Bottom Sheet */}
               <div
-                className="review-bottom-sheet fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-81.75 max-h-[calc(100vh-100px)] md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:max-w-md bg-linear-to-br from-[#020617] via-[#3b0764] to-[#0f172a] rounded-3xl shadow-2xl shadow-black/50 z-9999 overflow-hidden flex flex-col animate-slide-up-bottom"
+                className="review-bottom-sheet fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-48px)] max-w-81.75 max-h-[calc(100dvh-100px)] md:bottom-auto md:top-1/2 md:-translate-y-1/2 md:max-w-md bg-linear-to-br from-[#020617] via-[#3b0764] to-[#0f172a] rounded-3xl shadow-2xl shadow-black/50 z-9999 overflow-hidden flex flex-col animate-slide-up-bottom"
                 role="dialog"
                 aria-modal="true"
                 aria-label={`رأي ${review.name}`}

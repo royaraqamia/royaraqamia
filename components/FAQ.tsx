@@ -87,18 +87,18 @@ export function FAQ() {
                       ${
                         isOpen
                           ? 'bg-white/5 border border-violet-500/30 shadow-[0_0_30px_-10px_rgba(124,58,237,0.3)]'
-                          : 'glass-card border border-transparent hover:bg-white/[0.02]'
+                          : 'glass-card border border-transparent hover:bg-white/2'
                       }
                     `}
                   >
                     {/* Active State Gradient Border/Glow effect */}
                     {isOpen && (
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/5 pointer-events-none" />
+                      <div className="absolute inset-0 bg-linear-to-r from-primary/10 via-transparent to-primary/5 pointer-events-none" />
                     )}
 
                     <button
                       onClick={() => setOpenIndex(isOpen ? null : index)}
-                      className="relative w-full px-6 py-5 md:py-6 flex items-start md:items-center justify-between text-right gap-6 outline-none cursor-pointer min-h-[44px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-full"
+                      className="relative w-full px-6 py-5 md:py-6 flex items-start md:items-center justify-between text-right gap-6 outline-none cursor-pointer min-h-11 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring rounded-full"
                       aria-expanded={isOpen}
                       aria-controls={`faq-answer-${index}`}
                     >
@@ -113,7 +113,7 @@ export function FAQ() {
 
                       <div
                         className={`
-                        flex-shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-500
+                        shrink-0 w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center transition-all duration-500
                         ${
                           isOpen
                             ? 'bg-primary text-white rotate-180 shadow-lg shadow-primary/25'
@@ -134,7 +134,7 @@ export function FAQ() {
                           className={`px-6 pb-8 pt-2 transition-opacity duration-500 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
                         >
                           {/* Divider */}
-                          <div className="w-full h-px bg-gradient-to-r from-transparent via-violet-500/30 to-transparent mb-4" />
+                          <div className="w-full h-px bg-linear-to-r from-transparent via-violet-500/30 to-transparent mb-4" />
 
                           <p className="text-muted-foreground leading-relaxed text-sm md:text-base">
                             {faq.answer}

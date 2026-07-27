@@ -334,7 +334,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                             href={fullUrl}
                             target="_blank"
                             rel="noreferrer"
-                            className="hover:underline"
+                            className="hover:underline cursor-pointer"
                           >
                             /{link.code}
                           </a>
@@ -483,7 +483,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
                       <button
                         key={pageNum}
                         onClick={() => setPage(pageNum)}
-                        className={`w-9 h-9 text-xs font-bold rounded-full transition-colors cursor-pointer focus-ring touch-target btn-press ${
+                        className={`w-10 h-10 text-xs font-bold rounded-full transition-colors cursor-pointer focus-ring touch-target btn-press ${
                           pageNum === page
                             ? 'bg-primary text-primary-foreground'
                             : 'text-muted-foreground hover:bg-muted'

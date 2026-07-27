@@ -39,10 +39,10 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden">
       <GlowOrb className="w-96 h-96 bg-primary/20 top-1/4 -left-48 animate-pulse-slow" />
       <GlowOrb
-        className="w-80 h-80 bg-accent-teal/10 bottom-1/4 -right-40 animate-pulse-slow"
+        className="w-80 h-80 bg-accent-indigo/10 bottom-1/4 -right-40 animate-pulse-slow"
         style={{ animationDelay: '2s' }}
       />
 
@@ -127,7 +127,7 @@ export function Hero() {
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
                   <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <div className="mr-auto text-xs text-muted-foreground">linksnap.app</div>
+                  <div className="ms-auto text-xs text-muted-foreground">linksnap.app</div>
                 </div>
 
                 <div className="space-y-4">

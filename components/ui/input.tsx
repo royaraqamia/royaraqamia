@@ -27,7 +27,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             // Disabled states
             'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/50',
             // File input styles
-            'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground file:mr-3',
+            'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground file:me-3',
             // Enhanced error states with better visual feedback
             error &&
               'border-destructive/80 bg-destructive/5 focus-visible:border-destructive focus-visible:ring-destructive/30',

@@ -31,7 +31,7 @@ export function HeroVisual() {
     >
       {/* Floating icon - Top Right (Lightning bolt) */}
       <m.div
-        className="absolute -top-6 -right-6 lg:top-0 lg:right-0 lg:translate-x-1/2 lg:-translate-y-1/2 w-12 h-12 lg:w-16 lg:h-16 z-30"
+        className="absolute -top-6 -inset-e-6 lg:top-0 lg:inset-e-0 lg:translate-x-1/2 lg:-translate-y-1/2 w-12 h-12 lg:w-16 lg:h-16 z-30"
         animate={{
           y: [0, -12, 0],
           rotate: [0, 5, -5, 0],
@@ -92,8 +92,8 @@ export function HeroVisual() {
               {/* Top-left card - Analytics Chart */}
               <div className="bg-white/5 rounded-2xl p-4 border border-white/5 aspect-square flex flex-col relative overflow-hidden group hover:bg-white/10 transition-colors">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-lg bg-teal-500/20 flex items-center justify-center">
-                    <TrendUp className="w-3.5 h-3.5 text-teal-400" weight="duotone" />
+                  <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center">
+                    <TrendUp className="w-3.5 h-3.5 text-purple-400" weight="duotone" />
                   </div>
                 </div>
 
@@ -102,7 +102,7 @@ export function HeroVisual() {
                   {[60, 85, 45, 95, 70, 55, 80].map((height, i) => (
                     <m.div
                       key={i}
-                      className="w-3 rounded-t-sm bg-linear-to-t from-teal-500/60 to-cyan-400/40"
+                      className="w-3 rounded-t-sm bg-linear-to-t from-purple-500/60 to-violet-400/40"
                       initial={{ height: `${height * 0.7}%` }}
                       animate={
                         isHoveringDashboard
@@ -122,8 +122,8 @@ export function HeroVisual() {
               {/* Top-right card - Users Line Chart */}
               <div className="bg-white/5 rounded-2xl p-4 border border-white/5 aspect-square flex flex-col relative overflow-hidden group hover:bg-white/10 transition-colors">
                 <div className="flex items-center gap-2 mb-3">
-                  <div className="w-6 h-6 rounded-lg bg-pink-500/20 flex items-center justify-center">
-                    <Users className="w-3.5 h-3.5 text-pink-400" />
+                  <div className="w-6 h-6 rounded-lg bg-violet-500/20 flex items-center justify-center">
+                    <Users className="w-3.5 h-3.5 text-violet-400" />
                   </div>
                 </div>
 
@@ -144,14 +144,14 @@ export function HeroVisual() {
                     <defs>
                       <linearGradient id="gradientLine" x1="0" y1="0" x2="1" y2="0">
                         <stop offset="0%" stopColor="#A855F7" />
-                        <stop offset="100%" stopColor="#EC4899" />
+                        <stop offset="100%" stopColor="#7C3AED" />
                       </linearGradient>
                     </defs>
                   </svg>
 
                   {/* Dot that only moves on hover */}
                   <m.div
-                    className="absolute top-1/2 left-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(236,72,153,0.8)]"
+                    className="absolute top-1/2 left-1/2 w-3 h-3 bg-white rounded-full shadow-[0_0_10px_rgba(168,85,247,0.8)]"
                     animate={isHoveringDashboard ? { x: [-20, 20, -20] } : {}}
                     transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
                   />
@@ -162,10 +162,10 @@ export function HeroVisual() {
             {/* Bottom row - Four smaller blocks, now responsive grid */}
             <div className="grid grid-cols-4 gap-2 lg:gap-3">
               {[
-                { icon: ChartBar, color: 'text-blue-400', bg: 'bg-blue-500/20', progress: 75 },
-                { icon: Sparkle, color: 'text-amber-400', bg: 'bg-amber-500/20', progress: 90 },
-                { icon: TrendUp, color: 'text-green-400', bg: 'bg-green-500/20', progress: 60 },
-                { icon: Lightning, color: 'text-purple-400', bg: 'bg-purple-500/20', progress: 85 },
+                { icon: ChartBar, color: 'text-purple-400', bg: 'bg-purple-500/20', progress: 75 },
+                { icon: Sparkle, color: 'text-violet-400', bg: 'bg-violet-500/20', progress: 90 },
+                { icon: TrendUp, color: 'text-indigo-400', bg: 'bg-indigo-500/20', progress: 60 },
+                { icon: Lightning, color: 'text-primary', bg: 'bg-primary/20', progress: 85 },
               ].map((item, idx) => (
                 <div
                   key={idx}
@@ -194,7 +194,7 @@ export function HeroVisual() {
 
       {/* Floating indicator - Bottom Left */}
       <m.div
-        className="absolute -bottom-5 -left-5 lg:bottom-0 lg:left-0 lg:-translate-x-1/2 lg:translate-y-1/3 w-16 h-16 lg:w-20 lg:h-20 z-30"
+        className="absolute -bottom-5 -inset-s-5 lg:bottom-0 lg:inset-s-0 lg:-translate-x-1/2 lg:translate-y-1/3 w-16 h-16 lg:w-20 lg:h-20 z-30"
         animate={{
           y: [0, -10, 0],
           rotate: [0, 5, -5, 0],

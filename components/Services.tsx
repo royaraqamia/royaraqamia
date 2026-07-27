@@ -1,10 +1,11 @@
 'use client';
 
+import { motion } from 'motion/react';
 import { ChatCircle, Code, Lightbulb } from '@phosphor-icons/react';
-import { ScrollAnimation } from './ScrollAnimations';
 import { ServiceCard } from './services/ServiceCard';
 import type { ColorKey } from './services/colorConfigs';
 
+// Interfaces remain identical for seamless drop-in
 interface ServiceItem {
   icon: typeof ChatCircle;
   title: string;
@@ -22,19 +23,35 @@ interface ServiceItem {
 
 const services: ServiceItem[] = [
   {
+    icon: Code,
+    title: 'بناء',
+    description: 'خدمات هندسيَّة وإداريَّة متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق.',
+    features: [
+      'بناء متكامل من الألف إلى الياء',
+      'تقنيات حديثة وأفضل الممارسات',
+      'بنية آمنة وقابلة للتَّوسُّع',
+    ],
+    pricing: { cta: 'قراءة المزيد' },
+    colorKey: 'indigo',
+    shadowColor: 'shadow-indigo-500/30',
+    hoverShadow: 'group-hover/item:shadow-indigo-500/50',
+    href: '#web-dev-service',
+    categories: ['merchants'],
+  },
+  {
     icon: ChatCircle,
     title: 'تدريب',
     description:
-      'المسار التَّدريبي العربي المتكامل الذي يعلِّمك بناء موقع إلكتروني أو تطبيق دون كتابة كود.',
+      'المسار التَّدريبي العربي المتكامل الذي يُعلِّمك بناء مواقع وتطبيقات دون كتابة كود.',
     features: [
-      'يدرِّبك خبير متخصِّص في المجال',
+      'يُدرِّبك خبير متخصِّص في المجال',
       'لا تحتاج لكتابة أي سطر كود',
       'التَّدريب أونلاين مع مجموعة',
     ],
     pricing: { cta: 'قراءة المزيد' },
     colorKey: 'teal',
-    shadowColor: 'shadow-teal-500/30',
-    hoverShadow: 'group-hover/item:shadow-teal-500/50',
+    shadowColor: 'shadow-purple-700/30',
+    hoverShadow: 'group-hover/item:shadow-purple-700/50',
     href: '#training',
     categories: ['students'],
   },
@@ -48,75 +65,80 @@ const services: ServiceItem[] = [
       'الاستشارة فرديَّة أونلاين صوتيَّة',
     ],
     pricing: { cta: 'قراءة المزيد' },
-    colorKey: 'rose',
-    shadowColor: 'shadow-rose-500/30',
-    hoverShadow: 'group-hover/item:shadow-rose-500/50',
+    colorKey: 'violet',
+    shadowColor: 'shadow-violet-500/30',
+    hoverShadow: 'group-hover/item:shadow-violet-500/50',
     href: '#consultation',
     categories: ['students'],
   },
-  {
-    icon: Code,
-    title: 'بناء',
-    description:
-      'خدمات تطوير متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق. نبني حلول رقميَّة قابلة للتَّوسُّع، آمنة، وسهلة الاستخدام.',
-    features: [
-      'تطوير متكامل من الألف إلى الياء',
-      'تقنيات حديثة وأفضل الممارسات',
-      'بنية آمنة وقابلة للتَّوسُّع',
-    ],
-    pricing: { cta: 'قراءة المزيد' },
-    colorKey: 'blue',
-    shadowColor: 'shadow-violet-500/30',
-    hoverShadow: 'group-hover/item:shadow-violet-500/50',
-    href: '#web-dev-service',
-    categories: ['merchants'],
-  },
 ];
+
+// --- Framer Motion Variants ---
+const headerVariant = {
+  hidden: { opacity: 0, y: -30 },
+  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 70, damping: 20 } },
+} as const;
 
 export function Services() {
   return (
-    <section id="services" className="section-spacing overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div
-          className="absolute top-1/4 right-1/4 w-64 h-64 bg-primary-600 opacity-[0.07] rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: '4s' }}
+    <section id="services" className="relative py-24 lg:py-32 overflow-hidden bg-[#050810]">
+      {/* 
+        Elite Background: Organic Floating Orbs 
+        Replaced rigid pulses with Framer Motion infinite drifting mesh gradients.
+      */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none mix-blend-screen z-0">
+        <motion.div
+          animate={{ y: [0, -40, 0], x: [0, 30, 0], scale: [1, 1.1, 1] }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/4 right-1/4 w-72 h-72 bg-indigo-600/10 rounded-full blur-[100px]"
         />
-        <div
-          className="absolute bottom-1/4 left-1/4 w-48 h-48 bg-teal-500 opacity-[0.05] rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: '6s', animationDelay: '1s' }}
+        <motion.div
+          animate={{ y: [0, 50, 0], x: [0, -40, 0], scale: [1, 1.2, 1] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-[120px]"
         />
-        <div
-          className="absolute top-1/2 left-1/2 w-56 h-56 bg-orange-500 opacity-[0.04] rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: '5s', animationDelay: '2s' }}
+        <motion.div
+          animate={{ y: [0, -30, 0], x: [0, -20, 0], opacity: [0.1, 0.15, 0.1] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-violet-500/10 rounded-full blur-[120px]"
         />
-        <div
-          className="absolute top-3/4 right-1/3 w-40 h-40 bg-blue-500 opacity-[0.04] rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: '7s', animationDelay: '3s' }}
-        />
-        <div
-          className="absolute top-1/3 left-1/4 w-44 h-44 bg-pink-500 opacity-[0.03] rounded-full blur-3xl animate-pulse"
-          style={{ animationDuration: '6s', animationDelay: '1.5s' }}
-        />
+        {/* Subtle noise texture over the gradients for a premium physical feel */}
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02] mix-blend-overlay"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto container-padding">
-        <ScrollAnimation animation="slide-down" duration={0.7}>
-          <div className="text-center max-w-3xl mx-auto section-header">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
-              ماذا <span className="gradient-text">نقدِّم</span>؟
-            </h2>
-            <p className="text-sm sm:text-base lg:text-lg text-foreground/70 leading-[1.8] sm:leading-[1.9]">
-              بُنية تحتيَّة شاملة للأفراد وأصحاب الأعمال تحت سقف واحد
-            </p>
+      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+        {/* Section Header */}
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-100px' }}
+          variants={headerVariant}
+          className="text-center max-w-3xl mx-auto mb-20"
+        >
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse"></span>
+            <span className="text-sm font-medium text-white/80">خدماتنا الشاملة</span>
           </div>
-        </ScrollAnimation>
 
-        <div className="mt-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-10">
-            {services.map((service, index) => (
-              <ServiceCard key={index} service={service} index={index} />
-            ))}
-          </div>
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl mb-6 font-extrabold tracking-tight text-white">
+            ماذا <span className="gradient-text">نقدِّم</span>؟
+          </h2>
+          <p className="text-base sm:text-lg lg:text-xl text-white/60 leading-relaxed font-medium">
+            بُنية تحتيَّة شاملة للأفراد وأصحاب الأعمال تحت سقف واحد، نرافقك من بلورة الفكرة وحتى
+            إطلاقها بنجاح.
+          </p>
+        </motion.div>
+
+        {/* 
+          The Grid Layout 
+          Notice the advanced Tailwind selector: [&>*:last-child]:md:col-span-2 [&>*:last-child]:lg:col-span-1
+        */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 [&>*:last-child]:md:col-span-2 [&>*:last-child]:lg:col-span-1 [&>*:last-child]:md:max-w-md [&>*:last-child]:md:mx-auto [&>*:last-child]:lg:max-w-none">
+          {services.map((service, index) => (
+            <div key={index} className="h-full">
+              <ServiceCard service={service} index={index} />
+            </div>
+          ))}
         </div>
       </div>
     </section>

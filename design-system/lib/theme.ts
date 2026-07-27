@@ -37,14 +37,14 @@ export const bioDesignTheme = {
     },
 
     // Semantic colors
-    success: '#10b981',
-    warning: '#f59e0b',
-    error: '#ef4444',
-    info: '#3b82f6',
+    success: '#8b5cf6',
+    warning: '#7c3aed',
+    error: '#dc2626',
+    info: '#6366f1',
 
     // Accent colors
-    teal: '#14b8a6',
-    orange: '#f97316',
+    teal: '#6366f1',
+    orange: '#8b5cf6',
     purple: '#a855f7',
   },
 

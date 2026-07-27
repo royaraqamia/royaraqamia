@@ -137,14 +137,15 @@ export function PostList({ posts }: PostListProps) {
           ))}
         </div>
 
-        <div className="relative sm:mr-auto sm:min-w-56">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40 pointer-events-none" />
+        <div className="relative sm:ms-auto sm:min-w-56">
+          <Search className="absolute inset-e-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40 pointer-events-none" />
           <input
             ref={searchRef}
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="بحث في المقالات..."
+            aria-label="بحث في المقالات"
             className="w-full h-9 pr-9 pl-8 rounded-lg bg-muted/50 border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs placeholder:text-muted-foreground/40 outline-none transition-all"
           />
           {searchQuery ? (
@@ -153,13 +154,13 @@ export function PostList({ posts }: PostListProps) {
                 setSearchQuery('');
                 searchRef.current?.focus();
               }}
-              className="absolute left-2 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full text-muted-foreground/40 hover:text-foreground hover:bg-muted transition-smooth cursor-pointer"
+              className="absolute inset-s-2 top-1/2 -translate-y-1/2 size-6 flex items-center justify-center rounded-full text-muted-foreground/40 hover:text-foreground hover:bg-muted transition-smooth cursor-pointer"
               aria-label="مسح البحث"
             >
               <X className="size-3" />
             </button>
           ) : (
-            <kbd className="absolute left-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-muted-foreground/30 border border-border/50 bg-muted/30 leading-none pointer-events-none">
+            <kbd className="absolute inset-s-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-muted-foreground/30 border border-border/50 bg-muted/30 leading-none pointer-events-none">
               <span className="text-[9px]">⌘</span>K
             </kbd>
           )}

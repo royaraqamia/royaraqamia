@@ -99,17 +99,17 @@ function HabitTracker() {
           viewport={{ once: true }}
           transition={{ delay: 0.2 + i * 0.08, duration: 0.4 }}
           className={`glass rounded-lg p-3 flex items-center justify-between ${
-            habit.done ? 'border-l-2 border-success' : 'border-l-2 border-muted'
+            habit.done ? 'border-l-2 border-primary' : 'border-l-2 border-muted'
           }`}
         >
           <div className="flex items-center gap-3">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                habit.done ? 'bg-success/20' : 'bg-muted'
+                habit.done ? 'bg-primary/20' : 'bg-muted'
               }`}
             >
               {habit.done ? (
-                <span className="text-success text-sm font-bold">✓</span>
+                <span className="text-primary text-sm font-bold">✓</span>
               ) : (
                 <span className="text-muted-foreground text-sm">○</span>
               )}
@@ -117,7 +117,7 @@ function HabitTracker() {
             <span className="text-sm font-medium">{habit.name}</span>
           </div>
           <div className="flex items-center gap-1">
-            <Fire size={14} className="text-accent-orange" />
+            <Fire size={14} className="text-accent-purple" />
             <span className="text-xs text-muted-foreground">{habit.streak}d</span>
           </div>
         </motion.div>
@@ -135,7 +135,7 @@ function StreakCalendar() {
       <div className="flex items-center justify-between mb-5">
         <span className="text-sm font-medium">السلاسل الشهرية</span>
         <div className="flex items-center gap-1">
-          <Fire size={16} className="text-accent-orange" />
+          <Fire size={16} className="text-accent-purple" />
           <span className="text-lg font-bold gradient-text">22</span>
         </div>
       </div>
@@ -160,7 +160,7 @@ function StreakCalendar() {
                   key={j}
                   className={`flex-1 h-8 rounded-md flex items-center justify-center text-xs ${
                     j < (streakData[i] ?? 0)
-                      ? 'bg-gradient-to-b from-primary/40 to-primary/20 text-primary font-medium'
+                      ? 'bg-linear-to-b from-primary/40 to-primary/20 text-primary font-medium'
                       : 'bg-muted text-muted-foreground'
                   }`}
                 >
@@ -197,7 +197,7 @@ function ProgressAnalytics() {
           >
             <span className="text-lg font-bold gradient-text block">{stat.value}</span>
             <span className="text-xs text-muted-foreground block mt-1">{stat.label}</span>
-            <span className="text-xs text-accent-teal font-medium">{stat.change}</span>
+            <span className="text-xs text-accent-indigo font-medium">{stat.change}</span>
           </motion.div>
         ))}
       </div>
@@ -208,7 +208,7 @@ function ProgressAnalytics() {
             whileInView={{ width: '78%' }}
             viewport={{ once: true }}
             transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="h-full rounded-full bg-gradient-to-r from-primary/60 to-primary"
+            className="h-full rounded-full bg-linear-to-r from-primary/60 to-primary"
           />
         </div>
         <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
@@ -259,7 +259,7 @@ export function FeaturesBento() {
             title="تقويم السلاسل"
             description="تصوَّر انتظامك مع تقويم السلاسل الأسبوعية والشهرية. شاهد تقدُّمك وهو ينمو."
             icon={Fire}
-            gradient="rgba(45,212,191,1)"
+            gradient="rgba(129,140,248,1)"
             className="lg:col-span-2"
             delay={0.2}
           >
@@ -270,7 +270,7 @@ export function FeaturesBento() {
             title="تحليلات التقدُّم"
             description="تتبَّع معدلات الإنجاز ومتوسط أطوال السلاسل، وشاهد كيف تتحسن عاداتك بمرور الوقت."
             icon={ChartLineUp}
-            gradient="rgba(251,146,60,1)"
+            gradient="rgba(167,139,250,1)"
             className="lg:col-span-2"
             delay={0.3}
           >

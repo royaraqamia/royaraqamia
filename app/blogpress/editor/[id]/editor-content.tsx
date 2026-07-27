@@ -10,7 +10,6 @@ import {
   useReducer,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import NextLink from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -79,11 +78,14 @@ export function EditorContent({ post }: EditorContentProps) {
   const [metaDesc, setMetaDesc] = useState(post.meta_desc ?? '');
   const [isUploading, setIsUploading] = useState(false);
   const [isCoverUploading, setIsCoverUploading] = useState(false);
+  const [coverImageError, setCoverImageError] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [pending, startTransition] = useTransition();
   const [isDirty, setIsDirty] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
   const [, forceRender] = useReducer((x) => x + 1, 0);
   const autoSaveRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
   const contentRef = useRef(content);
@@ -191,6 +193,7 @@ export function EditorContent({ post }: EditorContentProps) {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) handleImageUpload(file);
+      e.target.value = '';
     },
     [handleImageUpload]
   );
@@ -211,6 +214,7 @@ export function EditorContent({ post }: EditorContentProps) {
       }
       if (result.url) {
         setCoverImage(result.url);
+        setCoverImageError(false);
         toast.success('تمَّ رفع صورة الغلاف');
       }
     } catch {
@@ -243,7 +247,9 @@ export function EditorContent({ post }: EditorContentProps) {
   const handleSave = useCallback(async () => {
     let finalSlug = generateSlug(slug);
     if (!finalSlug) {
-      finalSlug = generateSlug(title) || `post-${crypto.randomUUID().slice(0, 8)}`;
+      finalSlug =
+        generateSlug(title) ||
+        `post-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2, 10)).slice(0, 8)}`;
     }
     if (finalSlug !== slug) setSlug(finalSlug);
     const currentContent = editorRef.current?.getMarkdown() ?? content;
@@ -279,7 +285,7 @@ export function EditorContent({ post }: EditorContentProps) {
   useEffect(() => {
     autoSaveRef.current = setInterval(() => {
       saveAllFields();
-    }, 1000);
+    }, 30000);
     return () => {
       if (autoSaveRef.current) clearInterval(autoSaveRef.current);
     };
@@ -303,7 +309,9 @@ export function EditorContent({ post }: EditorContentProps) {
   const handlePublish = useCallback(async () => {
     let finalSlug = generateSlug(slug);
     if (!finalSlug) {
-      finalSlug = generateSlug(title) || `post-${crypto.randomUUID().slice(0, 8)}`;
+      finalSlug =
+        generateSlug(title) ||
+        `post-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2, 10)).slice(0, 8)}`;
     }
     if (finalSlug !== slug) setSlug(finalSlug);
     const currentContent = editorRef.current?.getMarkdown() ?? content;
@@ -325,7 +333,6 @@ export function EditorContent({ post }: EditorContentProps) {
         setIsDirty(false);
         setPublishDialogOpen(false);
         toast.success('تمَّ نشر المقال!');
-        router.refresh();
         router.push(`/blog/${finalSlug}`);
       } catch {
         toast.error('فشل نشر المقال. حاول مرَّة أخرى.');
@@ -396,13 +403,14 @@ export function EditorContent({ post }: EditorContentProps) {
           <Button
             variant="ghost"
             size="icon-sm"
-            asChild
+            onClick={async () => {
+              if (isDirtyRef.current) await saveAllFields();
+              router.push('/blogpress');
+            }}
             className="shrink-0 transition-smooth"
             aria-label="العودة إلى لوحة التحكم"
           >
-            <NextLink href="/blogpress">
-              <ArrowRight className="size-4" />
-            </NextLink>
+            <ArrowRight className="size-4" />
           </Button>
           <Label htmlFor="editor-title" className="sr-only">
             عنوان المقال
@@ -414,7 +422,7 @@ export function EditorContent({ post }: EditorContentProps) {
             onChange={(e) => setTitle(e.target.value)}
             onBlur={handleTitleBlur}
             placeholder="عنوان المقال..."
-            className="border-0 text-lg font-semibold bg-transparent px-0 focus-visible:ring-0 h-auto placeholder:text-muted-foreground/50 transition-smooth"
+            className="border-0 text-lg font-semibold bg-transparent px-0 h-auto placeholder:text-muted-foreground/50 transition-smooth focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           />
         </div>
         <div className="flex items-center gap-1">
@@ -430,7 +438,7 @@ export function EditorContent({ post }: EditorContentProps) {
             size="sm"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="text-muted-foreground hover:text-foreground transition-smooth hidden sm:inline-flex min-h-11"
+            className="text-muted-foreground hover:text-foreground transition-smooth inline-flex min-h-11"
           >
             {isUploading ? (
               <Loader2 className="size-4 ms-1.5 animate-spin" />
@@ -501,7 +509,7 @@ export function EditorContent({ post }: EditorContentProps) {
                       className="hidden"
                       onChange={handleCoverFileSelect}
                     />
-                    {coverImage ? (
+                    {coverImage && !coverImageError ? (
                       <div className="relative aspect-video overflow-hidden rounded-lg border border-border/50 bg-muted group">
                         <Image
                           src={coverImage}
@@ -510,9 +518,7 @@ export function EditorContent({ post }: EditorContentProps) {
                           sizes="(max-width: 640px) 100vw, 448px"
                           unoptimized
                           className="object-cover"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
+                          onError={() => setCoverImageError(true)}
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                           <Button
@@ -535,7 +541,10 @@ export function EditorContent({ post }: EditorContentProps) {
                             size="sm"
                             variant="destructive"
                             className="rounded-full"
-                            onClick={() => setCoverImage('')}
+                            onClick={() => {
+                              setCoverImage('');
+                              setCoverImageError(false);
+                            }}
                           >
                             <X className="size-3.5" />
                             إزالة
@@ -740,8 +749,8 @@ export function EditorContent({ post }: EditorContentProps) {
                     return;
                   }
                   if (btn.action === 'link') {
-                    const url = window.prompt('أدخل رابط URL:');
-                    if (url) ed.chain().focus().setLink({ href: url }).run();
+                    setLinkUrl(ed.getAttributes('link').href ?? '');
+                    setLinkDialogOpen(true);
                     return;
                   }
                   if (btn.action === 'undo') {
@@ -808,21 +817,23 @@ export function EditorContent({ post }: EditorContentProps) {
           });
           return elements;
         })()}
-        <div className="mr-auto flex items-center gap-2 text-xs text-muted-foreground/50">
+        <div className="me-auto flex items-center gap-2 text-xs text-muted-foreground/50">
           <kbd className="px-1.5 py-0.5 rounded bg-muted/50 text-[10px] font-mono">Ctrl+S</kbd>
           <span>حفظ</span>
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        <TiptapEditor
-          ref={editorRef}
-          initialContent={content}
-          onUpdate={setContent}
-          onImageUpload={handleImageUpload}
-          onStateChange={() => forceRender()}
-          className="flex-1"
-        />
+      <div className="flex flex-1 overflow-hidden px-4 md:px-8 lg:px-12">
+        <div className="flex-1 max-w-3xl mx-auto bg-background rounded-2xl shadow-xs border border-border/30 overflow-hidden my-4 md:my-6">
+          <TiptapEditor
+            ref={editorRef}
+            initialContent={content}
+            onUpdate={setContent}
+            onImageUpload={handleImageUpload}
+            onStateChange={() => forceRender()}
+            className="flex-1"
+          />
+        </div>
       </div>
 
       <div
@@ -908,6 +919,46 @@ export function EditorContent({ post }: EditorContentProps) {
         </div>
       </div>
 
+      {/* Link Dialog */}
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>إدراج رابط</DialogTitle>
+            <DialogDescription>أدخل رابط URL للرابط</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              value={linkUrl}
+              onChange={(e) => setLinkUrl(e.target.value)}
+              placeholder="https://..."
+              dir="ltr"
+              className="min-h-11"
+            />
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setLinkDialogOpen(false)}
+                className="rounded-full"
+              >
+                إلغاء
+              </Button>
+              <Button
+                onClick={() => {
+                  const ed = editorRef.current?.editor;
+                  if (ed && linkUrl) {
+                    ed.chain().focus().setLink({ href: linkUrl }).run();
+                  }
+                  setLinkDialogOpen(false);
+                }}
+                className="rounded-full"
+              >
+                إدراج
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Keyboard Shortcuts Dialog */}
       <Dialog open={shortcutsOpen} onOpenChange={setShortcutsOpen}>
         <DialogContent>
@@ -919,6 +970,11 @@ export function EditorContent({ post }: EditorContentProps) {
             {[
               { keys: 'Ctrl + S', label: 'حفظ المقال' },
               { keys: 'Ctrl + Enter', label: 'نشر المقال (للمسودَّات)' },
+              { keys: 'Ctrl + B', label: 'عريض' },
+              { keys: 'Ctrl + I', label: 'مائل' },
+              { keys: 'Ctrl + Z', label: 'تراجع' },
+              { keys: 'Ctrl + Shift + Z', label: 'إعادة' },
+              { keys: 'Ctrl + K', label: 'إدراج رابط' },
             ].map((shortcut) => (
               <div key={shortcut.keys} className="flex items-center justify-between py-1.5">
                 <span className="text-sm text-muted-foreground">{shortcut.label}</span>
@@ -962,7 +1018,7 @@ export function EditorContent({ post }: EditorContentProps) {
                   >
                     {check.label}
                     {check.optional && (
-                      <span className="text-xs text-muted-foreground/50 mr-1">(اختياري)</span>
+                      <span className="text-xs text-muted-foreground/50 ms-1">(اختياري)</span>
                     )}
                   </p>
                 </div>

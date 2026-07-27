@@ -17,8 +17,8 @@ describe('Services', () => {
 
   it('renders all service cards', () => {
     renderWithProviders(<Services />);
-    expect(screen.getAllByText('التَّدريب').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('الاستشارات').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('بناء مواقع إلكترونيَّة وتطبيقات').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('تدريب').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('استشارات').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('بناء').length).toBeGreaterThan(0);
   });
 });

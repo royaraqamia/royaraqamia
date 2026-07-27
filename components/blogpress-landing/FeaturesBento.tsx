@@ -100,7 +100,7 @@ function EditorPreview() {
           <span className="w-2.5 h-2.5 rounded-full bg-muted" />
           <span className="w-2.5 h-2.5 rounded-full bg-muted" />
         </div>
-        <span className="text-xs text-muted-foreground ml-auto">post.md</span>
+        <span className="text-xs text-muted-foreground me-auto">post.md</span>
         <span className="text-xs text-primary font-medium">● جاري التحرير</span>
       </div>
       <div className="space-y-1 font-mono text-xs">
@@ -115,9 +115,9 @@ function EditorPreview() {
             {line.startsWith('#') ? (
               <span className="text-primary font-bold">{line}</span>
             ) : line.startsWith('-') ? (
-              <span className="text-accent-teal">{line}</span>
+              <span className="text-accent-indigo">{line}</span>
             ) : line.startsWith('>') ? (
-              <span className="text-accent-orange italic">{line}</span>
+              <span className="text-accent-purple italic">{line}</span>
             ) : (
               <span className="text-muted-foreground">{line}</span>
             )}
@@ -129,8 +129,8 @@ function EditorPreview() {
 }
 
 const draftStats = [
-  { label: 'منشور', value: '24', color: 'text-accent-teal' },
-  { label: 'مسوَّدات', value: '7', color: 'text-accent-orange' },
+  { label: 'منشور', value: '24', color: 'text-accent-indigo' },
+  { label: 'مسوَّدات', value: '7', color: 'text-accent-purple' },
   { label: 'مجدول', value: '3', color: 'text-primary' },
 ];
 
@@ -189,7 +189,7 @@ function SEOPreview() {
     <div className="glass rounded-xl p-5">
       <div className="flex items-center justify-between mb-5">
         <span className="text-sm font-medium">قائمة تحسين محركات البحث</span>
-        <span className="text-sm font-bold text-accent-teal">80%</span>
+        <span className="text-sm font-bold text-accent-indigo">80%</span>
       </div>
       <div className="space-y-3">
         {seoChecks.map((item, i) => (
@@ -203,10 +203,12 @@ function SEOPreview() {
           >
             <div
               className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${
-                item.pass ? 'bg-success/20' : 'bg-warning/20'
+                item.pass ? 'bg-primary/20' : 'bg-primary/10'
               }`}
             >
-              <span className={`text-xs font-bold ${item.pass ? 'text-success' : 'text-warning'}`}>
+              <span
+                className={`text-xs font-bold ${item.pass ? 'text-primary' : 'text-primary/60'}`}
+              >
                 {item.pass ? '✓' : '!'}
               </span>
             </div>
@@ -221,7 +223,7 @@ function SEOPreview() {
             whileInView={{ width: '80%' }}
             viewport={{ once: true }}
             transition={{ delay: 0.8, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="h-full rounded-full bg-gradient-to-r from-primary/60 to-primary"
+            className="h-full rounded-full bg-linear-to-r from-primary/60 to-primary"
           />
         </div>
       </div>
@@ -268,7 +270,7 @@ export function FeaturesBento() {
             title="إدارة المسوَّدات"
             description="نظّم كتاباتك مع المسوَّدات وسير عمل النشر والتحكم الكامل بالإصدارات."
             icon={Note}
-            gradient="rgba(45,212,191,1)"
+            gradient="rgba(129,140,248,1)"
             className="lg:col-span-2"
             delay={0.2}
           >
@@ -279,7 +281,7 @@ export function FeaturesBento() {
             title="تحسين محركات البحث"
             description="أدوات SEO مدمجة تساعد محتواك في تحقيق ترتيب متقدّم والوصول لقرّاء أكثر."
             icon={MagnifyingGlass}
-            gradient="rgba(251,146,60,1)"
+            gradient="rgba(167,139,250,1)"
             className="lg:col-span-2"
             delay={0.3}
           >

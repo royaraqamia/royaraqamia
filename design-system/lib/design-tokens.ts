@@ -16,26 +16,26 @@ const bioColors = {
 
   // Semantic colors with high contrast
   secondary: {
-    900: '#7c3aed',
-    800: '#a855f7',
-    700: '#c084fc',
-    600: '#e879f9',
-    500: '#f0abfc',
-    400: '#f9a8d4',
-    300: '#fbcfe8',
-    200: '#fce7f3',
-    100: '#fdf2f8',
-    50: '#fff1f5',
+    900: '#4c1d95',
+    800: '#5b21b6',
+    700: '#6d28d9',
+    600: '#7c3aed',
+    500: '#8b5cf6',
+    400: '#a78bfa',
+    300: '#c4b5fd',
+    200: '#ddd6fe',
+    100: '#ede9fe',
+    50: '#f5f3ff',
   },
 
   // Accent colors for highlighting and CTAs
-  accent: { 500: '#10b981', 600: '#059669', 400: '#34d399', 700: '#047857', 300: '#6ee7b7' },
+  accent: { 500: '#8b5cf6', 600: '#7c3aed', 400: '#a78bfa', 700: '#6d28d9', 300: '#c4b5fd' },
 
   // Status colors with accessibility
-  success: { 500: '#10b981', 600: '#059669', 400: '#34d399' },
-  warning: { 500: '#f59e0b', 600: '#d97706', 400: '#fbbf24' },
+  success: { 500: '#8b5cf6', 600: '#7c3aed', 400: '#a78bfa' },
+  warning: { 500: '#7c3aed', 600: '#6d28d9', 400: '#c4b5fd' },
   error: { 500: '#ef4444', 600: '#dc2626', 400: '#f87171' },
-  info: { 500: '#3b82f6', 600: '#2563eb', 400: '#60a5fa' },
+  info: { 500: '#6366f1', 600: '#4f46e5', 400: '#818cf8' },
 };
 
 // Typography scale with perfect modular third and fluid typography
@@ -160,8 +160,8 @@ const shadows = {
 
   // Color specific
   primary: '0 4px 14px rgba(99, 102, 241, 0.25)',
-  success: '0 4px 14px rgba(16, 185, 129, 0.2)',
-  warning: '0 4px 14px rgba(245, 158, 11, 0.2)',
+  success: '0 4px 14px rgba(139, 92, 246, 0.2)',
+  warning: '0 4px 14px rgba(124, 58, 237, 0.2)',
   error: '0 4px 14px rgba(239, 68, 68, 0.2)',
 };
 

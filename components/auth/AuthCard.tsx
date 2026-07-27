@@ -14,7 +14,7 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
     <div className="relative w-full max-w-md">
       {/* Decorative gradient orbs */}
       <div className="absolute -top-20 -right-20 size-60 rounded-full bg-primary/20 blur-[100px] animate-float pointer-events-none" />
-      <div className="absolute -bottom-16 -left-16 size-48 rounded-full bg-accent-teal/15 blur-[80px] animate-float-delayed pointer-events-none" />
+      <div className="absolute -bottom-16 -left-16 size-48 rounded-full bg-accent-indigo/15 blur-[80px] animate-float-delayed pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 24 }}

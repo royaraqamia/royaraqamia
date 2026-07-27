@@ -102,7 +102,7 @@ export function Footer() {
             </button>
 
             {/* Tagline */}
-            <p className="text-sm text-gray-300 leading-relaxed max-w-md">
+            <p className="text-sm md:text-base text-gray-300 leading-relaxed max-w-md">
               شريكك الاستراتيجي للتَّحوُّل الرَّقمي
             </p>
             <p className="text-sm text-muted-foreground leading-relaxed max-w-md flex items-center justify-center gap-2 flex-wrap">

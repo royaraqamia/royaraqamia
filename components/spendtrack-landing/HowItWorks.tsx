@@ -48,7 +48,7 @@ export function HowItWorks() {
         </motion.div>
 
         <div className="relative">
-          <div className="hidden lg:block absolute top-1/2 left-[15%] right-[15%] h-0.5 bg-gradient-to-r from-primary/20 via-primary/40 to-primary/20 -translate-y-1/2" />
+          <div className="hidden lg:block absolute top-1/2 left-[15%] right-[15%] h-0.5 bg-linear-to-r from-primary/20 via-primary/40 to-primary/20 -translate-y-1/2" />
 
           <div className="grid lg:grid-cols-3 gap-12 lg:gap-8">
             {steps.map((step, i) => (
@@ -67,7 +67,7 @@ export function HowItWorks() {
                   transition={{ delay: i * 0.2 + 0.2, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
                   className="relative z-10 w-20 h-20 rounded-2xl bg-card border border-border/50 flex items-center justify-center mb-8 shadow-lg shadow-primary/5"
                 >
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-primary/10 to-transparent" />
+                  <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-primary/10 to-transparent" />
                   <step.icon size={32} className="text-primary relative z-10" />
                 </motion.div>
 

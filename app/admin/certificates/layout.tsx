@@ -22,7 +22,7 @@ export default async function AdminCertificatesLayout({ children }: { children: 
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col">
+    <div className="min-h-dvh bg-background text-foreground flex flex-col">
       <Navbar />
       <main id="main-content" className="flex-1 pt-24">
         <div className="container mx-auto max-w-6xl px-4 pb-8">

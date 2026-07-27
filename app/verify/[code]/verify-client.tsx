@@ -233,7 +233,7 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
           transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
         />
         <m.div
-          className="absolute top-1/3 right-1/3 h-64 w-64 rounded-full bg-green-500 opacity-[0.03] blur-3xl"
+          className="absolute top-1/3 right-1/3 h-64 w-64 rounded-full bg-purple-500 opacity-[0.03] blur-3xl"
           animate={{ scale: [1, 1.4, 1], opacity: [0.03, 0.06, 0.03] }}
           transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
         />
@@ -281,10 +281,10 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
                 </div>
 
                 {/* Decorative corners */}
-                <div className="pointer-events-none absolute top-0 left-0 size-16 border-t-2 border-l-2 border-primary/20 rounded-tl-xl" />
-                <div className="pointer-events-none absolute top-0 right-0 size-16 border-t-2 border-r-2 border-primary/20 rounded-tr-xl" />
-                <div className="pointer-events-none absolute bottom-0 left-0 size-16 border-b-2 border-l-2 border-primary/20 rounded-bl-xl" />
-                <div className="pointer-events-none absolute bottom-0 right-0 size-16 border-b-2 border-r-2 border-primary/20 rounded-br-xl" />
+                <div className="pointer-events-none absolute top-0 inset-s-0 size-16 border-t-2 border-s-2 border-primary/20 rounded-ss-xl" />
+                <div className="pointer-events-none absolute top-0 inset-e-0 size-16 border-t-2 border-e-2 border-primary/20 rounded-se-xl" />
+                <div className="pointer-events-none absolute bottom-0 inset-s-0 size-16 border-b-2 border-s-2 border-primary/20 rounded-es-xl" />
+                <div className="pointer-events-none absolute bottom-0 inset-e-0 size-16 border-b-2 border-e-2 border-primary/20 rounded-ee-xl" />
 
                 {/* Header */}
                 <m.div

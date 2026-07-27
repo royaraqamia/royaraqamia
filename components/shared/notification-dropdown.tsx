@@ -165,7 +165,12 @@ export function NotificationDropdown() {
                         </p>
                       </div>
                       {!notification.is_read && (
-                        <span className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                        <span
+                          className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0"
+                          role="status"
+                        >
+                          <span className="sr-only">غير مقروء</span>
+                        </span>
                       )}
                     </div>
                   </li>

@@ -69,38 +69,38 @@ export function WhyUs() {
       icon: Trophy,
       title: 'خبرة واسعة ومعتمدة',
       description: 'فريق من الخبراء مع سنوات من الخبرة في المجال الرَّقمي والتَّدريب التِّقني',
-      glowColor: 'rgba(99, 102, 241, 0.15)', // Indigo
+      glowColor: 'rgba(99, 102, 241, 0.15)',
     },
     {
       icon: TrendUp,
       title: 'نتائج قابلة للقياس',
       description: 'نركِّز على تحقيق نتائج ملموسة وقابلة للقياس تساهم في نمو أعمالك وتطوير مهاراتك',
-      glowColor: 'rgba(16, 185, 129, 0.15)', // Emerald
+      glowColor: 'rgba(139, 92, 246, 0.15)',
     },
     {
       icon: Clock,
       title: 'مرونة في المواعيد',
       description:
         'جداول زمنيَّة مرنة تتناسب مع احتياجاتك وأوقاتك مع إمكانيَّة الوصول على مدار السَّاعة',
-      glowColor: 'rgba(14, 165, 233, 0.15)', // Sky
+      glowColor: 'rgba(168, 85, 247, 0.15)',
     },
     {
       icon: Headphones,
       title: 'دعم فنِّي متواصل',
       description: 'فريق دعم متخصِّص متاح على مدار السَّاعة لمساعدتك في أي استفسار',
-      glowColor: 'rgba(249, 115, 22, 0.15)', // Orange
+      glowColor: 'rgba(129, 140, 248, 0.15)',
     },
     {
       icon: ShieldCheck,
       title: 'أمان وخصوصيَّة مضمونة',
       description: 'نلتزم بأعلى معايير الأمان والخصوصيَّة لحماية بياناتك ومعلوماتك',
-      glowColor: 'rgba(20, 184, 166, 0.15)', // Teal
+      glowColor: 'rgba(167, 139, 250, 0.15)',
     },
     {
       icon: Users,
       title: 'مجتمع نشط من المحترفين',
       description: 'انضم إلى شبكة واسعة من المحترفين والخبراء في مختلف المجالات التِّقنيَّة',
-      glowColor: 'rgba(139, 92, 246, 0.15)', // Violet
+      glowColor: 'rgba(99, 102, 241, 0.15)',
     },
   ];
 

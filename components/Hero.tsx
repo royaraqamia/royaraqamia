@@ -97,7 +97,7 @@ export function Hero() {
               {/* Main Headline */}
               <m.div variants={itemVariants} className="space-y-1 mt-1!">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight">
-                  <span className="block text-teal-300 mb-0.5 lg:mb-1">شريكك الاستراتيجي</span>
+                  <span className="block gradient-text mb-0.5 lg:mb-1">شريكك الاستراتيجي</span>
                   <span className="text-white drop-shadow-xl whitespace-normal lg:whitespace-nowrap wrap-break-word">
                     للتَّحوُّل الرَّقمي
                   </span>
@@ -115,10 +115,38 @@ export function Hero() {
                 والتَّطبيقات.
               </m.p>
 
-              {/* CTA Button - Optimized */}
+              {/* Social Proof Strip - Trust Signals */}
               <m.div
                 variants={itemVariants}
-                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-2 items-center w-full sm:w-auto"
+                className="flex flex-wrap items-center justify-center lg:justify-start gap-6 pt-2"
+              >
+                <div className="flex items-center gap-3 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+                  <div className="flex -space-x-2 rtl:space-x-reverse">
+                    {[1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="w-7 h-7 rounded-full bg-linear-to-br from-indigo-400 to-purple-600 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white"
+                      >
+                        {['أ', 'ز', 'ك'][i - 1]}
+                      </div>
+                    ))}
+                  </div>
+                  <span className="text-xs sm:text-sm text-slate-300">
+                    ثقة <span className="font-bold text-white">30+</span> شخص
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-slate-300">
+                  <span className="text-purple-400">★★★★★</span>
+                  <span className="text-xs sm:text-sm">
+                    <span className="font-bold text-white">4.9</span>/5
+                  </span>
+                </div>
+              </m.div>
+
+              {/* CTA Buttons */}
+              <m.div
+                variants={itemVariants}
+                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4 items-center w-full sm:w-auto"
               >
                 <a
                   href={getWhatsAppUrl()}
@@ -134,12 +162,19 @@ export function Hero() {
                   <div className="absolute -inset-1 rounded-full bg-primary-600/40 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                   <span className="relative z-10 flex items-center gap-3">
-                    تواصل معنا الآن
+                    تواصل معنا
                     <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                   </span>
 
                   {/* Shine element */}
                   <span className="shine-element absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-12" />
+                </a>
+
+                <a
+                  href="#portfolio"
+                  className="group relative h-14 px-8 rounded-full border border-white/20 bg-white/5 text-white text-lg font-bold backdrop-blur-sm transition-all duration-300 hover:bg-white/10 hover:border-white/30 flex items-center gap-3 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  نبذة عن أعمالنا
                 </a>
               </m.div>
             </div>

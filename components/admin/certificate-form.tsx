@@ -96,7 +96,7 @@ export function CertificateForm({ mode, initialData, onSubmit }: CertificateForm
       <div className="space-y-6">
         {/* Header Card */}
         <Card className="glass-card overflow-hidden border-primary/10">
-          <CardHeader className="border-b border-primary/10 bg-gradient-to-l from-primary/5 to-transparent">
+          <CardHeader className="border-b border-primary/10 bg-linear-to-l from-primary/5 to-transparent">
             <CardTitle className="flex items-center gap-3 text-lg">
               {mode === 'create' ? (
                 <>

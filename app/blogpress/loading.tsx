@@ -31,7 +31,7 @@ export default function DashboardLoading() {
             <Skeleton key={i} className="h-9 w-16 rounded-lg" />
           ))}
         </div>
-        <Skeleton className="sm:mr-auto h-9 w-[200px] rounded-lg" />
+        <Skeleton className="sm:ms-auto h-9 w-[200px] rounded-lg" />
       </div>
 
       <div className="divide-y divide-border/50">

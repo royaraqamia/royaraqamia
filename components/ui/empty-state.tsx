@@ -14,13 +14,13 @@ function EmptyState({ className, title, description, action, ...props }: EmptySt
         'flex flex-col items-center justify-center py-20 px-6 text-center',
         'bg-card/50 backdrop-blur-sm rounded-2xl border border-border/30',
         'shadow-sm hover:shadow-lg transition-all duration-300',
-        'min-h-[400px]',
+        'min-h-100',
         className
       )}
       {...props}
     >
       <div className="relative mb-8">
-        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-muted/40 to-muted/20 flex items-center justify-center">
+        <div className="w-28 h-28 rounded-full bg-linear-to-br from-muted/40 to-muted/20 flex items-center justify-center">
           <svg
             className="w-14 h-14 text-muted-foreground/60"
             fill="none"
@@ -41,7 +41,7 @@ function EmptyState({ className, title, description, action, ...props }: EmptySt
             />
           </svg>
         </div>
-        <div className="absolute -inset-2 bg-gradient-to-r from-transparent via-primary/10 to-transparent rounded-full blur-md" />
+        <div className="absolute -inset-2 bg-linear-to-r from-transparent via-primary/10 to-transparent rounded-full blur-md" />
       </div>
 
       <h3 className="text-2xl font-semibold text-foreground mb-3">{title || 'لا توجد بيانات'}</h3>

@@ -30,7 +30,7 @@ export function UserDropdown() {
   if (isLoading) {
     return (
       <div className="p-2">
-        <div className="size-[22px] rounded-full bg-muted animate-pulse" />
+        <div className="size-5.5 rounded-full bg-muted animate-pulse" />
       </div>
     );
   }

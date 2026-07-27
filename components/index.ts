@@ -2,6 +2,7 @@ export { Footer } from './Footer';
 export { Navbar } from './Navbar';
 export { Hero } from './Hero';
 export { HeroVisual } from './HeroVisual';
+export { Process } from './Process';
 export { Services } from './Services';
 export { Portfolio } from './Portfolio';
 export { Testimonials } from './Testimonials';

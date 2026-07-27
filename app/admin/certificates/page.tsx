@@ -246,7 +246,7 @@ export default function CertificatesListPage() {
                             variant={isExpired ? 'destructive' : 'default'}
                             className="shrink-0 text-xs"
                           >
-                            <span className="relative flex size-1.5 ml-1.5">
+                            <span className="relative flex size-1.5 ms-1.5">
                               {!isExpired && (
                                 <span className="absolute inline-flex size-full animate-ping rounded-full bg-current opacity-75" />
                               )}

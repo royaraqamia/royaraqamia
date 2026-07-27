@@ -20,10 +20,10 @@ function GlowOrb({
 }
 
 const transactions = [
-  { desc: 'بقالة', amount: '-$84.50', cat: 'طعام', color: 'text-accent-orange' },
-  { desc: 'راتب', amount: '+$3,200', cat: 'دخل', color: 'text-success' },
+  { desc: 'بقالة', amount: '-$84.50', cat: 'طعام', color: 'text-accent-purple' },
+  { desc: 'راتب', amount: '+$3,200', cat: 'دخل', color: 'text-primary' },
   { desc: 'نتفلكس', amount: '-$15.99', cat: 'ترفيه', color: 'text-primary' },
-  { desc: 'وقود', amount: '-$42.00', cat: 'مواصلات', color: 'text-accent-teal' },
+  { desc: 'وقود', amount: '-$42.00', cat: 'مواصلات', color: 'text-accent-indigo' },
 ];
 
 export function Hero() {
@@ -39,10 +39,10 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden">
       <GlowOrb className="w-96 h-96 bg-primary/20 top-1/4 -right-48 animate-pulse-slow" />
       <GlowOrb
-        className="w-80 h-80 bg-accent-teal/10 bottom-1/4 -left-40 animate-pulse-slow"
+        className="w-80 h-80 bg-accent-indigo/10 bottom-1/4 -left-40 animate-pulse-slow"
         style={{ animationDelay: '2s' }}
       />
 
@@ -127,7 +127,7 @@ export function Hero() {
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
                   <div className="w-3 h-3 rounded-full bg-green-500" />
-                  <div className="mr-auto text-xs text-muted-foreground">spendtrack.app</div>
+                  <div className="ms-auto text-xs text-muted-foreground">spendtrack.app</div>
                 </div>
 
                 <div className="flex items-center justify-between mb-6">
@@ -165,10 +165,10 @@ export function Hero() {
                   className="mt-5 pt-4 border-t border-border/50 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-success" />
+                    <div className="w-2 h-2 rounded-full bg-primary" />
                     <span className="text-sm text-muted-foreground">الميزانية الشهرية</span>
                   </div>
-                  <span className="text-sm font-bold text-accent-teal">مُستهلَك 68%</span>
+                  <span className="text-sm font-bold text-primary">مُستهلَك 68%</span>
                 </motion.div>
               </motion.div>
             </div>
