@@ -1,7 +1,7 @@
 function stripMarkdown(text: string): string {
   const sanitizeOnce = (value: string): string =>
     value
-      .replace(/<[^>]*>/g, '')
+      .replace(/[<>]/g, ' ')
       .replace(/```[\s\S]*?```/g, ' ')
       .replace(/!\[.*?\]\(.*?\)/g, ' ')
       .replace(/\[([^\]]*)\]\(.*?\)/g, ' ')
@@ -14,7 +14,7 @@ function stripMarkdown(text: string): string {
       .replace(/^[-*+]\s+/gm, ' ')
       .replace(/^\d+\.\s+/gm, ' ')
       .replace(/^[-*_]{3,}\s*$/gm, ' ')
-      .replace(/[|<>]/g, ' ')
+      .replace(/[|]/g, ' ')
       .replace(/\s{2,}/g, ' ')
       .trim();
 
