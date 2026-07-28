@@ -1616,6 +1616,14 @@
   background: hsl(var(--border));
 }
 
+/* Touch action utilities for gesture handling */
+.touch-action-manipulation {
+  touch-action: manipulation;
+}
+.touch-action-none {
+  touch-action: none;
+}
+
 /* Custom Scrollbar Styling */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;

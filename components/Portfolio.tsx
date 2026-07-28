@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, Key, useState, useEffect } from 'react';
+import { memo, Key, useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { motion, useScroll, useSpring, useReducedMotion, LayoutGroup } from 'motion/react';
 import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
@@ -142,11 +142,30 @@ export const Portfolio = memo(function Portfolio() {
   const [imageError, setImageError] = useState<Set<number>>(new Set());
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
+  const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
+  const [galleryImageError, setGalleryImageError] = useState(false);
+  const imageContainerRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{
+    x: number;
+    y: number;
+    time: number;
+    baseX: number;
+    baseY: number;
+  } | null>(null);
+  const lastTapRef = useRef<number>(0);
+  const pinchRef = useRef<{ dist: number; scale: number } | null>(null);
   const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     setGalleryIndex(0);
+    setZoom({ scale: 1, x: 0, y: 0 });
+    setGalleryImageError(false);
   }, [selectedProject]);
+
+  useEffect(() => {
+    setZoom({ scale: 1, x: 0, y: 0 });
+    setGalleryImageError(false);
+  }, [galleryIndex]);
 
   // Elite Detail: Scroll Progress Bar linked to the horizontal container
   const { scrollXProgress } = useScroll({ container: scrollContainerRef });
@@ -439,21 +458,171 @@ export const Portfolio = memo(function Portfolio() {
                 const goToNext = () =>
                   setGalleryIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
 
+                const zoomed = zoom.scale > 1;
+
+                const handleTouchStart = (e: React.TouchEvent) => {
+                  if (e.touches.length === 1) {
+                    const t = e.touches[0]!;
+                    touchStartRef.current = {
+                      x: t.clientX,
+                      y: t.clientY,
+                      time: Date.now(),
+                      baseX: zoom.x,
+                      baseY: zoom.y,
+                    };
+                  } else if (e.touches.length === 2 && zoomed) {
+                    const t0 = e.touches[0]!;
+                    const t1 = e.touches[1]!;
+                    const dx = t0.clientX - t1.clientX;
+                    const dy = t0.clientY - t1.clientY;
+                    pinchRef.current = {
+                      dist: Math.sqrt(dx * dx + dy * dy),
+                      scale: zoom.scale,
+                    };
+                  }
+                };
+
+                const handleTouchMove = (e: React.TouchEvent) => {
+                  if (e.touches.length === 2 && pinchRef.current && zoomed) {
+                    e.preventDefault();
+                    const t0 = e.touches[0]!;
+                    const t1 = e.touches[1]!;
+                    const dx = t0.clientX - t1.clientX;
+                    const dy = t0.clientY - t1.clientY;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    const newScale = Math.max(
+                      1,
+                      Math.min(5, pinchRef.current.scale * (dist / pinchRef.current.dist))
+                    );
+                    setZoom((prev) => ({ ...prev, scale: newScale }));
+                  } else if (e.touches.length === 1 && touchStartRef.current && zoomed) {
+                    const ts = touchStartRef.current;
+                    const t = e.touches[0]!;
+                    const dx = t.clientX - ts.x;
+                    const dy = t.clientY - ts.y;
+                    setZoom((prev) => ({
+                      ...prev,
+                      x: ts.baseX + dx,
+                      y: ts.baseY + dy,
+                    }));
+                  }
+                };
+
+                const handleTouchEnd = (e: React.TouchEvent) => {
+                  if (e.changedTouches.length === 1 && touchStartRef.current) {
+                    const ct = e.changedTouches[0]!;
+                    const dx = ct.clientX - touchStartRef.current.x;
+                    const dy = ct.clientY - touchStartRef.current.y;
+                    const dt = Date.now() - touchStartRef.current.time;
+                    const absDx = Math.abs(dx);
+                    const absDy = Math.abs(dy);
+
+                    if (!zoomed && absDx > 50 && absDx > absDy * 2) {
+                      if (dx < 0) goToNext();
+                      else goToPrev();
+                      touchStartRef.current = null;
+                      pinchRef.current = null;
+                      return;
+                    }
+
+                    if (absDx < 10 && absDy < 10 && dt < 300) {
+                      const now = Date.now();
+                      if (now - lastTapRef.current < 300 && now - lastTapRef.current > 50) {
+                        setZoom((prev) =>
+                          prev.scale > 1 ? { scale: 1, x: 0, y: 0 } : { scale: 2.5, x: 0, y: 0 }
+                        );
+                        lastTapRef.current = 0;
+                        touchStartRef.current = null;
+                        pinchRef.current = null;
+                        return;
+                      }
+                      lastTapRef.current = now;
+                    }
+                  }
+                  touchStartRef.current = null;
+                  pinchRef.current = null;
+                };
+
                 return (
                   <div className="flex flex-col h-full max-md:h-dvh">
-                    <motion.div className="flex-1 min-h-0 flex items-center justify-center bg-linear-to-b from-purple-900/10 via-black/20 to-black/40 p-4 sm:p-8 relative overflow-hidden">
+                    <div
+                      ref={imageContainerRef}
+                      className={`flex-1 min-h-0 flex items-center justify-center bg-linear-to-b from-purple-900/10 via-black/20 to-black/40 p-4 sm:p-8 relative ${
+                        zoomed
+                          ? 'overflow-auto touch-action-none'
+                          : 'overflow-hidden touch-action-manipulation'
+                      }`}
+                      onTouchStart={handleTouchStart}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                    >
                       <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.08)_0,transparent_70%)] pointer-events-none" />
-                      <Image
-                        key={galleryIndex}
-                        src={currentImage.webp}
-                        alt={project.title}
-                        width={1600}
-                        height={1152}
-                        unoptimized
-                        className="max-h-full max-w-full object-contain w-auto h-auto rounded-2xl shadow-2xl relative z-10"
-                        sizes="(max-width: 768px) 100vw, 900px"
-                      />
-                      {hasMultipleImages && (
+                      {galleryImageError ? (
+                        <div className="flex flex-col items-center justify-center text-slate-500 z-10 gap-3">
+                          <svg
+                            className="w-16 h-16 opacity-40"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={1}
+                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span className="text-sm">تعذر تحميل الصورة</span>
+                        </div>
+                      ) : (
+                        <Image
+                          key={galleryIndex}
+                          src={currentImage.webp}
+                          alt={project.title}
+                          width={1600}
+                          height={1152}
+                          unoptimized
+                          className={`rounded-2xl shadow-2xl relative z-10 select-none ${
+                            zoomed
+                              ? 'max-w-none max-h-none'
+                              : 'max-h-full max-w-full object-contain w-auto h-auto'
+                          }`}
+                          style={
+                            zoomed
+                              ? {
+                                  transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`,
+                                  transformOrigin: 'center center',
+                                }
+                              : undefined
+                          }
+                          draggable={false}
+                          onError={() => setGalleryImageError(true)}
+                          sizes="(max-width: 768px) 100vw, 900px"
+                        />
+                      )}
+                      {zoomed && (
+                        <button
+                          onClick={() => setZoom({ scale: 1, x: 0, y: 0 })}
+                          className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-purple-600/70 transition-all duration-300"
+                          aria-label="إعادة تعيين التكبير"
+                          type="button"
+                        >
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      )}
+                      {hasMultipleImages && !zoomed && (
                         <>
                           <button
                             onClick={goToPrev}
@@ -512,7 +681,7 @@ export const Portfolio = memo(function Portfolio() {
                           </div>
                         </>
                       )}
-                    </motion.div>
+                    </div>
                     <div className="p-6 sm:p-8 pt-5 sm:pt-6 shrink-0 bg-[#080c16] border-t border-white/10">
                       <div className="flex items-center gap-3 mb-3">
                         <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">
