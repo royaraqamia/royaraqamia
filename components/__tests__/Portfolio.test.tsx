@@ -4,7 +4,7 @@ import { Portfolio } from '../Portfolio';
 
 vi.mock('../../hooks/useHorizontalScroll', () => ({
   useHorizontalScroll: () => ({
-    scrollContainerRef: { current: null },
+    scrollContainerRef: { current: document.createElement('div') },
     canScrollLeft: false,
     canScrollRight: false,
     scroll: () => {},

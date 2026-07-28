@@ -154,6 +154,8 @@ export const Portfolio = memo(function Portfolio() {
   } | null>(null);
   const lastTapRef = useRef<number>(0);
   const pinchRef = useRef<{ dist: number; scale: number } | null>(null);
+  const pinchRAFRef = useRef<number | null>(null);
+  const pinchScaleRef = useRef(1);
   const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -494,7 +496,13 @@ export const Portfolio = memo(function Portfolio() {
                       1,
                       Math.min(5, pinchRef.current.scale * (dist / pinchRef.current.dist))
                     );
-                    setZoom((prev) => ({ ...prev, scale: newScale }));
+                    pinchScaleRef.current = newScale;
+                    if (pinchRAFRef.current === null) {
+                      pinchRAFRef.current = requestAnimationFrame(() => {
+                        pinchRAFRef.current = null;
+                        setZoom((prev) => ({ ...prev, scale: pinchScaleRef.current }));
+                      });
+                    }
                   } else if (e.touches.length === 1 && touchStartRef.current && zoomed) {
                     const ts = touchStartRef.current;
                     const t = e.touches[0]!;
@@ -538,6 +546,11 @@ export const Portfolio = memo(function Portfolio() {
                       }
                       lastTapRef.current = now;
                     }
+                  }
+                  if (pinchRAFRef.current !== null) {
+                    cancelAnimationFrame(pinchRAFRef.current);
+                    pinchRAFRef.current = null;
+                    setZoom((prev) => ({ ...prev, scale: pinchScaleRef.current }));
                   }
                   touchStartRef.current = null;
                   pinchRef.current = null;
