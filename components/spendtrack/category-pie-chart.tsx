@@ -37,7 +37,7 @@ function CustomTooltip({
         <span className="text-sm font-medium">{item.name}</span>
       </div>
       <p className="text-sm text-muted-foreground mt-1">
-        {Number(item.value).toLocaleString('ar-SA')} ل.س
+        {Number(item.value).toLocaleString('ar-SA-u-nu-latn')} ل.س
       </p>
     </div>
   );
@@ -160,7 +160,7 @@ export function CategoryPieChart({ data }: { data: CategorySpending[] }) {
                       ? 2
                       : 0
                   }
-                  aria-label={`${entry.name}: ${Number(entry.total).toLocaleString('ar-SA')} ل.س`}
+                  aria-label={`${entry.name}: ${Number(entry.total).toLocaleString('ar-SA-u-nu-latn')} ل.س`}
                 />
               ))}
             </Pie>
@@ -172,7 +172,7 @@ export function CategoryPieChart({ data }: { data: CategorySpending[] }) {
       <div className="sr-only" role="list" aria-label="التصنيفات">
         {data.map((entry, index) => (
           <div key={index} role="listitem">
-            {entry.name}: {Number(entry.total).toLocaleString('ar-SA')} ل.س
+            {entry.name}: {Number(entry.total).toLocaleString('ar-SA-u-nu-latn')} ل.س
           </div>
         ))}
       </div>

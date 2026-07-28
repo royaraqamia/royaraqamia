@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'سياسة الخصوصيَّة',
@@ -34,7 +34,7 @@ export default function PrivacyPage() {
 
       <div className="space-y-8 text-base leading-relaxed text-foreground/90">
         <section>
-          <h2 className="mb-3 text-xl font-bold">١. المُقدِّمة</h2>
+          <h2 className="mb-3 text-xl font-bold">. المُقدِّمة</h2>
           <p>
             مرحبًا بك في منصَّة <strong>رؤية رقمية</strong> (&quot;نحن&quot; أو
             &quot;المُشغِّل&quot;). نُقدِّر ثقتك بنا. تشرح هذه السِّياسة كيفيَّة جمع معلوماتك
@@ -43,7 +43,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٢. المعلومات التي نجمعها</h2>
+          <h2 className="mb-3 text-xl font-bold">. المعلومات التي نجمعها</h2>
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">أ) معلومات التسجيل والدُّخول</h3>
             <p>عند إنشاء حساب أو تسجيل الدُّخول، نجمع:</p>
@@ -80,7 +80,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٣. كيفيَّة استخدام معلوماتك</h2>
+          <h2 className="mb-3 text-xl font-bold">. كيفيَّة استخدام معلوماتك</h2>
           <p>نستخدم المعلومات التي نجمعها للأغراض التالية:</p>
           <ul className="list-disc space-y-1 pr-6">
             <li>توفير وتشغيل خدماتنا (الدورات التدريبيَّة، الشَّهادات، التطبيقات)</li>
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٤. مشاركة المعلومات مع أطراف ثالثة</h2>
+          <h2 className="mb-3 text-xl font-bold">. مشاركة المعلومات مع أطراف ثالثة</h2>
           <p>
             نحن لا نبيع معلوماتك الشخصيَّة لأي طرف ثالث. قد نشارك معلوماتك فقط في الحالات التالية:
           </p>
@@ -111,7 +111,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٥. الأمان والخزّن</h2>
+          <h2 className="mb-3 text-xl font-bold">. الأمان والخزّن</h2>
           <ul className="list-disc space-y-1 pr-6">
             <li>
               نتَّبع إجراءات أمنيَّة معقولة لحماية معلوماتك من الوصول غير المصرَّح به أو استخدامها
@@ -129,7 +129,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٦. حقوقك</h2>
+          <h2 className="mb-3 text-xl font-bold">. حقوقك</h2>
           <p>لك حقوق فيما يتعلق بمعلوماتك الشخصيَّة:</p>
           <ul className="list-disc space-y-1 pr-6">
             <li>
@@ -158,7 +158,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٧. ملفات تعريف ارتباط (Cookies)</h2>
+          <h2 className="mb-3 text-xl font-bold">. ملفات تعريف ارتباط (Cookies)</h2>
           <p>
             نستخدم ملفات تعريف ارتباط الضروريَّة لتشغيل الموقع وتأمين الجلسات. لا نستخدم ملفات تعريف
             ارتباط التتبُّع لأغراض تحليليَّة أو تسويقيَّة.
@@ -166,7 +166,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٨. خصوصيَّة الأحداث</h2>
+          <h2 className="mb-3 text-xl font-bold">. خصوصيَّة الأحداث</h2>
           <p>
             قد تتم معالجة بعض بياناتك من خلال خدمات مُزوِّدين مثل Vercel Analytics وSentry لتحسين
             أداء الموقع واكتشاف الأخطاء. تُعالج هذه البيانات بشكل مُجمَّع وغير مُحدَّد الهويَّة.
@@ -174,15 +174,15 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٩. الأطفال</h2>
+          <h2 className="mb-3 text-xl font-bold">. الأطفال</h2>
           <p>
-            خدماتنا غير مُوجَّهة لأقل من ١٣ عامًا. لا نجمع عن عمد معلومات شخصيَّة من الأطفال. إذا
-            علمنا أننا جمعنا معلومات من طفل دون ١٣ عامًا، سنقوم بمحو هذه المعلومات فورًا.
+            خدماتنا غير مُوجَّهة لأقل من عامًا. لا نجمع عن عمد معلومات شخصيَّة من الأطفال. إذا علمنا
+            أننا جمعنا معلومات من طفل دون عامًا، سنقوم بمحو هذه المعلومات فورًا.
           </p>
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">١٠. التغييرات على هذه السِّياسة</h2>
+          <h2 className="mb-3 text-xl font-bold">. التغييرات على هذه السِّياسة</h2>
           <p>
             قد نُحدِّث هذه السِّياسة من وقت لآخر. سنُعلن عن أي تغييرات جوهريَّة عبر الموقع أو عبر
             البريد الإلكتروني. نُشجِّعك على مراجعة هذه السِّياسة بانتظام.
@@ -190,7 +190,7 @@ export default function PrivacyPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">١١. التواصل معنا</h2>
+          <h2 className="mb-3 text-xl font-bold">. التواصل معنا</h2>
           <p>لأي استفسارات أو طلبات تتعلق بسِياسة الخُصوصيَّة هذه، يُرجى التواصل عبر:</p>
           <ul className="list-disc space-y-1 pr-6">
             <li>

@@ -83,6 +83,7 @@ async function TotalCard({
             month: 'long',
             day: 'numeric',
             calendar: 'islamic-umalqura',
+            numberingSystem: 'latn',
           }).format(new Date(start))}{' '}
           إلى{' '}
           {new Intl.DateTimeFormat('ar-SA', {
@@ -90,6 +91,7 @@ async function TotalCard({
             month: 'long',
             day: 'numeric',
             calendar: 'islamic-umalqura',
+            numberingSystem: 'latn',
           }).format(new Date(end))}
         </p>
       </CardContent>

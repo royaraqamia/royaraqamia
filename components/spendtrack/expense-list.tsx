@@ -131,6 +131,7 @@ function ExpenseRow({
     month: 'long',
     day: 'numeric',
     calendar: 'islamic-umalqura',
+    numberingSystem: 'latn',
   }).format(parseISO(expense.date));
   const rowLabel = `${expense.description || 'بدون وصف'}، ${Number(expense.amount).toFixed(2)} دولار، ${formattedDate}`;
 

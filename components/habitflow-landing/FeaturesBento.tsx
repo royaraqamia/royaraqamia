@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useRef, useState, useCallback } from 'react';
 import { motion } from 'motion/react';
@@ -126,7 +126,7 @@ function HabitTracker() {
   );
 }
 
-const weekLabels = ['الأسبوع ١', 'الأسبوع ٢', 'الأسبوع ٣', 'الأسبوع ٤'];
+const weekLabels = ['الأسبوع ', 'الأسبوع ', 'الأسبوع ', 'الأسبوع '];
 const streakData = [5, 7, 4, 6];
 
 function StreakCalendar() {

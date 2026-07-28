@@ -137,7 +137,7 @@ export function LinkAnalyticsDrawer({
                                 : 'متصفح غير معروف'}
                             </span>
                             <span className="font-mono text-muted-foreground">
-                              {new Date(click.clickedAt).toLocaleTimeString('ar-EG', {
+                              {new Date(click.clickedAt).toLocaleTimeString('ar-EG-u-nu-latn', {
                                 hour: '2-digit',
                                 minute: '2-digit',
                               })}

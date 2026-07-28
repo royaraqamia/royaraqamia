@@ -139,6 +139,7 @@ export function LinkRowCard({
                   day: 'numeric',
                   year: 'numeric',
                   calendar: 'islamic-umalqura',
+                  numberingSystem: 'latn',
                 }).format(new Date(createdAt))}
               </span>
               {isBlocked && (

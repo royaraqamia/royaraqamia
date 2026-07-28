@@ -224,6 +224,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                       month: 'long',
                       day: 'numeric',
                       calendar: 'islamic-umalqura',
+                      numberingSystem: 'latn',
                     }).format(new Date(p.published_at))}
                   </span>
                 )}

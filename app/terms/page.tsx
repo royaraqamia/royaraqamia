@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+﻿import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: 'شروط الاستخدام',
@@ -34,7 +34,7 @@ export default function TermsPage() {
 
       <div className="space-y-8 text-base leading-relaxed text-foreground/90">
         <section>
-          <h2 className="mb-3 text-xl font-bold">١. المُقدِّمة</h2>
+          <h2 className="mb-3 text-xl font-bold">. المُقدِّمة</h2>
           <p>
             مرحبًا بك في منصَّة <strong>رؤية رقمية</strong> (&quot;نحن&quot; أو
             &quot;المُشغِّل&quot;). باستخدامك لمواقعنا وخدماتنا، فإنك توافق على الالتزام بهذه
@@ -43,7 +43,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٢. وصف الخدمات</h2>
+          <h2 className="mb-3 text-xl font-bold">. وصف الخدمات</h2>
           <p>
             تُقدِّم رؤية رقمية منصَّة تعليميَّة إلكترونيَّة تشمل الدورات التدريبيَّة والشهادات
             المعتمدة في مجالات تطوير المواقع والتصميم والتسويق الرقمي. كما نُقدِّم أدوات وتطبيقات
@@ -66,11 +66,11 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٣. الحساب والمُصادقة</h2>
+          <h2 className="mb-3 text-xl font-bold">. الحساب والمُصادقة</h2>
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">أ) إنشاء الحساب</h3>
             <ul className="list-disc space-y-1 pr-6">
-              <li>يجب أن يكون عمرك ١٣ عامًا على الأقل لإنشاء حساب.</li>
+              <li>يجب أن يكون عمرك عامًا على الأقل لإنشاء حساب.</li>
               <li>يجب تقديم معلومات دقيقة ومُحدَّثة أثناء التسجيل.</li>
               <li>أنت مسؤول عن الحفاظ على سرّيَّة كلمة المرور الخاصة بك.</li>
               <li>أنت مسؤول عن جميع الأنشطة التي تتم تحت حسابك.</li>
@@ -86,13 +86,13 @@ export default function TermsPage() {
             <h3 className="text-lg font-semibold">ج) إلغاء الحساب</h3>
             <p>
               يمكنك طلب إلغاء حسابك في أي وقت عن طريق التواصل معنا عبر البريد الإلكتروني. سنقوم
-              بمعالجة طلبك خلال ٣٠ يومًا.
+              بمعالجة طلبك خلال يومًا.
             </p>
           </div>
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٤. استخدام الخدمات</h2>
+          <h2 className="mb-3 text-xl font-bold">. استخدام الخدمات</h2>
           <p>يُحظر عليك عند استخدام خدماتنا:</p>
           <ul className="list-disc space-y-1 pr-6">
             <li>انتهاك القوانين أو اللوائح المعمول بها</li>
@@ -106,7 +106,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٥. المحتوى والملكية الفكريَّة</h2>
+          <h2 className="mb-3 text-xl font-bold">. المحتوى والملكية الفكريَّة</h2>
           <div className="space-y-3">
             <h3 className="text-lg font-semibold">أ) محتوانا</h3>
             <p>
@@ -124,7 +124,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٦. الدفع والاسترداد</h2>
+          <h2 className="mb-3 text-xl font-bold">. الدفع والاسترداد</h2>
           <ul className="list-disc space-y-1 pr-6">
             <li>بعض الخدمات قد تتطلّب أجرًا. تُوضَّح الأسعار بوضوح قبل إتمام أي عملية شراء.</li>
             <li>في حالة وجود سياسة استرداد محددة لدورة أو خدمة معينة، ستُعرض عند الشراء.</li>
@@ -133,7 +133,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٧. إخلاء المسؤوليَّة</h2>
+          <h2 className="mb-3 text-xl font-bold">. إخلاء المسؤوليَّة</h2>
           <ul className="list-disc space-y-1 pr-6">
             <li>
               تُقدَّم الخدمات &quot;كما هي&quot; و&quot;كما هي متاحة&quot; دون ضمانات صريحة أو
@@ -145,14 +145,14 @@ export default function TermsPage() {
               الخدمات.
             </li>
             <li>
-              مسؤوليَّتنا الإجماليَّة لن تتجاوز المبالغ التي دفعتها فعليًا لنا خلال الاثني عشر (١٢)
+              مسؤوليَّتنا الإجماليَّة لن تتجاوز المبالغ التي دفعتها فعليًا لنا خلال الاثني عشر ()
               شهرًا السابقة للحدث المُسبِّب للمسؤوليَّة.
             </li>
           </ul>
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٨. تعديلات الشُروط</h2>
+          <h2 className="mb-3 text-xl font-bold">. تعديلات الشُروط</h2>
           <p>
             نحتفظ بحق تعديل هذه الشُروط في أي وقت. سنُعلن عن التعديلات الجوهرية عبر الموقع أو عبر
             البريد الإلكتروني. استمرارك في استخدام الخدمات بعد أي تعديلات يُشكِّل قبولًا لها.
@@ -160,7 +160,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">٩. الإنهاء</h2>
+          <h2 className="mb-3 text-xl font-bold">. الإنهاء</h2>
           <p>
             يمكننا تعليق أو إنهاء حسابك أو وصولك إلى الخدمات في أي وقت، سواء بسبب انتهاك هذه الشُروط
             أو لأي سبب آخر، مع أو بدون إخطار مسبق.
@@ -168,7 +168,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">١٠. القانون الحاكم</h2>
+          <h2 className="mb-3 text-xl font-bold">. القانون الحاكم</h2>
           <p>
             تخضع هذه الشُروط لقوانين الجمهوريَّة العربيَّة السورية. أي نزاعات ناشئة عن هذه الشُروط
             أو استخدام الخدمات تخضع للاختصاص القضائي الحصري لمحاكم حلب، سوريا.
@@ -176,7 +176,7 @@ export default function TermsPage() {
         </section>
 
         <section>
-          <h2 className="mb-3 text-xl font-bold">١١. التواصل معنا</h2>
+          <h2 className="mb-3 text-xl font-bold">. التواصل معنا</h2>
           <p>لأي استفسارات أو طلبات تتعلق بشُروط الاستخدام هذه، يُرجى التواصل عبر:</p>
           <ul className="list-disc space-y-1 pr-6">
             <li>

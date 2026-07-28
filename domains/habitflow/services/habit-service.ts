@@ -198,7 +198,7 @@ export class HabitService {
       const dStr = d.toISOString().split('T')[0]!;
       grid.push({
         date: dStr,
-        dayLabel: d.toLocaleDateString('ar-SA', { weekday: 'short' }),
+        dayLabel: d.toLocaleDateString('ar-SA-u-nu-latn', { weekday: 'short' }),
         isToday: dStr === todayStr,
       });
     }

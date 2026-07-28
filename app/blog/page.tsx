@@ -186,6 +186,7 @@ export default async function BlogPage(props: {
                             month: 'long',
                             day: 'numeric',
                             calendar: 'islamic-umalqura',
+                            numberingSystem: 'latn',
                           }).format(new Date(post.published_at))}
                         </time>
                       )}

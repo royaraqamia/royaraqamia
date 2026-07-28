@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useTransition } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
@@ -189,7 +189,7 @@ export function DashboardShell({
               <StatsCard
                 index={0}
                 icon={TrendingUp}
-                label="الاستمرارية (٣٠ يوم)"
+                label="الاستمرارية ( يوم)"
                 value={`${activeStats.averageCompletionRate}%`}
               />
               <StatsCard

@@ -259,13 +259,14 @@ function PostRow({ post }: { post: Post }) {
           <span className="text-muted-foreground/30">&middot;</span>
           <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
             <Clock className="size-3" />
-            {wordCount.toLocaleString('ar')} كلمة &middot; {formatReadingTime(readingTime)}
+            {wordCount.toLocaleString('ar-u-nu-latn')} كلمة &middot;{' '}
+            {formatReadingTime(readingTime)}
           </span>
           <span className="text-muted-foreground/30">&middot;</span>
           <span className="text-xs text-muted-foreground/60">
             {post.status === 'published'
-              ? `نُشر ${post.published_at ? new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.published_at)) : ''}`
-              : `آخر تعديل ${new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.updated_at))}`}
+              ? `نُشر ${post.published_at ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.published_at)) : ''}`
+              : `آخر تعديل ${new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.updated_at))}`}
           </span>
         </div>
       </div>

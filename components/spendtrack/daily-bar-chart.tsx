@@ -22,7 +22,7 @@ function CustomTooltip({
     <div className="rounded-lg border bg-popover px-3 py-2 shadow-elevated">
       <p className="text-sm font-medium">{label}</p>
       <p className="text-sm text-muted-foreground mt-1">
-        {Number(item.value).toLocaleString('ar-SA')} ل.س
+        {Number(item.value).toLocaleString('ar-SA-u-nu-latn')} ل.س
       </p>
     </div>
   );
@@ -81,7 +81,7 @@ export function DailyBarChart({ data }: { data: DailySpending[] }) {
           <YAxis
             className="text-xs text-muted-foreground"
             tick={{ fontSize: 12 }}
-            tickFormatter={(value: number) => `${value.toLocaleString('ar-SA')} ل.س`}
+            tickFormatter={(value: number) => `${value.toLocaleString('ar-SA-u-nu-latn')} ل.س`}
             tickLine={false}
             axisLine={false}
             label={{

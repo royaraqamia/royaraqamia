@@ -425,6 +425,7 @@ export function useDashboard(seed: SeedData) {
       day: 'numeric',
       year: 'numeric',
       calendar: 'islamic-umalqura',
+      numberingSystem: 'latn',
     }).format(d);
   };
 

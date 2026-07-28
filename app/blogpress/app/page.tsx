@@ -52,7 +52,7 @@ export default async function DashboardPage() {
     },
     {
       label: 'إجمالي الكلمات',
-      value: stats.totalWords.toLocaleString('ar'),
+      value: stats.totalWords.toLocaleString('ar-u-nu-latn'),
       icon: BookOpen,
       bg: 'bg-info/10',
       tx: 'text-info',

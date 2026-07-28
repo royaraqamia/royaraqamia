@@ -50,5 +50,6 @@ export function calculateTimeAgo(dateStr: string): string {
     month: 'long',
     day: 'numeric',
     calendar: 'islamic-umalqura',
+    numberingSystem: 'latn',
   }).format(new Date(dateStr));
 }

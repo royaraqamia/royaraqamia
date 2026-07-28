@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useReducedMotion } from 'motion/react';
 import { HabitLog } from '@/domains/habitflow/models';
@@ -50,7 +50,7 @@ export function CalendarGrid({
     <div className="space-y-4">
       <div>
         <h2 className="text-2xl font-display font-bold text-foreground leading-snug">
-          سلسلة الإنجاز لآخر ٣٠ يوم
+          سلسلة الإنجاز لآخر يوم
         </h2>
         <p className="text-xs text-muted-foreground leading-relaxed">
           تصوير مرئي للاستمرارية اليومية الإجمالية

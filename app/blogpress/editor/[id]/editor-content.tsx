@@ -864,7 +864,7 @@ export function EditorContent({ post }: EditorContentProps) {
           </div>
           <span className="text-muted-foreground/40 hidden sm:inline">·</span>
           <span className="text-xs text-muted-foreground hidden sm:inline">
-            {wordCount.toLocaleString('ar')} كلمة
+            {wordCount.toLocaleString('ar-u-nu-latn')} كلمة
           </span>
           <span className="text-muted-foreground/40 hidden sm:inline">·</span>
           <span className="text-xs text-muted-foreground hidden sm:inline">
@@ -874,7 +874,11 @@ export function EditorContent({ post }: EditorContentProps) {
             <>
               <span className="text-muted-foreground/40 hidden sm:inline">·</span>
               <span className="text-xs text-muted-foreground hidden sm:inline">
-                حفظ {lastSaved.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}
+                حفظ{' '}
+                {lastSaved.toLocaleTimeString('ar-u-nu-latn', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
               </span>
             </>
           )}
