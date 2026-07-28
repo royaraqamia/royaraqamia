@@ -11,6 +11,7 @@ export interface Post {
   meta_title: string | null;
   meta_desc: string | null;
   published_at: string | null;
+  blog_visible: boolean;
   created_at: string;
   updated_at: string;
 }

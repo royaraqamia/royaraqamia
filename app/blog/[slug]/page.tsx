@@ -107,6 +107,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
     .from('posts')
     .select('id, title, slug, cover_image, published_at, content')
     .eq('status', 'published')
+    .eq('blog_visible', true)
     .neq('slug', slug)
     .order('published_at', { ascending: false })
     .limit(3);
@@ -148,14 +149,18 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                 الرَّئيسيَّة
               </Link>
             </li>
-            <li className="text-muted-foreground/40">
-              <ChevronLeft className="size-3.5" />
-            </li>
-            <li>
-              <Link href="/blog" className="hover:text-primary transition-smooth">
-                المدوَّنة
-              </Link>
-            </li>
+            {p.blog_visible && (
+              <>
+                <li className="text-muted-foreground/40">
+                  <ChevronLeft className="size-3.5" />
+                </li>
+                <li>
+                  <Link href="/blog" className="hover:text-primary transition-smooth">
+                    المدوَّنة
+                  </Link>
+                </li>
+              </>
+            )}
             <li className="text-muted-foreground/40">
               <ChevronLeft className="size-3.5" />
             </li>

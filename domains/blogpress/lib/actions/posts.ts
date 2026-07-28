@@ -63,6 +63,15 @@ export async function updatePost(postId: string, _prevState: unknown, formData: 
   return { message: 'تمَّ حفظ المقال' };
 }
 
+function isAdminEmail(email: string): boolean {
+  const adminEmails = (process.env.ADMIN_EMAILS || '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e.length > 0);
+  if (adminEmails.length === 0) return false;
+  return adminEmails.includes(email.trim().toLowerCase());
+}
+
 export async function saveAndPublishPost(postId: string, formData: FormData) {
   const session = await verifySession();
   const cookieStore = await cookies();
@@ -81,12 +90,15 @@ export async function saveAndPublishPost(postId: string, formData: FormData) {
     return { errors: validated.error.flatten().fieldErrors };
   }
 
+  const blogVisible = isAdminEmail(session.user.email ?? '');
+
   const { data, error } = await supabase
     .from('posts')
     .update({
       ...validated.data,
       status: 'published',
       published_at: new Date().toISOString(),
+      blog_visible: blogVisible,
     })
     .eq('id', postId)
     .eq('author_id', session.userId)
@@ -107,11 +119,14 @@ export async function publishPost(postId: string) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
+  const blogVisible = isAdminEmail(session.user.email ?? '');
+
   const { data, error } = await supabase
     .from('posts')
     .update({
       status: 'published',
       published_at: new Date().toISOString(),
+      blog_visible: blogVisible,
     })
     .eq('id', postId)
     .eq('author_id', session.userId)

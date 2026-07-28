@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'المدوَّنة | رؤية رقمية',
-  description: 'أفكار، دروس، وقصص في عالم التقنية والتحول الرقمي',
+  description: 'أفكار، دروس، وقصص في العالم الرَّقمي',
 };
 
 const PAGE_SIZE = 9;
@@ -34,7 +34,8 @@ export default async function BlogPage(props: {
   let queryBuilder = supabase
     .from('posts')
     .select('*', { count: 'exact' })
-    .eq('status', 'published');
+    .eq('status', 'published')
+    .eq('blog_visible', true);
 
   if (query) {
     queryBuilder = queryBuilder.or(`title.ilike.%${query}%,meta_desc.ilike.%${query}%`);
@@ -64,7 +65,7 @@ export default async function BlogPage(props: {
           </h1>
 
           <p className="text-lg md:text-xl text-white/50 max-w-xl font-medium leading-relaxed mb-10">
-            أفكار، دروس، وقصص في عالم التقنية والتحول الرقمي
+            أفكار، دروس، وقصص في العالم الرَّقمي
           </p>
 
           <div className="w-full max-w-md relative z-20">

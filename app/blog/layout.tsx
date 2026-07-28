@@ -5,9 +5,9 @@ import { Footer } from '@/components/Footer';
 export const metadata: Metadata = {
   title: {
     default: 'المدوَّنة',
-    template: '%s | BlogPress',
+    template: '%s | رؤية رقمية',
   },
-  description: 'اقرأ أحدث المقالات من BlogPress.',
+  description: 'اقرأ أحدث المقالات من رؤية رقمية.',
 };
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {

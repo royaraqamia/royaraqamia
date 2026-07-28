@@ -10,7 +10,7 @@ import {
   useSpring,
   useMotionTemplate,
 } from 'motion/react';
-import { Trophy, SealCheck, HandPointing } from '@phosphor-icons/react';
+import { Trophy } from '@phosphor-icons/react';
 import { LazyImage } from './LazyImage';
 
 // --- Framer Motion Variants ---
@@ -194,16 +194,6 @@ export function Certificate() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col items-center justify-center perspective-[2000px]"
         >
-          {/* Interactive Hint Banner (fades out after user touches or hovers) */}
-          <motion.div
-            animate={{ opacity: hasInteracted ? 0 : 1, y: hasInteracted ? -10 : 0 }}
-            transition={{ duration: 0.4 }}
-            className="mb-4 flex items-center gap-2 text-xs text-purple-400/90 bg-purple-500/10 border border-purple-500/20 px-3.5 py-1.5 rounded-full backdrop-blur-md pointer-events-none"
-          >
-            <HandPointing className="w-4 h-4 animate-bounce" weight="duotone" />
-            <span>حرك المؤشر أو اضغط لمسًا للمعاينة التفاعلية ثلاثية الأبعاد</span>
-          </motion.div>
-
           {/* Interactive Card */}
           <motion.div
             onMouseMove={handleMouseMove}
@@ -240,14 +230,6 @@ export function Certificate() {
                   : 'border-purple-500/0 group-hover:border-purple-400/40 group-hover:shadow-[inset_0_0_60px_rgba(168,85,247,0.15)]'
               }`}
             />
-
-            {/* Floating Trust Verification Badge */}
-            <div className="absolute top-4 inset-e-4 md:top-6 md:inset-e-6 z-30 flex items-center gap-2 bg-slate-950/70 border border-white/10 backdrop-blur-md px-3 py-1.5 md:px-4 md:py-2 rounded-full shadow-lg">
-              <SealCheck className="w-4 h-4 md:w-5 md:h-5 text-purple-400" weight="fill" />
-              <span className="text-[11px] md:text-xs font-semibold text-white/90">
-                وثيقة معتمدة وموثقة
-              </span>
-            </div>
 
             {/* Certificate Image Component */}
             <LazyImage
