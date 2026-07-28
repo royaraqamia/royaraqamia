@@ -201,7 +201,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
             const dateParts = stat.date.split('-');
             const labelStr =
               dateParts.length === 3
-                ? `${new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2])).toLocaleDateString('ar-EG', { month: 'short', day: 'numeric' })}`
+                ? `${new Intl.DateTimeFormat('ar-SA', { month: 'short', day: 'numeric', calendar: 'islamic-umalqura' }).format(new Date(Number(dateParts[0]), Number(dateParts[1]) - 1, Number(dateParts[2])))}`
                 : stat.date;
 
             return (

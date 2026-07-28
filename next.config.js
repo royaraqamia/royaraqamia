@@ -40,6 +40,7 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.royaraqamia.com' },
       { protocol: 'https', hostname: '*.supabase.co' },
       { protocol: 'https', hostname: 'picsum.photos' },
+      { protocol: 'https', hostname: '*.googleusercontent.com' },
     ],
   },
   async headers() {

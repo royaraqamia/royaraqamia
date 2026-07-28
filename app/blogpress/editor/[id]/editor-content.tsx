@@ -405,7 +405,7 @@ export function EditorContent({ post }: EditorContentProps) {
             size="icon-sm"
             onClick={async () => {
               if (isDirtyRef.current) await saveAllFields();
-              router.push('/blogpress');
+              router.push('/blogpress/app');
             }}
             className="shrink-0 transition-smooth"
             aria-label="العودة إلى لوحة التحكم"

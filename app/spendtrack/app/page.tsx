@@ -13,7 +13,7 @@ import { getAuthUser } from '@/domains/spendtrack/lib/auth-guard';
 import { createClient } from '@/lib/supabase/server';
 import { cookies } from 'next/headers';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
-import { ar } from 'date-fns/locale';
+
 import type { Category, ExpenseWithCategory } from '@/domains/spendtrack/lib/database.types';
 
 export const dynamic = 'force-dynamic';
@@ -78,8 +78,19 @@ async function TotalCard({
           ${Number(data ?? 0).toFixed(2)}
         </p>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          {format(new Date(start), 'd MMMM yyyy', { locale: ar })} إلى{' '}
-          {format(new Date(end), 'd MMMM yyyy', { locale: ar })}
+          {new Intl.DateTimeFormat('ar-SA', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            calendar: 'islamic-umalqura',
+          }).format(new Date(start))}{' '}
+          إلى{' '}
+          {new Intl.DateTimeFormat('ar-SA', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            calendar: 'islamic-umalqura',
+          }).format(new Date(end))}
         </p>
       </CardContent>
     </Card>

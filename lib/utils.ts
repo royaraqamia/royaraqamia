@@ -6,11 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatDateArabic(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString('ar-EG', {
+  return new Intl.DateTimeFormat('ar-SA', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
+    calendar: 'islamic-umalqura',
+  }).format(new Date(dateStr));
 }
 
 export function throttle<T extends (...args: unknown[]) => unknown>(

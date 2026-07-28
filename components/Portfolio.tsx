@@ -2,7 +2,7 @@
 
 import { memo, Key, useState } from 'react';
 import Image from 'next/image';
-import { motion, useScroll, useSpring } from 'motion/react';
+import { motion, useScroll, useSpring, useReducedMotion, LayoutGroup } from 'motion/react';
 import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
 import { SectionBackground } from './SectionBackground';
@@ -124,10 +124,16 @@ export const Portfolio = memo(function Portfolio() {
   const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(400);
   const [imageError, setImageError] = useState<Set<number>>(new Set());
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
+  const shouldReduceMotion = useReducedMotion();
 
   // Elite Detail: Scroll Progress Bar linked to the horizontal container
   const { scrollXProgress } = useScroll({ container: scrollContainerRef });
-  const scaleX = useSpring(scrollXProgress, { stiffness: 100, damping: 30, restDelta: 0.001 });
+  const springScaleX = useSpring(scrollXProgress, {
+    stiffness: 100,
+    damping: 30,
+    restDelta: 0.001,
+  });
+  const scaleX = shouldReduceMotion ? scrollXProgress : springScaleX;
 
   const handleImageError = (index: number) => {
     setImageError((prev) => new Set(prev).add(index));
@@ -166,147 +172,154 @@ export const Portfolio = memo(function Portfolio() {
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02] mix-blend-overlay"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
-        {/* Section Header */}
-        <motion.div
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-100px' }}
-          variants={headerVariant}
-          className="text-center max-w-4xl mx-auto mb-16 flex flex-col items-center"
-        >
-          <h2 className="text-5xl sm:text-6xl lg:text-7xl mb-6 font-extrabold tracking-tight text-white">
-            نبذة عن{' '}
-            <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 via-violet-400 to-indigo-400">
-              أعمالنا
-            </span>
-          </h2>
-        </motion.div>
-      </div>
+      <LayoutGroup>
+        <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+          {/* Section Header */}
+          <motion.div
+            initial={shouldReduceMotion ? false : 'hidden'}
+            whileInView={shouldReduceMotion ? undefined : 'show'}
+            viewport={{ once: true, margin: '-100px' }}
+            variants={headerVariant}
+            className="text-center max-w-4xl mx-auto mb-16 flex flex-col items-center"
+          >
+            <h2 className="text-5xl sm:text-6xl lg:text-7xl mb-6 font-extrabold tracking-tight text-white">
+              نبذة عن{' '}
+              <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 via-violet-400 to-indigo-400">
+                أعمالنا
+              </span>
+            </h2>
+          </motion.div>
+        </div>
 
-      {/* Portfolio Horizontal Scroll Area */}
-      <div className="relative w-full group/scroll z-10">
-        {/* Elite Detail: Animated Scroll Progress Indicator */}
-        <div className="max-w-7xl mx-auto px-6 md:px-12 mb-6 flex items-center justify-between">
-          <div className="flex-1 h-0.5 bg-white/10 rounded-full overflow-hidden max-w-50 ml-auto">
-            <motion.div
-              className="h-full bg-linear-to-r from-violet-500 to-purple-500 origin-right"
-              style={{ scaleX }} // Tied to horizontal scroll progress
+        {/* Portfolio Horizontal Scroll Area */}
+        <div className="relative w-full group/scroll z-10">
+          {/* Elite Detail: Animated Scroll Progress Indicator */}
+          <div className="max-w-7xl mx-auto px-6 md:px-12 mb-6 flex items-center justify-between">
+            <div className="flex-1 h-0.5 bg-white/10 rounded-full overflow-hidden max-w-50 ml-auto">
+              <motion.div
+                className="h-full bg-linear-to-r from-violet-500 to-purple-500 origin-right"
+                style={{ scaleX }} // Tied to horizontal scroll progress
+              />
+            </div>
+
+            <HorizontalScrollArrows
+              onScroll={scroll}
+              canScrollLeft={canScrollLeft}
+              canScrollRight={canScrollRight}
+              ariaLabelLeft="التالي"
+              ariaLabelRight="السابق"
             />
           </div>
 
-          <HorizontalScrollArrows
-            onScroll={scroll}
-            canScrollLeft={canScrollLeft}
-            canScrollRight={canScrollRight}
-            ariaLabelLeft="التالي"
-            ariaLabelRight="السابق"
-          />
+          {/* Scroll Container */}
+          <motion.div
+            initial={shouldReduceMotion ? false : 'hidden'}
+            whileInView={shouldReduceMotion ? undefined : 'show'}
+            viewport={{ once: true, margin: '-50px' }}
+            variants={cardStagger}
+            ref={scrollContainerRef}
+            className="flex snap-x snap-mandatory overflow-x-auto pb-12 pt-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none items-center touch-manipulation"
+            style={{
+              paddingLeft: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',
+              paddingRight: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',
+              scrollPaddingInline: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',
+              gap: '32px',
+            }}
+            role="region"
+            aria-label="معرض الأعمال"
+          >
+            {PORTFOLIO_IMAGES.map((imagePath, index) => {
+              if (imageError.has(index)) return null;
+              const project = projectData[index]!;
+
+              return (
+                <motion.div
+                  key={index}
+                  variants={cardVariant}
+                  className="shrink-0 w-[85vw] sm:w-90 md:w-120 lg:w-135 min-w-0 snap-center"
+                >
+                  <motion.div
+                    layoutId={`portfolio-${index}`}
+                    transition={shouldReduceMotion ? { duration: 0 } : undefined}
+                    onClick={() => setSelectedProject(index)}
+                    className="relative group/card rounded-4xl overflow-hidden bg-white/2 border border-white/10 transition-[border-color,box-shadow,outline-color] duration-700 motion-reduce:transition-none hover:border-white/30 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)] w-full aspect-4/3 cursor-pointer active:scale-[0.97] active:opacity-80 focus-visible:outline-2 focus-visible:outline-purple-400/60 focus-visible:outline-offset-2"
+                  >
+                    <Image
+                      src={imagePath.webp}
+                      alt={`${project.title} - رؤية رقمية`}
+                      fill
+                      loading={index < 3 ? 'eager' : 'lazy'}
+                      sizes="(max-width: 640px) 85vw, (max-width: 768px) 360px, (max-width: 1024px) 480px, 540px"
+                      className="object-cover transition-transform duration-300 motion-reduce:duration-0 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/card:scale-105 group-hover/card:rotate-1"
+                      onError={() => handleImageError(index)}
+                    />
+
+                    <div className="absolute inset-0 bg-linear-to-t from-[#050810]/80 via-transparent to-transparent" />
+
+                    <div className="absolute inset-0 bg-[#050810]/90 backdrop-blur-sm opacity-0 group-hover/card:opacity-100 transition-opacity duration-300 motion-reduce:duration-0 flex flex-col justify-center items-center p-6 text-center">
+                      <h3 className="text-white font-bold text-xl mb-3">{project.title}</h3>
+                      <p className="text-white/60 text-sm mb-5 line-clamp-2">
+                        {project.description}
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-3">
+                        {(project.metrics ?? []).map((_metric: any, mi: Key | null | undefined) => (
+                          <div
+                            key={mi}
+                            className="bg-white/10 backdrop-blur-md rounded-xl px-4 py-3 min-w-24 border border-white/10"
+                          ></div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* "View Project" Pill */}
+                  </motion.div>
+                </motion.div>
+              );
+            })}
+          </motion.div>
         </div>
 
-        {/* Scroll Container */}
-        <motion.div
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-50px' }}
-          variants={cardStagger}
-          ref={scrollContainerRef}
-          className="flex snap-x snap-mandatory overflow-x-auto pb-12 pt-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none items-center"
-          style={{
-            paddingLeft: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',
-            paddingRight: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',
-            scrollPaddingInline: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',
-            gap: '32px',
+        <Dialog
+          open={selectedProject !== null}
+          onOpenChange={(open) => {
+            if (!open) setSelectedProject(null);
           }}
-          role="region"
-          aria-label="معرض الأعمال"
         >
-          {PORTFOLIO_IMAGES.map((imagePath, index) => {
-            if (imageError.has(index)) return null;
-            const project = projectData[index]!;
-
-            return (
-              <motion.div
-                key={index}
-                variants={cardVariant}
-                className="shrink-0 w-[85vw] sm:w-90 md:w-120 lg:w-135 min-w-0 snap-center"
-              >
-                <div
-                  onClick={() => setSelectedProject(index)}
-                  className="relative group/card rounded-4xl overflow-hidden bg-white/2 border border-white/10 transition-all duration-700 hover:border-white/30 hover:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)] w-full aspect-4/3 cursor-pointer"
-                >
-                  <Image
-                    src={imagePath.png}
-                    alt={`${project.title} - رؤية رقمية`}
-                    fill
-                    loading={index < 3 ? 'eager' : 'lazy'}
-                    sizes="(max-width: 640px) 85vw, (max-width: 768px) 360px, (max-width: 1024px) 480px, 540px"
-                    className="object-cover transition-transform duration-1000 ease-[cubic-bezier(0.2,0.8,0.2,1)] group-hover/card:scale-105 group-hover/card:rotate-1"
-                    onError={() => handleImageError(index)}
-                  />
-
-                  <div className="absolute inset-0 bg-linear-to-t from-[#050810]/80 via-transparent to-transparent" />
-
-                  <div className="absolute inset-0 bg-[#050810]/90 backdrop-blur-sm opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 flex flex-col justify-center items-center p-6 text-center">
-                    <h3 className="text-white font-bold text-xl mb-3">{project.title}</h3>
-                    <p className="text-white/60 text-sm mb-5 line-clamp-2">{project.description}</p>
-                    <div className="flex flex-wrap justify-center gap-3">
-                      {(project.metrics ?? []).map((_metric: any, mi: Key | null | undefined) => (
-                        <div
-                          key={mi}
-                          className="bg-white/10 backdrop-blur-md rounded-xl px-4 py-3 min-w-24 border border-white/10"
-                        ></div>
-                      ))}
+          <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#0a0e1a] border border-white/10 max-md:inset-0 max-md:w-full max-md:rounded-none max-md:h-dvh max-md:max-h-none max-md:border-0">
+            {selectedProject !== null &&
+              (() => {
+                const project = projectData[selectedProject]!;
+                const image = PORTFOLIO_IMAGES[selectedProject]!;
+                return (
+                  <div className="flex flex-col h-full max-md:h-dvh">
+                    <motion.div
+                      layoutId={`portfolio-${selectedProject}`}
+                      transition={shouldReduceMotion ? { duration: 0 } : undefined}
+                      className="flex-1 min-h-0 flex items-center justify-center bg-black/10"
+                    >
+                      <Image
+                        src={image.webp}
+                        alt={project.title}
+                        width={1200}
+                        height={800}
+                        className="max-h-full max-w-full object-contain w-auto h-auto"
+                        sizes="(max-width: 768px) 100vw, 900px"
+                      />
+                    </motion.div>
+                    <div className="p-6 sm:p-8 pt-4 sm:pt-6 shrink-0">
+                      <DialogTitle className="text-2xl sm:text-3xl font-bold text-white mb-3">
+                        {project.title}
+                      </DialogTitle>
+                      <DialogDescription className="text-white/60 text-base leading-relaxed">
+                        {project.description}
+                      </DialogDescription>
                     </div>
                   </div>
-
-                  {/* "View Project" Pill */}
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-      </div>
-
-      <Dialog
-        open={selectedProject !== null}
-        onOpenChange={(open) => {
-          if (!open) setSelectedProject(null);
-        }}
-      >
-        <DialogContent
-          className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#0a0e1a] border border-white/10"
-          aria-describedby={undefined}
-        >
-          {selectedProject !== null &&
-            (() => {
-              const project = projectData[selectedProject]!;
-              const image = PORTFOLIO_IMAGES[selectedProject]!;
-              return (
-                <>
-                  <div className="w-full">
-                    <Image
-                      src={image.png}
-                      alt={project.title}
-                      width={1200}
-                      height={800}
-                      className="w-full h-auto"
-                      sizes="(max-width: 768px) 100vw, 900px"
-                    />
-                  </div>
-                  <div className="p-6 sm:p-8 pt-4 sm:pt-6">
-                    <DialogTitle className="text-2xl sm:text-3xl font-bold text-white mb-3">
-                      {project.title}
-                    </DialogTitle>
-                    <DialogDescription className="text-white/60 text-base leading-relaxed">
-                      {project.description}
-                    </DialogDescription>
-                  </div>
-                </>
-              );
-            })()}
-        </DialogContent>
-      </Dialog>
+                );
+              })()}
+          </DialogContent>
+        </Dialog>
+      </LayoutGroup>
     </section>
   );
 });

@@ -45,9 +45,10 @@ export function calculateTimeAgo(dateStr: string): string {
   if (diffDay < 7) return `منذ ${diffDay} يوم`;
   const diffWeek = Math.floor(diffDay / 7);
   if (diffWeek < 4) return `منذ ${diffWeek} أسبوع`;
-  return new Date(dateStr).toLocaleDateString('ar-EG', {
+  return new Intl.DateTimeFormat('ar-SA', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
-  });
+    calendar: 'islamic-umalqura',
+  }).format(new Date(dateStr));
 }

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
+import { getAdminSupabase } from '@/lib/supabase/admin';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -97,7 +98,8 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   const p = post as Post;
 
-  const { data: author } = await supabase
+  const adminSupabase = getAdminSupabase();
+  const { data: author } = await adminSupabase
     .from('users')
     .select('name, avatar_url, bio')
     .eq('id', p.author_id)
@@ -138,7 +140,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   return (
     <>
-      <ReadingProgress />
+      <ReadingProgress targetId="article-body" />
       <CodeBlockEnhancer />
 
       <article className="max-w-3xl mx-auto" aria-label={p.title}>
@@ -170,65 +172,68 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
           </ol>
         </nav>
 
-        <header className="mb-10">
-          {p.cover_image && (
-            <div className="relative aspect-video overflow-hidden rounded-2xl mb-8 bg-muted shadow-sm ring-1 ring-border/50">
-              <Image
-                src={p.cover_image}
-                alt={p.title}
-                fill
-                sizes="(max-width: 768px) 100vw, 768px"
-                className="object-cover"
-                priority
-              />
-            </div>
-          )}
-
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary font-medium mb-4">
-            <BookOpen className="size-3" />
-            مقال
-          </div>
-
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl leading-tight">{p.title}</h1>
-
-          <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            {author?.name && (
-              <div className="flex items-center gap-2.5">
-                {author.avatar_url ? (
+        <div className="lg:grid lg:grid-cols-[1fr_200px] lg:gap-10">
+          <div id="article-body" className="min-w-0">
+            <header className="mb-10">
+              {p.cover_image && (
+                <div className="relative aspect-video overflow-hidden rounded-2xl mb-8 bg-muted shadow-sm ring-1 ring-border/50">
                   <Image
-                    src={author.avatar_url}
-                    alt={author.name}
-                    width={28}
-                    height={28}
-                    className="rounded-full object-cover ring-2 ring-background"
+                    src={p.cover_image}
+                    alt={p.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 768px"
+                    className="object-cover"
+                    priority
                   />
-                ) : (
-                  <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-medium text-primary">
-                    <User className="size-3.5" />
+                </div>
+              )}
+
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-xs text-primary font-medium mb-4">
+                <BookOpen className="size-3" />
+                مقال
+              </div>
+
+              <h1 className="text-3xl font-bold tracking-tight sm:text-4xl leading-tight">
+                {p.title}
+              </h1>
+
+              <div className="mt-5 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                {author?.name && (
+                  <div className="flex items-center gap-2.5">
+                    {author.avatar_url?.trim() ? (
+                      <Image
+                        src={author.avatar_url}
+                        alt={author.name}
+                        width={28}
+                        height={28}
+                        className="rounded-full object-cover ring-2 ring-background"
+                      />
+                    ) : (
+                      <div className="size-7 rounded-full bg-primary/10 flex items-center justify-center text-[11px] font-medium text-primary">
+                        <User className="size-3.5" />
+                      </div>
+                    )}
+                    <span className="font-medium text-foreground">{author.name}</span>
                   </div>
                 )}
-                <span className="font-medium text-foreground">{author.name}</span>
+                {p.published_at && (
+                  <span className="flex items-center gap-1.5">
+                    <Calendar className="size-3.5" />
+                    {new Intl.DateTimeFormat('ar-SA', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      calendar: 'islamic-umalqura',
+                    }).format(new Date(p.published_at))}
+                  </span>
+                )}
+                <span className="flex items-center gap-1.5">
+                  <Clock className="size-3.5" />
+                  {formatReadingTimeLong(readingTime)}
+                </span>
               </div>
-            )}
-            {p.published_at && (
-              <span className="flex items-center gap-1.5">
-                <Calendar className="size-3.5" />
-                {new Date(p.published_at).toLocaleDateString('ar', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric',
-                })}
-              </span>
-            )}
-            <span className="flex items-center gap-1.5">
-              <Clock className="size-3.5" />
-              {formatReadingTimeLong(readingTime)}
-            </span>
-          </div>
-        </header>
+            </header>
 
-        <div className="lg:grid lg:grid-cols-[1fr_200px] lg:gap-10">
-          <div className="min-w-0">
             <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-primary prose-img:rounded-xl prose-img:shadow-sm prose-code:before:content-none prose-code:after:content-none prose-pre:relative prose-pre:bg-muted/80">
               <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
@@ -278,7 +283,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
           {author?.name && (
             <div className="rounded-2xl border border-border/50 bg-linear-to-br from-muted/50 to-background p-6">
               <div className="flex items-start gap-4">
-                {author.avatar_url ? (
+                {author.avatar_url?.trim() ? (
                   <Image
                     src={author.avatar_url}
                     alt={author.name}

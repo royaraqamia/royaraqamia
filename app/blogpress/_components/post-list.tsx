@@ -4,7 +4,7 @@ import { useState, useTransition, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
+
 import {
   FileText,
   MoreHorizontal,
@@ -264,8 +264,8 @@ function PostRow({ post }: { post: Post }) {
           <span className="text-muted-foreground/30">&middot;</span>
           <span className="text-xs text-muted-foreground/60">
             {post.status === 'published'
-              ? `نُشر ${post.published_at ? format(new Date(post.published_at), 'yyyy/MM/dd') : ''}`
-              : `آخر تعديل ${format(new Date(post.updated_at), 'yyyy/MM/dd')}`}
+              ? `نُشر ${post.published_at ? new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.published_at)) : ''}`
+              : `آخر تعديل ${new Intl.DateTimeFormat('ar-SA', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.updated_at))}`}
           </span>
         </div>
       </div>

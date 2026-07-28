@@ -419,12 +419,13 @@ export function useDashboard(seed: SeedData) {
 
   const getReadableActiveDate = () => {
     const d = new Date(activeDate);
-    return d.toLocaleDateString('ar-SA', {
+    return new Intl.DateTimeFormat('ar-SA', {
       weekday: 'long',
       month: 'short',
       day: 'numeric',
       year: 'numeric',
-    });
+      calendar: 'islamic-umalqura',
+    }).format(d);
   };
 
   const openEditModal = (habit: Habit) => {

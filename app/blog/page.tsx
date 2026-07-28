@@ -13,7 +13,7 @@ import type { Post } from '@/domains/blogpress/lib/definitions';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'المدوَّنة | رؤية رقمية',
+  title: 'المدوَّنة',
   description: 'أفكار، دروس، وقصص في العالم الرَّقمي',
 };
 
@@ -181,11 +181,12 @@ export default async function BlogPage(props: {
                           dateTime={post.published_at}
                           className="text-xs font-medium text-white/40"
                         >
-                          {new Date(post.published_at).toLocaleDateString('ar', {
+                          {new Intl.DateTimeFormat('ar-SA', {
                             year: 'numeric',
                             month: 'long',
                             day: 'numeric',
-                          })}
+                            calendar: 'islamic-umalqura',
+                          }).format(new Date(post.published_at))}
                         </time>
                       )}
 

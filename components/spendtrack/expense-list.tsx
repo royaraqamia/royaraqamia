@@ -14,8 +14,8 @@ import {
 } from '@/components/ui/dialog';
 import { Trash2, Loader2, Receipt } from 'lucide-react';
 import { CreateExpenseDialog, EditExpenseDialog } from '@/components/spendtrack/expense-dialog';
-import { format, parseISO } from 'date-fns';
-import { ar } from 'date-fns/locale';
+import { parseISO } from 'date-fns';
+
 import type { Category, ExpenseWithCategory } from '@/domains/spendtrack/lib/database.types';
 
 export function ExpenseList({
@@ -126,7 +126,12 @@ function ExpenseRow({
     }
   }, [state, router, expense.description]);
 
-  const formattedDate = format(parseISO(expense.date), 'd MMMM yyyy', { locale: ar });
+  const formattedDate = new Intl.DateTimeFormat('ar-SA', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    calendar: 'islamic-umalqura',
+  }).format(parseISO(expense.date));
   const rowLabel = `${expense.description || 'بدون وصف'}، ${Number(expense.amount).toFixed(2)} دولار، ${formattedDate}`;
 
   return (

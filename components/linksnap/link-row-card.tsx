@@ -134,11 +134,12 @@ export function LinkRowCard({
               </button>
               <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full font-medium font-mono flex items-center gap-1 shrink-0">
                 <Calendar aria-hidden="true" className="w-3 h-3" />
-                {new Date(createdAt).toLocaleDateString('ar-EG', {
+                {new Intl.DateTimeFormat('ar-SA', {
                   month: 'short',
                   day: 'numeric',
                   year: 'numeric',
-                })}
+                  calendar: 'islamic-umalqura',
+                }).format(new Date(createdAt))}
               </span>
               {isBlocked && (
                 <span className="text-xs text-destructive bg-destructive/10 border border-destructive/20 px-2 py-0.5 rounded-full font-bold">
