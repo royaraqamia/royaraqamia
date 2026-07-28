@@ -34,7 +34,7 @@ export function HorizontalScrollArrows({
       {canScrollLeft && (
         <button
           onClick={() => onScroll('left')}
-          className={`${arrowBase} inset-s-4`}
+          className={`${arrowBase} inset-e-4`}
           style={getArrowStyle('left')}
           onMouseEnter={() => setHoveredArrow('left')}
           onMouseLeave={() => setHoveredArrow(null)}
@@ -48,7 +48,7 @@ export function HorizontalScrollArrows({
       {canScrollRight && (
         <button
           onClick={() => onScroll('right')}
-          className={`${arrowBase} inset-e-4`}
+          className={`${arrowBase} inset-s-4`}
           style={getArrowStyle('right')}
           onMouseEnter={() => setHoveredArrow('right')}
           onMouseLeave={() => setHoveredArrow(null)}

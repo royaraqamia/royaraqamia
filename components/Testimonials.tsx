@@ -96,20 +96,6 @@ export function Testimonials() {
           ariaLabelRight="السابق"
         />
 
-        {/* Edge Fade Gradients - Desktop (only show when there's content in that direction) */}
-        {canScrollLeft && (
-          <div
-            className="hidden md:block absolute inset-s-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
-            style={{ background: 'linear-gradient(to right, rgba(2, 6, 23, 0.9), transparent)' }}
-          />
-        )}
-        {canScrollRight && (
-          <div
-            className="hidden md:block absolute inset-e-0 top-0 bottom-0 w-20 z-10 pointer-events-none"
-            style={{ background: 'linear-gradient(to left, rgba(2, 6, 23, 0.9), transparent)' }}
-          />
-        )}
-
         <div
           ref={scrollRef}
           className="horizontal-scroll pt-2 md:pt-4 pb-12 flex"
