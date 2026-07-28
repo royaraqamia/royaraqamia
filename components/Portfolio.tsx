@@ -311,7 +311,7 @@ export const Portfolio = memo(function Portfolio() {
                 <motion.div
                   key={actualIndex}
                   variants={cardVariant}
-                  className="shrink-0 w-[85vw] sm:w-95 md:w-110 lg:w-120 min-w-0 snap-center group/card"
+                  className="shrink-0 w-[85vw] sm:w-95 md:w-110 lg:w-120 min-w-0 snap-center group/card bg-[#050810] rounded-3xl overflow-hidden"
                 >
                   <motion.div
                     onClick={() => setSelectedProject(actualIndex)}
@@ -349,13 +349,6 @@ export const Portfolio = memo(function Portfolio() {
                       <span className="text-xs font-mono font-medium text-white/50 bg-[#050810]/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/5">
                         #{(displayIdx + 1).toString().padStart(2, '0')}
                       </span>
-                    </div>
-
-                    {/* Default Bottom Title Bar */}
-                    <div className="absolute bottom-0 inset-x-0 p-6 z-10 transition-all duration-300 group-hover/card-inner:opacity-0 group-hover/card-inner:translate-y-2">
-                      <h3 className="text-white font-bold text-xl sm:text-2xl drop-shadow-md tracking-tight">
-                        {project.title}
-                      </h3>
                     </div>
 
                     {/* High-End Glassmorphic Hover Overlay */}
@@ -432,6 +425,9 @@ export const Portfolio = memo(function Portfolio() {
                       </div>
                     </div>
                   </motion.div>
+                  <h3 className="text-white font-bold text-xl sm:text-2xl mt-4 text-center leading-snug">
+                    {project.title}
+                  </h3>
                 </motion.div>
               );
             })}
@@ -445,7 +441,7 @@ export const Portfolio = memo(function Portfolio() {
             if (!open) setSelectedProject(null);
           }}
         >
-          <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 backdrop-blur-2xl shadow-2xl shadow-purple-950/50 overflow-y-auto dialog-scrollbar max-md:inset-0 max-md:w-full max-md:translate-x-0 max-md:rounded-none max-md:h-dvh max-md:max-h-none max-md:border-0">
+          <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 backdrop-blur-2xl shadow-2xl shadow-purple-950/50 overflow-y-auto dialog-scrollbar max-md:max-h-[80dvh] max-md:my-auto">
             {selectedProject !== null &&
               (() => {
                 const project = projectData[selectedProject]!;
@@ -557,10 +553,10 @@ export const Portfolio = memo(function Portfolio() {
                 };
 
                 return (
-                  <div className="flex flex-col h-full max-md:h-dvh">
+                  <div className="flex flex-col h-full">
                     <div
                       ref={imageContainerRef}
-                      className={`flex-1 min-h-0 flex items-center justify-center bg-linear-to-b from-purple-900/10 via-black/20 to-black/40 p-4 sm:p-8 relative ${
+                      className={`flex-1 min-h-0 flex items-center justify-center bg-linear-to-b from-purple-900/10 via-black/20 to-black/40 max-md:px-0 max-md:pt-0 p-4 sm:p-8 relative ${
                         zoomed
                           ? 'overflow-auto touch-action-none'
                           : 'overflow-hidden touch-action-manipulation'
@@ -598,7 +594,7 @@ export const Portfolio = memo(function Portfolio() {
                           className={`rounded-2xl shadow-2xl relative z-10 select-none ${
                             zoomed
                               ? 'max-w-none max-h-none'
-                              : 'max-h-full max-w-full object-contain w-auto h-auto'
+                              : 'max-h-full max-w-full object-contain w-auto h-auto max-md:w-full'
                           }`}
                           style={
                             zoomed
