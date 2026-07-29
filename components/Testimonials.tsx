@@ -1,12 +1,16 @@
 'use client';
 
-import { X, UserCircle, CaretLeft } from '@phosphor-icons/react';
-import { useState, useEffect, useCallback } from 'react';
+import { UserCircle, CaretLeft } from '@phosphor-icons/react';
+import { useState } from 'react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 import { useUI } from '../context/UIContext';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
 import { testimonials } from '../data/testimonials';
+import {
+  Sheet,
+  SheetContent,
+} from './ui/sheet';
 
 export function Testimonials() {
   const { setIsReviewSheetOpen } = useUI();
@@ -18,60 +22,10 @@ export function Testimonials() {
   } = useHorizontalScroll(412);
   const [selectedReview, setSelectedReview] = useState<number | null>(null);
 
-  // Sync with global UI state
-  useEffect(() => {
-    setIsReviewSheetOpen(selectedReview !== null);
-  }, [selectedReview, setIsReviewSheetOpen]);
-
-  // Lock body scroll when bottom sheet is open
-  useEffect(() => {
-    if (selectedReview === null) return;
-
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    document.body.style.paddingRight = `${scrollbarWidth}px`;
-
-    const navbar = document.querySelector('nav[role="navigation"]');
-    if (navbar instanceof HTMLElement) {
-      navbar.style.paddingRight = `${scrollbarWidth}px`;
-    }
-
-    return () => {
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-      document.body.style.paddingRight = '';
-
-      if (navbar instanceof HTMLElement) {
-        navbar.style.paddingRight = '';
-      }
-
-      setIsReviewSheetOpen(false);
-    };
-  }, [selectedReview, setIsReviewSheetOpen]);
-
-  const closeReviewSheet = useCallback(() => {
+  const closeReviewSheet = () => {
     setSelectedReview(null);
     setIsReviewSheetOpen(false);
-  }, [setIsReviewSheetOpen]);
-
-  // Handle keyboard events for closing the review sheet
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        closeReviewSheet();
-      }
-    };
-
-    if (selectedReview !== null) {
-      window.addEventListener('keydown', handleKeyDown);
-    }
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [selectedReview, closeReviewSheet]);
+  };
 
   return (
     <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden" id="testimonials">
@@ -189,49 +143,27 @@ export function Testimonials() {
         </div>
       </div>
 
-      {/* Bottom Sheet / Dialog Modal */}
-      {selectedReview !== null &&
-        (() => {
-          const review = testimonials[selectedReview];
-          if (!review) return null;
-          return (
-            <>
-              {/* Backdrop Overlay */}
-              <div
-                className="fixed inset-0 bg-black/75 backdrop-blur-md z-9998 transition-opacity duration-300"
-                onClick={closeReviewSheet}
-                tabIndex={-1}
-                role="presentation"
-              />
+      {/* Bottom Sheet (mobile) / Dialog (desktop) */}
+      <Sheet
+        open={selectedReview !== null}
+        onOpenChange={(open) => {
+          if (!open) closeReviewSheet();
+        }}
+      >
+        <SheetContent
+          side="bottom"
+          className="md:max-w-lg md:mx-auto md:top-1/2 md:-translate-y-1/2 md:rounded-3xl md:border md:border-white/15 md:inset-x-auto md:bottom-auto max-h-[85vh] rounded-t-3xl border-0 p-0 bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-200 shadow-2xl shadow-black/80"
+        >
+          {/* Mobile Drag Indicator */}
+          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-white/20 rounded-full md:hidden z-1" />
 
-              {/* Modal Container */}
-              <div
-                className="review-bottom-sheet fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-lg max-h-[85vh] md:bottom-auto md:top-1/2 md:-translate-y-1/2 bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 rounded-t-3xl md:rounded-3xl border border-white/15 shadow-2xl shadow-black/80 z-9999 overflow-hidden flex flex-col"
-                role="dialog"
-                aria-modal="true"
-                aria-label={`رأي ${review.name}`}
-              >
-                {/* Modal Header */}
-                <div
-                  className="px-5 py-3.5 border-b border-white/10 relative shrink-0 flex items-center justify-between bg-slate-950/60 backdrop-blur-sm"
-                  dir="ltr"
-                >
-                  {/* Mobile Drag Indicator */}
-                  <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-white/20 rounded-full md:hidden" />
-
-                  {/* Close Button */}
-                  <button
-                    onClick={closeReviewSheet}
-                    className="relative flex items-center justify-center w-10 h-10 bg-white/5 hover:bg-white/10 active:scale-95 border border-white/10 cursor-pointer text-slate-300 hover:text-white transition-all duration-200 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
-                    type="button"
-                    aria-label="إغلاق"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Modal Content */}
-                <div className="custom-review-scrollbar p-6 sm:p-8 overflow-y-auto flex-1 text-slate-200 flex flex-col justify-between">
+          {/* Content */}
+          <div className="custom-review-scrollbar p-6 sm:p-8 overflow-y-auto flex-1 text-slate-200 flex flex-col justify-between max-h-[calc(85vh-1px)]">
+            {(() => {
+              const review = selectedReview !== null ? testimonials[selectedReview] : null;
+              if (!review) return null;
+              return (
+                <>
                   <div className="mb-6">
                     <span className="text-violet-400/40 text-4xl font-serif leading-none select-none block mb-2">
                       &ldquo;
@@ -241,7 +173,6 @@ export function Testimonials() {
                     </p>
                   </div>
 
-                  {/* Author Information */}
                   <div className="flex items-center gap-4 pt-5 border-t border-white/10">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 bg-linear-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-black/40 ring-2 ring-violet-400/30">
                       <UserCircle className="w-7 h-7 text-white" />
@@ -251,11 +182,12 @@ export function Testimonials() {
                       <p className="text-xs text-violet-300/80 font-medium">مُوثَّق</p>
                     </div>
                   </div>
-                </div>
-              </div>
-            </>
-          );
-        })()}
+                </>
+              );
+            })()}
+          </div>
+        </SheetContent>
+      </Sheet>
     </section>
   );
 }

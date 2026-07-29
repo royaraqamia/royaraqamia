@@ -146,10 +146,10 @@ export function ConsultationCards() {
                     href="https://wa.me/963968478904?text=%D8%A7%D9%84%D8%B3%D9%91%D9%8E%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%AD%D8%AC%D8%B2%20%D8%A7%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%D8%A9."
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="block group/btn rounded-2xl sm:rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                    className="block group/btn rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                     aria-label="احجز استشارتك الآن"
                   >
-                    <Button className="w-full h-14 sm:h-16 text-lg sm:text-xl font-bold text-white rounded-2xl sm:rounded-full bg-linear-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:via-indigo-500 hover:to-purple-500 transition-all duration-300 ease-out hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] shadow-xl shadow-purple-900/40 cursor-pointer border border-purple-400/30 active:scale-[0.98] flex items-center justify-center gap-3 min-h-11">
+                    <Button className="w-full h-14 sm:h-16 text-lg sm:text-xl font-bold text-white rounded-full bg-linear-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:via-indigo-500 hover:to-purple-500 transition-all duration-300 ease-out hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] shadow-xl shadow-purple-900/40 cursor-pointer border border-purple-400/30 active:scale-[0.98] flex items-center justify-center gap-3 min-h-11">
                       <span>احجز استشارتك الآن</span>
                       <ArrowLeft className="w-5 h-5 text-purple-200 group-hover/btn:-translate-x-1.5 transition-transform duration-300 shrink-0" />
                     </Button>

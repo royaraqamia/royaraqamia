@@ -46,8 +46,10 @@ export function CTA() {
               </div>
 
               {/* Headline */}
-              <h2 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-balance bg-clip-text text-transparent bg-linear-to-b from-white via-slate-100 to-slate-400 mb-6 leading-normal sm:leading-normal">
-                لا تترك مستقبلك للصُّدفة
+              <h2 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-balance mb-6 leading-snug">
+                <span className="block lg:inline gradient-text">لا تترك</span>{' '}
+                <span className="block lg:inline gradient-text">مستقبلك</span>{' '}
+                <span className="block lg:inline gradient-text">للصُّدفة</span>
               </h2>
 
               {/* Subtitle / Description */}
@@ -62,7 +64,7 @@ export function CTA() {
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="تواصل معنا عبر واتساب"
-                  className="group/btn relative inline-flex items-center justify-center gap-3 w-full sm:w-auto px-8 sm:px-10 py-4 sm:py-4.5 rounded-full font-bold text-base sm:text-lg text-white bg-linear-to-r from-purple-600 via-indigo-600 to-purple-600 bg-size-[200%_auto] hover:bg-position-[right_center] shadow-[0_0_25px_-5px_rgba(147,51,234,0.5)] hover:shadow-[0_0_35px_0px_rgba(147,51,234,0.7)] transition-all duration-500 ease-out hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 overflow-hidden cursor-pointer"
+                  className="group/btn relative h-14 w-auto min-w-50 max-w-full inline-flex items-center justify-center gap-3 px-8 rounded-full font-bold text-base sm:text-lg text-white bg-linear-to-r from-purple-600 via-indigo-600 to-purple-600 bg-size-[200%_auto] hover:bg-position-[right_center] shadow-[0_0_25px_-5px_rgba(147,51,234,0.5)] hover:shadow-[0_0_35px_0px_rgba(147,51,234,0.7)] transition-all duration-500 ease-out hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 overflow-hidden cursor-pointer"
                 >
                   {/* Subtle Inner Ambient Glow Sheen Effect */}
                   <span className="absolute inset-0 rounded-full bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-in-out" />
