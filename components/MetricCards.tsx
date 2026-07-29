@@ -23,7 +23,7 @@ function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
   }, [inView, value]);
 
   return (
-    <span ref={ref} className="font-tabular-nums">
+    <span ref={ref} className="tabular-nums">
       {displayValue}
       {suffix}
     </span>
@@ -76,7 +76,7 @@ export const MetricCards = memo(function MetricCards() {
       numericValue: 100,
       suffix: '+',
       label: 'مشروع رقمي',
-      description: 'تم إنجازها بين مواقع وتطبيقات',
+      description: 'تمَّ إنجازها بين مواقع وتطبيقات',
       colorKey: 'violet' as const,
     },
   ];
@@ -84,63 +84,88 @@ export const MetricCards = memo(function MetricCards() {
   // Upgraded color configs with text gradients and ambient shadows
   const colorConfigs = {
     purple: {
-      bgHover: 'group-hover/card:bg-purple-500/[0.03]',
-      borderHover: 'group-hover/card:border-purple-500/30',
-      iconGlow: 'group-hover/card:text-purple-400 group-hover/card:bg-purple-500/10 text-white',
-      textGradient: 'from-purple-400 to-purple-600',
-      shadow: 'group-hover/card:shadow-[0_0_40px_-15px_rgba(168,85,247,0.3)]',
+      bgHover: 'group-hover/card:bg-purple-500/[0.04]',
+      borderHover: 'group-hover/card:border-purple-500/40',
+      iconGlow:
+        'text-purple-400 group-hover/card:text-purple-300 group-hover/card:bg-purple-500/20 group-hover/card:border-purple-500/40',
+      textGradient: 'from-purple-300 via-purple-400 to-indigo-400',
+      dividerGradient: 'from-purple-500 via-purple-400/80 to-transparent',
+      shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(168,85,247,0.25)]',
+      glowBg: 'bg-purple-500/20',
     },
     indigo: {
-      bgHover: 'group-hover/card:bg-indigo-500/[0.03]',
-      borderHover: 'group-hover/card:border-indigo-500/30',
-      iconGlow: 'group-hover/card:text-indigo-400 group-hover/card:bg-indigo-500/10 text-white',
-      textGradient: 'from-indigo-400 to-indigo-600',
-      shadow: 'group-hover/card:shadow-[0_0_40px_-15px_rgba(99,102,241,0.3)]',
+      bgHover: 'group-hover/card:bg-indigo-500/[0.04]',
+      borderHover: 'group-hover/card:border-indigo-500/40',
+      iconGlow:
+        'text-indigo-400 group-hover/card:text-indigo-300 group-hover/card:bg-indigo-500/20 group-hover/card:border-indigo-500/40',
+      textGradient: 'from-indigo-300 via-indigo-400 to-sky-400',
+      dividerGradient: 'from-indigo-500 via-indigo-400/80 to-transparent',
+      shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(99,102,241,0.25)]',
+      glowBg: 'bg-indigo-500/20',
     },
     violet: {
-      bgHover: 'group-hover/card:bg-violet-500/[0.03]',
-      borderHover: 'group-hover/card:border-violet-500/30',
-      iconGlow: 'group-hover/card:text-violet-400 group-hover/card:bg-violet-500/10 text-white',
-      textGradient: 'from-violet-400 to-violet-600',
-      shadow: 'group-hover/card:shadow-[0_0_40px_-15px_rgba(139,92,246,0.3)]',
+      bgHover: 'group-hover/card:bg-violet-500/[0.04]',
+      borderHover: 'group-hover/card:border-violet-500/40',
+      iconGlow:
+        'text-violet-400 group-hover/card:text-violet-300 group-hover/card:bg-violet-500/20 group-hover/card:border-violet-500/40',
+      textGradient: 'from-violet-300 via-violet-400 to-fuchsia-400',
+      dividerGradient: 'from-violet-500 via-violet-400/80 to-transparent',
+      shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(139,92,246,0.25)]',
+      glowBg: 'bg-violet-500/20',
     },
   };
 
   return (
-    <section className="relative py-24 lg:py-32 overflow-hidden bg-[#050810]">
-      {/* Background - Ultra-minimal ambient center glow */}
-      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(900px,100vw)] bg-white opacity-[0.01] blur-[150px] rounded-full" />
+    <section
+      aria-label="Key Performance Indicators"
+      className="relative py-20 sm:py-28 lg:py-36 overflow-hidden bg-[#030712] text-white selection:bg-purple-500/30 selection:text-purple-200"
+    >
+      {/* Ambient Visual Atmosphere & Subtle Developer Tech Grid */}
+      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        {/* Subtle grid pattern background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
+
+        {/* Top ambient color glow highlight */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-80 bg-linear-to-b from-purple-500/10 via-indigo-500/5 to-transparent blur-3xl" />
+
+        {/* Deep ambient radial glow orb */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(900px,100vw)] bg-linear-to-tr from-purple-600/10 via-indigo-600/10 to-transparent opacity-60 blur-[140px] rounded-full" />
+
+        {/* Top and bottom subtle section boundaries */}
+        <div className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
+        <div className="absolute bottom-0 inset-x-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, margin: '-100px' }}
-          className="grid md:grid-cols-3 gap-8 lg:gap-10"
+          className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-8 xl:gap-10"
         >
           {metrics.map((metric, index) => {
             const Icon = metric.icon;
             const colors = colorConfigs[metric.colorKey];
 
             return (
-              <motion.div
+              <motion.article
                 key={index}
                 variants={itemVariants}
-                className={`group/card relative rounded-[2.5rem] p-8 lg:p-12 transition-all duration-700 overflow-hidden bg-white/2 border border-white/5 backdrop-blur-md z-10 hover:-translate-y-2 ${colors.borderHover} ${colors.shadow}`}
+                className={`group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-all duration-500 ease-out overflow-hidden bg-neutral-900/40 border border-white/10 backdrop-blur-xl z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
               >
-                {/* 
-                  Premium Ambient Hover Layer 
-                  Provides a subtle tinted background on hover without being overwhelming
-                */}
+                {/* Premium Ambient Background Tint on Hover */}
                 <div
-                  className={`absolute inset-0 transition-colors duration-700 -z-10 ${colors.bgHover}`}
+                  className={`absolute inset-0 transition-colors duration-500 -z-10 ${colors.bgHover}`}
+                />
+
+                {/* Soft Corner Glow Spotlight */}
+                <div
+                  className={`absolute -top-24 -right-24 w-48 h-48 rounded-full ${colors.glowBg} blur-3xl opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none`}
                 />
 
                 <div className="flex flex-col h-full relative z-10">
-                  {/* Floating Minimalist Icon */}
+                  {/* Floating Icon Badge Container */}
                   <motion.div
                     animate={{ y: [0, -6, 0] }}
                     transition={{
@@ -149,40 +174,54 @@ export const MetricCards = memo(function MetricCards() {
                       ease: 'easeInOut',
                       delay: index * 0.5,
                     }}
-                    className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-12 transition-all duration-500 bg-white/5 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-6 relative overflow-hidden ${colors.iconGlow}`}
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-8 sm:mb-10 lg:mb-12 transition-all duration-500 ease-out bg-white/3 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shadow-lg ${colors.iconGlow}`}
                   >
-                    <Icon weight="duotone" className="w-8 h-8 drop-shadow-lg relative z-10" />
+                    <div
+                      className={`absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 ${colors.glowBg} blur-sm`}
+                    />
+                    <Icon
+                      weight="duotone"
+                      className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-md relative z-10 transition-transform duration-500 group-hover/card:scale-105"
+                      aria-hidden="true"
+                    />
                   </motion.div>
 
-                  {/* Editorial Typography & Data */}
+                  {/* Data & Editorial Content */}
                   <div className="mt-auto text-start">
-                    {/* The Number Container with Hover Gradient Text */}
-                    <div className="relative text-6xl lg:text-7xl xl:text-8xl font-extrabold tracking-tighter mb-6 transition-transform duration-700 ease-out group-hover/card:translate-x-2 rtl:group-hover/card:-translate-x-2">
-                      {/* Base White Number (Fades out slightly on hover) */}
-                      <span className="absolute inset-0 text-white transition-opacity duration-500 group-hover/card:opacity-0">
+                    {/* The Number Container with Dual-Layer Hover Gradient Transition */}
+                    <div className="relative text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-none mb-6 transition-transform duration-500 ease-out group-hover/card:translate-x-1 sm:group-hover/card:translate-x-2 rtl:group-hover/card:-translate-x-1 rtl:sm:group-hover/card:-translate-x-2">
+                      {/* Base White Display Number */}
+                      <span className="text-white transition-opacity duration-500 group-hover/card:opacity-0 block">
                         <AnimatedCounter value={metric.numericValue} suffix={metric.suffix} />
                       </span>
 
-                      {/* Colored Gradient Number (Reveals on hover) */}
+                      {/* Hover Gradient Text Reveal Layer */}
                       <span
-                        className={`bg-clip-text text-transparent bg-linear-to-r ${colors.textGradient} opacity-0 transition-opacity duration-500 group-hover/card:opacity-100`}
+                        className={`absolute inset-0 bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent opacity-0 transition-opacity duration-500 group-hover/card:opacity-100 pointer-events-none block`}
+                        aria-hidden="true"
                       >
                         <AnimatedCounter value={metric.numericValue} suffix={metric.suffix} />
                       </span>
                     </div>
 
-                    <div className="w-12 h-1 bg-white/10 rounded-full mb-6 transition-all duration-500 group-hover/card:w-24 group-hover/card:bg-white/30" />
+                    {/* Dynamic Gradient Accent Divider */}
+                    <div
+                      className={`w-12 h-1 rounded-full mb-6 transition-all duration-500 ease-out group-hover/card:w-24 bg-linear-to-r ${colors.dividerGradient}`}
+                      aria-hidden="true"
+                    />
 
-                    <div className="text-xl lg:text-2xl font-bold text-white mb-3">
+                    {/* Label */}
+                    <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-2.5 transition-colors duration-300">
                       {metric.label}
-                    </div>
+                    </h3>
 
-                    <p className="text-sm md:text-base text-white/50 leading-relaxed font-medium">
+                    {/* Description */}
+                    <p className="text-sm sm:text-base text-neutral-400 group-hover/card:text-neutral-300 leading-relaxed font-normal transition-colors duration-300">
                       {metric.description}
                     </p>
                   </div>
                 </div>
-              </motion.div>
+              </motion.article>
             );
           })}
         </motion.div>

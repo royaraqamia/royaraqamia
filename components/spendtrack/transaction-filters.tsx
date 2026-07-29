@@ -76,7 +76,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
       <Select value={currentRange} onValueChange={(v) => updateParam('range', v)}>
-        <SelectTrigger className="w-full sm:w-[140px] btn-press" aria-label="نطاق التاريخ">
+        <SelectTrigger className="w-full sm:w-35 btn-press" aria-label="نطاق التاريخ">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -92,7 +92,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
         <>
           <Input
             type="date"
-            className="w-full sm:w-[140px] focus-ring"
+            className="w-full sm:w-35 focus-ring"
             value={customStart}
             onChange={(e) => updateParam('from', e.target.value)}
             placeholder="من"
@@ -100,7 +100,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
           />
           <Input
             type="date"
-            className="w-full sm:w-[140px] focus-ring"
+            className="w-full sm:w-35 focus-ring"
             value={customEnd}
             onChange={(e) => updateParam('to', e.target.value)}
             placeholder="إلى"
@@ -113,14 +113,14 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
         <PopoverTrigger asChild>
           <Button
             variant="outline"
-            className="justify-between w-full sm:w-[160px] min-h-[44px] btn-press"
+            className="justify-between w-full sm:w-40 min-h-11 btn-press"
             aria-label={`التصنيفات${selectedCount > 0 ? ` (${selectedCount} محددة)` : ''}`}
           >
             <span>{selectedCount > 0 ? `التصنيفات (${selectedCount})` : 'جميع التصنيفات'}</span>
             <ChevronDown className="size-4 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-full max-w-[220px] p-2" align="start">
+        <PopoverContent className="w-full max-w-55 p-2" align="start">
           <div className="space-y-1">
             {categories.map((cat) => {
               const isSelected = selectedCategories.includes(cat.id);
@@ -168,7 +168,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
       </Popover>
 
       <Select value={currentSort} onValueChange={(v) => updateParam('sort', v)}>
-        <SelectTrigger className="w-full sm:w-[160px] btn-press" aria-label="ترتيب المعاملات">
+        <SelectTrigger className="w-full sm:w-40 btn-press" aria-label="ترتيب المعاملات">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -185,7 +185,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
           variant="ghost"
           size="sm"
           onClick={() => router.push(pathname)}
-          className="gap-1.5 min-h-[44px] btn-press touch-target"
+          className="gap-1.5 min-h-11 btn-press touch-target"
           aria-label="مسح الفلاتر"
         >
           <X className="size-3.5" />

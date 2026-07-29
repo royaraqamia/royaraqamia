@@ -24,41 +24,43 @@ import {
   Lock,
   ScanLine,
   Database,
-  ArrowLeft,
+  RotateCcw,
+  Sparkles,
+  CheckCircle2,
 } from 'lucide-react';
 import { m, AnimatePresence } from 'motion/react';
+
+const easeOut = [0.16, 1, 0.3, 1] as const;
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.12, delayChildren: 0.2 },
+    transition: { staggerChildren: 0.1, delayChildren: 0.15 },
   },
 };
 
-const easeOut = [0.25, 0.4, 0.25, 1] as const;
-
 const itemVariants = {
-  hidden: { opacity: 0, y: 24 },
+  hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: easeOut } },
 };
 
 const cardVariants = {
-  hidden: { opacity: 0, scale: 0.95, y: 20 },
+  hidden: { opacity: 0, scale: 0.97, y: 16 },
   visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.5, ease: easeOut } },
 };
 
 const resultVariants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: easeOut } },
+  hidden: { opacity: 0, y: 24, scale: 0.98 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.45, ease: easeOut } },
 };
 
 const detailVariants = {
-  hidden: { opacity: 0, x: -20 },
+  hidden: { opacity: 0, y: 12 },
   visible: (i: number) => ({
     opacity: 1,
-    x: 0,
-    transition: { delay: i * 0.08, duration: 0.4, ease: easeOut },
+    y: 0,
+    transition: { delay: i * 0.05, duration: 0.35, ease: easeOut },
   }),
 };
 
@@ -95,7 +97,7 @@ export default function VerifyPage() {
       const data = await verifyCertificate(code);
       setResult(data);
     } catch {
-      setResult({ success: false, error: 'حدث خطأ غير متوقَّع. الرجاء المحاولة مرَّة أخرى.' });
+      setResult({ success: false, error: 'حدث خطأ غير مُتوقَّع. الرَّجاء المحاولة مرَّة أخرى.' });
     } finally {
       setLoading(false);
     }
@@ -109,145 +111,184 @@ export default function VerifyPage() {
   }
 
   return (
-    <div className="relative min-h-screen overflow-hidden">
-      {/* Animated Background Blobs */}
+    <main className="relative min-h-screen overflow-hidden bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
+      {/* Dynamic Background Grid & Glowing Lighting */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)] bg-size-[24px_24px] opacity-30" />
         <m.div
-          className="absolute -top-40 right-20 h-96 w-96 rounded-full bg-[#7766EE] opacity-[0.08] blur-3xl"
-          animate={{ scale: [1, 1.2, 1], x: [0, 30, 0], y: [0, -20, 0] }}
-          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-32 right-1/4 h-125 w-125 rounded-full bg-linear-to-br from-indigo-500/15 via-purple-500/10 to-transparent blur-3xl"
+          animate={{ scale: [1, 1.15, 1], x: [0, 25, 0], y: [0, -15, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
         />
         <m.div
-          className="absolute -bottom-40 left-20 h-80 w-80 rounded-full bg-[#A78BFA] opacity-[0.06] blur-3xl"
-          animate={{ scale: [1, 1.3, 1], x: [0, -30, 0], y: [0, 30, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-        />
-        <m.div
-          className="absolute top-1/3 left-1/4 h-64 w-64 rounded-full bg-[#6366F1] opacity-[0.04] blur-3xl"
-          animate={{ scale: [1, 1.4, 1], opacity: [0.04, 0.08, 0.04] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          className="absolute -bottom-32 left-1/4 h-112.5 w-112.5 rounded-full bg-linear-to-tr from-violet-500/15 via-fuchsia-500/10 to-transparent blur-3xl"
+          animate={{ scale: [1, 1.2, 1], x: [0, -25, 0], y: [0, 25, 0] }}
+          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
         />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-3xl px-4 py-12 md:py-20">
-        <m.div variants={containerVariants} initial="hidden" animate="visible">
-          {/* Hero Section */}
-          <div className="mb-12 text-center">
-            <m.div variants={itemVariants} className="mb-6 inline-flex">
+      <div className="relative z-10 mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 md:py-20 lg:py-24">
+        <m.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="space-y-8"
+        >
+          {/* Hero Header Section */}
+          <header className="text-center">
+            <m.div
+              variants={itemVariants}
+              className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 backdrop-blur-md"
+            >
+              <span className="relative flex size-2">
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex size-2 rounded-full bg-primary" />
+              </span>
+              <span className="text-xs font-semibold tracking-wide text-primary">
+                نظام التَّحقُّق الرَّقمي
+              </span>
+            </m.div>
+
+            <m.div variants={itemVariants} className="mb-6 flex justify-center">
               <m.div
-                className="relative flex size-20 items-center justify-center rounded-2xl bg-linear-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-primary/25"
+                className="relative flex size-20 items-center justify-center rounded-3xl bg-linear-to-br from-primary via-indigo-600 to-purple-700 shadow-xl shadow-primary/25 ring-8 ring-primary/10"
                 initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 15, duration: 0.8 }}
+                transition={{ type: 'spring', stiffness: 220, damping: 18, duration: 0.8 }}
               >
-                <ShieldCheck className="relative size-10 text-white" />
+                <ShieldCheck className="size-10 text-white" />
+                <Sparkles className="absolute -top-1 -right-1 size-5 text-amber-300 animate-pulse" />
               </m.div>
             </m.div>
 
             <m.h1
               variants={itemVariants}
-              className="mb-4 text-3xl font-bold tracking-tight md:text-4xl"
+              className="text-3xl font-extrabold tracking-tight sm:text-4xl md:text-5xl"
             >
-              التَّحقُّق من <span className="gradient-text">الشَّهادة</span>
+              التَّحقُّق من{' '}
+              <span className="bg-linear-to-r from-primary via-purple-600 to-indigo-600 bg-clip-text text-transparent dark:from-indigo-400 dark:via-purple-300 dark:to-violet-400">
+                الشَّهادة
+              </span>
             </m.h1>
 
             <m.p
               variants={itemVariants}
-              className="text-muted-foreground mx-auto max-w-lg text-base leading-relaxed"
+              className="mt-4 mx-auto max-w-lg text-sm sm:text-base text-muted-foreground leading-relaxed"
             >
-              أدخل رمز الشَّهادة للتَّحقُّق من صحَّتها وأصالتها في منظومة رؤية رقمية.
+              أدخِل رمز الشَّهادة المطبوع على الوثيقة للتَّحقُّق من صحَّتها وأصالتها فورًا في رؤية
+              رقمية.
             </m.p>
-          </div>
+          </header>
 
-          {/* Search Card */}
+          {/* Search Input Card */}
           <m.div variants={cardVariants}>
-            <Card className="glass-card relative overflow-hidden border-primary/10">
-              <m.div
-                className="pointer-events-none absolute inset-0 rounded-xl opacity-0 transition-opacity duration-500"
-                style={{
-                  background:
-                    'linear-gradient(120deg, rgba(139,92,246,0.08), rgba(99,102,241,0.04))',
-                }}
-                whileHover={{ opacity: 1 }}
-              />
-              <CardContent className="p-6 md:p-8">
-                <form onSubmit={handleSubmit} className="flex flex-col gap-4 sm:flex-row">
+            <Card className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 p-1 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl transition-all duration-300 hover:border-border">
+              <CardContent className="p-5 sm:p-8">
+                <form
+                  onSubmit={handleSubmit}
+                  className="flex flex-col gap-3 sm:flex-row sm:items-center"
+                >
                   <div className="relative flex-1">
-                    <Hash className="text-muted-foreground absolute top-1/2 inset-s-3 size-4 -translate-y-1/2" />
+                    <div className="pointer-events-none absolute inset-y-0 inset-s-0 flex items-center ps-4">
+                      <Hash
+                        className={`size-5 transition-colors duration-200 ${code ? 'text-primary' : 'text-muted-foreground'}`}
+                      />
+                    </div>
                     <Input
                       ref={inputRef}
                       type="text"
                       value={code}
                       onChange={(e) => setCode(e.target.value.toUpperCase())}
                       placeholder="COMP-2026-A1B2C3D4"
-                      className="h-12 min-h-11 ps-10 text-base tracking-wider transition-all duration-300"
+                      className="h-13 w-full rounded-2xl border-border/70 bg-background/50 ps-11 pe-11 font-mono text-base tracking-wider uppercase shadow-xs backdrop-blur-sm transition-all duration-300 placeholder:font-sans placeholder:tracking-normal placeholder:normal-case focus:border-primary/60 focus:bg-background focus:ring-4 focus:ring-primary/10 dark:bg-neutral-900/60"
                       maxLength={30}
                       autoFocus
                       required
+                      aria-label="رمز الشَّهادة"
                     />
-                    {isValidFormat === false && code.length >= 5 && (
-                      <m.p
-                        initial={{ opacity: 0, y: -4 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-destructive mt-1.5 text-xs"
-                      >
-                        الصيغة الصحيحة: COMP-YYYY-XXXXXXXX
-                      </m.p>
+                    {isValidFormat === true && (
+                      <div className="pointer-events-none absolute inset-y-0 inset-e-0 flex items-center pe-4">
+                        <CheckCircle2 className="size-5 text-emerald-500 animate-in fade-in zoom-in-75 duration-200" />
+                      </div>
                     )}
                   </div>
                   <Button
                     type="submit"
                     size="lg"
                     isLoading={loading}
-                    className="btn-hover-lift sm:w-auto min-h-11"
+                    disabled={loading || !code.trim()}
+                    className="h-13 min-h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/3 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 sm:w-auto w-full gap-2 shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {!loading && <Search className="size-4" />}
-                    تحقُّق
+                    {!loading && <Search className="size-5" />}
+                    <span>تحقُّق</span>
                   </Button>
                 </form>
-                <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
-                  <ScanLine className="size-3.5" />
-                  <span>مثال: COMP-2026-A1B2C3D4</span>
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border/40 pt-4 text-xs text-muted-foreground">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCode('COMP-2026-UHVW9SG5');
+                      inputRef.current?.focus();
+                    }}
+                    className="group inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-muted hover:text-foreground cursor-pointer"
+                  >
+                    <ScanLine className="size-3.5 text-primary/80 transition-transform group-hover:scale-110" />
+                    <span>مثال للتَّجربة:</span>
+                    <code className="font-mono font-semibold text-primary transition-underline group-hover:underline">
+                      COMP-2026-UHVW9SG5
+                    </code>
+                  </button>
+
+                  {isValidFormat === false && code.length >= 5 && (
+                    <m.div
+                      initial={{ opacity: 0, y: -4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="inline-flex items-center gap-1.5 font-medium text-destructive bg-destructive/10 px-3 py-1 rounded-lg border border-destructive/20 text-xs"
+                    >
+                      <AlertCircle className="size-3.5 shrink-0" />
+                      <span>الصِّيغة الصَّحيحة: COMP-YYYY-XXXXXXXX</span>
+                    </m.div>
+                  )}
                 </div>
               </CardContent>
             </Card>
           </m.div>
 
-          {/* Loading State */}
+          {/* Loading Indicator State */}
           <AnimatePresence>
             {loading && (
               <m.div
                 key="loading"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, transition: { duration: 0.15 } }}
-                className="flex flex-col items-center gap-4 py-16"
+                initial={{ opacity: 0, scale: 0.98 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
+                className="my-6 rounded-3xl border border-primary/20 bg-card/60 p-8 sm:p-12 text-center backdrop-blur-xl shadow-xl shadow-primary/5"
               >
-                <div className="relative">
-                  <Loader2 className="text-primary size-10 animate-spin" />
-                  <m.div
-                    className="absolute inset-0 rounded-full"
-                    animate={{
-                      boxShadow: [
-                        '0 0 0px rgba(119,102,238,0)',
-                        '0 0 30px rgba(119,102,238,0.3)',
-                        '0 0 0px rgba(119,102,238,0)',
-                      ],
-                    }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  />
+                <div className="relative mx-auto flex size-20 items-center justify-center">
+                  <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+                  <div className="relative flex size-16 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 shadow-inner">
+                    <Loader2 className="size-8 animate-spin text-primary" />
+                  </div>
                 </div>
-                <m.div className="flex gap-1">
+                <div className="mt-6 space-y-2">
+                  <h3 className="text-base font-semibold text-foreground">
+                    جارٍ التَّحقُّق من أصالة الشَّهادة...
+                  </h3>
+                  <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                    يتمُّ مطابقة السِّجلات الرَّقميَّة المُشفَّرة والتَّحقُّق من التَّوقيع المُعتمَد
+                  </p>
+                </div>
+                <div className="mt-6 flex justify-center gap-1.5">
                   {[0, 1, 2].map((i) => (
                     <m.div
                       key={i}
-                      className="bg-primary size-2 rounded-full"
-                      animate={{ y: [0, -8, 0] }}
-                      transition={{ duration: 0.6, repeat: Infinity, delay: i * 0.15 }}
+                      className="size-2 rounded-full bg-primary"
+                      animate={{ scale: [1, 1.4, 1], opacity: [0.3, 1, 0.3] }}
+                      transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.2 }}
                     />
                   ))}
-                </m.div>
-                <p className="text-muted-foreground text-sm">جارٍ التَّحقُّق من الشَّهادة...</p>
+                </div>
               </m.div>
             )}
           </AnimatePresence>
@@ -261,49 +302,37 @@ export default function VerifyPage() {
                 initial="hidden"
                 animate="visible"
                 exit={{ opacity: 0, y: -20, transition: { duration: 0.15 } }}
+                className="my-6"
               >
-                <Card className="overflow-hidden border-destructive/20">
-                  <m.div
-                    className="bg-destructive/10 flex flex-wrap items-center gap-3 border-b border-destructive/10 px-6 py-4"
-                    initial={{ x: -20, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <m.div
-                      className="flex size-10 items-center justify-center rounded-full bg-destructive/20"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 200, delay: 0.1 }}
-                    >
-                      <AlertCircle className="text-destructive size-5" />
-                    </m.div>
-                    <div>
-                      <h2 className="font-bold text-lg text-destructive">
-                        {result.rateLimited ? 'طلبات كثيرة' : 'خطأ في التَّحقُّق'}
-                      </h2>
-                      <p className="text-muted-foreground text-sm">
-                        {result.rateLimited
-                          ? 'الرجاء الانتظار قبل المحاولة مرة أخرى'
-                          : 'تعذَّر التحقق من الشهادة'}
-                      </p>
+                <Card className="overflow-hidden rounded-3xl border-destructive/30 bg-card/90 shadow-2xl backdrop-blur-xl">
+                  <div className="bg-destructive/10 border-b border-destructive/15 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="flex size-12 items-center justify-center rounded-2xl bg-destructive/15 border border-destructive/30 text-destructive shadow-xs">
+                        <AlertCircle className="size-6" />
+                      </div>
+                      <div>
+                        <h2 className="font-bold text-lg text-destructive">
+                          {result.rateLimited
+                            ? 'تجاوز عدد المحاولات المسموحة'
+                            : 'خطأ في التَّحقُّق'}
+                        </h2>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {result.rateLimited
+                            ? 'الرَّجاء الانتظار بضع دقائق قبل المحاولة مرَّة أخرى'
+                            : 'تعذَّر العثور على شهادة بهذا الرَّمز في سجلاتنا'}
+                        </p>
+                      </div>
                     </div>
-                  </m.div>
-                  <CardContent className="pt-6">
-                    <m.div
-                      className="flex items-start gap-3 rounded-lg bg-destructive/5 px-4 py-3"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 }}
-                    >
-                      <AlertCircle className="text-destructive mt-0.5 size-4 shrink-0" />
-                      <p className="text-sm">{result.error}</p>
-                    </m.div>
-                    <m.div
-                      className="mt-4 flex justify-center"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                    >
+                    <Badge variant="destructive" className="px-3 py-1 text-xs rounded-full">
+                      {result.rateLimited ? 'محدود المؤقت' : 'غير مُسجَّلَة'}
+                    </Badge>
+                  </div>
+                  <CardContent className="p-6 sm:p-8">
+                    <div className="flex items-start gap-3 rounded-2xl bg-destructive/5 border border-destructive/15 p-4">
+                      <AlertCircle className="size-5 text-destructive shrink-0 mt-0.5" />
+                      <p className="text-sm leading-relaxed text-foreground">{result.error}</p>
+                    </div>
+                    <div className="mt-6 flex justify-end">
                       <Button
                         variant="outline"
                         size="sm"
@@ -312,18 +341,19 @@ export default function VerifyPage() {
                           setCode('');
                           inputRef.current?.focus();
                         }}
+                        className="gap-2 rounded-xl border-border hover:bg-muted cursor-pointer transition-all"
                       >
-                        <ArrowLeft className="size-4" />
-                        المحاولة مرة أخرى
+                        <RotateCcw className="size-4" />
+                        <span>المحاولة مرَّة أخرى</span>
                       </Button>
-                    </m.div>
+                    </div>
                   </CardContent>
                 </Card>
               </m.div>
             )}
           </AnimatePresence>
 
-          {/* Success State */}
+          {/* Success Result State */}
           <AnimatePresence>
             {!loading && result?.success && result.certificate && (
               <m.div
@@ -332,6 +362,7 @@ export default function VerifyPage() {
                 initial="hidden"
                 animate="visible"
                 exit={{ opacity: 0, y: -20, transition: { duration: 0.15 } }}
+                className="my-6"
               >
                 <CertificateResultCard
                   certificate={result.certificate}
@@ -342,26 +373,26 @@ export default function VerifyPage() {
             )}
           </AnimatePresence>
 
-          {/* Trust Footer */}
-          <m.div variants={itemVariants} className="mt-16 border-t border-white/5 pt-8">
-            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <Lock className="size-3.5" />
-                اتصال مشفر SSL
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="size-3.5" />
-                نظام توثيق رقمي
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Database className="size-3.5" />
-                التحقق آني من قاعدة البيانات
-              </span>
+          {/* Trust Footer Section */}
+          <m.footer variants={itemVariants} className="mt-16 border-t border-border/40 pt-8">
+            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground font-medium">
+              <div className="inline-flex items-center gap-2 rounded-xl bg-muted/50 px-3.5 py-2 border border-border/40 transition-colors hover:border-primary/30">
+                <Lock className="size-4 text-emerald-500" />
+                <span>اتِّصال مُشفَّر SSL 256-bit</span>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-xl bg-muted/50 px-3.5 py-2 border border-border/40 transition-colors hover:border-primary/30">
+                <ShieldCheck className="size-4 text-primary" />
+                <span>نظام توثيق رقمي</span>
+              </div>
+              <div className="inline-flex items-center gap-2 rounded-xl bg-muted/50 px-3.5 py-2 border border-border/40 transition-colors hover:border-primary/30">
+                <Database className="size-4 text-indigo-500" />
+                <span>فحص آني في قاعدة البيانات</span>
+              </div>
             </div>
-          </m.div>
+          </m.footer>
         </m.div>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -418,51 +449,102 @@ function CertificateResultCard({
   ];
 
   return (
-    <Card className="card-hover glass-card overflow-hidden border-primary/10">
+    <Card className="group relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-card/90 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-emerald-500/40">
+      {/* Accent Background Glows */}
+      <div className="pointer-events-none absolute -top-24 -inset-e-24 size-96 rounded-full bg-emerald-500/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 -inset-s-24 size-80 rounded-full bg-indigo-500/10 blur-3xl" />
+
+      {/* Top Banner Header */}
       <m.div
-        className="bg-linear-to-l from-primary/10 via-primary/5 to-transparent flex flex-wrap items-center gap-3 border-b border-primary/10 px-6 py-5"
+        className="relative flex flex-wrap items-center justify-between gap-4 border-b border-border/50 bg-linear-to-r from-emerald-500/10 via-emerald-500/5 to-transparent px-6 py-5 sm:px-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
       >
-        <m.div
-          className="flex size-12 items-center justify-center rounded-full bg-linear-to-br from-green-500 to-emerald-600 shadow-lg shadow-green-500/25"
-          initial={{ scale: 0, rotate: -90 }}
-          animate={{ scale: 1, rotate: 0 }}
-          transition={{ type: 'spring', stiffness: 200, damping: 12, delay: 0.1 }}
-        >
-          <ShieldCheck className="relative size-6 text-white" />
-        </m.div>
-        <div className="flex-1">
-          <h2 className="font-bold text-lg">تمَّ التَّحقُّق بنجاح</h2>
-          <p className="text-muted-foreground text-sm">هذه الشَّهادة أصيلة وصادرة من رؤية رقمية</p>
+        <div className="flex items-center gap-4">
+          <m.div
+            className="flex size-12 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 shadow-lg shadow-emerald-500/25 ring-4 ring-emerald-500/20"
+            initial={{ scale: 0, rotate: -90 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: 'spring', stiffness: 220, damping: 14, delay: 0.1 }}
+          >
+            <ShieldCheck className="size-7 text-white" />
+          </m.div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold tracking-tight text-foreground">
+                تمَّ التَّحقُّق بنجاح
+              </h2>
+              <Sparkles className="size-4 text-amber-500 animate-pulse" />
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              هذه الشَّهادة أصيلة ومُوثَّقة رسميًّا في سجلات رؤية رقمية
+            </p>
+          </div>
         </div>
+
         <m.div
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, delay: 0.3 }}
+          transition={{ type: 'spring', stiffness: 200, delay: 0.25 }}
         >
           <Badge
             variant={isExpired ? 'destructive' : 'default'}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm"
+            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-full shadow-xs ${
+              isExpired
+                ? 'bg-destructive/15 text-destructive border border-destructive/30'
+                : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+            }`}
           >
             <span className="relative flex size-2">
               {!isExpired && (
-                <span className="absolute inline-flex size-full animate-ping rounded-full bg-green-400 opacity-75" />
+                <span className="absolute inline-flex size-full animate-ping rounded-full bg-emerald-400 opacity-75" />
               )}
               <span
                 className={`relative inline-flex size-2 rounded-full ${
-                  isExpired ? 'bg-destructive' : 'bg-green-500'
+                  isExpired ? 'bg-destructive' : 'bg-emerald-500'
                 }`}
               />
             </span>
-            {isExpired ? 'منتهية' : 'صالحة'}
+            {isExpired ? 'شهادة منتهية' : 'شهادة صالحة ومُوثَّقة'}
           </Badge>
         </m.div>
       </m.div>
 
-      <CardContent className="pt-6">
-        <div className="grid gap-4 sm:grid-cols-2">
+      <CardContent className="p-6 sm:p-8 space-y-6">
+        {/* Main Certificate Showcase Highlight Banner */}
+        <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-linear-to-br from-primary/5 via-primary/2 to-transparent p-5 sm:p-6 backdrop-blur-sm">
+          <div className="pointer-events-none absolute -inset-e-6 -bottom-6 opacity-[0.04] dark:opacity-[0.06]">
+            <GraduationCap className="size-44 text-primary" />
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 relative z-10">
+            {/* Student Info */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <User className="size-3.5 text-primary" />
+                <span>اسم الطَّالب / الحاصل على الشَّهادة</span>
+              </div>
+              <p className="text-lg sm:text-xl font-bold text-foreground tracking-tight leading-snug">
+                {certificate.student_name}
+              </p>
+            </div>
+
+            {/* Course Info */}
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <GraduationCap className="size-3.5 text-primary" />
+                <span>اسم الدَّورة / البرنامج التَّدريبي</span>
+              </div>
+              <p className="text-base sm:text-lg font-bold text-foreground leading-snug">
+                {certificate.course_name}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Items Grid */}
+        <div className="grid gap-3.5 sm:grid-cols-2">
           {details.map((detail, i) => (
             <m.div
               key={detail.label}
@@ -470,35 +552,45 @@ function CertificateResultCard({
               variants={detailVariants}
               initial="hidden"
               animate="visible"
-              className="group flex items-start gap-3"
+              className="group/item relative flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-background/60 p-4 transition-all duration-200 hover:border-primary/30 hover:bg-background/90 hover:shadow-xs"
             >
-              <div className="bg-muted/80 text-muted-foreground mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl transition-colors duration-300 group-hover:bg-primary/10 group-hover:text-primary">
-                {detail.icon}
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted/80 text-muted-foreground transition-colors duration-200 group-hover/item:bg-primary/10 group-hover/item:text-primary">
+                  {detail.icon}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs text-muted-foreground font-medium">{detail.label}</p>
+                  <p
+                    className={`truncate text-sm font-semibold mt-0.5 ${
+                      'danger' in detail && detail.danger
+                        ? 'text-destructive'
+                        : 'highlight' in detail && detail.highlight
+                          ? 'font-mono tracking-wider text-primary'
+                          : 'text-foreground'
+                    }`}
+                  >
+                    {'value' in detail ? detail.value : ''}
+                  </p>
+                </div>
               </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-muted-foreground text-xs">{detail.label}</p>
-                <p
-                  className={`truncate text-sm font-semibold ${
-                    'danger' in detail && detail.danger
-                      ? 'text-destructive'
-                      : 'highlight' in detail && detail.highlight
-                        ? 'text-primary'
-                        : 'text-foreground'
-                  }`}
-                >
-                  {'value' in detail ? detail.value : ''}
-                </p>
-              </div>
+
               {'copyable' in detail && detail.copyable && (
                 <button
+                  type="button"
                   onClick={() => onCopy(detail.value ?? '')}
-                  className="text-muted-foreground hover:text-foreground mt-0.5 shrink-0 opacity-0 transition-all duration-200 group-hover:opacity-100"
-                  aria-label="نسخ الرمز"
+                  className="relative inline-flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/50 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary cursor-pointer active:scale-95 shrink-0"
+                  aria-label="نسخ رمز الشَّهادة"
                 >
                   {copied ? (
-                    <Check className="size-4 text-green-500" />
+                    <>
+                      <Check className="size-3.5 text-emerald-500" />
+                      <span className="text-emerald-500 font-semibold">تمَّ النَّسخ</span>
+                    </>
                   ) : (
-                    <Copy className="size-4" />
+                    <>
+                      <Copy className="size-3.5" />
+                      <span>نسخ</span>
+                    </>
                   )}
                 </button>
               )}
