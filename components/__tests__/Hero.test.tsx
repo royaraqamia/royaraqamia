@@ -10,7 +10,7 @@ describe('Hero', () => {
 
   it('renders the CTA button with WhatsApp link', () => {
     render(<Hero />);
-    const link = screen.getByText('تواصل معنا');
+    const link = screen.getByText('تواصل معنا الآن');
     expect(link).toBeInTheDocument();
     expect(link.closest('a')).toHaveAttribute('href', expect.stringContaining('wa.me'));
   });

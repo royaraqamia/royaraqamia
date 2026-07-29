@@ -7,10 +7,7 @@ import { useHorizontalScroll } from '../hooks/useHorizontalScroll';
 import { useUI } from '../context/UIContext';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
 import { testimonials } from '../data/testimonials';
-import {
-  Sheet,
-  SheetContent,
-} from './ui/sheet';
+import { Sheet, SheetContent } from './ui/sheet';
 
 export function Testimonials() {
   const { setIsReviewSheetOpen } = useUI();
@@ -152,7 +149,7 @@ export function Testimonials() {
       >
         <SheetContent
           side="bottom"
-          className="md:max-w-lg md:mx-auto md:top-1/2 md:-translate-y-1/2 md:rounded-3xl md:border md:border-white/15 md:inset-x-auto md:bottom-auto max-h-[85vh] rounded-t-3xl border-0 p-0 bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-200 shadow-2xl shadow-black/80"
+          className="gap-0 p-0 max-h-[85vh] left-4 right-4 bottom-4 rounded-3xl border-0 bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-200 shadow-2xl shadow-black/80 md:left-1/2 md:right-auto md:-translate-x-1/2 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:max-w-lg md:rounded-3xl md:border md:border-white/15"
         >
           {/* Mobile Drag Indicator */}
           <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-white/20 rounded-full md:hidden z-1" />
