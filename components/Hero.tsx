@@ -135,7 +135,7 @@ export const Hero = memo(function Hero() {
                     ))}
                   </div>
                   <span className="text-xs sm:text-sm text-slate-300">
-                    ثقة <span className="font-bold text-white">30+</span> شخص
+                    ثقة <span className="font-bold text-white">25+</span> شخص
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-300 transition-all duration-300 group-hover:text-slate-200">
@@ -171,7 +171,7 @@ export const Hero = memo(function Hero() {
                   <div className="absolute -inset-1 rounded-full bg-primary-600/40 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
                   <span className="relative z-10 flex items-center gap-3">
-                    تواصل معنا
+                    تواصل معنا الآن
                     <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                   </span>
 

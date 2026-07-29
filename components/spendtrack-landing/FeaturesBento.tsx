@@ -269,12 +269,12 @@ function MonthlyTrend() {
           الاتِّجاهات الشَّهريَّة
         </span>
         <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
-          <TrendUp size={12} className="shrink-0 text-emerald-500 sm:size-[14px]" />
+          <TrendUp size={12} className="shrink-0 text-emerald-500 sm:size-3.5" />
           <span className="whitespace-nowrap">-12% مقابل الشَّهر الماضي</span>
         </span>
       </div>
       <div className="overflow-x-auto px-1 pb-1 pt-4">
-        <div className="flex h-32 items-end justify-between gap-1.5 sm:gap-3 min-w-[280px]">
+        <div className="flex h-32 items-end justify-between gap-1.5 sm:gap-3 min-w-70">
           {monthlyData.map((val, i) => {
             const heightPercent = (val / maxVal) * 100;
             const isHighest = val === maxVal;

@@ -30,7 +30,7 @@ const DialogOverlay = React.forwardRef<
     ref={ref}
     data-slot="dialog-overlay"
     className={cn(
-      'fixed inset-0 z-[10000] bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
+      'fixed inset-0 z-10000 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
       className
     )}
     {...props}
@@ -51,7 +51,7 @@ const DialogContent = React.forwardRef<
       aria-labelledby="dialog-title"
       data-slot="dialog-content"
       className={cn(
-        'fixed z-[10000] w-full grid gap-4 p-6 shadow-xl duration-300',
+        'fixed z-10000 w-full grid gap-4 p-6 shadow-xl duration-300',
         'ease-[cubic-bezier(0.16,1,0.3,1)]',
         'border border-border/50 bg-background/95 backdrop-blur-md',
         'top-1/2 left-1/2 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-3xl',

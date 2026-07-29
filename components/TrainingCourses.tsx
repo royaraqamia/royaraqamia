@@ -9,7 +9,6 @@ import {
   HardDrive,
   Briefcase,
   User,
-  WhatsappLogo,
   ArrowLeft,
   CheckCircle,
   ShieldCheck,
@@ -41,7 +40,7 @@ export function TrainingCourses() {
       icon: Sparkle,
       label: 'مشروع جاهز للبيع',
       description: 'لا نخرج بمجرَّد واجهة، بل بمنتج رقمي كامل.',
-      badge: 'الهدف الرئيسي',
+      badge: 'الهدف الرَّئيسي',
     },
     {
       icon: Trophy,
@@ -53,7 +52,7 @@ export function TrainingCourses() {
   const features = [
     { icon: Code, text: 'احتراف التَّوجيه لبناء التَّطبيقات وربط قواعد البيانات.' },
     { icon: HardDrive, text: 'رفع المشاريع على سيرفرات حقيقيَّة.' },
-    { icon: Briefcase, text: 'تحويل المهارة إلى دخل: كيف تبيع خدماتك أو تطلق مشروعك الخاص.' },
+    { icon: Briefcase, text: 'تحويل المهارة إلى دخل: كيف تبيع خدماتك أو تُطلق مشروعك الخاص.' },
   ];
 
   return (
@@ -89,12 +88,12 @@ export function TrainingCourses() {
           <div className="text-center mb-12 lg:mb-16">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-semibold mb-4 backdrop-blur-md">
               <Lightning className="w-3.5 h-3.5 text-purple-500 animate-pulse" />
-              <span>المسار التَّدريبي التَّطبيقي</span>
+              <span>المسار التَّدريبي التَّطبيقي</span>
             </div>
 
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-4 text-foreground">
               <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
-                التَّدريب الشَّامل
+                التَّدريب
               </span>
             </h2>
 
@@ -123,7 +122,7 @@ export function TrainingCourses() {
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
                       <span className="text-xs font-semibold text-purple-200 tracking-wide">
-                        التَّسجيل مفتوح حالياً
+                        التَّسجيل مفتوح حاليًّا
                       </span>
                     </div>
 
@@ -149,7 +148,7 @@ export function TrainingCourses() {
                       </div>
                       <div className="text-[11px] text-purple-300/70 mt-1.5 font-medium flex items-center justify-center md:justify-start gap-1">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>للدَّورة كاملة شاملة التطبيق</span>
+                        <span>للدَّورة كاملة</span>
                       </div>
                     </div>
                   </div>
@@ -176,7 +175,7 @@ export function TrainingCourses() {
                         >
                           {isFeatured && (
                             <div className="absolute -top-3 right-6 px-3 py-0.5 rounded-full bg-linear-to-r from-purple-600 to-violet-600 text-[10px] font-bold text-white shadow-xs">
-                              {highlight.badge || 'الهدف الرئيسي'}
+                              {highlight.badge || 'الهدف الرَّئيسي'}
                             </div>
                           )}
 
@@ -209,7 +208,7 @@ export function TrainingCourses() {
                       </div>
                       <div className="min-w-0">
                         <span className="block text-xs font-medium text-muted-foreground">
-                          المدرِّب
+                          المدرِّب
                         </span>
                         <span className="block text-sm sm:text-base font-bold text-foreground truncate">
                           {course.trainer}
@@ -291,8 +290,7 @@ export function TrainingCourses() {
                       {/* Animated Light Shimmer Beam */}
                       <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-                      <WhatsappLogo className="w-6 h-6 text-emerald-300 shrink-0" weight="fill" />
-                      <span>احجز مقعدك الآن عبر واتساب</span>
+                      <span>احجز مقعدك الآن</span>
                       <ArrowLeft className="w-5 h-5 shrink-0 transition-transform group-hover:-translate-x-1 duration-300" />
                     </Button>
                   </a>
@@ -309,7 +307,7 @@ export function TrainingCourses() {
                     </span>
                     <span className="inline-flex items-center gap-1.5">
                       <CheckCircle className="w-4 h-4 text-emerald-500" />
-                      تطبيقات عملية 100%
+                      تطبيقات عمليَّة 100%
                     </span>
                   </div>
                 </div>
