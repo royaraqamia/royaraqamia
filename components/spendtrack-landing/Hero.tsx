@@ -41,7 +41,7 @@ export function Hero() {
   return (
     <section
       aria-label="SpendTrack Hero Section"
-      className="relative min-h-dvh flex items-center justify-center overflow-hidden py-16 sm:py-24 lg:py-32 w-full bg-background"
+      className="relative min-h-dvh flex items-center justify-center overflow-hidden pt-24 md:pt-32 pb-12 lg:py-0 w-full bg-background"
     >
       {/* Background Mesh Grid & Ambient Glows */}
       <div
@@ -87,17 +87,17 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[1.02] tracking-[-0.03em] mb-6 text-foreground"
+              className="text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
             >
-              <span className="gradient-text bg-linear-to-r from-primary via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                تتبَّع.
-              </span>
-              <br />
-              <span>حلِّل.</span>
-              <br />
-              <span className="gradient-text bg-linear-to-r from-primary via-purple-500 to-indigo-500 bg-clip-text text-transparent">
-                وفِّر.
-              </span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="gradient-text bg-linear-to-r from-primary via-purple-500 to-indigo-500 bg-clip-text text-transparent">
+                  تتبَّع.
+                </span>
+                <span>حلِّل.</span>
+                <span className="gradient-text bg-linear-to-r from-primary via-purple-500 to-indigo-500 bg-clip-text text-transparent">
+                  وفِّر.
+                </span>
+              </div>
             </motion.h1>
 
             {/* Subtitle */}
@@ -116,7 +116,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto justify-center lg:justify-start"
+              className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
             >
               <Button
                 size="xl"
@@ -198,7 +198,7 @@ export function Hero() {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.8 + i * 0.12, duration: 0.4 }}
-                      className="glass rounded-full sm:rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-background/50 hover:bg-background/80 border border-border/30 hover:border-border/60 transition-all duration-200 group"
+                      className="glass rounded-xl sm:rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-background/50 hover:bg-background/80 border border-border/30 hover:border-border/60 transition-all duration-200 group"
                     >
                       <div className="flex items-center gap-3 min-w-0">
                         <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-primary/20 transition-all duration-200">

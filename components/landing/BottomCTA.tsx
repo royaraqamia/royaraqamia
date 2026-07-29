@@ -78,12 +78,12 @@ export function BottomCTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.3, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4 w-full max-w-md sm:max-w-none"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4"
           >
             <Button
               size="xl"
               onClick={handleCTA}
-              className="cta-glow group relative inline-flex items-center justify-center gap-2.5 w-full sm:w-auto text-base sm:text-lg font-semibold px-8 sm:px-12 h-14 sm:h-16 rounded-full transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 hover:shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="cta-glow group relative inline-flex items-center justify-center gap-2.5 text-base sm:text-lg font-semibold px-8 sm:px-12 h-14 sm:h-16 rounded-full transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 hover:shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               <span>{user ? 'لوحة التَّحكُّم' : 'أنشِئ حسابك'}</span>
               <ArrowLeft
@@ -99,7 +99,7 @@ export function BottomCTA() {
               onClick={() => {
                 document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="group inline-flex items-center justify-center w-full sm:w-auto text-base sm:text-lg font-medium h-14 sm:h-16 px-8 sm:px-10 rounded-full border border-border/80 bg-background/60 hover:bg-accent/80 hover:border-border transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="group inline-flex items-center justify-center text-base sm:text-lg font-medium h-14 sm:h-16 px-8 sm:px-10 rounded-full border border-border/80 bg-background/60 hover:bg-accent/80 hover:border-border transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] backdrop-blur-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               كيف يعمل
             </Button>

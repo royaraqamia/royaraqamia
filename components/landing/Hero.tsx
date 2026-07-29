@@ -42,7 +42,7 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground py-20 lg:py-28">
+    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0">
       {/* Subtle Background Lighting & Grid Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.25),rgba(255,255,255,0))] pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
@@ -82,17 +82,17 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="text-4xl sm:text-6xl md:text-7xl lg:text-7xl xl:text-8xl font-black leading-[1.05] tracking-tight mb-6"
+              className="text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6"
             >
-              <span className="bg-linear-to-r from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent inline-block pb-1">
-                اختصِر.
-              </span>
-              <br />
-              <span className="text-foreground inline-block">شارك.</span>
-              <br />
-              <span className="bg-linear-to-r from-purple-600 via-indigo-500 to-primary bg-clip-text text-transparent inline-block pb-1">
-                تتبَّع.
-              </span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="bg-linear-to-r from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent inline-block pb-1">
+                  اختصِر.
+                </span>
+                <span className="text-foreground inline-block">شارك.</span>
+                <span className="bg-linear-to-r from-purple-600 via-indigo-500 to-primary bg-clip-text text-transparent inline-block pb-1">
+                  تتبَّع.
+                </span>
+              </div>
             </motion.h1>
 
             <motion.h2
@@ -110,7 +110,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto justify-center lg:justify-start"
+              className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
             >
               <Button
                 size="xl"
@@ -142,7 +142,7 @@ export function Hero() {
             initial={{ opacity: 0, scale: 0.92, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-6 xl:col-span-5 relative hidden lg:block"
+            className="lg:col-span-6 xl:col-span-5 relative"
           >
             <div className="relative" style={{ perspective: '1200px' }}>
               {/* Background Glow Ring */}
@@ -165,7 +165,7 @@ export function Hero() {
                     <div className="w-3 h-3 rounded-full bg-amber-500/80 hover:opacity-100 transition-opacity" />
                     <div className="w-3 h-3 rounded-full bg-emerald-500/80 hover:opacity-100 transition-opacity" />
                   </div>
-                  <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/60 text-xs font-mono text-muted-foreground border border-border/40">
+                  <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-muted/60 text-xs font-mono text-muted-foreground border border-border/40">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                     <span>royaraqamia.com</span>
                   </div>
@@ -198,7 +198,7 @@ export function Hero() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.8 + i * 0.15, duration: 0.5 }}
-                      className="group/item relative backdrop-blur-md bg-muted/40 hover:bg-muted/80 border border-border/40 hover:border-primary/30 rounded-full p-3.5 transition-all duration-300 shadow-sm"
+                      className="group/item relative backdrop-blur-md bg-muted/40 hover:bg-muted/80 border border-border/40 hover:border-primary/30 rounded-xl p-3.5 transition-all duration-300 shadow-sm"
                     >
                       <div className="flex items-center justify-between gap-3 mb-1.5">
                         <span className="text-xs font-mono text-muted-foreground truncate max-w-45">
@@ -228,7 +228,7 @@ export function Hero() {
                   className="mt-6 pt-5 border-t border-border/60 flex items-center justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
+                    <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
                       <Link size={18} weight="bold" />
                     </div>
                     <div>
@@ -250,7 +250,7 @@ export function Hero() {
               {floatingIcons.map(({ Icon, delay, x, y, size }, i) => (
                 <motion.div
                   key={i}
-                  className="absolute -z-10 pointer-events-none hidden xl:block"
+                  className="absolute -z-10 pointer-events-none"
                   style={{ left: x, top: y }}
                   animate={{ y: [0, -12 + i * 4, 0] }}
                   transition={{

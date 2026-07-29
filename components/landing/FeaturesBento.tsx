@@ -252,11 +252,11 @@ export function FeaturesBento() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-base sm:text-lg font-bold font-mono bg-linear-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent">
+              <div className="flex items-center justify-between gap-2 pt-1">
+                <span className="truncate text-sm sm:text-lg font-bold font-mono bg-linear-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent">
                   royaraqamia.com/abc123
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 border border-slate-800 px-3 py-1 text-xs text-slate-400 font-medium">
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-slate-900 border border-slate-800 px-2.5 py-0.5 text-[10px] text-slate-400 font-medium sm:px-3 sm:py-1 sm:text-xs">
                   منذ 2 ثانية
                 </span>
               </div>

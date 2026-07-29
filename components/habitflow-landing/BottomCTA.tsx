@@ -75,12 +75,12 @@ export function BottomCTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 w-full max-w-md mx-auto sm:max-w-none"
+            className="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4"
           >
             <Button
               size="xl"
               onClick={handleCTA}
-              className="group relative w-full sm:w-auto text-base sm:text-lg font-semibold px-8 sm:px-10 h-14 sm:h-16 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              className="group relative text-base sm:text-lg font-semibold px-8 sm:px-10 h-14 sm:h-16 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             >
               <span>{user ? 'لوحة التَّحكُّم' : 'أنشِئ حسابك'}</span>
               <ArrowLeft
@@ -95,7 +95,7 @@ export function BottomCTA() {
               onClick={() => {
                 document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
               }}
-              className="w-full sm:w-auto text-base sm:text-lg font-medium h-14 sm:h-16 px-8 sm:px-10 rounded-full border-border/80 hover:bg-accent/80 hover:text-accent-foreground transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="text-base sm:text-lg font-medium h-14 sm:h-16 px-8 sm:px-10 rounded-full border-border/80 hover:bg-accent/80 hover:text-accent-foreground transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               كيف يعمل
             </Button>

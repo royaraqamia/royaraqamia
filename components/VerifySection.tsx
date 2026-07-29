@@ -7,153 +7,223 @@ import Link from 'next/link';
 
 export function VerifySection() {
   return (
-    <section id="verify" className="section-spacing relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-purple-950 to-slate-900">
-        <div className="absolute top-0 right-1/4 w-150 h-150 bg-[#7766EE] opacity-5 blur-[150px] rounded-full" />
-        <div className="absolute bottom-0 left-1/4 w-150 h-150 bg-[#A78BFA] opacity-5 blur-[150px] rounded-full" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-100 h-100 bg-[#6366F1] opacity-3 blur-[120px] rounded-full" />
+    <section
+      id="verify"
+      dir="rtl"
+      aria-labelledby="verify-heading"
+      className="relative overflow-hidden bg-slate-950 py-20 sm:py-28 lg:py-36 text-slate-100 isolate select-none sm:select-text"
+    >
+      {/* Dynamic Background Atmosphere */}
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none">
+        {/* Modern Vector Mesh Grid Pattern */}
+        <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] bg-size-[24px_24px] opacity-20 mask-[radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)]" />
+
+        {/* High-End Ambient Glowing Orbs */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-150 bg-linear-to-b from-[#7766EE]/20 via-[#6366F1]/10 to-transparent blur-[140px] rounded-full pointer-events-none" />
+        <div className="absolute -bottom-20 right-1/4 w-112.5 h-112.5 bg-linear-to-t from-[#A78BFA]/15 via-purple-900/10 to-transparent blur-[130px] rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 -left-20 -translate-y-1/2 w-87.5 h-87.5 bg-[#6366F1]/10 blur-[120px] rounded-full pointer-events-none" />
       </div>
 
-      <div className="relative max-w-5xl mx-auto container-padding">
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Section Header */}
         <ScrollAnimation animation="slide-up" duration={0.8}>
-          <div className="text-center mb-10 lg:mb-16">
-            <div className="inline-flex items-center justify-center mb-6">
-              <div className="w-16 h-16 rounded-2xl bg-linear-to-br from-[#7766EE] to-[#A78BFA] flex items-center justify-center shadow-lg shadow-primary/25 relative overflow-hidden">
-                <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent motion-safe:animate-[shine-slide_3s_linear_infinite]" />
-                <ShieldCheck className="w-8 h-8 text-white relative z-10" weight="fill" />
+          <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+            {/* Encrypted System Pill Badge */}
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs sm:text-sm font-medium backdrop-blur-md shadow-sm mb-6 transition-colors hover:bg-indigo-500/15 cursor-default">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
+              </span>
+              <span>نظام التَّوثيق الرَّقمي</span>
+            </div>
+
+            {/* Glowing Icon Shield Badge */}
+            <div className="flex items-center justify-center mb-6">
+              <div className="relative group">
+                <div className="absolute -inset-1.5 bg-linear-to-r from-[#7766EE] via-[#222346] to-[#A78BFA] rounded-3xl blur-lg opacity-40 group-hover:opacity-75 transition duration-500" />
+                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-linear-to-br from-[#7766EE] via-[#6366F1] to-[#A78BFA] flex items-center justify-center shadow-2xl border border-white/20 overflow-hidden">
+                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                  <ShieldCheck
+                    className="w-9 h-9 sm:w-11 sm:h-11 text-white relative z-10 drop-shadow-md"
+                    weight="fill"
+                  />
+                </div>
               </div>
             </div>
 
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl mb-4 font-bold">
-              التَّحقُّق من <span className="gradient-text">الشَّهادة</span>
+            {/* Section Main Title */}
+            <h2
+              id="verify-heading"
+              className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-100 mb-4 sm:mb-6 leading-tight sm:leading-tight"
+            >
+              التَّحقُّق من{' '}
+              <span className="bg-linear-to-r from-[#7766EE] via-purple-300 to-[#A78BFA] bg-clip-text text-transparent">
+                الشَّهادة
+              </span>
             </h2>
 
-            <p className="text-sm sm:text-base lg:text-lg text-foreground/70 max-w-2xl mx-auto leading-[1.8] sm:leading-[1.9]">
+            {/* Description */}
+            <p className="text-base sm:text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed text-balance">
               نظام توثيق رقمي يضمن لك مصداقيَّة الشَّهادات الصَّادرة عن رؤية رقمية.
             </p>
           </div>
         </ScrollAnimation>
 
-        {/* Browser Device Mockup */}
+        {/* Browser Device Mockup Showcase */}
         <ScrollAnimation animation="scale" duration={0.8} delay={0.15}>
-          <div className="max-w-2xl mx-auto mb-10 lg:mb-14 select-none" aria-hidden="true">
-            {/* Browser Chrome */}
-            <div className="bg-slate-900/80 backdrop-blur-sm rounded-t-2xl border border-white/8 border-b-0 px-4 py-3 flex items-center gap-3 shadow-lg shadow-black/20">
-              <div className="flex items-center gap-1.5" aria-hidden="true">
-                <div className="w-3 h-3 rounded-full bg-red-500/70" />
-                <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
-                <div className="w-3 h-3 rounded-full bg-green-500/70" />
-              </div>
-              <div className="flex-1 max-w-md mx-auto">
-                <div className="h-7 rounded-lg bg-white/6 border border-white/6 flex items-center justify-center gap-2 px-3">
-                  <Lock className="w-3 h-3 text-emerald-400/70" />
-                  <span className="text-[11px] text-muted-foreground/50 truncate tracking-wide">
-                    royaraqamia.com/verify
-                  </span>
-                </div>
-              </div>
-            </div>
+          <div className="max-w-2xl mx-auto mb-12 sm:mb-16 lg:mb-20">
+            <div className="p-px rounded-2xl sm:rounded-3xl bg-linear-to-b from-white/20 via-white/10 to-transparent shadow-2xl shadow-black/80 backdrop-blur-xl">
+              <div className="rounded-2xl sm:rounded-3xl bg-slate-900/90 overflow-hidden border border-white/10">
+                {/* Browser Window Header Controls */}
+                <div className="bg-slate-950/80 px-4 sm:px-6 py-3.5 border-b border-white/10 flex items-center justify-between gap-4 backdrop-blur-md">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-rose-500/80 border border-rose-400/30" />
+                    <div className="w-3 h-3 rounded-full bg-amber-500/80 border border-amber-400/30" />
+                    <div className="w-3 h-3 rounded-full bg-emerald-500/80 border border-emerald-400/30" />
+                  </div>
 
-            <div
-              className="bg-slate-900/40 backdrop-blur-sm rounded-b-2xl border border-white/8 p-6 md:p-8 shadow-lg shadow-black/20"
-              role="presentation"
-            >
-              <div className="flex flex-col items-center text-center gap-5">
-                <div className="w-14 h-14 rounded-xl bg-white/4 border border-dashed border-white/8 flex items-center justify-center">
-                  <QrCode className="w-6 h-6 text-muted-foreground/40" />
-                </div>
-
-                <div className="space-y-1.5">
-                  <p className="text-sm text-foreground/50 font-medium">رمز الشهادة</p>
-                  <div className="flex items-center gap-2 justify-center">
-                    <div className="h-10 px-4 flex items-center border border-dashed border-white/8 rounded-lg bg-white/3">
-                      <span className="text-sm text-muted-foreground/40 font-mono tracking-[0.15em]">
-                        COMP-2026-A1B2C3D4
+                  <div className="flex-1 max-w-xs sm:max-w-md mx-auto">
+                    <div className="h-8 rounded-xl bg-slate-900/90 border border-white/10 px-3 flex items-center justify-center gap-2 text-xs font-mono text-slate-400 shadow-inner group/url hover:border-indigo-500/30 transition-colors">
+                      <Lock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <span className="truncate tracking-wide text-slate-300">
+                        royaraqamia.com/verify
                       </span>
                     </div>
-                    <div className="w-10 h-10 rounded-lg bg-white/4 border border-dashed border-white/8 flex items-center justify-center">
-                      <Copy className="w-4 h-4 text-muted-foreground/30" />
-                    </div>
+                  </div>
+
+                  <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-md">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span>آمن 256-bit</span>
                   </div>
                 </div>
 
-                <div className="h-10 px-6 rounded-lg bg-white/5 border border-dashed border-white/8 flex items-center justify-center gap-2">
-                  <ScanLine className="w-4 h-4 text-muted-foreground/30" />
-                  <span className="text-sm text-muted-foreground/30 font-medium">تحقُّق</span>
+                {/* Mockup Display Content */}
+                <div className="bg-linear-to-b from-slate-900/90 via-slate-950/90 to-slate-900/90 p-6 sm:p-10 text-center relative">
+                  <div className="flex flex-col items-center gap-6">
+                    {/* Futuristic QR Display */}
+                    <div className="relative group/qr">
+                      <div className="absolute -inset-1.5 bg-linear-to-r from-[#7766EE] to-[#A78BFA] rounded-2xl blur opacity-25 group-hover/qr:opacity-50 transition duration-300" />
+                      <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-950/90 border border-indigo-500/30 flex items-center justify-center shadow-lg group-hover/qr:scale-105 transition-transform duration-300">
+                        <QrCode className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-400 group-hover/qr:text-indigo-300 transition-colors" />
+                      </div>
+                    </div>
+
+                    {/* Certificate Code Input Mock */}
+                    <div className="w-full max-w-md space-y-2">
+                      <p className="text-xs sm:text-sm text-slate-400 font-medium">رمز الشَّهادة</p>
+                      <div className="flex flex-wrap sm:flex-nowrap items-center justify-center gap-2.5">
+                        <div className="h-11 px-4 sm:px-6 rounded-xl bg-slate-950/90 border border-indigo-500/30 text-indigo-200 font-mono text-xs sm:text-sm tracking-widest flex items-center justify-center shadow-inner flex-1 min-w-50">
+                          <span className="select-all">COMP-2026-A1B2C3D4</span>
+                        </div>
+                        <button
+                          type="button"
+                          aria-label="نسخ رمز الشَّهادة"
+                          className="h-11 w-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-indigo-500/20 hover:border-indigo-500/40 active:scale-95 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 group/copy"
+                        >
+                          <Copy className="w-4 h-4 group-hover/copy:scale-110 transition-transform" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Quick Verification Status Pill */}
+                    <div className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs sm:text-sm font-medium">
+                      <ScanLine className="w-4 h-4 text-indigo-400 animate-pulse" />
+                      <span>تحقُّق فوري متاح</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Caption */}
-            <div className="mt-3 flex items-center justify-center gap-3">
-              <div className="h-px flex-1 max-w-16 bg-linear-to-l from-white/6 to-transparent" />
-              <span className="text-[11px] text-muted-foreground/50 tracking-wide">
-                واجهة التّحقق التوضيحيّة
+            {/* Device Caption */}
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <div className="h-px flex-1 max-w-20 bg-linear-to-l from-white/10 to-transparent" />
+              <span className="text-xs text-slate-500 font-medium tracking-wide">
+                واجهة التَّحقُّق التَّوضيحيَّة
               </span>
-              <div className="h-px flex-1 max-w-16 bg-linear-to-r from-white/6 to-transparent" />
+              <div className="h-px flex-1 max-w-20 bg-linear-to-r from-white/10 to-transparent" />
             </div>
           </div>
         </ScrollAnimation>
 
-        {/* How It Works Strip */}
+        {/* How It Works Grid Steps */}
         <ScrollAnimation animation="slide-up" duration={0.8} delay={0.25}>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-0 mb-10 lg:mb-14 max-w-lg mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 mb-12 sm:mb-16 lg:mb-20 max-w-4xl mx-auto">
             {[
-              { icon: FileText, label: 'أدخل رمز الشهادة', sub: 'مكوّن من 16 حرفًا' },
-              { icon: ScanLine, label: 'تحقّق فوري', sub: 'من قاعدة البيانات' },
-              { icon: CheckCircle, label: 'احصل على النتيجة', sub: 'موثّقة وموقّعة' },
+              {
+                icon: FileText,
+                step: '01',
+                label: 'أدخِل رمز الشَّهادة',
+                sub: 'مُكوَّن من 16 حرفًا',
+              },
+              {
+                icon: ScanLine,
+                step: '02',
+                label: 'تحقُّق فوري',
+                sub: 'من قاعدة البيانات',
+              },
+              {
+                icon: CheckCircle,
+                step: '03',
+                label: 'احصل على النَّتيجة',
+                sub: 'مُوثَّقة ومُوقَّعة',
+              },
             ].map((step, i) => (
-              <div key={i} className="flex items-center w-full sm:w-auto">
-                {i > 0 && (
-                  <div className="hidden sm:block w-8 h-px bg-linear-to-l from-white/8 to-transparent mx-2 shrink-0" />
-                )}
-                <div className="flex items-center gap-3 flex-1 sm:flex-initial">
-                  <div className="w-9 h-9 rounded-full bg-white/4 border border-white/8 flex items-center justify-center shrink-0">
-                    <step.icon className="w-4 h-4 text-muted-foreground/50" />
+              <div
+                key={i}
+                className="relative group/step p-6 rounded-2xl bg-linear-to-b from-white/5 to-white/1 border border-white/10 hover:border-indigo-500/40 hover:bg-white/[0.07] transition-all duration-300 shadow-xl shadow-black/20 flex flex-col justify-between"
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover/step:scale-110 group-hover/step:bg-indigo-500/20 group-hover/step:text-indigo-300 transition-all duration-300">
+                    <step.icon className="w-6 h-6" />
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-foreground/60">{step.label}</p>
-                    <p className="text-xs text-muted-foreground/40">{step.sub}</p>
-                  </div>
+                  <span className="text-2xl font-black font-mono text-slate-700 group-hover/step:text-indigo-400/50 transition-colors">
+                    {step.step}
+                  </span>
+                </div>
+                <div className="space-y-1 text-right">
+                  <h3 className="text-base sm:text-lg font-bold text-slate-100 group-hover/step:text-indigo-300 transition-colors">
+                    {step.label}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">{step.sub}</p>
                 </div>
               </div>
             ))}
           </div>
         </ScrollAnimation>
 
-        {/* CTA Button */}
+        {/* Primary Call-to-Action */}
         <ScrollAnimation animation="slide-up" duration={0.8} delay={0.3}>
           <div className="text-center">
             <Link
               href="/verify"
-              className="primary-cta-btn cta-glow relative overflow-hidden h-14 sm:h-16 inline-flex items-center justify-center px-8 sm:px-12 rounded-full bg-linear-to-r from-[#7766EE] to-[#A78BFA] text-white text-base sm:text-xl font-bold motion-safe:transition-all duration-300 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white group"
+              className="relative inline-flex items-center justify-center group overflow-hidden rounded-full p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-2xl shadow-indigo-600/30 hover:shadow-indigo-500/50"
             >
-              <span className="relative flex items-center gap-3 z-10">
-                الانتقال إلى التَّحقُّق
-                <ArrowLeft className="w-6 h-6 motion-safe:transition-transform duration-300 group-hover:-translate-x-1" />
+              <span className="absolute inset-0 bg-linear-to-r from-[#7766EE] via-[#6366F1] to-[#A78BFA] rounded-full" />
+              <span className="relative inline-flex items-center gap-3.5 px-8 sm:px-12 py-4 sm:py-5 rounded-full bg-slate-950 text-white font-bold text-base sm:text-xl transition-all duration-300 group-hover:bg-slate-950/80">
+                <span>الانتقال إلى التَّحقُّق</span>
+                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:-translate-x-1.5" />
               </span>
-              <span className="shine-effect absolute inset-0 -translate-x-full motion-safe:transition-transform duration-700 bg-linear-to-r from-transparent via-white/25 to-transparent motion-safe:group-hover:translate-x-full" />
             </Link>
           </div>
         </ScrollAnimation>
 
-        {/* Trust Footer */}
+        {/* Trust & Security Badge Footer */}
         <ScrollAnimation animation="slide-up" duration={0.8} delay={0.4}>
-          <div className="mt-12 border-t border-white/5 pt-8">
-            <div className="flex flex-wrap items-center justify-center gap-6 text-xs text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5" />
-                اتصال مشفر SSL
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5" weight="bold" />
-                نظام توثيق رقمي
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Database className="w-3.5 h-3.5" />
-                التحقق آني من قاعدة البيانات
-              </span>
+          <div className="mt-14 sm:mt-20 border-t border-white/10 pt-8 sm:pt-10">
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-slate-400 font-medium">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/3 border border-white/10 hover:border-white/20 transition-colors">
+                <Lock className="w-4 h-4 text-indigo-400" />
+                <span>اتِّصال مُشفَّر SSL</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/3 border border-white/10 hover:border-white/20 transition-colors">
+                <ShieldCheck className="w-4 h-4 text-purple-400" weight="bold" />
+                <span>نظام توثيق رقمي</span>
+              </div>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/3 border border-white/10 hover:border-white/20 transition-colors">
+                <Database className="w-4 h-4 text-emerald-400" />
+                <span>التَّحقُّق آني من قاعدة البيانات</span>
+              </div>
             </div>
           </div>
         </ScrollAnimation>

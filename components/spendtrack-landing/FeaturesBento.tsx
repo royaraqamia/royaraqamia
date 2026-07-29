@@ -264,17 +264,17 @@ function MonthlyTrend() {
 
   return (
     <div className="space-y-4 rounded-2xl border border-border/40 bg-background/50 p-4 shadow-inner backdrop-blur-md sm:p-5">
-      <div className="flex items-center justify-between border-b border-border/30 pb-2">
+      <div className="flex flex-wrap items-center justify-between gap-1 border-b border-border/30 pb-2">
         <span className="text-xs font-semibold text-foreground sm:text-sm">
           الاتِّجاهات الشَّهريَّة
         </span>
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-500">
-          <TrendUp size={14} className="text-emerald-500" />
-          -12% مقابل الشَّهر الماضي
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
+          <TrendUp size={12} className="shrink-0 text-emerald-500 sm:size-[14px]" />
+          <span className="whitespace-nowrap">-12% مقابل الشَّهر الماضي</span>
         </span>
       </div>
-      <div className="px-1 pb-1 pt-4">
-        <div className="flex h-32 items-end justify-between gap-2 sm:gap-3">
+      <div className="overflow-x-auto px-1 pb-1 pt-4">
+        <div className="flex h-32 items-end justify-between gap-1.5 sm:gap-3 min-w-[280px]">
           {monthlyData.map((val, i) => {
             const heightPercent = (val / maxVal) * 100;
             const isHighest = val === maxVal;
@@ -305,7 +305,7 @@ function MonthlyTrend() {
                     }`}
                   />
                 </div>
-                <span className="mt-2 text-[11px] font-medium text-muted-foreground transition-colors duration-200 group-hover/col:text-foreground">
+                <span className="mt-2 whitespace-nowrap text-[10px] font-medium text-muted-foreground transition-colors duration-200 group-hover/col:text-foreground sm:text-[11px]">
                   {months[i]}
                 </span>
               </motion.div>

@@ -47,7 +47,7 @@ export function Hero() {
   };
 
   return (
-    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground py-16 sm:py-24 lg:py-32 selection:bg-primary/20 selection:text-primary">
+    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0 selection:bg-primary/20 selection:text-primary">
       {/* Ambient Grid Background Layer */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] pointer-events-none" />
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
@@ -70,7 +70,7 @@ export function Hero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-6 xl:col-span-7 text-center lg:text-right"
+            className="lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start"
           >
             {/* Pulsing Status Pill */}
             <motion.div
@@ -91,17 +91,17 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="text-4xl sm:text-6xl md:text-7xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-[1.08] sm:leading-[1.05] mb-6 text-foreground"
+              className="text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
             >
-              <span className="bg-linear-to-l from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent inline-block drop-shadow-xs">
-                تتبَّع.
-              </span>
-              <br />
-              <span className="text-foreground inline-block">واظب.</span>
-              <br />
-              <span className="bg-linear-to-l from-purple-600 via-indigo-500 to-primary bg-clip-text text-transparent inline-block drop-shadow-xs">
-                ازدَهِر.
-              </span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="bg-linear-to-l from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent inline-block drop-shadow-xs">
+                  تتبَّع.
+                </span>
+                <span className="text-foreground inline-block">واظب.</span>
+                <span className="bg-linear-to-l from-purple-600 via-indigo-500 to-primary bg-clip-text text-transparent inline-block drop-shadow-xs">
+                  ازدَهِر.
+                </span>
+              </div>
             </motion.h1>
 
             {/* Subtitle Description */}
@@ -179,11 +179,11 @@ export function Hero() {
                 </div>
 
                 {/* Weekly Streak Header */}
-                <div className="flex items-center justify-between mb-5 bg-muted/30 p-3.5 rounded-full border border-border/30">
+                <div className="flex items-center justify-between mb-5 bg-muted/30 p-3.5 rounded-xl border border-border/30">
                   <span className="text-xs sm:text-sm font-semibold text-foreground">
                     هذا الأسبوع
                   </span>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs sm:text-sm font-bold shadow-xs">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs sm:text-sm font-bold shadow-xs">
                     <Fire size={18} weight="fill" className="text-orange-500 animate-pulse" />
                     <span>12</span>
                   </div>
@@ -212,7 +212,7 @@ export function Hero() {
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: 0.6 + i * 0.12, duration: 0.5 }}
-                      className="group/row rounded-full p-3 bg-muted/20 hover:bg-muted/40 border border-border/40 hover:border-border/80 transition-all duration-300"
+                      className="group/row rounded-xl p-3 bg-muted/20 hover:bg-muted/40 border border-border/40 hover:border-border/80 transition-all duration-300"
                     >
                       <div className="flex items-center justify-between mb-2.5">
                         <span className="text-xs sm:text-sm font-semibold text-foreground group-hover/row:text-primary transition-colors">

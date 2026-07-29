@@ -34,7 +34,7 @@ export function Hero() {
   return (
     <section
       aria-label="Hero"
-      className="relative min-h-dvh w-full flex items-center justify-center overflow-hidden bg-background text-foreground py-20 lg:py-0"
+      className="relative min-h-dvh w-full flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0"
     >
       {/* Premium Background Lighting & Dot Grid Overlay */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] pointer-events-none" />
@@ -47,7 +47,7 @@ export function Hero() {
         style={{ animationDelay: '2s' }}
       />
 
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-28 pb-20 lg:pt-32 lg:pb-24">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
           {/* Main Content Column */}
           <motion.div
@@ -75,17 +75,17 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-              className="text-4xl xs:text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-black tracking-tight leading-[1.05] sm:leading-[1.02] mb-6 text-foreground"
+              className="text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
             >
-              <span className="bg-linear-to-l from-primary via-primary/90 to-foreground bg-clip-text text-transparent inline-block">
-                اكتب.
-              </span>
-              <br />
-              <span className="inline-block hover:opacity-90 transition-opacity">انشر.</span>
-              <br />
-              <span className="bg-linear-to-l from-indigo-500 via-primary to-primary/80 bg-clip-text text-transparent inline-block">
-                تمّ.
-              </span>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                <span className="bg-linear-to-l from-primary via-primary/90 to-foreground bg-clip-text text-transparent inline-block">
+                  اكتب.
+                </span>
+                <span className="inline-block hover:opacity-90 transition-opacity">انشر.</span>
+                <span className="bg-linear-to-l from-indigo-500 via-primary to-primary/80 bg-clip-text text-transparent inline-block">
+                  تمّ.
+                </span>
+              </div>
             </motion.h1>
 
             {/* Supporting Subtitle */}
@@ -104,7 +104,7 @@ export function Hero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.55, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto justify-center lg:justify-start"
+              className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
             >
               <Button
                 size="xl"
@@ -136,7 +136,7 @@ export function Hero() {
             initial={{ opacity: 0, scale: 0.94, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             transition={{ delay: 0.35, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:col-span-6 xl:col-span-6 relative hidden lg:block"
+            className="lg:col-span-6 xl:col-span-6 relative"
           >
             <div className="relative perspective-3d">
               {/* Diffused Outer Aura */}
@@ -166,7 +166,7 @@ export function Hero() {
                 <div className="grid grid-cols-2 gap-4">
                   {/* Left: Code Editor Pane */}
                   <div className="space-y-3">
-                    <div className="rounded-full border border-border/50 bg-card/60 p-4 shadow-sm backdrop-blur-sm">
+                    <div className="rounded-xl border border-border/50 bg-card/60 p-4 shadow-sm backdrop-blur-sm">
                       <div className="flex items-center justify-between mb-3 border-b border-border/30 pb-2">
                         <div className="flex items-center gap-1.5">
                           <Code size={14} className="text-primary" />
@@ -202,7 +202,7 @@ export function Hero() {
 
                   {/* Right: Live Output & SEO Meter Pane */}
                   <div className="space-y-3">
-                    <div className="rounded-full border border-border/50 bg-card/60 p-4 shadow-sm backdrop-blur-sm">
+                    <div className="rounded-xl border border-border/50 bg-card/60 p-4 shadow-sm backdrop-blur-sm">
                       <div className="flex items-center gap-1.5 mb-3 border-b border-border/30 pb-2">
                         <Eye size={14} className="text-primary" />
                         <span className="text-xs font-semibold text-foreground">معاينة</span>
@@ -222,7 +222,7 @@ export function Hero() {
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 1.2, duration: 0.5 }}
-                      className="rounded-full border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-3.5 flex items-center justify-between backdrop-blur-sm shadow-xs"
+                      className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-3.5 flex items-center justify-between backdrop-blur-sm shadow-xs"
                     >
                       <div className="flex items-center gap-2">
                         <span className="relative flex h-2 w-2">
@@ -264,7 +264,7 @@ export function Hero() {
                       delay: item.delay,
                     }}
                   >
-                    <div className="flex items-center gap-2 rounded-full border border-white/20 dark:border-white/10 bg-background/90 dark:bg-neutral-900/90 backdrop-blur-md px-3.5 py-2 shadow-xl text-xs font-medium text-foreground">
+                    <div className="flex items-center gap-2 rounded-xl border border-white/20 dark:border-white/10 bg-background/90 dark:bg-neutral-900/90 backdrop-blur-md px-3.5 py-2 shadow-xl text-xs font-medium text-foreground">
                       <Icon size={18} className="text-primary" />
                       <span className="whitespace-nowrap">{item.label}</span>
                     </div>

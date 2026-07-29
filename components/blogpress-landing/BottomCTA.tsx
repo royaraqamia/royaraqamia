@@ -73,12 +73,12 @@ export function BottomCTA() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: 0.3, duration: 0.6 }}
-              className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-4 sm:gap-5 max-w-md sm:max-w-none mx-auto w-full"
+              className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5"
             >
               <Button
                 size="xl"
                 onClick={handleCTA}
-                className="group relative inline-flex items-center justify-center gap-3 h-14 sm:h-16 px-8 sm:px-10 rounded-full bg-primary text-primary-foreground font-semibold text-base sm:text-lg shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 border border-primary/30 cursor-pointer w-full sm:w-auto"
+                className="group relative inline-flex items-center justify-center gap-3 h-14 sm:h-16 px-8 sm:px-10 rounded-full bg-primary text-primary-foreground font-semibold text-base sm:text-lg shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 border border-primary/30 cursor-pointer"
               >
                 <span className="relative z-10">{user ? 'لوحة التَّحكُّم' : 'أنشِئ حسابك'}</span>
                 <ArrowLeft
@@ -94,7 +94,7 @@ export function BottomCTA() {
                 onClick={() => {
                   document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="inline-flex items-center justify-center h-14 sm:h-16 px-8 sm:px-10 rounded-full border border-border/80 bg-background/60 backdrop-blur-md hover:bg-accent/80 hover:border-accent hover:text-accent-foreground text-foreground font-semibold text-base sm:text-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer w-full sm:w-auto"
+                className="inline-flex items-center justify-center h-14 sm:h-16 px-8 sm:px-10 rounded-full border border-border/80 bg-background/60 backdrop-blur-md hover:bg-accent/80 hover:border-accent hover:text-accent-foreground text-foreground font-semibold text-base sm:text-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer"
               >
                 كيف يعمل
               </Button>

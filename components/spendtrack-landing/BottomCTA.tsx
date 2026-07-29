@@ -77,7 +77,7 @@ export function BottomCTA() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3.5 sm:gap-4 w-full sm:w-auto min-w-70"
+            className="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4"
           >
             <Button
               size="xl"

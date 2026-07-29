@@ -79,62 +79,115 @@ const headerVariant = {
   show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 70, damping: 20 } },
 } as const;
 
+const gridContainerVariant = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.15,
+    },
+  },
+} as const;
+
+const cardItemVariant = {
+  hidden: { opacity: 0, y: 28 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring', stiffness: 75, damping: 20 },
+  },
+} as const;
+
 export function Services() {
   return (
-    <section id="services" className="relative py-24 lg:py-32 overflow-hidden bg-[#050810]">
-      {/* 
-        Elite Background: Organic Floating Orbs 
-        Replaced rigid pulses with Framer Motion infinite drifting mesh gradients.
-      */}
+    <section
+      id="services"
+      dir="rtl"
+      className="relative py-24 sm:py-32 lg:py-40 overflow-hidden bg-[#030712] text-slate-100 selection:bg-indigo-500/30 selection:text-indigo-200"
+    >
+      {/* Top Ambient Highlight Border */}
+      <div className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-indigo-500/30 to-transparent pointer-events-none" />
+
+      {/* Modern Architectural Dot/Grid Pattern */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29371a_1px,transparent_1px),linear-gradient(to_bottom,#1f29371a_1px,transparent_1px)] bg-size-[3.5rem_3.5rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_35%,#000_70%,transparent_100%)] pointer-events-none" />
+
+      {/* Dynamic Background Spotlight & Floating Mesh Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none mix-blend-screen z-0">
         <motion.div
-          animate={{ y: [0, -40, 0], x: [0, 30, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute top-1/4 right-1/4 w-72 h-72 bg-indigo-600/10 rounded-full blur-[100px]"
+          animate={{ y: [0, -35, 0], x: [0, 25, 0], scale: [1, 1.12, 1] }}
+          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/4 right-1/4 w-80 h-80 sm:w-96 sm:h-96 bg-indigo-600/15 rounded-full blur-[130px]"
         />
         <motion.div
-          animate={{ y: [0, 50, 0], x: [0, -40, 0], scale: [1, 1.2, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-          className="absolute bottom-1/4 left-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-[120px]"
+          animate={{ y: [0, 45, 0], x: [0, -35, 0], scale: [1, 1.18, 1] }}
+          transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+          className="absolute bottom-1/4 left-1/4 w-80 h-80 sm:w-96 sm:h-96 bg-purple-600/15 rounded-full blur-[140px]"
         />
         <motion.div
-          animate={{ y: [0, -30, 0], x: [0, -20, 0], opacity: [0.1, 0.15, 0.1] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-96 h-96 bg-violet-500/10 rounded-full blur-[120px]"
+          animate={{ y: [0, -25, 0], x: [0, -20, 0], opacity: [0.12, 0.2, 0.12] }}
+          transition={{ duration: 13, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 w-md h-112 bg-violet-600/12 rounded-full blur-[140px]"
         />
-        {/* Subtle noise texture over the gradients for a premium physical feel */}
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02] mix-blend-overlay"></div>
+        {/* Tactile Noise Overlay */}
+        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.025] mix-blend-overlay" />
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
         {/* Section Header */}
         <motion.div
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: '-100px' }}
           variants={headerVariant}
-          className="text-center max-w-3xl mx-auto mb-20"
+          className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24 flex flex-col items-center"
         >
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl mb-6 font-extrabold tracking-tight text-white">
-            ماذا <span className="gradient-text">نقدِّم</span>؟
+          {/* High-End Glass Pill Badge */}
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-inner text-xs font-semibold text-indigo-300 mb-6 group transition-colors duration-300 hover:border-indigo-500/40 hover:bg-slate-900">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
+            </span>
+            <span className="tracking-wide">خدماتنا المتميِّزة</span>
+          </div>
+
+          {/* Heading */}
+          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6 leading-[1.15]">
+            ماذا{' '}
+            <span className="bg-linear-to-r from-indigo-400 via-purple-300 to-teal-300 bg-clip-text text-transparent drop-shadow-sm">
+              نقدِّم
+            </span>
+            ؟
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-white/60 leading-relaxed font-medium">
+
+          {/* Subtitle */}
+          <p className="text-base sm:text-lg lg:text-xl text-slate-400 leading-relaxed font-normal max-w-2xl">
             بُنية تحتيَّة شاملة للأفراد وأصحاب الأعمال تحت سقف واحد.
           </p>
         </motion.div>
 
-        {/* 
-          The Grid Layout 
-          Notice the advanced Tailwind selector: [&>*:last-child]:md:col-span-2 [&>*:last-child]:lg:col-span-1
-        */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 [&>*:last-child]:md:col-span-2 [&>*:last-child]:lg:col-span-1 [&>*:last-child]:md:max-w-md [&>*:last-child]:md:mx-auto [&>*:last-child]:lg:max-w-none">
+        {/* Dynamic Grid Layout */}
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, margin: '-50px' }}
+          variants={gridContainerVariant}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-8 [&>*:last-child]:md:col-span-2 [&>*:last-child]:lg:col-span-1 [&>*:last-child]:md:max-w-md [&>*:last-child]:md:mx-auto [&>*:last-child]:lg:max-w-none"
+        >
           {services.map((service, index) => (
-            <div key={index} className="h-full">
+            <motion.div
+              key={index}
+              variants={cardItemVariant}
+              className="h-full flex flex-col transition-transform duration-300 ease-out hover:scale-[1.01]"
+            >
               <ServiceCard service={service} index={index} />
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
+
+      {/* Bottom Ambient Divider Line */}
+      <div className="absolute bottom-0 inset-x-0 h-px bg-linear-to-r from-transparent via-slate-800 to-transparent pointer-events-none" />
     </section>
   );
 }
