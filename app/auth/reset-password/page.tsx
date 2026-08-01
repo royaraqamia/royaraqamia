@@ -4,7 +4,7 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { WarningCircle, CheckCircle, ArrowLeft } from '@phosphor-icons/react';
-import { resetPassword } from '@/lib/actions/auth';
+import { resetPassword } from '@/backend/actions/auth';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AuthCard } from '@/components/auth/AuthCard';

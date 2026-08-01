@@ -9,7 +9,7 @@ import { RedirectErrorBanner } from '@/components/linksnap/redirect-error-banner
 import { ViewSelector } from '@/components/linksnap/view-selector';
 import { useSession } from '@/components/shared/session-provider';
 import { DashboardSkeleton } from '@/components/linksnap/loading-skeletons';
-import { AdminValidator } from '@/domains/linksnap/domain/services/admin-validator';
+import { AdminValidator } from '@/shared/admin-validator';
 
 interface RedirectError {
   type: string;

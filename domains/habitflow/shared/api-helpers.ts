@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { SupabaseClient } from '@supabase/supabase-js';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/backend/transport/supabase/server';
 import { AppError, getErrorMessage } from './errors';
 
 interface AuthenticatedUser {

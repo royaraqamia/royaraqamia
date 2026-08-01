@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/domains/linksnap/lib/auth-helper';
-import { SupabaseShortLinkRepository } from '@/domains/linksnap/infrastructure/repositories/supabase-short-link.repository';
-import { BulkShortenUseCase } from '@/domains/linksnap/application/services/bulk-shorten.usecase';
-import { checkRateLimitApi } from '@/domains/linksnap/lib/with-rate-limit';
+import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
+import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
+import { BulkShortenUseCase } from '@/backend/usecases/linksnap/bulk-shorten';
+import { checkRateLimitApi } from '@/backend/shared/with-rate-limit';
 
 export async function POST(req: NextRequest) {
   try {

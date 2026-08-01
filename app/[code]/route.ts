@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SupabaseShortLinkRepository } from '@/domains/linksnap/infrastructure/repositories/supabase-short-link.repository';
-import { SupabaseAnalyticsRepository } from '@/domains/linksnap/infrastructure/repositories/supabase-analytics.repository';
-import { RedirectUrlUseCase } from '@/domains/linksnap/application/services/redirect-url.usecase';
+import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
+import { SupabaseAnalyticsRepository } from '@/backend/repositories/linksnap/supabase-analytics';
+import { RedirectUrlUseCase } from '@/backend/usecases/linksnap/redirect-url';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ code: string }> }) {
   const { code } = await context.params;

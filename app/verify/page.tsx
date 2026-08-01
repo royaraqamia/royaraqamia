@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { verifyCertificate } from '@/lib/actions/certificates';
-import type { Certificate } from '@/lib/certificate-verification';
-import { formatDateArabic } from '@/lib/utils';
+import { verifyCertificate } from '@/backend/actions/certificates/verify';
+import type { Certificate } from '@/backend/services/certificate-verification';
+import { formatDateArabic } from '@/frontend/shared/utils';
 import {
   ShieldCheck,
   Search,

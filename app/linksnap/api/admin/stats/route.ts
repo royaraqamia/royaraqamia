@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/domains/linksnap/lib/auth-helper';
-import { GetSystemStatsUseCase } from '@/domains/linksnap/application/services/get-system-stats.usecase';
-import { SupabaseAdminRepository } from '@/domains/linksnap/infrastructure/repositories/supabase-admin.repository';
+import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
+import { GetSystemStatsUseCase } from '@/backend/usecases/linksnap/get-system-stats';
+import { SupabaseAdminRepository } from '@/backend/repositories/linksnap/supabase-admin';
 
 export async function GET(req: NextRequest) {
   try {

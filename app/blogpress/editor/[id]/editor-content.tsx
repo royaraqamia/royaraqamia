@@ -59,8 +59,8 @@ import { updatePost, saveAndPublishPost } from '@/domains/blogpress/lib/actions/
 import { uploadImage } from '@/domains/blogpress/lib/actions/media';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
-import type { Post } from '@/domains/blogpress/lib/definitions';
-import { estimateWordCount, formatReadingTimeLong } from '@/lib/reading-time';
+import type { Post } from '@/backend/models/blogpress';
+import { estimateWordCount, formatReadingTimeLong } from '@/backend/shared/reading-time';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
 

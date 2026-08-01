@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
-import { cn } from '@/lib/utils';
+import { cn } from '@/frontend/shared/utils';
 import { Loader2 } from 'lucide-react';
 
 interface CertificateQRCodeClientProps {

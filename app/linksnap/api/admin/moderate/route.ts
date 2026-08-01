@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/domains/linksnap/lib/auth-helper';
-import { SupabaseShortLinkRepository } from '@/domains/linksnap/infrastructure/repositories/supabase-short-link.repository';
-import { ModerateLinkUseCase } from '@/domains/linksnap/application/services/moderate-link.usecase';
+import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
+import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
+import { ModerateLinkUseCase } from '@/backend/usecases/linksnap/moderate-link';
 
 export async function POST(req: NextRequest) {
   try {

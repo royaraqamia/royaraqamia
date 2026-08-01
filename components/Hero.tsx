@@ -4,7 +4,7 @@ import { memo } from 'react';
 import { m } from 'motion/react';
 import { ArrowLeft, Star } from '@phosphor-icons/react';
 import { HeroVisual } from './HeroVisual';
-import { getWhatsAppUrl } from '../lib/constants';
+import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
 export const Hero = memo(function Hero() {
   const containerVariants = {

@@ -2,8 +2,8 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
-import { getAdminSupabase } from '@/lib/supabase/admin';
+import { createClient } from '@/backend/transport/supabase/server';
+import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -12,8 +12,8 @@ import { ArrowRight, Clock, Calendar, BookOpen, User, ChevronLeft } from 'lucide
 import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
-import { estimateReadingTime, formatReadingTimeLong } from '@/lib/reading-time';
-import type { Post } from '@/domains/blogpress/lib/definitions';
+import { estimateReadingTime, formatReadingTimeLong } from '@/backend/shared/reading-time';
+import type { Post } from '@/backend/models/blogpress';
 import type { Metadata } from 'next';
 
 export const revalidate = 60;

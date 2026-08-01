@@ -1,14 +1,14 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/backend/transport/supabase/server';
 import { createHabitService } from '@/domains/habitflow/config/composition-root';
 import {
   createHabitSchema,
   updateHabitSchema,
   toggleLogSchema,
 } from '@/domains/habitflow/lib/validation';
-import type { Habit, HabitLog } from '@/domains/habitflow/models';
+import type { Habit, HabitLog } from '@/backend/models/habitflow';
 
 type ActionResult<T = void> = { error: string } | ({ success: true } & T);
 

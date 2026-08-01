@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { requireAuth } from '@/lib/actions/admin-certificates';
+import { requireAuth } from '@/backend/actions/certificates/admin';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { Plus, ShieldCheck } from 'lucide-react';

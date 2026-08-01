@@ -4,7 +4,7 @@ import { useActionState, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { WarningCircle } from '@phosphor-icons/react';
-import { updatePassword } from '@/lib/actions/auth';
+import { updatePassword } from '@/backend/actions/auth';
 import { Button } from '@/components/ui/button';
 import { PasswordInput } from '@/components/auth/PasswordInput';
 import { PasswordStrength } from '@/components/auth/PasswordStrength';

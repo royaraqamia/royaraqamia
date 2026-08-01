@@ -16,7 +16,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import type { Category } from '@/domains/spendtrack/lib/database.types';
+import type { Category } from '@/shared/contracts/spendtrack';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'الاسم مطلوب'),

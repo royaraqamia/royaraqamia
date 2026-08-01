@@ -8,7 +8,7 @@ import { DesktopNav } from './navbar/DesktopNav';
 import { MobileMenu } from './navbar/MobileMenu';
 import { NotificationDropdown } from './shared/notification-dropdown';
 import { UserDropdown } from './shared/user-dropdown';
-import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '../lib/scroll';
+import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
 
 export function Navbar() {
   const { isMobileMenuOpen, setIsMobileMenuOpen, isReviewSheetOpen } = useUI();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUI } from '../context/UIContext';
-import { WHATSAPP_PHONE, WHATSAPP_MESSAGE } from '../lib/constants';
+import { WHATSAPP_PHONE, WHATSAPP_MESSAGE } from '@/frontend/shared/constants';
 
 interface WhatsAppFloatProps {
   phone?: string;

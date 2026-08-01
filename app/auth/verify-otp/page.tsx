@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { WarningCircle, ArrowLeft, Clock, CheckCircle } from '@phosphor-icons/react';
 import { OtpInput } from '@/components/shared/otp-input';
-import { verifyOtp, resendOtp } from '@/lib/actions/auth';
+import { verifyOtp, resendOtp } from '@/backend/actions/auth';
 import { Button } from '@/components/ui/button';
 import { AuthCard } from '@/components/auth/AuthCard';
 

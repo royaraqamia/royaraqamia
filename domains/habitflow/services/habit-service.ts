@@ -4,9 +4,9 @@ import {
   IHabitRepository,
   HabitStats,
   AggregateStats,
-} from '@/domains/habitflow/models';
+} from '@/backend/models/habitflow';
 
-export type { HabitStats, AggregateStats } from '@/domains/habitflow/models';
+export type { HabitStats, AggregateStats } from '@/backend/models/habitflow';
 
 function getCompletedDateSet(habitId: string, logs: HabitLog[]): Set<string> {
   return new Set(logs.filter((l) => l.habitId === habitId && l.completed).map((l) => l.date));

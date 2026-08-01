@@ -3,9 +3,9 @@
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/backend/transport/supabase/server';
 import { verifySession } from '@/domains/blogpress/lib/dal';
-import { PostSchema } from '@/lib/schemas';
+import { PostSchema } from '@/shared/contracts/blog';
 
 export async function createPost() {
   const session = await verifySession();

@@ -1,9 +1,9 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/backend/transport/supabase/server';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import type { ExpenseWithCategory } from '@/domains/spendtrack/lib/database.types';
+import type { ExpenseWithCategory } from '@/shared/contracts/spendtrack';
 
 type ActionState = { error?: string; success?: boolean } | undefined;
 

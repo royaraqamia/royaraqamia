@@ -1,7 +1,7 @@
 'use server';
 
 import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/backend/transport/supabase/server';
 import { verifySession } from '@/domains/blogpress/lib/dal';
 
 async function uploadToBucket(bucketName: string, formData: FormData, userId: string) {

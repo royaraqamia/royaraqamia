@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useUI } from '../context/UIContext';
-import { throttle } from '../lib/utils';
-import { scrollToTop } from '../lib/scroll';
+import { throttle } from '@/frontend/shared/utils';
+import { scrollToTop } from '@/frontend/shared/scroll';
 
 export function GoUpButton() {
   const { isMobileMenuOpen, isReviewSheetOpen } = useUI();

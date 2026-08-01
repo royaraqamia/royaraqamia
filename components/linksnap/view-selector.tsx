@@ -1,6 +1,6 @@
 'use client';
 
-import { AdminValidator } from '@/domains/linksnap/domain/services/admin-validator';
+import { AdminValidator } from '@/shared/admin-validator';
 
 interface ViewSelectorProps {
   selectedView: 'shorten' | 'dashboard' | 'admin';

@@ -2,7 +2,7 @@
 
 import { ScrollAnimation } from './ScrollAnimations';
 import { ArrowLeft } from '@phosphor-icons/react';
-import { getWhatsAppUrl } from '../lib/constants';
+import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
 export function CTA() {
   return (

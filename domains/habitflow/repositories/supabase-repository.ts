@@ -1,5 +1,5 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { Habit, HabitLog, IHabitRepository } from '@/domains/habitflow/models';
+import { Habit, HabitLog, IHabitRepository } from '@/backend/models/habitflow';
 
 interface HabitRow {
   id: string;

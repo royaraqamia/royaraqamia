@@ -41,9 +41,9 @@ import {
   publishPost,
   createPost,
 } from '@/domains/blogpress/lib/actions/posts';
-import type { Post, PostStatus } from '@/domains/blogpress/lib/definitions';
-import { cn } from '@/lib/utils';
-import { estimateWordCount, estimateReadingTime, formatReadingTime } from '@/lib/reading-time';
+import type { Post, PostStatus } from '@/backend/models/blogpress';
+import { cn } from '@/frontend/shared/utils';
+import { estimateWordCount, estimateReadingTime, formatReadingTime } from '@/backend/shared/reading-time';
 import { toast } from 'sonner';
 
 interface PostListProps {

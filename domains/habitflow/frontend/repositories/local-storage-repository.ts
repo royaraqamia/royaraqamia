@@ -1,4 +1,4 @@
-import { Habit, HabitLog, IHabitRepository } from '@/domains/habitflow/models';
+import { Habit, HabitLog, IHabitRepository } from '@/backend/models/habitflow';
 
 const HABITS_KEY = 'habitflow_habits';
 const LOGS_KEY = 'habitflow_logs';

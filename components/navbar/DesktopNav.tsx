@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CaretDown, type Icon } from '@phosphor-icons/react';
 import { Button } from '../ui/button';
-import { getWhatsAppUrl } from '../../lib/constants';
+import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { NotificationDropdown } from '../shared/notification-dropdown';
 import { UserDropdown } from '../shared/user-dropdown';
 import NextImage from 'next/image';

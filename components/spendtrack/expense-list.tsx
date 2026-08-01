@@ -16,7 +16,7 @@ import { Trash2, Loader2, Receipt } from 'lucide-react';
 import { CreateExpenseDialog, EditExpenseDialog } from '@/components/spendtrack/expense-dialog';
 import { parseISO } from 'date-fns';
 
-import type { Category, ExpenseWithCategory } from '@/domains/spendtrack/lib/database.types';
+import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
 
 export function ExpenseList({
   expenses: initialExpenses,

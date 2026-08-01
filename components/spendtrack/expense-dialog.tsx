@@ -25,7 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Plus, Pencil, Loader2 } from 'lucide-react';
-import type { Category, Expense } from '@/domains/spendtrack/lib/database.types';
+import type { Category, Expense } from '@/shared/contracts/spendtrack';
 
 const expenseSchema = z.object({
   amount: z

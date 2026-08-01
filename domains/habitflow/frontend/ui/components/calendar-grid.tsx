@@ -1,7 +1,7 @@
-﻿'use client';
+'use client';
 
 import { useReducedMotion } from 'motion/react';
-import { HabitLog } from '@/domains/habitflow/models';
+import { HabitLog } from '@/backend/models/habitflow';
 import { Card } from '@/components/ui/card';
 import { CalendarDays } from 'lucide-react';
 

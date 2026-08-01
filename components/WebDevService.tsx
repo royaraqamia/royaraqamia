@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { Button } from './ui/button';
 import { Code, Rocket, ShieldCheck, DeviceMobile, Monitor, Globe } from '@phosphor-icons/react';
-import { WHATSAPP_PHONE } from '../lib/constants';
+import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 import { SectionBackground } from './SectionBackground';
 
 // --- Framer Motion Variants ---

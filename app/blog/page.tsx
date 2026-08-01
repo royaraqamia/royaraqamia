@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/backend/transport/supabase/server';
 import { Button } from '@/components/ui/button';
 import {
   ChevronLeft,
@@ -17,8 +17,8 @@ import {
   Calendar,
 } from 'lucide-react';
 import { BlogSearch } from './_components/blog-search';
-import { estimateReadingTime, formatReadingTime } from '@/lib/reading-time';
-import type { Post } from '@/domains/blogpress/lib/definitions';
+import { estimateReadingTime, formatReadingTime } from '@/backend/shared/reading-time';
+import type { Post } from '@/backend/models/blogpress';
 
 export const dynamic = 'force-dynamic';
 

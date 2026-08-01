@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/backend/transport/supabase/server';
 import { verifySession } from '@/domains/blogpress/lib/dal';
 import { PostList } from '../_components/post-list';
 import { CreatePostButton } from '../_components/create-post-button';
 import { FileText, Eye, PenLine, BookOpen } from 'lucide-react';
-import { estimateWordCount } from '@/lib/reading-time';
-import type { Post } from '@/domains/blogpress/lib/definitions';
+import { estimateWordCount } from '@/backend/shared/reading-time';
+import type { Post } from '@/backend/models/blogpress';
 
 export const dynamic = 'force-dynamic';
 

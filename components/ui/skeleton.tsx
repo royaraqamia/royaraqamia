@@ -1,5 +1,5 @@
 // Premium Skeleton Loader Component -->
-import { cn } from '@/lib/utils';
+import { cn } from '@/frontend/shared/utils';
 
 function Skeleton({ className, ...props }: React.ComponentProps<'div'>) {
   return (

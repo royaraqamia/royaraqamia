@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useEffect, useState, useTransition } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
@@ -12,8 +12,8 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
-import { Habit, HabitLog } from '@/domains/habitflow/models';
-import { logout } from '@/lib/actions/auth';
+import { Habit, HabitLog } from '@/backend/models/habitflow';
+import { logout } from '@/backend/actions/auth';
 import { useDashboard } from '@/domains/habitflow/frontend/state/use-dashboard';
 import { useSession } from '@/components/shared/session-provider';
 import { Button } from '@/components/ui/button';

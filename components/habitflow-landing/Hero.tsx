@@ -6,7 +6,7 @@ import { ArrowLeft, CheckCircle, Fire } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/components/shared/session-provider';
-import { cn } from '@/lib/utils';
+import { cn } from '@/frontend/shared/utils';
 
 function GlowOrb({
   className,

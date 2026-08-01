@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/domains/linksnap/lib/auth-helper';
-import { SupabaseShortLinkRepository } from '@/domains/linksnap/infrastructure/repositories/supabase-short-link.repository';
-import { ShortenUrlUseCase } from '@/domains/linksnap/application/services/shorten-url.usecase';
-import { checkRateLimitApi } from '@/domains/linksnap/lib/with-rate-limit';
-import { getClientIp } from '@/domains/linksnap/lib/request-utils';
-import { getErrorMessage } from '@/domains/linksnap/lib/error-utils';
+import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
+import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
+import { ShortenUrlUseCase } from '@/backend/usecases/linksnap/shorten-url';
+import { checkRateLimitApi } from '@/backend/shared/with-rate-limit';
+import { getClientIp } from '@/backend/shared/request-utils';
+import { getErrorMessage } from '@/backend/shared/error-utils';
 
 export async function POST(req: NextRequest) {
   try {

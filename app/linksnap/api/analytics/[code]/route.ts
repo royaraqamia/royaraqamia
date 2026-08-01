@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/domains/linksnap/lib/auth-helper';
-import { SupabaseAnalyticsRepository } from '@/domains/linksnap/infrastructure/repositories/supabase-analytics.repository';
-import { GetUrlAnalyticsUseCase } from '@/domains/linksnap/application/services/get-url-analytics.usecase';
+import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
+import { SupabaseAnalyticsRepository } from '@/backend/repositories/linksnap/supabase-analytics';
+import { GetUrlAnalyticsUseCase } from '@/backend/usecases/linksnap/get-url-analytics';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ code: string }> }) {
   try {

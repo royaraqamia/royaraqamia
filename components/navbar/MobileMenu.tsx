@@ -5,7 +5,7 @@ import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { X, CaretDown, type Icon } from '@phosphor-icons/react';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
-import { getWhatsAppUrl } from '../../lib/constants';
+import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
 // ============================================================================
 // Types

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { getAuthUser } from '@/domains/spendtrack/lib/auth-guard';
+import { getAuthUser } from '@/backend/transport/auth-guard';
 import { CategoryList } from './category-list';
 import { CreateCategoryDialog } from './create-category-dialog';
 

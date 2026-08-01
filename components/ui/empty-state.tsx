@@ -1,5 +1,5 @@
 // Premium Empty State Component -->
-import { cn } from '@/lib/utils';
+import { cn } from '@/frontend/shared/utils';
 
 interface EmptyStateProps extends React.ComponentProps<'div'> {
   title?: string;

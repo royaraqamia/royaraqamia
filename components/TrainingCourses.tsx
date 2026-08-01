@@ -17,7 +17,7 @@ import {
 } from '@phosphor-icons/react';
 import { Button } from './ui/button';
 import { ScrollAnimation } from './ScrollAnimations';
-import { WHATSAPP_PHONE } from '../lib/constants';
+import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 
 export function TrainingCourses() {
   const course = {

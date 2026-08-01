@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/backend/transport/supabase/server';
 import { Navbar } from '@/components/Navbar';
 
 export default async function HabitFlowAppLayout({ children }: { children: React.ReactNode }) {

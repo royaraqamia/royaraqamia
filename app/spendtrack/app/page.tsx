@@ -9,12 +9,12 @@ import { ExpenseList } from '@/components/spendtrack/expense-list';
 import { CategoryPieChart } from '@/components/spendtrack/category-pie-chart';
 import { DailyBarChart } from '@/components/spendtrack/daily-bar-chart';
 import { TransactionFilters } from '@/components/spendtrack/transaction-filters';
-import { getAuthUser } from '@/domains/spendtrack/lib/auth-guard';
-import { createClient } from '@/lib/supabase/server';
+import { getAuthUser } from '@/backend/transport/auth-guard';
+import { createClient } from '@/backend/transport/supabase/server';
 import { cookies } from 'next/headers';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
 
-import type { Category, ExpenseWithCategory } from '@/domains/spendtrack/lib/database.types';
+import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
 
 export const dynamic = 'force-dynamic';
 

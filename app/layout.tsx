@@ -14,8 +14,8 @@ import { VersionChecker } from '../components/VersionChecker';
 import { PWAProvider } from '../components/PWAProvider';
 import { GoUpButton } from '../components/GoUpButton';
 import { WhatsAppFloat } from '../components/WhatsAppFloat';
-import { SITE_NAME } from '@/lib/metadata';
-import { ibmPlexSansArabic, arefRuqaa } from '@/lib/fonts';
+import { SITE_NAME } from '@/frontend/shared/metadata';
+import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/components/RouteChangeFocus';
 
 export const metadata: Metadata = {

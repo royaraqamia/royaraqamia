@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { CaretDown, Question } from '@phosphor-icons/react';
 import { ScrollAnimation } from './ScrollAnimations';
-import { WHATSAPP_PHONE } from '../lib/constants';
+import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 
 interface FAQItem {
   question: string;

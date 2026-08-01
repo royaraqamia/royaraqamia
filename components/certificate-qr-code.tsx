@@ -1,5 +1,5 @@
 import QRCode from 'qrcode';
-import { cn } from '@/lib/utils';
+import { cn } from '@/frontend/shared/utils';
 
 interface CertificateQRCodeProps {
   code: string;

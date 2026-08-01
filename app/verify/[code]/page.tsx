@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/lib/supabase/server';
-import { type Certificate } from '@/lib/certificate-verification';
-import { formatDateArabic } from '@/lib/utils';
+import { createClient } from '@/backend/transport/supabase/server';
+import { type Certificate } from '@/backend/services/certificate-verification';
+import { formatDateArabic } from '@/frontend/shared/utils';
 import { VerifyClient } from './verify-client';
 
 interface PageProps {

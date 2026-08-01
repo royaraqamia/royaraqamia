@@ -1,4 +1,4 @@
-import type { Notification, NotificationCreateInput } from './entities';
+import type { Notification, NotificationCreateInput } from '@/backend/models/notifications';
 
 export interface INotificationRepository {
   findByUserId(userId: string, limit?: number, offset?: number): Promise<Notification[]>;

@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ChevronDown, X } from 'lucide-react';
-import type { Category } from '@/domains/spendtrack/lib/database.types';
+import type { Category } from '@/shared/contracts/spendtrack';
 
 const datePresets = [
   { label: 'هذا الشهر', value: 'this_month' },

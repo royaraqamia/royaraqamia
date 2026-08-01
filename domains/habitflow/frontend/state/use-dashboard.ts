@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Habit, HabitLog } from '@/domains/habitflow/models';
+import { Habit, HabitLog } from '@/backend/models/habitflow';
 import { HabitService, AggregateStats } from '@/domains/habitflow/services/habit-service';
 import { createHabit, updateHabit, archiveHabit, toggleLog } from '@/app/habitflow/actions/habits';
 import { LocalStorageHabitRepository } from '@/domains/habitflow/frontend/repositories/local-storage-repository';

@@ -2,8 +2,8 @@ import type { INotificationRepository } from '@/domains/notifications/domain/int
 import type {
   Notification,
   NotificationCreateInput,
-} from '@/domains/notifications/domain/entities';
-import { checkRateLimit } from '@/lib/rate-limiter';
+} from '@/backend/models/notifications';
+import { checkRateLimit } from '@/backend/shared/rate-limiter';
 
 export function createNotificationService(repo: INotificationRepository) {
   return {

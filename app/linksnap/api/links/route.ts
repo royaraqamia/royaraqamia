@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/domains/linksnap/lib/auth-helper';
-import { SupabaseShortLinkRepository } from '@/domains/linksnap/infrastructure/repositories/supabase-short-link.repository';
-import { ListLinksUseCase } from '@/domains/linksnap/application/services/list-links.usecase';
-import { UpdateLinkUseCase } from '@/domains/linksnap/application/services/update-link.usecase';
-import { DeleteLinkUseCase } from '@/domains/linksnap/application/services/delete-link.usecase';
+import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
+import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
+import { ListLinksUseCase } from '@/backend/usecases/linksnap/list-links';
+import { UpdateLinkUseCase } from '@/backend/usecases/linksnap/update-link';
+import { DeleteLinkUseCase } from '@/backend/usecases/linksnap/delete-link';
 
 export async function GET(req: NextRequest) {
   try {

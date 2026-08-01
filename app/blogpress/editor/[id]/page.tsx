@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/backend/transport/supabase/server';
 import { verifySession } from '@/domains/blogpress/lib/dal';
 import { EditorContent } from './editor-content';
-import type { Post } from '@/domains/blogpress/lib/definitions';
+import type { Post } from '@/backend/models/blogpress';
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>;

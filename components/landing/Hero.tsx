@@ -5,7 +5,7 @@ import { ArrowLeft, Link } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useSession } from '@/components/shared/session-provider';
-import { cn } from '@/lib/utils';
+import { cn } from '@/frontend/shared/utils';
 
 const floatingIcons = [
   { Icon: Link, delay: 0, x: '-12%', y: '-8%', size: 28 },

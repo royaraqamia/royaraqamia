@@ -10,10 +10,10 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/frontend/transport/supabase/client';
 import { useSession } from '@/components/shared/session-provider';
-import type { Notification, NotificationWithMeta } from '@/domains/notifications/domain/entities';
-import { calculateTimeAgo } from '@/domains/notifications/domain/entities';
+import type { Notification, NotificationWithMeta } from '@/backend/models/notifications';
+import { calculateTimeAgo } from '@/backend/models/notifications';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import {
   getNotifications,

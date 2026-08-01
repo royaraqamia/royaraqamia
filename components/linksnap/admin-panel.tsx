@@ -16,9 +16,9 @@ import {
 } from 'lucide-react';
 import { AdminSkeleton } from '@/components/linksnap/loading-skeletons';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { getBaseUrl } from '@/lib/utils';
+import { getBaseUrl } from '@/frontend/shared/utils';
 import { Badge } from '@/components/ui/badge';
-import { useAnimatedCounter } from '@/domains/linksnap/hooks/use-animated-counter';
+import { useAnimatedCounter } from '@/frontend/shared/use-animated-counter';
 import { toast } from 'sonner';
 
 interface AdminStats {

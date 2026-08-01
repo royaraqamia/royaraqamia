@@ -22,8 +22,8 @@ import {
 } from 'lucide-react';
 import { m } from 'motion/react';
 import Link from 'next/link';
-import type { Certificate } from '@/lib/certificate-verification';
-import { formatDateArabic } from '@/lib/utils';
+import type { Certificate } from '@/backend/services/certificate-verification';
+import { formatDateArabic } from '@/frontend/shared/utils';
 import { CertificateQRCodeClient } from '@/components/certificate-qr-code-client';
 
 const easeOut = [0.25, 0.4, 0.25, 1] as const;

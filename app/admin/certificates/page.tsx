@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
-import { getCertificates, deleteCertificate } from '@/lib/actions/admin-certificates';
-import type { AdminCertificate } from '@/lib/actions/admin-certificates';
+import { getCertificates, deleteCertificate } from '@/backend/actions/certificates/admin';
+import type { AdminCertificate } from '@/backend/actions/certificates/admin';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';

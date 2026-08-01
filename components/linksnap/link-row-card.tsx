@@ -15,7 +15,7 @@ import {
 import { LinkEditForm } from './link-edit-form';
 import { LinkAnalyticsDrawer, AnalyticsData } from './link-analytics-drawer';
 import { ConfirmDialog } from '@/components/shared/confirm-dialog';
-import { cn, getBaseUrl } from '@/lib/utils';
+import { cn, getBaseUrl } from '@/frontend/shared/utils';
 import { toast } from 'sonner';
 
 interface LinkRowCardProps {

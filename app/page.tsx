@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { SITE_DESCRIPTION } from '@/lib/metadata';
+import { SITE_DESCRIPTION } from '@/frontend/shared/metadata';
 import { Navbar } from '../components/Navbar';
 import { HomePageContent } from '../components/HomePageContent';
 import { Footer } from '../components/Footer';

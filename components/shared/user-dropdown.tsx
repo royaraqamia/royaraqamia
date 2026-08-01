@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@/frontend/shared/utils';
 import { User, SignOut, Download } from '@phosphor-icons/react';
 import { useSession } from './session-provider';
 import { usePWAContext } from '../PWAProvider';
