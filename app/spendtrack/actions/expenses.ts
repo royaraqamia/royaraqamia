@@ -3,6 +3,7 @@
 import { createClient } from '@/backend/transport/supabase/server';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
+import { createSpendtrackRepository } from '@/backend/repositories/spendtrack';
 import type { ExpenseWithCategory } from '@/shared/contracts/spendtrack';
 
 type ActionState = { error?: string; success?: boolean } | undefined;
@@ -28,15 +29,18 @@ export async function createExpense(_prevState: ActionState, formData: FormData)
   if (!category_id) return { error: 'التصنيف مطلوب' };
   if (!date) return { error: 'التاريخ مطلوب' };
 
-  const { error } = await supabase.from('expenses').insert({
-    user_id: user.id,
-    amount,
-    category_id,
-    date,
-    description,
-  });
+  try {
+    await createSpendtrackRepository(supabase).createExpense({
+      user_id: user.id,
+      amount,
+      category_id,
+      date,
+      description,
+    });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل إنشاء المصروف' };
+  }
 
-  if (error) return { error: error.message };
   revalidatePath('/spendtrack', 'layout');
   return { success: true };
 }
@@ -64,13 +68,17 @@ export async function updateExpense(
 
   if (isNaN(amount) || amount <= 0) return { error: 'مبلغ غير صالح' };
 
-  const { error } = await supabase
-    .from('expenses')
-    .update({ amount, category_id, date, description, updated_at: new Date().toISOString() })
-    .eq('id', expenseId)
-    .eq('user_id', user.id);
+  try {
+    await createSpendtrackRepository(supabase).updateExpense(expenseId, user.id, {
+      amount,
+      category_id,
+      date,
+      description,
+    });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل تحديث المصروف' };
+  }
 
-  if (error) return { error: error.message };
   revalidatePath('/spendtrack', 'layout');
   return { success: true };
 }
@@ -84,13 +92,12 @@ export async function deleteExpense(expenseId: string, _prevState: ActionState) 
   } = await supabase.auth.getUser();
   if (!user) return { error: 'غير مصرح' };
 
-  const { error } = await supabase
-    .from('expenses')
-    .delete()
-    .eq('id', expenseId)
-    .eq('user_id', user.id);
+  try {
+    await createSpendtrackRepository(supabase).deleteExpense(expenseId, user.id);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل حذف المصروف' };
+  }
 
-  if (error) return { error: error.message };
   revalidatePath('/spendtrack', 'layout');
   return { success: true };
 }
@@ -111,26 +118,15 @@ export async function getExpensesPage(options: {
   } = await supabase.auth.getUser();
   if (!user) throw new Error('غير مصرح');
 
-  let query = supabase
-    .from('expenses')
-    .select('*, categories(name, color_hex)')
-    .eq('user_id', user.id)
-    .gte('date', options.start)
-    .lte('date', options.end);
-
-  if (options.categories.length > 0) {
-    query = query.in('category_id', options.categories);
-  }
-
-  const [sortField, sortDir] = options.sort.split('_') as [string, string];
-  query = query.order(sortField === 'amount' ? 'amount' : 'date', {
-    ascending: sortDir === 'asc',
+  const { expenses } = await createSpendtrackRepository(supabase).getTransactions({
+    userId: user.id,
+    start: options.start,
+    end: options.end,
+    filterCategories: options.categories,
+    sort: options.sort,
+    pageSize: options.limit,
+    offset: options.offset,
   });
 
-  const { data: expenses } = (await query.range(
-    options.offset,
-    options.offset + options.limit - 1
-  )) as { data: ExpenseWithCategory[] | null };
-
-  return { expenses: expenses ?? [] };
+  return { expenses };
 }

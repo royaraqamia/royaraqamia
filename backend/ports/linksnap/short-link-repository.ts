@@ -1,4 +1,4 @@
-import { ShortLink } from '@/backend/models/linksnap/short-link';
+import { ShortLink } from '@/shared/contracts/linksnap';
 
 export interface IShortLinkRepository {
   findByCode(code: string): Promise<ShortLink | null>;

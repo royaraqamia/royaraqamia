@@ -1,4 +1,4 @@
-import { AnalyticsEvent, LinkAnalyticsSummary } from '@/backend/models/linksnap/analytics-event';
+import { AnalyticsEvent, LinkAnalyticsSummary } from '@/shared/contracts/linksnap';
 
 export interface IAnalyticsRepository {
   recordClick(event: Omit<AnalyticsEvent, 'id' | 'clickedAt'>): Promise<AnalyticsEvent>;

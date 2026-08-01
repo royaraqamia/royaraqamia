@@ -12,7 +12,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/shared/error-boundary';
-import { Habit, HabitLog } from '@/backend/models/habitflow';
+import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { logout } from '@/backend/actions/auth';
 import { useDashboard } from '@/frontend/habitflow/state/use-dashboard';
 import { useSession } from '@/components/shared/session-provider';

@@ -1,4 +1,4 @@
-import { Habit, HabitLog } from '@/backend/models/habitflow';
+import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 class ApiError extends Error {
   constructor(

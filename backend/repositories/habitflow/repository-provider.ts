@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { IHabitRepository } from '@/backend/models/habitflow';
+import { IHabitRepository } from '@/shared/contracts/habitflow';
 import { JsonFileHabitRepository } from './json-file-repository';
 import { SupabaseHabitRepository } from './supabase-repository';
 

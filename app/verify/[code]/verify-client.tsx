@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { m } from 'motion/react';
 import Link from 'next/link';
-import type { Certificate } from '@/backend/services/certificate-verification';
+import type { Certificate } from '@/shared/contracts/certificates';
 import { formatDateArabic } from '@/frontend/shared/format';
 import { CertificateQRCodeClient } from '@/components/certificate-qr-code-client';
 

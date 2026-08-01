@@ -14,9 +14,7 @@ import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { estimateReadingTime, formatReadingTimeLong } from '@/backend/shared/reading-time';
 import {
-  getPublishedPostBySlug,
-  getPostAuthor,
-  getRelatedPosts,
+  createPostsRepository,
 } from '@/backend/repositories/blogpress/posts';
 import type { Metadata } from 'next';
 
@@ -61,7 +59,7 @@ export async function generateMetadata(props: {
   const { slug } = await props.params;
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const post = await getPublishedPostBySlug(supabase, slug);
+  const post = await createPostsRepository(supabase).getPublishedPostBySlug(slug);
 
   if (!post) {
     return {
@@ -87,16 +85,16 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
   const { slug } = await props.params;
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const post = await getPublishedPostBySlug(supabase, slug);
+  const post = await createPostsRepository(supabase).getPublishedPostBySlug(slug);
 
   if (!post) notFound();
 
   const p = post;
 
   const adminSupabase = getAdminSupabase();
-  const author = await getPostAuthor(adminSupabase, p.author_id);
+  const author = await createPostsRepository(adminSupabase).getPostAuthor(p.author_id);
 
-  const relatedPosts = await getRelatedPosts(supabase, slug);
+  const relatedPosts = await createPostsRepository(supabase).getRelatedPosts(slug);
 
   const readingTime = estimateReadingTime(p.content);
   const headings = extractHeadings(p.content ?? '');

@@ -2,7 +2,8 @@ import * as Sentry from '@sentry/nextjs';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 import { getPublicSupabase } from '@/backend/transport/supabase/public';
-import { getCertificateByCode, type Certificate } from '@/backend/repositories/certificates';
+import { createCertificatesRepository } from '@/backend/repositories/certificates';
+import type { VerifyResult } from '@/shared/contracts/certificates';
 
 // ============================================================
 // Certificate Code Format: COMP-YYYY-XXXXXXXX (8 alphanumeric chars)
@@ -88,15 +89,6 @@ async function checkRateLimit(identifier: string, type: 'ip' | 'code'): Promise<
  * so the service role key is not needed and should not be used here.
  */
 
-export type { Certificate };
-
-export interface VerifyResult {
-  success: boolean;
-  certificate?: Certificate;
-  error?: string;
-  rateLimited?: boolean;
-}
-
 /**
  * Validates certificate code format and queries Supabase.
  * Returns structured result with Sentry logging for monitoring.
@@ -144,7 +136,7 @@ export async function verifyCertificateByCode(code: string, ip: string): Promise
     }
 
     // Database lookup — uses publishable key, not service role
-    const certificate = await getCertificateByCode(getPublicSupabase(), sanitized);
+    const certificate = await createCertificatesRepository(getPublicSupabase()).getByCode(sanitized);
 
     if (!certificate) {
       Sentry.captureMessage('Certificate not found', {

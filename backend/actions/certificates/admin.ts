@@ -4,8 +4,9 @@ import * as Sentry from '@sentry/nextjs';
 import { randomInt } from 'crypto';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 import { createClient } from '@/backend/transport/supabase/server';
+import { createCertificatesRepository } from '@/backend/repositories/certificates';
 import { z } from 'zod';
-import type { Tables } from '@/shared/contracts/database.types';
+import type { Certificate } from '@/shared/contracts/certificates';
 import { getAdminEmails } from '@/shared/admin-validator';
 
 // ============================================================
@@ -31,7 +32,7 @@ const certificateSchema = z
     { message: 'تاريخ الانتهاء يجب أن يكون بعد تاريخ الإصدار', path: ['expiration_date'] }
   );
 
-export type AdminCertificate = Tables<'certificates'>;
+export type AdminCertificate = Certificate;
 
 export interface AdminActionResult {
   success: boolean;
@@ -91,31 +92,9 @@ export async function getCertificates(
 ): Promise<{ data: AdminCertificate[]; total: number }> {
   try {
     await requireAuth();
-    const admin = getAdminSupabase();
-
-    let query = admin
-      .from('certificates')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false });
-
-    if (search) {
-      query = query.or(
-        `student_name.ilike.%${search}%,course_name.ilike.%${search}%,certificate_code.ilike.%${search}%`
-      );
-    }
-
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-
-    const { data, error, count } = await query.range(from, to);
-
-    if (error) {
-      Sentry.captureException(error);
-      return { data: [], total: 0 };
-    }
-
-    return { data: (data as AdminCertificate[]) ?? [], total: count ?? 0 };
-  } catch {
+    return await createCertificatesRepository(getAdminSupabase()).list(page, pageSize, search);
+  } catch (error) {
+    Sentry.captureException(error);
     return { data: [], total: 0 };
   }
 }
@@ -123,12 +102,7 @@ export async function getCertificates(
 export async function getCertificateById(id: string): Promise<AdminCertificate | null> {
   try {
     await requireAuth();
-    const admin = getAdminSupabase();
-
-    const { data, error } = await admin.from('certificates').select('*').eq('id', id).single();
-
-    if (error || !data) return null;
-    return data as AdminCertificate;
+    return await createCertificatesRepository(getAdminSupabase()).getById(id);
   } catch {
     return null;
   }
@@ -157,7 +131,6 @@ export async function createCertificate(
       return { success: false, error: 'بيانات غير صالحة', fieldErrors };
     }
 
-    const admin = getAdminSupabase();
     const code = customCode?.trim().toUpperCase() || generateCode();
 
     // Validate custom code format
@@ -168,30 +141,22 @@ export async function createCertificate(
       };
     }
 
-    const { data, error } = await admin
-      .from('certificates')
-      .insert({
-        certificate_code: code,
-        student_name: parsed.data.student_name,
-        course_name: parsed.data.course_name,
-        issue_date: parsed.data.issue_date,
-        expiration_date: parsed.data.expiration_date || null,
-        grade_or_status: parsed.data.grade_or_status || null,
-      })
-      .select()
-      .single();
+    const data = await createCertificatesRepository(getAdminSupabase()).create({
+      certificate_code: code,
+      student_name: parsed.data.student_name,
+      course_name: parsed.data.course_name,
+      issue_date: parsed.data.issue_date,
+      expiration_date: parsed.data.expiration_date || null,
+      grade_or_status: parsed.data.grade_or_status || null,
+    });
 
-    if (error) {
-      Sentry.captureException(error);
-      if (error.code === '23505') {
-        return { success: false, error: 'هذا الرمز مستخدم بالفعل. جرب رمزاً آخر.' };
-      }
-      return { success: false, error: 'حدث خطأ أثناء إنشاء الشهادة' };
+    return { success: true, data };
+  } catch (error) {
+    Sentry.captureException(error);
+    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
+      return { success: false, error: 'هذا الرمز مستخدم بالفعل. جرب رمزاً آخر.' };
     }
-
-    return { success: true, data: data as AdminCertificate };
-  } catch {
-    return { success: false, error: 'حدث خطأ غير متوقع' };
+    return { success: false, error: 'حدث خطأ أثناء إنشاء الشهادة' };
   }
 }
 
@@ -218,46 +183,28 @@ export async function updateCertificate(
       return { success: false, error: 'بيانات غير صالحة', fieldErrors };
     }
 
-    const admin = getAdminSupabase();
+    const data = await createCertificatesRepository(getAdminSupabase()).update(id, {
+      student_name: parsed.data.student_name,
+      course_name: parsed.data.course_name,
+      issue_date: parsed.data.issue_date,
+      expiration_date: parsed.data.expiration_date || null,
+      grade_or_status: parsed.data.grade_or_status || null,
+    });
 
-    const { data, error } = await admin
-      .from('certificates')
-      .update({
-        student_name: parsed.data.student_name,
-        course_name: parsed.data.course_name,
-        issue_date: parsed.data.issue_date,
-        expiration_date: parsed.data.expiration_date || null,
-        grade_or_status: parsed.data.grade_or_status || null,
-      })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      Sentry.captureException(error);
-      return { success: false, error: 'حدث خطأ أثناء تحديث الشهادة' };
-    }
-
-    return { success: true, data: data as AdminCertificate };
-  } catch {
-    return { success: false, error: 'حدث خطأ غير متوقع' };
+    return { success: true, data };
+  } catch (error) {
+    Sentry.captureException(error);
+    return { success: false, error: 'حدث خطأ أثناء تحديث الشهادة' };
   }
 }
 
 export async function deleteCertificate(id: string): Promise<AdminActionResult> {
   try {
     await requireAuth();
-    const admin = getAdminSupabase();
-
-    const { error } = await admin.from('certificates').delete().eq('id', id);
-
-    if (error) {
-      Sentry.captureException(error);
-      return { success: false, error: 'حدث خطأ أثناء حذف الشهادة' };
-    }
-
+    await createCertificatesRepository(getAdminSupabase()).delete(id);
     return { success: true };
-  } catch {
-    return { success: false, error: 'حدث خطأ غير متوقع' };
+  } catch (error) {
+    Sentry.captureException(error);
+    return { success: false, error: 'حدث خطأ أثناء حذف الشهادة' };
   }
 }

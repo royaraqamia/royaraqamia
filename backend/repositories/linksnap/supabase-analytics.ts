@@ -1,9 +1,5 @@
 import { IAnalyticsRepository } from '@/backend/ports/linksnap/analytics-repository';
-import {
-  AnalyticsEvent,
-  LinkAnalyticsSummary,
-  DailyClickStat,
-} from '@/backend/models/linksnap/analytics-event';
+import { AnalyticsEvent, LinkAnalyticsSummary, DailyClickStat } from '@/shared/contracts/linksnap';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 
 interface AnalyticsEventDbRow {

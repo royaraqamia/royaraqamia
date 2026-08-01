@@ -59,7 +59,7 @@ import { updatePost, saveAndPublishPost } from '@/backend/actions/blogpress/post
 import { uploadImage } from '@/backend/actions/blogpress/media';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
-import type { Post } from '@/backend/models/blogpress';
+import type { Post } from '@/shared/contracts/blogpress';
 import { estimateWordCount, formatReadingTimeLong } from '@/backend/shared/reading-time';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';

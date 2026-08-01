@@ -6,7 +6,7 @@ import { PostList } from '../_components/post-list';
 import { CreatePostButton } from '../_components/create-post-button';
 import { FileText, Eye, PenLine, BookOpen } from 'lucide-react';
 import { estimateWordCount } from '@/backend/shared/reading-time';
-import { listPostsByAuthor } from '@/backend/repositories/blogpress/posts';
+import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  const postList = await listPostsByAuthor(supabase, session.userId);
+  const postList = await createPostsRepository(supabase).listPostsByAuthor(session.userId);
 
   const stats = {
     total: postList.length,

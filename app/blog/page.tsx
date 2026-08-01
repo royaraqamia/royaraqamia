@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { BlogSearch } from './_components/blog-search';
 import { estimateReadingTime, formatReadingTime } from '@/backend/shared/reading-time';
-import { getPublishedPosts } from '@/backend/repositories/blogpress/posts';
+import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,7 +39,7 @@ export default async function BlogPage(props: {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  const { posts, totalPages } = await getPublishedPosts(supabase, page, query, PAGE_SIZE);
+  const { posts, totalPages } = await createPostsRepository(supabase).getPublishedPosts(page, query, PAGE_SIZE);
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 selection:text-white pb-24">

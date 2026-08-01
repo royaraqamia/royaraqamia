@@ -1,5 +1,5 @@
 import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
-import { ShortLink } from '@/backend/models/linksnap/short-link';
+import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 
 export class UpdateLinkUseCase {

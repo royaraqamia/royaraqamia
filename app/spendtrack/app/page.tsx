@@ -13,13 +13,7 @@ import { getAuthUser } from '@/backend/transport/auth-guard';
 import { createClient } from '@/backend/transport/supabase/server';
 import { cookies } from 'next/headers';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
-import {
-  getTotalExpenses,
-  getCategoryBreakdown,
-  getDailyTotals,
-  getUserCategories,
-  getTransactions,
-} from '@/backend/repositories/spendtrack';
+import { createSpendtrackRepository } from '@/backend/repositories/spendtrack';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,7 +55,7 @@ async function TotalCard({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const data = await getTotalExpenses(supabase, userId, start, end, catFilter);
+  const data = await createSpendtrackRepository(supabase).getTotalExpenses(userId, start, end, catFilter);
   return (
     <Card
       className="group/card card-lift"
@@ -102,7 +96,7 @@ async function TotalCard({
 async function CreateExpenseButton({ userId }: { userId: string }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const categories = await getUserCategories(supabase, userId);
+  const categories = await createSpendtrackRepository(supabase).getUserCategories(userId);
   return <CreateExpenseDialog categories={categories} />;
 }
 
@@ -119,7 +113,7 @@ async function CategoryPieSection({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const data = await getCategoryBreakdown(supabase, userId, start, end, catFilter);
+  const data = await createSpendtrackRepository(supabase).getCategoryBreakdown(userId, start, end, catFilter);
   return <CategoryPieChart data={data ?? []} />;
 }
 
@@ -136,7 +130,7 @@ async function DailyBarSection({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const data = await getDailyTotals(supabase, userId, start, end, catFilter);
+  const data = await createSpendtrackRepository(supabase).getDailyTotals(userId, start, end, catFilter);
   return <DailyBarChart data={data ?? []} />;
 }
 
@@ -160,7 +154,14 @@ async function TransactionsSection({
     expenses: safeExpenses,
     categories: safeCategories,
     totalCount,
-  } = await getTransactions(supabase, userId, start, end, filterCategories, sort, PAGE_SIZE);
+  } = await createSpendtrackRepository(supabase).getTransactions({
+    userId,
+    start,
+    end,
+    filterCategories,
+    sort,
+    pageSize: PAGE_SIZE,
+  });
 
   return (
     <>

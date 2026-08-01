@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { verifyCertificate } from '@/backend/actions/certificates/verify';
-import type { Certificate } from '@/backend/services/certificate-verification';
+import type { Certificate } from '@/shared/contracts/certificates';
 import { formatDateArabic } from '@/frontend/shared/format';
 import {
   ShieldCheck,

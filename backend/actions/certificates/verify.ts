@@ -3,7 +3,7 @@
 import { verifyCertificateByCode } from '@/backend/services/certificate-verification';
 import { headers } from 'next/headers';
 import { getForwardedIp } from '@/backend/shared/request-utils';
-import type { VerifyResult } from '@/backend/services/certificate-verification';
+import type { VerifyResult } from '@/shared/contracts/certificates';
 
 export async function verifyCertificate(code: string): Promise<VerifyResult> {
   try {

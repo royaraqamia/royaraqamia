@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { createClient } from '@/backend/transport/supabase/server';
 import { createSupabaseNotificationRepository } from '@/backend/repositories/notifications/supabase-repository';
 import { createNotificationService } from '@/backend/services/notifications/notification-service';
-import type { Notification } from '@/backend/models/notifications';
+import type { Notification } from '@/shared/contracts/notifications';
 
 export async function getNotifications(): Promise<Notification[]> {
   const cookieStore = await cookies();

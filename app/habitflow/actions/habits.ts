@@ -8,7 +8,7 @@ import {
   updateHabitSchema,
   toggleLogSchema,
 } from '@/backend/shared/habitflow/validation';
-import type { Habit, HabitLog } from '@/backend/models/habitflow';
+import type { Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 type ActionResult<T = void> = { error: string } | ({ success: true } & T);
 

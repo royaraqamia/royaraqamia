@@ -1,5 +1,5 @@
 import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
-import { ShortLink } from '@/backend/models/linksnap/short-link';
+import { ShortLink } from '@/shared/contracts/linksnap';
 
 export class ListLinksUseCase {
   constructor(private shortLinkRepository: IShortLinkRepository) {}

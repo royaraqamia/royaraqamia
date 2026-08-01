@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Check, Flame, Edit3 } from 'lucide-react';
-import { Habit, HabitLog } from '@/backend/models/habitflow';
+import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { HabitService } from '@/shared/habitflow/habit-service';
 import { getIconComponent, getIconColorClass } from '@/frontend/habitflow/shared/habit-icons';
 import { Card } from '@/components/ui/card';

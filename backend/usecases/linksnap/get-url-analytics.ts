@@ -1,5 +1,5 @@
 import { IAnalyticsRepository } from '@/backend/ports/linksnap/analytics-repository';
-import { LinkAnalyticsSummary } from '@/backend/models/linksnap/analytics-event';
+import { LinkAnalyticsSummary } from '@/shared/contracts/linksnap';
 
 export class GetUrlAnalyticsUseCase {
   constructor(private analyticsRepository: IAnalyticsRepository) {}

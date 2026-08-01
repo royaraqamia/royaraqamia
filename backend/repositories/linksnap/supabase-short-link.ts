@@ -1,5 +1,5 @@
 import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
-import { ShortLink } from '@/backend/models/linksnap/short-link';
+import { ShortLink } from '@/shared/contracts/linksnap';
 import { createClient } from '@/frontend/transport/supabase/client';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 

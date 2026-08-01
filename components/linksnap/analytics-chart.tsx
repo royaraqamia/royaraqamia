@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { DailyClickStat } from '@/backend/models/linksnap/analytics-event';
+import { DailyClickStat } from '@/shared/contracts/linksnap';
 import { motion, useReducedMotion } from 'motion/react';
 
 interface AnalyticsChartProps {

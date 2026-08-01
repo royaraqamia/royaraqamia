@@ -41,7 +41,7 @@ import {
   publishPost,
   createPost,
 } from '@/backend/actions/blogpress/posts';
-import type { Post, PostStatus } from '@/backend/models/blogpress';
+import type { Post, PostStatus } from '@/shared/contracts/blogpress';
 import { cn } from '@/frontend/shared/utils';
 import {
   estimateWordCount,

@@ -1,5 +1,5 @@
 import type { INotificationRepository } from '@/backend/ports/notifications/interfaces';
-import type { Notification, NotificationCreateInput } from '@/backend/models/notifications';
+import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
 import { checkRateLimit } from '@/backend/shared/rate-limiter';
 
 export function createNotificationService(repo: INotificationRepository) {

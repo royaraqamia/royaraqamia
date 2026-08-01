@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { createClient } from '@/frontend/transport/supabase/client';
 import { useSession } from '@/components/shared/session-provider';
-import type { Notification, NotificationWithMeta } from '@/backend/models/notifications';
+import type { Notification, NotificationWithMeta } from '@/shared/contracts/notifications';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import {
