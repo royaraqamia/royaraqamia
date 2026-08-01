@@ -5,16 +5,6 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatDateArabic(dateStr: string): string {
-  return new Intl.DateTimeFormat('ar-SA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    calendar: 'islamic-umalqura',
-    numberingSystem: 'latn',
-  }).format(new Date(dateStr));
-}
-
 export function throttle<T extends (...args: unknown[]) => unknown>(
   func: T,
   delay: number
@@ -45,19 +35,4 @@ export function getBaseUrl(): string {
     return window.location.origin;
   }
   return process.env.NEXT_PUBLIC_APP_URL || '';
-}
-
-export function formatHijriDate(
-  date: Date | string | number,
-  options: Intl.DateTimeFormatOptions = {}
-): string {
-  const baseOptions: Intl.DateTimeFormatOptions = {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    calendar: 'islamic-umalqura',
-    numberingSystem: 'latn',
-    ...options,
-  };
-  return new Intl.DateTimeFormat('ar-SA', baseOptions).format(new Date(date));
 }

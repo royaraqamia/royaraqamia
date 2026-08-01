@@ -13,8 +13,13 @@ import { getAuthUser } from '@/backend/transport/auth-guard';
 import { createClient } from '@/backend/transport/supabase/server';
 import { cookies } from 'next/headers';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
-
-import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
+import {
+  getTotalExpenses,
+  getCategoryBreakdown,
+  getDailyTotals,
+  getUserCategories,
+  getTransactions,
+} from '@/backend/repositories/spendtrack';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,12 +61,7 @@ async function TotalCard({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const { data } = await supabase.rpc('get_total_expenses', {
-    p_user_id: userId,
-    p_start: start,
-    p_end: end,
-    p_categories: catFilter,
-  });
+  const data = await getTotalExpenses(supabase, userId, start, end, catFilter);
   return (
     <Card
       className="group/card card-lift"
@@ -102,12 +102,8 @@ async function TotalCard({
 async function CreateExpenseButton({ userId }: { userId: string }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const { data: categories } = (await supabase
-    .from('categories')
-    .select('*')
-    .or(`user_id.eq.${userId},is_default.eq.true`)
-    .order('name')) as { data: Category[] | null };
-  return <CreateExpenseDialog categories={categories ?? []} />;
+  const categories = await getUserCategories(supabase, userId);
+  return <CreateExpenseDialog categories={categories} />;
 }
 
 async function CategoryPieSection({
@@ -123,12 +119,7 @@ async function CategoryPieSection({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const { data } = await supabase.rpc('get_category_breakdown', {
-    p_user_id: userId,
-    p_start: start,
-    p_end: end,
-    p_categories: catFilter,
-  });
+  const data = await getCategoryBreakdown(supabase, userId, start, end, catFilter);
   return <CategoryPieChart data={data ?? []} />;
 }
 
@@ -145,12 +136,7 @@ async function DailyBarSection({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const { data } = await supabase.rpc('get_daily_totals', {
-    p_user_id: userId,
-    p_start: start,
-    p_end: end,
-    p_categories: catFilter,
-  });
+  const data = await getDailyTotals(supabase, userId, start, end, catFilter);
   return <DailyBarChart data={data ?? []} />;
 }
 
@@ -170,41 +156,11 @@ async function TransactionsSection({
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  const { data: categories } = (await supabase
-    .from('categories')
-    .select('*')
-    .or(`user_id.eq.${userId},is_default.eq.true`)
-    .order('name')) as { data: Category[] | null };
-
-  const safeCategories = categories ?? [];
-
-  const { count: totalCount } = await supabase
-    .from('expenses')
-    .select('*', { count: 'exact', head: true })
-    .eq('user_id', userId)
-    .gte('date', start)
-    .lte('date', end);
-
-  let query = supabase
-    .from('expenses')
-    .select('*, categories(name, color_hex)')
-    .eq('user_id', userId)
-    .gte('date', start)
-    .lte('date', end);
-
-  if (filterCategories.length > 0) {
-    query = query.in('category_id', filterCategories);
-  }
-
-  const sortParts = sort.split('_');
-  const sortField = sortParts[0] === 'amount' ? 'amount' : 'date';
-  const sortAsc = sortParts[1] === 'asc';
-  query = query.order(sortField, { ascending: sortAsc });
-
-  const { data: expenses } = (await query.limit(PAGE_SIZE)) as {
-    data: ExpenseWithCategory[] | null;
-  };
-  const safeExpenses = expenses ?? [];
+  const {
+    expenses: safeExpenses,
+    categories: safeCategories,
+    totalCount,
+  } = await getTransactions(supabase, userId, start, end, filterCategories, sort, PAGE_SIZE);
 
   return (
     <>
@@ -213,7 +169,7 @@ async function TransactionsSection({
         key={`${start}-${end}-${filterCategories.join(',')}-${sort}`}
         expenses={safeExpenses}
         categories={safeCategories}
-        totalCount={totalCount ?? 0}
+        totalCount={totalCount}
         start={start}
         end={end}
         filterCategories={filterCategories}

@@ -13,7 +13,7 @@ import {
 import { createClient } from '@/frontend/transport/supabase/client';
 import { useSession } from '@/components/shared/session-provider';
 import type { Notification, NotificationWithMeta } from '@/backend/models/notifications';
-import { calculateTimeAgo } from '@/backend/models/notifications';
+import { calculateTimeAgo } from '@/frontend/shared/format';
 import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 import {
   getNotifications,
@@ -21,7 +21,7 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-} from '@/domains/notifications/lib/actions';
+} from '@/backend/actions/notifications';
 import { toast } from 'sonner';
 
 interface NotificationContextType {

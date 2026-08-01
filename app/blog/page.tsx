@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { BlogSearch } from './_components/blog-search';
 import { estimateReadingTime, formatReadingTime } from '@/backend/shared/reading-time';
-import type { Post } from '@/backend/models/blogpress';
+import { getPublishedPosts } from '@/backend/repositories/blogpress/posts';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,27 +35,11 @@ export default async function BlogPage(props: {
   const { page: pageParam, q } = await props.searchParams;
   const page = Math.max(1, Number(pageParam) || 1);
   const query = q?.trim() || '';
-  const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
 
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  let queryBuilder = supabase
-    .from('posts')
-    .select('*', { count: 'exact' })
-    .eq('status', 'published')
-    .eq('blog_visible', true);
-
-  if (query) {
-    queryBuilder = queryBuilder.or(`title.ilike.%${query}%,meta_desc.ilike.%${query}%`);
-  }
-
-  const { data: posts, count } = await queryBuilder
-    .order('published_at', { ascending: false })
-    .range(from, to);
-
-  const totalPages = Math.ceil((count ?? 0) / PAGE_SIZE);
+  const { posts, totalPages } = await getPublishedPosts(supabase, page, query, PAGE_SIZE);
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 selection:text-white pb-24">
@@ -114,7 +98,7 @@ export default async function BlogPage(props: {
           </div>
         )}
 
-        {((posts as Post[]) ?? []).length === 0 ? (
+        {posts.length === 0 ? (
           /* Empty State Section */
           <div className="relative overflow-hidden rounded-3xl border border-border bg-muted/20 backdrop-blur-xl py-24 px-6 flex flex-col items-center justify-center text-center my-8 shadow-2xl">
             <div className="size-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mb-6 shadow-inner text-muted-foreground">
@@ -143,7 +127,7 @@ export default async function BlogPage(props: {
           <>
             {/* Post Cards Grid */}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-              {(posts as Post[]).map((post, index) => (
+              {posts.map((post, index) => (
                 <article
                   key={post.id}
                   className="group/blog relative flex flex-col justify-between rounded-3xl border border-border bg-muted/20 overflow-hidden transition-all duration-500 ease-out hover:border-border hover:bg-muted/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-background/60 opacity-0 animate-fade-in-up focus-within:ring-2 focus-within:ring-primary/50"

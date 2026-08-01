@@ -2,12 +2,12 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/backend/transport/supabase/server';
-import { createHabitService } from '@/domains/habitflow/config/composition-root';
+import { createHabitService } from '@/backend/services/habitflow/composition-root';
 import {
   createHabitSchema,
   updateHabitSchema,
   toggleLogSchema,
-} from '@/domains/habitflow/lib/validation';
+} from '@/backend/shared/habitflow/validation';
 import type { Habit, HabitLog } from '@/backend/models/habitflow';
 
 type ActionResult<T = void> = { error: string } | ({ success: true } & T);

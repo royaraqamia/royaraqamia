@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { PlusCircle, CheckCircle, Fire } from '@phosphor-icons/react';
+import { SectionHeading } from '@/components/landing-shared/SectionHeading';
 
 const steps = [
   {
@@ -41,33 +42,24 @@ export function HowItWorks() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 container-padding">
         {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-16 sm:mb-24"
-        >
-          {/* Badge Pill with Live Animated Indicator Dot */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 backdrop-blur-md shadow-sm shadow-primary/5 transition-all duration-300 hover:bg-primary/15 hover:border-primary/30">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-            </span>
-            <span>سير عمل بسيط</span>
-          </div>
-
-          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 sm:mb-6 leading-[1.15]">
-            ثلاث خطوات لـ{' '}
-            <span className="gradient-text bg-linear-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent">
-              عادات دائمة
-            </span>
-          </h2>
-
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal">
-            ابدأ صغيرًا، واظب باستمرار، وشاهد عاداتك تُغيِّر حياتك.
-          </p>
-        </motion.div>
+        <SectionHeading
+          badge={
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 backdrop-blur-md shadow-sm shadow-primary/5 transition-all duration-300 hover:bg-primary/15 hover:border-primary/30">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+              <span>سير عمل بسيط</span>
+            </div>
+          }
+          wrapperClassName="text-center mb-16 sm:mb-24"
+          titleClassName="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 sm:mb-6 leading-[1.15]"
+          titlePrefix="ثلاث خطوات لـ "
+          titleHighlight="عادات دائمة"
+          titleHighlightClassName="gradient-text bg-linear-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent"
+          subtitle="ابدأ صغيرًا، واظب باستمرار، وشاهد عاداتك تُغيِّر حياتك."
+          subtitleClassName="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal"
+        />
 
         {/* Steps Grid */}
         <div className="relative">

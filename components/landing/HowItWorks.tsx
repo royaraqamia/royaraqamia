@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { Link, Scissors, ChartBar } from '@phosphor-icons/react';
+import { SectionHeading } from '@/components/landing-shared/SectionHeading';
 
 const steps = [
   {
@@ -43,32 +44,24 @@ export function HowItWorks() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24"
-        >
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 backdrop-blur-md transition-all duration-300 hover:bg-primary/15">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-            </span>
-            <span>سير عمل بسيط</span>
-          </div>
-
-          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15] mb-6">
-            ثلاث خطوات{' '}
-            <span className="bg-linear-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
-              لروابط أذكى
-            </span>
-          </h2>
-
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal">
-            البدء يستغرق أقل من دقيقة. لا حاجة لبطاقة ائتمان.
-          </p>
-        </motion.div>
+        <SectionHeading
+          badge={
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 backdrop-blur-md transition-all duration-300 hover:bg-primary/15">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+              <span>سير عمل بسيط</span>
+            </div>
+          }
+          wrapperClassName="text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24"
+          titleClassName="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15] mb-6"
+          titlePrefix="ثلاث خطوات "
+          titleHighlight="لروابط أذكى"
+          titleHighlightClassName="bg-linear-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent"
+          subtitle="البدء يستغرق أقل من دقيقة. لا حاجة لبطاقة ائتمان."
+          subtitleClassName="text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal"
+        />
 
         {/* Steps Grid & Timeline Container */}
         <div className="relative">

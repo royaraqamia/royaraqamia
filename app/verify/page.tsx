@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { verifyCertificate } from '@/backend/actions/certificates/verify';
 import type { Certificate } from '@/backend/services/certificate-verification';
-import { formatDateArabic } from '@/frontend/shared/utils';
+import { formatDateArabic } from '@/frontend/shared/format';
 import {
   ShieldCheck,
   Search,

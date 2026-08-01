@@ -3,21 +3,9 @@
 import { motion } from 'motion/react';
 import { ArrowLeft, Wallet } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/components/shared/session-provider';
+import { GlowOrb } from '@/components/landing-shared/GlowOrb';
+import { useLandingCta } from '@/components/landing-shared/useLandingCta';
 import { cn } from '@/frontend/shared/utils';
-
-function GlowOrb({
-  className,
-  ...props
-}: { className?: string } & React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn('absolute rounded-full blur-3xl pointer-events-none transform-gpu', className)}
-      {...props}
-    />
-  );
-}
 
 const transactions = [
   { desc: 'بقالة', amount: '-$84.50', cat: 'طعام', color: 'text-accent-purple' },
@@ -27,16 +15,7 @@ const transactions = [
 ];
 
 export function Hero() {
-  const router = useRouter();
-  const { user } = useSession();
-
-  const handleCTA = () => {
-    if (user) {
-      router.push('/spendtrack/app');
-    } else {
-      router.push('/auth/login?redirect=/spendtrack');
-    }
-  };
+  const { user, handleCTA } = useLandingCta('/spendtrack/app', '/spendtrack');
 
   return (
     <section
@@ -53,9 +32,9 @@ export function Hero() {
         className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"
       />
 
-      <GlowOrb className="w-72 h-72 sm:w-96 sm:h-96 bg-primary/20 top-1/4 -right-24 sm:-right-48 animate-pulse-slow" />
+      <GlowOrb className="transform-gpu w-72 h-72 sm:w-96 sm:h-96 bg-primary/20 top-1/4 -right-24 sm:-right-48 animate-pulse-slow" />
       <GlowOrb
-        className="w-64 h-64 sm:w-80 sm:h-80 bg-accent-indigo/15 bottom-1/4 -left-20 sm:-left-40 animate-pulse-slow"
+        className="transform-gpu w-64 h-64 sm:w-80 sm:h-80 bg-accent-indigo/15 bottom-1/4 -left-20 sm:-left-40 animate-pulse-slow"
         style={{ animationDelay: '2s' }}
       />
 

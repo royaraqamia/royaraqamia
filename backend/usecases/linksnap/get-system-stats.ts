@@ -1,7 +1,4 @@
-import {
-  IAdminRepository,
-  SystemStatsReportData,
-} from '@/backend/ports/linksnap/admin-repository';
+import { IAdminRepository, SystemStatsReportData } from '@/backend/ports/linksnap/admin-repository';
 import { AdminValidator } from '@/shared/admin-validator';
 
 type SystemStatsReport = SystemStatsReportData;

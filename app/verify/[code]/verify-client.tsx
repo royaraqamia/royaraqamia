@@ -23,7 +23,7 @@ import {
 import { m } from 'motion/react';
 import Link from 'next/link';
 import type { Certificate } from '@/backend/services/certificate-verification';
-import { formatDateArabic } from '@/frontend/shared/utils';
+import { formatDateArabic } from '@/frontend/shared/format';
 import { CertificateQRCodeClient } from '@/components/certificate-qr-code-client';
 
 const easeOut = [0.25, 0.4, 0.25, 1] as const;

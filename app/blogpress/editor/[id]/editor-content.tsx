@@ -55,8 +55,8 @@ import {
   Save,
   Send,
 } from 'lucide-react';
-import { updatePost, saveAndPublishPost } from '@/domains/blogpress/lib/actions/posts';
-import { uploadImage } from '@/domains/blogpress/lib/actions/media';
+import { updatePost, saveAndPublishPost } from '@/backend/actions/blogpress/posts';
+import { uploadImage } from '@/backend/actions/blogpress/media';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
 import type { Post } from '@/backend/models/blogpress';

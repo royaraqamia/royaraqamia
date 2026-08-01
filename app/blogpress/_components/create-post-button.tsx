@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { Button } from '@/components/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
-import { createPost } from '@/domains/blogpress/lib/actions/posts';
+import { createPost } from '@/backend/actions/blogpress/posts';
 
 export function CreatePostButton() {
   const [pending, startTransition] = useTransition();

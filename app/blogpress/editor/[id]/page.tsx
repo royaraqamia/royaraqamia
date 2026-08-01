@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createClient } from '@/backend/transport/supabase/server';
-import { verifySession } from '@/domains/blogpress/lib/dal';
+import { verifySession } from '@/backend/actions/blogpress/dal';
 import { EditorContent } from './editor-content';
-import type { Post } from '@/backend/models/blogpress';
+import { getPostTitleById, getPostForUser } from '@/backend/repositories/blogpress/posts';
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>;
@@ -13,10 +13,10 @@ export async function generateMetadata(props: {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  const { data: post } = await supabase.from('posts').select('title').eq('id', id).single();
+  const title = await getPostTitleById(supabase, id);
 
   return {
-    title: post ? `تحرير: ${post.title}` : 'تحرير المقال',
+    title: title ? `تحرير: ${title}` : 'تحرير المقال',
     description: 'تحرير وتعديل المقالات في BlogPress.',
   };
 }
@@ -27,18 +27,9 @@ export default async function EditorPage(props: { params: Promise<{ id: string }
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  const { data: post, error: postError } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('id', id)
-    .eq('author_id', session.userId)
-    .single();
-
-  if (postError && postError.code !== 'PGRST116') {
-    throw new Error(`Failed to fetch post: ${postError.message}`);
-  }
+  const post = await getPostForUser(supabase, id, session.userId);
 
   if (!post) notFound();
 
-  return <EditorContent post={post as Post} />;
+  return <EditorContent post={post} />;
 }

@@ -40,10 +40,14 @@ import {
   unpublishPost,
   publishPost,
   createPost,
-} from '@/domains/blogpress/lib/actions/posts';
+} from '@/backend/actions/blogpress/posts';
 import type { Post, PostStatus } from '@/backend/models/blogpress';
 import { cn } from '@/frontend/shared/utils';
-import { estimateWordCount, estimateReadingTime, formatReadingTime } from '@/backend/shared/reading-time';
+import {
+  estimateWordCount,
+  estimateReadingTime,
+  formatReadingTime,
+} from '@/backend/shared/reading-time';
 import { toast } from 'sonner';
 
 interface PostListProps {

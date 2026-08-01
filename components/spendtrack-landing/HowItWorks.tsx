@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { Receipt, ChartPieSlice, TrendUp } from '@phosphor-icons/react';
+import { SectionHeading } from '@/components/landing-shared/SectionHeading';
 
 const steps = [
   {
@@ -50,35 +51,26 @@ export function HowItWorks() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center mb-16 sm:mb-20 lg:mb-24 max-w-3xl mx-auto"
-        >
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs transition-transform duration-300 hover:scale-105">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-            </span>
-            <span>سير عمل بسيط</span>
-          </div>
-
-          <h2
-            id="how-it-works-heading"
-            className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-6 leading-tight sm:leading-[1.18]"
-          >
-            ثلاث خطوات نحو{' '}
-            <span className="bg-linear-to-r from-primary via-emerald-500 to-teal-400 bg-clip-text text-transparent drop-shadow-xs">
-              الوضوح المالي
-            </span>
-          </h2>
-
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal">
-            ابدأ بتتبُّع مصروفاتك اليوم وتمتَّع برؤية كاملة لعادات الإنفاق الخاصَّة بك.
-          </p>
-        </motion.div>
+        <SectionHeading
+          badge={
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs transition-transform duration-300 hover:scale-105">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+              <span>سير عمل بسيط</span>
+            </div>
+          }
+          wrapperClassName="text-center mb-16 sm:mb-20 lg:mb-24 max-w-3xl mx-auto"
+          titleId="how-it-works-heading"
+          titleClassName="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-6 leading-tight sm:leading-[1.18]"
+          titlePrefix="ثلاث خطوات نحو "
+          titleHighlight="الوضوح المالي"
+          titleHighlightClassName="bg-linear-to-r from-primary via-emerald-500 to-teal-400 bg-clip-text text-transparent drop-shadow-xs"
+          subtitle="ابدأ بتتبُّع مصروفاتك اليوم وتمتَّع برؤية كاملة لعادات الإنفاق الخاصَّة بك."
+          subtitleClassName="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal"
+          initialY={24}
+        />
 
         {/* Steps Grid */}
         <div className="relative">

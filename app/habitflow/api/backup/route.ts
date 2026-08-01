@@ -1,9 +1,9 @@
 import { NextRequest } from 'next/server';
 import fs from 'fs';
-import { getHabitRepository } from '@/domains/habitflow/repositories/repository-provider';
-import { getOptionalUser, jsonOk, jsonError } from '@/domains/habitflow/shared/api-helpers';
-import { AppError } from '@/domains/habitflow/shared/errors';
-import { getDbPath } from '@/domains/habitflow/shared/data-path';
+import { getHabitRepository } from '@/backend/repositories/habitflow/repository-provider';
+import { getOptionalUser, jsonOk, jsonError } from '@/backend/shared/habitflow/api-helpers';
+import { AppError } from '@/backend/shared/habitflow/errors';
+import { getDbPath } from '@/backend/shared/habitflow/data-path';
 
 const DB_FILE = getDbPath();
 

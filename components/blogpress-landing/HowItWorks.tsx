@@ -2,6 +2,7 @@
 
 import { motion } from 'motion/react';
 import { FileText, Eye, Globe, Sparkle } from '@phosphor-icons/react';
+import { SectionHeading } from '@/components/landing-shared/SectionHeading';
 
 const steps = [
   {
@@ -43,32 +44,26 @@ export function HowItWorks() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header Section */}
-        <motion.header
-          initial={{ opacity: 0, y: 16 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-100px' }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-          className="text-center max-w-3xl mx-auto mb-16 sm:mb-24"
-        >
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-6 shadow-xs backdrop-blur-md">
-            <Sparkle size={14} weight="fill" className="text-primary animate-pulse" />
-            <span>سير عمل بسيط</span>
-          </div>
-
-          <h2
-            id="how-it-works-title"
-            className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.15] mb-5"
-          >
-            ثلاث خطوات لـ{' '}
-            <span className="bg-linear-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
-              نشر سلس
-            </span>
-          </h2>
-
-          <p className="text-base sm:text-xl text-muted-foreground leading-relaxed font-normal max-w-xl mx-auto">
-            من الفكرة إلى المنشور في دقائق. لا تعقيد، فقط كتابة.
-          </p>
-        </motion.header>
+        <SectionHeading
+          as="header"
+          badge={
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-6 shadow-xs backdrop-blur-md">
+              <Sparkle size={14} weight="fill" className="text-primary animate-pulse" />
+              <span>سير عمل بسيط</span>
+            </div>
+          }
+          wrapperClassName="text-center max-w-3xl mx-auto mb-16 sm:mb-24"
+          titleId="how-it-works-title"
+          titleClassName="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.15] mb-5"
+          titlePrefix="ثلاث خطوات لـ "
+          titleHighlight="نشر سلس"
+          titleHighlightClassName="bg-linear-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent"
+          subtitle="من الفكرة إلى المنشور في دقائق. لا تعقيد، فقط كتابة."
+          subtitleClassName="text-base sm:text-xl text-muted-foreground leading-relaxed font-normal max-w-xl mx-auto"
+          initialY={16}
+          viewportMargin="-100px"
+          duration={0.5}
+        />
 
         {/* Steps Grid & Interactive Timeline */}
         <div className="relative">

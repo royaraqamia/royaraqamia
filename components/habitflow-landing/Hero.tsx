@@ -1,27 +1,10 @@
 'use client';
 
-import React from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, CheckCircle, Fire } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/components/shared/session-provider';
-import { cn } from '@/frontend/shared/utils';
-
-function GlowOrb({
-  className,
-  ...props
-}: { className?: string } & React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn(
-        'absolute rounded-full blur-3xl pointer-events-none opacity-60 select-none',
-        className
-      )}
-      {...props}
-    />
-  );
-}
+import { GlowOrb } from '@/components/landing-shared/GlowOrb';
+import { useLandingCta } from '@/components/landing-shared/useLandingCta';
 
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const habitData = [
@@ -35,16 +18,7 @@ const habitData = [
 ];
 
 export function Hero() {
-  const router = useRouter();
-  const { user } = useSession();
-
-  const handleCTA = () => {
-    if (user) {
-      router.push('/habitflow/app');
-    } else {
-      router.push('/auth/login?redirect=/habitflow');
-    }
-  };
+  const { user, handleCTA } = useLandingCta('/habitflow/app', '/habitflow');
 
   return (
     <section className="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0 selection:bg-primary/20 selection:text-primary">
@@ -54,14 +28,14 @@ export function Hero() {
 
       {/* Layered Motion Ambient Light Orbs */}
       <GlowOrb
-        className="w-md h-112 sm:w-xl sm:h-144 bg-primary/20 top-1/4 -left-36 sm:-left-48 animate-pulse"
+        className="opacity-60 select-none w-md h-112 sm:w-xl sm:h-144 bg-primary/20 top-1/4 -left-36 sm:-left-48 animate-pulse"
         style={{ animationDuration: '8s' }}
       />
       <GlowOrb
-        className="w-[24rem] h-96 sm:w-lg sm:h-128 bg-indigo-500/15 bottom-1/4 -right-36 sm:-right-40 animate-pulse"
+        className="opacity-60 select-none w-[24rem] h-96 sm:w-lg sm:h-128 bg-indigo-500/15 bottom-1/4 -right-36 sm:-right-40 animate-pulse"
         style={{ animationDuration: '10s', animationDelay: '2s' }}
       />
-      <GlowOrb className="w-80 h-80 bg-purple-500/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+      <GlowOrb className="opacity-60 select-none w-80 h-80 bg-purple-500/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
 
       <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">

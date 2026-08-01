@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import { createClient } from '@/backend/transport/supabase/server';
 import { type Certificate } from '@/backend/services/certificate-verification';
-import { formatDateArabic } from '@/frontend/shared/utils';
+import { getCertificateByCode } from '@/backend/repositories/certificates';
+import { formatDateArabic } from '@/frontend/shared/format';
 import { VerifyClient } from './verify-client';
 
 interface PageProps {
@@ -60,15 +61,7 @@ export default async function VerifyCodePage({ params }: PageProps) {
 async function getCertificate(code: string): Promise<Certificate | null> {
   try {
     const supabase = await createClient();
-
-    const { data, error } = await supabase
-      .from('certificates')
-      .select('*')
-      .eq('certificate_code', code)
-      .single();
-
-    if (error || !data) return null;
-    return data;
+    return await getCertificateByCode(supabase, code);
   } catch {
     return null;
   }

@@ -1,109 +1,10 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { Link, ChartBar, MagnifyingGlass } from '@phosphor-icons/react';
-
-interface BentoCardProps {
-  title: string;
-  description: string;
-  icon: React.ElementType;
-  gradient: string;
-  className?: string;
-  delay?: number;
-  children?: React.ReactNode;
-}
-
-function BentoCard({
-  title,
-  description,
-  icon: Icon,
-  gradient,
-  className = '',
-  delay = 0,
-  children,
-}: BentoCardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
-
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setMousePos({
-      x: ((e.clientX - rect.left) / rect.width) * 100,
-      y: ((e.clientY - rect.top) / rect.height) * 100,
-    });
-  }, []);
-
-  const handleMouseLeave = useCallback(() => {
-    setMousePos({ x: 50, y: 50 });
-  }, []);
-
-  // Format gradient string safely for CSS radial-gradient
-  const formatGradient = (colorStr: string, alpha: number) => {
-    if (colorStr.startsWith('rgba')) {
-      return colorStr.replace(/,\s*[\d.]+\)/, `, ${alpha})`);
-    }
-    if (colorStr.startsWith('rgb(')) {
-      return colorStr.replace('rgb(', 'rgba(').replace(')', `, ${alpha})`);
-    }
-    if (colorStr.startsWith('#')) {
-      const hexAlpha = Math.round(alpha * 255)
-        .toString(16)
-        .padStart(2, '0');
-      return `${colorStr}${hexAlpha}`;
-    }
-    return colorStr;
-  };
-
-  const bgSpotlight = formatGradient(gradient, 0.12);
-  const hoverSpotlight = formatGradient(gradient, 0.22);
-
-  return (
-    <motion.div
-      ref={cardRef}
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-80px' }}
-      transition={{ delay, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10 ${className}`}
-      style={{
-        background: `radial-gradient(600px circle at ${mousePos.x}% ${mousePos.y}%, ${bgSpotlight}, transparent 70%), rgba(15, 23, 42, 0.75)`,
-      }}
-    >
-      {/* Ambient hover glowing spotlight layer */}
-      <div
-        className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
-        style={{
-          background: `radial-gradient(800px circle at ${mousePos.x}% ${mousePos.y}%, ${hoverSpotlight}, transparent 65%)`,
-        }}
-      />
-
-      <div className="relative z-10 flex h-full flex-col justify-between space-y-6">
-        <div>
-          <div className="flex items-center gap-4 mb-4">
-            <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 text-violet-400 shadow-inner group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/20 transition-all duration-300">
-              <Icon
-                size={26}
-                className="text-violet-400 transition-transform duration-300 group-hover:scale-110"
-              />
-            </div>
-            <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 group-hover:text-white transition-colors">
-              {title}
-            </h3>
-          </div>
-          <p className="text-sm sm:text-base leading-relaxed text-slate-400 font-normal">
-            {description}
-          </p>
-        </div>
-
-        {children && <div className="mt-auto pt-2">{children}</div>}
-      </div>
-    </motion.div>
-  );
-}
+import { BentoCard } from '@/components/landing-shared/BentoCard';
+import { SectionHeading } from '@/components/landing-shared/SectionHeading';
+import { formatGradientAlpha } from '@/components/landing-shared/formatGradientAlpha';
 
 const barData = [35, 55, 42, 78, 62, 90, 75, 88, 95, 70, 85, 92];
 
@@ -210,35 +111,45 @@ export function FeaturesBento() {
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-linear-to-b from-violet-600/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none" />
 
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16 sm:mb-20"
-        >
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs backdrop-blur-md">
-            ✨ ميِّزات قويَّة
-          </span>
-          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-slate-100">
-            كل ما تحتاجه{' '}
-            <span className="bg-linear-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-xs">
-              لإدارة الرَّوابط
+        <SectionHeading
+          badge={
+            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs backdrop-blur-md">
+              ✨ ميِّزات قويَّة
             </span>
-          </h2>
-          <p className="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed font-normal">
-            اختصِر، نظِّم، وحلِّل روابطك بأدوات قويَّة مُصمَّمَة للمبدعين والمسوِّقين.
-          </p>
-        </motion.div>
+          }
+          wrapperClassName="text-center mb-16 sm:mb-20"
+          titleClassName="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-slate-100"
+          titlePrefix="كل ما تحتاجه "
+          titleHighlight="لإدارة الرَّوابط"
+          titleHighlightClassName="bg-linear-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-xs"
+          subtitle="اختصِر، نظِّم، وحلِّل روابطك بأدوات قويَّة مُصمَّمَة للمبدعين والمسوِّقين."
+          subtitleClassName="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed font-normal"
+          useEase={false}
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           <BentoCard
             title="اختصار فوري"
             description="الصق أي رابط طويل واحصل على رابط قصير نظيف قابل للمشاركة بالميلي ثانية."
             icon={Link}
-            gradient="rgba(139,92,246,1)"
             className="lg:col-span-2 lg:row-span-2"
             delay={0.1}
+            cardClassName="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10"
+            backgroundStyle={(x, y) => ({
+              background: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha('rgba(139,92,246,1)', 0.12)}, transparent 70%), rgba(15, 23, 42, 0.75)`,
+            })}
+            hoverStyle={(x, y) => ({
+              background: `radial-gradient(800px circle at ${x}% ${y}%, ${formatGradientAlpha('rgba(139,92,246,1)', 0.22)}, transparent 65%)`,
+            })}
+            contentClassName="relative z-10 flex h-full flex-col justify-between space-y-6"
+            headerClassName="flex items-center gap-4 mb-4"
+            iconBoxClassName="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 text-violet-400 shadow-inner group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/20 transition-all duration-300"
+            iconClassName="text-violet-400 transition-transform duration-300 group-hover:scale-110"
+            iconSize={26}
+            titleClassName="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 group-hover:text-white transition-colors"
+            descriptionClassName="text-sm sm:text-base leading-relaxed text-slate-400 font-normal"
+            childrenWrapperClassName="mt-auto pt-2"
+            hoverOverlayClassName="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
           >
             <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 shadow-inner backdrop-blur-md space-y-4">
               <div className="flex items-center gap-3" dir="ltr">
@@ -265,22 +176,52 @@ export function FeaturesBento() {
 
           <BentoCard
             title="تتبُّع النَّقرات"
-            description="اعرف بالضَّبط كم مرَّة تمَّ النَّقر على كل رابط بتتبُّع دقيق وفوري."
+            description="اعرف بالضَّبط كم مرَّه تمَّ النَّقر على كل رابط بتتبُّع دقيق وفوري."
             icon={ChartBar}
-            gradient="rgba(129,140,248,1)"
             className="lg:col-span-2"
             delay={0.2}
+            cardClassName="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10"
+            backgroundStyle={(x, y) => ({
+              background: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha('rgba(129,140,248,1)', 0.12)}, transparent 70%), rgba(15, 23, 42, 0.75)`,
+            })}
+            hoverStyle={(x, y) => ({
+              background: `radial-gradient(800px circle at ${x}% ${y}%, ${formatGradientAlpha('rgba(129,140,248,1)', 0.22)}, transparent 65%)`,
+            })}
+            contentClassName="relative z-10 flex h-full flex-col justify-between space-y-6"
+            headerClassName="flex items-center gap-4 mb-4"
+            iconBoxClassName="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 text-violet-400 shadow-inner group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/20 transition-all duration-300"
+            iconClassName="text-violet-400 transition-transform duration-300 group-hover:scale-110"
+            iconSize={26}
+            titleClassName="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 group-hover:text-white transition-colors"
+            descriptionClassName="text-sm sm:text-base leading-relaxed text-slate-400 font-normal"
+            childrenWrapperClassName="mt-auto pt-2"
+            hoverOverlayClassName="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
           >
             <MiniChart />
           </BentoCard>
 
           <BentoCard
-            title="تحليلات متقدِّمة"
-            description="افهم جمهورك من خلال تحليلات مُفصَّلَة عن أداء الرَّوابط والمواقع الجغرافيَّة والاتِّجاهات."
+            title="تحليلات متقدِّمة"
+            description="افهم جمهورك من خلال تحليلات مُفصَّلَة عن أداء الرَّوابط والمواقع الجغرافيَّة والاتِّجاهات."
             icon={MagnifyingGlass}
-            gradient="rgba(167,139,250,1)"
             className="lg:col-span-2"
             delay={0.3}
+            cardClassName="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10"
+            backgroundStyle={(x, y) => ({
+              background: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha('rgba(167,139,250,1)', 0.12)}, transparent 70%), rgba(15, 23, 42, 0.75)`,
+            })}
+            hoverStyle={(x, y) => ({
+              background: `radial-gradient(800px circle at ${x}% ${y}%, ${formatGradientAlpha('rgba(167,139,250,1)', 0.22)}, transparent 65%)`,
+            })}
+            contentClassName="relative z-10 flex h-full flex-col justify-between space-y-6"
+            headerClassName="flex items-center gap-4 mb-4"
+            iconBoxClassName="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 text-violet-400 shadow-inner group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/20 transition-all duration-300"
+            iconClassName="text-violet-400 transition-transform duration-300 group-hover:scale-110"
+            iconSize={26}
+            titleClassName="text-xl sm:text-2xl font-bold tracking-tight text-slate-100 group-hover:text-white transition-colors"
+            descriptionClassName="text-sm sm:text-base leading-relaxed text-slate-400 font-normal"
+            childrenWrapperClassName="mt-auto pt-2"
+            hoverOverlayClassName="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700"
           >
             <AnalyticsPreview />
           </BentoCard>

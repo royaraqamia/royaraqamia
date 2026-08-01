@@ -3,33 +3,11 @@
 import { motion } from 'motion/react';
 import { ArrowLeft, FileText, Sparkle, CheckCircle, Code, Eye } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/components/shared/session-provider';
-import { cn } from '@/frontend/shared/utils';
-
-function GlowOrb({
-  className,
-  ...props
-}: { className?: string } & React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn('absolute rounded-full blur-3xl pointer-events-none', className)}
-      {...props}
-    />
-  );
-}
+import { GlowOrb } from '@/components/landing-shared/GlowOrb';
+import { useLandingCta } from '@/components/landing-shared/useLandingCta';
 
 export function Hero() {
-  const router = useRouter();
-  const { user } = useSession();
-
-  const handleCTA = () => {
-    if (user) {
-      router.push('/blogpress/app');
-    } else {
-      router.push('/auth/login?redirect=/blogpress');
-    }
-  };
+  const { user, handleCTA } = useLandingCta('/blogpress/app', '/blogpress');
 
   return (
     <section

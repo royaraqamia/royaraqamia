@@ -3,9 +3,8 @@
 import { motion } from 'motion/react';
 import { ArrowLeft, Link } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
-import { useRouter } from 'next/navigation';
-import { useSession } from '@/components/shared/session-provider';
-import { cn } from '@/frontend/shared/utils';
+import { GlowOrb } from '@/components/landing-shared/GlowOrb';
+import { useLandingCta } from '@/components/landing-shared/useLandingCta';
 
 const floatingIcons = [
   { Icon: Link, delay: 0, x: '-12%', y: '-8%', size: 28 },
@@ -14,32 +13,8 @@ const floatingIcons = [
   { Icon: Link, delay: 1.5, x: '85%', y: '72%', size: 30 },
 ];
 
-function GlowOrb({
-  className,
-  ...props
-}: { className?: string } & React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn(
-        'absolute rounded-full blur-3xl pointer-events-none opacity-40 select-none transform-gpu',
-        className
-      )}
-      {...props}
-    />
-  );
-}
-
 export function Hero() {
-  const router = useRouter();
-  const { user } = useSession();
-
-  const handleCTA = () => {
-    if (user) {
-      router.push('/linksnap/app');
-    } else {
-      router.push('/auth/login?redirect=/linksnap');
-    }
-  };
+  const { user, handleCTA } = useLandingCta('/linksnap/app', '/linksnap');
 
   return (
     <section className="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0">
@@ -48,9 +23,9 @@ export function Hero() {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
       {/* Layered Glow Orbs */}
-      <GlowOrb className="w-md h-112 bg-linear-to-br from-primary/30 to-indigo-500/20 top-1/4 -left-32 sm:-left-48 animate-pulse" />
+      <GlowOrb className="w-md h-112 bg-linear-to-br from-primary/30 to-indigo-500/20 top-1/4 -left-32 sm:-left-48 animate-pulse opacity-40 select-none transform-gpu" />
       <GlowOrb
-        className="w-[24rem] h-96 bg-linear-to-tl from-purple-500/20 to-primary/20 bottom-1/4 -right-32 sm:-right-40 animate-pulse"
+        className="w-[24rem] h-96 bg-linear-to-tl from-purple-500/20 to-primary/20 bottom-1/4 -right-32 sm:-right-40 animate-pulse opacity-40 select-none transform-gpu"
         style={{ animationDelay: '2s' }}
       />
 

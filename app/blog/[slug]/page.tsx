@@ -13,22 +13,14 @@ import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { estimateReadingTime, formatReadingTimeLong } from '@/backend/shared/reading-time';
-import type { Post } from '@/backend/models/blogpress';
+import {
+  getPublishedPostBySlug,
+  getPostAuthor,
+  getRelatedPosts,
+} from '@/backend/repositories/blogpress/posts';
 import type { Metadata } from 'next';
 
 export const revalidate = 60;
-
-const getPublishedPost = async (slug: string) => {
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-  const { data } = await supabase
-    .from('posts')
-    .select('*')
-    .eq('slug', slug)
-    .eq('status', 'published')
-    .single();
-  return data as Post | null;
-};
 
 function extractHeadings(content: string): { level: number; text: string; id: string }[] {
   const headingRegex = /^(#{1,3})\s+(.+)$/gm;
@@ -67,7 +59,9 @@ export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await props.params;
-  const post = await getPublishedPost(slug);
+  const cookieStore = await cookies();
+  const supabase = await createClient(cookieStore);
+  const post = await getPublishedPostBySlug(supabase, slug);
 
   if (!post) {
     return {
@@ -91,28 +85,18 @@ export async function generateMetadata(props: {
 
 export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
-  const supabase = await createClient();
-  const post = await getPublishedPost(slug);
+  const cookieStore = await cookies();
+  const supabase = await createClient(cookieStore);
+  const post = await getPublishedPostBySlug(supabase, slug);
 
   if (!post) notFound();
 
-  const p = post as Post;
+  const p = post;
 
   const adminSupabase = getAdminSupabase();
-  const { data: author } = await adminSupabase
-    .from('users')
-    .select('name, avatar_url, bio')
-    .eq('id', p.author_id)
-    .maybeSingle();
+  const author = await getPostAuthor(adminSupabase, p.author_id);
 
-  const { data: relatedPosts } = await supabase
-    .from('posts')
-    .select('id, title, slug, cover_image, published_at, content')
-    .eq('status', 'published')
-    .eq('blog_visible', true)
-    .neq('slug', slug)
-    .order('published_at', { ascending: false })
-    .limit(3);
+  const relatedPosts = await getRelatedPosts(supabase, slug);
 
   const readingTime = estimateReadingTime(p.content);
   const headings = extractHeadings(p.content ?? '');

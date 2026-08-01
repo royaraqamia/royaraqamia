@@ -1,8 +1,8 @@
 import * as Sentry from '@sentry/nextjs';
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
-import { createClient } from '@supabase/supabase-js';
-import type { Database, Tables } from '@/shared/contracts/database.types';
+import { getPublicSupabase } from '@/backend/transport/supabase/public';
+import { getCertificateByCode, type Certificate } from '@/backend/repositories/certificates';
 
 // ============================================================
 // Certificate Code Format: COMP-YYYY-XXXXXXXX (8 alphanumeric chars)
@@ -83,33 +83,12 @@ async function checkRateLimit(identifier: string, type: 'ip' | 'code'): Promise<
 }
 
 /**
- * Creates a Supabase client using the publishable (anon) key.
  * Certificate verification is a public, read-only operation — the
  * certificates table has an explicit RLS policy allowing public SELECT,
  * so the service role key is not needed and should not be used here.
  */
-function createVerificationClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const publishableKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-  if (!url) {
-    throw new Error('[createVerificationClient] Missing env var: NEXT_PUBLIC_SUPABASE_URL');
-  }
-  if (!publishableKey) {
-    throw new Error(
-      '[createVerificationClient] Missing env var: NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY'
-    );
-  }
-
-  return createClient<Database>(url, publishableKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  });
-}
-
-export type Certificate = Tables<'certificates'>;
+export type { Certificate };
 
 export interface VerifyResult {
   success: boolean;
@@ -165,14 +144,9 @@ export async function verifyCertificateByCode(code: string, ip: string): Promise
     }
 
     // Database lookup — uses publishable key, not service role
-    const client = createVerificationClient();
-    const { data, error } = await client
-      .from('certificates')
-      .select('*')
-      .eq('certificate_code', sanitized)
-      .single();
+    const certificate = await getCertificateByCode(getPublicSupabase(), sanitized);
 
-    if (error || !data) {
+    if (!certificate) {
       Sentry.captureMessage('Certificate not found', {
         level: 'info',
         extra: { code: sanitized, ip },
@@ -185,10 +159,10 @@ export async function verifyCertificateByCode(code: string, ip: string): Promise
 
     Sentry.captureMessage('Certificate verified successfully', {
       level: 'info',
-      extra: { code: sanitized, student: data.student_name, ip },
+      extra: { code: sanitized, student: certificate.student_name, ip },
     });
 
-    return { success: true, certificate: data };
+    return { success: true, certificate };
   } catch (e) {
     console.error('[verifyCertificateByCode] Unexpected error:', e);
     Sentry.captureException(e, {

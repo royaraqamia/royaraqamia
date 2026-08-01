@@ -2,13 +2,13 @@
 
 import { verifyCertificateByCode } from '@/backend/services/certificate-verification';
 import { headers } from 'next/headers';
+import { getForwardedIp } from '@/backend/shared/request-utils';
 import type { VerifyResult } from '@/backend/services/certificate-verification';
 
 export async function verifyCertificate(code: string): Promise<VerifyResult> {
   try {
     const headerStore = await headers();
-    const forwarded = headerStore.get('x-forwarded-for');
-    const ip = forwarded?.split(',')[0]?.trim() ?? 'unknown';
+    const ip = getForwardedIp(headerStore);
 
     return await verifyCertificateByCode(code, ip);
   } catch (e) {

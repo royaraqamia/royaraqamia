@@ -1,7 +1,4 @@
-import {
-  IAdminRepository,
-  SystemStatsReportData,
-} from '@/backend/ports/linksnap/admin-repository';
+import { IAdminRepository, SystemStatsReportData } from '@/backend/ports/linksnap/admin-repository';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 
 export class SupabaseAdminRepository implements IAdminRepository {

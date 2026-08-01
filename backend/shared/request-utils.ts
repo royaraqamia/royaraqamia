@@ -7,3 +7,7 @@ export function getClientIp(req: NextRequest): string {
     '127.0.0.1'
   );
 }
+
+export function getForwardedIp(headerStore: Pick<Headers, 'get'>): string {
+  return headerStore.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown';
+}

@@ -10,7 +10,7 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { formatHijriDate } from '@/frontend/shared/utils';
+import { formatHijriDate } from '@/frontend/shared/format';
 import { scrollToSection, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
 
 const TelegramIcon = ({

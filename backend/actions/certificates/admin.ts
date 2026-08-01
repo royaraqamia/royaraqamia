@@ -6,6 +6,7 @@ import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 import { createClient } from '@/backend/transport/supabase/server';
 import { z } from 'zod';
 import type { Tables } from '@/shared/contracts/database.types';
+import { getAdminEmails } from '@/shared/admin-validator';
 
 // ============================================================
 // Validation Schema
@@ -54,10 +55,7 @@ export async function requireAuth() {
   }
 
   // RBAC: check if user email is in the admin list
-  const adminEmails = (process.env.ADMIN_EMAILS ?? '')
-    .split(',')
-    .map((e) => e.trim().toLowerCase())
-    .filter(Boolean);
+  const adminEmails = getAdminEmails();
 
   if (adminEmails.length > 0 && !adminEmails.includes(user.email?.toLowerCase() ?? '')) {
     throw new Error('FORBIDDEN');
