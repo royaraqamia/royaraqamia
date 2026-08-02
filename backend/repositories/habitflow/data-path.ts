@@ -23,9 +23,18 @@ function getDataDir(): string {
     cachedDir = candidate;
     return cachedDir;
   } catch {
-    const fallback = path.join(os.tmpdir(), 'habitflow-data');
-    cachedDir = fallback;
-    return cachedDir;
+    const fallback = path.join(os.homedir(), '.habitflow', 'data');
+    try {
+      if (!fs.existsSync(fallback)) {
+        fs.mkdirSync(fallback, { recursive: true, mode: 0o700 });
+      }
+      fs.chmodSync(fallback, 0o700);
+      fs.accessSync(fallback, fs.constants.W_OK);
+      cachedDir = fallback;
+      return cachedDir;
+    } catch {
+      throw new Error('Unable to initialize a secure fallback data directory');
+    }
   }
 }
 
