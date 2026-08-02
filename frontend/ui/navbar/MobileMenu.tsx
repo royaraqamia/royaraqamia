@@ -304,32 +304,32 @@ export function MobileMenu({
             style={{ transformOrigin: 'center top' }}
           >
             {/* Content Container */}
-              <div className="relative z-10 flex flex-col h-full">
-                {/* Header */}
-                <header className="flex items-center justify-between px-5 h-20 shrink-0">
-                  <Link
-                    href={isHomePage ? '#home' : '/'}
-                    onClick={scrollToHome}
-                    className="flex items-center gap-3 no-underline group"
-                  >
-                    <img
-                      src={logoProp}
-                      alt="شعار رؤية رقمية"
-                      width={40}
-                      height={40}
-                      loading="eager"
-                      className="h-10 w-10 logo-glow transition-transform duration-200 group-hover:scale-105"
-                    />
-                    <span className="text-xl font-bold font-heading">رؤية رقمية</span>
-                  </Link>
+            <div className="relative z-10 flex flex-col h-full">
+              {/* Header */}
+              <header className="flex items-center justify-between px-5 h-20 shrink-0">
+                <Link
+                  href={isHomePage ? '#home' : '/'}
+                  onClick={scrollToHome}
+                  className="flex items-center gap-3 no-underline group"
+                >
+                  <img
+                    src={logoProp}
+                    alt="شعار رؤية رقمية"
+                    width={40}
+                    height={40}
+                    loading="eager"
+                    className="h-10 w-10 logo-glow transition-transform duration-200 group-hover:scale-105"
+                  />
+                  <span className="text-xl font-bold font-heading">رؤية رقمية</span>
+                </Link>
 
-                  <button
-                    onClick={() => {
-                      triggerHaptic();
-                      handleClose();
-                    }}
-                    aria-label="إغلاق القائمة"
-                    className="
+                <button
+                  onClick={() => {
+                    triggerHaptic();
+                    handleClose();
+                  }}
+                  aria-label="إغلاق القائمة"
+                  className="
                                 flex items-center justify-center
                                 w-11 h-11 rounded-full
                                 bg-white/3 border border-white/8
@@ -339,41 +339,41 @@ export function MobileMenu({
                                 active:scale-95
                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
                             "
-                  >
-                    <X size={20} weight="bold" />
-                  </button>
-                </header>
+                >
+                  <X size={20} weight="bold" />
+                </button>
+              </header>
 
-                {/* Navigation */}
-                <nav
-                  className="
+              {/* Navigation */}
+              <nav
+                className="
                         flex-1 overflow-y-auto
                         px-5 py-6
                         flex flex-col gap-1
                         overscroll-contain
                     "
-                >
-                  {navLinks
-                    .filter((link) => link.visible !== false)
-                    .map((link) =>
-                      link.hasDropdown && link.dropdownKey
-                        ? renderDropdownItem(link)
-                        : renderNavItem(link)
-                    )}
-                </nav>
+              >
+                {navLinks
+                  .filter((link) => link.visible !== false)
+                  .map((link) =>
+                    link.hasDropdown && link.dropdownKey
+                      ? renderDropdownItem(link)
+                      : renderNavItem(link)
+                  )}
+              </nav>
 
-                {/* Footer */}
-                <footer className="px-5 pt-5 pb-10 shrink-0">
-                  {/* CTA Button - Primary */}
-                  <a
-                    href={getWhatsAppUrl()}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    onClick={() => {
-                      triggerHaptic();
-                      handleClose();
-                    }}
-                    className="
+              {/* Footer */}
+              <footer className="px-5 pt-5 pb-10 shrink-0">
+                {/* CTA Button - Primary */}
+                <a
+                  href={getWhatsAppUrl()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => {
+                    triggerHaptic();
+                    handleClose();
+                  }}
+                  className="
                 relative
                 w-full mb-5 h-14
                 rounded-full
@@ -383,17 +383,17 @@ export function MobileMenu({
                 active:scale-95
                 overflow-hidden
               "
-                  >
-                    <span className="relative z-10 flex items-center gap-2">
-                      <span>تواصل معنا الآن</span>
-                    </span>
-                  </a>
-                </footer>
-              </div>
+                >
+                  <span className="relative z-10 flex items-center gap-2">
+                    <span>تواصل معنا الآن</span>
+                  </span>
+                </a>
+              </footer>
             </div>
-          </div>,
-          document.body
-        )}
+          </div>
+        </div>,
+        document.body
+      )}
     </>
   );
 }

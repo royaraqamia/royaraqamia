@@ -41,7 +41,7 @@ The application is a single Next.js 16 (App Router) deployment that serves multi
 - **Certificates** — certificate issuance, admin management, and QR-based public verification (`app/admin/certificates`, `app/verify`).
 - **Auth & Accounts** — OTP-based email authentication, password reset, and admin role management (`app/auth`).
 
-The backend is intentionally decoupled from Next.js: business logic lives in `backend/services`, external integrations behind interfaces in `backend/ports`, and adapters in `backend/repositories` and `backend/clients`. The frontend is organized by product (`frontend/<product>`) with shared UI, state, and Supabase transport layers.
+The backend is intentionally decoupled from Next.js: business logic lives in `backend/services`, data access behind interfaces in `backend/repositories`, external integrations behind interfaces in `backend/clients`, and thin inbound handlers in `backend/controllers`. The frontend is organized by product (`frontend/<product>`) with shared UI, state, API-client, and Supabase transport layers.
 
 ---
 
@@ -59,36 +59,35 @@ royaraqamia/
 │   ├── auth/                     #   Login, signup, OTP, password reset/update
 │   ├── blog/                     #   Public blog (list + [slug] article)
 │   ├── blogpress/                #   Blog editor product (app + editor/[id])
-│   ├── habitflow/                #   Habit tracker product (+ api/, actions/)
+│   ├── habitflow/                #   Habit tracker product (+ api/)
 │   ├── linksnap/                 #   URL shortener product (+ api/, landing)
-│   ├── spendtrack/               #   Expense tracker product (+ actions/, categories/)
+│   ├── spendtrack/               #   Expense tracker product (+ categories/)
 │   ├── verify/                   #   Public certificate verification
 │   ├── terms/ · privacy/ · offline/
 │   ├── layout.tsx · page.tsx     #   Root marketing layout & home page
 │   └── global.css                #   Tailwind entry point
 │
 ├── backend/                      # Clean architecture — business logic + infrastructure
-│   ├── actions/                  #   Server actions (auth, blogpress, certificates, notifications)
-│   ├── clients/                  #   External SDKs (Resend email, Cloudflare Turnstile)
-│   ├── config/                   #   Composition roots / DI wiring (e.g. linksnap.ts)
-│   ├── middleware/               #   Session middleware
-│   ├── ports/                    #   Abstract interfaces (repositories contracts per domain)
-│   ├── repositories/             #   Supabase adapters implementing the ports
-│   ├── services/                 #   Pure business logic (linksnap, habitflow, auth, notifications)
-│   ├── shared/                   #   Rate limiters, error classes, cross-domain helpers
-│   └── transport/                #   Auth guards/helpers + Supabase server/admin clients
+│   ├── clients/                  #   External SDKs (Resend email, Cloudflare Turnstile, Upstash)
+│   ├── config/                   #   Composition roots / DI wiring (e.g. auth.ts, linksnap.ts)
+│   ├── controllers/              #   Thin inbound handlers / server actions (auth, certificates, spendtrack)
+│   ├── middleware/               #   Session middleware, auth guards, rate-limit helpers
+│   ├── models/                   #   Data shapes (Supabase database types)
+│   ├── repositories/             #   Supabase adapters implementing repository interfaces
+│   ├── services/                 #   Pure business logic (auth, blogpress, certificates, habitflow, linksnap, notifications, spendtrack)
+│   ├── shared/                   #   Rate limiters, error classes, admin-validator
+│   └── transport/                #   Supabase server/admin clients + HTTP helpers
 │
 ├── frontend/                     # Client-side code, organized by product
+│   ├── api/                      #   Server-data client layer (auth, notifications, spendtrack)
 │   ├── habitflow/                #   Product-specific state/repositories/ui
-│   ├── shared/                   #   Constants, fonts, metadata, formatting utils
+│   ├── shared/                   #   Constants, fonts, metadata, formatting utils, habit-stats
 │   ├── state/                    #   React contexts, PWA hook, focus-trap, scroll hooks
 │   ├── transport/supabase/       #   Browser Supabase client
 │   └── ui/                       #   Reusable components (landing, auth, shadcn/ui, product UIs)
 │
 ├── shared/                       # Contracts shared across frontend & backend
-│   ├── contracts/                #   Zod schemas + TS types per domain (auth, blog, linksnap, …)
-│   ├── admin-validator.ts        #   Admin authorization rules
-│   └── habitflow/                #   Shared habit service/domain
+│   └── contracts/                #   Zod schemas + TS types per domain (auth, blog, certificates, …)
 │
 ├── supabase/
 │   └── migrations/               #   Versioned SQL migrations (schema, RLS, storage buckets)
@@ -114,7 +113,7 @@ royaraqamia/
 └── tsconfig.json                 # Strict TypeScript configuration
 ```
 
-> **Separation of concerns:** UI routes never import repositories directly — they call `backend/services` (pure logic) through the composition roots in `backend/config`, while `backend/repositories` adapt the domain interfaces in `backend/ports` to Supabase. `shared/contracts` keeps request/response shapes typed and identical on both sides of the network boundary.
+> **Separation of concerns:** UI routes and server actions never import repositories directly — `backend/controllers` and app routes call exactly one `backend/services` module through the composition roots in `backend/config`, while `backend/repositories` adapt domain interfaces to Supabase. `shared/contracts` keeps request/response shapes typed and identical on both sides of the network boundary.
 
 ---
 

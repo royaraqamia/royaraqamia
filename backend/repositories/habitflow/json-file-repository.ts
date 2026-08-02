@@ -16,8 +16,13 @@ export class JsonFileHabitRepository implements IHabitRepository {
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
-    if (!fs.existsSync(DB_FILE)) {
-      fs.writeFileSync(DB_FILE, JSON.stringify({ habits: [], logs: [] }, null, 2), 'utf-8');
+    try {
+      fs.writeFileSync(DB_FILE, JSON.stringify({ habits: [], logs: [] }, null, 2), {
+        encoding: 'utf-8',
+        flag: 'wx',
+      });
+    } catch (e: unknown) {
+      if ((e as NodeJS.ErrnoException)?.code !== 'EEXIST') throw e;
     }
   }
 
