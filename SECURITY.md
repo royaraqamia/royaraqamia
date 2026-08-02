@@ -2,7 +2,7 @@
 
 | Attribute            | Value                                  |
 | -------------------- | -------------------------------------- |
-| **Document version** | 1.0.0                                  |
+| **Document version** | 1.2.0                                  |
 | **Status**           | Production                             |
 | **Last reviewed**    | 2026-08-02                             |
 | **Next review due**  | 2027-02-02 (mandatory 6-month cadence) |
@@ -44,7 +44,7 @@ Only the versions listed below are actively maintained and receive security patc
 2. Subject line MUST be prefixed with `[SECURITY]` — e.g. `[SECURITY] Stored XSS in article editor`.
 3. A machine-readable disclosure file is published at `/.well-known/security.txt` (RFC 9116); it MUST stay in sync with this policy.
 4. **PGP encryption is required for sensitive reports.** Encrypt with our key:
-   - **PGP Fingerprint:** `0000 0000 0000 0000 0000  0000 0000 0000 0000` _(maintainers: replace with the real 40-char fingerprint, publish the public key block at the bottom of this file, and serve it at `/.well-known/security.txt.pgp`)_
+   - **PGP Fingerprint:** `672D A1FC CB71 7ECA 20C2  1531 C402 2CE9 1654 5CE1`
    - Key is also published at the contact address's keyserver entry.
 
 5. Include, where possible:
@@ -331,3 +331,39 @@ This is **not** a type-check bypass: the authoritative type gate is **`tsc --noE
 ## Contact
 
 For security questions or to report a vulnerability, contact **contact@royaraqamia.com** with the subject prefix `[SECURITY]`. All code, configurations, and documentation in this repository are confidential and proprietary.
+
+## PGP Public Key
+
+Fingerprint: 672D A1FC CB71 7ECA 20C2 1531 C402 2CE9 1654 5CE1
+
+```pgp
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mQINBGpvOn4BEACdJam0/aZAGGLsaMAPNoFSCxrARl79s0J+WkjCrZqaBQ/0ZUvG
+3sznVjlgVFszl2JHmqWNHiIol2VKc7WHxy8lHyHiD9pO5Tx4vyH88uaVsAYEbicS
+nCuZyRdIFHgpMQYfb+5k7xbZ5u5NkC4XhWGgN+mvP2+i+kgjRkILXAQ2JNh6FujB
+Wgbl6juJ08jBTEnLeitUV+pGaA9KC70qTqwuqhOhFlnVxaToshkfl1QzcG5aMtcq
+NM1zPCbmtYreiTLkdA5mwFAKvB2G/ZyhO4TCuDUcPRXnPjioicatC3BFhltKsI+A
+c7FDLIiM3/Cq7k7Jk7wdAyc2rxLqFQuy6Ixol/m6IGsckFEDHbs5QENM31947PKk
+df8eXsexgZLlKkdaz8QqbVvPaxZJLQNnE9nfOUm23+uIVx5cVMkxWLZH02WFabK7
+LAgR+920MZY4O2w+/mhM0LdMk+mz6xckT5/sulr0dnKAK2iQfcQt4MI+XEnBxz+O
+ZIkcNLB+ofj2oEw/XFDd9Sa8BKIDbWpNPcPejOm9npYvh01o3BUKTpVHYeTnpPNj
+EPdHITPfAnR/EippdvtjiKgIzxxXPEBLqSHxT+cplybzwxh1IISZ9PSd8DYtVY/H
+Opx7Ou0PMesOiJbKMHUQll9z2KPL/QvJwwXggZLbyExELdTGtyfuSZmgcQARAQAB
+tCZSb3lhIFJhcWFtaWEgPGNvbnRhY3RAcm95YXJhcWFtaWEuY29tPokCbgQTAQgA
+WBYhBGctofzLcX7KIMIVMcQCLOkWVFzhBQJqbzp+GxSAAAAAAAQADm1hbnUyLDIu
+NSsxLjEyLDIsMQMbLwQFCwkIBwICIgIGFQoJCAsCBBYCAwECHgcCF4AACgkQxAIs
+6RZUXOFPvw/+NLwxKsycKKYc81AJZc4KKuwuzfSytJA5AMU2PkqWBsPyc0Rh0lQB
+4iINEiZl+++rszyKIeLhh11b/h0EvtI6PIfl3RCxQJ966l4ubS4cBzXbiwnXdlFp
+PgX37xa0wGRrAYQbd/J29YddBNiXOx0l6Lu7Uure9woMHjubiDD8NtiXC0y5JvYg
+Sc6a6gh1OtaxF5YqLmvO5eSLAf5fwjm38qmAdFMCgKmm2Hs4WE9oMmcRMxU/JPd/
+rLVW8PgpNonr/VDjev4qg0S7u6zHxRnFbFmF+oGB1osp1K5HaeCG1qQSAB9wks1+
+8fNp7wvf+RS8ALqR7m6cbNHYxIHvHKYSVb8mYgYuXX/JXuO/PxYdAowavSRPJ+m1
+8lSVthGmKvAjT9gU4CTZcfIphU0EtwhoeI37Kw8sgvnozOdD4iooWmfioFBHAO2h
+8cdkPnYjv/LsLYyAjjR4kQtydo9a7/4vV84CZ46GGOfdPz6hioFONnMaJs0SYwVJ
+ycf1TdgSeX/VLe06W7M70WqxTNg0B4NC+knkSGdVRaruAchJbEr89ZF9n9w+009P
+4Qd57EatKYpcM1PbE7R71wWZuvg2dDtznjGnLnPuTJn8oiojl9B63zJQBmAWZLke
+s+j6za6MZZdupzL+2HZ3pNcyT7Qd558/5O93bIXqURv7lA2wqqXEd5w=
+=drqN
+-----END PGP PUBLIC KEY BLOCK-----
+```

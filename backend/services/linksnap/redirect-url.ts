@@ -1,5 +1,5 @@
-import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
-import { IAnalyticsRepository } from '@/backend/ports/linksnap/analytics-repository';
+import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import { IAnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 
 export class RedirectUrlService {

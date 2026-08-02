@@ -40,9 +40,9 @@ import {
   unpublishPost,
   publishPost,
   createPost,
-} from '@/backend/actions/blogpress/posts';
+} from '@/backend/controllers/blogpress/posts';
 import type { Post, PostStatus } from '@/shared/contracts/blogpress';
-import { cn } from '@/frontend/shared/utils';
+import { cn } from '@/frontend/shared/cn';
 import {
   estimateWordCount,
   estimateReadingTime,

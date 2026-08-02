@@ -1,4 +1,4 @@
-import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
+import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 
 export class ListLinksService {

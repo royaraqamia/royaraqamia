@@ -1,4 +1,4 @@
-import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
+import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { getPublicSupabase } from '@/backend/transport/supabase/public';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';

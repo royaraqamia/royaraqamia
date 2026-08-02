@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { cn } from '@/frontend/shared/utils';
+import { cn } from '@/frontend/shared/cn';
 
 interface InputProps extends React.ComponentProps<'input'> {
   error?: boolean;

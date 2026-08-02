@@ -2,7 +2,7 @@
 
 import { Search, ChevronLeft, ChevronRight, X, AlertTriangle, Unlock, Lock } from 'lucide-react';
 import { Badge } from '@/frontend/ui/ui/badge';
-import { getBaseUrl } from '@/frontend/shared/utils';
+import { getBaseUrl } from '@/frontend/shared/get-base-url';
 
 export interface AdminSystemLink {
   code: string;

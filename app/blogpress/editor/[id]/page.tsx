@@ -2,9 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
 import { createClient } from '@/backend/transport/supabase/server';
-import { verifySession } from '@/backend/actions/blogpress/dal';
+import { verifySession } from '@/backend/middleware/session-guard';
 import { EditorContent } from './editor-content';
-import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
+import { createBlogpressPostsService } from '@/backend/config/blogpress';
 
 export async function generateMetadata(props: {
   params: Promise<{ id: string }>;
@@ -13,7 +13,7 @@ export async function generateMetadata(props: {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  const title = await createPostsRepository(supabase).getPostTitleById(id);
+  const title = await createBlogpressPostsService(supabase).getPostTitleById(id);
 
   return {
     title: title ? `تحرير: ${title}` : 'تحرير المقال',
@@ -27,7 +27,7 @@ export default async function EditorPage(props: { params: Promise<{ id: string }
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  const post = await createPostsRepository(supabase).getPostForUser(id, session.userId);
+  const post = await createBlogpressPostsService(supabase).getPostForUser(id, session.userId);
 
   if (!post) notFound();
 

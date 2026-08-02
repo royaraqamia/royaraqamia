@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { LinksnapApiClient } from '@/frontend/api/linksnap';
 
 interface LinkEditFormProps {
   code: string;
@@ -21,19 +22,8 @@ export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: Lin
     setUpdateLoading(true);
     setUpdateError(null);
     try {
-      const res = await fetch('/linksnap/api/links', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ code, originalUrl: editingUrlValue }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to update URL');
-
-      onSaved(code, data.link.originalUrl);
+      const link = await LinksnapApiClient.updateLink(code, editingUrlValue, token);
+      onSaved(code, link.originalUrl);
       toast.success('تم تحديث الرابط بنجاح');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'خطأ في تحديث الرَّابط.';

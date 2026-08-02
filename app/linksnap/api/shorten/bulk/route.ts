@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
+import { getAuthenticatedUser } from '@/backend/transport/bearer-auth';
 import { createBulkShortenService } from '@/backend/config/linksnap';
-import { checkRateLimitApi } from '@/backend/shared/with-rate-limit';
+import { checkRateLimitApi } from '@/backend/middleware/http';
 
 export async function POST(req: NextRequest) {
   try {

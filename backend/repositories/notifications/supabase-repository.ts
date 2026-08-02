@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database, Json } from '@/shared/contracts/database.types';
-import type { INotificationRepository } from '@/backend/ports/notifications/interfaces';
+import type { Database, Json } from '@/backend/models/database.types';
+import type { INotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
 import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
 
 export function createSupabaseNotificationRepository(

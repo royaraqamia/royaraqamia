@@ -1,4 +1,4 @@
-import { requireAuth } from '@/backend/transport/auth-guard';
+import { requireAuth } from '@/backend/middleware/auth-guard';
 import { ThemeProvider } from '@/frontend/ui/linksnap/theme-provider';
 import { ProgressBar } from '@/frontend/ui/linksnap/progress-bar';
 import { Toaster } from 'sonner';

@@ -1,6 +1,6 @@
-import type { INotificationRepository } from '@/backend/ports/notifications/interfaces';
+import type { INotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
 import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
-import { checkRateLimit as defaultCheckRateLimit } from '@/backend/shared/rate-limiter';
+import { checkRateLimit as defaultCheckRateLimit } from '@/backend/clients/rate-limiter';
 
 export interface NotificationServiceDeps {
   checkRateLimit?: (key: string, limit: number, windowMs: number) => Promise<boolean>;
@@ -43,11 +43,4 @@ export class NotificationService {
   async delete(id: string, userId: string): Promise<void> {
     return this.repo.delete(id, userId);
   }
-}
-
-export function createNotificationService(
-  repo: INotificationRepository,
-  deps: NotificationServiceDeps = {}
-): NotificationService {
-  return new NotificationService(repo, deps);
 }

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/shared/contracts/database.types';
+import type { Database } from '@/backend/models/database.types';
 
 let publicClient: ReturnType<typeof createClient<Database>> | null = null;
 

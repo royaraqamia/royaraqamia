@@ -5,7 +5,7 @@ import {
   type CertificateVerifierDeps,
 } from '@/backend/services/certificate-verification';
 import type { Certificate } from '@/shared/contracts/certificates';
-import type { ICertificatesRepository } from '@/backend/ports/certificates/certificates-repository';
+import type { ICertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
 
 // ============================================================
 // Test the certificate code validation logic

@@ -1,4 +1,4 @@
-import { IAnalyticsRepository } from '@/backend/ports/linksnap/analytics-repository';
+import { IAnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { LinkAnalyticsSummary } from '@/shared/contracts/linksnap';
 
 export class GetUrlAnalyticsService {

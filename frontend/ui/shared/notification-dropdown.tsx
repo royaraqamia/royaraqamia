@@ -13,7 +13,7 @@ import {
   Megaphone,
 } from '@phosphor-icons/react';
 import { useNotifications } from '@/frontend/state/NotificationContext';
-import { cn } from '@/frontend/shared/utils';
+import { cn } from '@/frontend/shared/cn';
 import { ScrollArea } from '@/frontend/ui/ui/scroll-area';
 
 const typeIcons: Record<string, React.ReactNode> = {

@@ -1,6 +1,6 @@
-import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
+import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
-import { AdminValidator } from '@/shared/admin-validator';
+import { AdminValidator } from '@/backend/shared/admin-validator';
 
 export class ModerateLinkService {
   constructor(private shortLinkRepository: IShortLinkRepository) {}

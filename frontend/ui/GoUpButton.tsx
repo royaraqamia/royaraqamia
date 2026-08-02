@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useUI } from '../state/UIContext';
-import { throttle } from '@/frontend/shared/utils';
+import { throttle } from '@/frontend/shared/throttle';
 import { scrollToTop } from '@/frontend/shared/scroll';
 
 export function GoUpButton() {

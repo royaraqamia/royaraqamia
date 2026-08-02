@@ -1,11 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/shared/contracts/database.types';
+import type { Database } from '@/backend/models/database.types';
 import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
 import type {
   ISpendtrackRepository,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
-} from '@/backend/ports/spendtrack/repository';
+} from '@/backend/repositories/spendtrack/spendtrack-repository';
 
 export function createSpendtrackRepository(
   supabase: SupabaseClient<Database>

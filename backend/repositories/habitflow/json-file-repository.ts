@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Habit, HabitLog, IHabitRepository } from '@/shared/contracts/habitflow';
-import { getDbPath } from '@/backend/shared/habitflow/data-path';
+import { getDbPath } from '@/backend/repositories/habitflow/data-path';
 
 const DB_FILE = getDbPath();
 

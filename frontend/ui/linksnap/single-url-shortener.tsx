@@ -5,8 +5,9 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Link, Sparkles, Copy, Check, Share2, QrCode, ArrowLeft, RotateCcw } from 'lucide-react';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
-import { getBaseUrl } from '@/frontend/shared/utils';
+import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
+import { LinksnapApiClient } from '@/frontend/api/linksnap';
 
 interface SingleUrlShortenerProps {
   token: string | null;
@@ -48,19 +49,9 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     setLoading(true);
 
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+      const link = await LinksnapApiClient.shorten(originalUrl, customCode, token);
 
-      const res = await fetch('/linksnap/api/shorten', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ originalUrl, customCode: customCode || undefined }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'فشل في اختصار الرَّابط');
-
-      const generatedCode = data.link.code;
+      const generatedCode = link.code;
       setShortenedUrl(`${getBaseUrl()}/${generatedCode}`);
       onLinkCreated();
       const style = getComputedStyle(document.documentElement);

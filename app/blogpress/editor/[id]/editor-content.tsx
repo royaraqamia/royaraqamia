@@ -55,8 +55,8 @@ import {
   Save,
   Send,
 } from 'lucide-react';
-import { updatePost, saveAndPublishPost } from '@/backend/actions/blogpress/posts';
-import { uploadImage } from '@/backend/actions/blogpress/media';
+import { updatePost, saveAndPublishPost } from '@/backend/controllers/blogpress/posts';
+import { uploadImage } from '@/backend/controllers/blogpress/media';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
 import type { Post } from '@/shared/contracts/blogpress';
@@ -178,12 +178,12 @@ export function EditorContent({ post }: EditorContentProps) {
     const result = await uploadImage(formData);
     setIsUploading(false);
 
-    if (result.error) {
+    if ('error' in result && result.error) {
       toast.error(result.error);
       return;
     }
 
-    if (result.url) {
+    if ('url' in result && result.url) {
       editorRef.current?.insertImage(result.url, file.name);
       toast.success('تمَّ رفع الصُّورة');
     }
@@ -208,11 +208,11 @@ export function EditorContent({ post }: EditorContentProps) {
     formData.append('file', file);
     try {
       const result = await uploadImage(formData);
-      if (result.error) {
+      if ('error' in result && result.error) {
         toast.error(result.error);
         return;
       }
-      if (result.url) {
+      if ('url' in result && result.url) {
         setCoverImage(result.url);
         setCoverImageError(false);
         toast.success('تمَّ رفع صورة الغلاف');

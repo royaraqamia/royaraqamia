@@ -15,8 +15,10 @@ import {
 import { LinkEditForm } from './link-edit-form';
 import { LinkAnalyticsDrawer, AnalyticsData } from './link-analytics-drawer';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
-import { cn, getBaseUrl } from '@/frontend/shared/utils';
+import { cn } from '@/frontend/shared/cn';
+import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
+import { LinksnapApiClient } from '@/frontend/api/linksnap';
 
 interface LinkRowCardProps {
   code: string;
@@ -65,13 +67,7 @@ export function LinkRowCard({
     setDeleteError(null);
 
     try {
-      const res = await fetch(`/linksnap/api/links?code=${code}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'فشل في حذف الرَّابط');
+      await LinksnapApiClient.deleteLink(code, token);
       onDeleted(code);
       toast.success('تم حذف الرابط بنجاح');
     } catch (err: unknown) {
@@ -94,13 +90,7 @@ export function LinkRowCard({
     setAnalyticsError(null);
 
     try {
-      const res = await fetch(`/linksnap/api/analytics/${code}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'فشل في جلب التَّحليلات');
-      setAnalytics(data.analytics);
+      setAnalytics(await LinksnapApiClient.fetchAnalytics(code, token));
     } catch (err: unknown) {
       setAnalyticsError(err instanceof Error ? err.message : 'فشل في تحميل التَّحليلات.');
     } finally {

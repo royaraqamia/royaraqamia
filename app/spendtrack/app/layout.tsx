@@ -1,4 +1,4 @@
-import { requireAuth } from '@/backend/transport/auth-guard';
+import { requireAuth } from '@/backend/middleware/auth-guard';
 import { Navbar } from '@/frontend/ui/Navbar';
 
 export default async function SpendTrackAppLayout({ children }: { children: React.ReactNode }) {

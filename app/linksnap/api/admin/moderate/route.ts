@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
+import { getAuthenticatedUser } from '@/backend/transport/bearer-auth';
 import { createModerateLinkService } from '@/backend/config/linksnap';
 
 export async function POST(req: NextRequest) {

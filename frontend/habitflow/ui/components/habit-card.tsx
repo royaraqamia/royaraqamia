@@ -2,7 +2,7 @@ import { createElement } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Check, Flame, Edit3 } from 'lucide-react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
-import { HabitService } from '@/shared/habitflow/habit-service';
+import { calculateHabitStats } from '@/frontend/shared/habit-stats';
 import { getIconComponent, getIconColorClass } from '@/frontend/habitflow/shared/habit-icons';
 import { Card } from '@/frontend/ui/ui/card';
 import { Button } from '@/frontend/ui/ui/button';
@@ -29,7 +29,7 @@ export function HabitCard({
     (l) => l.habitId === habit.id && l.date === activeDate && l.completed
   );
   const isToggling = togglingHabitId === habit.id;
-  const stats = HabitService.calculateHabitStats(habit.id, logs, activeDate);
+  const stats = calculateHabitStats(habit.id, logs, activeDate);
   const colorClass = getIconColorClass(habit.icon);
 
   return (

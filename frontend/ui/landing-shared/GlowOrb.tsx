@@ -1,4 +1,4 @@
-import { cn } from '@/frontend/shared/utils';
+import { cn } from '@/frontend/shared/cn';
 
 export function GlowOrb({
   className,

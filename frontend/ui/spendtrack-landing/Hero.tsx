@@ -5,7 +5,7 @@ import { ArrowLeft, Wallet } from '@phosphor-icons/react';
 import { Button } from '@/frontend/ui/ui/button';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { useLandingCta } from '@/frontend/ui/landing-shared/useLandingCta';
-import { cn } from '@/frontend/shared/utils';
+import { cn } from '@/frontend/shared/cn';
 
 const transactions = [
   { desc: 'بقالة', amount: '-$84.50', cat: 'طعام', color: 'text-accent-purple' },

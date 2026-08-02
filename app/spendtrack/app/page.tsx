@@ -9,11 +9,11 @@ import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
 import { CategoryPieChart } from '@/frontend/ui/spendtrack/category-pie-chart';
 import { DailyBarChart } from '@/frontend/ui/spendtrack/daily-bar-chart';
 import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
-import { getAuthUser } from '@/backend/transport/auth-guard';
+import { getAuthUser } from '@/backend/middleware/auth-guard';
 import { createClient } from '@/backend/transport/supabase/server';
 import { cookies } from 'next/headers';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
-import { createSpendtrackRepository } from '@/backend/repositories/spendtrack';
+import { createSpendtrackService } from '@/backend/config/spendtrack';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +55,7 @@ async function TotalCard({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const data = await createSpendtrackRepository(supabase).getTotalExpenses(
+  const data = await createSpendtrackService(supabase).getTotalExpenses(
     userId,
     start,
     end,
@@ -101,7 +101,7 @@ async function TotalCard({
 async function CreateExpenseButton({ userId }: { userId: string }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const categories = await createSpendtrackRepository(supabase).getUserCategories(userId);
+  const categories = await createSpendtrackService(supabase).getUserCategories(userId);
   return <CreateExpenseDialog categories={categories} />;
 }
 
@@ -118,7 +118,7 @@ async function CategoryPieSection({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const data = await createSpendtrackRepository(supabase).getCategoryBreakdown(
+  const data = await createSpendtrackService(supabase).getCategoryBreakdown(
     userId,
     start,
     end,
@@ -140,7 +140,7 @@ async function DailyBarSection({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const data = await createSpendtrackRepository(supabase).getDailyTotals(
+  const data = await createSpendtrackService(supabase).getDailyTotals(
     userId,
     start,
     end,
@@ -169,7 +169,7 @@ async function TransactionsSection({
     expenses: safeExpenses,
     categories: safeCategories,
     totalCount,
-  } = await createSpendtrackRepository(supabase).getTransactions({
+  } = await createSpendtrackService(supabase).getTransactions({
     userId,
     start,
     end,

@@ -3,14 +3,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Layers, FileText, AlertCircle, ArrowLeft, Copy, Check, RefreshCw } from 'lucide-react';
-import { getBaseUrl } from '@/frontend/shared/utils';
+import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
-
-interface BulkShortenResultItem {
-  originalUrl: string;
-  shortLink?: { code: string };
-  error?: string;
-}
+import { LinksnapApiClient, type BulkShortenResultItem } from '@/frontend/api/linksnap';
 
 interface BulkUrlShortenerProps {
   token: string | null;
@@ -52,19 +47,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
     }
 
     try {
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
-
-      const res = await fetch('/linksnap/api/shorten/bulk', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ urls: parsedUrls }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'فشل في اختصار الروابط');
-
-      setResults(data.results || []);
+      setResults(await LinksnapApiClient.shortenBulk(parsedUrls, token));
       onLinkCreated();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'حدث خطأ أثناء الاختصار بالجملة.');

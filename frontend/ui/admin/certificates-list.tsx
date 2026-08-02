@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { AdminCertificate } from '@/backend/actions/certificates/admin';
+import type { Certificate } from '@/shared/contracts/certificates';
 import { Button } from '@/frontend/ui/ui/button';
 import { Card, CardContent } from '@/frontend/ui/ui/card';
 import { Badge } from '@/frontend/ui/ui/badge';
@@ -41,11 +41,11 @@ const staggerItem = {
 };
 
 export interface CertificatesListItemProps {
-  cert: AdminCertificate;
+  cert: Certificate;
   deleting: boolean;
   copied: boolean;
   onCopy: (code: string, id: string) => void;
-  onDeleteRequest: (cert: AdminCertificate) => void;
+  onDeleteRequest: (cert: Certificate) => void;
   onDeleteDialogChange: (open: boolean) => void;
   onConfirmDelete: () => void;
   isDeleteTarget: boolean;
@@ -192,14 +192,14 @@ function CertificateListItem({
 }
 
 interface CertificatesListProps {
-  certificates: AdminCertificate[];
+  certificates: Certificate[];
   loading: boolean;
   hasSearch: boolean;
   deleting: string | null;
   copiedId: string | null;
-  deleteTarget: AdminCertificate | null;
+  deleteTarget: Certificate | null;
   onCopy: (code: string, id: string) => void;
-  onDeleteRequest: (cert: AdminCertificate) => void;
+  onDeleteRequest: (cert: Certificate) => void;
   onDeleteDialogChange: (open: boolean) => void;
   onConfirmDelete: () => void;
 }

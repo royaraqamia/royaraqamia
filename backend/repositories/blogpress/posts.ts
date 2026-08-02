@@ -1,12 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/shared/contracts/database.types';
+import type { Database } from '@/backend/models/database.types';
 import type { Post } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 import type {
   IPostsRepository,
   PostAuthor,
   PublishedPostsResult,
-} from '@/backend/ports/blogpress/posts-repository';
+} from '@/backend/repositories/blogpress/posts-repository';
 
 export function createPostsRepository(supabase: SupabaseClient<Database>): IPostsRepository {
   return {

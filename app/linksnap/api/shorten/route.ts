@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
+import { getAuthenticatedUser } from '@/backend/transport/bearer-auth';
 import { createShortenUrlService } from '@/backend/config/linksnap';
-import { checkRateLimitApi } from '@/backend/shared/with-rate-limit';
-import { getClientIp } from '@/backend/shared/request-utils';
-import { getErrorMessage } from '@/backend/shared/error-utils';
+import { checkRateLimitApi } from '@/backend/middleware/http';
+import { getClientIp } from '@/backend/transport/http';
+import { getErrorMessage } from '@/backend/shared/errors';
 
 export async function POST(req: NextRequest) {
   try {

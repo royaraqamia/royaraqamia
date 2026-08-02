@@ -31,8 +31,8 @@ export class ApiClient {
     mode: 'supabase' | 'local';
   }> {
     const [habitsData, logsData] = await Promise.all([
-      request<{ habits: Habit[]; mode: 'supabase' | 'local' }>('/api/habits'),
-      request<{ logs: HabitLog[]; mode: 'supabase' | 'local' }>('/api/logs'),
+      request<{ habits: Habit[]; mode: 'supabase' | 'local' }>('/habitflow/api/habits'),
+      request<{ logs: HabitLog[]; mode: 'supabase' | 'local' }>('/habitflow/api/logs'),
     ]);
 
     return {
@@ -44,7 +44,7 @@ export class ApiClient {
 
   static async fetchUser() {
     try {
-      const data = await request<{ user: unknown }>('/api/auth/user');
+      const data = await request<{ user: unknown }>('/habitflow/api/auth/user');
       return data.user;
     } catch {
       return null;
@@ -52,7 +52,7 @@ export class ApiClient {
   }
 
   static async createHabit(habitName: string, habitIcon: string, habitFrequency: string) {
-    return request<{ habit: Habit; mode: 'supabase' | 'local' }>('/api/habits', {
+    return request<{ habit: Habit; mode: 'supabase' | 'local' }>('/habitflow/api/habits', {
       method: 'POST',
       body: JSON.stringify({ name: habitName, icon: habitIcon, frequency: habitFrequency }),
     });
@@ -64,27 +64,29 @@ export class ApiClient {
     habitIcon: string,
     habitFrequency: string
   ) {
-    return request<{ habit: Habit; mode: 'supabase' | 'local' }>('/api/habits', {
+    return request<{ habit: Habit; mode: 'supabase' | 'local' }>('/habitflow/api/habits', {
       method: 'PUT',
       body: JSON.stringify({ id, name: habitName, icon: habitIcon, frequency: habitFrequency }),
     });
   }
 
   static async archiveHabit(id: string) {
-    const data = await request<{ success: boolean }>(`/api/habits?id=${id}`, { method: 'DELETE' });
+    const data = await request<{ success: boolean }>(`/habitflow/api/habits?id=${id}`, {
+      method: 'DELETE',
+    });
     return data.success;
   }
 
   static async fetchLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[]; count: number }> {
     try {
-      return await request('/api/local-data');
+      return await request('/habitflow/api/local-data');
     } catch {
       return { habits: [], logs: [], count: 0 };
     }
   }
 
   static async syncToCloud(data: { habits: Habit[]; logs: HabitLog[] }) {
-    await request('/api/backup', {
+    await request('/habitflow/api/backup', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -92,7 +94,7 @@ export class ApiClient {
   }
 
   static async toggleLog(habitId: string, date: string, completed: boolean) {
-    return request<{ log: HabitLog; mode: 'supabase' | 'local' }>('/api/logs', {
+    return request<{ log: HabitLog; mode: 'supabase' | 'local' }>('/habitflow/api/logs', {
       method: 'POST',
       body: JSON.stringify({ habitId, date, completed }),
     });
@@ -100,12 +102,12 @@ export class ApiClient {
 
   static async exportBackup() {
     return request<{ version: string; exportedAt: string; habits: unknown[]; logs: unknown[] }>(
-      '/api/backup'
+      '/habitflow/api/backup'
     );
   }
 
   static async importBackup(parsedData: unknown): Promise<boolean> {
-    await request('/api/backup', {
+    await request('/habitflow/api/backup', {
       method: 'POST',
       body: JSON.stringify(parsedData),
     });

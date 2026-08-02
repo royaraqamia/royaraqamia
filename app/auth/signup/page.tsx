@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { GoogleLogo, WarningCircle } from '@phosphor-icons/react';
-import { signup, signInWithGoogle } from '@/backend/actions/auth';
+import { signup, signInWithGoogle } from '@/backend/controllers/auth';
 import { Input } from '@/frontend/ui/ui/input';
 import { Button } from '@/frontend/ui/ui/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';

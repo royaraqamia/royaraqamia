@@ -7,14 +7,8 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { toast } from 'sonner';
 import { AdminStatsCards } from './admin-stats-cards';
 import { AdminErrorState } from './admin-error-state';
-import { AdminLinksDirectory, type AdminSystemLink } from './admin-links-directory';
-
-interface AdminStats {
-  totalLinks: number;
-  totalClicks: number;
-  blockedLinksCount: number;
-  systemLinks: AdminSystemLink[];
-}
+import { AdminLinksDirectory } from './admin-links-directory';
+import { LinksnapApiClient, type AdminStats } from '@/frontend/api/linksnap';
 
 interface AdminPanelProps {
   token: string;
@@ -38,18 +32,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/linksnap/api/admin/stats', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'تم رفض الوصول أو فشل تحميل إحصائيات الإدارة.');
-      }
-
-      setStats(data.stats);
+      setStats(await LinksnapApiClient.fetchAdminStats(token));
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'فشل في جلب البيانات الإدارية.');
@@ -67,9 +50,9 @@ export function AdminPanel({ token }: AdminPanelProps) {
 
   const filteredLinks = useMemo(() => {
     if (!stats) return [];
-    if (!searchQuery.trim()) return stats.systemLinks || [];
+    if (!searchQuery.trim()) return stats.links || [];
     const q = searchQuery.toLowerCase();
-    return (stats.systemLinks || []).filter(
+    return (stats.links || []).filter(
       (l) => l.code.toLowerCase().includes(q) || l.originalUrl.toLowerCase().includes(q)
     );
   }, [stats, searchQuery]);
@@ -81,22 +64,10 @@ export function AdminPanel({ token }: AdminPanelProps) {
     setModerateError(null);
     try {
       const targetState = !currentBlockedState;
-      const res = await fetch('/linksnap/api/admin/moderate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ code, isBlocked: targetState }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'فشل في مراقبة الرابط المختصر.');
-      }
+      await LinksnapApiClient.moderateLink(code, targetState, token);
 
       if (stats) {
-        const updatedLinks = (stats.systemLinks || []).map((link) => {
+        const updatedLinks = (stats.links || []).map((link) => {
           if (link.code === code) {
             return { ...link, isBlocked: targetState };
           }
@@ -108,7 +79,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
         setStats({
           ...stats,
           blockedLinksCount: stats.blockedLinksCount + blockedDiff,
-          systemLinks: updatedLinks,
+          links: updatedLinks,
         });
         toast.success(targetState ? 'تم حظر الرابط بنجاح' : 'تم إلغاء حظر الرابط بنجاح');
       }

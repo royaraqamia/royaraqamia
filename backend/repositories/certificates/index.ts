@@ -1,11 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/shared/contracts/database.types';
+import type { Database } from '@/backend/models/database.types';
 import type { Certificate } from '@/shared/contracts/certificates';
 import type {
   CertificateCreateInput,
   CertificateUpdateInput,
   ICertificatesRepository,
-} from '@/backend/ports/certificates/certificates-repository';
+} from '@/backend/repositories/certificates/certificates-repository';
 
 export function createCertificatesRepository(
   supabase: SupabaseClient<Database>

@@ -21,7 +21,7 @@ import {
   markAsRead,
   markAllAsRead,
   deleteNotification,
-} from '@/backend/actions/notifications';
+} from '@/frontend/api/notifications';
 import { toast } from 'sonner';
 
 interface NotificationContextType {

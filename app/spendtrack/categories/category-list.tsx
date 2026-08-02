@@ -4,7 +4,7 @@ import { useActionState, startTransition, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { updateCategory, deleteCategory } from '@/app/spendtrack/actions/categories';
+import { updateCategory, deleteCategory } from '@/backend/controllers/spendtrack/categories';
 import { Button } from '@/frontend/ui/ui/button';
 import { Input } from '@/frontend/ui/ui/input';
 import { Pencil, Trash2, Tags } from 'lucide-react';

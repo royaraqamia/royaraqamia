@@ -1,0 +1,14 @@
+# Gitleaks configuration for رؤية رقمية
+# See: https://github.com/gitleaks/gitleaks
+title = "Gitleaks config for royaraqamia"
+
+[extend]
+useDefault = true
+
+[allowlist]
+  description = "Intentional secret-like fixtures and placeholder templates"
+  paths = [
+    # Unit test that asserts example.env and configs contain NO real secrets;
+    # it deliberately embeds secret-shaped regex patterns.
+    '''scripts/__tests__/security-config\.test\.ts''',
+  ]

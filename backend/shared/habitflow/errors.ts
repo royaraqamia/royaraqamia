@@ -1,4 +1,4 @@
-import { getErrorMessage } from '@/backend/shared/error-utils';
+import { getErrorMessage } from '@/backend/shared/errors';
 
 export class AppError extends Error {
   constructor(

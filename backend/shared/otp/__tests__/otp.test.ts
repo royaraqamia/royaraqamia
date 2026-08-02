@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateOtp, hashOtp, verifyOtp } from '@/backend/shared/otp/generator';
-import { OTP_CONFIG } from '@/backend/shared/otp/config';
+import { OTP_CONFIG } from '@/backend/config/otp';
 
 describe('OTP Generator', () => {
   describe('generateOtp', () => {

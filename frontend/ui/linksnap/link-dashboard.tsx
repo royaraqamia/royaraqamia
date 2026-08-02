@@ -6,13 +6,7 @@ import { Link2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { LinkRowCard } from './link-row-card';
 import { DashboardEmptyState } from './dashboard-empty-state';
 import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
-
-interface LinkItem {
-  code: string;
-  originalUrl: string;
-  createdAt: string;
-  isBlocked: boolean;
-}
+import { LinksnapApiClient, type ShortenedLink } from '@/frontend/api/linksnap';
 
 interface LinkDashboardProps {
   token: string;
@@ -21,7 +15,7 @@ interface LinkDashboardProps {
 
 export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   const reducedMotion = useReducedMotion();
-  const [links, setLinks] = useState<LinkItem[]>([]);
+  const [links, setLinks] = useState<ShortenedLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,12 +23,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch('/linksnap/api/links', {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      if (!res.ok || !data.success) throw new Error(data.error || 'Failed to fetch links');
-      setLinks(data.links);
+      setLinks(await LinksnapApiClient.listLinks(token));
     } catch (err: unknown) {
       setError((err instanceof Error && err.message) || 'فشل في تحميل روابطك المختصرة.');
     } finally {

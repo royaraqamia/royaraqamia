@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
-import { logout } from '@/backend/actions/auth';
+import { logout } from '@/frontend/api/auth';
 import { useDashboard } from '@/frontend/habitflow/state/use-dashboard';
 import { useSession } from '@/frontend/ui/shared/session-provider';
 import { Button } from '@/frontend/ui/ui/button';

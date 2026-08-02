@@ -6,7 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createExpense, updateExpense } from '@/app/spendtrack/actions/expenses';
+import { createExpense, updateExpense } from '@/frontend/api/spendtrack';
 import { Button } from '@/frontend/ui/ui/button';
 import { Input } from '@/frontend/ui/ui/input';
 import { Label } from '@/frontend/ui/ui/label';

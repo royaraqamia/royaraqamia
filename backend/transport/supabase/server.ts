@@ -1,6 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
-import type { Database } from '@/shared/contracts/database.types';
+import type { Database } from '@/backend/models/database.types';
 
 type CookieStore = Awaited<ReturnType<typeof cookies>>;
 

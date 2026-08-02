@@ -1,16 +1,12 @@
 'use client';
 
-import { AdminValidator } from '@/shared/admin-validator';
-
 interface ViewSelectorProps {
   selectedView: 'shorten' | 'dashboard' | 'admin';
-  userEmail: string | null;
+  isAdmin: boolean;
   onChange: (view: 'shorten' | 'dashboard' | 'admin') => void;
 }
 
-export function ViewSelector({ selectedView, userEmail, onChange }: ViewSelectorProps) {
-  const isAdmin = userEmail ? AdminValidator.isAdmin(userEmail) : false;
-
+export function ViewSelector({ selectedView, isAdmin, onChange }: ViewSelectorProps) {
   return (
     <div
       className="bg-card p-1 rounded-xl border border-border shadow-sm flex items-center justify-between gap-1 w-full max-w-90 mx-auto"

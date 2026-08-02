@@ -1,4 +1,4 @@
-import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
+import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 import { CodeGenerator } from '@/backend/services/linksnap/code-generator';

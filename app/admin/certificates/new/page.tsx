@@ -1,7 +1,7 @@
 'use client';
 
 import { CertificateForm } from '@/frontend/ui/admin/certificate-form';
-import { createCertificate } from '@/backend/actions/certificates/admin';
+import { createCertificate } from '@/backend/controllers/certificates/admin';
 
 export default function NewCertificatePage() {
   return (

@@ -1,13 +1,24 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Database } from '@/shared/contracts/database.types';
 import { generateOtp, hashOtp } from '@/backend/shared/otp/generator';
-import { createOtpRecord, verifyOtpRecord } from '@/backend/repositories/otp/otp-repository';
-import { sendOtpEmail } from '@/backend/clients/email';
-import { checkRateLimit } from '@/backend/shared/rate-limiter';
-import { OTP_CONFIG } from '@/backend/shared/otp/config';
+import {
+  createOtpRecord as defaultCreateOtpRecord,
+  verifyOtpRecord as defaultVerifyOtpRecord,
+} from '@/backend/repositories/otp/supabase-otp-repository';
+import {
+  sendOtpEmail as defaultSendOtpEmail,
+  sendPasswordResetEmail as defaultSendPasswordResetEmail,
+} from '@/backend/clients/email';
+import {
+  checkRateLimit as defaultCheckRateLimit,
+  getRateLimitRemaining as defaultGetRateLimitRemaining,
+} from '@/backend/clients/rate-limiter';
+import { verifyTurnstileToken as defaultVerifyTurnstileToken } from '@/backend/clients/turnstile';
+import { OTP_CONFIG } from '@/backend/config/otp';
 import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
-import { verifyTurnstileToken } from '@/backend/clients/turnstile';
 import { safeRedirect } from '@/backend/shared/safe-redirect';
+import type { AuthGateway } from '@/backend/clients/auth-gateway';
+import type { IOtpRepository } from '@/backend/repositories/otp/otp-repository';
+import type { EmailClient } from '@/backend/clients/email';
+import type { RateLimiter } from '@/backend/clients/rate-limiter';
 
 export type SignupResult = { ok: true; redirectUrl: string } | { ok: false; message: string };
 
@@ -24,18 +35,45 @@ export type SimpleResult = { ok: true; message?: string } | { ok: false; message
 
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
 
+export interface AuthServiceDeps {
+  otpRepository?: IOtpRepository;
+  emailClient?: EmailClient;
+  rateLimiter?: RateLimiter;
+  verifyTurnstile?: (token: string) => Promise<boolean>;
+}
+
 export class AuthService {
-  async signup(
-    supabase: SupabaseClient<Database>,
-    admin: SupabaseClient<Database>,
-    input: {
-      name: string;
-      email: string;
-      password: string;
-      redirectTo: string | null;
-      turnstileToken: string;
-    }
-  ): Promise<SignupResult> {
+  private readonly otpRepository: IOtpRepository;
+  private readonly emailClient: EmailClient;
+  private readonly rateLimiter: RateLimiter;
+  private readonly verifyTurnstile: (token: string) => Promise<boolean>;
+
+  constructor(
+    private readonly gateway: AuthGateway,
+    deps: AuthServiceDeps = {}
+  ) {
+    this.otpRepository = deps.otpRepository ?? {
+      createOtpRecord: defaultCreateOtpRecord,
+      verifyOtpRecord: defaultVerifyOtpRecord,
+    };
+    this.emailClient = deps.emailClient ?? {
+      sendOtpEmail: defaultSendOtpEmail,
+      sendPasswordResetEmail: defaultSendPasswordResetEmail,
+    };
+    this.rateLimiter = deps.rateLimiter ?? {
+      checkRateLimit: defaultCheckRateLimit,
+      getRateLimitRemaining: defaultGetRateLimitRemaining,
+    };
+    this.verifyTurnstile = deps.verifyTurnstile ?? defaultVerifyTurnstileToken;
+  }
+
+  async signup(input: {
+    name: string;
+    email: string;
+    password: string;
+    redirectTo: string | null;
+    turnstileToken: string;
+  }): Promise<SignupResult> {
     const parsed = SignupSchema.safeParse({
       name: input.name,
       email: input.email,
@@ -45,19 +83,23 @@ export class AuthService {
       return { ok: false, message: parsed.error.issues[0]?.message || 'بيانات غير صحيحة' };
     }
 
-    if (input.turnstileToken && !(await verifyTurnstileToken(input.turnstileToken))) {
+    if (input.turnstileToken && !(await this.verifyTurnstile(input.turnstileToken))) {
       return { ok: false, message: 'فشل التحقق الأمني. يرجى تحديث الصفحة والمحاولة مرة أخرى' };
     }
 
-    const signupRateOk = await checkRateLimit(`signup:${input.email}`, 3, 60 * 60 * 1000);
+    const signupRateOk = await this.rateLimiter.checkRateLimit(
+      `signup:${input.email}`,
+      3,
+      60 * 60 * 1000
+    );
     if (!signupRateOk) {
       return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
     }
 
-    const { data: signUpData, error } = await supabase.auth.signUp({
+    const { user, error } = await this.gateway.signUp({
       email: input.email,
       password: input.password,
-      options: { data: { name: input.name } },
+      name: input.name,
     });
 
     if (error) {
@@ -70,25 +112,21 @@ export class AuthService {
       };
     }
 
-    if (signUpData.user?.id) {
-      await admin
-        .from('users')
-        .upsert({
-          id: signUpData.user.id,
-          email: input.email,
-          name: input.name,
-          created_at: new Date().toISOString(),
-        })
-        .maybeSingle();
+    if (user?.id) {
+      await this.gateway.upsertUserProfile({
+        id: user.id,
+        email: input.email,
+        name: input.name,
+      });
     }
 
     const otp = generateOtp();
     const { hash, salt } = hashOtp(otp);
     const expiresAt = new Date(Date.now() + OTP_CONFIG.TTL_MINUTES * 60 * 1000);
 
-    await createOtpRecord(input.email, hash, salt, expiresAt);
+    await this.otpRepository.createOtpRecord(input.email, hash, salt, expiresAt);
     try {
-      await sendOtpEmail(input.email, otp);
+      await this.emailClient.sendOtpEmail(input.email, otp);
     } catch {
       // Email delivery failure — OTP is created, user can still resend from verify page
     }
@@ -98,25 +136,22 @@ export class AuthService {
     return { ok: true, redirectUrl: `/auth/verify-otp?${params.toString()}` };
   }
 
-  async login(
-    supabase: SupabaseClient<Database>,
-    input: {
-      email: string;
-      password: string;
-      redirectTo: string | null;
-      turnstileToken: string;
-    }
-  ): Promise<LoginResult> {
+  async login(input: {
+    email: string;
+    password: string;
+    redirectTo: string | null;
+    turnstileToken: string;
+  }): Promise<LoginResult> {
     const parsed = LoginSchema.safeParse({ email: input.email, password: input.password });
     if (!parsed.success) {
       return { ok: false, message: parsed.error.issues[0]?.message || 'بيانات غير صحيحة' };
     }
 
-    if (input.turnstileToken && !(await verifyTurnstileToken(input.turnstileToken))) {
+    if (input.turnstileToken && !(await this.verifyTurnstile(input.turnstileToken))) {
       return { ok: false, message: 'فشل التحقق الأمني. يرجى تحديث الصفحة والمحاولة مرة أخرى' };
     }
 
-    const loginRateOk = await checkRateLimit(`login:${input.email}`, 5, 60 * 1000);
+    const loginRateOk = await this.rateLimiter.checkRateLimit(`login:${input.email}`, 5, 60 * 1000);
     if (!loginRateOk) {
       return {
         ok: false,
@@ -124,7 +159,7 @@ export class AuthService {
       };
     }
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const { error } = await this.gateway.signInWithPassword({
       email: input.email,
       password: input.password,
     });
@@ -135,9 +170,9 @@ export class AuthService {
         const { hash, salt } = hashOtp(otp);
         const expiresAt = new Date(Date.now() + OTP_CONFIG.TTL_MINUTES * 60 * 1000);
 
-        await createOtpRecord(input.email, hash, salt, expiresAt);
+        await this.otpRepository.createOtpRecord(input.email, hash, salt, expiresAt);
         try {
-          await sendOtpEmail(input.email, otp);
+          await this.emailClient.sendOtpEmail(input.email, otp);
         } catch {
           // Email delivery failure — OTP is created, user can resend
         }
@@ -157,42 +192,38 @@ export class AuthService {
     return { ok: true, redirectUrl: safeRedirect(input.redirectTo) };
   }
 
-  async verifyOtp(
-    supabase: SupabaseClient<Database>,
-    admin: SupabaseClient<Database>,
-    input: { email: string; otp: string; redirectTo: string | null; pendingPassword: string | null }
-  ): Promise<VerifyOtpResult> {
-    const result = await verifyOtpRecord(input.email, input.otp);
+  async verifyOtp(input: {
+    email: string;
+    otp: string;
+    redirectTo: string | null;
+    pendingPassword: string | null;
+  }): Promise<VerifyOtpResult> {
+    const result = await this.otpRepository.verifyOtpRecord(input.email, input.otp);
 
     if (result.error) {
       return { ok: false, message: result.error };
     }
 
     // Try session-first (signup flow — user already has unconfirmed session)
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { user } = await this.gateway.getUser();
 
     if (user && user.email_confirmed_at === null) {
-      await admin.auth.admin.updateUserById(user.id, { email_confirm: true });
+      await this.gateway.confirmUserEmail(user.id);
       return { ok: true, redirectUrl: safeRedirect(input.redirectTo), consumedPendingLogin: false };
     }
 
-    const { data: usersData, error: listError } = await admin.auth.admin.listUsers({
-      page: 1,
-      perPage: 10000,
-    });
+    const { users, error: listError } = await this.gateway.listUsers();
     let consumedPendingLogin = false;
-    if (!listError && usersData) {
-      const targetUser = usersData.users.find((u) => u.email === input.email);
+    if (!listError && users) {
+      const targetUser = users.find((u) => u.email === input.email);
       if (targetUser && targetUser.email_confirmed_at === null) {
-        await admin.auth.admin.updateUserById(targetUser.id, { email_confirm: true });
+        await this.gateway.confirmUserEmail(targetUser.id);
 
         // Auto-sign-in if user came from login flow (has pending_login cookie)
         if (input.pendingPassword) {
           consumedPendingLogin = true;
           try {
-            await supabase.auth.signInWithPassword({
+            await this.gateway.signInWithPassword({
               email: input.email,
               password: input.pendingPassword,
             });
@@ -207,7 +238,7 @@ export class AuthService {
   }
 
   async resendOtp(input: { email: string }): Promise<SimpleResult> {
-    const resendRateOk = await checkRateLimit(
+    const resendRateOk = await this.rateLimiter.checkRateLimit(
       `resend:${input.email}`,
       1,
       OTP_CONFIG.RESEND_COOLDOWN_SECONDS * 1000
@@ -220,9 +251,9 @@ export class AuthService {
     const { hash, salt } = hashOtp(otp);
     const expiresAt = new Date(Date.now() + OTP_CONFIG.TTL_MINUTES * 60 * 1000);
 
-    await createOtpRecord(input.email, hash, salt, expiresAt);
+    await this.otpRepository.createOtpRecord(input.email, hash, salt, expiresAt);
     try {
-      await sendOtpEmail(input.email, otp);
+      await this.emailClient.sendOtpEmail(input.email, otp);
     } catch {
       return { ok: false, message: 'فشل إرسال رمز التحقق. يرجى المحاولة لاحقاً' };
     }
@@ -230,19 +261,21 @@ export class AuthService {
     return { ok: true, message: 'تم إعادة إرسال رمز التحقق' };
   }
 
-  async resetPassword(
-    supabase: SupabaseClient<Database>,
-    input: { email: string }
-  ): Promise<SimpleResult> {
-    const resetRateOk = await checkRateLimit(`reset:${input.email}`, 3, 60 * 60 * 1000);
+  async resetPassword(input: { email: string }): Promise<SimpleResult> {
+    const resetRateOk = await this.rateLimiter.checkRateLimit(
+      `reset:${input.email}`,
+      3,
+      60 * 60 * 1000
+    );
     if (!resetRateOk) {
       return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
     }
 
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
-    const { error } = await supabase.auth.resetPasswordForEmail(input.email, {
-      redirectTo: `${siteUrl}/auth/update-password`,
-    });
+    const { error } = await this.gateway.resetPasswordForEmail(
+      input.email,
+      `${siteUrl}/auth/update-password`
+    );
 
     if (error) {
       return { ok: false, message: error.message };
@@ -251,10 +284,10 @@ export class AuthService {
     return { ok: true, message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني' };
   }
 
-  async updatePassword(
-    supabase: SupabaseClient<Database>,
-    input: { password: string; confirmPassword: string }
-  ): Promise<SimpleResult> {
+  async updatePassword(input: {
+    password: string;
+    confirmPassword: string;
+  }): Promise<SimpleResult> {
     if (input.password !== input.confirmPassword) {
       return { ok: false, message: 'كلمة المرور غير متطابقة' };
     }
@@ -264,7 +297,7 @@ export class AuthService {
       return { ok: false, message: parsed.error.issues[0]?.message || 'كلمة المرور غير صحيحة' };
     }
 
-    const { error } = await supabase.auth.updateUser({ password: input.password });
+    const { error } = await this.gateway.updateUser({ password: input.password });
 
     if (error) {
       return { ok: false, message: error.message };
@@ -273,15 +306,11 @@ export class AuthService {
     return { ok: true };
   }
 
-  async logout(supabase: SupabaseClient<Database>): Promise<void> {
-    await supabase.auth.signOut();
+  async logout(): Promise<void> {
+    await this.gateway.signOut();
   }
 
-  async signInWithOAuth(
-    supabase: SupabaseClient<Database>,
-    provider: 'google',
-    redirectTo?: string
-  ): Promise<OAuthResult> {
+  async signInWithOAuth(provider: 'google', redirectTo?: string): Promise<OAuthResult> {
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
 
     const callbackUrl = new URL(`${siteUrl}/auth/callback`);
@@ -290,22 +319,14 @@ export class AuthService {
       callbackUrl.searchParams.set('next', safeNext);
     }
 
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider,
-      options: { redirectTo: callbackUrl.toString() },
-    });
+    const { url, error } = await this.gateway.signInWithOAuth(provider, callbackUrl.toString());
 
     if (error) {
       return { ok: false, message: error.message };
     }
-    if (!data.url) {
+    if (!url) {
       return { ok: false, message: 'تعذر بدء تسجيل الدخول عبر جوجل' };
     }
-    return { ok: true, url: data.url };
+    return { ok: true, url };
   }
-}
-
-/** Composition root entry — one AuthService instance per request boundary. */
-export function createAuthService(): AuthService {
-  return new AuthService();
 }

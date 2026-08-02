@@ -122,7 +122,7 @@ const draftStats = [
   },
 ];
 
-function DraftManager() {
+function DraftsOverviewCard() {
   return (
     <div className="rounded-2xl border border-neutral-800/90 bg-neutral-950/80 backdrop-blur-xl p-5 sm:p-6 shadow-2xl relative overflow-hidden group/draft">
       {/* Top Gradient Stripe */}
@@ -360,7 +360,7 @@ export function FeaturesBento() {
             childrenWrapperClassName="mt-auto w-full pt-2"
             hoverOverlayClassName="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none"
           >
-            <DraftManager />
+            <DraftsOverviewCard />
           </BentoCard>
 
           <BentoCard

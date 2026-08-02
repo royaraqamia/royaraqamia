@@ -1,13 +1,13 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { Habit, HabitLog, AggregateStats } from '@/shared/contracts/habitflow';
-import { HabitService } from '@/shared/habitflow/habit-service';
+import { calculateAggregateStats, get30DayCalendarGrid } from '@/frontend/shared/habit-stats';
 import { getTodayString } from './use-dashboard-data';
 
 export interface DashboardCalendar {
   activeDate: string;
   setActiveDate: Dispatch<SetStateAction<string>>;
   activeStats: AggregateStats;
-  calendarGrid: ReturnType<typeof HabitService.get30DayCalendarGrid>;
+  calendarGrid: ReturnType<typeof get30DayCalendarGrid>;
   handleDateShift: (days: number) => void;
   getReadableActiveDate: () => string;
   todayDate: string;
@@ -16,12 +16,8 @@ export interface DashboardCalendar {
 export function useDashboardCalendar(habits: Habit[], logs: HabitLog[]): DashboardCalendar {
   const [activeDate, setActiveDate] = useState<string>(getTodayString);
 
-  const activeStats: AggregateStats = HabitService.calculateAggregateStats(
-    habits,
-    logs,
-    activeDate
-  );
-  const calendarGrid = HabitService.get30DayCalendarGrid(activeDate);
+  const activeStats: AggregateStats = calculateAggregateStats(habits, logs, activeDate);
+  const calendarGrid = get30DayCalendarGrid(activeDate);
 
   const handleDateShift = (days: number) => {
     const current = new Date(activeDate);

@@ -7,7 +7,7 @@ import {
   type SetStateAction,
 } from 'react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
-import { LocalStorageHabitRepository } from '@/frontend/habitflow/repositories/local-storage-repository';
+import { LocalStorageHabitRepository } from '@/frontend/habitflow/api/local-storage-repository';
 
 export function getTodayString(): string {
   const tzOffset = new Date().getTimezoneOffset() * 60000;
@@ -81,7 +81,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
       await ApiClient.syncToCloud({ habits: localHabits, logs: localLogs });
       localStorage.removeItem('habitflow_habits');
       localStorage.removeItem('habitflow_logs');
-      const freshData = await import('@/app/habitflow/actions/habits').then((m) =>
+      const freshData = await import('@/frontend/habitflow/api/habit-actions').then((m) =>
         m.fetchInitialData()
       );
       setHabits(freshData.habits);
@@ -128,7 +128,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
   };
 
   async function refreshData() {
-    const { fetchInitialData } = await import('@/app/habitflow/actions/habits');
+    const { fetchInitialData } = await import('@/frontend/habitflow/api/habit-actions');
     const data = await fetchInitialData();
     setHabits(data.habits);
     setLogs(data.logs);

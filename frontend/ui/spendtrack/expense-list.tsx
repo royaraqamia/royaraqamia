@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useActionState } from 'react';
 import { useRouter } from 'next/navigation';
-import { deleteExpense, getExpensesPage } from '@/app/spendtrack/actions/expenses';
+import { deleteExpense, getExpensesPage } from '@/frontend/api/spendtrack';
 import { Button } from '@/frontend/ui/ui/button';
 import { toast } from 'sonner';
 import {

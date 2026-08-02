@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type FormEvent, useRef, useEffect } from 'react';
-import { verifyCertificate } from '@/backend/actions/certificates/verify';
+import { verifyCertificate } from '@/backend/controllers/certificates/verify';
 import { CERT_CODE_REGEX } from '@/backend/services/certificate-verification';
 import { m, AnimatePresence } from 'motion/react';
 import { containerVariants, resultVariants } from '@/frontend/ui/verify/verify-variants';

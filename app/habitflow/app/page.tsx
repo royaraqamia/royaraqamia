@@ -4,7 +4,7 @@ import { DashboardShell } from '@/frontend/habitflow/ui/components/dashboard-she
 import { SkeletonStats } from '@/frontend/habitflow/ui/components/skeleton-stats';
 import { SkeletonHabits } from '@/frontend/habitflow/ui/components/skeleton-habits';
 import { SkeletonCalendar } from '@/frontend/habitflow/ui/components/skeleton-calendar';
-import { fetchInitialData } from '@/app/habitflow/actions/habits';
+import { fetchInitialData } from '@/frontend/habitflow/api/habit-actions';
 
 export const dynamic = 'force-dynamic';
 

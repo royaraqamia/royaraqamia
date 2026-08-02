@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@/backend/transport/supabase/server';
-import { createHabitService } from '@/backend/services/habitflow/composition-root';
+import { createHabitService } from '@/backend/config/habitflow';
 import {
   createHabitSchema,
   updateHabitSchema,

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getCertificates, deleteCertificate } from '@/backend/actions/certificates/admin';
-import type { AdminCertificate } from '@/backend/actions/certificates/admin';
+import { getCertificates, deleteCertificate } from '@/backend/controllers/certificates/admin';
+import type { AdminCertificate } from '@/backend/controllers/certificates/admin';
 import { toast } from 'sonner';
 import {
   CertificatesFilterBar,

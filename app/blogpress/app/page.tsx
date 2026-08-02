@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { createClient } from '@/backend/transport/supabase/server';
-import { verifySession } from '@/backend/actions/blogpress/dal';
+import { verifySession } from '@/backend/middleware/session-guard';
 import { PostList } from '../_components/post-list';
 import { CreatePostButton } from '../_components/create-post-button';
 import { FileText, Eye, PenLine, BookOpen } from 'lucide-react';
 import { estimateWordCount } from '@/backend/shared/reading-time';
-import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
+import { createBlogpressPostsService } from '@/backend/config/blogpress';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,7 +19,7 @@ export default async function DashboardPage() {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  const postList = await createPostsRepository(supabase).listPostsByAuthor(session.userId);
+  const postList = await createBlogpressPostsService(supabase).listPostsByAuthor(session.userId);
 
   const stats = {
     total: postList.length,

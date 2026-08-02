@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
-import { createHabitService } from '@/backend/services/habitflow/composition-root';
-import { getOptionalUser, jsonOk, jsonError } from '@/backend/shared/habitflow/api-helpers';
+import { createHabitService } from '@/backend/config/habitflow';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
+import { jsonOk, jsonError } from '@/backend/transport/http';
 import { AppError } from '@/backend/shared/habitflow/errors';
 
 export async function GET(req: NextRequest) {
