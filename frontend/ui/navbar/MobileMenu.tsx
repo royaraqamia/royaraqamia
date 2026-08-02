@@ -275,26 +275,25 @@ export function MobileMenu({
 
   return (
     <>
-      {isOpen &&
-        createPortal(
-          <div className="fixed inset-0 z-10001 md:hidden" style={{ position: 'fixed' }}>
-            {/* Backdrop */}
-            <div
-              className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
-              onClick={handleClose}
-              tabIndex={-1}
-              role="presentation"
-            />
+      {createPortal(
+        <div className="fixed inset-0 z-10001 md:hidden" style={{ position: 'fixed' }}>
+          {/* Backdrop */}
+          <div
+            className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+            onClick={handleClose}
+            tabIndex={-1}
+            role="presentation"
+          />
 
-            {/* Menu Panel */}
-            <div
-              ref={mobileMenuRef}
-              role="dialog"
-              aria-modal="true"
-              aria-label="القائمة الرئيسية"
-              dir="rtl"
-              onKeyDown={(e) => e.key === 'Escape' && handleClose()}
-              className={`
+          {/* Menu Panel */}
+          <div
+            ref={mobileMenuRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="القائمة الرئيسية"
+            dir="rtl"
+            onKeyDown={(e) => e.key === 'Escape' && handleClose()}
+            className={`
                     absolute inset-0
                     w-screen h-screen
                     bg-background
@@ -302,9 +301,9 @@ export function MobileMenu({
                     will-change-transform
                     ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.98]'}
                 `}
-              style={{ transformOrigin: 'center top' }}
-            >
-              {/* Content Container */}
+            style={{ transformOrigin: 'center top' }}
+          >
+            {/* Content Container */}
               <div className="relative z-10 flex flex-col h-full">
                 {/* Header */}
                 <header className="flex items-center justify-between px-5 h-20 shrink-0">
