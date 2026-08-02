@@ -1,60 +1,15 @@
 'use server';
 
 import * as Sentry from '@sentry/nextjs';
-import { randomInt } from 'crypto';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
-import { createClient } from '@/backend/transport/supabase/server';
-import { createCertificatesRepository } from '@/backend/repositories/certificates';
-import { z } from 'zod';
+import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
+import { createCertificatesService } from '@/backend/config/certificates';
+import {
+  CertificateCodeFormatError,
+  CertificateDuplicateCodeError,
+  CertificateValidationError,
+} from '@/backend/services/certificates/certificates-service';
 import type { Certificate } from '@/shared/contracts/certificates';
-import { getAdminEmails } from '@/backend/shared/admin-validator';
-
-// ============================================================
-// Sync the DB admin allowlist (app_settings) with ADMIN_EMAILS
-// so RLS (public.is_admin()) stays consistent with the env var.
-// ============================================================
-
-async function syncAdminFlags(): Promise<void> {
-  const adminEmails = getAdminEmails();
-  const supabase = getAdminSupabase();
-
-  const { data } = await supabase
-    .from('app_settings')
-    .select('admin_emails')
-    .eq('id', true)
-    .maybeSingle();
-
-  const current = (data?.admin_emails ?? []) as string[];
-  const isSame =
-    current.length === adminEmails.length && adminEmails.every((e) => current.includes(e));
-  if (isSame) return;
-
-  await supabase.from('app_settings').upsert({ id: true, admin_emails: adminEmails });
-  await supabase.rpc('recompute_admin_flags', { p_emails: adminEmails });
-}
-
-// ============================================================
-// Validation Schema
-// ============================================================
-
-const certificateSchema = z
-  .object({
-    student_name: z.string().min(2, 'اسم الطالب قصير جداً').max(200, 'اسم الطالب طويل جداً'),
-    course_name: z.string().min(2, 'اسم الدورة قصير جداً').max(200, 'اسم الدورة طويل جداً'),
-    issue_date: z.string().refine((d) => !isNaN(Date.parse(d)), 'تاريخ الإصدار غير صالح'),
-    expiration_date: z
-      .string()
-      .optional()
-      .refine((d) => !d || !isNaN(Date.parse(d)), 'تاريخ الانتهاء غير صالح'),
-    grade_or_status: z.string().max(100).optional(),
-  })
-  .refine(
-    (data) => {
-      if (!data.expiration_date) return true;
-      return new Date(data.expiration_date) > new Date(data.issue_date);
-    },
-    { message: 'تاريخ الانتهاء يجب أن يكون بعد تاريخ الإصدار', path: ['expiration_date'] }
-  );
 
 export type AdminCertificate = Certificate;
 
@@ -65,62 +20,14 @@ interface AdminActionResult {
   fieldErrors?: Record<string, string>;
 }
 
-// ============================================================
-// Auth Guard
-// ============================================================
-
-export async function requireAuth() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('UNAUTHORIZED');
-  }
-
-  // RBAC: check if user email is in the admin list (fail closed)
-  const adminEmails = getAdminEmails();
-  const userEmail = user.email?.toLowerCase() ?? '';
-
-  if (adminEmails.length === 0 || !adminEmails.includes(userEmail)) {
-    throw new Error('FORBIDDEN');
-  }
-
-  // Keep the DB admin allowlist (used by RLS) in sync with ADMIN_EMAILS.
-  await syncAdminFlags().catch(() => undefined);
-
-  return { supabase, user };
-}
-
-// ============================================================
-// Generate unique certificate code
-// ============================================================
-
-function generateCode(): string {
-  const year = new Date().getFullYear();
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const charsArr = chars.split('');
-  let random = '';
-  for (let i = 0; i < 8; i++) {
-    const idx = randomInt(charsArr.length);
-    random += charsArr[idx] ?? '';
-  }
-  return `COMP-${year}-${random}`;
-}
-
-// ============================================================
-// CRUD Operations
-// ============================================================
-
 export async function getCertificates(
   page = 1,
   pageSize = 20,
   search = ''
 ): Promise<{ data: AdminCertificate[]; total: number }> {
   try {
-    await requireAuth();
-    return await createCertificatesRepository(getAdminSupabase()).list(page, pageSize, search);
+    await requireAdminAuth();
+    return await createCertificatesService(getAdminSupabase()).list(page, pageSize, search);
   } catch (error) {
     Sentry.captureException(error);
     return { data: [], total: 0 };
@@ -129,8 +36,8 @@ export async function getCertificates(
 
 export async function getCertificateById(id: string): Promise<AdminCertificate | null> {
   try {
-    await requireAuth();
-    return await createCertificatesRepository(getAdminSupabase()).getById(id);
+    await requireAdminAuth();
+    return await createCertificatesService(getAdminSupabase()).getById(id);
   } catch {
     return null;
   }
@@ -147,42 +54,21 @@ export async function createCertificate(
   customCode?: string
 ): Promise<AdminActionResult> {
   try {
-    await requireAuth();
+    await requireAdminAuth();
 
-    const parsed = certificateSchema.safeParse(formData);
-    if (!parsed.success) {
-      const fieldErrors: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const field = issue.path[0] as string;
-        fieldErrors[field] = issue.message;
-      }
-      return { success: false, error: 'بيانات غير صالحة', fieldErrors };
-    }
-
-    const code = customCode?.trim().toUpperCase() || generateCode();
-
-    // Validate custom code format
-    if (customCode && !/^COMP-\d{4}-[A-Z0-9]{8}$/.test(code)) {
-      return {
-        success: false,
-        error: 'صيغة الرمز غير صالحة. الصيغة: COMP-YYYY-XXXXXXXX',
-      };
-    }
-
-    const data = await createCertificatesRepository(getAdminSupabase()).create({
-      certificate_code: code,
-      student_name: parsed.data.student_name,
-      course_name: parsed.data.course_name,
-      issue_date: parsed.data.issue_date,
-      expiration_date: parsed.data.expiration_date || null,
-      grade_or_status: parsed.data.grade_or_status || null,
-    });
+    const data = await createCertificatesService(getAdminSupabase()).create(formData, customCode);
 
     return { success: true, data };
   } catch (error) {
     Sentry.captureException(error);
-    if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {
-      return { success: false, error: 'هذا الرمز مستخدم بالفعل. جرب رمزاً آخر.' };
+    if (error instanceof CertificateValidationError) {
+      return { success: false, error: error.message, fieldErrors: error.fieldErrors };
+    }
+    if (error instanceof CertificateCodeFormatError) {
+      return { success: false, error: error.message };
+    }
+    if (error instanceof CertificateDuplicateCodeError) {
+      return { success: false, error: error.message };
     }
     return { success: false, error: 'حدث خطأ أثناء إنشاء الشهادة' };
   }
@@ -199,37 +85,24 @@ export async function updateCertificate(
   }
 ): Promise<AdminActionResult> {
   try {
-    await requireAuth();
+    await requireAdminAuth();
 
-    const parsed = certificateSchema.safeParse(formData);
-    if (!parsed.success) {
-      const fieldErrors: Record<string, string> = {};
-      for (const issue of parsed.error.issues) {
-        const field = issue.path[0] as string;
-        fieldErrors[field] = issue.message;
-      }
-      return { success: false, error: 'بيانات غير صالحة', fieldErrors };
-    }
-
-    const data = await createCertificatesRepository(getAdminSupabase()).update(id, {
-      student_name: parsed.data.student_name,
-      course_name: parsed.data.course_name,
-      issue_date: parsed.data.issue_date,
-      expiration_date: parsed.data.expiration_date || null,
-      grade_or_status: parsed.data.grade_or_status || null,
-    });
+    const data = await createCertificatesService(getAdminSupabase()).update(id, formData);
 
     return { success: true, data };
   } catch (error) {
     Sentry.captureException(error);
+    if (error instanceof CertificateValidationError) {
+      return { success: false, error: error.message, fieldErrors: error.fieldErrors };
+    }
     return { success: false, error: 'حدث خطأ أثناء تحديث الشهادة' };
   }
 }
 
 export async function deleteCertificate(id: string): Promise<AdminActionResult> {
   try {
-    await requireAuth();
-    await createCertificatesRepository(getAdminSupabase()).delete(id);
+    await requireAdminAuth();
+    await createCertificatesService(getAdminSupabase()).delete(id);
     return { success: true };
   } catch (error) {
     Sentry.captureException(error);

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { requireAuth } from '@/backend/controllers/certificates/admin';
+import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
 import { Navbar } from '@/frontend/ui/Navbar';
 import { Footer } from '@/frontend/ui/Footer';
 import { Plus, ShieldCheck } from 'lucide-react';
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default async function AdminCertificatesLayout({ children }: { children: React.ReactNode }) {
   try {
-    await requireAuth();
+    await requireAdminAuth();
   } catch (err) {
     if (err instanceof Error && err.message === 'FORBIDDEN') {
       redirect('/');

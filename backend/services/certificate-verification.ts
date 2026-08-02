@@ -1,5 +1,5 @@
 import type { ICertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
-import type { VerifyResult } from '@/shared/contracts/certificates';
+import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';
 
 // ============================================================
 // Certificate Code Format: COMP-YYYY-XXXXXXXX (8 alphanumeric chars)
@@ -36,6 +36,10 @@ export interface CertificateVerifierDeps {
  */
 export class CertificateVerifier {
   constructor(private readonly deps: CertificateVerifierDeps) {}
+
+  getCertificateByCode = async (code: string): Promise<Certificate | null> => {
+    return this.deps.repository.getByCode(code.trim().toUpperCase());
+  };
 
   verifyCertificateByCode = async (code: string, ip: string): Promise<VerifyResult> => {
     try {

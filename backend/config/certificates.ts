@@ -7,8 +7,9 @@ import {
   createCertificateVerifier,
   type CertificateVerifier,
 } from '@/backend/services/certificate-verification';
+import { CertificatesService } from '@/backend/services/certificates/certificates-service';
 import type { Database } from '@/backend/models/database.types';
-import type { VerifyResult } from '@/shared/contracts/certificates';
+import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';
 
 /**
  * Default wiring used by server actions. Uses the publishable (anon) key
@@ -36,4 +37,12 @@ function getDefaultVerifier() {
 /** Backwards-compatible export kept for server actions. */
 export function verifyCertificateByCode(code: string, ip: string): Promise<VerifyResult> {
   return getDefaultVerifier().verifyCertificateByCode(code, ip);
+}
+
+export function getCertificateByCode(code: string): Promise<Certificate | null> {
+  return getDefaultVerifier().getCertificateByCode(code);
+}
+
+export function createCertificatesService(supabase: SupabaseClient<Database>): CertificatesService {
+  return new CertificatesService(createCertificatesRepository(supabase));
 }
