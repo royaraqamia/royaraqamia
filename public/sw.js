@@ -158,6 +158,9 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('message', (event) => {
   event.waitUntil((async () => {
+    const messageOrigin = event.origin;
+    if (messageOrigin && messageOrigin !== self.location.origin) return;
+
     const source = event.source;
     if (!source || !('id' in source)) return;
 
