@@ -4,6 +4,8 @@ create table if not exists public.app_settings (
   admin_emails text[] not null default '{}'
 );
 
+alter table public.app_settings enable row level security;
+
 insert into public.app_settings (id, admin_emails)
 values (true, array['contact@royaraqamia.com'])
 on conflict (id) do update set admin_emails = excluded.admin_emails;
