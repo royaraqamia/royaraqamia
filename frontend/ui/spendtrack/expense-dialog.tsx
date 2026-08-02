@@ -1,12 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
-import { toast } from 'sonner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createExpense, updateExpense } from '@/frontend/api/spendtrack';
+import { useSaveExpense } from '@/frontend/state/spendtrack/use-expenses';
 import { Button } from '@/frontend/ui/ui/button';
 import { Input } from '@/frontend/ui/ui/input';
 import { Label } from '@/frontend/ui/ui/label';
@@ -39,10 +37,8 @@ const expenseSchema = z.object({
 type ExpenseFormValues = z.input<typeof expenseSchema>;
 
 export function CreateExpenseDialog({ categories }: { categories: Category[] }) {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [serverError, setServerError] = useState<string>();
+  const { submit, pending, serverError } = useSaveExpense();
 
   const {
     register,
@@ -62,26 +58,10 @@ export function CreateExpenseDialog({ categories }: { categories: Category[] }) 
   });
 
   async function onSubmit(data: ExpenseFormValues) {
-    const fd = new FormData();
-    fd.append('amount', data.amount);
-    fd.append('category_id', data.category_id);
-    fd.append('date', data.date);
-    fd.append('description', data.description || '');
-    setPending(true);
-    setServerError(undefined);
-    try {
-      const result = await createExpense(undefined, fd);
-      if (result?.success) {
-        toast.success('تمت إضافة المصروف بنجاح');
-        setIsOpen(false);
-        reset();
-        router.refresh();
-      } else if (result?.error) {
-        toast.error('حدث خطأ أثناء حفظ المصروف');
-        setServerError(result.error);
-      }
-    } finally {
-      setPending(false);
+    const ok = await submit(data);
+    if (ok) {
+      setIsOpen(false);
+      reset();
     }
   }
 
@@ -124,11 +104,8 @@ export function EditExpenseDialog({
   expense: Expense & { categories?: Pick<Category, 'name' | 'color_hex'> };
   categories: Category[];
 }) {
-  const router = useRouter();
-  const updateWithId = updateExpense.bind(null, expense.id);
   const [isOpen, setIsOpen] = useState(false);
-  const [pending, setPending] = useState(false);
-  const [serverError, setServerError] = useState<string>();
+  const { submit, pending, serverError } = useSaveExpense(expense.id);
 
   const {
     register,
@@ -148,26 +125,10 @@ export function EditExpenseDialog({
   });
 
   async function onSubmit(data: ExpenseFormValues) {
-    const fd = new FormData();
-    fd.append('amount', data.amount);
-    fd.append('category_id', data.category_id);
-    fd.append('date', data.date);
-    fd.append('description', data.description || '');
-    setPending(true);
-    setServerError(undefined);
-    try {
-      const result = await updateWithId(undefined, fd);
-      if (result?.success) {
-        toast.success('تم تحديث المصروف بنجاح');
-        setIsOpen(false);
-        reset();
-        router.refresh();
-      } else if (result?.error) {
-        toast.error('حدث خطأ أثناء حفظ المصروف');
-        setServerError(result.error);
-      }
-    } finally {
-      setPending(false);
+    const ok = await submit(data);
+    if (ok) {
+      setIsOpen(false);
+      reset();
     }
   }
 

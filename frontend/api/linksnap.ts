@@ -1,3 +1,5 @@
+import { request } from '@/frontend/transport/http';
+
 export interface ShortenedLink {
   code: string;
   originalUrl: string;
@@ -43,40 +45,11 @@ export interface BulkShortenResultItem {
   error?: string;
 }
 
-class ApiError extends Error {
-  constructor(
-    message: string,
-    public status?: number
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-async function request<T>(
-  url: string,
-  options: { method?: string; token?: string | null; body?: unknown } = {}
-): Promise<T> {
-  const headers: Record<string, string> = {};
-  if (options.body !== undefined) headers['Content-Type'] = 'application/json';
-  if (options.token) headers['Authorization'] = `Bearer ${options.token}`;
-
-  const res = await fetch(url, {
-    method: options.method ?? 'GET',
-    headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-  });
-
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok || !data.success) {
-    throw new ApiError(data.error || `Request failed (${res.status})`, res.status);
-  }
-  return data;
-}
-
 export class LinksnapApiClient {
   static async listLinks(token: string): Promise<ShortenedLink[]> {
-    const data = await request<{ links: ShortenedLink[] }>('/linksnap/api/links', { token });
+    const data = await request<{ links: ShortenedLink[] }>('/linksnap/api/links', {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
     return data.links || [];
   }
 
@@ -87,8 +60,8 @@ export class LinksnapApiClient {
   ): Promise<ShortenedLink> {
     const data = await request<{ link: ShortenedLink }>('/linksnap/api/shorten', {
       method: 'POST',
-      token,
-      body: { originalUrl, customCode: customCode || undefined },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: JSON.stringify({ originalUrl, customCode: customCode || undefined }),
     });
     return data.link;
   }
@@ -96,8 +69,8 @@ export class LinksnapApiClient {
   static async shortenBulk(urls: string[], token: string | null): Promise<BulkShortenResultItem[]> {
     const data = await request<{ results: BulkShortenResultItem[] }>('/linksnap/api/shorten/bulk', {
       method: 'POST',
-      token,
-      body: { urls },
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      body: JSON.stringify({ urls }),
     });
     return data.results || [];
   }
@@ -105,7 +78,7 @@ export class LinksnapApiClient {
   static async deleteLink(code: string, token: string): Promise<void> {
     await request(`/linksnap/api/links?code=${encodeURIComponent(code)}`, {
       method: 'DELETE',
-      token,
+      headers: { Authorization: `Bearer ${token}` },
     });
   }
 
@@ -116,29 +89,31 @@ export class LinksnapApiClient {
   ): Promise<ShortenedLink> {
     const data = await request<{ link: ShortenedLink }>('/linksnap/api/links', {
       method: 'PATCH',
-      token,
-      body: { code, originalUrl },
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ code, originalUrl }),
     });
     return data.link;
   }
 
   static async fetchAdminStats(token: string): Promise<AdminStats> {
-    const data = await request<{ stats: AdminStats }>('/linksnap/api/admin/stats', { token });
+    const data = await request<{ stats: AdminStats }>('/linksnap/api/admin/stats', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
     return data.stats;
   }
 
   static async moderateLink(code: string, isBlocked: boolean, token: string): Promise<void> {
     await request('/linksnap/api/admin/moderate', {
       method: 'POST',
-      token,
-      body: { code, isBlocked },
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ code, isBlocked }),
     });
   }
 
   static async fetchAnalytics(code: string, token: string): Promise<LinkAnalyticsSummary> {
     const data = await request<{ analytics: LinkAnalyticsSummary }>(
       `/linksnap/api/analytics/${encodeURIComponent(code)}`,
-      { token }
+      { headers: { Authorization: `Bearer ${token}` } }
     );
     return data.analytics;
   }

@@ -1,14 +1,8 @@
 import type { ICertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
 import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';
+import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
 
-// ============================================================
-// Certificate Code Format: COMP-YYYY-XXXXXXXX (8 alphanumeric chars)
-// Example: COMP-2026-A1B2C3D4
-// Total length: 22 characters
-// Space: 32^8 = ~1.1 trillion combinations
-// ============================================================
-
-export const CERT_CODE_REGEX = /^COMP-\d{4}-[A-Z0-9]{8}$/;
+export { CERT_CODE_REGEX };
 
 // 20 requests per 60 seconds per IP, 5 per code (anti-enumeration)
 const IP_LIMIT = 20;

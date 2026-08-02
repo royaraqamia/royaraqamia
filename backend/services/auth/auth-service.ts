@@ -1,18 +1,4 @@
 import { generateOtp, hashOtp } from '@/backend/shared/otp/generator';
-import {
-  createOtpRecord as defaultCreateOtpRecord,
-  verifyOtpRecord as defaultVerifyOtpRecord,
-} from '@/backend/repositories/otp/supabase-otp-repository';
-import {
-  sendOtpEmail as defaultSendOtpEmail,
-  sendPasswordResetEmail as defaultSendPasswordResetEmail,
-} from '@/backend/clients/email';
-import {
-  checkRateLimit as defaultCheckRateLimit,
-  getRateLimitRemaining as defaultGetRateLimitRemaining,
-} from '@/backend/clients/rate-limiter';
-import { verifyTurnstileToken as defaultVerifyTurnstileToken } from '@/backend/clients/turnstile';
-import { OTP_CONFIG } from '@/backend/config/otp';
 import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
 import { safeRedirect } from '@/backend/shared/safe-redirect';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
@@ -36,10 +22,12 @@ export type SimpleResult = { ok: true; message?: string } | { ok: false; message
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
 
 export interface AuthServiceDeps {
-  otpRepository?: IOtpRepository;
-  emailClient?: EmailClient;
-  rateLimiter?: RateLimiter;
-  verifyTurnstile?: (token: string) => Promise<boolean>;
+  otpRepository: IOtpRepository;
+  emailClient: EmailClient;
+  rateLimiter: RateLimiter;
+  verifyTurnstile: (token: string) => Promise<boolean>;
+  otpTtlMinutes: number;
+  otpResendCooldownSeconds: number;
 }
 
 export class AuthService {
@@ -47,24 +35,19 @@ export class AuthService {
   private readonly emailClient: EmailClient;
   private readonly rateLimiter: RateLimiter;
   private readonly verifyTurnstile: (token: string) => Promise<boolean>;
+  private readonly otpTtlMinutes: number;
+  private readonly otpResendCooldownSeconds: number;
 
   constructor(
     private readonly gateway: AuthGateway,
-    deps: AuthServiceDeps = {}
+    deps: AuthServiceDeps
   ) {
-    this.otpRepository = deps.otpRepository ?? {
-      createOtpRecord: defaultCreateOtpRecord,
-      verifyOtpRecord: defaultVerifyOtpRecord,
-    };
-    this.emailClient = deps.emailClient ?? {
-      sendOtpEmail: defaultSendOtpEmail,
-      sendPasswordResetEmail: defaultSendPasswordResetEmail,
-    };
-    this.rateLimiter = deps.rateLimiter ?? {
-      checkRateLimit: defaultCheckRateLimit,
-      getRateLimitRemaining: defaultGetRateLimitRemaining,
-    };
-    this.verifyTurnstile = deps.verifyTurnstile ?? defaultVerifyTurnstileToken;
+    this.otpRepository = deps.otpRepository;
+    this.emailClient = deps.emailClient;
+    this.rateLimiter = deps.rateLimiter;
+    this.verifyTurnstile = deps.verifyTurnstile;
+    this.otpTtlMinutes = deps.otpTtlMinutes;
+    this.otpResendCooldownSeconds = deps.otpResendCooldownSeconds;
   }
 
   async signup(input: {
@@ -122,7 +105,7 @@ export class AuthService {
 
     const otp = generateOtp();
     const { hash, salt } = hashOtp(otp);
-    const expiresAt = new Date(Date.now() + OTP_CONFIG.TTL_MINUTES * 60 * 1000);
+    const expiresAt = new Date(Date.now() + this.otpTtlMinutes * 60 * 1000);
 
     await this.otpRepository.createOtpRecord(input.email, hash, salt, expiresAt);
     try {
@@ -168,7 +151,7 @@ export class AuthService {
       if (error.message.includes('Email not confirmed')) {
         const otp = generateOtp();
         const { hash, salt } = hashOtp(otp);
-        const expiresAt = new Date(Date.now() + OTP_CONFIG.TTL_MINUTES * 60 * 1000);
+        const expiresAt = new Date(Date.now() + this.otpTtlMinutes * 60 * 1000);
 
         await this.otpRepository.createOtpRecord(input.email, hash, salt, expiresAt);
         try {
@@ -241,7 +224,7 @@ export class AuthService {
     const resendRateOk = await this.rateLimiter.checkRateLimit(
       `resend:${input.email}`,
       1,
-      OTP_CONFIG.RESEND_COOLDOWN_SECONDS * 1000
+      this.otpResendCooldownSeconds * 1000
     );
     if (!resendRateOk) {
       return { ok: false, message: 'يرجى الانتظار قبل إعادة الإرسال' };
@@ -249,7 +232,7 @@ export class AuthService {
 
     const otp = generateOtp();
     const { hash, salt } = hashOtp(otp);
-    const expiresAt = new Date(Date.now() + OTP_CONFIG.TTL_MINUTES * 60 * 1000);
+    const expiresAt = new Date(Date.now() + this.otpTtlMinutes * 60 * 1000);
 
     await this.otpRepository.createOtpRecord(input.email, hash, salt, expiresAt);
     try {

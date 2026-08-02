@@ -1,19 +1,18 @@
 import type { INotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
 import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
-import { checkRateLimit as defaultCheckRateLimit } from '@/backend/clients/rate-limiter';
 
 export interface NotificationServiceDeps {
-  checkRateLimit?: (key: string, limit: number, windowMs: number) => Promise<boolean>;
+  checkRateLimit: (key: string, limit: number, windowMs: number) => Promise<boolean>;
 }
 
 export class NotificationService {
-  private readonly checkRateLimit: NonNullable<NotificationServiceDeps['checkRateLimit']>;
+  private readonly checkRateLimit: NotificationServiceDeps['checkRateLimit'];
 
   constructor(
     private readonly repo: INotificationRepository,
-    deps: NotificationServiceDeps = {}
+    deps: NotificationServiceDeps
   ) {
-    this.checkRateLimit = deps.checkRateLimit ?? defaultCheckRateLimit;
+    this.checkRateLimit = deps.checkRateLimit;
   }
 
   async getNotifications(userId: string, limit?: number, offset?: number): Promise<Notification[]> {

@@ -1,12 +1,11 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Link2, RefreshCw, AlertTriangle } from 'lucide-react';
 import { LinkRowCard } from './link-row-card';
 import { DashboardEmptyState } from './dashboard-empty-state';
 import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
-import { LinksnapApiClient, type ShortenedLink } from '@/frontend/api/linksnap';
+import { useLinks } from '@/frontend/state/linksnap/use-links';
 
 interface LinkDashboardProps {
   token: string;
@@ -15,37 +14,10 @@ interface LinkDashboardProps {
 
 export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   const reducedMotion = useReducedMotion();
-  const [links, setLinks] = useState<ShortenedLink[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchLinks = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setLinks(await LinksnapApiClient.listLinks(token));
-    } catch (err: unknown) {
-      setError((err instanceof Error && err.message) || 'فشل في تحميل روابطك المختصرة.');
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (token) {
-      const timer = setTimeout(() => fetchLinks(), 0);
-      return () => clearTimeout(timer);
-    }
-    return undefined;
-  }, [token, refreshTrigger, fetchLinks]);
-
-  const handleDelete = (code: string) => {
-    setLinks(links.filter((l) => l.code !== code));
-  };
-
-  const handleUpdate = (code: string, newUrl: string) => {
-    setLinks(links.map((l) => (l.code === code ? { ...l, originalUrl: newUrl } : l)));
-  };
+  const { links, loading, error, fetchLinks, handleDelete, handleUpdate } = useLinks(
+    token,
+    refreshTrigger
+  );
 
   return (
     <div className="space-y-6">

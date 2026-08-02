@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { LinksnapApiClient } from '@/frontend/api/linksnap';
+import { useUpdateLink } from '@/frontend/state/linksnap/use-links';
 
 interface LinkEditFormProps {
   code: string;
@@ -14,23 +14,17 @@ interface LinkEditFormProps {
 
 export function LinkEditForm({ code, currentUrl, token, onSaved, onCancel }: LinkEditFormProps) {
   const [editingUrlValue, setEditingUrlValue] = useState(currentUrl);
-  const [updateLoading, setUpdateLoading] = useState(false);
-  const [updateError, setUpdateError] = useState<string | null>(null);
+  const { updateLink, updateLoading, updateError } = useUpdateLink(token);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUpdateLoading(true);
-    setUpdateError(null);
     try {
-      const link = await LinksnapApiClient.updateLink(code, editingUrlValue, token);
+      const link = await updateLink(code, editingUrlValue);
       onSaved(code, link.originalUrl);
       toast.success('تم تحديث الرابط بنجاح');
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'خطأ في تحديث الرَّابط.';
-      setUpdateError(msg);
+      const msg = err instanceof Error ? err.message : 'خطأ في تحديث الرابط.';
       toast.error(msg);
-    } finally {
-      setUpdateLoading(false);
     }
   };
 

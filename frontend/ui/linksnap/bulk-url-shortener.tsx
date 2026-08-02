@@ -5,7 +5,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Layers, FileText, AlertCircle, ArrowLeft, Copy, Check, RefreshCw } from 'lucide-react';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
-import { LinksnapApiClient, type BulkShortenResultItem } from '@/frontend/api/linksnap';
+import type { BulkShortenResultItem } from '@/frontend/state/linksnap/use-shorten';
+import { useBulkShortenLinks } from '@/frontend/state/linksnap/use-shorten';
 
 interface BulkUrlShortenerProps {
   token: string | null;
@@ -14,17 +15,14 @@ interface BulkUrlShortenerProps {
 
 export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps) {
   const reducedMotion = useReducedMotion();
+  const { shortenBulk, loading, error, setError } = useBulkShortenLinks(token);
   const [bulkUrls, setBulkUrls] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<BulkShortenResultItem[] | null>(null);
   const [copiedIndexes, setCopiedIndexes] = useState<Record<number, boolean>>({});
   const [allCopied, setAllCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
     setResults(null);
     setCopiedIndexes({});
     setAllCopied(false);
@@ -36,23 +34,18 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
 
     if (parsedUrls.length === 0) {
       setError('يرجى إدخال رابط صالح واحد على الأقل.');
-      setLoading(false);
       return;
     }
 
     if (parsedUrls.length > 50) {
       setError('الاختصار بالجملة محدود بـ 50 رابطًا لكل دفعة لمنع إساءة استخدام الخادم.');
-      setLoading(false);
       return;
     }
 
-    try {
-      setResults(await LinksnapApiClient.shortenBulk(parsedUrls, token));
+    const result = await shortenBulk(parsedUrls);
+    if (result) {
+      setResults(result);
       onLinkCreated();
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء الاختصار بالجملة.');
-    } finally {
-      setLoading(false);
     }
   };
 

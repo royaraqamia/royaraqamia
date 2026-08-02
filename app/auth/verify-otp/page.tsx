@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useActionState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { WarningCircle, ArrowLeft, Clock, CheckCircle } from '@phosphor-icons/react';
 import { OtpInput } from '@/frontend/ui/shared/otp-input';
-import { verifyOtp, resendOtp } from '@/backend/controllers/auth';
+import { verifyOtp, resendOtp } from '@/frontend/api/auth';
 import { Button } from '@/frontend/ui/ui/button';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 
@@ -23,8 +23,10 @@ export default function VerifyOtpPage() {
 
   type VerifyState = { message?: string; success?: boolean; redirectTo?: string } | null;
   const [otp, setOtp] = useState('');
-  const [state, formAction, isPending] = useActionState<VerifyState, FormData>(verifyOtp, null);
-  const [resendState, resendAction, isResending] = useActionState(resendOtp, null);
+  const [state, setState] = useState<VerifyState>(null);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [countdown, setCountdown] = useState(OTP_EXPIRY_SECONDS);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [isVerified, setIsVerified] = useState(false);
@@ -66,12 +68,12 @@ export default function VerifyOtpPage() {
 
   // Reset countdown when OTP is resent successfully
   useEffect(() => {
-    if (resendState?.message) {
+    if (resendMessage) {
       sessionStorage.setItem(OTP_START_KEY, String(Date.now()));
       setCountdown(OTP_EXPIRY_SECONDS);
       setResendCooldown(RESEND_COOLDOWN_SECONDS);
     }
-  }, [resendState?.message, OTP_START_KEY]);
+  }, [resendMessage, OTP_START_KEY]);
 
   // Handle successful verification with feedback
   useEffect(() => {
@@ -88,6 +90,33 @@ export default function VerifyOtpPage() {
   }, [state, router, OTP_START_KEY]);
 
   if (!email) return null;
+
+  async function handleVerify(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setState(null);
+    setIsPending(true);
+    try {
+      const result = await verifyOtp({ email, otp, redirectTo });
+      if (!result.ok) {
+        setState({ message: result.message });
+        return;
+      }
+      setState({ success: true, redirectTo: result.redirectUrl });
+    } finally {
+      setIsPending(false);
+    }
+  }
+
+  async function handleResend(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setIsResending(true);
+    try {
+      const result = await resendOtp(email);
+      setResendMessage(result.message);
+    } finally {
+      setIsResending(false);
+    }
+  }
 
   const minutes = Math.floor(countdown / 60);
   const seconds = countdown % 60;
@@ -118,7 +147,7 @@ export default function VerifyOtpPage() {
           </motion.div>
         ) : (
           <>
-            <form action={formAction} className="space-y-6">
+            <form onSubmit={handleVerify} className="space-y-6">
               <input type="hidden" name="email" value={email} />
               <input type="hidden" name="otp" value={otp} />
               <input type="hidden" name="redirectTo" value={redirectTo} />
@@ -164,7 +193,7 @@ export default function VerifyOtpPage() {
 
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">لم تتلقَ الرمز؟</p>
-              <form action={resendAction}>
+              <form onSubmit={handleResend}>
                 <input type="hidden" name="email" value={email} />
                 <Button
                   type="submit"
@@ -179,13 +208,13 @@ export default function VerifyOtpPage() {
                       : 'إعادة إرسال الرمز'}
                 </Button>
               </form>
-              {resendState?.message && (
+              {resendMessage && (
                 <motion.p
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className="text-sm text-success"
                 >
-                  {resendState.message}
+                  {resendMessage}
                 </motion.p>
               )}
             </div>

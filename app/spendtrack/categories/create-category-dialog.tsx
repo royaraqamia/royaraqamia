@@ -1,10 +1,10 @@
 'use client';
 
-import { useActionState, startTransition, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createCategory } from '@/backend/controllers/spendtrack/categories';
+import { createCategory } from '@/frontend/api/spendtrack';
 import { Button } from '@/frontend/ui/ui/button';
 import { Input } from '@/frontend/ui/ui/input';
 import { Label } from '@/frontend/ui/ui/label';
@@ -26,15 +26,16 @@ const categorySchema = z.object({
 type CategoryFormValues = z.input<typeof categorySchema>;
 
 export function CreateCategoryDialog() {
-  const [state, formAction, pending] = useActionState(createCategory, undefined);
+  const [pending, setPending] = useState(false);
+  const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
+  const [showToast, setShowToast] = useState(false);
 
   // Show toast on success/error
-  const prevStateRef = useState(state);
-  if (state && state !== prevStateRef[0]) {
-    prevStateRef[1](state);
-    if (state.success) {
+  if (showToast) {
+    setShowToast(false);
+    if (state?.success) {
       toast.success('تم إنشاء التصنيف بنجاح');
-    } else if (state.error) {
+    } else if (state?.error) {
       toast.error(state.error);
     }
   }
@@ -57,10 +58,14 @@ export function CreateCategoryDialog() {
   const { onChange: rhfColorOnChange, ...colorRegister } = register('color_hex');
 
   function onSubmit(data: CategoryFormValues) {
-    const fd = new FormData();
-    fd.append('name', data.name);
-    fd.append('color_hex', data.color_hex);
-    startTransition(() => formAction(fd));
+    setPending(true);
+    setState(undefined);
+    createCategory({ name: data.name, color_hex: data.color_hex })
+      .then((result) => {
+        setState(result);
+        setShowToast(true);
+      })
+      .finally(() => setPending(false));
   }
 
   return (

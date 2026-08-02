@@ -1,11 +1,11 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { GoogleLogo, WarningCircle } from '@phosphor-icons/react';
-import { signup, signInWithGoogle } from '@/backend/controllers/auth';
+import { signup, signInWithGoogle } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/ui/input';
 import { Button } from '@/frontend/ui/ui/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
@@ -17,15 +17,39 @@ import { Turnstile } from '@/frontend/ui/auth/Turnstile';
 export default function SignupPage() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
-  const [state, formAction, isPending] = useActionState(signup, null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
   const [password, setPassword] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
 
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+    setIsPending(true);
+    try {
+      const formData = new FormData(event.currentTarget);
+      const result = await signup({
+        name: formData.get('name') as string,
+        email: formData.get('email') as string,
+        password: formData.get('password') as string,
+        redirectTo: formData.get('redirectTo') as string | null,
+        turnstileToken: (formData.get('cf-turnstile-response') as string) || '',
+      });
+      if (result.ok) {
+        window.location.assign(result.redirectUrl);
+        return;
+      }
+      setMessage(result.message);
+    } finally {
+      setIsPending(false);
+    }
+  }
+
   return (
     <AuthCard title="إنشاء حساب">
-      <form action={formAction} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <input type="hidden" name="redirectTo" value={redirectTo} />
 
         <div className="space-y-5">
@@ -40,7 +64,7 @@ export default function SignupPage() {
               required
               autoComplete="name"
               placeholder="الاسم الكامل"
-              aria-describedby={state?.message ? 'signup-error' : undefined}
+              aria-describedby={message ? 'signup-error' : undefined}
             />
           </div>
 
@@ -55,7 +79,7 @@ export default function SignupPage() {
               required
               autoComplete="email"
               placeholder="example@email.com"
-              aria-describedby={state?.message ? 'signup-error' : undefined}
+              aria-describedby={message ? 'signup-error' : undefined}
             />
           </div>
 
@@ -68,7 +92,7 @@ export default function SignupPage() {
               name="password"
               autoComplete="new-password"
               onChange={setPassword}
-              aria-describedby={state?.message ? 'signup-error' : undefined}
+              aria-describedby={message ? 'signup-error' : undefined}
             />
             <PasswordStrength password={password} />
           </div>
@@ -78,7 +102,7 @@ export default function SignupPage() {
 
         <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
 
-        {state?.message && (
+        {message && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -86,7 +110,7 @@ export default function SignupPage() {
           >
             <WarningCircle size={18} className="shrink-0 mt-0.5 text-destructive" />
             <p id="signup-error" role="alert" className="text-sm text-destructive">
-              {state.message}
+              {message}
             </p>
           </motion.div>
         )}

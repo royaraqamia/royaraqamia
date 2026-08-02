@@ -55,12 +55,11 @@ import {
   Save,
   Send,
 } from 'lucide-react';
-import { updatePost, saveAndPublishPost } from '@/backend/controllers/blogpress/posts';
-import { uploadImage } from '@/backend/controllers/blogpress/media';
+import { updatePost, saveAndPublishPost, uploadImage } from '@/frontend/api/blogpress';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
 import type { Post } from '@/shared/contracts/blogpress';
-import { estimateWordCount, formatReadingTimeLong } from '@/backend/shared/reading-time';
+import { estimateWordCount, formatReadingTimeLong } from '@/shared/reading-time';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
 
@@ -132,15 +131,16 @@ export function EditorContent({ post }: EditorContentProps) {
 
   const saveAllFields = useCallback(async () => {
     if (!isDirtyRef.current) return;
-    const formData = new FormData();
-    formData.append('title', titleRef.current);
-    formData.append('slug', slugRef.current);
-    formData.append('content', contentRef.current);
-    formData.append('cover_image', coverImageRef.current);
-    formData.append('meta_title', metaTitleRef.current);
-    formData.append('meta_desc', metaDescRef.current);
+    const fields = {
+      title: titleRef.current,
+      slug: slugRef.current,
+      content: contentRef.current,
+      cover_image: coverImageRef.current,
+      meta_title: metaTitleRef.current,
+      meta_desc: metaDescRef.current,
+    };
     try {
-      const result = await updatePost(post.id, undefined, formData);
+      const result = await updatePost(post.id, fields);
       if (result?.message === 'تمَّ حفظ المقال') {
         isDirtyRef.current = false;
         setIsDirty(false);
@@ -253,16 +253,17 @@ export function EditorContent({ post }: EditorContentProps) {
     }
     if (finalSlug !== slug) setSlug(finalSlug);
     const currentContent = editorRef.current?.getMarkdown() ?? content;
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('slug', finalSlug);
-    formData.append('content', currentContent);
-    formData.append('cover_image', coverImage);
-    formData.append('meta_title', metaTitle);
-    formData.append('meta_desc', metaDesc);
+    const fields = {
+      title,
+      slug: finalSlug,
+      content: currentContent,
+      cover_image: coverImage,
+      meta_title: metaTitle,
+      meta_desc: metaDesc,
+    };
     startTransition(async () => {
       try {
-        const result = await updatePost(post.id, undefined, formData);
+        const result = await updatePost(post.id, fields);
         if (result?.message === 'تمَّ حفظ المقال') {
           isDirtyRef.current = false;
           setIsDirty(false);
@@ -315,16 +316,17 @@ export function EditorContent({ post }: EditorContentProps) {
     }
     if (finalSlug !== slug) setSlug(finalSlug);
     const currentContent = editorRef.current?.getMarkdown() ?? content;
-    const formData = new FormData();
-    formData.append('title', title);
-    formData.append('slug', finalSlug);
-    formData.append('content', currentContent);
-    formData.append('cover_image', coverImage);
-    formData.append('meta_title', metaTitle);
-    formData.append('meta_desc', metaDesc);
+    const fields = {
+      title,
+      slug: finalSlug,
+      content: currentContent,
+      cover_image: coverImage,
+      meta_title: metaTitle,
+      meta_desc: metaDesc,
+    };
     startTransition(async () => {
       try {
-        const result = await saveAndPublishPost(post.id, formData);
+        const result = await saveAndPublishPost(post.id, fields);
         if (result?.errors) {
           toast.error('يُرجَى إصلاح أخطاء التَّحقُّق قبل النَّشر');
           return;

@@ -13,12 +13,13 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { LinkEditForm } from './link-edit-form';
-import { LinkAnalyticsDrawer, AnalyticsData } from './link-analytics-drawer';
+import { LinkAnalyticsDrawer } from './link-analytics-drawer';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { cn } from '@/frontend/shared/cn';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
-import { LinksnapApiClient } from '@/frontend/api/linksnap';
+import { useDeleteLink } from '@/frontend/state/linksnap/use-links';
+import { useLinkAnalytics } from '@/frontend/state/linksnap/use-analytics';
 
 interface LinkRowCardProps {
   code: string;
@@ -42,11 +43,10 @@ export function LinkRowCard({
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
-  const [analyticsLoading, setAnalyticsLoading] = useState(false);
-  const [analyticsError, setAnalyticsError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const { deleteLink, deleteError } = useDeleteLink(token);
+  const { analytics, analyticsLoading, analyticsError, loadAnalytics, resetAnalytics } =
+    useLinkAnalytics(code, token);
 
   const fullShortUrl = `${getBaseUrl()}/${code}`;
 
@@ -64,38 +64,25 @@ export function LinkRowCard({
 
   const handleDeleteConfirmed = async () => {
     setShowDeleteConfirm(false);
-    setDeleteError(null);
 
     try {
-      await LinksnapApiClient.deleteLink(code, token);
+      await deleteLink(code);
       onDeleted(code);
       toast.success('تم حذف الرابط بنجاح');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'خطأ في حذف الرَّابط.';
-      setDeleteError(msg);
       toast.error(msg);
     }
   };
 
-  const loadAnalytics = async () => {
+  const handleAnalyticsToggle = () => {
     if (isExpanded) {
       setIsExpanded(false);
-      setAnalytics(null);
+      resetAnalytics();
       return;
     }
-
     setIsExpanded(true);
-    setAnalytics(null);
-    setAnalyticsLoading(true);
-    setAnalyticsError(null);
-
-    try {
-      setAnalytics(await LinksnapApiClient.fetchAnalytics(code, token));
-    } catch (err: unknown) {
-      setAnalyticsError(err instanceof Error ? err.message : 'فشل في تحميل التَّحليلات.');
-    } finally {
-      setAnalyticsLoading(false);
-    }
+    loadAnalytics();
   };
 
   return (
@@ -168,7 +155,7 @@ export function LinkRowCard({
           </button>
 
           <button
-            onClick={loadAnalytics}
+            onClick={handleAnalyticsToggle}
             aria-expanded={isExpanded}
             aria-controls={`analytics-panel-${code}`}
             className={cn(

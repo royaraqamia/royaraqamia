@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { UpdatePopup } from './UpdatePopup';
 import { usePWAContext } from './PWAProvider';
+import { request } from '@/frontend/transport/http';
 
 const POLL_INTERVAL = 60_000;
 
@@ -19,8 +20,9 @@ export function VersionChecker() {
 
   const checkVersion = useCallback(async () => {
     try {
-      const res = await fetch('/api/version', { cache: 'no-store' });
-      const { version } = await res.json();
+      const { version } = await request<{ version: string }>('/api/version', {
+        cache: 'no-store',
+      });
 
       if (currentVersion.current === null) {
         currentVersion.current = version;

@@ -35,19 +35,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/frontend/ui/ui/dialog';
-import {
-  deletePost,
-  unpublishPost,
-  publishPost,
-  createPost,
-} from '@/backend/controllers/blogpress/posts';
+import { deletePost, unpublishPost, publishPost, createPost } from '@/frontend/api/blogpress';
 import type { Post, PostStatus } from '@/shared/contracts/blogpress';
 import { cn } from '@/frontend/shared/cn';
-import {
-  estimateWordCount,
-  estimateReadingTime,
-  formatReadingTime,
-} from '@/backend/shared/reading-time';
+import { estimateWordCount, estimateReadingTime, formatReadingTime } from '@/shared/reading-time';
 import { toast } from 'sonner';
 
 interface PostListProps {
@@ -61,6 +52,7 @@ const filters: { label: string; value: PostStatus | 'all' }[] = [
 ];
 
 export function PostList({ posts }: PostListProps) {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<PostStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [pending, startTransition] = useTransition();
@@ -204,7 +196,16 @@ export function PostList({ posts }: PostListProps) {
               <Button
                 className="mt-5 transition-smooth shadow-sm hover:shadow-md rounded-full"
                 disabled={pending}
-                onClick={() => startTransition(() => createPost())}
+                onClick={() =>
+                  startTransition(async () => {
+                    try {
+                      const { id } = await createPost();
+                      router.push(`/blogpress/editor/${id}`);
+                    } catch {
+                      // Navigation will not occur on failure
+                    }
+                  })
+                }
                 aria-busy={pending}
                 aria-live="polite"
               >

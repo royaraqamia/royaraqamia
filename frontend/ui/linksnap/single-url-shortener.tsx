@@ -7,7 +7,7 @@ import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
-import { LinksnapApiClient } from '@/frontend/api/linksnap';
+import { useShortenLink } from '@/frontend/state/linksnap/use-shorten';
 
 interface SingleUrlShortenerProps {
   token: string | null;
@@ -25,10 +25,9 @@ function isValidUrl(url: string): boolean {
 
 export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerProps) {
   const reducedMotion = useReducedMotion();
+  const { shorten, loading, error, setError } = useShortenLink(token);
   const [originalUrl, setOriginalUrl] = useState('');
   const [customCode, setCustomCode] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [shortenedUrl, setShortenedUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
@@ -36,7 +35,6 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
   const handleShorten = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
     setShortenedUrl(null);
     setShowQr(false);
     setQrDataUrl(null);
@@ -46,30 +44,23 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
       return;
     }
 
-    setLoading(true);
+    const link = await shorten(originalUrl, customCode);
+    if (!link) return;
 
-    try {
-      const link = await LinksnapApiClient.shorten(originalUrl, customCode, token);
-
-      const generatedCode = link.code;
-      setShortenedUrl(`${getBaseUrl()}/${generatedCode}`);
-      onLinkCreated();
-      const style = getComputedStyle(document.documentElement);
-      const primary = style.getPropertyValue('--primary').trim();
-      const accent = style.getPropertyValue('--accent').trim();
-      const warning = style.getPropertyValue('--warning').trim();
-      confetti({
-        particleCount: 60,
-        spread: 70,
-        origin: { y: 0.5, x: 0.5 },
-        startVelocity: 20,
-        colors: [`hsl(${primary})`, `hsl(${accent})`, `hsl(${warning})`],
-      });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'حدث خطأ أثناء اختصار الرَّابط.');
-    } finally {
-      setLoading(false);
-    }
+    const generatedCode = link.code;
+    setShortenedUrl(`${getBaseUrl()}/${generatedCode}`);
+    onLinkCreated();
+    const style = getComputedStyle(document.documentElement);
+    const primary = style.getPropertyValue('--primary').trim();
+    const accent = style.getPropertyValue('--accent').trim();
+    const warning = style.getPropertyValue('--warning').trim();
+    confetti({
+      particleCount: 60,
+      spread: 70,
+      origin: { y: 0.5, x: 0.5 },
+      startVelocity: 20,
+      colors: [`hsl(${primary})`, `hsl(${accent})`, `hsl(${warning})`],
+    });
   };
 
   const copyToClipboard = async () => {

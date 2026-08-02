@@ -1,28 +1,7 @@
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
+import { request, ApiError } from '@/frontend/transport/http';
 
-class ApiError extends Error {
-  constructor(
-    message: string,
-    public status?: number
-  ) {
-    super(message);
-    this.name = 'ApiError';
-  }
-}
-
-async function request<T>(url: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options,
-  });
-
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new ApiError(body.error || `Request failed (${res.status})`, res.status);
-  }
-
-  return res.json();
-}
+export { ApiError };
 
 export class ApiClient {
   static async fetchInitialData(): Promise<{

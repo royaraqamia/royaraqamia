@@ -1,7 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'sonner';
 import { HabitLog } from '@/shared/contracts/habitflow';
-import { toggleLog } from '@/frontend/habitflow/api/habit-actions';
+import { ApiClient } from '@/frontend/habitflow/api/habit-api';
 import { LocalStorageHabitRepository } from '@/frontend/habitflow/api/local-storage-repository';
 
 const localRepo = new LocalStorageHabitRepository();
@@ -50,8 +50,13 @@ export function useDashboardToggle(
       setLogs(updatedLogs);
 
       if (user) {
-        const result = await toggleLog(habitId, activeDate, nextCompleted);
-        if ('error' in result) {
+        try {
+          const result = await ApiClient.toggleLog(habitId, activeDate, nextCompleted);
+          setLogs((prev) =>
+            prev.map((l) => (l.habitId === habitId && l.date === activeDate ? result.log : l))
+          );
+          if (nextCompleted) toast.success('تم تسجيل العادة');
+        } catch {
           setLogs((prev) =>
             prev.map((l) =>
               l.habitId === habitId && l.date === activeDate
@@ -59,14 +64,7 @@ export function useDashboardToggle(
                 : l
             )
           );
-          toast.error(result.error);
-          return;
-        }
-        if ('log' in result && result.log) {
-          setLogs((prev) =>
-            prev.map((l) => (l.habitId === habitId && l.date === activeDate ? result.log : l))
-          );
-          if (nextCompleted) toast.success('تم تسجيل العادة');
+          toast.error('حدث خطأ أثناء تسجيل العادة. يرجى المحاولة مرة أخرى.');
         }
       } else {
         const log = await localRepo.toggleLog(habitId, activeDate, nextCompleted);

@@ -1,5 +1,5 @@
 import { getAuthUser } from '@/backend/middleware/auth-guard';
-import { AdminValidator } from '@/backend/shared/admin-validator';
+import { AdminValidator } from '@/shared/admin-validator';
 import { LinkSnapAppView } from '@/frontend/ui/linksnap/link-snap-app-view';
 
 export const dynamic = 'force-dynamic';

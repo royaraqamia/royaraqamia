@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { getCertificateById, updateCertificate } from '@/backend/controllers/certificates/admin';
-import type { AdminCertificate } from '@/backend/controllers/certificates/admin';
+import { getCertificateById, updateCertificate } from '@/frontend/api/certificates';
+import type { AdminCertificate } from '@/frontend/api/certificates';
 import { CertificateForm } from '@/frontend/ui/admin/certificate-form';
 import { Loader2 } from 'lucide-react';
 

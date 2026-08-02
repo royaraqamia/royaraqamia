@@ -1,7 +1,7 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'sonner';
 import { Habit } from '@/shared/contracts/habitflow';
-import { createHabit, updateHabit, archiveHabit } from '@/frontend/habitflow/api/habit-actions';
+import { ApiClient, ApiError } from '@/frontend/habitflow/api/habit-api';
 import { LocalStorageHabitRepository } from '@/frontend/habitflow/api/local-storage-repository';
 
 const localRepo = new LocalStorageHabitRepository();
@@ -53,28 +53,22 @@ export function useDashboardForm(
     setIsSubmitting(true);
 
     if (user) {
-      const formData = new FormData();
-      formData.append('name', habitName);
-      formData.append('icon', habitIcon);
-      formData.append('frequency', habitFrequency);
       try {
-        const result = await createHabit(formData);
-        if ('error' in result) {
-          setFormError(result.error as string);
-          return;
-        }
-        if ('habit' in result && result.habit) {
-          setHabits((prev) => [...prev, result.habit]);
-          setIsAddModalOpen(false);
-          setHabitName('');
-          setHabitIcon('Activity');
-          setHabitFrequency('daily');
-          setFormError('');
-          toast.success('تم إنشاء العادة بنجاح');
-        }
+        const result = await ApiClient.createHabit(habitName, habitIcon, habitFrequency);
+        setHabits((prev) => [...prev, result.habit]);
+        setIsAddModalOpen(false);
+        setHabitName('');
+        setHabitIcon('Activity');
+        setHabitFrequency('daily');
+        setFormError('');
+        toast.success('تم إنشاء العادة بنجاح');
       } catch (e) {
-        setFormError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
-        toast.error('فشل إنشاء العادة');
+        if (e instanceof ApiError && e.status === 400) {
+          setFormError(e.message);
+        } else {
+          setFormError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
+          toast.error('فشل إنشاء العادة');
+        }
       }
     } else {
       try {
@@ -105,28 +99,26 @@ export function useDashboardForm(
     setIsSubmitting(true);
 
     if (user) {
-      const formData = new FormData();
-      formData.append('id', selectedHabit.id);
-      formData.append('name', habitName);
-      formData.append('icon', habitIcon);
-      formData.append('frequency', habitFrequency);
       try {
-        const result = await updateHabit(formData);
-        if ('error' in result) {
-          setFormError(result.error as string);
-          return;
-        }
-        if ('habit' in result && result.habit) {
-          setHabits((prev) => prev.map((h) => (h.id === selectedHabit.id ? result.habit : h)));
-          setIsEditModalOpen(false);
-          setSelectedHabit(null);
-          setHabitName('');
-          setFormError('');
-          toast.success('تم تحديث العادة بنجاح');
-        }
+        const result = await ApiClient.updateHabit(
+          selectedHabit.id,
+          habitName,
+          habitIcon,
+          habitFrequency
+        );
+        setHabits((prev) => prev.map((h) => (h.id === selectedHabit.id ? result.habit : h)));
+        setIsEditModalOpen(false);
+        setSelectedHabit(null);
+        setHabitName('');
+        setFormError('');
+        toast.success('تم تحديث العادة بنجاح');
       } catch (e) {
-        setFormError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
-        toast.error('فشل تحديث العادة');
+        if (e instanceof ApiError && e.status === 400) {
+          setFormError(e.message);
+        } else {
+          setFormError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
+          toast.error('فشل تحديث العادة');
+        }
       }
     } else {
       try {
@@ -160,20 +152,18 @@ export function useDashboardForm(
 
     if (user) {
       try {
-        const result = await archiveHabit(confirmArchiveHabitId);
-        if ('error' in result) {
-          setFormError(result.error as string);
+        const success = await ApiClient.archiveHabit(confirmArchiveHabitId);
+        if (!success) {
+          setFormError('فشل في أرشفة العادة. يرجى المحاولة مرة أخرى.');
           setConfirmArchiveHabitId(null);
           return;
         }
-        if ('success' in result && result.success) {
-          setHabits((prev) => prev.filter((h) => h.id !== confirmArchiveHabitId));
-          setIsEditModalOpen(false);
-          setSelectedHabit(null);
-          setFormError('');
-          setConfirmArchiveHabitId(null);
-          toast.success('تم أرشفة العادة بنجاح');
-        }
+        setHabits((prev) => prev.filter((h) => h.id !== confirmArchiveHabitId));
+        setIsEditModalOpen(false);
+        setSelectedHabit(null);
+        setFormError('');
+        setConfirmArchiveHabitId(null);
+        toast.success('تم أرشفة العادة بنجاح');
       } catch (e) {
         setFormError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
         setConfirmArchiveHabitId(null);

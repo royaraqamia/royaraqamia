@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createClient } from '@/backend/transport/supabase/server';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
-import { getAdminEmails } from '@/backend/shared/admin-validator';
+import { getAdminEmails } from '@/shared/admin-validator';
 
 // ============================================================
 // Sync the DB admin allowlist (app_settings) with ADMIN_EMAILS

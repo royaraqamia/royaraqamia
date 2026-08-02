@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import {
   Plus,
@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
-import { logout } from '@/frontend/api/auth';
 import { useDashboard } from '@/frontend/habitflow/state/use-dashboard';
+import { useLogout } from '@/frontend/state/use-logout';
 import { useSession } from '@/frontend/ui/shared/session-provider';
 import { Button } from '@/frontend/ui/ui/button';
 import { Card } from '@/frontend/ui/ui/card';
@@ -92,7 +92,7 @@ export function DashboardShell({
 
   const shouldReduce = useReducedMotion();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [isLoggingOut, startLogoutTransition] = useTransition();
+  const { signOut, isLoggingOut } = useLogout();
   useEffect(() => {
     if (sessionUser) {
       syncUser(sessionUser);
@@ -388,7 +388,7 @@ export function DashboardShell({
           message="هل أنت متأكد من رغبتك في تسجيل الخروج؟"
           confirmLabel={isLoggingOut ? 'جارٍ تسجيل الخروج...' : 'تسجيل الخروج'}
           cancelLabel="إلغاء"
-          onConfirm={() => startLogoutTransition(() => logout())}
+          onConfirm={signOut}
           onCancel={() => setShowLogoutConfirm(false)}
         />
 

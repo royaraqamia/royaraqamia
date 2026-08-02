@@ -87,7 +87,7 @@ export class SpendtrackService {
 
   async createCategory(userId: string, input: SpendtrackCategoryInput): Promise<void> {
     this.validateCategoryInput(input);
-    await this.repository.createCategory({ user_id: userId, ...input });
+    await this.repository.createCategory({ user_id: userId, ...input, name: input.name.trim() });
   }
 
   async updateCategory(
@@ -96,7 +96,10 @@ export class SpendtrackService {
     input: SpendtrackCategoryInput
   ): Promise<void> {
     this.validateCategoryInput(input);
-    await this.repository.updateCategory(categoryId, userId, input);
+    await this.repository.updateCategory(categoryId, userId, {
+      ...input,
+      name: input.name.trim(),
+    });
   }
 
   async deleteCategory(categoryId: string, userId: string): Promise<void> {

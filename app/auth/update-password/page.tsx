@@ -1,10 +1,10 @@
 'use client';
 
-import { useActionState, useState } from 'react';
+import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { WarningCircle } from '@phosphor-icons/react';
-import { updatePassword } from '@/backend/controllers/auth';
+import { updatePassword } from '@/frontend/api/auth';
 import { Button } from '@/frontend/ui/ui/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { PasswordStrength } from '@/frontend/ui/auth/PasswordStrength';
@@ -13,16 +13,38 @@ import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 export default function UpdatePasswordPage() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
-  const [state, formAction, isPending] = useActionState(updatePassword, null);
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const doPasswordsMatch = password && confirmPassword && password === confirmPassword;
   const showMismatch = confirmPassword.length > 0 && !doPasswordsMatch;
 
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setMessage(null);
+    setIsPending(true);
+    try {
+      const formData = new FormData(event.currentTarget);
+      const result = await updatePassword({
+        password: formData.get('password') as string,
+        confirmPassword: formData.get('confirmPassword') as string,
+        redirectTo: formData.get('redirectTo') as string | null,
+      });
+      if (result.ok) {
+        window.location.assign(result.redirectUrl);
+        return;
+      }
+      setMessage(result.message);
+    } finally {
+      setIsPending(false);
+    }
+  }
+
   return (
     <AuthCard title="كلمة مرور جديدة" description="أدخل كلمة المرور الجديدة التي ترغب في تعيينها">
-      <form action={formAction} className="space-y-5">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <input type="hidden" name="redirectTo" value={redirectTo} />
 
         <div className="space-y-5">
@@ -68,7 +90,7 @@ export default function UpdatePasswordPage() {
           </div>
         </div>
 
-        {state?.message && (
+        {message && (
           <motion.div
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
@@ -76,7 +98,7 @@ export default function UpdatePasswordPage() {
           >
             <WarningCircle size={18} className="shrink-0 mt-0.5 text-destructive" />
             <p role="alert" className="text-sm text-destructive">
-              {state.message}
+              {message}
             </p>
           </motion.div>
         )}

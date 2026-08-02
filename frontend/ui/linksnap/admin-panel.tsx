@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Shield, RefreshCw } from 'lucide-react';
 import { AdminSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
-import { toast } from 'sonner';
 import { AdminStatsCards } from './admin-stats-cards';
 import { AdminErrorState } from './admin-error-state';
 import { AdminLinksDirectory } from './admin-links-directory';
-import { LinksnapApiClient, type AdminStats } from '@/frontend/api/linksnap';
+import { useAdminLinks } from '@/frontend/state/linksnap/use-admin';
 
 interface AdminPanelProps {
   token: string;
@@ -17,36 +16,21 @@ interface AdminPanelProps {
 const PAGE_SIZE = 25;
 
 export function AdminPanel({ token }: AdminPanelProps) {
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [actionLoadingCode, setActionLoadingCode] = useState<string | null>(null);
-  const [moderateError, setModerateError] = useState<string | null>(null);
+  const {
+    stats,
+    loading,
+    error,
+    fetchAdminStats,
+    toggleModerationBlock,
+    actionLoadingCode,
+    moderateError,
+    setModerateError,
+  } = useAdminLinks(token);
   const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [blockConfirm, setBlockConfirm] = useState<{ code: string; isBlocked: boolean } | null>(
     null
   );
-
-  const fetchAdminStats = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setStats(await LinksnapApiClient.fetchAdminStats(token));
-    } catch (err: unknown) {
-      console.error(err);
-      setError(err instanceof Error ? err.message : 'فشل في جلب البيانات الإدارية.');
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      fetchAdminStats();
-    }, 0);
-    return () => clearTimeout(timer);
-  }, [fetchAdminStats]);
 
   const filteredLinks = useMemo(() => {
     if (!stats) return [];
@@ -58,37 +42,6 @@ export function AdminPanel({ token }: AdminPanelProps) {
   }, [stats, searchQuery]);
 
   const totalPages = Math.max(1, Math.ceil(filteredLinks.length / PAGE_SIZE));
-
-  const toggleModerationBlock = async (code: string, currentBlockedState: boolean) => {
-    setActionLoadingCode(code);
-    setModerateError(null);
-    try {
-      const targetState = !currentBlockedState;
-      await LinksnapApiClient.moderateLink(code, targetState, token);
-
-      if (stats) {
-        const updatedLinks = (stats.links || []).map((link) => {
-          if (link.code === code) {
-            return { ...link, isBlocked: targetState };
-          }
-          return link;
-        });
-
-        const blockedDiff = targetState ? 1 : -1;
-
-        setStats({
-          ...stats,
-          blockedLinksCount: stats.blockedLinksCount + blockedDiff,
-          links: updatedLinks,
-        });
-        toast.success(targetState ? 'تم حظر الرابط بنجاح' : 'تم إلغاء حظر الرابط بنجاح');
-      }
-    } catch (err: unknown) {
-      setModerateError(err instanceof Error ? err.message : 'حدث خطأ أثناء إجراء المراقبة.');
-    } finally {
-      setActionLoadingCode(null);
-    }
-  };
 
   if (loading && !stats) {
     return <AdminSkeleton />;

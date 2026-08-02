@@ -81,13 +81,14 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
       await ApiClient.syncToCloud({ habits: localHabits, logs: localLogs });
       localStorage.removeItem('habitflow_habits');
       localStorage.removeItem('habitflow_logs');
-      const freshData = await import('@/frontend/habitflow/api/habit-actions').then((m) =>
-        m.fetchInitialData()
-      );
+      const [freshData, freshUser] = await Promise.all([
+        ApiClient.fetchInitialData(),
+        ApiClient.fetchUser(),
+      ]);
       setHabits(freshData.habits);
       setLogs(freshData.logs);
       setMode(freshData.mode);
-      setUser(freshData.user);
+      setUser(freshUser);
     } catch (e) {
       console.error('Failed to sync local data to cloud', e);
     }
@@ -128,12 +129,15 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
   };
 
   async function refreshData() {
-    const { fetchInitialData } = await import('@/frontend/habitflow/api/habit-actions');
-    const data = await fetchInitialData();
+    const { ApiClient } = await import('@/frontend/habitflow/api/habit-api');
+    const [data, freshUser] = await Promise.all([
+      ApiClient.fetchInitialData(),
+      ApiClient.fetchUser(),
+    ]);
     setHabits(data.habits);
     setLogs(data.logs);
     setMode(data.mode);
-    setUser(data.user);
+    setUser(freshUser);
   }
 
   const syncUser = useCallback(

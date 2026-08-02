@@ -4,7 +4,7 @@ import { getHabitRepository } from '@/backend/config/habitflow';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { jsonOk, jsonError } from '@/backend/transport/http';
 import { AppError } from '@/backend/shared/habitflow/errors';
-import { getDbPath } from '@/backend/repositories/habitflow/data-path';
+import { getDbPath } from '@/backend/shared/habitflow/data-path';
 
 const DB_FILE = getDbPath();
 

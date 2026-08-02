@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
-import { getDbPath } from '@/backend/repositories/habitflow/data-path';
+import { getDbPath } from '@/backend/shared/habitflow/data-path';
 
 const DB_FILE = getDbPath();
 

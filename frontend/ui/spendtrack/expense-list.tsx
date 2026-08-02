@@ -1,10 +1,7 @@
 'use client';
 
-import { useState, useEffect, useActionState } from 'react';
-import { useRouter } from 'next/navigation';
-import { deleteExpense, getExpensesPage } from '@/frontend/api/spendtrack';
+import { useState } from 'react';
 import { Button } from '@/frontend/ui/ui/button';
-import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -14,6 +11,7 @@ import {
 } from '@/frontend/ui/ui/dialog';
 import { Trash2, Loader2, Receipt } from 'lucide-react';
 import { CreateExpenseDialog, EditExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
+import { useDeleteExpense, useExpensePagination } from '@/frontend/state/spendtrack/use-expenses';
 import { parseISO } from 'date-fns';
 
 import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
@@ -35,31 +33,15 @@ export function ExpenseList({
   filterCategories: string[];
   sort: string;
 }) {
-  const [expenses, setExpenses] = useState(initialExpenses);
-  useEffect(() => {
-    setExpenses(initialExpenses);
-  }, [initialExpenses]);
-  const [loading, setLoading] = useState(false);
-
-  const hasMore = expenses.length < totalCount;
+  const { expenses, loading, hasMore, loadMore } = useExpensePagination({
+    initialExpenses,
+    start,
+    end,
+    filterCategories,
+    sort,
+    totalCount,
+  });
   const hasFilters = filterCategories.length > 0 || sort !== 'date_desc';
-
-  async function loadMore() {
-    setLoading(true);
-    try {
-      const result = await getExpensesPage({
-        offset: expenses.length,
-        limit: 20,
-        start,
-        end,
-        categories: filterCategories,
-        sort,
-      });
-      setExpenses((prev) => [...prev, ...result.expenses]);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   if (expenses.length === 0) {
     return (
@@ -111,21 +93,8 @@ function ExpenseRow({
   categories: Category[];
   index: number;
 }) {
-  const router = useRouter();
-  const deleteWithId = deleteExpense.bind(null, expense.id);
-  const [state, formAction, pending] = useActionState(deleteWithId, undefined);
+  const { formAction, pending, error } = useDeleteExpense(expense.id, expense.description || '');
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-
-  useEffect(() => {
-    if (state?.success) {
-      toast.success('تم حذف المصروف', {
-        description: `تم حذف "${expense.description || 'بدون وصف'}" بنجاح`,
-        duration: 4000,
-      });
-      router.refresh();
-    }
-  }, [state, router, expense.description]);
-
   const formattedDate = new Intl.DateTimeFormat('ar-SA', {
     year: 'numeric',
     month: 'long',
@@ -199,9 +168,9 @@ function ExpenseRow({
                 </Button>
               </form>
             </div>
-            {state?.error && (
+            {error && (
               <p className="text-sm text-destructive" role="alert">
-                {state.error}
+                {error}
               </p>
             )}
           </DialogContent>

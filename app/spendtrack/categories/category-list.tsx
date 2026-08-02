@@ -1,10 +1,10 @@
 'use client';
 
-import { useActionState, startTransition, useState } from 'react';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { updateCategory, deleteCategory } from '@/backend/controllers/spendtrack/categories';
+import { updateCategory, deleteCategory } from '@/frontend/api/spendtrack';
 import { Button } from '@/frontend/ui/ui/button';
 import { Input } from '@/frontend/ui/ui/input';
 import { Pencil, Trash2, Tags } from 'lucide-react';
@@ -81,8 +81,8 @@ export function CategoryList({ categories, userId }: { categories: Category[]; u
 }
 
 function EditCategoryDialog({ category }: { category: Category }) {
-  const updateWithId = updateCategory.bind(null, category.id);
-  const [state, formAction, pending] = useActionState(updateWithId, undefined);
+  const [pending, setPending] = useState(false);
+  const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
 
   const {
     register,
@@ -101,10 +101,16 @@ function EditCategoryDialog({ category }: { category: Category }) {
   const { onChange: rhfColorOnChange, ...colorRegister } = register('color_hex');
 
   function onSubmit(data: CategoryFormValues) {
-    const fd = new FormData();
-    fd.append('name', data.name);
-    fd.append('color_hex', data.color_hex);
-    startTransition(() => formAction(fd));
+    setPending(true);
+    setState(undefined);
+    updateCategory(category.id, { name: data.name, color_hex: data.color_hex })
+      .then((result) => {
+        setState(result);
+        if (result?.error) {
+          // Keep dialog open; error displayed inline
+        }
+      })
+      .finally(() => setPending(false));
   }
 
   return (
@@ -190,11 +196,21 @@ function EditCategoryDialog({ category }: { category: Category }) {
 }
 
 function DeleteCategoryButton({ categoryId }: { categoryId: string }) {
-  const [state, formAction, pending] = useActionState(
-    (prev: { error?: string; success?: boolean } | undefined) => deleteCategory(categoryId, prev),
-    undefined
-  );
+  const [pending, setPending] = useState(false);
+  const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
   const [confirmOpen, setConfirmOpen] = useState(false);
+
+  function handleDelete(e: React.FormEvent) {
+    e.preventDefault();
+    setPending(true);
+    setState(undefined);
+    deleteCategory(categoryId)
+      .then((result) => {
+        setState(result);
+        if (result?.success) setConfirmOpen(false);
+      })
+      .finally(() => setPending(false));
+  }
 
   return (
     <>
@@ -224,7 +240,7 @@ function DeleteCategoryButton({ categoryId }: { categoryId: string }) {
             >
               إلغاء
             </Button>
-            <form action={formAction}>
+            <form onSubmit={handleDelete}>
               <Button
                 type="submit"
                 variant="destructive"

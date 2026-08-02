@@ -4,7 +4,8 @@ import { DashboardShell } from '@/frontend/habitflow/ui/components/dashboard-she
 import { SkeletonStats } from '@/frontend/habitflow/ui/components/skeleton-stats';
 import { SkeletonHabits } from '@/frontend/habitflow/ui/components/skeleton-habits';
 import { SkeletonCalendar } from '@/frontend/habitflow/ui/components/skeleton-calendar';
-import { fetchInitialData } from '@/frontend/habitflow/api/habit-actions';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
+import { createHabitService } from '@/backend/config/habitflow';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,15 +33,24 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const data = await fetchInitialData();
+  const { user, client } = await getOptionalUser();
+  const { service, mode } = createHabitService(user?.id, client ?? undefined);
+
+  const [habits, logs] = await Promise.all([
+    service.getAllHabits(),
+    service.getLogs(
+      new Date(Date.now() - 35 * 86400000).toISOString().slice(0, 10),
+      new Date().toISOString().slice(0, 10)
+    ),
+  ]);
 
   return (
     <Suspense fallback={<LoadingShell />}>
       <DashboardShell
-        initialHabits={data.habits}
-        initialLogs={data.logs}
-        initialMode={data.mode}
-        initialUser={data.user}
+        initialHabits={habits}
+        initialLogs={logs}
+        initialMode={mode}
+        initialUser={user}
       />
     </Suspense>
   );

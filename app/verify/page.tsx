@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, type FormEvent, useRef, useEffect } from 'react';
-import { verifyCertificate } from '@/backend/controllers/certificates/verify';
-import { CERT_CODE_REGEX } from '@/backend/services/certificate-verification';
+import { verifyCertificate } from '@/frontend/api/certificates';
+import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
 import { m, AnimatePresence } from 'motion/react';
 import { containerVariants, resultVariants } from '@/frontend/ui/verify/verify-variants';
 import { VerifyHero } from '@/frontend/ui/verify/verify-hero';

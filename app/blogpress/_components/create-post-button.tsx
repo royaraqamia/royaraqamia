@@ -3,7 +3,7 @@
 import { useTransition } from 'react';
 import { Button } from '@/frontend/ui/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
-import { createPost } from '@/backend/controllers/blogpress/posts';
+import { createPost } from '@/frontend/api/blogpress';
 
 export function CreatePostButton() {
   const [pending, startTransition] = useTransition();
@@ -11,7 +11,16 @@ export function CreatePostButton() {
   return (
     <Button
       disabled={pending}
-      onClick={() => startTransition(() => createPost())}
+      onClick={() =>
+        startTransition(async () => {
+          try {
+            const { id } = await createPost();
+            window.location.assign(`/blogpress/editor/${id}`);
+          } catch {
+            // Navigation will not occur on failure
+          }
+        })
+      }
       className="transition-smooth shadow-sm hover:shadow-md"
       aria-busy={pending}
       aria-live="polite"

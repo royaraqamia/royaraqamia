@@ -1,17 +1,21 @@
 export function formatDateArabic(dateStr: string): string {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
   return new Intl.DateTimeFormat('ar-SA', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
     calendar: 'islamic-umalqura',
     numberingSystem: 'latn',
-  }).format(new Date(dateStr));
+  }).format(date);
 }
 
 export function formatHijriDate(
   date: Date | string | number,
   options: Intl.DateTimeFormatOptions = {}
 ): string {
+  const parsed = new Date(date);
+  if (isNaN(parsed.getTime())) return String(date);
   const baseOptions: Intl.DateTimeFormatOptions = {
     year: 'numeric',
     month: 'long',
@@ -20,7 +24,7 @@ export function formatHijriDate(
     numberingSystem: 'latn',
     ...options,
   };
-  return new Intl.DateTimeFormat('ar-SA', baseOptions).format(new Date(date));
+  return new Intl.DateTimeFormat('ar-SA', baseOptions).format(parsed);
 }
 
 export function calculateTimeAgo(dateStr: string): string {
