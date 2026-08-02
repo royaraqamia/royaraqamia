@@ -157,16 +157,23 @@ self.addEventListener('fetch', (event) => {
 });
 
 self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-  if (event.data?.type === 'CACHE_URLS') {
-    const urls = event.data.urls;
-    event.waitUntil(
-      (async () => {
-        const cache = await caches.open(CACHE);
-        await cache.addAll(urls);
-      })()
-    );
-  }
+  event.waitUntil((async () => {
+    const source = event.source;
+    if (!source || !('id' in source)) return;
+
+    const client = await self.clients.get(source.id);
+    if (!client) return;
+
+    const clientOrigin = new URL(client.url).origin;
+    if (clientOrigin !== self.location.origin) return;
+
+    if (event.data?.type === 'SKIP_WAITING') {
+      self.skipWaiting();
+    }
+    if (event.data?.type === 'CACHE_URLS') {
+      const urls = event.data.urls;
+      const cache = await caches.open(CACHE);
+      await cache.addAll(urls);
+    }
+  })());
 });
