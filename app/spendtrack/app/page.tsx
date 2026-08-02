@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/ui/card';
+import { Skeleton } from '@/frontend/ui/ui/skeleton';
 import { DollarSign, PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
-import { CreateExpenseDialog } from '@/components/spendtrack/expense-dialog';
-import { ExpenseList } from '@/components/spendtrack/expense-list';
-import { CategoryPieChart } from '@/components/spendtrack/category-pie-chart';
-import { DailyBarChart } from '@/components/spendtrack/daily-bar-chart';
-import { TransactionFilters } from '@/components/spendtrack/transaction-filters';
+import { CreateExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
+import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
+import { CategoryPieChart } from '@/frontend/ui/spendtrack/category-pie-chart';
+import { DailyBarChart } from '@/frontend/ui/spendtrack/daily-bar-chart';
+import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
 import { getAuthUser } from '@/backend/transport/auth-guard';
 import { createClient } from '@/backend/transport/supabase/server';
 import { cookies } from 'next/headers';
@@ -55,7 +55,12 @@ async function TotalCard({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const data = await createSpendtrackRepository(supabase).getTotalExpenses(userId, start, end, catFilter);
+  const data = await createSpendtrackRepository(supabase).getTotalExpenses(
+    userId,
+    start,
+    end,
+    catFilter
+  );
   return (
     <Card
       className="group/card card-lift"
@@ -113,7 +118,12 @@ async function CategoryPieSection({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const data = await createSpendtrackRepository(supabase).getCategoryBreakdown(userId, start, end, catFilter);
+  const data = await createSpendtrackRepository(supabase).getCategoryBreakdown(
+    userId,
+    start,
+    end,
+    catFilter
+  );
   return <CategoryPieChart data={data ?? []} />;
 }
 
@@ -130,7 +140,12 @@ async function DailyBarSection({
 }) {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
-  const data = await createSpendtrackRepository(supabase).getDailyTotals(userId, start, end, catFilter);
+  const data = await createSpendtrackRepository(supabase).getDailyTotals(
+    userId,
+    start,
+    end,
+    catFilter
+  );
   return <DailyBarChart data={data ?? []} />;
 }
 

@@ -5,9 +5,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createCategory } from '@/app/spendtrack/actions/categories';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Button } from '@/frontend/ui/ui/button';
+import { Input } from '@/frontend/ui/ui/input';
+import { Label } from '@/frontend/ui/ui/label';
 import { toast } from 'sonner';
 import {
   Dialog,
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@/frontend/ui/ui/dialog';
 import { Plus } from 'lucide-react';
 
 const categorySchema = z.object({

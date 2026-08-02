@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/frontend/ui/ui/card';
+import { Badge } from '@/frontend/ui/ui/badge';
+import { Button } from '@/frontend/ui/ui/button';
 import {
   ShieldCheck,
   ShieldAlert,
@@ -24,7 +24,7 @@ import { m } from 'motion/react';
 import Link from 'next/link';
 import type { Certificate } from '@/shared/contracts/certificates';
 import { formatDateArabic } from '@/frontend/shared/format';
-import { CertificateQRCodeClient } from '@/components/certificate-qr-code-client';
+import { CertificateQRCodeClient } from '@/frontend/ui/certificate-qr-code-client';
 
 const easeOut = [0.25, 0.4, 0.25, 1] as const;
 

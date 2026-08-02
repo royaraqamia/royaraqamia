@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw, House } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/frontend/ui/ui/button';
 
 export default function Error({
   error,

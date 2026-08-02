@@ -55,11 +55,7 @@ export interface ISpendtrackRepository {
     }
   ): Promise<void>;
   deleteExpense(expenseId: string, userId: string): Promise<void>;
-  createCategory(input: {
-    user_id: string;
-    name: string;
-    color_hex: string;
-  }): Promise<void>;
+  createCategory(input: { user_id: string; name: string; color_hex: string }): Promise<void>;
   updateCategory(
     categoryId: string,
     userId: string,

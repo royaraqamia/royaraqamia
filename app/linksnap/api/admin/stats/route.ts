@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
-import { GetSystemStatsUseCase } from '@/backend/usecases/linksnap/get-system-stats';
-import { SupabaseAdminRepository } from '@/backend/repositories/linksnap/supabase-admin';
+import { createGetSystemStatsService } from '@/backend/config/linksnap';
 
 export async function GET(req: NextRequest) {
   try {
@@ -13,9 +12,8 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const repository = new SupabaseAdminRepository();
-    const useCase = new GetSystemStatsUseCase(repository);
-    const stats = await useCase.execute(user.email);
+    const service = createGetSystemStatsService();
+    const stats = await service.execute(user.email);
 
     return NextResponse.json({
       success: true,

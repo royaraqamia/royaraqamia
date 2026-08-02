@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { requireAuth } from '@/backend/actions/certificates/admin';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import { Navbar } from '@/frontend/ui/Navbar';
+import { Footer } from '@/frontend/ui/Footer';
 import { Plus, ShieldCheck } from 'lucide-react';
 
 export const metadata: Metadata = {

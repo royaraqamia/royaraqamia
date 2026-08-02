@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
-import { SupabaseAnalyticsRepository } from '@/backend/repositories/linksnap/supabase-analytics';
-import { RedirectUrlUseCase } from '@/backend/usecases/linksnap/redirect-url';
+import { createRedirectUrlService } from '@/backend/config/linksnap';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ code: string }> }) {
   const { code } = await context.params;
@@ -11,16 +9,14 @@ export async function GET(req: NextRequest, context: { params: Promise<{ code: s
   }
 
   try {
-    const shortLinkRepo = new SupabaseShortLinkRepository();
-    const analyticsRepo = new SupabaseAnalyticsRepository();
-    const useCase = new RedirectUrlUseCase(shortLinkRepo, analyticsRepo);
+    const service = createRedirectUrlService();
 
     const referrer = req.headers.get('referer') || null;
     const userAgent = req.headers.get('user-agent') || null;
     const ipCountry =
       req.headers.get('x-vercel-ip-country') || req.headers.get('cf-ipcountry') || null;
 
-    const originalUrl = await useCase.execute(code, {
+    const originalUrl = await service.execute(code, {
       referrer,
       userAgent,
       ipCountry,

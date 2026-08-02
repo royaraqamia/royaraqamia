@@ -6,8 +6,6 @@ import {
   AggregateStats,
 } from '@/shared/contracts/habitflow';
 
-export type { HabitStats, AggregateStats } from '@/shared/contracts/habitflow';
-
 function getCompletedDateSet(habitId: string, logs: HabitLog[]): Set<string> {
   return new Set(logs.filter((l) => l.habitId === habitId && l.completed).map((l) => l.date));
 }

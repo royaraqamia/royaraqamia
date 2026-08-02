@@ -1,0 +1,143 @@
+'use client';
+
+import { motion } from 'motion/react';
+import { PlusCircle, CheckCircle, Fire } from '@phosphor-icons/react';
+import { SectionHeading } from '@/frontend/ui/landing-shared/SectionHeading';
+
+const steps = [
+  {
+    number: '01',
+    title: 'أضف عادة',
+    description:
+      'حدِّد العادات التي تُريد بناءها. الرُّوتين الصَّباحي، التَّمارين، القراءة — أيَّ شيء يهمُّك.',
+    icon: PlusCircle,
+  },
+  {
+    number: '02',
+    title: 'تتبَّع يوميًّا',
+    description: 'سجِّل حضورك يوميًّا وحدِّد تقدُّمك. متابعة بنعم/لا تستغرق ثوانٍ.',
+    icon: CheckCircle,
+  },
+  {
+    number: '03',
+    title: 'ابنِ السَّلاسل',
+    description: 'شاهد سلسلتك تنمو كلَّما حافظت على انتظامك. كلّ يوم يبني على الذي يليه.',
+    icon: Fire,
+  },
+];
+
+export function HowItWorks() {
+  return (
+    <section
+      id="how-it-works"
+      className="relative py-20 sm:py-28 lg:py-36 overflow-hidden section-spacing"
+    >
+      {/* Ambient Radial Background Glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
+      >
+        <div className="h-112.5 w-150 sm:w-200 rounded-full bg-linear-to-tr from-primary/10 via-primary/5 to-transparent blur-[120px] opacity-70" />
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 container-padding">
+        {/* Section Header */}
+        <SectionHeading
+          badge={
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 backdrop-blur-md shadow-sm shadow-primary/5 transition-all duration-300 hover:bg-primary/15 hover:border-primary/30">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
+              </span>
+              <span>سير عمل بسيط</span>
+            </div>
+          }
+          wrapperClassName="text-center mb-16 sm:mb-24"
+          titleClassName="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 sm:mb-6 leading-[1.15]"
+          titlePrefix="ثلاث خطوات لـ "
+          titleHighlight="عادات دائمة"
+          titleHighlightClassName="gradient-text bg-linear-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent"
+          subtitle="ابدأ صغيرًا، واظب باستمرار، وشاهد عاداتك تُغيِّر حياتك."
+          subtitleClassName="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal"
+        />
+
+        {/* Steps Grid */}
+        <div className="relative">
+          {/* Desktop Connected Workflow Timeline Line */}
+          <div
+            aria-hidden="true"
+            className="hidden lg:block absolute top-[28%] left-[15%] right-[15%] h-0.5 bg-linear-to-r from-primary/10 via-primary/40 to-primary/10 -translate-y-1/2 z-0"
+          />
+
+          <ol className="grid grid-cols-1 md:grid-cols-3 gap-8 lg:gap-8 relative z-10 list-none m-0 p-0">
+            {steps.map((step, i) => {
+              const StepIcon = step.icon;
+              return (
+                <motion.li
+                  key={step.number}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-80px' }}
+                  transition={{ delay: i * 0.18, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+                  className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/80 dark:bg-neutral-900/70 backdrop-blur-2xl border border-border/80 dark:border-neutral-800/80 shadow-xl shadow-black/2 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 outline-none"
+                >
+                  {/* Subtle Background Hover Light Glow */}
+                  <div className="absolute inset-0 rounded-3xl bg-linear-to-b from-primary/4 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+                  {/* Top Glowing Stroke Highlight Accent */}
+                  <div className="absolute top-0 inset-x-12 h-px bg-linear-to-r from-transparent via-primary/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                  {/* Background Watermark Step Number */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute top-6 left-6 text-4xl sm:text-5xl font-black text-primary/10 group-hover:text-primary/20 transition-colors duration-500 font-mono select-none tracking-tighter"
+                  >
+                    {step.number}
+                  </span>
+
+                  {/* Icon Badge Container with Micro-Interactions */}
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    whileInView={{ scale: 1, opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{
+                      delay: i * 0.18 + 0.15,
+                      duration: 0.5,
+                      ease: [0.34, 1.56, 0.64, 1],
+                    }}
+                    className="relative z-10 mb-8"
+                  >
+                    {/* Outer Glowing Aura on Hover */}
+                    <div className="absolute -inset-2 rounded-2xl bg-linear-to-r from-primary/30 to-primary/10 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                    <div className="relative w-20 h-20 rounded-2xl bg-card border border-border/80 flex items-center justify-center shadow-lg shadow-primary/5 group-hover:scale-110 group-hover:border-primary/50 group-hover:shadow-primary/20 transition-all duration-500 ease-out">
+                      <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-primary/10 via-transparent to-primary/5" />
+                      <StepIcon
+                        size={36}
+                        weight="duotone"
+                        className="text-primary relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
+                      />
+                    </div>
+                  </motion.div>
+
+                  {/* Step Title & Metadata */}
+                  <div className="relative z-10 flex flex-col items-center">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold tracking-wider text-primary bg-primary/10 border border-primary/20 mb-3 select-none">
+                      الخطوة {step.number}
+                    </span>
+                    <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-3 tracking-tight">
+                      {step.title}
+                    </h3>
+                    <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xs font-normal">
+                      {step.description}
+                    </p>
+                  </div>
+                </motion.li>
+              );
+            })}
+          </ol>
+        </div>
+      </div>
+    </section>
+  );
+}

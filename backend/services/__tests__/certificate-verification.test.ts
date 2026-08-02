@@ -1,10 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
+import {
+  createCertificateVerifier,
+  CERT_CODE_REGEX,
+  type CertificateVerifierDeps,
+} from '@/backend/services/certificate-verification';
+import type { Certificate } from '@/shared/contracts/certificates';
+import type { ICertificatesRepository } from '@/backend/ports/certificates/certificates-repository';
 
 // ============================================================
 // Test the certificate code validation logic
 // ============================================================
-
-const CERT_CODE_REGEX = /^COMP-\d{4}-[A-Z0-9]{8}$/;
 
 describe('Certificate code format validation', () => {
   it('accepts valid COMP-YYYY-XXXXXXXX codes', () => {
@@ -44,99 +49,127 @@ describe('Certificate code format validation', () => {
 });
 
 // ============================================================
-// Test the rate limiter
+// Test the certificate verification service with injected deps
 // ============================================================
 
-describe('In-memory rate limiter fallback', () => {
-  // Import the module to test the fallback path (when Redis is not configured)
-  it('allows requests within limit', () => {
-    const store = new Map<string, { count: number; resetAt: number }>();
-    const now = Date.now();
+function makeDeps(overrides: Partial<CertificateVerifierDeps> = {}) {
+  const repository: ICertificatesRepository = {
+    getByCode: vi.fn(),
+    list: vi.fn(),
+    getById: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+  };
 
-    // Simulate the checkMemoryLimit function
-    function check(key: string, limit: number, windowMs: number): boolean {
-      const record = store.get(key);
-      if (!record || now > record.resetAt) {
-        store.set(key, { count: 1, resetAt: now + windowMs });
-        return true;
-      }
-      if (record.count >= limit) return false;
-      record.count++;
-      return true;
-    }
+  const checkRateLimit = vi.fn<CertificateVerifierDeps['checkRateLimit']>(async () => true);
+  const captureMessage = vi.fn<CertificateVerifierDeps['captureMessage']>();
+  const captureException = vi.fn<CertificateVerifierDeps['captureException']>();
 
-    expect(check('test:1.2.3.4', 3, 60_000)).toBe(true);
-    expect(check('test:1.2.3.4', 3, 60_000)).toBe(true);
-    expect(check('test:1.2.3.4', 3, 60_000)).toBe(true);
-    expect(check('test:1.2.3.4', 3, 60_000)).toBe(false);
+  return {
+    repository,
+    checkRateLimit,
+    captureMessage,
+    captureException,
+    verifier: createCertificateVerifier({
+      repository,
+      checkRateLimit,
+      captureMessage,
+      captureException,
+      ...overrides,
+    }),
+  };
+}
+
+const sampleCertificate = {
+  id: '1',
+  certificate_code: 'COMP-2026-A1B2C3D4',
+  student_name: 'أحمد',
+  course_name: 'برمجة',
+  issue_date: '2026-01-01',
+  expiration_date: null,
+  grade_or_status: null,
+  created_at: '2026-01-01',
+} as unknown as Certificate;
+
+describe('Certificate verification service', () => {
+  it('trims whitespace and uppercases before lookup', async () => {
+    const { verifier, repository, checkRateLimit } = makeDeps();
+    (repository.getByCode as ReturnType<typeof vi.fn>).mockResolvedValue(sampleCertificate);
+
+    const result = await verifier.verifyCertificateByCode('  comp-2026-a1b2c3d4  ', '1.2.3.4');
+
+    expect(result.success).toBe(true);
+    expect(repository.getByCode).toHaveBeenCalledWith('COMP-2026-A1B2C3D4');
+    expect(checkRateLimit).toHaveBeenCalled();
   });
 
-  it('resets after window expires', () => {
-    const store = new Map<string, { count: number; resetAt: number }>();
+  it('returns format error and skips lookup for invalid codes', async () => {
+    const { verifier, repository, checkRateLimit } = makeDeps();
 
-    function check(key: string, limit: number, windowMs: number): boolean {
-      const record = store.get(key);
-      const now = Date.now();
-      if (!record || now > record.resetAt) {
-        store.set(key, { count: 1, resetAt: now + windowMs });
-        return true;
-      }
-      if (record.count >= limit) return false;
-      record.count++;
-      return true;
-    }
+    const result = await verifier.verifyCertificateByCode('NOT-A-CODE', '1.2.3.4');
 
-    // Use a tiny window for testing
-    expect(check('test:reset', 2, 1)).toBe(true);
-    expect(check('test:reset', 2, 1)).toBe(true);
-    expect(check('test:reset', 2, 1)).toBe(false);
-
-    // After window expires, should reset
-    // Wait 2ms
-    const start = Date.now();
-    while (Date.now() - start < 3) {
-      // busy wait
-    }
-    expect(check('test:reset', 2, 1)).toBe(true);
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('صيغة الرمز غير صالحة');
+    expect(repository.getByCode).not.toHaveBeenCalled();
+    expect(checkRateLimit).not.toHaveBeenCalled();
   });
 
-  it('tracks different keys independently', () => {
-    const store = new Map<string, { count: number; resetAt: number }>();
+  it('blocks requests that exceed the IP rate limit', async () => {
+    const { verifier, repository } = makeDeps({
+      checkRateLimit: vi.fn(async (key: string) => !key.startsWith('verify:1.2.3.4')),
+    });
 
-    function check(key: string, limit: number, windowMs: number): boolean {
-      const now = Date.now();
-      const record = store.get(key);
-      if (!record || now > record.resetAt) {
-        store.set(key, { count: 1, resetAt: now + windowMs });
-        return true;
-      }
-      if (record.count >= limit) return false;
-      record.count++;
-      return true;
-    }
+    const result = await verifier.verifyCertificateByCode('COMP-2026-A1B2C3D4', '1.2.3.4');
 
-    expect(check('ip:1.1.1.1', 2, 60_000)).toBe(true);
-    expect(check('ip:1.1.1.1', 2, 60_000)).toBe(true);
-    expect(check('ip:1.1.1.1', 2, 60_000)).toBe(false);
-
-    // Different IP should still work
-    expect(check('ip:2.2.2.2', 2, 60_000)).toBe(true);
-  });
-});
-
-// ============================================================
-// Test sanitize logic
-// ============================================================
-
-describe('Certificate code sanitization', () => {
-  it('trims whitespace and uppercases', () => {
-    const input = '  comp-2026-a1b2c3d4  ';
-    const sanitized = input.trim().toUpperCase();
-    expect(sanitized).toBe('COMP-2026-A1B2C3D4');
+    expect(result).toEqual({
+      success: false,
+      error: 'تم تجاوز الحد المسموح. الرجاء المحاولة بعد دقيقة.',
+      rateLimited: true,
+    });
+    expect(repository.getByCode).not.toHaveBeenCalled();
   });
 
-  it('normalizes lowercase to uppercase', () => {
-    const sanitized = 'comp-2026-abc12345'.trim().toUpperCase();
-    expect(sanitized).toBe('COMP-2026-ABC12345');
+  it('blocks requests that exceed the code rate limit (anti-enumeration)', async () => {
+    const { verifier, repository } = makeDeps({
+      checkRateLimit: vi.fn(async (key: string) => !key.includes('COMP-2026-A1B2C3D4')),
+    });
+
+    const result = await verifier.verifyCertificateByCode('COMP-2026-A1B2C3D4', '9.9.9.9');
+
+    expect(result.success).toBe(false);
+    expect(result.rateLimited).toBe(true);
+    expect(repository.getByCode).not.toHaveBeenCalled();
+  });
+
+  it('returns not-found error when repository returns null', async () => {
+    const { verifier, repository } = makeDeps();
+    (repository.getByCode as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    const result = await verifier.verifyCertificateByCode('COMP-2026-A1B2C3D4', '1.2.3.4');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('لم يتم العثور');
+  });
+
+  it('returns the certificate on success', async () => {
+    const { verifier, repository } = makeDeps();
+    (repository.getByCode as ReturnType<typeof vi.fn>).mockResolvedValue(sampleCertificate);
+
+    const result = await verifier.verifyCertificateByCode('COMP-2026-A1B2C3D4', '1.2.3.4');
+
+    expect(result).toEqual({ success: true, certificate: sampleCertificate });
+  });
+
+  it('reports unexpected errors and returns a generic message', async () => {
+    const { verifier, repository, captureException } = makeDeps();
+    const boom = new Error('db down');
+    (repository.getByCode as ReturnType<typeof vi.fn>).mockRejectedValue(boom);
+
+    const result = await verifier.verifyCertificateByCode('COMP-2026-A1B2C3D4', '1.2.3.4');
+
+    expect(result.success).toBe(false);
+    expect(result.error).toContain('حدث خطأ غير متوقع');
+    expect(captureException).toHaveBeenCalledWith(boom, expect.any(Object));
   });
 });

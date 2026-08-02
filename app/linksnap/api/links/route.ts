@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
-import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
-import { ListLinksUseCase } from '@/backend/usecases/linksnap/list-links';
-import { UpdateLinkUseCase } from '@/backend/usecases/linksnap/update-link';
-import { DeleteLinkUseCase } from '@/backend/usecases/linksnap/delete-link';
+import {
+  createListLinksService,
+  createUpdateLinkService,
+  createDeleteLinkService,
+} from '@/backend/config/linksnap';
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,10 +16,9 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const repository = new SupabaseShortLinkRepository();
-    const useCase = new ListLinksUseCase(repository);
+    const service = createListLinksService();
 
-    const links = await useCase.execute(user.id);
+    const links = await service.execute(user.id);
 
     return NextResponse.json({
       success: true,
@@ -57,10 +57,9 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const repository = new SupabaseShortLinkRepository();
-    const useCase = new UpdateLinkUseCase(repository);
+    const service = createUpdateLinkService();
 
-    const updatedLink = await useCase.execute(code, user.id, originalUrl);
+    const updatedLink = await service.execute(code, user.id, originalUrl);
 
     return NextResponse.json({
       success: true,
@@ -97,9 +96,8 @@ export async function DELETE(req: NextRequest) {
       );
     }
 
-    const repository = new SupabaseShortLinkRepository();
-    const useCase = new DeleteLinkUseCase(repository);
-    await useCase.execute(code, user.id);
+    const service = createDeleteLinkService();
+    await service.execute(code, user.id);
 
     return NextResponse.json({
       success: true,

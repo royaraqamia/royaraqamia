@@ -74,7 +74,12 @@ export async function saveAndPublishPost(postId: string, formData: FormData) {
 
   const blogVisible = AdminValidator.isAdmin(session.user.email ?? '');
 
-  const { slug } = await repo.saveAndPublishPost(postId, session.userId, validated.data, blogVisible);
+  const { slug } = await repo.saveAndPublishPost(
+    postId,
+    session.userId,
+    validated.data,
+    blogVisible
+  );
 
   revalidatePath('/blogpress');
   revalidatePath(`/blog/${slug}`);

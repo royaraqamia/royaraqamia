@@ -29,6 +29,9 @@ jobs:
       - name: Format Check
         run: npx prettier --check .
 
+      - name: Env Docs Sync
+        run: npm run check:env-docs
+
       - name: Lint
         run: npm run lint
 

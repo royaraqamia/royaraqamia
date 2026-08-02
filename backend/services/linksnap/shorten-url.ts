@@ -5,7 +5,7 @@ import { CodeGenerator } from '@/backend/services/linksnap/code-generator';
 
 const MAX_CODE_ATTEMPTS = 5;
 
-export class ShortenUrlUseCase {
+export class ShortenUrlService {
   constructor(private shortLinkRepository: IShortLinkRepository) {}
 
   async execute(

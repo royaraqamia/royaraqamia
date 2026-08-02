@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { LazyImage } from '../../components/LazyImage';
-import { Navbar } from '../../components/Navbar';
-import { Footer } from '../../components/Footer';
+import { LazyImage } from '../../frontend/ui/LazyImage';
+import { Navbar } from '../../frontend/ui/Navbar';
+import { Footer } from '../../frontend/ui/Footer';
 
 export const metadata: Metadata = {
   title: 'معلومات الشَّركة',

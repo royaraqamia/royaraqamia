@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { UrlShortener } from '@/components/linksnap/url-shortener';
-import { LinkDashboard } from '@/components/linksnap/link-dashboard';
-import { AdminPanel } from '@/components/linksnap/admin-panel';
-import { RedirectErrorBanner } from '@/components/linksnap/redirect-error-banner';
-import { ViewSelector } from '@/components/linksnap/view-selector';
-import { useSession } from '@/components/shared/session-provider';
-import { DashboardSkeleton } from '@/components/linksnap/loading-skeletons';
+import { UrlShortener } from '@/frontend/ui/linksnap/url-shortener';
+import { LinkDashboard } from '@/frontend/ui/linksnap/link-dashboard';
+import { AdminPanel } from '@/frontend/ui/linksnap/admin-panel';
+import { RedirectErrorBanner } from '@/frontend/ui/linksnap/redirect-error-banner';
+import { ViewSelector } from '@/frontend/ui/linksnap/view-selector';
+import { useSession } from '@/frontend/ui/shared/session-provider';
+import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 import { AdminValidator } from '@/shared/admin-validator';
 
 interface RedirectError {

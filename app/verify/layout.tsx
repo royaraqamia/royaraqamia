@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import { Navbar } from '@/frontend/ui/Navbar';
+import { Footer } from '@/frontend/ui/Footer';
 
 export const metadata: Metadata = {
   title: {

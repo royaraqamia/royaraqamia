@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/frontend/transport/supabase/client';
+import { getPublicSupabase } from '@/backend/transport/supabase/public';
 
 interface AuthenticatedUser {
   id: string;
@@ -18,7 +18,7 @@ export async function getAuthenticatedUser(req: NextRequest): Promise<Authentica
   }
 
   try {
-    const supabase = createClient();
+    const supabase = getPublicSupabase();
     const {
       data: { user },
       error,

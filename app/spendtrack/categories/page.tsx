@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/ui/card';
 import { getAuthUser } from '@/backend/transport/auth-guard';
 import { createSpendtrackRepository } from '@/backend/repositories/spendtrack';
 import { CategoryList } from './category-list';

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
-import { SupabaseAnalyticsRepository } from '@/backend/repositories/linksnap/supabase-analytics';
-import { GetUrlAnalyticsUseCase } from '@/backend/usecases/linksnap/get-url-analytics';
+import { createGetUrlAnalyticsService } from '@/backend/config/linksnap';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ code: string }> }) {
   try {
@@ -19,10 +18,9 @@ export async function GET(req: NextRequest, context: { params: Promise<{ code: s
       );
     }
 
-    const repository = new SupabaseAnalyticsRepository();
-    const useCase = new GetUrlAnalyticsUseCase(repository);
+    const service = createGetUrlAnalyticsService();
 
-    const analytics = await useCase.execute(code, user.id);
+    const analytics = await service.execute(code, user.id);
 
     return NextResponse.json({
       success: true,

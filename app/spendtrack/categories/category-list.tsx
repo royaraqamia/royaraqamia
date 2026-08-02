@@ -5,8 +5,8 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { updateCategory, deleteCategory } from '@/app/spendtrack/actions/categories';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Button } from '@/frontend/ui/ui/button';
+import { Input } from '@/frontend/ui/ui/input';
 import { Pencil, Trash2, Tags } from 'lucide-react';
 import {
   Dialog,
@@ -14,8 +14,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
+} from '@/frontend/ui/ui/dialog';
+import { Label } from '@/frontend/ui/ui/label';
 import type { Category } from '@/shared/contracts/spendtrack';
 
 const categorySchema = z.object({

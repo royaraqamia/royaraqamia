@@ -2,7 +2,7 @@ import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-reposi
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { AdminValidator } from '@/shared/admin-validator';
 
-export class ModerateLinkUseCase {
+export class ModerateLinkService {
   constructor(private shortLinkRepository: IShortLinkRepository) {}
 
   async execute(userEmail: string, code: string, isBlocked: boolean): Promise<ShortLink> {

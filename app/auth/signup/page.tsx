@@ -6,13 +6,13 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { GoogleLogo, WarningCircle } from '@phosphor-icons/react';
 import { signup, signInWithGoogle } from '@/backend/actions/auth';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { PasswordInput } from '@/components/auth/PasswordInput';
-import { PasswordStrength } from '@/components/auth/PasswordStrength';
-import { AuthCard } from '@/components/auth/AuthCard';
-import { AuthDivider } from '@/components/auth/AuthDivider';
-import { Turnstile } from '@/components/auth/Turnstile';
+import { Input } from '@/frontend/ui/ui/input';
+import { Button } from '@/frontend/ui/ui/button';
+import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
+import { PasswordStrength } from '@/frontend/ui/auth/PasswordStrength';
+import { AuthCard } from '@/frontend/ui/auth/AuthCard';
+import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
+import { Turnstile } from '@/frontend/ui/auth/Turnstile';
 
 export default function SignupPage() {
   const searchParams = useSearchParams();

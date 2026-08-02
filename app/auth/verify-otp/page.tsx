@@ -5,10 +5,10 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { WarningCircle, ArrowLeft, Clock, CheckCircle } from '@phosphor-icons/react';
-import { OtpInput } from '@/components/shared/otp-input';
+import { OtpInput } from '@/frontend/ui/shared/otp-input';
 import { verifyOtp, resendOtp } from '@/backend/actions/auth';
-import { Button } from '@/components/ui/button';
-import { AuthCard } from '@/components/auth/AuthCard';
+import { Button } from '@/frontend/ui/ui/button';
+import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 
 const OTP_EXPIRY_SECONDS = 5 * 60;
 const RESEND_COOLDOWN_SECONDS = 60;

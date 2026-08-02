@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { createClient } from '@/backend/transport/supabase/server';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/frontend/ui/ui/button';
 import {
   ChevronLeft,
   ChevronRight,
@@ -39,7 +39,11 @@ export default async function BlogPage(props: {
   const cookieStore = await cookies();
   const supabase = await createClient(cookieStore);
 
-  const { posts, totalPages } = await createPostsRepository(supabase).getPublishedPosts(page, query, PAGE_SIZE);
+  const { posts, totalPages } = await createPostsRepository(supabase).getPublishedPosts(
+    page,
+    query,
+    PAGE_SIZE
+  );
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 selection:text-white pb-24">

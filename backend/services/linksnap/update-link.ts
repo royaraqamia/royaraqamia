@@ -2,7 +2,7 @@ import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-reposi
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 
-export class UpdateLinkUseCase {
+export class UpdateLinkService {
   constructor(private shortLinkRepository: IShortLinkRepository) {}
 
   /**

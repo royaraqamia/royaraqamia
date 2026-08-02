@@ -2,9 +2,9 @@
 
 import { Trash2 } from 'lucide-react';
 import { Habit } from '@/shared/contracts/habitflow';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/ui/dialog';
+import { Button } from '@/frontend/ui/ui/button';
+import { Input } from '@/frontend/ui/ui/input';
 import { HABIT_ICONS } from '@/frontend/habitflow/shared/habit-icons';
 
 interface EditHabitModalProps {

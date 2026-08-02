@@ -1,8 +1,10 @@
 import * as Sentry from '@sentry/nextjs';
-import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
-import { getPublicSupabase } from '@/backend/transport/supabase/public';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { checkRateLimit } from '@/backend/shared/rate-limiter';
 import { createCertificatesRepository } from '@/backend/repositories/certificates';
+import { getPublicSupabase } from '@/backend/transport/supabase/public';
+import type { ICertificatesRepository } from '@/backend/ports/certificates/certificates-repository';
+import type { Database } from '@/shared/contracts/database.types';
 import type { VerifyResult } from '@/shared/contracts/certificates';
 
 // ============================================================
@@ -12,157 +14,138 @@ import type { VerifyResult } from '@/shared/contracts/certificates';
 // Space: 32^8 = ~1.1 trillion combinations
 // ============================================================
 
-const CERT_CODE_REGEX = /^COMP-\d{4}-[A-Z0-9]{8}$/;
+export const CERT_CODE_REGEX = /^COMP-\d{4}-[A-Z0-9]{8}$/;
 
-// ============================================================
-// Upstash Redis Rate Limiting
-// Persists across cold starts, works with serverless functions
-// ============================================================
+// 20 requests per 60 seconds per IP, 5 per code (anti-enumeration)
+const IP_LIMIT = 20;
+const CODE_LIMIT = 5;
+const WINDOW_MS = 60_000;
 
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
-      })
-    : null;
-
-// 20 requests per 60 seconds per IP
-const ipLimiter = redis
-  ? new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(20, '60 s'),
-      analytics: true,
-    })
-  : null;
-
-// 5 requests per 60 seconds per code (anti-enumeration)
-const codeLimiter = redis
-  ? new Ratelimit({
-      redis,
-      limiter: Ratelimit.slidingWindow(5, '60 s'),
-      analytics: true,
-    })
-  : null;
-
-// Fallback in-memory limiter when Redis is not configured
-const memoryStore = new Map<string, { count: number; resetAt: number }>();
-
-function checkMemoryLimit(key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  const record = memoryStore.get(key);
-
-  if (!record || now > record.resetAt) {
-    memoryStore.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-
-  if (record.count >= limit) return false;
-  record.count++;
-  return true;
-}
-
-async function checkRateLimit(identifier: string, type: 'ip' | 'code'): Promise<boolean> {
-  const limiter = type === 'ip' ? ipLimiter : codeLimiter;
-
-  if (limiter) {
-    try {
-      const { success } = await limiter.limit(identifier);
-      return success;
-    } catch (e) {
-      Sentry.captureException(e, {
-        extra: { identifier, type },
-      });
-      // Fail open — allow the request if rate limiting is unreachable
-      return true;
-    }
-  }
-
-  // Fallback to in-memory when Upstash is not configured
-  const limit = type === 'ip' ? 20 : 5;
-  return checkMemoryLimit(`${type}:${identifier}`, limit, 60_000);
+export interface CertificateVerifierDeps {
+  repository: ICertificatesRepository;
+  checkRateLimit: (key: string, limit: number, windowMs: number) => Promise<boolean>;
+  captureMessage: (
+    message: string,
+    options?: { level?: 'info' | 'warning'; extra?: Record<string, unknown> }
+  ) => void;
+  captureException: (error: unknown, options?: { extra?: Record<string, unknown> }) => void;
 }
 
 /**
  * Certificate verification is a public, read-only operation — the
  * certificates table has an explicit RLS policy allowing public SELECT,
  * so the service role key is not needed and should not be used here.
+ *
+ * Constructor accepts injected dependencies (repository, rate limiter, telemetry)
+ * so the verification logic is fully unit-testable without Supabase, Redis,
+ * or Sentry.
  */
+export class CertificateVerifier {
+  constructor(private readonly deps: CertificateVerifierDeps) {}
+
+  verifyCertificateByCode = async (code: string, ip: string): Promise<VerifyResult> => {
+    try {
+      const sanitized = code.trim().toUpperCase();
+
+      // Format validation
+      if (!CERT_CODE_REGEX.test(sanitized)) {
+        this.deps.captureMessage('Invalid certificate code format', {
+          level: 'warning',
+          extra: { code: sanitized, ip },
+        });
+        return {
+          success: false,
+          error: 'صيغة الرمز غير صالحة. الصيغة الصحيحة: COMP-YYYY-XXXXXXXX',
+        };
+      }
+
+      // Rate limiting - IP level
+      if (!(await this.deps.checkRateLimit(`verify:${ip}`, IP_LIMIT, WINDOW_MS))) {
+        this.deps.captureMessage('Certificate verification IP rate limit exceeded', {
+          level: 'warning',
+          extra: { code: sanitized, ip },
+        });
+        return {
+          success: false,
+          error: 'تم تجاوز الحد المسموح. الرجاء المحاولة بعد دقيقة.',
+          rateLimited: true,
+        };
+      }
+
+      // Rate limiting - Code level (anti-enumeration)
+      if (!(await this.deps.checkRateLimit(`verify:${sanitized}`, CODE_LIMIT, WINDOW_MS))) {
+        this.deps.captureMessage('Certificate verification code rate limit exceeded', {
+          level: 'warning',
+          extra: { code: sanitized, ip },
+        });
+        return {
+          success: false,
+          error: 'تم تجاوز الحد المسموح. الرجاء المحاولة بعد دقيقة.',
+          rateLimited: true,
+        };
+      }
+
+      // Database lookup — uses publishable key, not service role
+      const certificate = await this.deps.repository.getByCode(sanitized);
+
+      if (!certificate) {
+        this.deps.captureMessage('Certificate not found', {
+          level: 'info',
+          extra: { code: sanitized, ip },
+        });
+        return {
+          success: false,
+          error: 'لم يتم العثور على شهادة بهذا الرمز أو أن الرمز غير صالح.',
+        };
+      }
+
+      this.deps.captureMessage('Certificate verified successfully', {
+        level: 'info',
+        extra: { code: sanitized, student: certificate.student_name, ip },
+      });
+
+      return { success: true, certificate };
+    } catch (e) {
+      console.error('[verifyCertificateByCode] Unexpected error:', e);
+      this.deps.captureException(e, {
+        extra: { code, ip, source: 'verifyCertificateByCode' },
+      });
+      return {
+        success: false,
+        error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
+      };
+    }
+  };
+}
+
+export function createCertificateVerifier(deps: CertificateVerifierDeps): CertificateVerifier {
+  return new CertificateVerifier(deps);
+}
 
 /**
- * Validates certificate code format and queries Supabase.
- * Returns structured result with Sentry logging for monitoring.
+ * Default wiring used by server actions. Uses the publishable (anon) key
+ * via getPublicSupabase so RLS applies for public read-only lookups.
  */
-export async function verifyCertificateByCode(code: string, ip: string): Promise<VerifyResult> {
-  try {
-    const sanitized = code.trim().toUpperCase();
+export function createDefaultCertificateVerifier(supabase?: SupabaseClient<Database>) {
+  const client = supabase ?? getPublicSupabase();
+  return createCertificateVerifier({
+    repository: createCertificatesRepository(client),
+    checkRateLimit,
+    captureMessage: (message, options) => Sentry.captureMessage(message, options),
+    captureException: (error, options) => Sentry.captureException(error, options),
+  });
+}
 
-    // Format validation
-    if (!CERT_CODE_REGEX.test(sanitized)) {
-      Sentry.captureMessage('Invalid certificate code format', {
-        level: 'warning',
-        extra: { code: sanitized, ip },
-      });
-      return {
-        success: false,
-        error: 'صيغة الرمز غير صالحة. الصيغة الصحيحة: COMP-YYYY-XXXXXXXX',
-      };
-    }
+let defaultVerifier: ReturnType<typeof createDefaultCertificateVerifier> | null = null;
 
-    // Rate limiting - IP level
-    if (!(await checkRateLimit(`verify:${ip}`, 'ip'))) {
-      Sentry.captureMessage('Certificate verification IP rate limit exceeded', {
-        level: 'warning',
-        extra: { code: sanitized, ip },
-      });
-      return {
-        success: false,
-        error: 'تم تجاوز الحد المسموح. الرجاء المحاولة بعد دقيقة.',
-        rateLimited: true,
-      };
-    }
-
-    // Rate limiting - Code level (anti-enumeration)
-    if (!(await checkRateLimit(`verify:${sanitized}`, 'code'))) {
-      Sentry.captureMessage('Certificate verification code rate limit exceeded', {
-        level: 'warning',
-        extra: { code: sanitized, ip },
-      });
-      return {
-        success: false,
-        error: 'تم تجاوز الحد المسموح. الرجاء المحاولة بعد دقيقة.',
-        rateLimited: true,
-      };
-    }
-
-    // Database lookup — uses publishable key, not service role
-    const certificate = await createCertificatesRepository(getPublicSupabase()).getByCode(sanitized);
-
-    if (!certificate) {
-      Sentry.captureMessage('Certificate not found', {
-        level: 'info',
-        extra: { code: sanitized, ip },
-      });
-      return {
-        success: false,
-        error: 'لم يتم العثور على شهادة بهذا الرمز أو أن الرمز غير صالح.',
-      };
-    }
-
-    Sentry.captureMessage('Certificate verified successfully', {
-      level: 'info',
-      extra: { code: sanitized, student: certificate.student_name, ip },
-    });
-
-    return { success: true, certificate };
-  } catch (e) {
-    console.error('[verifyCertificateByCode] Unexpected error:', e);
-    Sentry.captureException(e, {
-      extra: { code, ip, source: 'verifyCertificateByCode' },
-    });
-    return {
-      success: false,
-      error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
-    };
+function getDefaultVerifier() {
+  if (!defaultVerifier) {
+    defaultVerifier = createDefaultCertificateVerifier();
   }
+  return defaultVerifier;
+}
+
+/** Backwards-compatible export kept for server actions. */
+export function verifyCertificateByCode(code: string, ip: string): Promise<VerifyResult> {
+  return getDefaultVerifier().verifyCertificateByCode(code, ip);
 }

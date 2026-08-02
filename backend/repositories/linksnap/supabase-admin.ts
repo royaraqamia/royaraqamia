@@ -52,14 +52,10 @@ export class SupabaseAdminRepository implements IAdminRepository {
       throw new Error(`Failed to retrieve master links: ${linksErr.message}`);
     }
 
-    const links = (rawLinks || []).map((lnk: any) => {
+    const links = (rawLinks || []).map((lnk) => {
       const countData = lnk.analytics_events;
-      let clickCount = 0;
-      if (Array.isArray(countData) && countData.length > 0) {
-        clickCount = countData[0].count || 0;
-      } else if (countData && typeof countData === 'object') {
-        clickCount = (countData as any).count || 0;
-      }
+      const clickCount =
+        Array.isArray(countData) && countData.length > 0 ? countData[0]?.count || 0 : 0;
 
       return {
         code: lnk.code || '',

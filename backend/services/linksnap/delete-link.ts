@@ -1,6 +1,6 @@
 import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
 
-export class DeleteLinkUseCase {
+export class DeleteLinkService {
   constructor(private shortLinkRepository: IShortLinkRepository) {}
 
   async execute(code: string, userId: string): Promise<boolean> {

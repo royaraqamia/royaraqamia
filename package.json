@@ -1,7 +1,7 @@
 {
   "name": "رؤية رقمية",
   "version": "1.0.0",
-  "description": "نبني مواقع إلكترونيَّة وتطبيقات بكود نظيف، قابل للصِّيانة والتَّوسُّع؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.",
+  "description": "نبني مواقع وتطبيقات برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.",
   "author": "م. أيْهَم العَلي",
   "license": "UNLICENSED",
   "private": true,
@@ -20,7 +20,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "npx playwright test",
-    "icons": "node scripts/generate-icons.mjs"
+    "icons": "node scripts/generate-icons.mjs",
+    "check:env-docs": "node scripts/check-env-docs.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -99,7 +100,8 @@
   },
   "overrides": {
     "postcss": ">=8.5.10",
-    "sharp": ">=0.35.3"
+    "sharp": ">=0.35.3",
+    "brace-expansion": ">=1.1.17"
   },
   "devDependencies": {
     "@axe-core/react": "^4.12.1",

@@ -34,7 +34,7 @@ const certificateSchema = z
 
 export type AdminCertificate = Certificate;
 
-export interface AdminActionResult {
+interface AdminActionResult {
   success: boolean;
   data?: AdminCertificate;
   error?: string;

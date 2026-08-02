@@ -11,10 +11,10 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/frontend/ui/ui/button';
+import { Input } from '@/frontend/ui/ui/input';
+import { Label } from '@/frontend/ui/ui/label';
+import { Textarea } from '@/frontend/ui/ui/textarea';
 import {
   Dialog,
   DialogContent,
@@ -22,7 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@/frontend/ui/ui/dialog';
 import {
   Settings,
   Upload,

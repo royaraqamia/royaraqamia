@@ -24,14 +24,6 @@ export const ResetPasswordSchema = z.object({
   email: z.string().email('البريد الإلكتروني غير صحيح'),
 });
 
-export const ResendOtpSchema = z.object({
-  email: z.string().email('البريد الإلكتروني غير صحيح'),
-});
-
-export const ResetSchema = z.object({
-  email: z.string().email('البريد الإلكتروني غير صحيح'),
-});
-
 export const UpdatePasswordSchema = z.object({
   password: z
     .string()
@@ -40,9 +32,3 @@ export const UpdatePasswordSchema = z.object({
     .regex(/[0-9]/, 'كلمة المرور يجب أن تحتوي على رقم')
     .regex(/[^A-Za-z0-9]/, 'كلمة المرور يجب أن تحتوي على رمز خاص'),
 });
-
-export type LoginInput = z.infer<typeof LoginSchema>;
-export type SignupInput = z.infer<typeof SignupSchema>;
-export type OtpInput = z.infer<typeof OtpSchema>;
-export type ResetPasswordInput = z.infer<typeof ResetPasswordSchema>;
-export type UpdatePasswordInput = z.infer<typeof UpdatePasswordSchema>;

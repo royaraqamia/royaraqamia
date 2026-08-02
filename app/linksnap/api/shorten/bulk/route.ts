@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
-import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
-import { BulkShortenUseCase } from '@/backend/usecases/linksnap/bulk-shorten';
+import { createBulkShortenService } from '@/backend/config/linksnap';
 import { checkRateLimitApi } from '@/backend/shared/with-rate-limit';
 
 export async function POST(req: NextRequest) {
@@ -14,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const rateLimitResponse = checkRateLimitApi({
+    const rateLimitResponse = await checkRateLimitApi({
       key: `bulk-shorten:${user.id}`,
       limit: 10,
       windowMs: 10 * 60 * 1000,
@@ -32,10 +31,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const shortLinkRepo = new SupabaseShortLinkRepository();
-    const bulkUseCase = new BulkShortenUseCase(shortLinkRepo);
+    const bulkService = createBulkShortenService();
 
-    const results = await bulkUseCase.execute(urls, user.id);
+    const results = await bulkService.execute(urls, user.id);
 
     return NextResponse.json({
       success: true,

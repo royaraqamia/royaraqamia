@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
-import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
-import { ShortenUrlUseCase } from '@/backend/usecases/linksnap/shorten-url';
+import { createShortenUrlService } from '@/backend/config/linksnap';
 import { checkRateLimitApi } from '@/backend/shared/with-rate-limit';
 import { getClientIp } from '@/backend/shared/request-utils';
 import { getErrorMessage } from '@/backend/shared/error-utils';
@@ -20,7 +19,7 @@ export async function POST(req: NextRequest) {
     const message = userId
       ? 'تم تجاوز حد الطلب: الحسابات الموثقة محدودة بـ 50 رابطًا كل 10 دقائق لمنع إساءة استخدام النظام.'
       : 'تم تجاوز حد الطلب: إنشاء الروابط للمستخدمين المجهولين محدود بـ 5 روابط كل 10 دقائق. يرجى تسجيل الدخول أو إنشاء حساب للحدود الأعلى.';
-    const rateLimitResponse = checkRateLimitApi({
+    const rateLimitResponse = await checkRateLimitApi({
       key: rateLimitKey,
       limit,
       windowMs: 10 * 60 * 1000,
@@ -28,10 +27,9 @@ export async function POST(req: NextRequest) {
     });
     if (rateLimitResponse) return rateLimitResponse;
 
-    const repository = new SupabaseShortLinkRepository();
-    const useCase = new ShortenUrlUseCase(repository);
+    const service = createShortenUrlService();
 
-    const newLink = await useCase.execute(originalUrl, userId, customCode);
+    const newLink = await service.execute(originalUrl, userId, customCode);
 
     return NextResponse.json({
       success: true,

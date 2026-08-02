@@ -4,8 +4,8 @@ import { Check, Flame, Edit3 } from 'lucide-react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { HabitService } from '@/shared/habitflow/habit-service';
 import { getIconComponent, getIconColorClass } from '@/frontend/habitflow/shared/habit-icons';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card } from '@/frontend/ui/ui/card';
+import { Button } from '@/frontend/ui/ui/button';
 
 interface HabitCardProps {
   habit: Habit;

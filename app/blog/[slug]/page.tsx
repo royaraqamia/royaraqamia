@@ -2,20 +2,19 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { cookies } from 'next/headers';
+import { isValidElement } from 'react';
 import { createClient } from '@/backend/transport/supabase/server';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/frontend/ui/ui/button';
 import { ArrowRight, Clock, Calendar, BookOpen, User, ChevronLeft } from 'lucide-react';
 import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { estimateReadingTime, formatReadingTimeLong } from '@/backend/shared/reading-time';
-import {
-  createPostsRepository,
-} from '@/backend/repositories/blogpress/posts';
+import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
 import type { Metadata } from 'next';
 
 export const revalidate = 60;
@@ -40,8 +39,8 @@ function flattenText(node: React.ReactNode): string {
   if (typeof node === 'string') return node;
   if (typeof node === 'number') return String(node);
   if (Array.isArray(node)) return node.map(flattenText).join('');
-  if (node && typeof node === 'object' && 'props' in node) {
-    return flattenText((node as any).props.children);
+  if (isValidElement(node)) {
+    return flattenText((node.props as { children?: React.ReactNode }).children);
   }
   return '';
 }
@@ -102,7 +101,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
   const hasHeadings = headings.length > 0;
 
   const markdownComponents = {
-    h2: (props: any) => {
+    h2: (props: React.ComponentPropsWithoutRef<'h2'>) => {
       const children: React.ReactNode = props.children;
       return (
         <h2
@@ -119,7 +118,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
         </h2>
       );
     },
-    h3: (props: any) => {
+    h3: (props: React.ComponentPropsWithoutRef<'h3'>) => {
       const children: React.ReactNode = props.children;
       return (
         <h3

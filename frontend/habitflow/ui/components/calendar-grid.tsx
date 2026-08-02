@@ -2,7 +2,7 @@
 
 import { useReducedMotion } from 'motion/react';
 import { HabitLog } from '@/shared/contracts/habitflow';
-import { Card } from '@/components/ui/card';
+import { Card } from '@/frontend/ui/ui/card';
 import { CalendarDays } from 'lucide-react';
 
 interface CalendarGridProps {

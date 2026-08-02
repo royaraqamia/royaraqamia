@@ -1,7 +1,7 @@
 import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 
-export class ListLinksUseCase {
+export class ListLinksService {
   constructor(private shortLinkRepository: IShortLinkRepository) {}
 
   async execute(userId: string): Promise<ShortLink[]> {

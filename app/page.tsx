@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { SITE_DESCRIPTION } from '@/frontend/shared/metadata';
-import { Navbar } from '../components/Navbar';
-import { HomePageContent } from '../components/HomePageContent';
-import { Footer } from '../components/Footer';
+import { Navbar } from '../frontend/ui/Navbar';
+import { HomePageContent } from '../frontend/ui/HomePageContent';
+import { Footer } from '../frontend/ui/Footer';
 
 export const metadata: Metadata = {
   description: SITE_DESCRIPTION,

@@ -11,19 +11,19 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { ErrorBoundary } from '@/components/shared/error-boundary';
+import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { logout } from '@/backend/actions/auth';
 import { useDashboard } from '@/frontend/habitflow/state/use-dashboard';
-import { useSession } from '@/components/shared/session-provider';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { useSession } from '@/frontend/ui/shared/session-provider';
+import { Button } from '@/frontend/ui/ui/button';
+import { Card } from '@/frontend/ui/ui/card';
 import { StatsCard } from '@/frontend/habitflow/ui/components/stats-card';
 import { HabitCard } from '@/frontend/habitflow/ui/components/habit-card';
 import { CalendarGrid } from '@/frontend/habitflow/ui/components/calendar-grid';
 import { AddHabitModal } from '@/frontend/habitflow/ui/components/add-habit-modal';
 import { EditHabitModal } from '@/frontend/habitflow/ui/components/edit-habit-modal';
-import { ConfirmDialog } from '@/components/shared/confirm-dialog';
+import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 interface DashboardShellProps {
   initialHabits: Habit[];

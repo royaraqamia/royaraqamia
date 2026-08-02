@@ -19,14 +19,14 @@ import {
   ExternalLink,
   Clock,
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/frontend/ui/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from '@/frontend/ui/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -34,7 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from '@/frontend/ui/ui/dialog';
 import {
   deletePost,
   unpublishPost,

@@ -1,9 +1,9 @@
 'use client';
 
-import { Hero } from '@/components/blogpress-landing/Hero';
-import { FeaturesBento } from '@/components/blogpress-landing/FeaturesBento';
-import { HowItWorks } from '@/components/blogpress-landing/HowItWorks';
-import { BottomCTA } from '@/components/blogpress-landing/BottomCTA';
+import { Hero } from '@/frontend/ui/blogpress-landing/Hero';
+import { FeaturesBento } from '@/frontend/ui/blogpress-landing/FeaturesBento';
+import { HowItWorks } from '@/frontend/ui/blogpress-landing/HowItWorks';
+import { BottomCTA } from '@/frontend/ui/blogpress-landing/BottomCTA';
 
 export default function BlogPressLandingPage() {
   return (

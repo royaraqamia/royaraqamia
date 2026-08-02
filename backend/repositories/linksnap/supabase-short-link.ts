@@ -1,6 +1,6 @@
 import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
-import { createClient } from '@/frontend/transport/supabase/client';
+import { getPublicSupabase } from '@/backend/transport/supabase/public';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 
 // Database row interface matching public.short_links in supabase_schema.sql
@@ -37,7 +37,7 @@ export class SupabaseShortLinkRepository implements IShortLinkRepository {
   }
 
   async findByCode(code: string): Promise<ShortLink | null> {
-    const supabase = createClient();
+    const supabase = getPublicSupabase();
     const { data, error } = await supabase
       .from('short_links')
       .select('*')
@@ -128,7 +128,7 @@ export class SupabaseShortLinkRepository implements IShortLinkRepository {
   }
 
   async exists(code: string): Promise<boolean> {
-    const supabase = createClient();
+    const supabase = getPublicSupabase();
     const { count, error } = await supabase
       .from('short_links')
       .select('*', { count: 'exact', head: true })

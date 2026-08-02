@@ -11,7 +11,7 @@ interface BulkShortenResult {
   error?: string;
 }
 
-export class BulkShortenUseCase {
+export class BulkShortenService {
   constructor(private shortLinkRepository: IShortLinkRepository) {}
 
   /**

@@ -1,18 +1,11 @@
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { createClient } from '@/backend/transport/supabase/server';
-import { ThemeProvider } from '@/components/linksnap/theme-provider';
-import { ProgressBar } from '@/components/linksnap/progress-bar';
+import { requireAuth } from '@/backend/transport/auth-guard';
+import { ThemeProvider } from '@/frontend/ui/linksnap/theme-provider';
+import { ProgressBar } from '@/frontend/ui/linksnap/progress-bar';
 import { Toaster } from 'sonner';
-import { Navbar } from '@/components/Navbar';
+import { Navbar } from '@/frontend/ui/Navbar';
 
 export default async function LinkSnapAppLayout({ children }: { children: React.ReactNode }) {
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect('/auth/login?redirect=/linksnap');
+  await requireAuth('/auth/login?redirect=/linksnap');
 
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col">

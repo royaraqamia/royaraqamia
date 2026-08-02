@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { SkipToContent } from '@/components/SkipToContent';
+import { Navbar } from '@/frontend/ui/Navbar';
+import { Footer } from '@/frontend/ui/Footer';
+import { SkipToContent } from '@/frontend/ui/SkipToContent';
 
 export const metadata: Metadata = {
   title: {

@@ -8,8 +8,8 @@ interface RateLimitConfig {
   message: string;
 }
 
-export function checkRateLimitApi(config: RateLimitConfig): NextResponse | null {
-  if (!checkRateLimit(config.key, config.limit, config.windowMs)) {
+export async function checkRateLimitApi(config: RateLimitConfig): Promise<NextResponse | null> {
+  if (!(await checkRateLimit(config.key, config.limit, config.windowMs))) {
     return NextResponse.json({ success: false, error: config.message }, { status: 429 });
   }
   return null;

@@ -1,7 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/frontend/ui/ui/button';
 import { Plus, Loader2 } from 'lucide-react';
 import { createPost } from '@/backend/actions/blogpress/posts';
 

@@ -2,21 +2,21 @@ import type { Metadata } from 'next';
 import './global.css';
 import './dark-theme-override.css';
 import { Toaster } from 'sonner';
-import { ErrorBoundary } from '../components/ErrorBoundary';
-import { MotionProvider } from '../components/MotionProvider';
-import { UIProvider } from '../context/UIContext';
-import { NotificationProvider } from '../context/NotificationContext';
-import { SessionProvider } from '../components/shared/session-provider';
+import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
+import { MotionProvider } from '../frontend/ui/MotionProvider';
+import { UIProvider } from '../frontend/state/UIContext';
+import { NotificationProvider } from '../frontend/state/NotificationContext';
+import { SessionProvider } from '../frontend/ui/shared/session-provider';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
-import { AccessibilityCheck } from '../components/AccessibilityCheck';
-import { VersionChecker } from '../components/VersionChecker';
-import { PWAProvider } from '../components/PWAProvider';
-import { GoUpButton } from '../components/GoUpButton';
-import { WhatsAppFloat } from '../components/WhatsAppFloat';
+import { AccessibilityCheck } from '../frontend/ui/AccessibilityCheck';
+import { VersionChecker } from '../frontend/ui/VersionChecker';
+import { PWAProvider } from '../frontend/ui/PWAProvider';
+import { GoUpButton } from '../frontend/ui/GoUpButton';
+import { WhatsAppFloat } from '../frontend/ui/WhatsAppFloat';
 import { SITE_NAME } from '@/frontend/shared/metadata';
 import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
-import { RouteChangeFocus } from '@/components/RouteChangeFocus';
+import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
 
 export const metadata: Metadata = {
   title: {

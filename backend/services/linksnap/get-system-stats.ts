@@ -3,7 +3,7 @@ import { AdminValidator } from '@/shared/admin-validator';
 
 type SystemStatsReport = SystemStatsReportData;
 
-export class GetSystemStatsUseCase {
+export class GetSystemStatsService {
   constructor(private adminRepository: IAdminRepository) {}
 
   /**

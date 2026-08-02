@@ -19,7 +19,11 @@ export interface CertificateUpdateInput {
 
 export interface ICertificatesRepository {
   getByCode(code: string): Promise<Certificate | null>;
-  list(page: number, pageSize: number, search: string): Promise<{ data: Certificate[]; total: number }>;
+  list(
+    page: number,
+    pageSize: number,
+    search: string
+  ): Promise<{ data: Certificate[]; total: number }>;
   getById(id: string): Promise<Certificate | null>;
   create(input: CertificateCreateInput): Promise<Certificate>;
   update(id: string, input: CertificateUpdateInput): Promise<Certificate>;

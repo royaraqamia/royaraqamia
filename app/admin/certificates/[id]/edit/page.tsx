@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { getCertificateById, updateCertificate } from '@/backend/actions/certificates/admin';
 import type { AdminCertificate } from '@/backend/actions/certificates/admin';
-import { CertificateForm } from '@/components/admin/certificate-form';
+import { CertificateForm } from '@/frontend/ui/admin/certificate-form';
 import { Loader2 } from 'lucide-react';
 
 export default function EditCertificatePage({ params }: { params: Promise<{ id: string }> }) {

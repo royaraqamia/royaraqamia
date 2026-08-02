@@ -2,7 +2,7 @@ import { IShortLinkRepository } from '@/backend/ports/linksnap/short-link-reposi
 import { IAnalyticsRepository } from '@/backend/ports/linksnap/analytics-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 
-export class RedirectUrlUseCase {
+export class RedirectUrlService {
   constructor(
     private shortLinkRepository: IShortLinkRepository,
     private analyticsRepository: IAnalyticsRepository

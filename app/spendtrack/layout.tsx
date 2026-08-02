@@ -1,6 +1,6 @@
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { SkipToContent } from '@/components/SkipToContent';
+import { Navbar } from '@/frontend/ui/Navbar';
+import { Footer } from '@/frontend/ui/Footer';
+import { SkipToContent } from '@/frontend/ui/SkipToContent';
 
 export default function SpendTrackLayout({ children }: { children: React.ReactNode }) {
   return (

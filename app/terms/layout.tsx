@@ -1,5 +1,5 @@
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
+import { Navbar } from '@/frontend/ui/Navbar';
+import { Footer } from '@/frontend/ui/Footer';
 
 export default function TermsLayout({ children }: { children: React.ReactNode }) {
   return (

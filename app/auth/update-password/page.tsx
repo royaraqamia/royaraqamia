@@ -5,10 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { WarningCircle } from '@phosphor-icons/react';
 import { updatePassword } from '@/backend/actions/auth';
-import { Button } from '@/components/ui/button';
-import { PasswordInput } from '@/components/auth/PasswordInput';
-import { PasswordStrength } from '@/components/auth/PasswordStrength';
-import { AuthCard } from '@/components/auth/AuthCard';
+import { Button } from '@/frontend/ui/ui/button';
+import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
+import { PasswordStrength } from '@/frontend/ui/auth/PasswordStrength';
+import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 
 export default function UpdatePasswordPage() {
   const searchParams = useSearchParams();

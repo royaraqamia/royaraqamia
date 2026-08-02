@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/backend/transport/auth-helper';
-import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
-import { ModerateLinkUseCase } from '@/backend/usecases/linksnap/moderate-link';
+import { createModerateLinkService } from '@/backend/config/linksnap';
 
 export async function POST(req: NextRequest) {
   try {
@@ -22,9 +21,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const shortLinkRepo = new SupabaseShortLinkRepository();
-    const useCase = new ModerateLinkUseCase(shortLinkRepo);
-    const updatedLink = await useCase.execute(user.email, code, isBlocked);
+    const service = createModerateLinkService();
+    const updatedLink = await service.execute(user.email, code, isBlocked);
 
     return NextResponse.json({
       success: true,

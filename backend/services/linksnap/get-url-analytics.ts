@@ -1,7 +1,7 @@
 import { IAnalyticsRepository } from '@/backend/ports/linksnap/analytics-repository';
 import { LinkAnalyticsSummary } from '@/shared/contracts/linksnap';
 
-export class GetUrlAnalyticsUseCase {
+export class GetUrlAnalyticsService {
   constructor(private analyticsRepository: IAnalyticsRepository) {}
 
   async execute(code: string, userId: string): Promise<LinkAnalyticsSummary> {
