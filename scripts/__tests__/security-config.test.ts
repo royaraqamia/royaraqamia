@@ -69,4 +69,13 @@ describe('security configuration', () => {
     }
     expect(env).toContain('SUPABASE_SERVICE_ROLE_KEY=');
   });
+
+  it('typescript.ignoreBuildErrors is only tolerated with a documented compensating control', () => {
+    const config = read('next.config.js');
+    const policy = read('SECURITY.md');
+    if (config.includes('ignoreBuildErrors: true')) {
+      expect(policy).toContain('Known limitation: TypeScript 7 native preview');
+      expect(policy).toMatch(/`tsc --noEmit`/);
+    }
+  });
 });

@@ -193,7 +193,16 @@ export function Footer() {
               href="/terms"
               className="hover:text-primary transition-colors cursor-pointer rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
             >
-              الشُّروط
+              الشُّروط
+            </Link>
+            <span className="text-border/60 select-none" aria-hidden="true">
+              |
+            </span>
+            <Link
+              href="/security"
+              className="hover:text-primary transition-colors cursor-pointer rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
+            >
+              الأمان
             </Link>
           </nav>
         </div>

@@ -49,6 +49,11 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     changeFrequency: 'yearly',
     priority: 0.3,
   },
+  {
+    path: '/security',
+    changeFrequency: 'yearly',
+    priority: 0.3,
+  },
 ];
 
 function getBaseUrl(): string {
