@@ -3,8 +3,6 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/backend/transport/supabase/server';
 import { createBlogpressPostsService } from '@/backend/config/blogpress';
 import { PostSchema } from '@/shared/contracts/blog';
-import { AdminValidator } from '@/shared/admin-validator';
-import { env } from '@/backend/config/env';
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
@@ -24,13 +22,11 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
       return NextResponse.json({ errors: validated.error.flatten().fieldErrors });
     }
 
-    const blogVisible = AdminValidator.isAdmin(user.email ?? '', env.adminEmails);
-
     const { slug } = await createBlogpressPostsService(supabase).saveAndPublishPost(
       id,
       user.id,
       validated.data,
-      blogVisible
+      user.email ?? ''
     );
 
     revalidatePath('/blogpress');

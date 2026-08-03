@@ -4,11 +4,12 @@ import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
 import { createMediaRepository } from '@/backend/repositories/blogpress/supabase-media';
 import { BlogpressPostsService } from '@/backend/services/blogpress/posts-service';
 import { BlogpressMediaService } from '@/backend/services/blogpress/media-service';
+import { env } from '@/backend/config/env';
 
 export function createBlogpressPostsService(
   supabase: SupabaseClient<Database>
 ): BlogpressPostsService {
-  return new BlogpressPostsService(createPostsRepository(supabase));
+  return new BlogpressPostsService(createPostsRepository(supabase), env.adminEmails);
 }
 
 export function createBlogpressMediaService(

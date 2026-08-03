@@ -36,7 +36,7 @@ function makeRepo(overrides: Partial<IPostsRepository> = {}) {
     deletePost: vi.fn(),
     ...overrides,
   };
-  return { repository, service: new BlogpressPostsService(repository) };
+  return { repository, service: new BlogpressPostsService(repository, ['admin@example.com']) };
 }
 
 const postData = { title: 'مقال', slug: 'post-1' };
@@ -114,15 +114,24 @@ describe('BlogpressPostsService (thin delegation)', () => {
     expect(repository.updatePost).toHaveBeenCalledWith('p-1', 'u-1', postData);
   });
 
-  it('delegates saveAndPublishPost with the blog visible flag', async () => {
+  it('delegates saveAndPublishPost with blog visibility for an admin', async () => {
     const { repository, service } = makeRepo();
     (repository.saveAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
       slug: 'post-1',
     });
-    await expect(service.saveAndPublishPost('p-1', 'u-1', postData, true)).resolves.toEqual({
+    await expect(
+      service.saveAndPublishPost('p-1', 'u-1', postData, 'admin@example.com')
+    ).resolves.toEqual({ slug: 'post-1' });
+    expect(repository.saveAndPublishPost).toHaveBeenCalledWith('p-1', 'u-1', postData, true);
+  });
+
+  it('delegates saveAndPublishPost with blog visibility hidden for a non-admin', async () => {
+    const { repository, service } = makeRepo();
+    (repository.saveAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
       slug: 'post-1',
     });
-    expect(repository.saveAndPublishPost).toHaveBeenCalledWith('p-1', 'u-1', postData, true);
+    await service.saveAndPublishPost('p-1', 'u-1', postData, 'user@example.com');
+    expect(repository.saveAndPublishPost).toHaveBeenCalledWith('p-1', 'u-1', postData, false);
   });
 
   it('delegates publishPost / unpublishPost / deletePost', async () => {
@@ -131,7 +140,10 @@ describe('BlogpressPostsService (thin delegation)', () => {
     (repository.unpublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
     (repository.deletePost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
 
-    await expect(service.publishPost('p-1', 'u-1', false)).resolves.toEqual({ slug: 'post-1' });
+    await expect(service.publishPost('p-1', 'u-1', 'user@example.com')).resolves.toEqual({
+      slug: 'post-1',
+    });
+    expect(repository.publishPost).toHaveBeenCalledWith('p-1', 'u-1', false);
     await expect(service.unpublishPost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
     await expect(service.deletePost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
   });

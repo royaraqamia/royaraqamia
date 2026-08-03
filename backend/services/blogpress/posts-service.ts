@@ -5,9 +5,13 @@ import type {
 } from '@/backend/repositories/blogpress/posts-repository';
 import type { Post } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
+import { AdminValidator } from '@/shared/admin-validator';
 
 export class BlogpressPostsService {
-  constructor(private readonly repository: IPostsRepository) {}
+  constructor(
+    private readonly repository: IPostsRepository,
+    private readonly adminEmails: string[]
+  ) {}
 
   async getPublishedPosts(
     page: number,
@@ -53,16 +57,18 @@ export class BlogpressPostsService {
     postId: string,
     authorId: string,
     data: PostInput,
-    blogVisible: boolean
+    authorEmail: string
   ): Promise<{ slug: string }> {
+    const blogVisible = AdminValidator.isAdmin(authorEmail, this.adminEmails);
     return this.repository.saveAndPublishPost(postId, authorId, data, blogVisible);
   }
 
   async publishPost(
     postId: string,
     authorId: string,
-    blogVisible: boolean
+    authorEmail: string
   ): Promise<{ slug: string }> {
+    const blogVisible = AdminValidator.isAdmin(authorEmail, this.adminEmails);
     return this.repository.publishPost(postId, authorId, blogVisible);
   }
 
