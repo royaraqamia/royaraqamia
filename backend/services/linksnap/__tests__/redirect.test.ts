@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { RedirectUrlService } from '@/backend/services/linksnap/redirect-url';
+import {
+  RedirectUrlService,
+  isReservedShortCode,
+  ShortLinkRedirectError,
+} from '@/backend/services/linksnap/redirect-url';
 import { GetUrlAnalyticsService } from '@/backend/services/linksnap/get-url-analytics';
 import type { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import type { IAnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
@@ -39,6 +43,20 @@ function makeDeps() {
   };
   return { shortLinkRepository, analyticsRepository };
 }
+
+describe('isReservedShortCode', () => {
+  it('rejects reserved codes', () => {
+    expect(isReservedShortCode('_private')).toBe(true);
+    expect(isReservedShortCode('has.dot')).toBe(true);
+    expect(isReservedShortCode('api')).toBe(true);
+    expect(isReservedShortCode('favicon.ico')).toBe(true);
+  });
+
+  it('allows normal short codes', () => {
+    expect(isReservedShortCode('abc123')).toBe(false);
+    expect(isReservedShortCode('xyZ')).toBe(false);
+  });
+});
 
 describe('RedirectUrlService.execute', () => {
   it('returns the original URL and records analytics for a valid link', async () => {
@@ -87,6 +105,9 @@ describe('RedirectUrlService.execute', () => {
 
     await expect(
       service.execute('missing', { referrer: null, userAgent: null, ipCountry: null })
+    ).rejects.toThrow(ShortLinkRedirectError);
+    await expect(
+      service.execute('missing', { referrer: null, userAgent: null, ipCountry: null })
     ).rejects.toThrow('Short link not found.');
     expect(analyticsRepository.recordClick).not.toHaveBeenCalled();
   });
@@ -100,6 +121,9 @@ describe('RedirectUrlService.execute', () => {
 
     const service = new RedirectUrlService(shortLinkRepository, analyticsRepository);
 
+    await expect(
+      service.execute('abc123', { referrer: null, userAgent: null, ipCountry: null })
+    ).rejects.toThrow(ShortLinkRedirectError);
     await expect(
       service.execute('abc123', { referrer: null, userAgent: null, ipCountry: null })
     ).rejects.toThrow('This link has been deactivated due to terms of service violations.');

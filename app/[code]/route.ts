@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRedirectUrlService } from '@/backend/config/linksnap';
+import {
+  isReservedShortCode,
+  ShortLinkRedirectError,
+} from '@/backend/services/linksnap/redirect-url';
 import { env } from '@/backend/config/env';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ code: string }> }) {
   const { code } = await context.params;
 
-  if (code.startsWith('_') || code.includes('.') || code === 'api' || code === 'favicon.ico') {
+  if (isReservedShortCode(code)) {
     return new NextResponse(null, { status: 404 });
   }
 
@@ -29,7 +33,8 @@ export async function GET(req: NextRequest, context: { params: Promise<{ code: s
     console.error(`Redirect failed for code [${code}]:`, errorMessage);
 
     const baseUrl = env.appUrl || new URL(req.url).origin;
-    const errorCode = errorMessage.includes('deactivated') ? 'blocked' : 'not-found';
+    const errorCode =
+      err instanceof ShortLinkRedirectError && err.kind === 'blocked' ? 'blocked' : 'not-found';
     return NextResponse.redirect(`${baseUrl}/linksnap?error=${errorCode}&code=${code}`, 302);
   }
 }
