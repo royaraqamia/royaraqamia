@@ -1,7 +1,7 @@
 'use client';
 
 import { Link2, BarChart3, Shield } from 'lucide-react';
-import { useAnimatedCounter } from '@/frontend/shared/use-animated-counter';
+import { useAnimatedCounter } from '@/frontend/state/use-animated-counter';
 
 interface AdminStatsCardsProps {
   totalLinks: number;
