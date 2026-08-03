@@ -1,7 +1,26 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/backend/models/database.types';
 import type { INotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
-import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
+import type {
+  Notification,
+  NotificationCreateInput,
+} from '@/shared/contracts/notifications';
+
+type NotificationRow = Database['public']['Tables']['notifications']['Row'];
+
+function toNotification(row: NotificationRow): Notification {
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    type: row.type as Notification['type'],
+    title: row.title,
+    body: row.body,
+    metadata: (row.metadata ?? {}) as Record<string, unknown>,
+    is_read: row.is_read,
+    created_at: row.created_at,
+    read_at: row.read_at,
+  };
+}
 
 export function createSupabaseNotificationRepository(
   supabase: SupabaseClient<Database>
@@ -15,7 +34,7 @@ export function createSupabaseNotificationRepository(
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1);
 
-      return (data ?? []) as unknown as Notification[];
+      return (data ?? []).map(toNotification);
     },
 
     async findUnreadCount(userId: string) {
@@ -41,7 +60,7 @@ export function createSupabaseNotificationRepository(
         .select()
         .single();
 
-      return data as unknown as Notification;
+      return data ? toNotification(data) : null;
     },
 
     async markAsRead(id: string, userId: string) {

@@ -23,7 +23,7 @@ export class NotificationService {
     return this.repo.findUnreadCount(userId);
   }
 
-  async create(input: NotificationCreateInput): Promise<Notification> {
+  async create(input: NotificationCreateInput): Promise<Notification | null> {
     const rateKey = `notify:${input.user_id}`;
     if (!(await this.checkRateLimit(rateKey, 100, 3600_000))) {
       throw new Error('تم تجاوز الحد الأقصى للإشعارات في الساعة');
