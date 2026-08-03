@@ -6,6 +6,49 @@ import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { SectionHeading } from '@/frontend/ui/landing-shared/SectionHeading';
 import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
 
+const bentoCardTheme = {
+  as: 'article' as const,
+  initialY: 30,
+  viewportMargin: '-60px',
+  duration: 0.6,
+  cardClassName:
+    'group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-border/80 hover:shadow-2xl hover:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2',
+  topDecor: (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent opacity-50 transition-opacity duration-500 group-hover:opacity-100"
+    />
+  ),
+  flatContent: true,
+  contentClassName: 'relative z-10 flex h-full flex-col',
+  headerClassName: 'mb-4 flex items-center gap-4',
+  iconBoxClassName:
+    'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-105 group-hover:bg-primary/15',
+  iconClassName: 'text-primary transition-transform duration-300 group-hover:rotate-3',
+  iconSize: 24,
+  titleWrapperClassName: 'block',
+  titleClassName:
+    'text-xl font-bold tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary',
+  descriptionClassName: 'mb-6 text-sm leading-relaxed text-muted-foreground sm:text-base',
+  childrenWrapperClassName: 'mt-auto w-full',
+  hoverOverlayClassName:
+    'pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700 group-hover:opacity-100',
+  hoverOverlayInnerClassName: 'absolute inset-0 transition-opacity duration-500',
+};
+
+function bentoCardProps(rgba: string) {
+  return {
+    ...bentoCardTheme,
+    backgroundStyle: (x: number, y: number) => ({
+      backgroundImage: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha(rgba, 0.15)}, transparent 70%)`,
+      backgroundColor: 'hsl(var(--card))',
+    }),
+    hoverStyle: (x: number, y: number) => ({
+      background: `radial-gradient(700px circle at ${x}% ${y}%, ${formatGradientAlpha(rgba, 0.08)}, transparent 65%)`,
+    }),
+  };
+}
+
 const expenseEntries = [
   {
     cat: 'طعام ومشروبات',
@@ -262,139 +305,34 @@ export function FeaturesBento() {
 
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <BentoCard
+            {...bentoCardProps('rgba(139,92,246,1)')}
             title="تسجيل المصروفات"
             description="سجِّل المصروفات بسرعة مع التَّصنيفات والوصف. لا تفقد أبدًا أين تذهب أموالك."
             icon={Receipt}
             className="md:col-span-2 lg:col-span-2 lg:row-span-2"
             delay={0.1}
-            as="article"
-            initialY={30}
-            viewportMargin="-60px"
-            duration={0.6}
-            cardClassName="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-border/80 hover:shadow-2xl hover:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2"
-            topDecor={
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent opacity-50 transition-opacity duration-500 group-hover:opacity-100"
-              />
-            }
-            backgroundStyle={(x, y) => ({
-              backgroundImage: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha(
-                'rgba(139,92,246,1)',
-                0.15
-              )}, transparent 70%)`,
-              backgroundColor: 'hsl(var(--card))',
-            })}
-            hoverStyle={(x, y) => ({
-              background: `radial-gradient(700px circle at ${x}% ${y}%, ${formatGradientAlpha(
-                'rgba(139,92,246,1)',
-                0.08
-              )}, transparent 65%)`,
-            })}
-            flatContent
-            contentClassName="relative z-10 flex h-full flex-col"
-            headerClassName="mb-4 flex items-center gap-4"
-            iconBoxClassName="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-105 group-hover:bg-primary/15"
-            iconClassName="text-primary transition-transform duration-300 group-hover:rotate-3"
-            iconSize={24}
-            titleWrapperClassName="block"
-            titleClassName="text-xl font-bold tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary"
-            descriptionClassName="mb-6 text-sm leading-relaxed text-muted-foreground sm:text-base"
-            childrenWrapperClassName="mt-auto w-full"
-            hoverOverlayClassName="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700 group-hover:opacity-100"
-            hoverOverlayInnerClassName="absolute inset-0 transition-opacity duration-500"
           >
             <ExpenseLogger />
           </BentoCard>
 
           <BentoCard
+            {...bentoCardProps('rgba(129,140,248,1)')}
             title="تحليل التَّصنيفات"
             description="صوِّر المصروفات حسب التَّصنيف بأشرطة مُلوَّنَة ونسب مئويَّة في لمحة."
             icon={ChartPieSlice}
             className="md:col-span-2 lg:col-span-2"
             delay={0.2}
-            as="article"
-            initialY={30}
-            viewportMargin="-60px"
-            duration={0.6}
-            cardClassName="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-border/80 hover:shadow-2xl hover:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2"
-            topDecor={
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent opacity-50 transition-opacity duration-500 group-hover:opacity-100"
-              />
-            }
-            backgroundStyle={(x, y) => ({
-              backgroundImage: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha(
-                'rgba(129,140,248,1)',
-                0.15
-              )}, transparent 70%)`,
-              backgroundColor: 'hsl(var(--card))',
-            })}
-            hoverStyle={(x, y) => ({
-              background: `radial-gradient(700px circle at ${x}% ${y}%, ${formatGradientAlpha(
-                'rgba(129,140,248,1)',
-                0.08
-              )}, transparent 65%)`,
-            })}
-            flatContent
-            contentClassName="relative z-10 flex h-full flex-col"
-            headerClassName="mb-4 flex items-center gap-4"
-            iconBoxClassName="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-105 group-hover:bg-primary/15"
-            iconClassName="text-primary transition-transform duration-300 group-hover:rotate-3"
-            iconSize={24}
-            titleWrapperClassName="block"
-            titleClassName="text-xl font-bold tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary"
-            descriptionClassName="mb-6 text-sm leading-relaxed text-muted-foreground sm:text-base"
-            childrenWrapperClassName="mt-auto w-full"
-            hoverOverlayClassName="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700 group-hover:opacity-100"
-            hoverOverlayInnerClassName="absolute inset-0 transition-opacity duration-500"
           >
             <CategoryChart />
           </BentoCard>
 
           <BentoCard
+            {...bentoCardProps('rgba(167,139,250,1)')}
             title="الاتِّجاهات الشَّهريَّة"
             description="تتبَّع أنماط إنفاقك بمرور الوقت من خلال رسوم بيانيَّة شهريَّة ورؤى مقارنة."
             icon={TrendUp}
             className="md:col-span-2 lg:col-span-2"
             delay={0.3}
-            as="article"
-            initialY={30}
-            viewportMargin="-60px"
-            duration={0.6}
-            cardClassName="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-border/80 hover:shadow-2xl hover:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2"
-            topDecor={
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent opacity-50 transition-opacity duration-500 group-hover:opacity-100"
-              />
-            }
-            backgroundStyle={(x, y) => ({
-              backgroundImage: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha(
-                'rgba(167,139,250,1)',
-                0.15
-              )}, transparent 70%)`,
-              backgroundColor: 'hsl(var(--card))',
-            })}
-            hoverStyle={(x, y) => ({
-              background: `radial-gradient(700px circle at ${x}% ${y}%, ${formatGradientAlpha(
-                'rgba(167,139,250,1)',
-                0.08
-              )}, transparent 65%)`,
-            })}
-            flatContent
-            contentClassName="relative z-10 flex h-full flex-col"
-            headerClassName="mb-4 flex items-center gap-4"
-            iconBoxClassName="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-105 group-hover:bg-primary/15"
-            iconClassName="text-primary transition-transform duration-300 group-hover:rotate-3"
-            iconSize={24}
-            titleWrapperClassName="block"
-            titleClassName="text-xl font-bold tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary"
-            descriptionClassName="mb-6 text-sm leading-relaxed text-muted-foreground sm:text-base"
-            childrenWrapperClassName="mt-auto w-full"
-            hoverOverlayClassName="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-700 group-hover:opacity-100"
-            hoverOverlayInnerClassName="absolute inset-0 transition-opacity duration-500"
           >
             <MonthlyTrend />
           </BentoCard>
