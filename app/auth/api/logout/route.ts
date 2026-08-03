@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/backend/transport/supabase/server';
-import { getAdminSupabase } from '@/backend/transport/supabase/admin';
-import { createAuthService } from '@/backend/config/auth';
-import { createSupabaseAuthGateway } from '@/backend/clients/supabase-auth-gateway';
+import { createServerAuthService } from '@/backend/config/auth';
 
 export async function POST() {
   try {
-    const service = createAuthService(
-      createSupabaseAuthGateway(await createClient(), getAdminSupabase())
-    );
+    const service = await createServerAuthService();
     await service.logout();
     return NextResponse.json({ success: true });
   } catch (error) {
