@@ -1,10 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/backend/models/database.types';
 import type { INotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
-import type {
-  Notification,
-  NotificationCreateInput,
-} from '@/shared/contracts/notifications';
+import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
 
 type NotificationRow = Database['public']['Tables']['notifications']['Row'];
 

@@ -60,12 +60,7 @@ async function TotalCard({
   catFilter: string[] | null;
 }) {
   const service = await loadSpendtrackService();
-  const data = await service.getTotalExpenses(
-    userId,
-    start,
-    end,
-    catFilter
-  );
+  const data = await service.getTotalExpenses(userId, start, end, catFilter);
   return (
     <Card
       className="group/card card-lift"
@@ -121,12 +116,7 @@ async function CategoryPieSection({
   catFilter: string[] | null;
 }) {
   const service = await loadSpendtrackService();
-  const data = await service.getCategoryBreakdown(
-    userId,
-    start,
-    end,
-    catFilter
-  );
+  const data = await service.getCategoryBreakdown(userId, start, end, catFilter);
   return <CategoryPieChart data={data ?? []} />;
 }
 
@@ -142,12 +132,7 @@ async function DailyBarSection({
   catFilter: string[] | null;
 }) {
   const service = await loadSpendtrackService();
-  const data = await service.getDailyTotals(
-    userId,
-    start,
-    end,
-    catFilter
-  );
+  const data = await service.getDailyTotals(userId, start, end, catFilter);
   return <DailyBarChart data={data ?? []} />;
 }
 
