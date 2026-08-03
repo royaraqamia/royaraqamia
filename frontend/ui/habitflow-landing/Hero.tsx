@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { ArrowLeft, CheckCircle, Fire } from '@phosphor-icons/react';
 import { Button } from '@/frontend/ui/ui/button';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
+import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
 import { useLandingCta } from '@/frontend/ui/landing-shared/useLandingCta';
 
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -21,24 +22,27 @@ export function Hero() {
   const { user, handleCTA } = useLandingCta('/habitflow/app', '/habitflow');
 
   return (
-    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0 selection:bg-primary/20 selection:text-primary">
-      {/* Ambient Grid Background Layer */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+    <HeroSection
+      sectionClassName="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0 selection:bg-primary/20 selection:text-primary"
+      decor={
+        <>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] pointer-events-none" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
-      {/* Layered Motion Ambient Light Orbs */}
-      <GlowOrb
-        className="opacity-60 select-none w-md h-112 sm:w-xl sm:h-144 bg-primary/20 top-1/4 -left-36 sm:-left-48 animate-pulse"
-        style={{ animationDuration: '8s' }}
-      />
-      <GlowOrb
-        className="opacity-60 select-none w-[24rem] h-96 sm:w-lg sm:h-128 bg-indigo-500/15 bottom-1/4 -right-36 sm:-right-40 animate-pulse"
-        style={{ animationDuration: '10s', animationDelay: '2s' }}
-      />
-      <GlowOrb className="opacity-60 select-none w-80 h-80 bg-purple-500/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <GlowOrb
+            className="opacity-60 select-none w-md h-112 sm:w-xl sm:h-144 bg-primary/20 top-1/4 -left-36 sm:-left-48 animate-pulse"
+            style={{ animationDuration: '8s' }}
+          />
+          <GlowOrb
+            className="opacity-60 select-none w-[24rem] h-96 sm:w-lg sm:h-128 bg-indigo-500/15 bottom-1/4 -right-36 sm:-right-40 animate-pulse"
+            style={{ animationDuration: '10s', animationDelay: '2s' }}
+          />
+          <GlowOrb className="opacity-60 select-none w-80 h-80 bg-purple-500/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        </>
+      }
+      containerClassName="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      gridClassName="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center"
+    >
           {/* Main Hero Typography & Action Controls */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -238,8 +242,6 @@ export function Hero() {
               </motion.div>
             </div>
           </motion.div>
-        </div>
-      </div>
-    </section>
+    </HeroSection>
   );
 }

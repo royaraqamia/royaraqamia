@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Link } from '@phosphor-icons/react';
 import { Button } from '@/frontend/ui/ui/button';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
+import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
 import { useLandingCta } from '@/frontend/ui/landing-shared/useLandingCta';
 
 const floatingIcons = [
@@ -17,20 +18,23 @@ export function Hero() {
   const { user, handleCTA } = useLandingCta('/linksnap/app', '/linksnap');
 
   return (
-    <section className="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0">
-      {/* Subtle Background Lighting & Grid Pattern */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.25),rgba(255,255,255,0))] pointer-events-none" />
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
+    <HeroSection
+      sectionClassName="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0"
+      decor={
+        <>
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.25),rgba(255,255,255,0))] pointer-events-none" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
-      {/* Layered Glow Orbs */}
-      <GlowOrb className="w-md h-112 bg-linear-to-br from-primary/30 to-indigo-500/20 top-1/4 -left-32 sm:-left-48 animate-pulse opacity-40 select-none transform-gpu" />
-      <GlowOrb
-        className="w-[24rem] h-96 bg-linear-to-tl from-purple-500/20 to-primary/20 bottom-1/4 -right-32 sm:-right-40 animate-pulse opacity-40 select-none transform-gpu"
-        style={{ animationDelay: '2s' }}
-      />
-
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <GlowOrb className="w-md h-112 bg-linear-to-br from-primary/30 to-indigo-500/20 top-1/4 -left-32 sm:-left-48 animate-pulse opacity-40 select-none transform-gpu" />
+          <GlowOrb
+            className="w-[24rem] h-96 bg-linear-to-tl from-purple-500/20 to-primary/20 bottom-1/4 -right-32 sm:-right-40 animate-pulse opacity-40 select-none transform-gpu"
+            style={{ animationDelay: '2s' }}
+          />
+        </>
+      }
+      containerClassName="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      gridClassName="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center"
+    >
           {/* Main Hero Copy Container */}
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -242,8 +246,6 @@ export function Hero() {
               ))}
             </div>
           </motion.div>
-        </div>
-      </div>
-    </section>
+    </HeroSection>
   );
 }
