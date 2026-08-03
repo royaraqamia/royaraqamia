@@ -1,8 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getLocalHabitRepository } from '@/backend/config/habitflow';
+import { NextRequest } from 'next/server';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { getLocalData } from '@/backend/controllers/habitflow';
 
 export async function GET(_req: NextRequest) {
-  const repository = getLocalHabitRepository();
-  const { habits, logs } = await repository.getLocalData();
-  return NextResponse.json({ habits, logs, count: habits.length });
+  return toNextResponse(await getLocalData());
 }

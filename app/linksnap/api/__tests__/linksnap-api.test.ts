@@ -291,6 +291,7 @@ describe('DELETE /linksnap/api/links', () => {
   it('returns 400 when the code query param is missing', async () => {
     const res = await linksDELETE({
       url: 'http://localhost/linksnap/api/links',
+      headers: new Headers(),
     } as unknown as NextRequest);
     expect(res.status).toBe(400);
     expect(readBody<{ error: string }>(res).error).toBe('رمز الرابط مطلوب.');
@@ -298,7 +299,7 @@ describe('DELETE /linksnap/api/links', () => {
 
   it('returns 401 without authentication', async () => {
     mockGetAuthenticatedUser.mockResolvedValue(null);
-    const req = { url: 'http://localhost/linksnap/api/links?code=abc123' };
+    const req = { url: 'http://localhost/linksnap/api/links?code=abc123', headers: new Headers() };
     const res = await linksDELETE(req as unknown as NextRequest);
     expect(res.status).toBe(401);
   });
@@ -307,7 +308,7 @@ describe('DELETE /linksnap/api/links', () => {
     mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
     mockDeleteLink.execute.mockResolvedValue(true);
 
-    const req = { url: 'http://localhost/linksnap/api/links?code=abc123' };
+    const req = { url: 'http://localhost/linksnap/api/links?code=abc123', headers: new Headers() };
     const res = await linksDELETE(req as unknown as NextRequest);
 
     expect(res.status).toBe(200);

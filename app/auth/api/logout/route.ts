@@ -1,15 +1,7 @@
-import { NextResponse } from 'next/server';
-import { createServerAuthService } from '@/backend/config/auth';
+import { NextRequest } from 'next/server';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { logout } from '@/backend/controllers/auth';
 
-export async function POST() {
-  try {
-    const service = await createServerAuthService();
-    await service.logout();
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : 'فشل تسجيل الخروج' },
-      { status: 500 }
-    );
-  }
+export async function POST(_req: NextRequest) {
+  return toNextResponse(await logout());
 }

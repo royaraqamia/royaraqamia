@@ -63,7 +63,7 @@ afterEach(() => {
 describe('GET /api/notifications', () => {
   it('returns an empty list for unauthenticated users', async () => {
     mockGetAuthUser.mockResolvedValue({ user: null, client: null });
-    const res = await listGET();
+    const res = await listGET({} as NextRequest);
     expect(res.status).toBe(200);
     expect(readBody(res)).toEqual({ notifications: [] });
   });
@@ -72,7 +72,7 @@ describe('GET /api/notifications', () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.getNotifications.mockResolvedValue([notification]);
 
-    const res = await listGET();
+    const res = await listGET({} as NextRequest);
 
     expect(res.status).toBe(200);
     expect(readBody<{ notifications: unknown[] }>(res).notifications).toEqual([notification]);
@@ -83,7 +83,7 @@ describe('GET /api/notifications', () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.getNotifications.mockRejectedValue(new Error('db down'));
 
-    const res = await listGET();
+    const res = await listGET({} as NextRequest);
 
     expect(res.status).toBe(200);
     expect(readBody(res)).toEqual({ notifications: [] });
@@ -93,7 +93,7 @@ describe('GET /api/notifications', () => {
 describe('PATCH /api/notifications (mark all read)', () => {
   it('is a no-op success for unauthenticated users', async () => {
     mockGetAuthUser.mockResolvedValue({ user: null, client: null });
-    const res = await markAllPATCH();
+    const res = await markAllPATCH({} as NextRequest);
     expect(readBody(res)).toEqual({ success: true });
   });
 
@@ -101,7 +101,7 @@ describe('PATCH /api/notifications (mark all read)', () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.markAllAsRead.mockResolvedValue(undefined);
 
-    const res = await markAllPATCH();
+    const res = await markAllPATCH({} as NextRequest);
 
     expect(readBody(res)).toEqual({ success: true });
     expect(mockService.markAllAsRead).toHaveBeenCalledWith('u-1');
@@ -111,7 +111,7 @@ describe('PATCH /api/notifications (mark all read)', () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.markAllAsRead.mockRejectedValue(new Error('db down'));
 
-    const res = await markAllPATCH();
+    const res = await markAllPATCH({} as NextRequest);
 
     expect(res.status).toBe(500);
     expect(readBody(res)).toEqual({ error: 'فشل تحديث الإشعارات' });
@@ -121,7 +121,7 @@ describe('PATCH /api/notifications (mark all read)', () => {
 describe('GET /api/notifications/unread-count', () => {
   it('returns 0 for unauthenticated users', async () => {
     mockGetAuthUser.mockResolvedValue({ user: null, client: null });
-    const res = await unreadGET();
+    const res = await unreadGET({} as NextRequest);
     expect(readBody(res)).toEqual({ count: 0 });
   });
 
@@ -129,7 +129,7 @@ describe('GET /api/notifications/unread-count', () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.getUnreadCount.mockResolvedValue(4);
 
-    const res = await unreadGET();
+    const res = await unreadGET({} as NextRequest);
 
     expect(readBody(res)).toEqual({ count: 4 });
   });
@@ -138,7 +138,7 @@ describe('GET /api/notifications/unread-count', () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.getUnreadCount.mockRejectedValue(new Error('db down'));
 
-    const res = await unreadGET();
+    const res = await unreadGET({} as NextRequest);
 
     expect(readBody(res)).toEqual({ count: 0 });
   });
@@ -191,14 +191,14 @@ describe('DELETE /api/notifications/[id]', () => {
 describe('GET /api/version', () => {
   it('returns the deployment id when present', async () => {
     vi.stubEnv('VERCEL_DEPLOYMENT_ID', 'dpl_123');
-    const res = await versionGET();
+    const res = await versionGET({} as NextRequest);
     expect(readBody(res)).toEqual({ version: 'dpl_123' });
   });
 
   it('falls back to the git commit sha', async () => {
     vi.stubEnv('VERCEL_DEPLOYMENT_ID', '');
     vi.stubEnv('VERCEL_GIT_COMMIT_SHA', 'abc123def');
-    const res = await versionGET();
+    const res = await versionGET({} as NextRequest);
     expect(readBody(res)).toEqual({ version: 'abc123def' });
   });
 
@@ -206,7 +206,7 @@ describe('GET /api/version', () => {
     vi.stubEnv('VERCEL_DEPLOYMENT_ID', '');
     vi.stubEnv('VERCEL_GIT_COMMIT_SHA', '');
     vi.stubEnv('NEXT_BUILD_ID', 'build-1');
-    const res = await versionGET();
+    const res = await versionGET({} as NextRequest);
     expect(readBody(res)).toEqual({ version: 'build-1' });
   });
 
@@ -214,13 +214,13 @@ describe('GET /api/version', () => {
     vi.stubEnv('VERCEL_DEPLOYMENT_ID', '');
     vi.stubEnv('VERCEL_GIT_COMMIT_SHA', '');
     vi.stubEnv('NEXT_BUILD_ID', '');
-    const res = await versionGET();
+    const res = await versionGET({} as NextRequest);
     expect(readBody(res)).toEqual({ version: 'unknown' });
   });
 
   it('sets a no-store cache control header', async () => {
     vi.stubEnv('VERCEL_DEPLOYMENT_ID', 'dpl_123');
-    const res = await versionGET();
+    const res = await versionGET({} as NextRequest);
     expect(res.status).toBe(200);
   });
 });

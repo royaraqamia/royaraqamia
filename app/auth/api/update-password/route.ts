@@ -1,19 +1,8 @@
-import { NextResponse } from 'next/server';
-import { safeRedirect } from '@/backend/shared/safe-redirect';
-import { createServerAuthService } from '@/backend/config/auth';
-import type { SimpleResult } from '@/backend/services/auth/auth-service';
+import { NextRequest } from 'next/server';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { updatePassword } from '@/backend/controllers/auth';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   const body = await req.json();
-  const authService = await createServerAuthService();
-  const result: SimpleResult = await authService.updatePassword({
-    password: body.password ?? '',
-    confirmPassword: body.confirmPassword ?? '',
-  });
-
-  if (!result.ok) {
-    return NextResponse.json({ error: result.message }, { status: 400 });
-  }
-
-  return NextResponse.json({ redirectUrl: safeRedirect(body.redirectTo ?? null) });
+  return toNextResponse(await updatePassword(body));
 }

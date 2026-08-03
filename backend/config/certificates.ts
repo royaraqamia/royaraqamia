@@ -2,14 +2,12 @@ import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { createCertificatesRepository } from '@/backend/repositories/certificates';
+import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 import { getPublicSupabase } from '@/backend/transport/supabase/public';
-import {
-  createCertificateVerifier,
-  type CertificateVerifier,
-} from '@/backend/services/certificates/certificate-verification';
+import { createCertificateVerifier } from '@/backend/services/certificates/certificate-verification';
 import { CertificatesService } from '@/backend/services/certificates/certificates-service';
 import type { Database } from '@/backend/models/database.types';
-import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';
+import type { VerifyResult } from '@/shared/contracts/certificates';
 
 /**
  * Default wiring used by server actions. Uses the publishable (anon) key
@@ -25,22 +23,15 @@ export function createDefaultCertificateVerifier(supabase?: SupabaseClient<Datab
   });
 }
 
-let defaultVerifier: CertificateVerifier | null = null;
-
-function getDefaultVerifier() {
-  if (!defaultVerifier) {
-    defaultVerifier = createDefaultCertificateVerifier();
-  }
-  return defaultVerifier;
-}
-
-/** Backwards-compatible export kept for server actions. */
 export function verifyCertificateByCode(code: string, ip: string): Promise<VerifyResult> {
-  return getDefaultVerifier().verifyCertificateByCode(code, ip);
+  return createDefaultCertificateVerifier().verifyCertificateByCode(code, ip);
 }
 
-export function getCertificateByCode(code: string): Promise<Certificate | null> {
-  return getDefaultVerifier().getCertificateByCode(code);
+/** Admin client wiring for certificate management endpoints. */
+export function createAdminCertificatesService(
+  supabase?: SupabaseClient<Database>
+): CertificatesService {
+  return createCertificatesService(supabase ?? getAdminSupabase());
 }
 
 export function createCertificatesService(supabase: SupabaseClient<Database>): CertificatesService {

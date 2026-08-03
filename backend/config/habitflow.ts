@@ -7,13 +7,8 @@ import { SupabaseHabitRepository } from '@/backend/repositories/habitflow/supaba
 import { env } from '@/backend/config/env';
 import { getDbPath } from '@/backend/config/habitflow/data-path';
 
-let cachedRepository: JsonFileHabitRepository | null = null;
-
 export function getLocalHabitRepository(): JsonFileHabitRepository {
-  if (!cachedRepository) {
-    cachedRepository = new JsonFileHabitRepository(getDbPath());
-  }
-  return cachedRepository;
+  return new JsonFileHabitRepository(getDbPath());
 }
 
 export function getHabitRepository(

@@ -1,20 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/backend/transport/supabase/server';
+import { NextRequest } from 'next/server';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { getAuthUserInfo } from '@/backend/controllers/habitflow';
 
 export async function GET(_req: NextRequest) {
-  try {
-    const supabase = await createClient();
-
-    if (!supabase) {
-      return NextResponse.json({ user: null });
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    return NextResponse.json({ user });
-  } catch (error) {
-    return NextResponse.json({ user: null });
-  }
+  return toNextResponse(await getAuthUserInfo());
 }

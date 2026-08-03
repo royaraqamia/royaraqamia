@@ -1,50 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { UpdatePopup } from './UpdatePopup';
 import { usePWAContext } from './PWAProvider';
-import { getVersion } from '@/frontend/api/version';
-
-const POLL_INTERVAL = 60_000;
+import { useAppVersion } from '@/frontend/state/use-app-version';
 
 export function VersionChecker() {
-  const currentVersion = useRef<string | null>(null);
   const [showUpdate, setShowUpdate] = useState(false);
-  const { hasUpdate, registration, dismissUpdate } = usePWAContext();
+  const { hasUpdate: hasPwaUpdate, registration, dismissUpdate } = usePWAContext();
+  const { hasUpdate: hasVersionUpdate } = useAppVersion();
 
   useEffect(() => {
-    if (hasUpdate) {
+    if (hasPwaUpdate || hasVersionUpdate) {
       setShowUpdate(true);
     }
-  }, [hasUpdate]);
-
-  const checkVersion = useCallback(async () => {
-    try {
-      const version = await getVersion();
-
-      if (currentVersion.current === null) {
-        currentVersion.current = version;
-        return;
-      }
-
-      if (version !== currentVersion.current) {
-        setShowUpdate(true);
-      }
-    } catch {
-      // silent
-    }
-  }, []);
-
-  useEffect(() => {
-    checkVersion();
-    const id = setInterval(checkVersion, POLL_INTERVAL);
-    window.addEventListener('focus', checkVersion);
-
-    return () => {
-      clearInterval(id);
-      window.removeEventListener('focus', checkVersion);
-    };
-  }, [checkVersion]);
+  }, [hasPwaUpdate, hasVersionUpdate]);
 
   const handleReload = useCallback(() => {
     if (registration?.waiting) {

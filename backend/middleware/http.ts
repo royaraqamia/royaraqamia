@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server';
-import { checkRateLimit, type RateLimitPolicy } from '@/backend/config/rate-limiter';
+import { checkRateLimit } from '@/backend/config/rate-limiter';
+import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
-export async function checkRateLimitApi(config: RateLimitPolicy): Promise<NextResponse | null> {
+interface RateLimitConfig {
+  key: string;
+  limit: number;
+  windowMs: number;
+  message: string;
+}
+
+export async function checkRateLimitApi(config: RateLimitConfig): Promise<HttpResult | null> {
   if (!(await checkRateLimit(config.key, config.limit, config.windowMs))) {
-    return NextResponse.json({ success: false, error: config.message }, { status: 429 });
+    return jsonResult(429, { success: false, error: config.message });
   }
   return null;
 }

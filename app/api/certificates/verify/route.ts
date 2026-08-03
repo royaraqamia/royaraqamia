@@ -1,20 +1,10 @@
-import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
-import { verifyCertificateByCode } from '@/backend/config/certificates';
-import { getForwardedIp } from '@/backend/transport/http';
-import type { VerifyResult } from '@/shared/contracts/certificates';
+import { NextRequest } from 'next/server';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { verifyCertificate } from '@/backend/controllers/certificates';
+import { getClientIp } from '@/backend/transport/http';
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const headerStore = await headers();
-    const ip = getForwardedIp(headerStore);
-
-    return NextResponse.json(await verifyCertificateByCode(body.code ?? '', ip));
-  } catch (e) {
-    return NextResponse.json({
-      success: false,
-      error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
-    } satisfies VerifyResult);
-  }
+export async function POST(req: NextRequest) {
+  const body = await req.json();
+  const ip = getClientIp(req);
+  return toNextResponse(await verifyCertificate(body.code, ip));
 }

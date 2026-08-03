@@ -1,4 +1,3 @@
-import { NextRequest } from 'next/server';
 import { getPublicSupabase } from '@/backend/transport/supabase/public';
 
 interface AuthenticatedUser {
@@ -6,13 +5,14 @@ interface AuthenticatedUser {
   email: string;
 }
 
-export async function getAuthenticatedUser(req: NextRequest): Promise<AuthenticatedUser | null> {
-  const authHeader = req.headers.get('Authorization');
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+export async function getAuthenticatedUser(
+  authorization: string | null
+): Promise<AuthenticatedUser | null> {
+  if (!authorization || !authorization.startsWith('Bearer ')) {
     return null;
   }
 
-  const token = authHeader.substring(7);
+  const token = authorization.substring(7);
   if (!token) {
     return null;
   }
