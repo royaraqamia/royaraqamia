@@ -1,6 +1,9 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { Habit, HabitLog, AggregateStats } from '@/shared/contracts/habitflow';
-import { calculateAggregateStats, get30DayCalendarGrid } from '@/frontend/shared/habitflow/habit-stats';
+import {
+  calculateAggregateStats,
+  get30DayCalendarGrid,
+} from '@/frontend/shared/habitflow/habit-stats';
 import { getTodayString } from './use-dashboard-data';
 
 export interface DashboardCalendar {
