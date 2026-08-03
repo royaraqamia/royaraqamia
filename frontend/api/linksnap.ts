@@ -1,3 +1,4 @@
+import type { AnalyticsEvent, DailyClickStat } from '@/shared/contracts/linksnap';
 import { request } from '@/frontend/transport/http';
 
 export interface ShortenedLink {
@@ -23,19 +24,12 @@ export interface AdminStats {
   links: AdminSystemLink[];
 }
 
-export interface RecentClick {
-  id: string;
-  linkCode: string;
-  clickedAt: string;
-  referrer: string | null;
-  userAgent: string | null;
-  ipCountry: string | null;
-}
+export type RecentClick = Omit<AnalyticsEvent, 'clickedAt'> & { clickedAt: string };
 
 export interface LinkAnalyticsSummary {
   totalClicks: number;
   recentClicks: RecentClick[];
-  clicksByDate: { date: string; clicks: number }[];
+  clicksByDate: DailyClickStat[];
   topReferrers: { name: string; count: number }[];
 }
 
