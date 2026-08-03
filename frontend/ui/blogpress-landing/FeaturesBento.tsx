@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { FileText, Note, MagnifyingGlass, Check, Warning, Sparkle } from '@phosphor-icons/react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
-import { SectionHeading } from '@/frontend/ui/landing-shared/SectionHeading';
+import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
 
 const bentoCardTheme = {
@@ -295,34 +295,36 @@ function SEOPreview() {
 
 export function FeaturesBento() {
   return (
-    <section
-      id="features"
-      dir="rtl"
-      className="relative py-20 sm:py-28 lg:py-32 bg-neutral-950 text-neutral-100 selection:bg-indigo-500/30 selection:text-indigo-200 overflow-hidden"
+    <FeaturesSection
+      sectionClassName="relative py-20 sm:py-28 lg:py-32 bg-neutral-950 text-neutral-100 selection:bg-indigo-500/30 selection:text-indigo-200 overflow-hidden"
+      decor={
+        <>
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none" />
+          <div className="absolute bottom-10 left-10 w-80 h-80 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
+        </>
+      }
+      containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
+      heading={{
+        badge: (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs sm:text-sm font-medium mb-6 backdrop-blur-md shadow-xs">
+            <Sparkle size={14} className="text-indigo-400 animate-pulse" />
+            <span>ميِّزات قويَّة</span>
+          </div>
+        ),
+        wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-20',
+        titleClassName: 'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight text-white',
+        titlePrefix: 'كل ما تحتاجه لـ ',
+        titleHighlight: 'كتابة أفضل',
+        titleHighlightClassName:
+          'bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent',
+        subtitle:
+          'من التَّحرير بالـ Markdown إلى تحسين محرِّكات البحث، نمنحك الأدوات اللازمة لإنشاء محتوى مميَّز.',
+        subtitleClassName:
+          'text-base sm:text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed font-normal',
+        useEase: false,
+      }}
+      gridClassName="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8"
     >
-      {/* Background Ambient Glows */}
-      <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute bottom-10 left-10 w-80 h-80 bg-purple-600/10 rounded-full blur-[120px] pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <SectionHeading
-          badge={
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs sm:text-sm font-medium mb-6 backdrop-blur-md shadow-xs">
-              <Sparkle size={14} className="text-indigo-400 animate-pulse" />
-              <span>ميِّزات قويَّة</span>
-            </div>
-          }
-          wrapperClassName="text-center max-w-3xl mx-auto mb-16 sm:mb-20"
-          titleClassName="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight text-white"
-          titlePrefix="كل ما تحتاجه لـ "
-          titleHighlight="كتابة أفضل"
-          titleHighlightClassName="bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent"
-          subtitle="من التَّحرير بالـ Markdown إلى تحسين محرِّكات البحث، نمنحك الأدوات اللازمة لإنشاء محتوى مميَّز."
-          subtitleClassName="text-base sm:text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed font-normal"
-          useEase={false}
-        />
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
           <BentoCard
             {...bentoCardProps('rgba(139,92,246,1)')}
             title="محرِّر Markdown"
@@ -355,8 +357,6 @@ export function FeaturesBento() {
           >
             <SEOPreview />
           </BentoCard>
-        </div>
-      </div>
-    </section>
+    </FeaturesSection>
   );
 }

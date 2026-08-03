@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { Link, ChartBar, MagnifyingGlass } from '@phosphor-icons/react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
-import { SectionHeading } from '@/frontend/ui/landing-shared/SectionHeading';
+import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
 
 const bentoCardTheme = {
@@ -129,33 +129,33 @@ function AnalyticsPreview() {
 
 export function FeaturesBento() {
   return (
-    <section
-      id="features"
-      dir="rtl"
-      className="relative overflow-hidden py-20 sm:py-28 bg-slate-950 text-slate-100"
+    <FeaturesSection
+      sectionClassName="relative overflow-hidden py-20 sm:py-28 bg-slate-950 text-slate-100"
+      decor={
+        <>
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-linear-to-b from-violet-600/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none" />
+        </>
+      }
+      containerClassName="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
+      heading={{
+        badge: (
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs backdrop-blur-md">
+            ✨ ميِّزات قويَّة
+          </span>
+        ),
+        wrapperClassName: 'text-center mb-16 sm:mb-20',
+        titleClassName: 'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-slate-100',
+        titlePrefix: 'كل ما تحتاجه ',
+        titleHighlight: 'لإدارة الرَّوابط',
+        titleHighlightClassName:
+          'bg-linear-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-xs',
+        subtitle: 'اختصِر، نظِّم، وحلِّل روابطك بأدوات قويَّة مُصمَّمَة للمبدعين والمسوِّقين.',
+        subtitleClassName: 'text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed font-normal',
+        useEase: false,
+      }}
+      gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8"
     >
-      {/* Background visual ambiance */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-linear-to-b from-violet-600/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none" />
-
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          badge={
-            <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs backdrop-blur-md">
-              ✨ ميِّزات قويَّة
-            </span>
-          }
-          wrapperClassName="text-center mb-16 sm:mb-20"
-          titleClassName="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-slate-100"
-          titlePrefix="كل ما تحتاجه "
-          titleHighlight="لإدارة الرَّوابط"
-          titleHighlightClassName="bg-linear-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-xs"
-          subtitle="اختصِر، نظِّم، وحلِّل روابطك بأدوات قويَّة مُصمَّمَة للمبدعين والمسوِّقين."
-          subtitleClassName="text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed font-normal"
-          useEase={false}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           <BentoCard
             {...bentoCardProps('rgba(139,92,246,1)')}
             title="اختصار فوري"
@@ -208,9 +208,7 @@ export function FeaturesBento() {
           >
             <AnalyticsPreview />
           </BentoCard>
-        </div>
-      </div>
-    </section>
+    </FeaturesSection>
   );
 }
 

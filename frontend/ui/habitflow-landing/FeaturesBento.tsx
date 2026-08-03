@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { CalendarCheck, ChartLineUp, Fire, CheckCircle } from '@phosphor-icons/react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
-import { SectionHeading } from '@/frontend/ui/landing-shared/SectionHeading';
+import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
 
 const bentoCardTheme = {
@@ -234,34 +234,35 @@ function ProgressAnalytics() {
 
 export function FeaturesBento() {
   return (
-    <section
-      id="features"
-      dir="rtl"
-      className="relative py-20 sm:py-28 lg:py-36 overflow-hidden bg-slate-950 text-slate-100"
+    <FeaturesSection
+      sectionClassName="relative py-20 sm:py-28 lg:py-36 overflow-hidden bg-slate-950 text-slate-100"
+      decor={
+        <>
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-violet-600/10 blur-[140px] rounded-full pointer-events-none" />
+          <div className="absolute bottom-10 right-10 w-100 h-100 bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
+        </>
+      }
+      containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
+      heading={{
+        badge: (
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs shadow-violet-500/10 backdrop-blur-md">
+            <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
+            ميِّزات قويَّة
+          </span>
+        ),
+        wrapperClassName: 'text-center max-w-3xl mx-auto mb-14 sm:mb-20',
+        titleClassName: 'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight',
+        titlePrefix: 'كل ما تحتاجه ل',
+        titleHighlight: 'بناء العادات',
+        titleHighlightClassName:
+          'bg-linear-to-r from-violet-400 via-purple-300 to-indigo-400 bg-clip-text text-transparent',
+        subtitle:
+          'تتبَّع، وتصوَّر، وحافظ على روتينك اليومي بأدوات مُصمَّمَة لتغيير السُّلوك الدَّائم.',
+        subtitleClassName: 'text-base sm:text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto',
+        useEase: false,
+      }}
+      gridClassName="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8"
     >
-      {/* Dynamic ambient lighting accents */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-violet-600/10 blur-[140px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-10 right-10 w-100 h-100 bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <SectionHeading
-          badge={
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs shadow-violet-500/10 backdrop-blur-md">
-              <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
-              ميِّزات قويَّة
-            </span>
-          }
-          wrapperClassName="text-center max-w-3xl mx-auto mb-14 sm:mb-20"
-          titleClassName="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight"
-          titlePrefix="كل ما تحتاجه ل"
-          titleHighlight="بناء العادات"
-          titleHighlightClassName="bg-linear-to-r from-violet-400 via-purple-300 to-indigo-400 bg-clip-text text-transparent"
-          subtitle="تتبَّع، وتصوَّر، وحافظ على روتينك اليومي بأدوات مُصمَّمَة لتغيير السُّلوك الدَّائم."
-          subtitleClassName="text-base sm:text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto"
-          useEase={false}
-        />
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
           <BentoCard
             {...bentoCardProps('rgba(139,92,246,1)')}
             title="تتبُّع يومي"
@@ -294,8 +295,6 @@ export function FeaturesBento() {
           >
             <ProgressAnalytics />
           </BentoCard>
-        </div>
-      </div>
-    </section>
+    </FeaturesSection>
   );
 }

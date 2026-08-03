@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { Receipt, ChartPieSlice, TrendUp } from '@phosphor-icons/react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
-import { SectionHeading } from '@/frontend/ui/landing-shared/SectionHeading';
+import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
 
 const bentoCardTheme = {
@@ -267,43 +267,43 @@ function MonthlyTrend() {
 
 export function FeaturesBento() {
   return (
-    <section
-      id="features"
-      dir="rtl"
-      className="relative overflow-hidden bg-background py-20 sm:py-28"
+    <FeaturesSection
+      sectionClassName="relative overflow-hidden bg-background py-20 sm:py-28"
+      decor={
+        <>
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute left-1/2 top-1/4 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 opacity-30 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute bottom-10 right-10 h-96 w-96 rounded-full bg-violet-500/10 opacity-20 blur-3xl"
+          />
+        </>
+      }
+      containerClassName="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
+      heading={{
+        as: 'header',
+        badge: (
+          <div className="mb-6 inline-flex cursor-default items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary shadow-xs backdrop-blur-md transition-colors duration-300 hover:bg-primary/15 sm:text-sm">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
+            </span>
+            ميِّزات قويَّة
+          </div>
+        ),
+        wrapperClassName: 'mx-auto mb-14 max-w-3xl text-center sm:mb-20',
+        titleClassName: 'mb-6 text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl',
+        titlePrefix: 'كل ما تحتاجه لتتبُّع ',
+        titleHighlight: 'المصروفات',
+        titleHighlightClassName:
+          'bg-linear-to-r from-primary via-violet-500 to-indigo-500 bg-clip-text text-transparent',
+        subtitle: 'سجِّل المصروفات، وصوِّر الأنماط، وتحكَّم في أموالك بأدوات بديهيَّه.',
+        subtitleClassName: 'text-base leading-relaxed text-muted-foreground sm:text-lg',
+      }}
+      gridClassName="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4"
     >
-      {/* Ambient Radial Background Glows */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute left-1/2 top-1/4 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 opacity-30 blur-3xl"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute bottom-10 right-10 h-96 w-96 rounded-full bg-violet-500/10 opacity-20 blur-3xl"
-      />
-
-      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <SectionHeading
-          as="header"
-          badge={
-            <div className="mb-6 inline-flex cursor-default items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary shadow-xs backdrop-blur-md transition-colors duration-300 hover:bg-primary/15 sm:text-sm">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
-              </span>
-              ميِّزات قويَّة
-            </div>
-          }
-          wrapperClassName="mx-auto mb-14 max-w-3xl text-center sm:mb-20"
-          titleClassName="mb-6 text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl"
-          titlePrefix="كل ما تحتاجه لتتبُّع "
-          titleHighlight="المصروفات"
-          titleHighlightClassName="bg-linear-to-r from-primary via-violet-500 to-indigo-500 bg-clip-text text-transparent"
-          subtitle="سجِّل المصروفات، وصوِّر الأنماط، وتحكَّم في أموالك بأدوات بديهيَّه."
-          subtitleClassName="text-base leading-relaxed text-muted-foreground sm:text-lg"
-        />
-
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
           <BentoCard
             {...bentoCardProps('rgba(139,92,246,1)')}
             title="تسجيل المصروفات"
@@ -336,8 +336,6 @@ export function FeaturesBento() {
           >
             <MonthlyTrend />
           </BentoCard>
-        </div>
-      </div>
-    </section>
+    </FeaturesSection>
   );
 }
