@@ -4,7 +4,6 @@ import {
   createHabitService,
   getLocalHabitRepository,
 } from '@/backend/config/habitflow';
-import { createClient } from '@/backend/transport/supabase/server';
 import { AppError } from '@/backend/shared/habitflow/errors';
 import { errorResult, jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import type { Habit, HabitRestoreInput } from '@/shared/contracts/habitflow';
@@ -148,19 +147,6 @@ export async function getLocalData(): Promise<HttpResult> {
 }
 
 export async function getAuthUserInfo(): Promise<HttpResult> {
-  try {
-    const supabase = await createClient();
-
-    if (!supabase) {
-      return jsonResult(200, { user: null });
-    }
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    return jsonResult(200, { user });
-  } catch {
-    return jsonResult(200, { user: null });
-  }
+  const { user } = await getOptionalUser();
+  return jsonResult(200, { user });
 }
