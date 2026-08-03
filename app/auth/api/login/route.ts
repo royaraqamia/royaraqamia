@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { createClient } from '@/backend/transport/supabase/server';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 import { createAuthService } from '@/backend/config/auth';
@@ -21,14 +20,6 @@ export async function POST(req: Request) {
   });
 
   if ('needsOtp' in result) {
-    const cookieStore = await cookies();
-    cookieStore.set('pending_login', JSON.stringify({ password: result.password }), {
-      httpOnly: true,
-      secure: true,
-      sameSite: 'lax',
-      maxAge: 300,
-      path: '/',
-    });
     return NextResponse.json({ needsOtp: true, redirectUrl: result.redirectUrl });
   }
 

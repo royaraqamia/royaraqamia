@@ -5,6 +5,7 @@ import { SupabaseOtpRepository } from '@/backend/repositories/otp/supabase-otp-r
 import { sendOtpEmail, sendPasswordResetEmail } from '@/backend/clients/email';
 import { checkRateLimit, getRateLimitRemaining } from '@/backend/clients/rate-limiter';
 import { verifyTurnstileToken } from '@/backend/clients/turnstile';
+import { createCookiePendingLoginStore } from '@/backend/transport/cookies';
 
 export function createAuthService(
   gateway: AuthGateway,
@@ -21,6 +22,7 @@ export function createAuthService(
       getRateLimitRemaining,
     },
     verifyTurnstile: verifyTurnstileToken,
+    pendingLoginStore: createCookiePendingLoginStore(),
     otpTtlMinutes: OTP_CONFIG.TTL_MINUTES,
     otpResendCooldownSeconds: OTP_CONFIG.RESEND_COOLDOWN_SECONDS,
     otpMaxAttempts: OTP_CONFIG.MAX_ATTEMPTS,

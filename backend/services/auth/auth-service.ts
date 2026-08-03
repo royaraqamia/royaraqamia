@@ -11,7 +11,7 @@ export type SignupResult = { ok: true; redirectUrl: string } | { ok: false; mess
 export type LoginResult =
   | { ok: true; redirectUrl: string }
   | { ok: false; message: string }
-  | { needsOtp: true; email: string; password: string; redirectUrl: string };
+  | { needsOtp: true; email: string; redirectUrl: string };
 
 export type VerifyOtpResult =
   | { ok: true; redirectUrl: string; consumedPendingLogin: boolean }
@@ -21,11 +21,18 @@ export type SimpleResult = { ok: true; message?: string } | { ok: false; message
 
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
 
+export interface PendingLoginStore {
+  readPassword(): Promise<string | null>;
+  setPassword(password: string): Promise<void>;
+  clear(): Promise<void>;
+}
+
 export interface AuthServiceDeps {
   otpRepository: IOtpRepository;
   emailClient: EmailClient;
   rateLimiter: RateLimiter;
   verifyTurnstile: (token: string) => Promise<boolean>;
+  pendingLoginStore: PendingLoginStore;
   otpTtlMinutes: number;
   otpResendCooldownSeconds: number;
   otpMaxAttempts: number;
@@ -37,6 +44,7 @@ export class AuthService {
   private readonly emailClient: EmailClient;
   private readonly rateLimiter: RateLimiter;
   private readonly verifyTurnstile: (token: string) => Promise<boolean>;
+  private readonly pendingLoginStore: PendingLoginStore;
   private readonly otpTtlMinutes: number;
   private readonly otpResendCooldownSeconds: number;
   private readonly otpMaxAttempts: number;
@@ -50,6 +58,7 @@ export class AuthService {
     this.emailClient = deps.emailClient;
     this.rateLimiter = deps.rateLimiter;
     this.verifyTurnstile = deps.verifyTurnstile;
+    this.pendingLoginStore = deps.pendingLoginStore;
     this.otpTtlMinutes = deps.otpTtlMinutes;
     this.otpResendCooldownSeconds = deps.otpResendCooldownSeconds;
     this.otpMaxAttempts = deps.otpMaxAttempts;
@@ -178,12 +187,13 @@ export class AuthService {
           // Email delivery failure — OTP is created, user can resend
         }
 
+        await this.pendingLoginStore.setPassword(input.password);
+
         const params = new URLSearchParams({ email: input.email });
         if (input.redirectTo) params.set('redirect', input.redirectTo);
         return {
           needsOtp: true,
           email: input.email,
-          password: input.password,
           redirectUrl: `/auth/verify-otp?${params.toString()}`,
         };
       }
@@ -197,8 +207,8 @@ export class AuthService {
     email: string;
     otp: string;
     redirectTo: string | null;
-    pendingPassword: string | null;
   }): Promise<VerifyOtpResult> {
+    const pendingPassword = await this.pendingLoginStore.readPassword();
     const record = await this.otpRepository.findLatestPendingOtp(input.email);
 
     if (!record) {
@@ -236,18 +246,22 @@ export class AuthService {
         await this.gateway.confirmUserEmail(targetUser.id);
 
         // Auto-sign-in if user came from login flow (has pending_login cookie)
-        if (input.pendingPassword) {
+        if (pendingPassword) {
           consumedPendingLogin = true;
           try {
             await this.gateway.signInWithPassword({
               email: input.email,
-              password: input.pendingPassword,
+              password: pendingPassword,
             });
           } catch {
             // Cookie expired or password changed — user will need to log in manually
           }
         }
       }
+    }
+
+    if (consumedPendingLogin) {
+      await this.pendingLoginStore.clear();
     }
 
     return { ok: true, redirectUrl: safeRedirect(input.redirectTo), consumedPendingLogin };

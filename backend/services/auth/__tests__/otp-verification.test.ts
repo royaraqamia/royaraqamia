@@ -40,6 +40,11 @@ function createService(overrides: { record?: OtpRecordData | null } = {}) {
     confirmUserEmail: vi.fn().mockResolvedValue(undefined),
     signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
   } as unknown as AuthGateway;
+  const pendingLoginStore = {
+    readPassword: vi.fn().mockResolvedValue(null),
+    setPassword: vi.fn().mockResolvedValue(undefined),
+    clear: vi.fn().mockResolvedValue(undefined),
+  };
 
   const service = new AuthService(gateway, {
     otpRepository,
@@ -52,20 +57,20 @@ function createService(overrides: { record?: OtpRecordData | null } = {}) {
       getRateLimitRemaining: vi.fn().mockResolvedValue(5),
     },
     verifyTurnstile: vi.fn().mockResolvedValue(true),
+    pendingLoginStore,
     otpTtlMinutes: 5,
     otpResendCooldownSeconds: 60,
     otpMaxAttempts: 5,
     siteUrl: 'https://royaraqamia.com',
   });
 
-  return { service, otpRepository };
+  return { service, otpRepository, pendingLoginStore, gateway };
 }
 
 const verifyInput = {
   email: 'user@example.com',
   otp: '123456',
   redirectTo: null,
-  pendingPassword: null,
 };
 
 describe('AuthService.verifyOtp', () => {
@@ -114,12 +119,71 @@ describe('AuthService.verifyOtp', () => {
   });
 
   it('marks the record verified and continues for a correct OTP', async () => {
-    const { service, otpRepository } = createService({
+    const { service, otpRepository, pendingLoginStore } = createService({
       record: makeOtpRecord({ attempts: 0 }),
     });
     const result = await service.verifyOtp(verifyInput);
     expect(result).toEqual({ ok: true, redirectUrl: '/', consumedPendingLogin: false });
     expect(otpRepository.markOtpVerified).toHaveBeenCalledWith('otp-1');
     expect(otpRepository.incrementOtpAttempts).not.toHaveBeenCalled();
+    expect(pendingLoginStore.clear).not.toHaveBeenCalled();
+  });
+
+  it('auto-signs-in with the pending password and clears the store when consumed', async () => {
+    const { service, otpRepository, pendingLoginStore, gateway } = createService({
+      record: makeOtpRecord({ attempts: 0 }),
+    });
+    pendingLoginStore.readPassword.mockResolvedValue('hunter2');
+    vi.mocked(gateway.listUsers).mockResolvedValue({
+      users: [{ id: 'user-1', email: 'user@example.com', email_confirmed_at: null }],
+      error: null,
+    });
+
+    const result = await service.verifyOtp(verifyInput);
+    expect(result).toEqual({ ok: true, redirectUrl: '/', consumedPendingLogin: true });
+    expect(gateway.confirmUserEmail).toHaveBeenCalledWith('user-1');
+    expect(gateway.signInWithPassword).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      password: 'hunter2',
+    });
+    expect(pendingLoginStore.clear).toHaveBeenCalled();
+    expect(otpRepository.markOtpVerified).toHaveBeenCalledWith('otp-1');
+  });
+});
+
+describe('AuthService.login', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('stores the pending password when the account is not confirmed', async () => {
+    const { service, pendingLoginStore, gateway } = createService();
+    vi.mocked(gateway.signInWithPassword).mockResolvedValue({
+      user: null,
+      error: { message: 'Email not confirmed' },
+    });
+
+    const result = await service.login({
+      email: 'user@example.com',
+      password: 'hunter2',
+      redirectTo: null,
+      turnstileToken: '',
+    });
+
+    expect(result).toMatchObject({ needsOtp: true, email: 'user@example.com' });
+    expect(pendingLoginStore.setPassword).toHaveBeenCalledWith('hunter2');
+    expect(result).not.toHaveProperty('password');
+  });
+
+  it('does not store a pending password when login succeeds', async () => {
+    const { service, pendingLoginStore } = createService();
+    const result = await service.login({
+      email: 'user@example.com',
+      password: 'hunter2',
+      redirectTo: null,
+      turnstileToken: '',
+    });
+    expect(result).toEqual({ ok: true, redirectUrl: '/' });
+    expect(pendingLoginStore.setPassword).not.toHaveBeenCalled();
   });
 });
