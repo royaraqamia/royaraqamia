@@ -5,7 +5,7 @@ import { verifySession } from '@/backend/middleware/session-guard';
 import { PostList } from '../_components/post-list';
 import { CreatePostButton } from '../_components/create-post-button';
 import { FileText, Eye, PenLine, BookOpen } from 'lucide-react';
-import { estimateWordCount } from '@/shared/reading-time';
+import { estimateWordCount } from '@/frontend/shared/reading-time';
 import { createBlogpressPostsService } from '@/backend/config/blogpress';
 
 export const dynamic = 'force-dynamic';

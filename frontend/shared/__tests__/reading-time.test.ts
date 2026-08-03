@@ -4,7 +4,7 @@ import {
   estimateReadingTime,
   formatReadingTime,
   formatReadingTimeLong,
-} from '@/shared/reading-time';
+} from '@/frontend/shared/reading-time';
 
 describe('estimateWordCount', () => {
   it('returns 0 for null/empty content', () => {

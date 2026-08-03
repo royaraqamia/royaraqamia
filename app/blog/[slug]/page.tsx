@@ -13,7 +13,7 @@ import { ArrowRight, Clock, Calendar, BookOpen, User, ChevronLeft } from 'lucide
 import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
-import { estimateReadingTime, formatReadingTimeLong } from '@/shared/reading-time';
+import { estimateReadingTime, formatReadingTimeLong } from '@/frontend/shared/reading-time';
 import { createBlogpressPostsService } from '@/backend/config/blogpress';
 import type { Metadata } from 'next';
 

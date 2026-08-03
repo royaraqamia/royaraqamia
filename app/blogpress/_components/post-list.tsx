@@ -38,7 +38,7 @@ import {
 import { deletePost, unpublishPost, publishPost, createPost } from '@/frontend/api/blogpress';
 import type { Post, PostStatus } from '@/shared/contracts/blogpress';
 import { cn } from '@/frontend/shared/cn';
-import { estimateWordCount, estimateReadingTime, formatReadingTime } from '@/shared/reading-time';
+import { estimateWordCount, estimateReadingTime, formatReadingTime } from '@/frontend/shared/reading-time';
 import { toast } from 'sonner';
 
 interface PostListProps {

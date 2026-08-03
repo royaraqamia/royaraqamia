@@ -17,7 +17,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { BlogSearch } from './_components/blog-search';
-import { estimateReadingTime, formatReadingTime } from '@/shared/reading-time';
+import { estimateReadingTime, formatReadingTime } from '@/frontend/shared/reading-time';
 import { createBlogpressPostsService } from '@/backend/config/blogpress';
 
 export const dynamic = 'force-dynamic';
