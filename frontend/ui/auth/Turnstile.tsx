@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { TURNSTILE_SITE_KEY } from '@/frontend/shared/constants';
 
 declare global {
   interface Window {
@@ -29,7 +30,7 @@ interface TurnstileProps {
 export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
+  const siteKey = TURNSTILE_SITE_KEY;
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) return;
