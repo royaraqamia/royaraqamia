@@ -29,6 +29,7 @@ export function createAuthService(
     verifyTurnstile: verifyTurnstileToken,
     otpTtlMinutes: OTP_CONFIG.TTL_MINUTES,
     otpResendCooldownSeconds: OTP_CONFIG.RESEND_COOLDOWN_SECONDS,
+    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com',
     ...deps,
   });
 }

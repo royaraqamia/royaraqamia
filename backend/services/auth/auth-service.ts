@@ -28,6 +28,7 @@ export interface AuthServiceDeps {
   verifyTurnstile: (token: string) => Promise<boolean>;
   otpTtlMinutes: number;
   otpResendCooldownSeconds: number;
+  siteUrl: string;
 }
 
 export class AuthService {
@@ -37,6 +38,7 @@ export class AuthService {
   private readonly verifyTurnstile: (token: string) => Promise<boolean>;
   private readonly otpTtlMinutes: number;
   private readonly otpResendCooldownSeconds: number;
+  private readonly siteUrl: string;
 
   constructor(
     private readonly gateway: AuthGateway,
@@ -48,6 +50,7 @@ export class AuthService {
     this.verifyTurnstile = deps.verifyTurnstile;
     this.otpTtlMinutes = deps.otpTtlMinutes;
     this.otpResendCooldownSeconds = deps.otpResendCooldownSeconds;
+    this.siteUrl = deps.siteUrl;
   }
 
   async signup(input: {
@@ -254,10 +257,9 @@ export class AuthService {
       return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
     }
 
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
     const { error } = await this.gateway.resetPasswordForEmail(
       input.email,
-      `${siteUrl}/auth/update-password`
+      `${this.siteUrl}/auth/update-password`
     );
 
     if (error) {
@@ -294,9 +296,7 @@ export class AuthService {
   }
 
   async signInWithOAuth(provider: 'google', redirectTo?: string): Promise<OAuthResult> {
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
-
-    const callbackUrl = new URL(`${siteUrl}/auth/callback`);
+    const callbackUrl = new URL(`${this.siteUrl}/auth/callback`);
     const safeNext = safeRedirect(redirectTo);
     if (safeNext !== '/') {
       callbackUrl.searchParams.set('next', safeNext);
