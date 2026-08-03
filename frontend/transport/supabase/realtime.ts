@@ -7,28 +7,47 @@ export interface PostgresChangeHandlers {
   onDelete: (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => void;
 }
 
-export function subscribeToNotificationChanges(
-  userId: string,
-  handlers: PostgresChangeHandlers
-): () => void {
+export interface PostgresChangesOptions {
+  channel: string;
+  table: string;
+  filter?: string;
+  handlers: PostgresChangeHandlers;
+}
+
+export function subscribeToPostgresChanges(options: PostgresChangesOptions): () => void {
   const supabase = createClient();
 
   const channel = supabase
-    .channel('notifications_realtime')
+    .channel(options.channel)
     .on(
       'postgres_changes',
-      { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-      handlers.onInsert
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: options.table,
+        ...(options.filter ? { filter: options.filter } : {}),
+      },
+      options.handlers.onInsert
     )
     .on(
       'postgres_changes',
-      { event: 'UPDATE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-      handlers.onUpdate
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: options.table,
+        ...(options.filter ? { filter: options.filter } : {}),
+      },
+      options.handlers.onUpdate
     )
     .on(
       'postgres_changes',
-      { event: 'DELETE', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-      handlers.onDelete
+      {
+        event: 'DELETE',
+        schema: 'public',
+        table: options.table,
+        ...(options.filter ? { filter: options.filter } : {}),
+      },
+      options.handlers.onDelete
     )
     .subscribe();
 

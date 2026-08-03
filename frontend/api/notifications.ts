@@ -1,5 +1,21 @@
 import type { Notification } from '@/shared/contracts/notifications';
 import { request } from '@/frontend/transport/http';
+import {
+  subscribeToPostgresChanges,
+  type PostgresChangeHandlers,
+} from '@/frontend/transport/supabase/realtime';
+
+export function subscribeToNotificationChanges(
+  userId: string,
+  handlers: PostgresChangeHandlers
+): () => void {
+  return subscribeToPostgresChanges({
+    channel: 'notifications_realtime',
+    table: 'notifications',
+    filter: `user_id=eq.${userId}`,
+    handlers,
+  });
+}
 
 export async function getNotifications(): Promise<Notification[]> {
   try {

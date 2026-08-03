@@ -13,13 +13,13 @@ import {
 import { useSession } from '@/frontend/ui/shared/session-provider';
 import type { Notification, NotificationWithMeta } from '@/shared/contracts/notifications';
 import { calculateTimeAgo } from '@/frontend/shared/format';
-import { subscribeToNotificationChanges } from '@/frontend/transport/supabase/realtime';
 import {
   getNotifications,
   getUnreadCount,
   markAsRead,
   markAllAsRead,
   deleteNotification,
+  subscribeToNotificationChanges,
 } from '@/frontend/api/notifications';
 import { toast } from 'sonner';
 
@@ -101,9 +101,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         const updated = payload.new as Notification;
         setNotifications((prev) =>
           prev.map((n) =>
-            n.id === updated.id
-              ? { ...updated, timeAgo: calculateTimeAgo(updated.created_at) }
-              : n
+            n.id === updated.id ? { ...updated, timeAgo: calculateTimeAgo(updated.created_at) } : n
           )
         );
         if (updated.is_read) {
