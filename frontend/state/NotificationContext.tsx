@@ -10,11 +10,10 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
-import { createClient } from '@/frontend/transport/supabase/client';
 import { useSession } from '@/frontend/ui/shared/session-provider';
 import type { Notification, NotificationWithMeta } from '@/shared/contracts/notifications';
 import { calculateTimeAgo } from '@/frontend/shared/format';
-import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import { subscribeToNotificationChanges } from '@/frontend/transport/supabase/realtime';
 import {
   getNotifications,
   getUnreadCount,
@@ -86,73 +85,40 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user) return;
 
-    const supabase = createClient();
-    const channel = supabase
-      .channel('notifications_realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-          const newNotif = payload.new as Notification;
-          setNotifications((prev) => {
-            if (prev.some((n) => n.id === newNotif.id)) return prev;
-            return [{ ...newNotif, timeAgo: calculateTimeAgo(newNotif.created_at) }, ...prev];
-          });
-          setUnreadCount((prev) => prev + 1);
-          toast(newNotif.title, {
-            description: newNotif.body ?? undefined,
-          });
+    return subscribeToNotificationChanges(user.id, {
+      onInsert: (payload) => {
+        const newNotif = payload.new as Notification;
+        setNotifications((prev) => {
+          if (prev.some((n) => n.id === newNotif.id)) return prev;
+          return [{ ...newNotif, timeAgo: calculateTimeAgo(newNotif.created_at) }, ...prev];
+        });
+        setUnreadCount((prev) => prev + 1);
+        toast(newNotif.title, {
+          description: newNotif.body ?? undefined,
+        });
+      },
+      onUpdate: (payload) => {
+        const updated = payload.new as Notification;
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === updated.id
+              ? { ...updated, timeAgo: calculateTimeAgo(updated.created_at) }
+              : n
+          )
+        );
+        if (updated.is_read) {
+          setUnreadCount((prev) => Math.max(0, prev - 1));
         }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-          const updated = payload.new as Notification;
-          setNotifications((prev) =>
-            prev.map((n) =>
-              n.id === updated.id
-                ? { ...updated, timeAgo: calculateTimeAgo(updated.created_at) }
-                : n
-            )
-          );
-          if (updated.is_read) {
-            setUnreadCount((prev) => Math.max(0, prev - 1));
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`,
-        },
-        (payload: RealtimePostgresChangesPayload<Record<string, unknown>>) => {
-          const deletedId = (payload.old as Record<string, unknown>).id as string;
-          setNotifications((prev) => prev.filter((n) => n.id !== deletedId));
-          setUnreadCount((prev) => {
-            const target = notificationsRef.current.find((n) => n.id === deletedId);
-            return target && !target.is_read ? Math.max(0, prev - 1) : prev;
-          });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      },
+      onDelete: (payload) => {
+        const deletedId = (payload.old as Record<string, unknown>).id as string;
+        setNotifications((prev) => prev.filter((n) => n.id !== deletedId));
+        setUnreadCount((prev) => {
+          const target = notificationsRef.current.find((n) => n.id === deletedId);
+          return target && !target.is_read ? Math.max(0, prev - 1) : prev;
+        });
+      },
+    });
   }, [user]);
 
   const handleMarkAsRead = useCallback(
