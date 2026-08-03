@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { cn } from '@/frontend/shared/cn';
 import { User, SignOut, Download } from '@phosphor-icons/react';
-import { useSession } from './session-provider';
+import { useSession } from '@/frontend/state/session-provider';
 import { usePWAContext } from '../PWAProvider';
 import { ConfirmDialog } from './confirm-dialog';
 

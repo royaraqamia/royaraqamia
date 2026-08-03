@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useSession } from '@/frontend/ui/shared/session-provider';
+import { useSession } from '@/frontend/state/session-provider';
 
 export function useLandingCta(appPath: string, loginRedirect: string) {
   const router = useRouter();

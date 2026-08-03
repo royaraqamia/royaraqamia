@@ -7,7 +7,7 @@ import { LinkDashboard } from '@/frontend/ui/linksnap/link-dashboard';
 import { AdminPanel } from '@/frontend/ui/linksnap/admin-panel';
 import { RedirectErrorBanner } from '@/frontend/ui/linksnap/redirect-error-banner';
 import { ViewSelector } from '@/frontend/ui/linksnap/view-selector';
-import { useSession } from '@/frontend/ui/shared/session-provider';
+import { useSession } from '@/frontend/state/session-provider';
 import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 
 interface RedirectError {

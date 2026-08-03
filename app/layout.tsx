@@ -6,7 +6,7 @@ import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { MotionProvider } from '../frontend/ui/MotionProvider';
 import { UIProvider } from '../frontend/state/UIContext';
 import { NotificationProvider } from '../frontend/state/NotificationContext';
-import { SessionProvider } from '../frontend/ui/shared/session-provider';
+import { SessionProvider } from '../frontend/state/session-provider';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { AccessibilityCheck } from '../frontend/ui/AccessibilityCheck';

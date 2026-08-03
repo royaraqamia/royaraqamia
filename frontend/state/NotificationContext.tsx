@@ -10,7 +10,7 @@ import {
   useMemo,
   type ReactNode,
 } from 'react';
-import { useSession } from '@/frontend/ui/shared/session-provider';
+import { useSession } from '@/frontend/state/session-provider';
 import type { Notification, NotificationWithMeta } from '@/shared/contracts/notifications';
 import { calculateTimeAgo } from '@/frontend/shared/format';
 import {

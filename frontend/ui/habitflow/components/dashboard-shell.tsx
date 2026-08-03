@@ -15,7 +15,7 @@ import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { useDashboard } from '@/frontend/state/habitflow/use-dashboard';
 import { useLogout } from '@/frontend/state/use-logout';
-import { useSession } from '@/frontend/ui/shared/session-provider';
+import { useSession } from '@/frontend/state/session-provider';
 import { Button } from '@/frontend/ui/ui/button';
 import { Card } from '@/frontend/ui/ui/card';
 import { StatsCard } from '@/frontend/ui/habitflow/components/stats-card';
