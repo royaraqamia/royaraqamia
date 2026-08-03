@@ -117,16 +117,15 @@ describe('SupabaseOtpRepository', () => {
     });
 
     it('returns the mapped record for a pending OTP', async () => {
-      const { selectEq, is } = makeClient({
-        record: makeRecord({ attempts: 1, max_attempts: 7 }),
-      });
+      const record = makeRecord({ attempts: 1, max_attempts: 7 });
+      const { selectEq, is } = makeClient({ record });
       const repo = new SupabaseOtpRepository();
 
       await expect(repo.findLatestPendingOtp('user@example.com')).resolves.toEqual({
         id: 'otp-1',
         otpHash: 'hash',
         salt: 'salt',
-        expiresAt: new Date(makeRecord().expires_at),
+        expiresAt: new Date(record.expires_at),
         attempts: 1,
         maxAttempts: 7,
       });
