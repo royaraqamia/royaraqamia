@@ -1,15 +1,15 @@
-export function getAdminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS || '')
+export function parseAdminEmails(raw: string): string[] {
+  return raw
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter((e) => e.length > 0);
 }
 
 export class AdminValidator {
-  static isAdmin(email: string): boolean {
+  static isAdmin(email: string, adminEmails: string[]): boolean {
     if (!email) return false;
-    const adminEmails = getAdminEmails();
     if (adminEmails.length === 0) return false;
-    return adminEmails.includes(email.trim().toLowerCase());
+    const normalized = adminEmails.map((e) => e.trim().toLowerCase());
+    return normalized.includes(email.trim().toLowerCase());
   }
 }

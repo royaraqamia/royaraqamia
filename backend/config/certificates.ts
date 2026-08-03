@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { checkRateLimit } from '@/backend/clients/rate-limiter';
+import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { createCertificatesRepository } from '@/backend/repositories/certificates';
 import { getPublicSupabase } from '@/backend/transport/supabase/public';
 import {

@@ -5,9 +5,10 @@ import { createClient } from '@/backend/transport/supabase/server';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 import { OTP_CONFIG } from '@/backend/config/otp';
 import { SupabaseOtpRepository } from '@/backend/repositories/otp/supabase-otp-repository';
-import { sendOtpEmail, sendPasswordResetEmail } from '@/backend/clients/email';
-import { checkRateLimit, getRateLimitRemaining } from '@/backend/clients/rate-limiter';
+import { sendOtpEmail, sendPasswordResetEmail } from '@/backend/config/email';
+import { checkRateLimit, getRateLimitRemaining } from '@/backend/config/rate-limiter';
 import { verifyTurnstileToken } from '@/backend/clients/turnstile';
+import { env } from '@/backend/config/env';
 import { createCookiePendingLoginStore } from '@/backend/transport/cookies';
 
 export async function createServerAuthService(): Promise<AuthService> {
@@ -28,12 +29,12 @@ export function createAuthService(
       checkRateLimit,
       getRateLimitRemaining,
     },
-    verifyTurnstile: verifyTurnstileToken,
+    verifyTurnstile: (token: string) => verifyTurnstileToken(token, env.turnstileSecret),
     pendingLoginStore: createCookiePendingLoginStore(),
     otpTtlMinutes: OTP_CONFIG.TTL_MINUTES,
     otpResendCooldownSeconds: OTP_CONFIG.RESEND_COOLDOWN_SECONDS,
     otpMaxAttempts: OTP_CONFIG.MAX_ATTEMPTS,
-    siteUrl: process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com',
+    siteUrl: env.siteUrl,
     ...deps,
   });
 }

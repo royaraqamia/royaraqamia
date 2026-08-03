@@ -10,6 +10,7 @@ import { ModerateLinkService } from '@/backend/services/linksnap/moderate-link';
 import { GetUrlAnalyticsService } from '@/backend/services/linksnap/get-url-analytics';
 import { GetSystemStatsService } from '@/backend/services/linksnap/get-system-stats';
 import { RedirectUrlService } from '@/backend/services/linksnap/redirect-url';
+import { env } from '@/backend/config/env';
 
 /**
  * Linksnap composition root — central wiring for repositories and
@@ -48,7 +49,7 @@ export function createDeleteLinkService(): DeleteLinkService {
 }
 
 export function createModerateLinkService(): ModerateLinkService {
-  return new ModerateLinkService(createShortLinkRepository());
+  return new ModerateLinkService(createShortLinkRepository(), env.adminEmails);
 }
 
 export function createGetUrlAnalyticsService(): GetUrlAnalyticsService {
@@ -56,7 +57,7 @@ export function createGetUrlAnalyticsService(): GetUrlAnalyticsService {
 }
 
 export function createGetSystemStatsService(): GetSystemStatsService {
-  return new GetSystemStatsService(createAdminRepository());
+  return new GetSystemStatsService(createAdminRepository(), env.adminEmails);
 }
 
 export function createRedirectUrlService(): RedirectUrlService {

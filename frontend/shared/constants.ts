@@ -8,6 +8,14 @@ export const WHATSAPP_MESSAGE = 'السَّلام عليكم ورحمة اللّ
 
 export const TURNSTILE_SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? '';
 
+export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+
+export const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
+
+export const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? '';
+
+export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://royaraqamia.com';
+
 export function getWhatsAppUrl(message: string = WHATSAPP_MESSAGE): string {
   return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
 }

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { checkRateLimit } from '@/backend/clients/rate-limiter';
+import { checkRateLimit } from '@/backend/config/rate-limiter';
 
 interface RateLimitConfig {
   key: string;

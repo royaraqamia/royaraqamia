@@ -15,6 +15,7 @@ import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { estimateReadingTime, formatReadingTimeLong } from '@/frontend/shared/reading-time';
 import { createBlogpressPostsService } from '@/backend/config/blogpress';
+import { env } from '@/backend/config/env';
 import type { Metadata } from 'next';
 
 export const revalidate = 60;
@@ -97,7 +98,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   const readingTime = estimateReadingTime(p.content);
   const headings = extractHeadings(p.content ?? '');
-  const postUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com'}/blog/${slug}`;
+  const postUrl = `${env.siteUrl}/blog/${slug}`;
   const hasHeadings = headings.length > 0;
 
   const markdownComponents = {

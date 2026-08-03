@@ -2,6 +2,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 import { createSupabaseAuthGateway } from '@/backend/clients/supabase-auth-gateway';
+import { env } from '@/backend/config/env';
 
 const protectedRoutes: Record<string, string> = {
   '/linksnap/app': '/auth/login',
@@ -39,23 +40,19 @@ export async function updateSession(request: NextRequest) {
     options: CookieOptions;
   }[] = [];
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value);
-            pendingCookies.push({ name, value, options: options ?? {} });
-          });
-        },
+  const supabase = createServerClient(env.supabaseUrl ?? '', env.supabasePublishableKey ?? '', {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          request.cookies.set(name, value);
+          pendingCookies.push({ name, value, options: options ?? {} });
+        });
+      },
+    },
+  });
 
   function applyCookies(response: NextResponse) {
     pendingCookies.forEach(({ name, value, options }) => {

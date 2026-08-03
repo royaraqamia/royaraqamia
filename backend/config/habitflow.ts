@@ -4,6 +4,7 @@ import { HabitBackupService } from '@/backend/services/habitflow/backup-service'
 import type { IHabitRepository } from '@/shared/contracts/habitflow';
 import { JsonFileHabitRepository } from '@/backend/repositories/habitflow/json-file-repository';
 import { SupabaseHabitRepository } from '@/backend/repositories/habitflow/supabase-repository';
+import { env } from '@/backend/config/env';
 
 let cachedRepository: JsonFileHabitRepository | null = null;
 
@@ -21,8 +22,8 @@ export function getHabitRepository(
   repository: IHabitRepository;
   mode: 'supabase' | 'local';
 } {
-  const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+  const url = env.habitflowSupabaseUrl;
+  const key = env.supabasePublishableKey;
 
   if (userId && url && key) {
     try {

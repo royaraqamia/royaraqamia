@@ -1,13 +1,14 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { env } from '@/backend/config/env';
 
 let cachedDir: string | null = null;
 
 function getDataDir(): string {
   if (cachedDir) return cachedDir;
 
-  const envDir = process.env.DATA_DIR;
+  const envDir = env.dataDir;
   if (envDir) {
     cachedDir = envDir;
     return cachedDir;

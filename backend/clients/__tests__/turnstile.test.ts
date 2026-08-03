@@ -1,22 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const originalEnv = process.env;
+import { verifyTurnstileToken } from '@/backend/clients/turnstile';
 
 beforeEach(() => {
   vi.restoreAllMocks();
-  process.env = { ...originalEnv };
 });
 
 describe('verifyTurnstileToken', () => {
   it('returns true when secret key is missing (graceful degradation)', async () => {
-    delete process.env.TURNSTILE_SECRET_KEY;
-    const { verifyTurnstileToken } = await import('@/backend/clients/turnstile');
-    const result = await verifyTurnstileToken('any-token');
+    const result = await verifyTurnstileToken('any-token', undefined);
     expect(result).toBe(true);
   });
 
   it('returns true when Cloudflare responds with success', async () => {
-    process.env.TURNSTILE_SECRET_KEY = 'test-secret';
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -24,13 +20,11 @@ describe('verifyTurnstileToken', () => {
       })
     );
 
-    const { verifyTurnstileToken } = await import('@/backend/clients/turnstile');
-    const result = await verifyTurnstileToken('valid-token');
+    const result = await verifyTurnstileToken('valid-token', 'test-secret');
     expect(result).toBe(true);
   });
 
   it('returns false when Cloudflare responds with failure', async () => {
-    process.env.TURNSTILE_SECRET_KEY = 'test-secret';
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -38,29 +32,24 @@ describe('verifyTurnstileToken', () => {
       })
     );
 
-    const { verifyTurnstileToken } = await import('@/backend/clients/turnstile');
-    const result = await verifyTurnstileToken('invalid-token');
+    const result = await verifyTurnstileToken('invalid-token', 'test-secret');
     expect(result).toBe(false);
   });
 
   it('returns false on network error', async () => {
-    process.env.TURNSTILE_SECRET_KEY = 'test-secret';
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')));
 
-    const { verifyTurnstileToken } = await import('@/backend/clients/turnstile');
-    const result = await verifyTurnstileToken('any-token');
+    const result = await verifyTurnstileToken('any-token', 'test-secret');
     expect(result).toBe(false);
   });
 
   it('sends secret and token in POST body to Cloudflare', async () => {
-    process.env.TURNSTILE_SECRET_KEY = 'my-secret';
     const mockFetch = vi.fn().mockResolvedValue({
       json: vi.fn().mockResolvedValue({ success: true }),
     });
     vi.stubGlobal('fetch', mockFetch);
 
-    const { verifyTurnstileToken } = await import('@/backend/clients/turnstile');
-    await verifyTurnstileToken('my-token');
+    await verifyTurnstileToken('my-token', 'my-secret');
 
     expect(mockFetch).toHaveBeenCalledWith(
       'https://challenges.cloudflare.com/turnstile/v0/siteverify',

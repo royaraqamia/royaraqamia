@@ -1,6 +1,11 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
 
+export interface RateLimiterConfig {
+  redisUrl?: string;
+  redisToken?: string;
+}
+
 export interface RateLimiter {
   checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean>;
   getRateLimitRemaining(key: string, limit: number, windowMs: number): Promise<number>;
@@ -10,13 +15,15 @@ export class RateLimiterService implements RateLimiter {
   private redis: Redis | null | undefined;
   private readonly limiters = new Map<string, Ratelimit>();
 
+  constructor(private readonly config: RateLimiterConfig) {}
+
   private getRedis(): Redis | null {
     if (this.redis === undefined) {
       this.redis =
-        process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+        this.config.redisUrl && this.config.redisToken
           ? new Redis({
-              url: process.env.UPSTASH_REDIS_REST_URL,
-              token: process.env.UPSTASH_REDIS_REST_TOKEN,
+              url: this.config.redisUrl,
+              token: this.config.redisToken,
             })
           : null;
     }
@@ -80,28 +87,6 @@ export class RateLimiterService implements RateLimiter {
   }
 }
 
-export function createRateLimiter(): RateLimiter {
-  return new RateLimiterService();
-}
-
-let defaultRateLimiter: RateLimiter | null = null;
-
-function getDefaultRateLimiter(): RateLimiter {
-  if (!defaultRateLimiter) {
-    defaultRateLimiter = createRateLimiter();
-  }
-  return defaultRateLimiter;
-}
-
-/** Backwards-compatible exports kept for existing actions/services. */
-export function checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
-  return getDefaultRateLimiter().checkRateLimit(key, limit, windowMs);
-}
-
-export function getRateLimitRemaining(
-  key: string,
-  limit: number,
-  windowMs: number
-): Promise<number> {
-  return getDefaultRateLimiter().getRateLimitRemaining(key, limit, windowMs);
+export function createRateLimiter(config: RateLimiterConfig = {}): RateLimiter {
+  return new RateLimiterService(config);
 }

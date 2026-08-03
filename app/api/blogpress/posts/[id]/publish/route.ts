@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@/backend/transport/supabase/server';
 import { createBlogpressPostsService } from '@/backend/config/blogpress';
 import { AdminValidator } from '@/shared/admin-validator';
+import { env } from '@/backend/config/env';
 
 export async function POST(_req: Request, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
@@ -15,7 +16,7 @@ export async function POST(_req: Request, context: { params: Promise<{ id: strin
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
 
-    const blogVisible = AdminValidator.isAdmin(user.email ?? '');
+    const blogVisible = AdminValidator.isAdmin(user.email ?? '', env.adminEmails);
 
     const { slug } = await createBlogpressPostsService(supabase).publishPost(
       id,

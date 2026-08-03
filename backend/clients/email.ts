@@ -2,17 +2,25 @@ import { Resend } from 'resend';
 
 const baseStyle = `font-family: 'IBM Plex Sans Arabic', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a; color: #f5f5f5;`;
 
+export interface EmailSender {
+  fromName: string;
+  fromEmail: string;
+}
+
 export interface EmailClient {
   sendOtpEmail(email: string, otp: string): Promise<void>;
   sendPasswordResetEmail(email: string, resetUrl: string): Promise<void>;
 }
 
 export class ResendEmailClient implements EmailClient {
-  constructor(private readonly resend: Resend) {}
+  constructor(
+    private readonly resend: Resend,
+    private readonly sender: EmailSender
+  ) {}
 
   async sendOtpEmail(email: string, otp: string): Promise<void> {
     await this.resend.emails.send({
-      from: `${process.env.RESEND_FROM_NAME} <${process.env.RESEND_FROM_EMAIL}>`,
+      from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
       to: email,
       subject: 'رمز التَّحقُّق - رؤية رقمية',
       html: `
@@ -35,7 +43,7 @@ export class ResendEmailClient implements EmailClient {
 
   async sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
     await this.resend.emails.send({
-      from: `${process.env.RESEND_FROM_NAME} <${process.env.RESEND_FROM_EMAIL}>`,
+      from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
       to: email,
       subject: 'إعادة تعيين كلمة المرور - رؤية رقمية',
       html: `
@@ -57,24 +65,6 @@ export class ResendEmailClient implements EmailClient {
   }
 }
 
-export function createEmailClient(resend: Resend): EmailClient {
-  return new ResendEmailClient(resend);
-}
-
-let defaultEmailClient: EmailClient | null = null;
-
-function getDefaultEmailClient(): EmailClient {
-  if (!defaultEmailClient) {
-    defaultEmailClient = createEmailClient(new Resend(process.env.RESEND_API_KEY));
-  }
-  return defaultEmailClient;
-}
-
-/** Backwards-compatible exports kept for existing server actions. */
-export function sendOtpEmail(email: string, otp: string): Promise<void> {
-  return getDefaultEmailClient().sendOtpEmail(email, otp);
-}
-
-export function sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
-  return getDefaultEmailClient().sendPasswordResetEmail(email, resetUrl);
+export function createEmailClient(resend: Resend, sender: EmailSender): EmailClient {
+  return new ResendEmailClient(resend, sender);
 }

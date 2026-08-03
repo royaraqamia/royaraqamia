@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
+import { env } from '@/backend/config/env';
 
 let adminClient: ReturnType<typeof createClient<Database>> | null = null;
 
@@ -10,8 +11,8 @@ let adminClient: ReturnType<typeof createClient<Database>> | null = null;
  */
 export function getAdminSupabase() {
   if (!adminClient) {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const url = env.supabaseUrl;
+    const serviceRoleKey = env.supabaseServiceRoleKey;
 
     if (!url) {
       throw new Error('[getAdminSupabase] Missing env var: NEXT_PUBLIC_SUPABASE_URL');

@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
+import { env } from '@/backend/config/env';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const version =
-    process.env.VERCEL_DEPLOYMENT_ID ||
-    process.env.VERCEL_GIT_COMMIT_SHA ||
-    process.env.NEXT_BUILD_ID ||
-    'unknown';
+  const version = env.version;
 
   return NextResponse.json({ version }, { headers: { 'Cache-Control': 'no-store, max-age=0' } });
 }

@@ -14,8 +14,7 @@ import {
   DialogTrigger,
 } from '@/frontend/ui/ui/dialog';
 import { Settings, Upload, Loader2, ImageIcon, Link2, Search, X } from 'lucide-react';
-
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://royaraqamia.com';
+import { SITE_URL } from '@/frontend/shared/constants';
 
 interface PostSettingsDialogProps {
   title: string;

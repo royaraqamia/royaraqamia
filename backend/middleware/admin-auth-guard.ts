@@ -2,7 +2,7 @@ import 'server-only';
 
 import { createClient } from '@/backend/transport/supabase/server';
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
-import { getAdminEmails } from '@/shared/admin-validator';
+import { env } from '@/backend/config/env';
 
 // ============================================================
 // Sync the DB admin allowlist (app_settings) with ADMIN_EMAILS
@@ -10,7 +10,7 @@ import { getAdminEmails } from '@/shared/admin-validator';
 // ============================================================
 
 async function syncAdminFlags(): Promise<void> {
-  const adminEmails = getAdminEmails();
+  const adminEmails = env.adminEmails;
   const supabase = getAdminSupabase();
 
   const { data } = await supabase
@@ -39,7 +39,7 @@ export async function requireAdminAuth() {
   }
 
   // RBAC: check if user email is in the admin list (fail closed)
-  const adminEmails = getAdminEmails();
+  const adminEmails = env.adminEmails;
   const userEmail = user.email?.toLowerCase() ?? '';
 
   if (adminEmails.length === 0 || !adminEmails.includes(userEmail)) {

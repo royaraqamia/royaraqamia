@@ -1,7 +1,8 @@
 import { MetadataRoute } from 'next';
+import { env } from '@/backend/config/env';
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://royaraqamia.com';
+  const baseUrl = env.baseUrl;
 
   return {
     rules: {

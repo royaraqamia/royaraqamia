@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createRedirectUrlService } from '@/backend/config/linksnap';
+import { env } from '@/backend/config/env';
 
 export async function GET(req: NextRequest, context: { params: Promise<{ code: string }> }) {
   const { code } = await context.params;
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest, context: { params: Promise<{ code: s
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     console.error(`Redirect failed for code [${code}]:`, errorMessage);
 
-    const baseUrl = process.env.APP_URL || new URL(req.url).origin;
+    const baseUrl = env.appUrl || new URL(req.url).origin;
     const errorCode = errorMessage.includes('deactivated') ? 'blocked' : 'not-found';
     return NextResponse.redirect(`${baseUrl}/linksnap?error=${errorCode}&code=${code}`, 302);
   }

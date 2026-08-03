@@ -9,22 +9,24 @@ vi.mock('resend', () => ({
 }));
 
 import { Resend } from 'resend';
-import { ResendEmailClient, createEmailClient } from '@/backend/clients/email';
+import { ResendEmailClient, createEmailClient, type EmailSender } from '@/backend/clients/email';
 
 function makeResend(): Resend {
   return new (Resend as unknown as new () => Resend)();
 }
 
+function makeSender(): EmailSender {
+  return { fromName: 'رؤية رقمية', fromEmail: 'no-reply@royaraqamia.com' };
+}
+
 describe('ResendEmailClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.RESEND_FROM_NAME = 'رؤية رقمية';
-    process.env.RESEND_FROM_EMAIL = 'no-reply@royaraqamia.com';
   });
 
   it('sendOtpEmail sends to the right recipient with the OTP embedded', async () => {
     mockSend.mockResolvedValue({ id: 'email-1' });
-    const client = new ResendEmailClient(makeResend());
+    const client = new ResendEmailClient(makeResend(), makeSender());
 
     await client.sendOtpEmail('user@example.com', '123456');
 
@@ -41,7 +43,7 @@ describe('ResendEmailClient', () => {
 
   it('sendPasswordResetEmail embeds the reset URL', async () => {
     mockSend.mockResolvedValue({ id: 'email-2' });
-    const client = new ResendEmailClient(makeResend());
+    const client = new ResendEmailClient(makeResend(), makeSender());
 
     await client.sendPasswordResetEmail(
       'user@example.com',
@@ -56,9 +58,22 @@ describe('ResendEmailClient', () => {
     expect(String(payload.html)).toContain('https://royaraqamia.com/auth/update-password');
   });
 
-  it('createEmailClient returns a working client', async () => {
+  it('uses the configured sender in the from field', async () => {
     mockSend.mockResolvedValue({ id: 'email-3' });
-    const client = createEmailClient(makeResend());
+    const client = new ResendEmailClient(makeResend(), {
+      fromName: 'Custom Sender',
+      fromEmail: 'custom@example.com',
+    });
+
+    await client.sendOtpEmail('a@b.com', '000000');
+
+    const [payload] = mockSend.mock.calls[0] as [Record<string, unknown>];
+    expect(payload.from).toBe('Custom Sender <custom@example.com>');
+  });
+
+  it('createEmailClient returns a working client', async () => {
+    mockSend.mockResolvedValue({ id: 'email-4' });
+    const client = createEmailClient(makeResend(), makeSender());
     await client.sendOtpEmail('a@b.com', '000000');
     expect(mockSend).toHaveBeenCalledTimes(1);
   });

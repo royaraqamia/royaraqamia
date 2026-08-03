@@ -1,9 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ModerateLinkService } from '@/backend/services/linksnap/moderate-link';
 import { GetSystemStatsService } from '@/backend/services/linksnap/get-system-stats';
 import type { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import type { IAdminRepository } from '@/backend/repositories/linksnap/admin-repository';
 import type { ShortLink } from '@/shared/contracts/linksnap';
+
+const adminEmails = ['admin@example.com'];
 
 const now = new Date('2026-08-02T08:00:00.000Z');
 
@@ -30,12 +32,11 @@ function makeLinkRepo(overrides: Partial<IShortLinkRepository> = {}) {
 }
 
 describe('ModerateLinkService', () => {
-  beforeEach(() => vi.stubEnv('ADMIN_EMAILS', 'admin@example.com'));
-  afterEach(() => vi.unstubAllEnvs());
+  beforeEach(() => vi.clearAllMocks());
 
   it('blocks a link as an admin', async () => {
     const { repository } = makeLinkRepo();
-    const service = new ModerateLinkService(repository);
+    const service = new ModerateLinkService(repository, adminEmails);
     (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
     (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue({
       ...linkFixture,
@@ -50,7 +51,7 @@ describe('ModerateLinkService', () => {
 
   it('unblocks a link as an admin', async () => {
     const { repository } = makeLinkRepo();
-    const service = new ModerateLinkService(repository);
+    const service = new ModerateLinkService(repository, adminEmails);
     (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({
       ...linkFixture,
       isBlocked: true,
@@ -67,7 +68,7 @@ describe('ModerateLinkService', () => {
 
   it('denies non-admin users', async () => {
     const { repository } = makeLinkRepo();
-    const service = new ModerateLinkService(repository);
+    const service = new ModerateLinkService(repository, adminEmails);
     await expect(service.execute('user@example.com', 'abc123', true)).rejects.toThrow(
       'Access Denied: Administrative privileges required.'
     );
@@ -75,9 +76,8 @@ describe('ModerateLinkService', () => {
   });
 
   it('denies when the allowlist is empty (fail closed)', async () => {
-    vi.stubEnv('ADMIN_EMAILS', '');
     const { repository } = makeLinkRepo();
-    const service = new ModerateLinkService(repository);
+    const service = new ModerateLinkService(repository, []);
     await expect(service.execute('admin@example.com', 'abc123', true)).rejects.toThrow(
       'Access Denied: Administrative privileges required.'
     );
@@ -85,7 +85,7 @@ describe('ModerateLinkService', () => {
 
   it('throws when the code is missing', async () => {
     const { repository } = makeLinkRepo();
-    const service = new ModerateLinkService(repository);
+    const service = new ModerateLinkService(repository, adminEmails);
     await expect(service.execute('admin@example.com', '', true)).rejects.toThrow(
       'Link code is required.'
     );
@@ -93,7 +93,7 @@ describe('ModerateLinkService', () => {
 
   it('throws when the link is not found', async () => {
     const { repository } = makeLinkRepo();
-    const service = new ModerateLinkService(repository);
+    const service = new ModerateLinkService(repository, adminEmails);
     (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
     await expect(service.execute('admin@example.com', 'abc123', true)).rejects.toThrow(
@@ -111,21 +111,20 @@ describe('GetSystemStatsService', () => {
     links: [],
   };
 
-  beforeEach(() => vi.stubEnv('ADMIN_EMAILS', 'admin@example.com'));
-  afterEach(() => vi.unstubAllEnvs());
+  beforeEach(() => vi.clearAllMocks());
 
   it('returns stats for an admin', async () => {
     const adminRepository: IAdminRepository = { getSystemStats: vi.fn() };
     (adminRepository.getSystemStats as ReturnType<typeof vi.fn>).mockResolvedValue(statsFixture);
 
-    const service = new GetSystemStatsService(adminRepository);
+    const service = new GetSystemStatsService(adminRepository, adminEmails);
 
     await expect(service.execute('admin@example.com')).resolves.toEqual(statsFixture);
   });
 
   it('denies non-admin users', async () => {
     const adminRepository: IAdminRepository = { getSystemStats: vi.fn() };
-    const service = new GetSystemStatsService(adminRepository);
+    const service = new GetSystemStatsService(adminRepository, adminEmails);
 
     await expect(service.execute('user@example.com')).rejects.toThrow(
       'Access Denied: Administrative privileges required.'
@@ -138,7 +137,7 @@ describe('GetSystemStatsService', () => {
     (adminRepository.getSystemStats as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error('stats unavailable')
     );
-    const service = new GetSystemStatsService(adminRepository);
+    const service = new GetSystemStatsService(adminRepository, adminEmails);
 
     await expect(service.execute('admin@example.com')).rejects.toThrow('stats unavailable');
   });

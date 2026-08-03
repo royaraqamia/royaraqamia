@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { env } from '@/backend/config/env';
 
 interface SitemapEntryConfig {
   path: string;
@@ -57,7 +58,7 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
 ];
 
 function getBaseUrl(): string {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://royaraqamia.com';
+  const baseUrl = env.baseUrl;
 
   try {
     const url = new URL(baseUrl);
