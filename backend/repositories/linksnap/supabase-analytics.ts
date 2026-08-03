@@ -48,9 +48,22 @@ export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
     return this.toDomain(data as AnalyticsEventDbRow);
   }
 
-  async getSummaryForLink(code: string, userId: string): Promise<LinkAnalyticsSummary> {
+  async getLinkOwner(code: string): Promise<string> {
     const supabase = getAdminSupabase();
-    await this.verifyOwnership(supabase, code, userId);
+    const { data, error } = await supabase
+      .from('short_links')
+      .select('user_id')
+      .eq('code', code)
+      .single();
+
+    if (error) {
+      throw new Error(`Failed to verify short link owner: ${error.message}`);
+    }
+    return data.user_id ?? '';
+  }
+
+  async getSummaryForLink(code: string): Promise<LinkAnalyticsSummary> {
+    const supabase = getAdminSupabase();
     const events = await this.fetchEvents(supabase, code);
     const totalClicks = events.length;
 
@@ -60,25 +73,6 @@ export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
       clicksByDate: this.aggregateClicksByDate(events),
       topReferrers: this.aggregateTopReferrers(events),
     };
-  }
-
-  private async verifyOwnership(
-    supabase: ReturnType<typeof getAdminSupabase>,
-    code: string,
-    userId: string
-  ): Promise<void> {
-    const { data: linkData, error: linkError } = await supabase
-      .from('short_links')
-      .select('user_id')
-      .eq('code', code)
-      .single();
-
-    if (linkError) {
-      throw new Error(`Failed to verify short link owner: ${linkError.message}`);
-    }
-    if (linkData.user_id !== userId) {
-      throw new Error('Unauthorized: You do not own this link.');
-    }
   }
 
   private async fetchEvents(

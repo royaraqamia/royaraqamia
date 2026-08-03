@@ -12,6 +12,11 @@ export class GetUrlAnalyticsService {
       throw new Error('User authorization is required to view link analytics.');
     }
 
-    return await this.analyticsRepository.getSummaryForLink(code, userId);
+    const ownerId = await this.analyticsRepository.getLinkOwner(code);
+    if (ownerId !== userId) {
+      throw new Error('Unauthorized: You do not own this link.');
+    }
+
+    return await this.analyticsRepository.getSummaryForLink(code);
   }
 }

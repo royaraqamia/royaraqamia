@@ -34,6 +34,7 @@ function makeDeps() {
   };
   const analyticsRepository: IAnalyticsRepository = {
     recordClick: vi.fn(),
+    getLinkOwner: vi.fn(),
     getSummaryForLink: vi.fn(),
   };
   return { shortLinkRepository, analyticsRepository };
@@ -132,6 +133,7 @@ describe('RedirectUrlService.execute', () => {
 describe('GetUrlAnalyticsService.execute', () => {
   it('returns the analytics summary', async () => {
     const { analyticsRepository } = makeDeps();
+    (analyticsRepository.getLinkOwner as ReturnType<typeof vi.fn>).mockResolvedValue('u-1');
     (analyticsRepository.getSummaryForLink as ReturnType<typeof vi.fn>).mockResolvedValue(
       summaryFixture
     );
@@ -139,7 +141,8 @@ describe('GetUrlAnalyticsService.execute', () => {
     const service = new GetUrlAnalyticsService(analyticsRepository);
 
     await expect(service.execute('abc123', 'u-1')).resolves.toEqual(summaryFixture);
-    expect(analyticsRepository.getSummaryForLink).toHaveBeenCalledWith('abc123', 'u-1');
+    expect(analyticsRepository.getLinkOwner).toHaveBeenCalledWith('abc123');
+    expect(analyticsRepository.getSummaryForLink).toHaveBeenCalledWith('abc123');
   });
 
   it('throws when the code is missing', async () => {
@@ -158,14 +161,24 @@ describe('GetUrlAnalyticsService.execute', () => {
     );
   });
 
-  it('propagates repository errors', async () => {
+  it('throws when the caller does not own the link', async () => {
     const { analyticsRepository } = makeDeps();
-    (analyticsRepository.getSummaryForLink as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('Unauthorized: You do not own this link.')
-    );
+    (analyticsRepository.getLinkOwner as ReturnType<typeof vi.fn>).mockResolvedValue('u-1');
+
     const service = new GetUrlAnalyticsService(analyticsRepository);
     await expect(service.execute('abc123', 'u-2')).rejects.toThrow(
       'Unauthorized: You do not own this link.'
     );
+    expect(analyticsRepository.getSummaryForLink).not.toHaveBeenCalled();
+  });
+
+  it('propagates repository errors', async () => {
+    const { analyticsRepository } = makeDeps();
+    (analyticsRepository.getLinkOwner as ReturnType<typeof vi.fn>).mockResolvedValue('u-1');
+    (analyticsRepository.getSummaryForLink as ReturnType<typeof vi.fn>).mockRejectedValue(
+      new Error('analytics down')
+    );
+    const service = new GetUrlAnalyticsService(analyticsRepository);
+    await expect(service.execute('abc123', 'u-1')).rejects.toThrow('analytics down');
   });
 });

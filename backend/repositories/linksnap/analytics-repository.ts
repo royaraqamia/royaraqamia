@@ -2,5 +2,6 @@ import { AnalyticsEvent, LinkAnalyticsSummary } from '@/shared/contracts/linksna
 
 export interface IAnalyticsRepository {
   recordClick(event: Omit<AnalyticsEvent, 'id' | 'clickedAt'>): Promise<AnalyticsEvent>;
-  getSummaryForLink(code: string, userId: string): Promise<LinkAnalyticsSummary>;
+  getLinkOwner(code: string): Promise<string>;
+  getSummaryForLink(code: string): Promise<LinkAnalyticsSummary>;
 }
