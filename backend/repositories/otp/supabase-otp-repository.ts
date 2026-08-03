@@ -1,79 +1,64 @@
 import { getAdminSupabase } from '@/backend/transport/supabase/admin';
-import type {
-  IOtpRepository,
-  OtpVerificationResult,
-} from '@/backend/repositories/otp/otp-repository';
+import type { IOtpRepository, OtpRecordData } from '@/backend/repositories/otp/otp-repository';
 
 export class SupabaseOtpRepository implements IOtpRepository {
-  async createOtpRecord(
-    email: string,
-    otpHash: string,
-    salt: string,
-    expiresAt: Date
-  ): Promise<void> {
+  async createOtpRecord(input: {
+    email: string;
+    otpHash: string;
+    salt: string;
+    expiresAt: Date;
+    maxAttempts: number;
+  }): Promise<void> {
     const supabase = getAdminSupabase();
     const { error } = await supabase.from('otp_codes').insert({
-      email,
-      otp_hash: otpHash,
-      salt,
-      expires_at: expiresAt.toISOString(),
-      max_attempts: 5,
+      email: input.email,
+      otp_hash: input.otpHash,
+      salt: input.salt,
+      expires_at: input.expiresAt.toISOString(),
+      max_attempts: input.maxAttempts,
     });
     if (error) throw error;
   }
 
-  async verifyOtpRecord(email: string, otp: string): Promise<OtpVerificationResult> {
+  async findLatestPendingOtp(email: string): Promise<OtpRecordData | null> {
     const supabase = getAdminSupabase();
 
-    const { data: record, error: fetchError } = await supabase
+    const { data, error } = await supabase
       .from('otp_codes')
-      .select('*')
+      .select('id, otp_hash, salt, expires_at, attempts, max_attempts')
       .eq('email', email)
       .is('verified_at', null)
       .order('created_at', { ascending: false })
       .limit(1)
-      .single();
+      .maybeSingle();
 
-    if (fetchError || !record) return { error: 'لم يتم العثور على رمز التحقق' };
+    if (error || !data) return null;
 
-    if (new Date(record.expires_at) < new Date()) return { error: 'انتهت صلاحية رمز التحقق' };
+    return {
+      id: data.id,
+      otpHash: data.otp_hash,
+      salt: data.salt,
+      expiresAt: new Date(data.expires_at),
+      attempts: data.attempts,
+      maxAttempts: data.max_attempts,
+    };
+  }
 
-    if (record.attempts >= record.max_attempts)
-      return { error: 'تم تجاوز الحد الأقصى لمحاولات التحقق' };
+  async incrementOtpAttempts(id: string, currentAttempts: number): Promise<void> {
+    const supabase = getAdminSupabase();
+    const { error } = await supabase
+      .from('otp_codes')
+      .update({ attempts: currentAttempts + 1 })
+      .eq('id', id);
+    if (error) throw error;
+  }
 
-    const { verifyOtp: verifyOtpFn } = await import('@/backend/shared/otp/generator');
-    const isValid = verifyOtpFn(otp, record.otp_hash, record.salt);
-
-    if (!isValid) {
-      await supabase
-        .from('otp_codes')
-        .update({ attempts: record.attempts + 1 })
-        .eq('id', record.id);
-      return { error: 'رمز التحقق غير صحيح' };
-    }
-
-    await supabase
+  async markOtpVerified(id: string): Promise<void> {
+    const supabase = getAdminSupabase();
+    const { error } = await supabase
       .from('otp_codes')
       .update({ verified_at: new Date().toISOString() })
-      .eq('id', record.id);
-
-    return { success: true };
+      .eq('id', id);
+    if (error) throw error;
   }
-}
-
-export function createOtpRepository(): IOtpRepository {
-  return new SupabaseOtpRepository();
-}
-
-export async function createOtpRecord(
-  email: string,
-  otpHash: string,
-  salt: string,
-  expiresAt: Date
-): Promise<void> {
-  return createOtpRepository().createOtpRecord(email, otpHash, salt, expiresAt);
-}
-
-export async function verifyOtpRecord(email: string, otp: string): Promise<OtpVerificationResult> {
-  return createOtpRepository().verifyOtpRecord(email, otp);
 }

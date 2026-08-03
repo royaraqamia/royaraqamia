@@ -1,4 +1,4 @@
-import { generateOtp, hashOtp } from '@/backend/shared/otp/generator';
+import { generateOtp, hashOtp, verifyOtp } from '@/backend/shared/otp/generator';
 import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
 import { safeRedirect } from '@/backend/shared/safe-redirect';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
@@ -28,6 +28,7 @@ export interface AuthServiceDeps {
   verifyTurnstile: (token: string) => Promise<boolean>;
   otpTtlMinutes: number;
   otpResendCooldownSeconds: number;
+  otpMaxAttempts: number;
   siteUrl: string;
 }
 
@@ -38,6 +39,7 @@ export class AuthService {
   private readonly verifyTurnstile: (token: string) => Promise<boolean>;
   private readonly otpTtlMinutes: number;
   private readonly otpResendCooldownSeconds: number;
+  private readonly otpMaxAttempts: number;
   private readonly siteUrl: string;
 
   constructor(
@@ -50,6 +52,7 @@ export class AuthService {
     this.verifyTurnstile = deps.verifyTurnstile;
     this.otpTtlMinutes = deps.otpTtlMinutes;
     this.otpResendCooldownSeconds = deps.otpResendCooldownSeconds;
+    this.otpMaxAttempts = deps.otpMaxAttempts;
     this.siteUrl = deps.siteUrl;
   }
 
@@ -110,7 +113,13 @@ export class AuthService {
     const { hash, salt } = hashOtp(otp);
     const expiresAt = new Date(Date.now() + this.otpTtlMinutes * 60 * 1000);
 
-    await this.otpRepository.createOtpRecord(input.email, hash, salt, expiresAt);
+    await this.otpRepository.createOtpRecord({
+      email: input.email,
+      otpHash: hash,
+      salt,
+      expiresAt,
+      maxAttempts: this.otpMaxAttempts,
+    });
     try {
       await this.emailClient.sendOtpEmail(input.email, otp);
     } catch {
@@ -156,7 +165,13 @@ export class AuthService {
         const { hash, salt } = hashOtp(otp);
         const expiresAt = new Date(Date.now() + this.otpTtlMinutes * 60 * 1000);
 
-        await this.otpRepository.createOtpRecord(input.email, hash, salt, expiresAt);
+        await this.otpRepository.createOtpRecord({
+          email: input.email,
+          otpHash: hash,
+          salt,
+          expiresAt,
+          maxAttempts: this.otpMaxAttempts,
+        });
         try {
           await this.emailClient.sendOtpEmail(input.email, otp);
         } catch {
@@ -184,11 +199,26 @@ export class AuthService {
     redirectTo: string | null;
     pendingPassword: string | null;
   }): Promise<VerifyOtpResult> {
-    const result = await this.otpRepository.verifyOtpRecord(input.email, input.otp);
+    const record = await this.otpRepository.findLatestPendingOtp(input.email);
 
-    if (result.error) {
-      return { ok: false, message: result.error };
+    if (!record) {
+      return { ok: false, message: 'لم يتم العثور على رمز التحقق' };
     }
+
+    if (record.expiresAt.getTime() < Date.now()) {
+      return { ok: false, message: 'انتهت صلاحية رمز التحقق' };
+    }
+
+    if (record.attempts >= record.maxAttempts) {
+      return { ok: false, message: 'تم تجاوز الحد الأقصى لمحاولات التحقق' };
+    }
+
+    if (!verifyOtp(input.otp, record.otpHash, record.salt)) {
+      await this.otpRepository.incrementOtpAttempts(record.id, record.attempts);
+      return { ok: false, message: 'رمز التحقق غير صحيح' };
+    }
+
+    await this.otpRepository.markOtpVerified(record.id);
 
     // Try session-first (signup flow — user already has unconfirmed session)
     const { user } = await this.gateway.getUser();
@@ -237,7 +267,13 @@ export class AuthService {
     const { hash, salt } = hashOtp(otp);
     const expiresAt = new Date(Date.now() + this.otpTtlMinutes * 60 * 1000);
 
-    await this.otpRepository.createOtpRecord(input.email, hash, salt, expiresAt);
+    await this.otpRepository.createOtpRecord({
+      email: input.email,
+      otpHash: hash,
+      salt,
+      expiresAt,
+      maxAttempts: this.otpMaxAttempts,
+    });
     try {
       await this.emailClient.sendOtpEmail(input.email, otp);
     } catch {
