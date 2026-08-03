@@ -3,7 +3,7 @@
 import { UserCircle, CaretLeft } from '@phosphor-icons/react';
 import { useState } from 'react';
 import { ScrollAnimation } from './ScrollAnimations';
-import { useHorizontalScroll } from '../state/useHorizontalScroll';
+import { useHorizontalScroll } from '../state/use-horizontal-scroll';
 import { useUI } from '../state/UIContext';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
 import { testimonials } from '../../data/testimonials';

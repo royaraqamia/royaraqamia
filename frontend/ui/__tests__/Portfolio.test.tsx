@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Portfolio } from '../Portfolio';
 
-vi.mock('../../state/useHorizontalScroll', () => ({
+vi.mock('../../state/use-horizontal-scroll', () => ({
   useHorizontalScroll: () => ({
     scrollContainerRef: { current: document.createElement('div') },
     canScrollLeft: false,
