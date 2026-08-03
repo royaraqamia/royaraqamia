@@ -1,5 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { getAdminSupabase } from '@/backend/transport/supabase/admin';
+import { createSupabaseAuthGateway } from '@/backend/clients/supabase-auth-gateway';
 
 const protectedRoutes: Record<string, string> = {
   '/linksnap/app': '/auth/login',
@@ -72,22 +74,13 @@ export async function updateSession(request: NextRequest) {
         data: { user },
       } = await supabase.auth.getUser();
       if (user && user.app_metadata?.provider === 'google') {
-        const { createClient } = await import('@supabase/supabase-js');
-        const admin = createClient(
-          process.env.NEXT_PUBLIC_SUPABASE_URL!,
-          process.env.SUPABASE_SERVICE_ROLE_KEY!,
-          { auth: { autoRefreshToken: false, persistSession: false } }
-        );
-        await admin
-          .from('users')
-          .upsert({
-            id: user.id,
-            email: user.email ?? '',
-            name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? '',
-            avatar_url: user.user_metadata?.avatar_url ?? null,
-            created_at: new Date().toISOString(),
-          })
-          .maybeSingle();
+        const gateway = createSupabaseAuthGateway(supabase, getAdminSupabase());
+        await gateway.upsertUserProfile({
+          id: user.id,
+          email: user.email ?? '',
+          name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? '',
+          avatar_url: user.user_metadata?.avatar_url ?? null,
+        });
       }
       const next = request.nextUrl.searchParams.get('next') ?? '/';
       const redirectUrl = isSafeRedirect(next) ? next : '/';

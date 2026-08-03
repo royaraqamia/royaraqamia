@@ -79,6 +79,7 @@ export function createSupabaseAuthGateway(
           id: input.id,
           email: input.email,
           name: input.name,
+          avatar_url: input.avatar_url ?? null,
           created_at: new Date().toISOString(),
         })
         .maybeSingle();
