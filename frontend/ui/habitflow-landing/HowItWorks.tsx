@@ -50,7 +50,8 @@ export function HowItWorks() {
           </div>
         ),
         wrapperClassName: 'text-center mb-16 sm:mb-24',
-        titleClassName: 'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 sm:mb-6 leading-[1.15]',
+        titleClassName:
+          'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 sm:mb-6 leading-[1.15]',
         titlePrefix: 'ثلاث خطوات لـ ',
         titleHighlight: 'عادات دائمة',
         titleHighlightClassName:

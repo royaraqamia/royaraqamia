@@ -13,7 +13,10 @@ import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { estimateReadingTime, formatReadingTimeLong } from '@/frontend/shared/reading-time';
-import { createBlogpressAdminPostsService, createBlogpressPostsService } from '@/backend/config/blogpress';
+import {
+  createBlogpressAdminPostsService,
+  createBlogpressPostsService,
+} from '@/backend/config/blogpress';
 import { env } from '@/backend/config/env';
 import type { Metadata } from 'next';
 

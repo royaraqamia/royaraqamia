@@ -294,7 +294,8 @@ export function FeaturesBento() {
           </div>
         ),
         wrapperClassName: 'mx-auto mb-14 max-w-3xl text-center sm:mb-20',
-        titleClassName: 'mb-6 text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl',
+        titleClassName:
+          'mb-6 text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl',
         titlePrefix: 'كل ما تحتاجه لتتبُّع ',
         titleHighlight: 'المصروفات',
         titleHighlightClassName:
@@ -304,38 +305,38 @@ export function FeaturesBento() {
       }}
       gridClassName="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4"
     >
-          <BentoCard
-            {...bentoCardProps('rgba(139,92,246,1)')}
-            title="تسجيل المصروفات"
-            description="سجِّل المصروفات بسرعة مع التَّصنيفات والوصف. لا تفقد أبدًا أين تذهب أموالك."
-            icon={Receipt}
-            className="md:col-span-2 lg:col-span-2 lg:row-span-2"
-            delay={0.1}
-          >
-            <ExpenseLogger />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(139,92,246,1)')}
+        title="تسجيل المصروفات"
+        description="سجِّل المصروفات بسرعة مع التَّصنيفات والوصف. لا تفقد أبدًا أين تذهب أموالك."
+        icon={Receipt}
+        className="md:col-span-2 lg:col-span-2 lg:row-span-2"
+        delay={0.1}
+      >
+        <ExpenseLogger />
+      </BentoCard>
 
-          <BentoCard
-            {...bentoCardProps('rgba(129,140,248,1)')}
-            title="تحليل التَّصنيفات"
-            description="صوِّر المصروفات حسب التَّصنيف بأشرطة مُلوَّنَة ونسب مئويَّة في لمحة."
-            icon={ChartPieSlice}
-            className="md:col-span-2 lg:col-span-2"
-            delay={0.2}
-          >
-            <CategoryChart />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(129,140,248,1)')}
+        title="تحليل التَّصنيفات"
+        description="صوِّر المصروفات حسب التَّصنيف بأشرطة مُلوَّنَة ونسب مئويَّة في لمحة."
+        icon={ChartPieSlice}
+        className="md:col-span-2 lg:col-span-2"
+        delay={0.2}
+      >
+        <CategoryChart />
+      </BentoCard>
 
-          <BentoCard
-            {...bentoCardProps('rgba(167,139,250,1)')}
-            title="الاتِّجاهات الشَّهريَّة"
-            description="تتبَّع أنماط إنفاقك بمرور الوقت من خلال رسوم بيانيَّة شهريَّة ورؤى مقارنة."
-            icon={TrendUp}
-            className="md:col-span-2 lg:col-span-2"
-            delay={0.3}
-          >
-            <MonthlyTrend />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(167,139,250,1)')}
+        title="الاتِّجاهات الشَّهريَّة"
+        description="تتبَّع أنماط إنفاقك بمرور الوقت من خلال رسوم بيانيَّة شهريَّة ورؤى مقارنة."
+        icon={TrendUp}
+        className="md:col-span-2 lg:col-span-2"
+        delay={0.3}
+      >
+        <MonthlyTrend />
+      </BentoCard>
     </FeaturesSection>
   );
 }

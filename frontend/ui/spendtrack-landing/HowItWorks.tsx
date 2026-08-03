@@ -67,8 +67,7 @@ export function HowItWorks() {
         titleHighlight: 'الوضوح المالي',
         titleHighlightClassName:
           'bg-linear-to-r from-primary via-emerald-500 to-teal-400 bg-clip-text text-transparent drop-shadow-xs',
-        subtitle:
-          'ابدأ بتتبُّع مصروفاتك اليوم وتمتَّع برؤية كاملة لعادات الإنفاق الخاصَّة بك.',
+        subtitle: 'ابدأ بتتبُّع مصروفاتك اليوم وتمتَّع برؤية كاملة لعادات الإنفاق الخاصَّة بك.',
         subtitleClassName:
           'text-base sm:text-lg lg:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed font-normal',
         initialY: 24,

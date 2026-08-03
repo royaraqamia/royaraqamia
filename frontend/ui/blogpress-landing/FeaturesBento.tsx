@@ -18,7 +18,8 @@ const bentoCardTheme = {
     'w-12 h-12 rounded-2xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 group-hover:border-indigo-500/50 transition-all duration-300',
   iconClassName: 'text-indigo-400 group-hover:text-indigo-300 transition-colors',
   iconSize: 24,
-  titleClassName: 'text-xl sm:text-2xl font-bold tracking-tight text-neutral-100 group-hover:text-white transition-colors',
+  titleClassName:
+    'text-xl sm:text-2xl font-bold tracking-tight text-neutral-100 group-hover:text-white transition-colors',
   descriptionClassName: 'text-neutral-400 text-sm sm:text-base leading-relaxed mb-6 font-normal',
   childrenWrapperClassName: 'mt-auto w-full pt-2',
   hoverOverlayClassName:
@@ -312,7 +313,8 @@ export function FeaturesBento() {
           </div>
         ),
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-20',
-        titleClassName: 'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight text-white',
+        titleClassName:
+          'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight text-white',
         titlePrefix: 'كل ما تحتاجه لـ ',
         titleHighlight: 'كتابة أفضل',
         titleHighlightClassName:
@@ -325,38 +327,38 @@ export function FeaturesBento() {
       }}
       gridClassName="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8"
     >
-          <BentoCard
-            {...bentoCardProps('rgba(139,92,246,1)')}
-            title="محرِّر Markdown"
-            description="اكتب بلغة الـ Markdown مع معاينة فوريَّة. لا تشتيت، فقط تحرير سريع ونظيف."
-            icon={FileText}
-            className="lg:col-span-2 lg:row-span-2"
-            delay={0.1}
-          >
-            <EditorPreview />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(139,92,246,1)')}
+        title="محرِّر Markdown"
+        description="اكتب بلغة الـ Markdown مع معاينة فوريَّة. لا تشتيت، فقط تحرير سريع ونظيف."
+        icon={FileText}
+        className="lg:col-span-2 lg:row-span-2"
+        delay={0.1}
+      >
+        <EditorPreview />
+      </BentoCard>
 
-          <BentoCard
-            {...bentoCardProps('rgba(129,140,248,1)')}
-            title="إدارة المسودَّات"
-            description="نظِّم كتاباتك مع المسودَّات وسير عمل النَّشر والتَّحكُّم الكامل بالإصدارات."
-            icon={Note}
-            className="lg:col-span-2"
-            delay={0.2}
-          >
-            <DraftsOverviewCard />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(129,140,248,1)')}
+        title="إدارة المسودَّات"
+        description="نظِّم كتاباتك مع المسودَّات وسير عمل النَّشر والتَّحكُّم الكامل بالإصدارات."
+        icon={Note}
+        className="lg:col-span-2"
+        delay={0.2}
+      >
+        <DraftsOverviewCard />
+      </BentoCard>
 
-          <BentoCard
-            {...bentoCardProps('rgba(167,139,250,1)')}
-            title="تحسين محرِّكات البحث"
-            description="أدوات SEO مدمجة تساعد محتواك في تحقيق ترتيب متقدِّم والوصول لقرَّاء أكثر."
-            icon={MagnifyingGlass}
-            className="lg:col-span-2"
-            delay={0.3}
-          >
-            <SEOPreview />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(167,139,250,1)')}
+        title="تحسين محرِّكات البحث"
+        description="أدوات SEO مدمجة تساعد محتواك في تحقيق ترتيب متقدِّم والوصول لقرَّاء أكثر."
+        icon={MagnifyingGlass}
+        className="lg:col-span-2"
+        delay={0.3}
+      >
+        <SEOPreview />
+      </BentoCard>
     </FeaturesSection>
   );
 }

@@ -251,7 +251,8 @@ export function FeaturesBento() {
           </span>
         ),
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-14 sm:mb-20',
-        titleClassName: 'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight',
+        titleClassName:
+          'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight',
         titlePrefix: 'كل ما تحتاجه ل',
         titleHighlight: 'بناء العادات',
         titleHighlightClassName:
@@ -263,38 +264,38 @@ export function FeaturesBento() {
       }}
       gridClassName="grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8"
     >
-          <BentoCard
-            {...bentoCardProps('rgba(139,92,246,1)')}
-            title="تتبُّع يومي"
-            description="سجِّل عاداتك يوميًّا بنقرة واحدة. متابعات بسيطة تبني الزَّخم مع الوقت."
-            icon={CalendarCheck}
-            className="lg:col-span-2 lg:row-span-2"
-            delay={0.1}
-          >
-            <HabitTracker />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(139,92,246,1)')}
+        title="تتبُّع يومي"
+        description="سجِّل عاداتك يوميًّا بنقرة واحدة. متابعات بسيطة تبني الزَّخم مع الوقت."
+        icon={CalendarCheck}
+        className="lg:col-span-2 lg:row-span-2"
+        delay={0.1}
+      >
+        <HabitTracker />
+      </BentoCard>
 
-          <BentoCard
-            {...bentoCardProps('rgba(129,140,248,1)')}
-            title="تقويم السَّلاسل"
-            description="تصوَّر انتظامك مع تقويم السَّلاسل الأسبوعيَّة والشَّهريَّة. شاهد تقدُّمك وهو ينمو."
-            icon={Fire}
-            className="lg:col-span-2"
-            delay={0.2}
-          >
-            <StreakCalendar />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(129,140,248,1)')}
+        title="تقويم السَّلاسل"
+        description="تصوَّر انتظامك مع تقويم السَّلاسل الأسبوعيَّة والشَّهريَّة. شاهد تقدُّمك وهو ينمو."
+        icon={Fire}
+        className="lg:col-span-2"
+        delay={0.2}
+      >
+        <StreakCalendar />
+      </BentoCard>
 
-          <BentoCard
-            {...bentoCardProps('rgba(167,139,250,1)')}
-            title="تحليلات التَّقدُّم"
-            description="تتبَّع معدَّلات الإنجاز ومُتوسِّط أطوال السَّلاسل، وشاهد كيف تتحسَّن عاداتك بمرور الوقت."
-            icon={ChartLineUp}
-            className="lg:col-span-2"
-            delay={0.3}
-          >
-            <ProgressAnalytics />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(167,139,250,1)')}
+        title="تحليلات التَّقدُّم"
+        description="تتبَّع معدَّلات الإنجاز ومُتوسِّط أطوال السَّلاسل، وشاهد كيف تتحسَّن عاداتك بمرور الوقت."
+        icon={ChartLineUp}
+        className="lg:col-span-2"
+        delay={0.3}
+      >
+        <ProgressAnalytics />
+      </BentoCard>
     </FeaturesSection>
   );
 }

@@ -15,7 +15,8 @@ const bentoCardTheme = {
     'flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 text-violet-400 shadow-inner group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/20 transition-all duration-300',
   iconClassName: 'text-violet-400 transition-transform duration-300 group-hover:scale-110',
   iconSize: 26,
-  titleClassName: 'text-xl sm:text-2xl font-bold tracking-tight text-slate-100 group-hover:text-white transition-colors',
+  titleClassName:
+    'text-xl sm:text-2xl font-bold tracking-tight text-slate-100 group-hover:text-white transition-colors',
   descriptionClassName: 'text-sm sm:text-base leading-relaxed text-slate-400 font-normal',
   childrenWrapperClassName: 'mt-auto pt-2',
   hoverOverlayClassName:
@@ -145,69 +146,71 @@ export function FeaturesBento() {
           </span>
         ),
         wrapperClassName: 'text-center mb-16 sm:mb-20',
-        titleClassName: 'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-slate-100',
+        titleClassName:
+          'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-slate-100',
         titlePrefix: 'كل ما تحتاجه ',
         titleHighlight: 'لإدارة الرَّوابط',
         titleHighlightClassName:
           'bg-linear-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-xs',
         subtitle: 'اختصِر، نظِّم، وحلِّل روابطك بأدوات قويَّة مُصمَّمَة للمبدعين والمسوِّقين.',
-        subtitleClassName: 'text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed font-normal',
+        subtitleClassName:
+          'text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed font-normal',
         useEase: false,
       }}
       gridClassName="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8"
     >
-          <BentoCard
-            {...bentoCardProps('rgba(139,92,246,1)')}
-            title="اختصار فوري"
-            description="الصق أي رابط طويل واحصل على رابط قصير نظيف قابل للمشاركة بالميلي ثانية."
-            icon={Link}
-            className="lg:col-span-2 lg:row-span-2"
-            delay={0.1}
-          >
-            <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 shadow-inner backdrop-blur-md space-y-4">
-              <div className="flex items-center gap-3" dir="ltr">
-                <div className="flex-1 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center px-4 overflow-hidden shadow-xs">
-                  <span className="text-xs sm:text-sm font-mono text-slate-400 truncate">
-                    https://example.com/very-long-url/with-many/parameters
-                  </span>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-violet-600/30 group-hover:scale-105 group-hover:bg-violet-500 transition-all">
-                  <ArrowRight size={20} className="text-white" />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-2 pt-1">
-                <span className="truncate text-sm sm:text-lg font-bold font-mono bg-linear-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent">
-                  royaraqamia.com/abc123
-                </span>
-                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-slate-900 border border-slate-800 px-2.5 py-0.5 text-[10px] text-slate-400 font-medium sm:px-3 sm:py-1 sm:text-xs">
-                  منذ 2 ثانية
-                </span>
-              </div>
+      <BentoCard
+        {...bentoCardProps('rgba(139,92,246,1)')}
+        title="اختصار فوري"
+        description="الصق أي رابط طويل واحصل على رابط قصير نظيف قابل للمشاركة بالميلي ثانية."
+        icon={Link}
+        className="lg:col-span-2 lg:row-span-2"
+        delay={0.1}
+      >
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 shadow-inner backdrop-blur-md space-y-4">
+          <div className="flex items-center gap-3" dir="ltr">
+            <div className="flex-1 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center px-4 overflow-hidden shadow-xs">
+              <span className="text-xs sm:text-sm font-mono text-slate-400 truncate">
+                https://example.com/very-long-url/with-many/parameters
+              </span>
             </div>
-          </BentoCard>
+            <div className="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-violet-600/30 group-hover:scale-105 group-hover:bg-violet-500 transition-all">
+              <ArrowRight size={20} className="text-white" />
+            </div>
+          </div>
 
-          <BentoCard
-            {...bentoCardProps('rgba(129,140,248,1)')}
-            title="تتبُّع النَّقرات"
-            description="اعرف بالضَّبط كم مرَّه تمَّ النَّقر على كل رابط بتتبُّع دقيق وفوري."
-            icon={ChartBar}
-            className="lg:col-span-2"
-            delay={0.2}
-          >
-            <MiniChart />
-          </BentoCard>
+          <div className="flex items-center justify-between gap-2 pt-1">
+            <span className="truncate text-sm sm:text-lg font-bold font-mono bg-linear-to-r from-violet-400 to-indigo-300 bg-clip-text text-transparent">
+              royaraqamia.com/abc123
+            </span>
+            <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-slate-900 border border-slate-800 px-2.5 py-0.5 text-[10px] text-slate-400 font-medium sm:px-3 sm:py-1 sm:text-xs">
+              منذ 2 ثانية
+            </span>
+          </div>
+        </div>
+      </BentoCard>
 
-          <BentoCard
-            {...bentoCardProps('rgba(167,139,250,1)')}
-            title="تحليلات متقدِّمة"
-            description="افهم جمهورك من خلال تحليلات مُفصَّلَة عن أداء الرَّوابط والمواقع الجغرافيَّة والاتِّجاهات."
-            icon={MagnifyingGlass}
-            className="lg:col-span-2"
-            delay={0.3}
-          >
-            <AnalyticsPreview />
-          </BentoCard>
+      <BentoCard
+        {...bentoCardProps('rgba(129,140,248,1)')}
+        title="تتبُّع النَّقرات"
+        description="اعرف بالضَّبط كم مرَّه تمَّ النَّقر على كل رابط بتتبُّع دقيق وفوري."
+        icon={ChartBar}
+        className="lg:col-span-2"
+        delay={0.2}
+      >
+        <MiniChart />
+      </BentoCard>
+
+      <BentoCard
+        {...bentoCardProps('rgba(167,139,250,1)')}
+        title="تحليلات متقدِّمة"
+        description="افهم جمهورك من خلال تحليلات مُفصَّلَة عن أداء الرَّوابط والمواقع الجغرافيَّة والاتِّجاهات."
+        icon={MagnifyingGlass}
+        className="lg:col-span-2"
+        delay={0.3}
+      >
+        <AnalyticsPreview />
+      </BentoCard>
     </FeaturesSection>
   );
 }
