@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { Habit, HabitLog, IHabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
-import { getDbPath } from '@/backend/config/habitflow/data-path';
 
 interface Schema {
   habits: Habit[];
@@ -9,8 +8,10 @@ interface Schema {
 }
 
 export class JsonFileHabitRepository implements IHabitRepository {
-  private get dbFile(): string {
-    return getDbPath();
+  private readonly dbFile: string;
+
+  constructor(dbPath: string) {
+    this.dbFile = dbPath;
   }
 
   private initDb() {

@@ -7,7 +7,7 @@ const tempDir = path.join(os.tmpdir(), `habitflow-test-${Date.now()}`);
 
 function loadRepo() {
   return import('@/backend/repositories/habitflow/json-file-repository').then(
-    (m) => new m.JsonFileHabitRepository()
+    (m) => new m.JsonFileHabitRepository(path.join(tempDir, 'habits_db.json'))
   );
 }
 

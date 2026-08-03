@@ -5,12 +5,13 @@ import type { IHabitRepository } from '@/shared/contracts/habitflow';
 import { JsonFileHabitRepository } from '@/backend/repositories/habitflow/json-file-repository';
 import { SupabaseHabitRepository } from '@/backend/repositories/habitflow/supabase-repository';
 import { env } from '@/backend/config/env';
+import { getDbPath } from '@/backend/config/habitflow/data-path';
 
 let cachedRepository: JsonFileHabitRepository | null = null;
 
 export function getLocalHabitRepository(): JsonFileHabitRepository {
   if (!cachedRepository) {
-    cachedRepository = new JsonFileHabitRepository();
+    cachedRepository = new JsonFileHabitRepository(getDbPath());
   }
   return cachedRepository;
 }
