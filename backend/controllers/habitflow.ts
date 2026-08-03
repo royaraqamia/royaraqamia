@@ -5,7 +5,8 @@ import {
   getLocalHabitRepository,
 } from '@/backend/config/habitflow';
 import { AppError } from '@/backend/shared/habitflow/errors';
-import { errorResult, jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import { errorResult } from '@/backend/middleware/http';
+import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import type { Habit, HabitRestoreInput } from '@/shared/contracts/habitflow';
 
 export async function getHabits(): Promise<HttpResult> {

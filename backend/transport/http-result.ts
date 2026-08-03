@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getErrorMessage } from '@/backend/shared/errors';
-import { AppError } from '@/backend/shared/habitflow/errors';
 
 export interface RevalidationHint {
   path: string;
@@ -27,14 +25,6 @@ export function jsonResult(
   options: { headers?: Record<string, string>; revalidate?: RevalidationHint[] } = {}
 ): HttpJsonResult {
   return { status, body, headers: options.headers, revalidate: options.revalidate };
-}
-
-export function errorResult(error: unknown, status?: number): HttpJsonResult {
-  const message = getErrorMessage(error);
-  if (status === undefined && error instanceof AppError) {
-    status = error.statusCode;
-  }
-  return { status: status ?? 500, body: { error: message } };
 }
 
 export function toNextResponse(result: HttpResult): NextResponse {
