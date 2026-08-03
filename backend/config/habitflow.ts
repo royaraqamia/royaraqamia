@@ -1,4 +1,4 @@
-import type { SupabaseClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { HabitService } from '@/backend/services/habitflow/habit-service';
 import type { IHabitRepository } from '@/shared/contracts/habitflow';
 import { JsonFileHabitRepository } from '@/backend/repositories/habitflow/json-file-repository';
@@ -18,7 +18,11 @@ export function getHabitRepository(
 
   if (userId && url && key) {
     try {
-      return { repository: new SupabaseHabitRepository(userId, client), mode: 'supabase' };
+      const supabase = client ?? createClient(url, key);
+      return {
+        repository: new SupabaseHabitRepository(supabase, userId),
+        mode: 'supabase',
+      };
     } catch (e) {
       console.warn('Supabase init failed, falling back to local storage:', e);
     }

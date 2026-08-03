@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { Habit, HabitLog, IHabitRepository } from '@/shared/contracts/habitflow';
 
 interface HabitRow {
@@ -47,21 +47,9 @@ export class SupabaseHabitRepository implements IHabitRepository {
   private client: SupabaseClient;
   private userId: string | undefined;
 
-  constructor(userId?: string, client?: SupabaseClient) {
+  constructor(client: SupabaseClient, userId?: string) {
+    this.client = client;
     this.userId = userId;
-
-    if (client) {
-      this.client = client;
-    } else {
-      const url = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-
-      if (!url || !key) {
-        throw new Error('Supabase environment variables are not configured.');
-      }
-
-      this.client = createClient(url, key);
-    }
   }
 
   async getHabits(): Promise<Habit[]> {
