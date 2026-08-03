@@ -1,9 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Habit, HabitLog, IHabitRepository } from '@/shared/contracts/habitflow';
-import { getDbPath } from '@/backend/shared/habitflow/data-path';
-
-const DB_FILE = getDbPath();
+import { getDbPath } from '@/backend/config/habitflow/data-path';
 
 interface Schema {
   habits: Habit[];
@@ -11,13 +9,17 @@ interface Schema {
 }
 
 export class JsonFileHabitRepository implements IHabitRepository {
+  private get dbFile(): string {
+    return getDbPath();
+  }
+
   private initDb() {
-    const dir = path.dirname(DB_FILE);
+    const dir = path.dirname(this.dbFile);
     if (!fs.existsSync(dir)) {
       fs.mkdirSync(dir, { recursive: true });
     }
     try {
-      fs.writeFileSync(DB_FILE, JSON.stringify({ habits: [], logs: [] }, null, 2), {
+      fs.writeFileSync(this.dbFile, JSON.stringify({ habits: [], logs: [] }, null, 2), {
         encoding: 'utf-8',
         flag: 'wx',
       });
@@ -29,7 +31,7 @@ export class JsonFileHabitRepository implements IHabitRepository {
   private readDb(): Schema {
     this.initDb();
     try {
-      const content = fs.readFileSync(DB_FILE, 'utf-8');
+      const content = fs.readFileSync(this.dbFile, 'utf-8');
       return JSON.parse(content);
     } catch (e) {
       console.error('Error reading JSON DB, resetting to empty', e);
@@ -39,7 +41,7 @@ export class JsonFileHabitRepository implements IHabitRepository {
 
   private writeDb(data: Schema): void {
     this.initDb();
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+    fs.writeFileSync(this.dbFile, JSON.stringify(data, null, 2), 'utf-8');
   }
 
   async getHabits(): Promise<Habit[]> {
