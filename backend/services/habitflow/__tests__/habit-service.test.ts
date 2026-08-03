@@ -27,6 +27,7 @@ function makeRepo(overrides: Partial<IHabitRepository> = {}) {
     deleteHabit: vi.fn(),
     getLogs: vi.fn(),
     toggleLog: vi.fn(),
+    restoreFromBackup: vi.fn(),
     ...overrides,
   };
   return { repository, service: new HabitService(repository) };

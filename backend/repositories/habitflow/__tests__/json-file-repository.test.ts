@@ -148,4 +148,55 @@ describe('JsonFileHabitRepository', () => {
     const habits = await repo.getHabits();
     expect(habits).toEqual([]);
   });
+
+  it('restoreFromBackup overwrites the file with the restored data', async () => {
+    const repo = await loadRepo();
+    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    await repo.toggleLog(habit.id, '2026-08-01', true);
+
+    await repo.restoreFromBackup({
+      habits: [
+        {
+          id: 'h-imported',
+          name: 'رياضة',
+          icon: 'Dumbbell',
+          frequency: 'daily',
+          createdAt: '2026-07-01T00:00:00.000Z',
+          archived: false,
+        },
+      ],
+      logs: [
+        {
+          id: 'l-imported',
+          habitId: 'h-imported',
+          date: '2026-07-02',
+          completed: true,
+          completedAt: null,
+        },
+      ],
+    });
+
+    const habits = await repo.getHabits();
+    expect(habits).toHaveLength(1);
+    expect(habits[0]).toMatchObject({ id: 'h-imported', name: 'رياضة', archived: false });
+    const logs = await repo.getLogs('2020-01-01', '2030-12-31');
+    expect(logs).toHaveLength(1);
+    expect(logs[0]).toMatchObject({ id: 'l-imported', habitId: 'h-imported', completed: true });
+  });
+
+  it('getLocalData returns empty when the file does not exist', async () => {
+    const repo = await loadRepo();
+    await expect(repo.getLocalData()).resolves.toEqual({ habits: [], logs: [] });
+  });
+
+  it('getLocalData returns the raw persisted data including archived habits', async () => {
+    const repo = await loadRepo();
+    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    await repo.deleteHabit(habit.id);
+
+    const { habits, logs } = await repo.getLocalData();
+    expect(habits).toHaveLength(1);
+    expect(habits[0]?.archived).toBe(true);
+    expect(logs).toEqual([]);
+  });
 });

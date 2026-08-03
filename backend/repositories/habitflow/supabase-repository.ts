@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Habit, HabitLog, IHabitRepository } from '@/shared/contracts/habitflow';
+import { Habit, HabitLog, IHabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import { AppError } from '@/backend/shared/habitflow/errors';
 
 interface HabitRow {
   id: string;
@@ -134,6 +135,59 @@ export class SupabaseHabitRepository implements IHabitRepository {
     }
 
     return true;
+  }
+
+  async restoreFromBackup(input: HabitRestoreInput): Promise<void> {
+    const userId = this.userId;
+    if (!userId) {
+      throw new AppError('Unauthorized for Supabase restore', 401);
+    }
+
+    const { error: clearLogsError } = await this.client
+      .from('habit_logs')
+      .delete()
+      .eq('user_id', userId);
+    const { error: clearHabitsError } = await this.client
+      .from('habits')
+      .delete()
+      .eq('user_id', userId);
+
+    if (clearLogsError || clearHabitsError) {
+      console.error('Failed to clear Supabase data for restore:', {
+        clearHabitsError,
+        clearLogsError,
+      });
+    }
+
+    const dbHabits = input.habits.map((h) => ({
+      id: h.id.startsWith('h-') ? undefined : h.id,
+      name: h.name,
+      icon: h.icon,
+      frequency: h.frequency,
+      archived: h.archived || false,
+      created_at: h.createdAt || new Date().toISOString(),
+      user_id: userId,
+    }));
+
+    const { error: insertHabitsError } = await this.client.from('habits').insert(dbHabits).select();
+
+    if (insertHabitsError) {
+      throw new AppError(`Failed to restore habits: ${insertHabitsError.message}`, 500);
+    }
+
+    const dbLogs = input.logs.map((l) => ({
+      habit_id: l.habitId,
+      date: l.date,
+      completed: l.completed,
+      completed_at: l.completedAt || new Date().toISOString(),
+      user_id: userId,
+    }));
+
+    const { error: insertLogsError } = await this.client.from('habit_logs').insert(dbLogs);
+
+    if (insertLogsError) {
+      throw new AppError(`Failed to restore logs: ${insertLogsError.message}`, 500);
+    }
   }
 
   async getLogs(startDate: string, endDate: string): Promise<HabitLog[]> {

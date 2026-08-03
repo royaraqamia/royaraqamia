@@ -24,6 +24,29 @@ export interface IHabitRepository {
   deleteHabit(id: string): Promise<boolean>;
   getLogs(startDate: string, endDate: string): Promise<HabitLog[]>;
   toggleLog(habitId: string, date: string, completed: boolean): Promise<HabitLog>;
+  restoreFromBackup(input: HabitRestoreInput): Promise<void>;
+}
+
+export interface HabitBackupHabit {
+  id: string;
+  name: string;
+  icon: string;
+  frequency: string;
+  archived?: boolean;
+  createdAt?: string;
+}
+
+export interface HabitBackupLog {
+  id: string;
+  habitId: string;
+  date: string;
+  completed: boolean;
+  completedAt?: string | null;
+}
+
+export interface HabitRestoreInput {
+  habits: HabitBackupHabit[];
+  logs: HabitBackupLog[];
 }
 
 export interface HabitStats {

@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Habit, HabitLog, IHabitRepository } from '@/shared/contracts/habitflow';
+import { Habit, HabitLog, IHabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
 import { getDbPath } from '@/backend/config/habitflow/data-path';
 
 interface Schema {
@@ -93,6 +93,43 @@ export class JsonFileHabitRepository implements IHabitRepository {
   async getLogs(startDate: string, endDate: string): Promise<HabitLog[]> {
     const db = this.readDb();
     return db.logs.filter((log) => log.date >= startDate && log.date <= endDate);
+  }
+
+  async getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
+    if (!fs.existsSync(this.dbFile)) {
+      return { habits: [], logs: [] };
+    }
+    try {
+      const content = fs.readFileSync(this.dbFile, 'utf-8');
+      const data = JSON.parse(content) as Partial<Schema>;
+      return {
+        habits: data.habits || [],
+        logs: data.logs || [],
+      };
+    } catch {
+      return { habits: [], logs: [] };
+    }
+  }
+
+  async restoreFromBackup(input: HabitRestoreInput): Promise<void> {
+    const restoredData: Schema = {
+      habits: input.habits.map((h) => ({
+        id: h.id,
+        name: h.name,
+        icon: h.icon,
+        frequency: h.frequency as Habit['frequency'],
+        createdAt: h.createdAt || new Date().toISOString(),
+        archived: h.archived || false,
+      })),
+      logs: input.logs.map((l) => ({
+        id: l.id,
+        habitId: l.habitId,
+        date: l.date,
+        completed: l.completed,
+        completedAt: l.completedAt || null,
+      })),
+    };
+    this.writeDb(restoredData);
   }
 
   async toggleLog(habitId: string, date: string, completed: boolean): Promise<HabitLog> {

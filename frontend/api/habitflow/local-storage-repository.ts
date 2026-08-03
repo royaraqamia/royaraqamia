@@ -1,4 +1,4 @@
-import { Habit, HabitLog, IHabitRepository } from '@/shared/contracts/habitflow';
+import { Habit, HabitLog, IHabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
 
 const HABITS_KEY = 'habitflow_habits';
 const LOGS_KEY = 'habitflow_logs';
@@ -97,6 +97,28 @@ export class LocalStorageHabitRepository implements IHabitRepository {
       writeLogs(logs);
       return newLog;
     }
+  }
+
+  async restoreFromBackup(input: HabitRestoreInput): Promise<void> {
+    writeHabits(
+      input.habits.map((h) => ({
+        id: h.id,
+        name: h.name,
+        icon: h.icon,
+        frequency: h.frequency as Habit['frequency'],
+        createdAt: h.createdAt || new Date().toISOString(),
+        archived: h.archived || false,
+      }))
+    );
+    writeLogs(
+      input.logs.map((l) => ({
+        id: l.id,
+        habitId: l.habitId,
+        date: l.date,
+        completed: l.completed,
+        completedAt: l.completedAt || null,
+      }))
+    );
   }
 
   static seedFromSSR(habits: Habit[], logs: HabitLog[]): void {
