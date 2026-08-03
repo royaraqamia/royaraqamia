@@ -5,7 +5,7 @@ import {
   type CertificateVerifierDeps,
 } from '@/backend/services/certificates/certificate-verification';
 import type { Certificate } from '@/shared/contracts/certificates';
-import type { ICertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
+import type { ICertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
 
 // ============================================================
 // Test the certificate code validation logic
@@ -53,13 +53,10 @@ describe('Certificate code format validation', () => {
 // ============================================================
 
 function makeDeps(overrides: Partial<CertificateVerifierDeps> = {}) {
-  const repository: ICertificatesRepository = {
+  const repository: ICertificatesReader = {
     getByCode: vi.fn(),
     list: vi.fn(),
     getById: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
   };
 
   const checkRateLimit = vi.fn<CertificateVerifierDeps['checkRateLimit']>(async () => true);
