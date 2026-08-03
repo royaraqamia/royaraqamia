@@ -1,15 +1,12 @@
 'use client';
 
-import { Trash2 } from 'lucide-react';
-import { Habit } from '@/shared/contracts/habitflow';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/ui/dialog';
 import { Button } from '@/frontend/ui/ui/button';
 import { Input } from '@/frontend/ui/ui/input';
-import { HABIT_ICONS } from '@/frontend/habitflow/shared/habit-icons';
+import { HABIT_ICONS } from '@/frontend/shared/habitflow/habit-icons';
 
-interface EditHabitModalProps {
+interface AddHabitModalProps {
   isOpen: boolean;
-  habit: Habit | null;
   habitName: string;
   habitIcon: string;
   habitFrequency: 'daily' | 'weekly';
@@ -18,14 +15,12 @@ interface EditHabitModalProps {
   onIconChange: (icon: string) => void;
   onFrequencyChange: (freq: 'daily' | 'weekly') => void;
   onSubmit: (e: React.FormEvent) => void;
-  onArchive: (id: string) => void;
   formError?: string;
   isSubmitting?: boolean;
 }
 
-export function EditHabitModal({
+export function AddHabitModal({
   isOpen,
-  habit,
   habitName,
   habitIcon,
   habitFrequency,
@@ -36,24 +31,23 @@ export function EditHabitModal({
   onIconChange,
   onFrequencyChange,
   onSubmit,
-  onArchive,
-}: EditHabitModalProps) {
+}: AddHabitModalProps) {
   return (
     <Dialog
-      open={isOpen && !!habit}
+      open={isOpen}
       onOpenChange={(open) => {
         if (!open) onClose();
       }}
     >
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>تعديل خصائص العادة</DialogTitle>
+          <DialogTitle>إنشاء عادة روتينية</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={onSubmit} className="p-4 sm:p-6 space-y-5">
           {formError && (
             <div
-              id="edit-habit-error"
+              id="add-habit-error"
               className="bg-destructive/10 border border-destructive/30 text-destructive text-xs font-semibold rounded-lg px-4 py-3 text-center"
               role="alert"
             >
@@ -62,7 +56,7 @@ export function EditHabitModal({
           )}
           <div className="space-y-2">
             <label
-              htmlFor="input-edit-habit-name"
+              htmlFor="input-add-habit-name"
               className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
             >
               اسم العادة
@@ -74,11 +68,12 @@ export function EditHabitModal({
                 onChange={(e) => {
                   if (e.target.value.length <= 50) onNameChange(e.target.value);
                 }}
+                placeholder="مثال: تأمل الصباح"
                 required
                 maxLength={50}
-                id="input-edit-habit-name"
+                id="input-add-habit-name"
                 autoFocus
-                aria-describedby={formError ? 'edit-habit-error' : undefined}
+                aria-describedby={formError ? 'add-habit-error' : undefined}
                 className="touch-target"
               />
             </div>
@@ -145,35 +140,23 @@ export function EditHabitModal({
             </div>
           </fieldset>
 
-          <div className="pt-2 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="pt-2 flex items-center justify-end gap-3 border-t border-border">
             <Button
               type="button"
-              onClick={() => onArchive(habit!.id)}
-              className="flex items-center gap-2 bg-warning/10 text-warning hover:bg-warning/20 border-0 shadow-none touch-target btn-press focus-ring"
-              id="btn-archive-habit"
+              variant="outline"
+              onClick={onClose}
+              className="touch-target btn-press focus-ring"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              أرشفة العادة
+              إلغاء
             </Button>
-
-            <div className="flex items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="touch-target btn-press focus-ring"
-              >
-                إلغاء
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                id="btn-submit-edit-habit"
-                className="touch-target btn-press focus-ring"
-              >
-                {isSubmitting ? 'جارٍ التطبيق...' : 'تطبيق التغييرات'}
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              id="btn-submit-add-habit"
+              className="touch-target btn-press focus-ring"
+            >
+              {isSubmitting ? 'جارٍ الحفظ...' : 'حفظ العادة'}
+            </Button>
           </div>
         </form>
       </DialogContent>

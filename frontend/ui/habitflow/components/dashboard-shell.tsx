@@ -13,16 +13,16 @@ import {
 } from 'lucide-react';
 import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
-import { useDashboard } from '@/frontend/habitflow/state/use-dashboard';
+import { useDashboard } from '@/frontend/state/habitflow/use-dashboard';
 import { useLogout } from '@/frontend/state/use-logout';
 import { useSession } from '@/frontend/ui/shared/session-provider';
 import { Button } from '@/frontend/ui/ui/button';
 import { Card } from '@/frontend/ui/ui/card';
-import { StatsCard } from '@/frontend/habitflow/ui/components/stats-card';
-import { HabitCard } from '@/frontend/habitflow/ui/components/habit-card';
-import { CalendarGrid } from '@/frontend/habitflow/ui/components/calendar-grid';
-import { AddHabitModal } from '@/frontend/habitflow/ui/components/add-habit-modal';
-import { EditHabitModal } from '@/frontend/habitflow/ui/components/edit-habit-modal';
+import { StatsCard } from '@/frontend/ui/habitflow/components/stats-card';
+import { HabitCard } from '@/frontend/ui/habitflow/components/habit-card';
+import { CalendarGrid } from '@/frontend/ui/habitflow/components/calendar-grid';
+import { AddHabitModal } from '@/frontend/ui/habitflow/components/add-habit-modal';
+import { EditHabitModal } from '@/frontend/ui/habitflow/components/edit-habit-modal';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 interface DashboardShellProps {

@@ -17,7 +17,7 @@ export function useDashboardBackup(refreshData: () => Promise<void>): DashboardB
 
   const handleDownloadBackup = async () => {
     try {
-      const { ApiClient } = await import('@/frontend/habitflow/api/habit-api');
+      const { ApiClient } = await import('@/frontend/api/habitflow/habit-api');
       const data = await ApiClient.exportBackup();
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -51,7 +51,7 @@ export function useDashboardBackup(refreshData: () => Promise<void>): DashboardB
         return;
       }
 
-      const { ApiClient } = await import('@/frontend/habitflow/api/habit-api');
+      const { ApiClient } = await import('@/frontend/api/habitflow/habit-api');
       await ApiClient.importBackup(parsed);
       toast.success('تم استعادة النسخة الاحتياطية بنجاح');
       setTimeout(async () => {

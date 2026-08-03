@@ -7,7 +7,7 @@ import {
   type SetStateAction,
 } from 'react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
-import { LocalStorageHabitRepository } from '@/frontend/habitflow/api/local-storage-repository';
+import { LocalStorageHabitRepository } from '@/frontend/api/habitflow/local-storage-repository';
 
 export function getTodayString(): string {
   const tzOffset = new Date().getTimezoneOffset() * 60000;
@@ -77,7 +77,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
       const localHabits = await localRepo.getHabits();
       const localLogs = await localRepo.getLogs('2000-01-01', '2099-12-31');
       if (localHabits.length === 0) return;
-      const { ApiClient } = await import('@/frontend/habitflow/api/habit-api');
+      const { ApiClient } = await import('@/frontend/api/habitflow/habit-api');
       await ApiClient.syncToCloud({ habits: localHabits, logs: localLogs });
       localStorage.removeItem('habitflow_habits');
       localStorage.removeItem('habitflow_logs');
@@ -129,7 +129,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
   };
 
   async function refreshData() {
-    const { ApiClient } = await import('@/frontend/habitflow/api/habit-api');
+    const { ApiClient } = await import('@/frontend/api/habitflow/habit-api');
     const [data, freshUser] = await Promise.all([
       ApiClient.fetchInitialData(),
       ApiClient.fetchUser(),

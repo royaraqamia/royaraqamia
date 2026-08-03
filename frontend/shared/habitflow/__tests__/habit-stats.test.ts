@@ -3,7 +3,7 @@ import {
   calculateHabitStats,
   calculateAggregateStats,
   get30DayCalendarGrid,
-} from '@/frontend/shared/habit-stats';
+} from '@/frontend/shared/habitflow/habit-stats';
 import type { Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 const TODAY = '2026-08-02';

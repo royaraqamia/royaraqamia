@@ -2,8 +2,8 @@ import { createElement } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Check, Flame, Edit3 } from 'lucide-react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
-import { calculateHabitStats } from '@/frontend/shared/habit-stats';
-import { getIconComponent, getIconColorClass } from '@/frontend/habitflow/shared/habit-icons';
+import { calculateHabitStats } from '@/frontend/shared/habitflow/habit-stats';
+import { getIconComponent, getIconColorClass } from '@/frontend/shared/habitflow/habit-icons';
 import { Card } from '@/frontend/ui/ui/card';
 import { Button } from '@/frontend/ui/ui/button';
 

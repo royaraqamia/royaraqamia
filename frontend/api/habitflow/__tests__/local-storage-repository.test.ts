@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { LocalStorageHabitRepository } from '@/frontend/habitflow/api/local-storage-repository';
+import { LocalStorageHabitRepository } from '@/frontend/api/habitflow/local-storage-repository';
 import type { Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 const HABITS_KEY = 'habitflow_habits';

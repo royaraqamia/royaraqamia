@@ -1,9 +1,9 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { DashboardShell } from '@/frontend/habitflow/ui/components/dashboard-shell';
-import { SkeletonStats } from '@/frontend/habitflow/ui/components/skeleton-stats';
-import { SkeletonHabits } from '@/frontend/habitflow/ui/components/skeleton-habits';
-import { SkeletonCalendar } from '@/frontend/habitflow/ui/components/skeleton-calendar';
+import { DashboardShell } from '@/frontend/ui/habitflow/components/dashboard-shell';
+import { SkeletonStats } from '@/frontend/ui/habitflow/components/skeleton-stats';
+import { SkeletonHabits } from '@/frontend/ui/habitflow/components/skeleton-habits';
+import { SkeletonCalendar } from '@/frontend/ui/habitflow/components/skeleton-calendar';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { createHabitService } from '@/backend/config/habitflow';
 

@@ -1,8 +1,8 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'sonner';
 import { Habit } from '@/shared/contracts/habitflow';
-import { ApiClient, ApiError } from '@/frontend/habitflow/api/habit-api';
-import { LocalStorageHabitRepository } from '@/frontend/habitflow/api/local-storage-repository';
+import { ApiClient, ApiError } from '@/frontend/api/habitflow/habit-api';
+import { LocalStorageHabitRepository } from '@/frontend/api/habitflow/local-storage-repository';
 
 const localRepo = new LocalStorageHabitRepository();
 

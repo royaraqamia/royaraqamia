@@ -3,7 +3,7 @@ import {
   getIconComponent,
   getIconColorClass,
   HABIT_ICONS,
-} from '@/frontend/habitflow/shared/habit-icons';
+} from '@/frontend/shared/habitflow/habit-icons';
 import { Activity } from 'lucide-react';
 
 describe('getIconComponent', () => {
