@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getAuthenticatedUser } from '@/backend/transport/bearer-auth';
 import { createBulkShortenService } from '@/backend/config/linksnap';
 import { checkRateLimitApi } from '@/backend/middleware/http';
+import { bulkShortenRateLimitPolicy } from '@/backend/config/rate-limiter';
 
 export async function POST(req: NextRequest) {
   try {
@@ -13,13 +14,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const rateLimitResponse = await checkRateLimitApi({
-      key: `bulk-shorten:${user.id}`,
-      limit: 10,
-      windowMs: 10 * 60 * 1000,
-      message:
-        'تم تجاوز حد الطلب: طلبات الاختصار بالجملة محدودة بـ 10 دفعات كل 10 دقائق لحماية سلامة قاعدة البيانات.',
-    });
+    const rateLimitResponse = await checkRateLimitApi(bulkShortenRateLimitPolicy(user.id));
     if (rateLimitResponse) return rateLimitResponse;
 
     const { urls } = await req.json();

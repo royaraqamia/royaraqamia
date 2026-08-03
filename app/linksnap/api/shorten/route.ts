@@ -3,6 +3,7 @@ import { getAuthenticatedUser } from '@/backend/transport/bearer-auth';
 import { createShortenUrlService } from '@/backend/config/linksnap';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { getClientIp } from '@/backend/transport/http';
+import { shortenRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { getErrorMessage } from '@/backend/shared/errors';
 
 export async function POST(req: NextRequest) {
@@ -14,17 +15,7 @@ export async function POST(req: NextRequest) {
     const userId = user ? user.id : null;
 
     const ip = getClientIp(req);
-    const rateLimitKey = `shorten:${userId || ip}`;
-    const limit = userId ? 50 : 5;
-    const message = userId
-      ? 'تم تجاوز حد الطلب: الحسابات الموثقة محدودة بـ 50 رابطًا كل 10 دقائق لمنع إساءة استخدام النظام.'
-      : 'تم تجاوز حد الطلب: إنشاء الروابط للمستخدمين المجهولين محدود بـ 5 روابط كل 10 دقائق. يرجى تسجيل الدخول أو إنشاء حساب للحدود الأعلى.';
-    const rateLimitResponse = await checkRateLimitApi({
-      key: rateLimitKey,
-      limit,
-      windowMs: 10 * 60 * 1000,
-      message,
-    });
+    const rateLimitResponse = await checkRateLimitApi(shortenRateLimitPolicy(userId, ip));
     if (rateLimitResponse) return rateLimitResponse;
 
     const service = createShortenUrlService();

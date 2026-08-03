@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { NextRequest, NextResponse } from 'next/server';
+import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
 
 function readBody<T>(res: NextResponse): T {
   return (res as unknown as { data: T }).data;
@@ -437,7 +438,10 @@ describe('GET /[code] redirect route', () => {
   it('redirects to the blocked page when the link is deactivated', async () => {
     process.env.APP_URL = 'http://localhost:3000';
     mockRedirect.execute.mockRejectedValue(
-      new Error('This link has been deactivated due to terms of service violations.')
+      new ShortLinkRedirectError(
+        'This link has been deactivated due to terms of service violations.',
+        'blocked'
+      )
     );
     const res = await redirectGET(makeReq(undefined, {}), {
       params: Promise.resolve({ code: 'abc123' }),
@@ -449,7 +453,9 @@ describe('GET /[code] redirect route', () => {
 
   it('redirects to the not-found page for unknown codes', async () => {
     process.env.APP_URL = 'http://localhost:3000';
-    mockRedirect.execute.mockRejectedValue(new Error('Short link not found.'));
+    mockRedirect.execute.mockRejectedValue(
+      new ShortLinkRedirectError('Short link not found.', 'not-found')
+    );
     const res = await redirectGET(makeReq(undefined, {}), {
       params: Promise.resolve({ code: 'abc123' }),
     });
