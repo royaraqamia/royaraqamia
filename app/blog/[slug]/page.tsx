@@ -4,7 +4,6 @@ import Image from 'next/image';
 import { cookies } from 'next/headers';
 import { isValidElement } from 'react';
 import { createClient } from '@/backend/transport/supabase/server';
-import { getAdminSupabase } from '@/backend/transport/supabase/admin';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -14,7 +13,7 @@ import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { estimateReadingTime, formatReadingTimeLong } from '@/frontend/shared/reading-time';
-import { createBlogpressPostsService } from '@/backend/config/blogpress';
+import { createBlogpressAdminPostsService, createBlogpressPostsService } from '@/backend/config/blogpress';
 import { env } from '@/backend/config/env';
 import type { Metadata } from 'next';
 
@@ -91,8 +90,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   const p = post;
 
-  const adminSupabase = getAdminSupabase();
-  const author = await createBlogpressPostsService(adminSupabase).getPostAuthor(p.author_id);
+  const author = await createBlogpressAdminPostsService().getPostAuthor(p.author_id);
 
   const relatedPosts = await createBlogpressPostsService(supabase).getRelatedPosts(slug);
 
