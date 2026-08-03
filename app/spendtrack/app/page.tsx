@@ -25,6 +25,12 @@ export const metadata: Metadata = {
 
 const PAGE_SIZE = 20;
 
+async function loadSpendtrackService() {
+  const cookieStore = await cookies();
+  const supabase = await createClient(cookieStore);
+  return createSpendtrackService(supabase);
+}
+
 function getDateRange(range: string, from?: string, to?: string) {
   const now = new Date();
   switch (range) {
@@ -53,9 +59,8 @@ async function TotalCard({
   end: string;
   catFilter: string[] | null;
 }) {
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-  const data = await createSpendtrackService(supabase).getTotalExpenses(
+  const service = await loadSpendtrackService();
+  const data = await service.getTotalExpenses(
     userId,
     start,
     end,
@@ -99,9 +104,8 @@ async function TotalCard({
 }
 
 async function CreateExpenseButton({ userId }: { userId: string }) {
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-  const categories = await createSpendtrackService(supabase).getUserCategories(userId);
+  const service = await loadSpendtrackService();
+  const categories = await service.getUserCategories(userId);
   return <CreateExpenseDialog categories={categories} />;
 }
 
@@ -116,9 +120,8 @@ async function CategoryPieSection({
   end: string;
   catFilter: string[] | null;
 }) {
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-  const data = await createSpendtrackService(supabase).getCategoryBreakdown(
+  const service = await loadSpendtrackService();
+  const data = await service.getCategoryBreakdown(
     userId,
     start,
     end,
@@ -138,9 +141,8 @@ async function DailyBarSection({
   end: string;
   catFilter: string[] | null;
 }) {
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
-  const data = await createSpendtrackService(supabase).getDailyTotals(
+  const service = await loadSpendtrackService();
+  const data = await service.getDailyTotals(
     userId,
     start,
     end,
@@ -162,14 +164,13 @@ async function TransactionsSection({
   filterCategories: string[];
   sort: string;
 }) {
-  const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
+  const service = await loadSpendtrackService();
 
   const {
     expenses: safeExpenses,
     categories: safeCategories,
     totalCount,
-  } = await createSpendtrackService(supabase).getTransactions({
+  } = await service.getTransactions({
     userId,
     start,
     end,
