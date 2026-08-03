@@ -268,7 +268,7 @@ npm test
 npm run test:watch
 
 # Run a single test file
-npx vitest run backend/services/__tests__/certificate-verification.test.ts
+npx vitest run backend/services/certificates/__tests__/certificate-verification.test.ts
 ```
 
 ### End-to-end tests (Playwright)

@@ -6,7 +6,7 @@ import { getPublicSupabase } from '@/backend/transport/supabase/public';
 import {
   createCertificateVerifier,
   type CertificateVerifier,
-} from '@/backend/services/certificate-verification';
+} from '@/backend/services/certificates/certificate-verification';
 import { CertificatesService } from '@/backend/services/certificates/certificates-service';
 import type { Database } from '@/backend/models/database.types';
 import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';

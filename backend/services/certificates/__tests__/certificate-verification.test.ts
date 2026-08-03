@@ -3,7 +3,7 @@ import {
   createCertificateVerifier,
   CERT_CODE_REGEX,
   type CertificateVerifierDeps,
-} from '@/backend/services/certificate-verification';
+} from '@/backend/services/certificates/certificate-verification';
 import type { Certificate } from '@/shared/contracts/certificates';
 import type { ICertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
 
