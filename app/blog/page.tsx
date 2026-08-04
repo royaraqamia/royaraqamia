@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { createClient } from '@/backend/transport/supabase/server';
+import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { Button } from '@/frontend/ui/ui/button';
 import {
   ChevronLeft,
@@ -37,7 +37,7 @@ export default async function BlogPage(props: {
   const query = q?.trim() || '';
 
   const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = await createServerSupabaseClient(cookieStore);
 
   const { posts, totalPages } = await createBlogpressPostsService(supabase).getPublishedPosts(
     page,

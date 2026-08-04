@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { cookies } from 'next/headers';
 import { isValidElement } from 'react';
-import { createClient } from '@/backend/transport/supabase/server';
+import { createServerSupabaseClient } from '@/backend/config/supabase';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -60,7 +60,7 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { slug } = await props.params;
   const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = await createServerSupabaseClient(cookieStore);
   const post = await createBlogpressPostsService(supabase).getPublishedPostBySlug(slug);
 
   if (!post) {
@@ -86,7 +86,7 @@ export async function generateMetadata(props: {
 export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
   const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = await createServerSupabaseClient(cookieStore);
   const post = await createBlogpressPostsService(supabase).getPublishedPostBySlug(slug);
 
   if (!post) notFound();

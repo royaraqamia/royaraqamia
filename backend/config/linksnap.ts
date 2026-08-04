@@ -10,6 +10,7 @@ import { ModerateLinkService } from '@/backend/services/linksnap/moderate-link';
 import { GetUrlAnalyticsService } from '@/backend/services/linksnap/get-url-analytics';
 import { GetSystemStatsService } from '@/backend/services/linksnap/get-system-stats';
 import { RedirectUrlService } from '@/backend/services/linksnap/redirect-url';
+import { getAdminSupabase, getPublicSupabase } from '@/backend/config/supabase';
 import { env } from '@/backend/config/env';
 
 /**
@@ -17,15 +18,15 @@ import { env } from '@/backend/config/env';
  * services used by the API route handlers.
  */
 export function createShortLinkRepository(): SupabaseShortLinkRepository {
-  return new SupabaseShortLinkRepository();
+  return new SupabaseShortLinkRepository(getAdminSupabase(), getPublicSupabase());
 }
 
 export function createAnalyticsRepository(): SupabaseAnalyticsRepository {
-  return new SupabaseAnalyticsRepository();
+  return new SupabaseAnalyticsRepository(getAdminSupabase());
 }
 
 export function createAdminRepository(): SupabaseAdminRepository {
-  return new SupabaseAdminRepository();
+  return new SupabaseAdminRepository(getAdminSupabase());
 }
 
 export function createShortenUrlService(): ShortenUrlService {

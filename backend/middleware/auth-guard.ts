@@ -4,11 +4,11 @@ import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { createClient } from '@/backend/transport/supabase/server';
+import { createServerSupabaseClient } from '@/backend/config/supabase';
 
 export const getAuthUser = cache(async () => {
   const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = await createServerSupabaseClient(cookieStore);
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -31,7 +31,7 @@ export async function getOptionalUser(): Promise<{
   client: SupabaseClient | null;
 }> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServerSupabaseClient();
     if (!supabase) return { user: null, client: null };
     const { data } = await supabase.auth.getUser();
     if (!data?.user) return { user: null, client: null };

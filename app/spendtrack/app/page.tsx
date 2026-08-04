@@ -10,7 +10,7 @@ import { CategoryPieChart } from '@/frontend/ui/spendtrack/category-pie-chart';
 import { DailyBarChart } from '@/frontend/ui/spendtrack/daily-bar-chart';
 import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
 import { getAuthUser } from '@/backend/middleware/auth-guard';
-import { createClient } from '@/backend/transport/supabase/server';
+import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { cookies } from 'next/headers';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
@@ -27,7 +27,7 @@ const PAGE_SIZE = 20;
 
 async function loadSpendtrackService() {
   const cookieStore = await cookies();
-  const supabase = await createClient(cookieStore);
+  const supabase = await createServerSupabaseClient(cookieStore);
   return createSpendtrackService(supabase);
 }
 

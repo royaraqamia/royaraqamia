@@ -1,6 +1,7 @@
 import { IAnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { AnalyticsEvent, LinkAnalyticsSummary, DailyClickStat } from '@/shared/contracts/linksnap';
-import { getAdminSupabase } from '@/backend/transport/supabase/admin';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/backend/models/database.types';
 
 interface AnalyticsEventDbRow {
   id: string;
@@ -17,6 +18,8 @@ interface ReferrerEntry {
 }
 
 export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
+  constructor(private readonly supabase: SupabaseClient<Database>) {}
+
   private toDomain(row: AnalyticsEventDbRow): AnalyticsEvent {
     return {
       id: row.id,
@@ -29,7 +32,7 @@ export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
   }
 
   async recordClick(event: Omit<AnalyticsEvent, 'id' | 'clickedAt'>): Promise<AnalyticsEvent> {
-    const supabase = getAdminSupabase();
+    const supabase = this.supabase;
     const { data, error } = await supabase
       .from('analytics_events')
       .insert({
@@ -49,7 +52,7 @@ export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
   }
 
   async getLinkOwner(code: string): Promise<string> {
-    const supabase = getAdminSupabase();
+    const supabase = this.supabase;
     const { data, error } = await supabase
       .from('short_links')
       .select('user_id')
@@ -63,7 +66,7 @@ export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
   }
 
   async getSummaryForLink(code: string): Promise<LinkAnalyticsSummary> {
-    const supabase = getAdminSupabase();
+    const supabase = this.supabase;
     const events = await this.fetchEvents(supabase, code);
     const totalClicks = events.length;
 
@@ -76,7 +79,7 @@ export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
   }
 
   private async fetchEvents(
-    supabase: ReturnType<typeof getAdminSupabase>,
+    supabase: SupabaseClient<Database>,
     code: string
   ): Promise<AnalyticsEvent[]> {
     const { data: eventsData, error: eventsError } = await supabase

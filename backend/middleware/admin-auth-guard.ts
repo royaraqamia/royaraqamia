@@ -1,7 +1,6 @@
 import 'server-only';
 
-import { createClient } from '@/backend/transport/supabase/server';
-import { getAdminSupabase } from '@/backend/transport/supabase/admin';
+import { createServerSupabaseClient, getAdminSupabase } from '@/backend/config/supabase';
 import { env } from '@/backend/config/env';
 
 // ============================================================
@@ -29,7 +28,7 @@ async function syncAdminFlags(): Promise<void> {
 }
 
 export async function requireAdminAuth() {
-  const supabase = await createClient();
+  const supabase = await createServerSupabaseClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

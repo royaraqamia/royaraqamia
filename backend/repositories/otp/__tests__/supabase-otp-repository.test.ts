@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-const mockGetAdminSupabase = vi.fn();
-
-vi.mock('@/backend/transport/supabase/admin', () => ({
-  getAdminSupabase: () => mockGetAdminSupabase(),
-}));
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/backend/models/database.types';
 
 import { SupabaseOtpRepository } from '@/backend/repositories/otp/supabase-otp-repository';
 
@@ -43,8 +39,7 @@ function makeClient(
     return { insert, select, update };
   });
 
-  const client = { from };
-  mockGetAdminSupabase.mockReturnValue(client);
+  const client = { from } as unknown as SupabaseClient<Database>;
   return { client, insert, update, updateEq, maybeSingle, from, selectEq, is };
 }
 
@@ -69,8 +64,8 @@ describe('SupabaseOtpRepository', () => {
 
   describe('createOtpRecord', () => {
     it('inserts the OTP record with the given max_attempts', async () => {
-      const { insert, from } = makeClient();
-      const repo = new SupabaseOtpRepository();
+      const { client, insert, from } = makeClient();
+      const repo = new SupabaseOtpRepository(client);
       const expiresAt = new Date('2026-08-02T10:00:00.000Z');
 
       await repo.createOtpRecord({
@@ -92,8 +87,8 @@ describe('SupabaseOtpRepository', () => {
     });
 
     it('throws when the insert fails', async () => {
-      makeClient({ insertError: new Error('insert failed') });
-      const repo = new SupabaseOtpRepository();
+      const { client } = makeClient({ insertError: new Error('insert failed') });
+      const repo = new SupabaseOtpRepository(client);
       await expect(
         repo.createOtpRecord({
           email: 'user@example.com',
@@ -108,8 +103,8 @@ describe('SupabaseOtpRepository', () => {
 
   describe('findLatestPendingOtp', () => {
     it('returns null when no record exists or a fetch error occurs', async () => {
-      makeClient({ record: null });
-      const repo = new SupabaseOtpRepository();
+      const { client } = makeClient({ record: null });
+      const repo = new SupabaseOtpRepository(client);
       await expect(repo.findLatestPendingOtp('user@example.com')).resolves.toBeNull();
 
       makeClient({ fetchError: new Error('db down') });
@@ -118,8 +113,8 @@ describe('SupabaseOtpRepository', () => {
 
     it('returns the mapped record for a pending OTP', async () => {
       const record = makeRecord({ attempts: 1, max_attempts: 7 });
-      const { selectEq, is } = makeClient({ record });
-      const repo = new SupabaseOtpRepository();
+      const { client, selectEq, is } = makeClient({ record });
+      const repo = new SupabaseOtpRepository(client);
 
       await expect(repo.findLatestPendingOtp('user@example.com')).resolves.toEqual({
         id: 'otp-1',
@@ -136,8 +131,8 @@ describe('SupabaseOtpRepository', () => {
 
   describe('incrementOtpAttempts', () => {
     it('updates attempts to current + 1', async () => {
-      const { update, updateEq } = makeClient();
-      const repo = new SupabaseOtpRepository();
+      const { client, update, updateEq } = makeClient();
+      const repo = new SupabaseOtpRepository(client);
 
       await repo.incrementOtpAttempts('otp-1', 2);
 
@@ -146,16 +141,16 @@ describe('SupabaseOtpRepository', () => {
     });
 
     it('throws when the update fails', async () => {
-      makeClient({ updateError: new Error('update failed') });
-      const repo = new SupabaseOtpRepository();
+      const { client } = makeClient({ updateError: new Error('update failed') });
+      const repo = new SupabaseOtpRepository(client);
       await expect(repo.incrementOtpAttempts('otp-1', 0)).rejects.toThrow('update failed');
     });
   });
 
   describe('markOtpVerified', () => {
     it('sets verified_at on the record', async () => {
-      const { update, updateEq } = makeClient();
-      const repo = new SupabaseOtpRepository();
+      const { client, update, updateEq } = makeClient();
+      const repo = new SupabaseOtpRepository(client);
 
       await repo.markOtpVerified('otp-1');
 
@@ -164,8 +159,8 @@ describe('SupabaseOtpRepository', () => {
     });
 
     it('throws when the update fails', async () => {
-      makeClient({ updateError: new Error('update failed') });
-      const repo = new SupabaseOtpRepository();
+      const { client } = makeClient({ updateError: new Error('update failed') });
+      const repo = new SupabaseOtpRepository(client);
       await expect(repo.markOtpVerified('otp-1')).rejects.toThrow('update failed');
     });
   });

@@ -43,7 +43,7 @@ vi.mock('next/server', () => ({
   NextRequest: class {},
 }));
 
-vi.mock('@/backend/transport/bearer-auth', () => ({
+vi.mock('@/backend/middleware/bearer-auth', () => ({
   getAuthenticatedUser: (req: unknown) => mockGetAuthenticatedUser(req),
 }));
 

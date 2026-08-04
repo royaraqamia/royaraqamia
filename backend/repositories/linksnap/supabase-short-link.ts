@@ -1,7 +1,7 @@
 import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
-import { getPublicSupabase } from '@/backend/transport/supabase/public';
-import { getAdminSupabase } from '@/backend/transport/supabase/admin';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/backend/models/database.types';
 
 // Database row interface matching public.short_links in supabase_schema.sql
 interface ShortLinkDbRow {
@@ -14,6 +14,11 @@ interface ShortLinkDbRow {
 }
 
 export class SupabaseShortLinkRepository implements IShortLinkRepository {
+  constructor(
+    private readonly adminClient: SupabaseClient<Database>,
+    private readonly publicClient: SupabaseClient<Database>
+  ) {}
+
   private toDomain(row: ShortLinkDbRow): ShortLink {
     return {
       code: row.code,
@@ -37,7 +42,7 @@ export class SupabaseShortLinkRepository implements IShortLinkRepository {
   }
 
   async findByCode(code: string): Promise<ShortLink | null> {
-    const supabase = getPublicSupabase();
+    const supabase = this.publicClient;
     const { data, error } = await supabase
       .from('short_links')
       .select('*')
@@ -55,7 +60,7 @@ export class SupabaseShortLinkRepository implements IShortLinkRepository {
   }
 
   async create(link: ShortLink): Promise<ShortLink> {
-    const supabase = getAdminSupabase();
+    const supabase = this.adminClient;
     const { data, error } = await supabase
       .from('short_links')
       .insert(this.toDb(link))
@@ -70,7 +75,7 @@ export class SupabaseShortLinkRepository implements IShortLinkRepository {
   }
 
   async listByUserId(userId: string): Promise<ShortLink[]> {
-    const supabase = getAdminSupabase(); // Use admin client to load user's specific list safely
+    const supabase = this.adminClient; // Use admin client to load user's specific list safely
     const { data, error } = await supabase
       .from('short_links')
       .select('*')
@@ -88,7 +93,6 @@ export class SupabaseShortLinkRepository implements IShortLinkRepository {
     code: string,
     updates: Partial<Pick<ShortLink, 'originalUrl' | 'isBlocked'>>
   ): Promise<ShortLink> {
-    const supabase = getAdminSupabase();
     const dbUpdates: Partial<ShortLinkDbRow> = {};
     if (updates.originalUrl !== undefined) {
       dbUpdates.original_url = updates.originalUrl;
@@ -98,6 +102,7 @@ export class SupabaseShortLinkRepository implements IShortLinkRepository {
     }
     dbUpdates.updated_at = new Date().toISOString();
 
+    const supabase = this.adminClient;
     const { data, error } = await supabase
       .from('short_links')
       .update(dbUpdates)
@@ -113,7 +118,7 @@ export class SupabaseShortLinkRepository implements IShortLinkRepository {
   }
 
   async delete(code: string, userId: string): Promise<boolean> {
-    const supabase = getAdminSupabase(); // Admin client verifies ownership/allows direct deletion safely
+    const supabase = this.adminClient; // Admin client verifies ownership/allows direct deletion safely
     const { error } = await supabase
       .from('short_links')
       .delete()
@@ -128,7 +133,7 @@ export class SupabaseShortLinkRepository implements IShortLinkRepository {
   }
 
   async exists(code: string): Promise<boolean> {
-    const supabase = getPublicSupabase();
+    const supabase = this.publicClient;
     const { count, error } = await supabase
       .from('short_links')
       .select('*', { count: 'exact', head: true })

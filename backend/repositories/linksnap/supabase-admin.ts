@@ -2,11 +2,14 @@ import {
   IAdminRepository,
   SystemStatsReportData,
 } from '@/backend/repositories/linksnap/admin-repository';
-import { getAdminSupabase } from '@/backend/transport/supabase/admin';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/backend/models/database.types';
 
 export class SupabaseAdminRepository implements IAdminRepository {
+  constructor(private readonly supabase: SupabaseClient<Database>) {}
+
   async getSystemStats(): Promise<SystemStatsReportData> {
-    const supabase = getAdminSupabase();
+    const supabase = this.supabase;
 
     // 1. Total Links count
     const { count: totalLinks, error: countErr } = await supabase

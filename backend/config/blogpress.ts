@@ -2,7 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
 import { createMediaRepository } from '@/backend/repositories/blogpress/supabase-media';
-import { getAdminSupabase } from '@/backend/transport/supabase/admin';
+import { getAdminSupabase } from '@/backend/config/supabase';
 import { BlogpressPostsService } from '@/backend/services/blogpress/posts-service';
 import { BlogpressMediaService } from '@/backend/services/blogpress/media-service';
 import { env } from '@/backend/config/env';

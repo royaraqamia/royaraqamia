@@ -1,4 +1,4 @@
-import { getAuthenticatedUser } from '@/backend/transport/bearer-auth';
+import { getAuthenticatedUser } from '@/backend/middleware/bearer-auth';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { getErrorMessage } from '@/backend/shared/errors';
 import { env } from '@/backend/config/env';

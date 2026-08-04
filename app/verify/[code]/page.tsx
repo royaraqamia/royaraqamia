@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { createClient } from '@/backend/transport/supabase/server';
+import { createServerSupabaseClient } from '@/backend/config/supabase';
 import type { Certificate } from '@/shared/contracts/certificates';
 import { createDefaultCertificateVerifier } from '@/backend/config/certificates';
 import { formatDateArabic } from '@/frontend/shared/format';
@@ -60,7 +60,7 @@ export default async function VerifyCodePage({ params }: PageProps) {
 
 async function getCertificate(code: string): Promise<Certificate | null> {
   try {
-    const supabase = await createClient();
+    const supabase = await createServerSupabaseClient();
     return await createDefaultCertificateVerifier(supabase).getCertificateByCode(code);
   } catch {
     return null;

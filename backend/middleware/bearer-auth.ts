@@ -1,4 +1,4 @@
-import { getPublicSupabase } from '@/backend/transport/supabase/public';
+import { getPublicSupabase } from '@/backend/config/supabase';
 
 interface AuthenticatedUser {
   id: string;

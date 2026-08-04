@@ -1,7 +1,10 @@
-import { getAdminSupabase } from '@/backend/transport/supabase/admin';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/backend/models/database.types';
 import type { IOtpRepository, OtpRecordData } from '@/backend/repositories/otp/otp-repository';
 
 export class SupabaseOtpRepository implements IOtpRepository {
+  constructor(private readonly supabase: SupabaseClient<Database>) {}
+
   async createOtpRecord(input: {
     email: string;
     otpHash: string;
@@ -9,7 +12,7 @@ export class SupabaseOtpRepository implements IOtpRepository {
     expiresAt: Date;
     maxAttempts: number;
   }): Promise<void> {
-    const supabase = getAdminSupabase();
+    const supabase = this.supabase;
     const { error } = await supabase.from('otp_codes').insert({
       email: input.email,
       otp_hash: input.otpHash,
@@ -21,7 +24,7 @@ export class SupabaseOtpRepository implements IOtpRepository {
   }
 
   async findLatestPendingOtp(email: string): Promise<OtpRecordData | null> {
-    const supabase = getAdminSupabase();
+    const supabase = this.supabase;
 
     const { data, error } = await supabase
       .from('otp_codes')
@@ -45,7 +48,7 @@ export class SupabaseOtpRepository implements IOtpRepository {
   }
 
   async incrementOtpAttempts(id: string, currentAttempts: number): Promise<void> {
-    const supabase = getAdminSupabase();
+    const supabase = this.supabase;
     const { error } = await supabase
       .from('otp_codes')
       .update({ attempts: currentAttempts + 1 })
@@ -54,7 +57,7 @@ export class SupabaseOtpRepository implements IOtpRepository {
   }
 
   async markOtpVerified(id: string): Promise<void> {
-    const supabase = getAdminSupabase();
+    const supabase = this.supabase;
     const { error } = await supabase
       .from('otp_codes')
       .update({ verified_at: new Date().toISOString() })

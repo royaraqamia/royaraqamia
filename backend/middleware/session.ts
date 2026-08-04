@@ -1,6 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { getAdminSupabase } from '@/backend/transport/supabase/admin';
+import { getAdminSupabase } from '@/backend/config/supabase';
 import { createSupabaseAuthGateway } from '@/backend/clients/supabase-auth-gateway';
 import { env } from '@/backend/config/env';
 
