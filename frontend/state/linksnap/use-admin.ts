@@ -12,7 +12,7 @@ export function useAdminLinks(token: string) {
   const [actionLoadingCode, setActionLoadingCode] = useState<string | null>(null);
   const [moderateError, setModerateError] = useState<string | null>(null);
 
-  const fetchAdminStats = useCallback(async () => {
+  const loadStats = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -27,10 +27,10 @@ export function useAdminLinks(token: string) {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchAdminStats();
+      loadStats();
     }, 0);
     return () => clearTimeout(timer);
-  }, [fetchAdminStats]);
+  }, [loadStats]);
 
   const toggleModerationBlock = useCallback(
     async (code: string, currentBlockedState: boolean) => {
@@ -65,7 +65,7 @@ export function useAdminLinks(token: string) {
     stats,
     loading,
     error,
-    fetchAdminStats,
+    fetchAdminStats: loadStats,
     toggleModerationBlock,
     actionLoadingCode,
     moderateError,

@@ -14,7 +14,7 @@ export function useShortenLink(token: string | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const shorten = useCallback(
+  const shortenAction = useCallback(
     async (originalUrl: string, customCode: string): Promise<ShortenedLink | null> => {
       setLoading(true);
       setError(null);
@@ -30,14 +30,14 @@ export function useShortenLink(token: string | null) {
     [token]
   );
 
-  return { shorten, loading, error, setError };
+  return { shorten: shortenAction, loading, error, setError };
 }
 
 export function useBulkShortenLinks(token: string | null) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const shortenBulk = useCallback(
+  const shortenBulkAction = useCallback(
     async (urls: string[]): Promise<BulkShortenResultItem[] | null> => {
       setLoading(true);
       setError(null);
@@ -53,5 +53,5 @@ export function useBulkShortenLinks(token: string | null) {
     [token]
   );
 
-  return { shortenBulk, loading, error, setError };
+  return { shortenBulk: shortenBulkAction, loading, error, setError };
 }

@@ -43,7 +43,7 @@ export function useUpdateLink(token: string) {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
-  const updateLink = useCallback(
+  const updateLinkAction = useCallback(
     async (code: string, url: string) => {
       setUpdateLoading(true);
       setUpdateError(null);
@@ -59,13 +59,13 @@ export function useUpdateLink(token: string) {
     [token]
   );
 
-  return { updateLink, updateLoading, updateError };
+  return { updateLink: updateLinkAction, updateLoading, updateError };
 }
 
 export function useDeleteLink(token: string) {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const deleteLink = useCallback(
+  const deleteLinkAction = useCallback(
     async (code: string) => {
       setDeleteError(null);
       try {
@@ -78,5 +78,5 @@ export function useDeleteLink(token: string) {
     [token]
   );
 
-  return { deleteLink, deleteError };
+  return { deleteLink: deleteLinkAction, deleteError };
 }

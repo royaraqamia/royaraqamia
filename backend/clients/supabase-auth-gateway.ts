@@ -40,6 +40,11 @@ export function createSupabaseAuthGateway(
       return { error: error ? { message: error.message } : null };
     },
 
+    async updateUserPassword(userId, password) {
+      const { error } = await admin.auth.admin.updateUserById(userId, { password });
+      return { error: error ? { message: error.message } : null };
+    },
+
     async signOut() {
       await supabase.auth.signOut();
     },
@@ -65,13 +70,11 @@ export function createSupabaseAuthGateway(
     },
 
     async getUserByEmail(email) {
-      const { data, error } = await admin.auth.admin.listUsers({
-        page: 1,
-        perPage: 1,
-        filter: { email },
-      });
+      const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 100 });
       if (error || !data?.users?.length) return { user: null };
-      return { user: toAuthUser(data.users[0]) };
+      const found = data.users.find((u) => u.email === email);
+      if (!found) return { user: null };
+      return { user: toAuthUser(found) };
     },
   };
 }

@@ -17,7 +17,7 @@ export function createSpendtrackRepository(
         .select('*')
         .or(`user_id.eq.${userId},is_default.eq.true`)
         .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
-      return (data ?? []).map((row) => ({ ...row, colorHex: row.color_hex })) as Category[];
+      return (data ?? []).map((row) => ({ ...row, colorHex: row.color_hex })) as unknown as Category[];
     },
 
     async getTotalExpenses(
@@ -82,7 +82,7 @@ export function createSpendtrackRepository(
         .or(`user_id.eq.${userId},is_default.eq.true`)
         .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
 
-      const safeCategories = (categories ?? []).map((row) => ({ ...row, colorHex: row.color_hex })) as Category[];
+      const safeCategories = (categories ?? []).map((row) => ({ ...row, colorHex: row.color_hex })) as unknown as Category[];
 
       const { count: totalCount } = await supabase
         .from('expenses')
@@ -174,7 +174,8 @@ export function createSpendtrackRepository(
       name: string;
       colorHex: string;
     }): Promise<void> {
-      const { error } = await supabase.from('categories').insert({ ...input, color_hex: input.colorHex });
+      const { colorHex, ...rest } = input;
+      const { error } = await supabase.from('categories').insert({ ...rest, color_hex: colorHex });
       if (error) throw new Error(error.message);
     },
 
@@ -183,9 +184,10 @@ export function createSpendtrackRepository(
       userId: string,
       input: { name: string; colorHex: string }
     ): Promise<void> {
+      const { colorHex, ...rest } = input;
       const { error } = await supabase
         .from('categories')
-        .update({ ...input, color_hex: input.colorHex })
+        .update({ ...rest, color_hex: colorHex })
         .eq('id', categoryId)
         .eq('user_id', userId);
 
