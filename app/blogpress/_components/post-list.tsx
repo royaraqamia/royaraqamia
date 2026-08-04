@@ -113,7 +113,11 @@ export function PostList({ posts, categories, activeCategory }: PostListProps) {
   return (
     <div>
       {categories.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 mb-4" role="group" aria-label="تصفية حسب التصنيف">
+        <div
+          className="flex flex-wrap items-center gap-1.5 mb-4"
+          role="group"
+          aria-label="تصفية حسب التصنيف"
+        >
           <CategoryChip
             label="كل التصنيفات"
             slug={undefined}
@@ -294,9 +298,7 @@ function PostRow({ post }: { post: Post }) {
 
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 min-w-0">
-          {post.featured && (
-            <Pin className="size-3.5 shrink-0 text-primary" aria-label="مثبّت" />
-          )}
+          {post.featured && <Pin className="size-3.5 shrink-0 text-primary" aria-label="مثبّت" />}
           <Link
             href={`/blogpress/editor/${post.id}`}
             className="text-sm font-medium hover:text-primary transition-smooth truncate block"
@@ -397,7 +399,9 @@ function PostRow({ post }: { post: Post }) {
                     }
                     router.refresh();
                   } catch {
-                    toast.error(post.status === 'scheduled' ? 'فشل النشر الآن' : 'فشل إلغاء النَّشر');
+                    toast.error(
+                      post.status === 'scheduled' ? 'فشل النشر الآن' : 'فشل إلغاء النَّشر'
+                    );
                   }
                 }}
                 className="cursor-pointer"
@@ -421,11 +425,7 @@ function PostRow({ post }: { post: Post }) {
               }}
               className="cursor-pointer"
             >
-              {post.featured ? (
-                <PinOff className="ms-2 size-4" />
-              ) : (
-                <Pin className="ms-2 size-4" />
-              )}
+              {post.featured ? <PinOff className="ms-2 size-4" /> : <Pin className="ms-2 size-4" />}
               {post.featured ? 'إلغاء التثبيت' : 'تثبيت'}
             </DropdownMenuItem>
             <DropdownMenuSeparator />

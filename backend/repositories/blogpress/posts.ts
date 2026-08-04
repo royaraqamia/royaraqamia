@@ -8,7 +8,8 @@ import type {
   PublishedPostsResult,
 } from '@/backend/repositories/blogpress/posts-repository';
 
-const PUBLISHED_POSTS_FILTER = 'or(status.eq.published,and(status.eq.scheduled,publish_at.lte.now))';
+const PUBLISHED_POSTS_FILTER =
+  'or(status.eq.published,and(status.eq.scheduled,publish_at.lte.now))';
 
 type Client = SupabaseClient<Database>;
 

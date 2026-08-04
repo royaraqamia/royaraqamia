@@ -30,10 +30,7 @@ function CustomTooltip({
   return (
     <div className="rounded-lg border bg-popover px-3 py-2 shadow-elevated">
       <div className="flex items-center gap-2">
-        <div
-          className="size-2.5 rounded-full"
-          style={{ backgroundColor: item.payload.colorHex }}
-        />
+        <div className="size-2.5 rounded-full" style={{ backgroundColor: item.payload.colorHex }} />
         <span className="text-sm font-medium">{item.name}</span>
       </div>
       <p className="text-sm text-muted-foreground mt-1">

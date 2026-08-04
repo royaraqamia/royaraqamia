@@ -112,10 +112,7 @@ export async function unpublishPost(id: string): Promise<HttpResult> {
   }
 }
 
-export async function setPostFeatured(
-  id: string,
-  featured: boolean
-): Promise<HttpResult> {
+export async function setPostFeatured(id: string, featured: boolean): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();
     if (!user) return jsonResult(401, { error: 'غير مصرح' });

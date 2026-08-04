@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  LoginSchema,
-  SignupSchema,
-  UpdatePasswordSchema,
-} from '@/shared/contracts/auth';
+import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
 
 describe('LoginSchema', () => {
   it('accepts valid email and password', () => {

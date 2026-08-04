@@ -30,7 +30,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (IS_PRODUCTION) {
       Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
     } else {
-      logger.error('[ErrorBoundary]', { error: error.message, componentStack: errorInfo.componentStack ?? undefined });
+      logger.error('[ErrorBoundary]', {
+        error: error.message,
+        componentStack: errorInfo.componentStack ?? undefined,
+      });
     }
   }
 

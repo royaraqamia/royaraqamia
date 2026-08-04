@@ -59,7 +59,10 @@ export async function shorten(
   return data.link;
 }
 
-export async function shortenBulk(urls: string[], token: string | null): Promise<BulkShortenResultItem[]> {
+export async function shortenBulk(
+  urls: string[],
+  token: string | null
+): Promise<BulkShortenResultItem[]> {
   const data = await request<{ results: BulkShortenResultItem[] }>('/linksnap/api/shorten/bulk', {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,

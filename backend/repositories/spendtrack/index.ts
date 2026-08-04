@@ -17,7 +17,10 @@ export function createSpendtrackRepository(
         .select('*')
         .or(`user_id.eq.${userId},is_default.eq.true`)
         .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
-      return (data ?? []).map((row) => ({ ...row, colorHex: row.color_hex })) as unknown as Category[];
+      return (data ?? []).map((row) => ({
+        ...row,
+        colorHex: row.color_hex,
+      })) as unknown as Category[];
     },
 
     async getTotalExpenses(
@@ -48,12 +51,14 @@ export function createSpendtrackRepository(
         p_categories: catFilter,
       });
       if (!data) return null;
-      return data.map((row: { category_id: string; color_hex: string; name: string; total: number }) => ({
-        categoryId: row.category_id,
-        colorHex: row.color_hex,
-        name: row.name,
-        total: row.total,
-      }));
+      return data.map(
+        (row: { category_id: string; color_hex: string; name: string; total: number }) => ({
+          categoryId: row.category_id,
+          colorHex: row.color_hex,
+          name: row.name,
+          total: row.total,
+        })
+      );
     },
 
     async getDailyTotals(
@@ -82,7 +87,10 @@ export function createSpendtrackRepository(
         .or(`user_id.eq.${userId},is_default.eq.true`)
         .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
 
-      const safeCategories = (categories ?? []).map((row) => ({ ...row, colorHex: row.color_hex })) as unknown as Category[];
+      const safeCategories = (categories ?? []).map((row) => ({
+        ...row,
+        colorHex: row.color_hex,
+      })) as unknown as Category[];
 
       const { count: totalCount } = await supabase
         .from('expenses')

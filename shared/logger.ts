@@ -6,7 +6,11 @@ interface Logger {
   info(message: string, context?: Record<string, unknown>): void;
 }
 
-function formatMessage(level: LogLevel, message: string, context?: Record<string, unknown>): string {
+function formatMessage(
+  level: LogLevel,
+  message: string,
+  context?: Record<string, unknown>
+): string {
   const prefix = `[${level.toUpperCase()}]`;
   if (!context) return `${prefix} ${message}`;
   return `${prefix} ${message} ${JSON.stringify(context)}`;

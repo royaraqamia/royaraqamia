@@ -113,11 +113,7 @@ export class BlogpressPostsService {
     return this.repository.getPostCategories(postId);
   }
 
-  async setPostCategories(
-    postId: string,
-    authorId: string,
-    categoryIds: string[]
-  ): Promise<void> {
+  async setPostCategories(postId: string, authorId: string, categoryIds: string[]): Promise<void> {
     return this.repository.setPostCategories(postId, authorId, categoryIds);
   }
 }

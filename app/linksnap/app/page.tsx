@@ -9,5 +9,5 @@ export default async function LinkSnapAppPage() {
   const { user } = await getAuthUser();
   const admin = user?.email ? isAdmin(user.email, env.adminEmails) : false;
 
-  return <LinkSnapAppView isAdmin={admin} />
+  return <LinkSnapAppView isAdmin={admin} />;
 }
