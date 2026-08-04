@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect } from 'react';
+import { IS_DEVELOPMENT } from '@/frontend/shared/constants';
 
 export function AccessibilityCheck() {
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
+    if (!IS_DEVELOPMENT) return;
     const run = async () => {
       try {
         const React = await import('react');

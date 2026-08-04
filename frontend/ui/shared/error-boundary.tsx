@@ -3,6 +3,7 @@
 import { Component, type ReactNode, type ErrorInfo } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { Button } from '@/frontend/ui/ui/button';
+import { IS_DEVELOPMENT, IS_PRODUCTION } from '@/frontend/shared/constants';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -25,7 +26,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
-    if (process.env.NODE_ENV === 'production') {
+    if (IS_PRODUCTION) {
       Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
     } else {
       console.error('[ErrorBoundary]', error, errorInfo);
@@ -65,7 +66,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
               عذراً، حدث خطأ أثناء تحميل الصفحة. يرجى المحاولة مرة أخرى.
             </p>
             <Button onClick={this.handleReset}>إعادة المحاولة</Button>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {IS_DEVELOPMENT && this.state.error && (
               <details className="mt-4 text-left">
                 <summary className="cursor-pointer text-sm text-muted-foreground">
                   تفاصيل الخطأ (للتطوير فقط)

@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
 import { usePWA, type PWAState } from '../state/use-pwa';
+import { IS_DEVELOPMENT } from '@/frontend/shared/constants';
 
 const SW_PATH = '/sw.js';
 
@@ -34,7 +35,7 @@ export function PWAProvider({ children, onUpdateAvailable }: PWAProviderProps) {
 
   useEffect(() => {
     if (registered.current) return;
-    if (process.env.NODE_ENV === 'development') return;
+    if (IS_DEVELOPMENT) return;
     if (!('serviceWorker' in navigator)) return;
 
     registered.current = true;
