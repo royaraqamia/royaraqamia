@@ -1,5 +1,5 @@
 import { Habit, HabitLog, IHabitRepository } from '@/shared/contracts/habitflow';
-import { AppError } from '@/backend/shared/habitflow/errors';
+import { AppError } from '@/backend/shared/errors';
 
 export class HabitService {
   static readonly DEFAULT_LOGS_WINDOW_DAYS = 35;

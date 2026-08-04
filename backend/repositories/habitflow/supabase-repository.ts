@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Habit, HabitLog, IHabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
-import { AppError } from '@/backend/shared/habitflow/errors';
+import { AppError } from '@/backend/shared/errors';
 
 interface HabitRow {
   id: string;

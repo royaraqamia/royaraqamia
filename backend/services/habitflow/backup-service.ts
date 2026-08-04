@@ -1,5 +1,5 @@
 import { IHabitRepository, Habit, HabitLog, HabitRestoreInput } from '@/shared/contracts/habitflow';
-import { AppError } from '@/backend/shared/habitflow/errors';
+import { AppError } from '@/backend/shared/errors';
 
 export interface HabitBackupPayload {
   version: string;

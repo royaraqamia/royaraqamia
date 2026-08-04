@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { HabitBackupService } from '@/backend/services/habitflow/backup-service';
-import { AppError } from '@/backend/shared/habitflow/errors';
+import { AppError } from '@/backend/shared/errors';
 import type { IHabitRepository, Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 function makeRepository() {

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { HabitService } from '@/backend/services/habitflow/habit-service';
-import { AppError } from '@/backend/shared/habitflow/errors';
+import { AppError } from '@/backend/shared/errors';
 import type { IHabitRepository, Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 const habitFixture: Habit = {

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getErrorMessage } from '@/backend/shared/errors';
-import { AppError } from '@/backend/shared/habitflow/errors';
+import { AppError } from '@/backend/shared/errors';
 
 describe('getErrorMessage', () => {
   it('returns the message for Error instances', () => {
