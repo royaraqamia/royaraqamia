@@ -173,6 +173,41 @@ describe('middleware', () => {
     expect(result.url).toBe('https://royaraqamia.com/spendtrack');
   });
 
+  it('keeps users on the update-password page after exchanging a recovery code', async () => {
+    mockExchangeCodeForSession.mockResolvedValue({ data: {}, error: null });
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    mockGetUser.mockResolvedValue({
+      data: {
+        user: {
+          id: 'u-recovery',
+          email: 'user@example.com',
+          app_metadata: { provider: 'email' },
+        },
+      },
+      error: null,
+    });
+    mockNextUrl.pathname = '/auth/update-password';
+    mockNextUrl.searchParams = new URLSearchParams('code=recovery-code');
+    mockRequest.url = 'https://royaraqamia.com/auth/update-password?code=recovery-code';
+
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
+    expect(mockExchangeCodeForSession).toHaveBeenCalled();
+    expect(result.status).toBe(307);
+    expect(result.url).toBe('https://royaraqamia.com/auth/update-password');
+  });
+
+  it('does not bounce authenticated users away from the update-password page', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
+    mockNextUrl.pathname = '/auth/update-password';
+    mockRequest.url = 'https://royaraqamia.com/auth/update-password';
+
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
+    expect(result.status).toBeUndefined();
+  });
+
   it('redirects unauthenticated users from /admin to login', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockGetUser.mockResolvedValue({ data: { user: null } });

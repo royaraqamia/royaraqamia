@@ -17,7 +17,6 @@ const authRoutes: Record<string, string> = {
   '/auth/signup': '/',
   '/auth/verify-otp': '/',
   '/auth/reset-password': '/',
-  '/auth/update-password': '/',
 };
 
 function isSafeRedirect(path: string): boolean {
@@ -78,6 +77,11 @@ export async function updateSession(request: NextRequest) {
           name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? '',
           avatar_url: user.user_metadata?.avatar_url ?? null,
         });
+      }
+      // Password-recovery links land here with an auth code — keep the user on
+      // the update-password page after the session is exchanged.
+      if (request.nextUrl.pathname === '/auth/update-password') {
+        return applyCookies(NextResponse.redirect(new URL('/auth/update-password', request.url)));
       }
       const next = request.nextUrl.searchParams.get('next') ?? '/';
       const redirectUrl = isSafeRedirect(next) ? next : '/';
