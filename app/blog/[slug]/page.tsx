@@ -1,9 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { cookies } from 'next/headers';
 import { isValidElement } from 'react';
-import { createServerSupabaseClient } from '@/backend/config/supabase';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
@@ -13,10 +11,7 @@ import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { estimateReadingTime, formatReadingTimeLong } from '@/frontend/shared/reading-time';
-import {
-  createBlogpressAdminPostsService,
-  createBlogpressPostsService,
-} from '@/backend/config/blogpress';
+import { loadPublishedPostBySlug, loadBlogPost } from '@/backend/loaders/blog';
 import { env } from '@/backend/config/env';
 import type { Metadata } from 'next';
 
@@ -59,9 +54,7 @@ export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await props.params;
-  const cookieStore = await cookies();
-  const supabase = await createServerSupabaseClient(cookieStore);
-  const post = await createBlogpressPostsService(supabase).getPublishedPostBySlug(slug);
+  const post = await loadPublishedPostBySlug(slug);
 
   if (!post) {
     return {
@@ -85,17 +78,11 @@ export async function generateMetadata(props: {
 
 export default async function BlogPostPage(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
-  const cookieStore = await cookies();
-  const supabase = await createServerSupabaseClient(cookieStore);
-  const post = await createBlogpressPostsService(supabase).getPublishedPostBySlug(slug);
+  const loaded = await loadBlogPost(slug);
 
-  if (!post) notFound();
+  if (!loaded) notFound();
 
-  const p = post;
-
-  const author = await createBlogpressAdminPostsService().getPostAuthor(p.author_id);
-
-  const relatedPosts = await createBlogpressPostsService(supabase).getRelatedPosts(slug);
+  const { post: p, author, relatedPosts } = loaded;
 
   const readingTime = estimateReadingTime(p.content);
   const headings = extractHeadings(p.content ?? '');

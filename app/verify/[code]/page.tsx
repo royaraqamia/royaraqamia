@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import { createServerSupabaseClient } from '@/backend/config/supabase';
-import type { Certificate } from '@/shared/contracts/certificates';
-import { createDefaultCertificateVerifier } from '@/backend/config/certificates';
+import { loadCertificateByCode } from '@/backend/loaders/certificates';
 import { formatDateArabic } from '@/frontend/shared/format';
 import { VerifyClient } from './verify-client';
 
@@ -11,7 +9,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { code } = await params;
-  const certificate = await getCertificate(code.trim().toUpperCase());
+  const certificate = await loadCertificateByCode(code.trim().toUpperCase());
 
   if (!certificate) {
     return {
@@ -53,16 +51,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function VerifyCodePage({ params }: PageProps) {
   const { code } = await params;
-  const certificate = await getCertificate(code.trim().toUpperCase());
+  const certificate = await loadCertificateByCode(code.trim().toUpperCase());
 
   return <VerifyClient code={code.trim().toUpperCase()} certificate={certificate} />;
-}
-
-async function getCertificate(code: string): Promise<Certificate | null> {
-  try {
-    const supabase = await createServerSupabaseClient();
-    return await createDefaultCertificateVerifier(supabase).getCertificateByCode(code);
-  } catch {
-    return null;
-  }
 }

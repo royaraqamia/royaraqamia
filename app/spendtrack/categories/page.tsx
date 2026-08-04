@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/ui/card';
 import { getAuthUser } from '@/backend/middleware/auth-guard';
-import { createSpendtrackService } from '@/backend/config/spendtrack';
+import { loadUserCategories } from '@/backend/loaders/spendtrack';
 import { CategoryList } from './category-list';
 import { CreateCategoryDialog } from './create-category-dialog';
 
@@ -12,10 +12,10 @@ export const metadata: Metadata = {
 };
 
 export default async function CategoriesPage() {
-  const { user, supabase } = await getAuthUser();
+  const { user } = await getAuthUser();
   if (!user) redirect('/auth/login?redirect=/spendtrack/categories');
 
-  const categories = await createSpendtrackService(supabase).getUserCategories(user.id);
+  const categories = await loadUserCategories(user.id);
 
   return (
     <div className="space-y-6">

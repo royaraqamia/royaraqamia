@@ -2,8 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense } from 'react';
-import { cookies } from 'next/headers';
-import { createServerSupabaseClient } from '@/backend/config/supabase';
+import { loadBlogIndex } from '@/backend/loaders/blog';
 import { Button } from '@/frontend/ui/ui/button';
 import {
   ChevronLeft,
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 import { BlogSearch } from './_components/blog-search';
 import { estimateReadingTime, formatReadingTime } from '@/frontend/shared/reading-time';
-import { createBlogpressPostsService } from '@/backend/config/blogpress';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,14 +34,7 @@ export default async function BlogPage(props: {
   const page = Math.max(1, Number(pageParam) || 1);
   const query = q?.trim() || '';
 
-  const cookieStore = await cookies();
-  const supabase = await createServerSupabaseClient(cookieStore);
-
-  const { posts, totalPages } = await createBlogpressPostsService(supabase).getPublishedPosts(
-    page,
-    query,
-    PAGE_SIZE
-  );
+  const { posts, totalPages } = await loadBlogIndex(page, query, PAGE_SIZE);
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 selection:text-white pb-24">

@@ -10,26 +10,24 @@ import { CategoryPieChart } from '@/frontend/ui/spendtrack/category-pie-chart';
 import { DailyBarChart } from '@/frontend/ui/spendtrack/daily-bar-chart';
 import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
 import { getAuthUser } from '@/backend/middleware/auth-guard';
-import { createServerSupabaseClient } from '@/backend/config/supabase';
-import { cookies } from 'next/headers';
+import {
+  loadCategoryBreakdown,
+  loadDailyTotals,
+  loadTotalExpenses,
+  loadTransactions,
+  loadUserCategories,
+} from '@/backend/loaders/spendtrack';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
-import { createSpendtrackService } from '@/backend/config/spendtrack';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'SpendTrack',
   description:
-    'تتبَّع مصروفاتك اليوميَّة، حلِّل أنماط إنفاقك، وتحكَّم في ميزانيَّتك مع SpendTrack.',
+    'تتبَّع مصروفاتك اليوميَّة، حلِّل أنماط إنفاقك، وتحكَّم في ميزانيَّتك مع SpendTrack.',
 };
 
 const PAGE_SIZE = 20;
-
-async function loadSpendtrackService() {
-  const cookieStore = await cookies();
-  const supabase = await createServerSupabaseClient(cookieStore);
-  return createSpendtrackService(supabase);
-}
 
 function getDateRange(range: string, from?: string, to?: string) {
   const now = new Date();
@@ -59,8 +57,7 @@ async function TotalCard({
   end: string;
   catFilter: string[] | null;
 }) {
-  const service = await loadSpendtrackService();
-  const data = await service.getTotalExpenses(userId, start, end, catFilter);
+  const data = await loadTotalExpenses(userId, start, end, catFilter);
   return (
     <Card
       className="group/card card-lift"
@@ -99,8 +96,7 @@ async function TotalCard({
 }
 
 async function CreateExpenseButton({ userId }: { userId: string }) {
-  const service = await loadSpendtrackService();
-  const categories = await service.getUserCategories(userId);
+  const categories = await loadUserCategories(userId);
   return <CreateExpenseDialog categories={categories} />;
 }
 
@@ -115,8 +111,7 @@ async function CategoryPieSection({
   end: string;
   catFilter: string[] | null;
 }) {
-  const service = await loadSpendtrackService();
-  const data = await service.getCategoryBreakdown(userId, start, end, catFilter);
+  const data = await loadCategoryBreakdown(userId, start, end, catFilter);
   return <CategoryPieChart data={data ?? []} />;
 }
 
@@ -131,8 +126,7 @@ async function DailyBarSection({
   end: string;
   catFilter: string[] | null;
 }) {
-  const service = await loadSpendtrackService();
-  const data = await service.getDailyTotals(userId, start, end, catFilter);
+  const data = await loadDailyTotals(userId, start, end, catFilter);
   return <DailyBarChart data={data ?? []} />;
 }
 
@@ -149,13 +143,11 @@ async function TransactionsSection({
   filterCategories: string[];
   sort: string;
 }) {
-  const service = await loadSpendtrackService();
-
   const {
     expenses: safeExpenses,
     categories: safeCategories,
     totalCount,
-  } = await service.getTransactions({
+  } = await loadTransactions({
     userId,
     start,
     end,
