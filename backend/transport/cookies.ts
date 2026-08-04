@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import type { PendingLoginStore } from '@/backend/services/auth/auth-service';
+import type { PendingLoginStore } from '@/backend/shared/auth/pending-login-store';
 
 const PENDING_LOGIN_COOKIE = 'pending_login';
 const PENDING_LOGIN_TTL_SECONDS = 5 * 60;

@@ -1,6 +1,7 @@
 import { generateOtp, hashOtp, verifyOtp } from '@/backend/shared/otp/generator';
 import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
 import { safeRedirect } from '@/backend/shared/safe-redirect';
+import type { PendingLoginStore } from '@/backend/shared/auth/pending-login-store';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
 import type { IOtpRepository } from '@/backend/repositories/otp/otp-repository';
 import type { EmailClient } from '@/backend/clients/email';
@@ -20,12 +21,6 @@ export type VerifyOtpResult =
 export type SimpleResult = { ok: true; message?: string } | { ok: false; message: string };
 
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
-
-export interface PendingLoginStore {
-  readPassword(): Promise<string | null>;
-  setPassword(password: string): Promise<void>;
-  clear(): Promise<void>;
-}
 
 export interface AuthServiceDeps {
   otpRepository: IOtpRepository;
