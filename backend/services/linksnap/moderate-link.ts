@@ -1,6 +1,7 @@
 import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { AdminValidator } from '@/shared/admin-validator';
+import { AppError } from '@/backend/shared/errors';
 
 export class ModerateLinkService {
   constructor(
@@ -13,8 +14,8 @@ export class ModerateLinkService {
       throw new Error('Access Denied: Administrative privileges required.');
     }
 
-    if (!code) {
-      throw new Error('Link code is required.');
+    if (!code || typeof isBlocked !== 'boolean') {
+      throw new AppError("كل من 'code' والقيمة المنطقية 'isBlocked' مطلوبان.", 400);
     }
 
     // Verify link exists before attempting update

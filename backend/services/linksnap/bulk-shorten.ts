@@ -2,6 +2,7 @@ import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 import { CodeGenerator } from '@/backend/services/linksnap/code-generator';
+import { AppError } from '@/backend/shared/errors';
 
 const MAX_CODE_ATTEMPTS = 5;
 
@@ -18,10 +19,13 @@ export class BulkShortenService {
    * Shortens a list of URLs in bulk for a registered user.
    */
   async execute(urls: string[], userId: string): Promise<BulkShortenResult[]> {
+    if (!urls || !Array.isArray(urls)) {
+      throw new AppError("يجب أن يحتوي الإدخال على مصفوفة من 'urls'.", 400);
+    }
     if (!userId) {
       throw new Error('Bulk shortening requires user authentication.');
     }
-    if (!urls || urls.length === 0) {
+    if (urls.length === 0) {
       throw new Error('Please provide at least one URL to shorten.');
     }
     if (urls.length > 50) {

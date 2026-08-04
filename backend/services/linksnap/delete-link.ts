@@ -1,11 +1,12 @@
 import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import { AppError } from '@/backend/shared/errors';
 
 export class DeleteLinkService {
   constructor(private shortLinkRepository: IShortLinkRepository) {}
 
   async execute(code: string, userId: string): Promise<boolean> {
     if (!code) {
-      throw new Error('Link code is required.');
+      throw new AppError('رمز الرابط مطلوب.', 400);
     }
     if (!userId) {
       throw new Error('User authorization is required to delete a link.');

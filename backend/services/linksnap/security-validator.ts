@@ -2,6 +2,7 @@
  * Domain Service for validating URL structures and checking for potential security
  * threats, including phishing patterns, spam keywords, loopbacks, and private IP ranges.
  */
+import { AppError } from '@/backend/shared/errors';
 
 const MALICIOUS_PATTERNS = [
   /phishing/i,
@@ -62,16 +63,17 @@ export class SecurityValidator {
     const sanitized = url.trim();
 
     if (!sanitized) {
-      throw new Error('URL cannot be empty.');
+      throw new AppError('URL cannot be empty.', 400);
     }
 
     if (!this.isValidUrl(sanitized)) {
-      throw new Error('Invalid URL format. Please include http:// or https://');
+      throw new AppError('Invalid URL format. Please include http:// or https://', 400);
     }
 
     if (this.isMaliciousOrLoopback(sanitized)) {
-      throw new Error(
-        'Security Block: This URL has been flagged as suspicious, malicious, or an internal network loopback address.'
+      throw new AppError(
+        'Security Block: This URL has been flagged as suspicious, malicious, or an internal network loopback address.',
+        400
       );
     }
 

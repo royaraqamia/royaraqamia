@@ -87,8 +87,17 @@ describe('ModerateLinkService', () => {
     const { repository } = makeLinkRepo();
     const service = new ModerateLinkService(repository, adminEmails);
     await expect(service.execute('admin@example.com', '', true)).rejects.toThrow(
-      'Link code is required.'
+      "كل من 'code' والقيمة المنطقية 'isBlocked' مطلوبان."
     );
+  });
+
+  it('throws when isBlocked is not a boolean', async () => {
+    const { repository } = makeLinkRepo();
+    const service = new ModerateLinkService(repository, adminEmails);
+    await expect(
+      service.execute('admin@example.com', 'abc123', 'yes' as unknown as boolean)
+    ).rejects.toThrow("كل من 'code' والقيمة المنطقية 'isBlocked' مطلوبان.");
+    expect(repository.findByCode).not.toHaveBeenCalled();
   });
 
   it('throws when the link is not found', async () => {

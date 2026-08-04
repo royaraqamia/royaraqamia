@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { NextRequest, NextResponse } from 'next/server';
 import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
+import { AppError } from '@/backend/shared/errors';
 
 function readBody<T>(res: NextResponse): T {
   return (res as unknown as { data: T }).data;
@@ -55,9 +56,10 @@ vi.mock('@/backend/transport/http', () => ({
   getClientIp: (req: unknown) => mockGetClientIp(req),
 }));
 
-vi.mock('@/backend/shared/errors', () => ({
-  getErrorMessage: (err: unknown) => mockGetErrorMessage(err),
-}));
+vi.mock('@/backend/shared/errors', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/shared/errors')>();
+  return { ...actual, getErrorMessage: (err: unknown) => mockGetErrorMessage(err) };
+});
 
 vi.mock('@/backend/config/linksnap', () => ({
   createShortenUrlService: () => mockShorten,
@@ -161,7 +163,7 @@ describe('POST /linksnap/api/shorten', () => {
 
   it('returns a 400 with the error message for invalid input', async () => {
     mockGetAuthenticatedUser.mockResolvedValue(null);
-    mockShorten.execute.mockRejectedValue(new Error('URL cannot be empty.'));
+    mockShorten.execute.mockRejectedValue(new AppError('URL cannot be empty.', 400));
 
     const res = await shortenPOST(makeReq({ originalUrl: '' }));
 
@@ -182,6 +184,9 @@ describe('POST /linksnap/api/shorten/bulk', () => {
 
   it('returns 400 when urls is not an array', async () => {
     mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockBulkShorten.execute.mockRejectedValue(
+      new AppError("يجب أن يحتوي الإدخال على مصفوفة من 'urls'.", 400)
+    );
 
     const res = await bulkPOST(makeReq({ urls: 'not-an-array' }));
 
@@ -191,6 +196,9 @@ describe('POST /linksnap/api/shorten/bulk', () => {
 
   it('returns 400 when urls is missing', async () => {
     mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockBulkShorten.execute.mockRejectedValue(
+      new AppError("يجب أن يحتوي الإدخال على مصفوفة من 'urls'.", 400)
+    );
 
     const res = await bulkPOST(makeReq({}));
 
@@ -260,6 +268,9 @@ describe('GET /linksnap/api/links', () => {
 describe('PATCH /linksnap/api/links', () => {
   it('returns 400 when code or originalUrl is missing', async () => {
     mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockUpdateLink.execute.mockRejectedValue(
+      new AppError("كل من 'code' و 'originalUrl' مطلوبان.", 400)
+    );
 
     const res = await linksPATCH(makeReq({ code: 'abc123' }));
 
@@ -289,6 +300,8 @@ describe('PATCH /linksnap/api/links', () => {
 
 describe('DELETE /linksnap/api/links', () => {
   it('returns 400 when the code query param is missing', async () => {
+    mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockDeleteLink.execute.mockRejectedValue(new AppError('رمز الرابط مطلوب.', 400));
     const res = await linksDELETE({
       url: 'http://localhost/linksnap/api/links',
       headers: new Headers(),
@@ -319,6 +332,8 @@ describe('DELETE /linksnap/api/links', () => {
 
 describe('GET /linksnap/api/analytics/[code]', () => {
   it('returns 400 when the code is missing', async () => {
+    mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockAnalytics.execute.mockRejectedValue(new AppError('رمز الرابط مطلوب.', 400));
     const res = await analyticsGET(makeReq(), { params: Promise.resolve({ code: '' }) });
     expect(res.status).toBe(400);
   });
@@ -349,6 +364,9 @@ describe('GET /linksnap/api/analytics/[code]', () => {
 describe('POST /linksnap/api/admin/moderate', () => {
   it('returns 400 when isBlocked is not a boolean', async () => {
     mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'admin@example.com' });
+    mockModerate.execute.mockRejectedValue(
+      new AppError("كل من 'code' والقيمة المنطقية 'isBlocked' مطلوبان.", 400)
+    );
     const res = await moderatePOST(makeReq({ code: 'abc123', isBlocked: 'yes' }));
     expect(res.status).toBe(400);
   });

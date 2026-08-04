@@ -1,6 +1,7 @@
 import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
+import { AppError } from '@/backend/shared/errors';
 
 export class UpdateLinkService {
   constructor(private shortLinkRepository: IShortLinkRepository) {}
@@ -9,8 +10,8 @@ export class UpdateLinkService {
    * Validates and updates the destination URL of an existing short link.
    */
   async execute(code: string, userId: string, newUrl: string): Promise<ShortLink> {
-    if (!code) {
-      throw new Error('Short link code is required.');
+    if (!code || !newUrl) {
+      throw new AppError("كل من 'code' و 'originalUrl' مطلوبان.", 400);
     }
     if (!userId) {
       throw new Error('User authorization is required to update a link.');

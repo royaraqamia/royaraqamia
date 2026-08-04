@@ -67,8 +67,17 @@ describe('UpdateLinkService', () => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
     await expect(service.execute('', 'u-1', 'https://new.com')).rejects.toThrow(
-      'Short link code is required.'
+      "كل من 'code' و 'originalUrl' مطلوبان."
     );
+  });
+
+  it('throws when the new URL is missing', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    await expect(service.execute('abc123', 'u-1', '')).rejects.toThrow(
+      "كل من 'code' و 'originalUrl' مطلوبان."
+    );
+    expect(repository.findByCode).not.toHaveBeenCalled();
   });
 
   it('throws when the user id is missing', async () => {
@@ -126,7 +135,7 @@ describe('DeleteLinkService', () => {
   it('throws when the code is missing', async () => {
     const { repository } = makeRepo();
     const service = new DeleteLinkService(repository);
-    await expect(service.execute('', 'u-1')).rejects.toThrow('Link code is required.');
+    await expect(service.execute('', 'u-1')).rejects.toThrow('رمز الرابط مطلوب.');
   });
 
   it('throws when the user id is missing', async () => {

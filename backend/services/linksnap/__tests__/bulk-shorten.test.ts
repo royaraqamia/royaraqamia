@@ -45,8 +45,15 @@ describe('BulkShortenService.execute', () => {
     await expect(service.execute([], 'u-1')).rejects.toThrow(
       'Please provide at least one URL to shorten.'
     );
+  });
+
+  it('requires urls to be an array', async () => {
+    const { service } = makeRepo();
     await expect(service.execute(null as unknown as string[], 'u-1')).rejects.toThrow(
-      'Please provide at least one URL to shorten.'
+      "يجب أن يحتوي الإدخال على مصفوفة من 'urls'."
+    );
+    await expect(service.execute('not-an-array' as unknown as string[], 'u-1')).rejects.toThrow(
+      "يجب أن يحتوي الإدخال على مصفوفة من 'urls'."
     );
   });
 

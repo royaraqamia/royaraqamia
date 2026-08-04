@@ -1,6 +1,6 @@
 import { getAuthenticatedUser } from '@/backend/middleware/bearer-auth';
 import { checkRateLimitApi } from '@/backend/middleware/http';
-import { getErrorMessage } from '@/backend/shared/errors';
+import { AppError, getErrorMessage } from '@/backend/shared/errors';
 import { env } from '@/backend/config/env';
 import {
   createBulkShortenService,
@@ -28,6 +28,12 @@ function linkView(l: { code: string; originalUrl: string; createdAt: Date; isBlo
 
 const UNAUTHORIZED_BODY = { success: false, error: 'غير مصرح. يرجى تسجيل الدخول أولاً.' };
 
+function errorResponse(err: unknown, log: string): HttpResult {
+  console.error(log, err);
+  const status = err instanceof AppError ? err.statusCode : 500;
+  return jsonResult(status, { success: false, error: getErrorMessage(err) });
+}
+
 export async function listLinks(authorization: string | null): Promise<HttpResult> {
   try {
     const user = await getAuthenticatedUser(authorization);
@@ -39,11 +45,7 @@ export async function listLinks(authorization: string | null): Promise<HttpResul
 
     return jsonResult(200, { success: true, links: links.map(linkView) });
   } catch (err: unknown) {
-    console.error('Error in list links API route:', err);
-    return jsonResult(500, {
-      success: false,
-      error: err instanceof Error ? err.message : 'حدث خطأ غير متوقع.',
-    });
+    return errorResponse(err, 'Error in list links API route:');
   }
 }
 
@@ -57,28 +59,15 @@ export async function updateLink(
       return jsonResult(401, UNAUTHORIZED_BODY);
     }
 
-    const { code, originalUrl } = body;
-
-    if (!code || !originalUrl) {
-      return jsonResult(400, {
-        success: false,
-        error: "كل من 'code' و 'originalUrl' مطلوبان.",
-      });
-    }
-
     const updatedLink = await createUpdateLinkService().execute(
-      code as string,
+      body.code as string,
       user.id,
-      originalUrl as string
+      body.originalUrl as string
     );
 
     return jsonResult(200, { success: true, link: linkView(updatedLink) });
   } catch (err: unknown) {
-    console.error('Error in update link API route:', err);
-    return jsonResult(500, {
-      success: false,
-      error: err instanceof Error ? err.message : 'حدث خطأ غير متوقع.',
-    });
+    return errorResponse(err, 'Error in update link API route:');
   }
 }
 
@@ -87,24 +76,16 @@ export async function deleteLink(
   code: string | null
 ): Promise<HttpResult> {
   try {
-    if (!code) {
-      return jsonResult(400, { success: false, error: 'رمز الرابط مطلوب.' });
-    }
-
     const user = await getAuthenticatedUser(authorization);
     if (!user) {
       return jsonResult(401, UNAUTHORIZED_BODY);
     }
 
-    await createDeleteLinkService().execute(code, user.id);
+    await createDeleteLinkService().execute(code ?? '', user.id);
 
     return jsonResult(200, { success: true, message: 'تم حذف الرابط بنجاح.' });
   } catch (err: unknown) {
-    console.error('Error in delete link API route:', err);
-    return jsonResult(500, {
-      success: false,
-      error: err instanceof Error ? err.message : 'حدث خطأ غير متوقع.',
-    });
+    return errorResponse(err, 'Error in delete link API route:');
   }
 }
 
@@ -138,8 +119,7 @@ export async function shortenUrl(
       },
     });
   } catch (err: unknown) {
-    console.error('Error in shorten API route:', err);
-    return jsonResult(400, { success: false, error: getErrorMessage(err) });
+    return errorResponse(err, 'Error in shorten API route:');
   }
 }
 
@@ -159,24 +139,11 @@ export async function bulkShorten(
     const rateLimitResult = await checkRateLimitApi(bulkShortenRateLimitPolicy(user.id));
     if (rateLimitResult) return rateLimitResult;
 
-    const { urls } = body;
-
-    if (!urls || !Array.isArray(urls)) {
-      return jsonResult(400, {
-        success: false,
-        error: "يجب أن يحتوي الإدخال على مصفوفة من 'urls'.",
-      });
-    }
-
-    const results = await createBulkShortenService().execute(urls, user.id);
+    const results = await createBulkShortenService().execute(body.urls as string[], user.id);
 
     return jsonResult(200, { success: true, results });
   } catch (err: unknown) {
-    console.error('Error in bulk shortening endpoint:', err);
-    return jsonResult(500, {
-      success: false,
-      error: err instanceof Error ? err.message : 'حدث خطأ غير متوقع أثناء الاختصار بالجملة.',
-    });
+    return errorResponse(err, 'Error in bulk shortening endpoint:');
   }
 }
 
@@ -190,24 +157,15 @@ export async function moderateLink(
       return jsonResult(401, UNAUTHORIZED_BODY);
     }
 
-    const { code, isBlocked } = body;
-
-    if (!code || typeof isBlocked !== 'boolean') {
-      return jsonResult(400, {
-        success: false,
-        error: "كل من 'code' والقيمة المنطقية 'isBlocked' مطلوبان.",
-      });
-    }
-
     const updatedLink = await createModerateLinkService().execute(
       user.email,
-      code as string,
-      isBlocked
+      body.code as string,
+      body.isBlocked as boolean
     );
 
     return jsonResult(200, {
       success: true,
-      message: `تم ${isBlocked ? 'حظر' : 'إلغاء حظر'} الرابط بنجاح.`,
+      message: `تم ${body.isBlocked ? 'حظر' : 'إلغاء حظر'} الرابط بنجاح.`,
       link: {
         code: updatedLink.code,
         originalUrl: updatedLink.originalUrl,
@@ -215,11 +173,7 @@ export async function moderateLink(
       },
     });
   } catch (err: unknown) {
-    console.error('Error in administration moderation endpoint:', err);
-    return jsonResult(500, {
-      success: false,
-      error: err instanceof Error ? err.message : 'حدث خطأ غير متوقع أثناء المراقبة.',
-    });
+    return errorResponse(err, 'Error in administration moderation endpoint:');
   }
 }
 
@@ -234,11 +188,7 @@ export async function getSystemStats(authorization: string | null): Promise<Http
 
     return jsonResult(200, { success: true, stats });
   } catch (err: unknown) {
-    console.error('Error in administrative stats endpoint:', err);
-    return jsonResult(500, {
-      success: false,
-      error: err instanceof Error ? err.message : 'حدث خطأ غير متوقع.',
-    });
+    return errorResponse(err, 'Error in administrative stats endpoint:');
   }
 }
 
@@ -247,10 +197,6 @@ export async function getUrlAnalytics(
   code: string
 ): Promise<HttpResult> {
   try {
-    if (!code) {
-      return jsonResult(400, { success: false, error: 'رمز الرابط مطلوب.' });
-    }
-
     const user = await getAuthenticatedUser(authorization);
     if (!user) {
       return jsonResult(401, UNAUTHORIZED_BODY);
@@ -260,11 +206,7 @@ export async function getUrlAnalytics(
 
     return jsonResult(200, { success: true, analytics });
   } catch (err: unknown) {
-    console.error('Error in link analytics API route:', err);
-    return jsonResult(500, {
-      success: false,
-      error: err instanceof Error ? err.message : 'حدث خطأ غير متوقع.',
-    });
+    return errorResponse(err, 'Error in link analytics API route:');
   }
 }
 

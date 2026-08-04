@@ -1,12 +1,13 @@
 import { IAnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { LinkAnalyticsSummary } from '@/shared/contracts/linksnap';
+import { AppError } from '@/backend/shared/errors';
 
 export class GetUrlAnalyticsService {
   constructor(private analyticsRepository: IAnalyticsRepository) {}
 
   async execute(code: string, userId: string): Promise<LinkAnalyticsSummary> {
     if (!code) {
-      throw new Error('Short code is required to retrieve analytics.');
+      throw new AppError('رمز الرابط مطلوب.', 400);
     }
     if (!userId) {
       throw new Error('User authorization is required to view link analytics.');

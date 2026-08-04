@@ -2,6 +2,7 @@ import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 import { CodeGenerator } from '@/backend/services/linksnap/code-generator';
+import { AppError } from '@/backend/shared/errors';
 
 const MAX_CODE_ATTEMPTS = 5;
 
@@ -20,15 +21,15 @@ export class ShortenUrlService {
     if (customCode) {
       const sanitizedCode = CodeGenerator.sanitizeCustomCode(customCode);
       if (sanitizedCode.length < 3) {
-        throw new Error('Custom short code must be at least 3 characters long.');
+        throw new AppError('Custom short code must be at least 3 characters long.', 400);
       }
       if (sanitizedCode.length > 16) {
-        throw new Error('Custom short code must be under 16 characters.');
+        throw new AppError('Custom short code must be under 16 characters.', 400);
       }
 
       const isTaken = await this.shortLinkRepository.exists(sanitizedCode);
       if (isTaken) {
-        throw new Error('This custom short code is already taken. Please try another one.');
+        throw new AppError('This custom short code is already taken. Please try another one.', 400);
       }
       code = sanitizedCode;
     } else {
@@ -40,7 +41,10 @@ export class ShortenUrlService {
         attempts++;
       }
       if (!unique) {
-        throw new Error('Server was unable to generate a unique link code. Please try again.');
+        throw new AppError(
+          'Server was unable to generate a unique link code. Please try again.',
+          500
+        );
       }
     }
 
