@@ -1,7 +1,7 @@
 import { randomInt } from 'crypto';
 import { z } from 'zod';
 import type { ICertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
-import type { Certificate } from '@/shared/contracts/certificates';
+import { CERT_CODE_REGEX, type Certificate } from '@/shared/contracts/certificates';
 
 export class CertificateValidationError extends Error {
   readonly fieldErrors: Record<string, string>;
@@ -115,7 +115,7 @@ export class CertificatesService {
     const parsed = parseCertificate(input);
 
     const code = customCode?.trim().toUpperCase() || generateCode();
-    if (customCode && !/^COMP-\d{4}-[A-Z0-9]{8}$/.test(code)) {
+    if (customCode && !CERT_CODE_REGEX.test(code)) {
       throw new CertificateCodeFormatError();
     }
 

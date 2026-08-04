@@ -1,13 +1,5 @@
 export function formatDateArabic(dateStr: string): string {
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return dateStr;
-  return new Intl.DateTimeFormat('ar-SA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    calendar: 'islamic-umalqura',
-    numberingSystem: 'latn',
-  }).format(date);
+  return formatHijriDate(dateStr);
 }
 
 export function formatHijriDate(
