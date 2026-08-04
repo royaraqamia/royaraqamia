@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { LinksnapApiClient, type LinkAnalyticsSummary } from '@/frontend/api/linksnap';
+import { fetchAnalytics, type LinkAnalyticsSummary } from '@/frontend/api/linksnap';
 
 export function useLinkAnalytics(code: string, token: string) {
   const [analytics, setAnalytics] = useState<LinkAnalyticsSummary | null>(null);
@@ -13,7 +13,7 @@ export function useLinkAnalytics(code: string, token: string) {
     setAnalyticsLoading(true);
     setAnalyticsError(null);
     try {
-      setAnalytics(await LinksnapApiClient.fetchAnalytics(code, token));
+      setAnalytics(await fetchAnalytics(code, token));
     } catch (err: unknown) {
       setAnalyticsError(err instanceof Error ? err.message : 'فشل في تحميل التَّحليلات.');
     } finally {

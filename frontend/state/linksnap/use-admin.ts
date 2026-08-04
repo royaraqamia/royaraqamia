@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
-import { LinksnapApiClient, type AdminStats } from '@/frontend/api/linksnap';
+import { fetchAdminStats, moderateLink, type AdminStats } from '@/frontend/api/linksnap';
 
 export function useAdminLinks(token: string) {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -15,7 +15,7 @@ export function useAdminLinks(token: string) {
     setLoading(true);
     setError(null);
     try {
-      setStats(await LinksnapApiClient.fetchAdminStats(token));
+      setStats(await fetchAdminStats(token));
     } catch (err: unknown) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'فشل في جلب البيانات الإدارية.');
@@ -37,7 +37,7 @@ export function useAdminLinks(token: string) {
       setModerateError(null);
       try {
         const targetState = !currentBlockedState;
-        await LinksnapApiClient.moderateLink(code, targetState, token);
+        await moderateLink(code, targetState, token);
         setStats((prev) => {
           if (!prev) return prev;
           const updatedLinks = (prev.links || []).map((link) =>

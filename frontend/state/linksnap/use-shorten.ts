@@ -2,7 +2,8 @@
 
 import { useCallback, useState } from 'react';
 import {
-  LinksnapApiClient,
+  shorten,
+  shortenBulk,
   type BulkShortenResultItem,
   type ShortenedLink,
 } from '@/frontend/api/linksnap';
@@ -18,7 +19,7 @@ export function useShortenLink(token: string | null) {
       setLoading(true);
       setError(null);
       try {
-        return await LinksnapApiClient.shorten(originalUrl, customCode, token);
+        return await shorten(originalUrl, customCode, token);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'حدث خطأ أثناء اختصار الرَّابط.');
         return null;
@@ -41,7 +42,7 @@ export function useBulkShortenLinks(token: string | null) {
       setLoading(true);
       setError(null);
       try {
-        return await LinksnapApiClient.shortenBulk(urls, token);
+        return await shortenBulk(urls, token);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'حدث خطأ أثناء الاختصار بالجملة.');
         return null;

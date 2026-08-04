@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { LinksnapApiClient, type ShortenedLink } from '@/frontend/api/linksnap';
+import { listLinks, updateLink, deleteLink, type ShortenedLink } from '@/frontend/api/linksnap';
 
 export function useLinks(token: string, refreshTrigger: number) {
   const [links, setLinks] = useState<ShortenedLink[]>([]);
@@ -12,7 +12,7 @@ export function useLinks(token: string, refreshTrigger: number) {
     setLoading(true);
     setError(null);
     try {
-      setLinks(await LinksnapApiClient.listLinks(token));
+      setLinks(await listLinks(token));
     } catch (err: unknown) {
       setError((err instanceof Error && err.message) || 'فشل في تحميل روابطك المختصرة.');
     } finally {
@@ -48,7 +48,7 @@ export function useUpdateLink(token: string) {
       setUpdateLoading(true);
       setUpdateError(null);
       try {
-        return await LinksnapApiClient.updateLink(code, url, token);
+        return await updateLink(code, url, token);
       } catch (err: unknown) {
         setUpdateError(err instanceof Error ? err.message : 'خطأ في تحديث الرابط.');
         throw err;
@@ -69,7 +69,7 @@ export function useDeleteLink(token: string) {
     async (code: string) => {
       setDeleteError(null);
       try {
-        await LinksnapApiClient.deleteLink(code, token);
+        await deleteLink(code, token);
       } catch (err: unknown) {
         setDeleteError(err instanceof Error ? err.message : 'خطأ في حذف الرابط.');
         throw err;
