@@ -1,6 +1,6 @@
 import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
-import { AdminValidator } from '@/shared/admin-validator';
+import { isAdmin } from '@/shared/admin-validator';
 import { AppError } from '@/backend/shared/errors';
 
 export class ModerateLinkService {
@@ -10,7 +10,7 @@ export class ModerateLinkService {
   ) {}
 
   async execute(userEmail: string, code: string, isBlocked: boolean): Promise<ShortLink> {
-    if (!AdminValidator.isAdmin(userEmail, this.adminEmails)) {
+    if (!isAdmin(userEmail, this.adminEmails)) {
       throw new Error('Access Denied: Administrative privileges required.');
     }
 

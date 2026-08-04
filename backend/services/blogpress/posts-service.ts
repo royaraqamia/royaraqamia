@@ -5,7 +5,7 @@ import type {
 } from '@/backend/repositories/blogpress/posts-repository';
 import type { Post, PostCategory } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
-import { AdminValidator } from '@/shared/admin-validator';
+import { isAdmin } from '@/shared/admin-validator';
 
 export class BlogpressPostsService {
   constructor(
@@ -72,7 +72,7 @@ export class BlogpressPostsService {
     data: PostInput,
     authorEmail: string
   ): Promise<{ slug: string }> {
-    const blogVisible = AdminValidator.isAdmin(authorEmail, this.adminEmails);
+    const blogVisible = isAdmin(authorEmail, this.adminEmails);
     return this.repository.saveAndPublishPost(postId, authorId, data, blogVisible);
   }
 
@@ -81,7 +81,7 @@ export class BlogpressPostsService {
     authorId: string,
     authorEmail: string
   ): Promise<{ slug: string }> {
-    const blogVisible = AdminValidator.isAdmin(authorEmail, this.adminEmails);
+    const blogVisible = isAdmin(authorEmail, this.adminEmails);
     return this.repository.publishPost(postId, authorId, blogVisible);
   }
 
