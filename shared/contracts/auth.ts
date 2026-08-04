@@ -16,14 +16,6 @@ export const SignupSchema = z.object({
     .regex(/[^A-Za-z0-9]/, 'كلمة المرور يجب أن تحتوي على رمز خاص'),
 });
 
-export const OtpSchema = z.object({
-  otp: z.string().length(6, 'رمز التحقق يجب أن يكون 6 أرقام'),
-});
-
-export const ResetPasswordSchema = z.object({
-  email: z.string().email('البريد الإلكتروني غير صحيح'),
-});
-
 export const UpdatePasswordSchema = z.object({
   password: z
     .string()

@@ -22,9 +22,3 @@ export const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 export function getWhatsAppUrl(message: string = WHATSAPP_MESSAGE): string {
   return `https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(message)}`;
 }
-
-export function getWhatsAppNumber(): string {
-  const match = WHATSAPP_PHONE.match(/(\d{3})(\d{3})(\d{3})(\d{3})/);
-  if (!match) return WHATSAPP_PHONE;
-  return `+${match[1]} ${match[2]} ${match[3]} ${match[4]}`;
-}

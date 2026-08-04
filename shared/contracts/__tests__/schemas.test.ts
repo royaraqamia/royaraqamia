@@ -2,8 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   LoginSchema,
   SignupSchema,
-  OtpSchema,
-  ResetPasswordSchema,
   UpdatePasswordSchema,
 } from '@/shared/contracts/auth';
 
@@ -102,40 +100,6 @@ describe('SignupSchema', () => {
       email: 'bad-email',
       password: 'StrongP@ss1',
     });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('OtpSchema', () => {
-  it('accepts exactly 6 digits', () => {
-    const result = OtpSchema.safeParse({ otp: '123456' });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects less than 6 characters', () => {
-    const result = OtpSchema.safeParse({ otp: '12345' });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects more than 6 characters', () => {
-    const result = OtpSchema.safeParse({ otp: '1234567' });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects empty string', () => {
-    const result = OtpSchema.safeParse({ otp: '' });
-    expect(result.success).toBe(false);
-  });
-});
-
-describe('ResetPasswordSchema', () => {
-  it('accepts valid email', () => {
-    const result = ResetPasswordSchema.safeParse({ email: 'test@example.com' });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects invalid email', () => {
-    const result = ResetPasswordSchema.safeParse({ email: 'not-email' });
     expect(result.success).toBe(false);
   });
 });
