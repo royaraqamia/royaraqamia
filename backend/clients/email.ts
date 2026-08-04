@@ -12,10 +12,24 @@ export interface EmailClient {
   sendPasswordResetEmail(email: string, resetUrl: string): Promise<void>;
 }
 
+export interface EmailValidity {
+  otpMinutes: number;
+  passwordResetHours: number;
+}
+
+function formatMinutes(minutes: number): string {
+  return minutes === 1 ? 'دقيقة' : `${minutes} دقائق`;
+}
+
+function formatHours(hours: number): string {
+  return hours === 1 ? 'ساعة' : `${hours} ساعات`;
+}
+
 export class ResendEmailClient implements EmailClient {
   constructor(
     private readonly resend: Resend,
-    private readonly sender: EmailSender
+    private readonly sender: EmailSender,
+    private readonly validity: EmailValidity
   ) {}
 
   async sendOtpEmail(email: string, otp: string): Promise<void> {
@@ -34,7 +48,7 @@ export class ResendEmailClient implements EmailClient {
               <div style="text-align: center; padding: 20px; background: rgba(119, 102, 238, 0.1); border-radius: 12px; border: 1px solid rgba(119, 102, 238, 0.3);">
                 <span style="font-size: 32px; font-weight: bold; color: #c4b5fd; letter-spacing: 8px;">${otp}</span>
               </div>
-              <p style="color: #71717a; font-size: 12px; margin: 24px 0 0; text-align: center;">صالح لمدَّة 5 دقائق</p>
+              <p style="color: #71717a; font-size: 12px; margin: 24px 0 0; text-align: center;">صالح لمدَّة ${formatMinutes(this.validity.otpMinutes)}</p>
             </div>
           </div>
         `,
@@ -57,7 +71,7 @@ export class ResendEmailClient implements EmailClient {
               <div style="text-align: center;">
                 <a href="${resetUrl}" style="display: inline-block; padding: 12px 32px; background: linear-gradient(135deg, #7766ee, #6366f1); color: white; text-decoration: none; border-radius: 9999px; font-weight: bold;">إعادة التعيين</a>
               </div>
-              <p style="color: #71717a; font-size: 12px; margin: 24px 0 0; text-align: center;">صالح لمدَّة ساعة</p>
+              <p style="color: #71717a; font-size: 12px; margin: 24px 0 0; text-align: center;">صالح لمدَّة ${formatHours(this.validity.passwordResetHours)}</p>
             </div>
           </div>
         `,
@@ -65,6 +79,10 @@ export class ResendEmailClient implements EmailClient {
   }
 }
 
-export function createEmailClient(resend: Resend, sender: EmailSender): EmailClient {
-  return new ResendEmailClient(resend, sender);
+export function createEmailClient(
+  resend: Resend,
+  sender: EmailSender,
+  validity: EmailValidity
+): EmailClient {
+  return new ResendEmailClient(resend, sender, validity);
 }

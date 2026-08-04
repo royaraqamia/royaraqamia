@@ -9,7 +9,12 @@ vi.mock('resend', () => ({
 }));
 
 import { Resend } from 'resend';
-import { ResendEmailClient, createEmailClient, type EmailSender } from '@/backend/clients/email';
+import {
+  ResendEmailClient,
+  createEmailClient,
+  type EmailSender,
+  type EmailValidity,
+} from '@/backend/clients/email';
 
 function makeResend(): Resend {
   return new (Resend as unknown as new () => Resend)();
@@ -19,6 +24,10 @@ function makeSender(): EmailSender {
   return { fromName: 'رؤية رقمية', fromEmail: 'no-reply@royaraqamia.com' };
 }
 
+function makeValidity(): EmailValidity {
+  return { otpMinutes: 5, passwordResetHours: 1 };
+}
+
 describe('ResendEmailClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -26,7 +35,7 @@ describe('ResendEmailClient', () => {
 
   it('sendOtpEmail sends to the right recipient with the OTP embedded', async () => {
     mockSend.mockResolvedValue({ id: 'email-1' });
-    const client = new ResendEmailClient(makeResend(), makeSender());
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
 
     await client.sendOtpEmail('user@example.com', '123456');
 
@@ -39,11 +48,12 @@ describe('ResendEmailClient', () => {
     });
     expect(String(payload.html)).toContain('123456');
     expect(String(payload.html)).toContain('dir="rtl"');
+    expect(String(payload.html)).toContain('5 دقائق');
   });
 
   it('sendPasswordResetEmail embeds the reset URL', async () => {
     mockSend.mockResolvedValue({ id: 'email-2' });
-    const client = new ResendEmailClient(makeResend(), makeSender());
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
 
     await client.sendPasswordResetEmail(
       'user@example.com',
@@ -56,6 +66,7 @@ describe('ResendEmailClient', () => {
       subject: 'إعادة تعيين كلمة المرور - رؤية رقمية',
     });
     expect(String(payload.html)).toContain('https://royaraqamia.com/auth/update-password');
+    expect(String(payload.html)).toContain('ساعة');
   });
 
   it('uses the configured sender in the from field', async () => {
@@ -63,7 +74,7 @@ describe('ResendEmailClient', () => {
     const client = new ResendEmailClient(makeResend(), {
       fromName: 'Custom Sender',
       fromEmail: 'custom@example.com',
-    });
+    }, makeValidity());
 
     await client.sendOtpEmail('a@b.com', '000000');
 
@@ -73,7 +84,7 @@ describe('ResendEmailClient', () => {
 
   it('createEmailClient returns a working client', async () => {
     mockSend.mockResolvedValue({ id: 'email-4' });
-    const client = createEmailClient(makeResend(), makeSender());
+    const client = createEmailClient(makeResend(), makeSender(), makeValidity());
     await client.sendOtpEmail('a@b.com', '000000');
     expect(mockSend).toHaveBeenCalledTimes(1);
   });
