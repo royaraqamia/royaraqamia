@@ -101,6 +101,18 @@ describe('LocalStorageHabitRepository', () => {
     expect(await repo.getLogs('2026-01-01', '2026-12-31')).toEqual([]);
   });
 
+  it('getLocalData returns the raw persisted data including archived habits', async () => {
+    const repo = new LocalStorageHabitRepository();
+    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    await repo.toggleLog(habit.id, '2026-08-02', true);
+    await repo.deleteHabit(habit.id);
+
+    const data = await repo.getLocalData();
+    expect(data.habits).toHaveLength(1);
+    expect(data.habits[0]?.archived).toBe(true);
+    expect(data.logs).toHaveLength(1);
+  });
+
   it('seedFromSSR only writes when nothing is stored yet', async () => {
     const habits: Habit[] = [
       {

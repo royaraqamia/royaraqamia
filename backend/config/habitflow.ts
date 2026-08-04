@@ -49,6 +49,10 @@ export function createHabitService(
   return { service: new HabitService(repository), mode };
 }
 
+export function createLocalHabitService(): HabitService {
+  return new HabitService(getLocalHabitRepository());
+}
+
 export function createHabitBackupService(
   userId?: string,
   client?: SupabaseClient

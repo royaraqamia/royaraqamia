@@ -33,7 +33,14 @@ export class HabitService {
 
   async deleteHabit(id: string): Promise<boolean> {
     if (!id) throw new AppError('معرّف العادة مطلوب', 400);
-    return this.repository.deleteHabit(id);
+    const deleted = await this.repository.deleteHabit(id);
+    if (!deleted) throw new AppError('العادة غير موجودة أو تعذّر أرشفتها', 404);
+    return deleted;
+  }
+
+  async getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[]; count: number }> {
+    const { habits, logs } = await this.repository.getLocalData();
+    return { habits, logs, count: habits.length };
   }
 
   async toggleHabitLog(data: {

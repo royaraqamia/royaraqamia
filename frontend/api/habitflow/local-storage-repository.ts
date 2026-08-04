@@ -76,6 +76,10 @@ export class LocalStorageHabitRepository implements IHabitRepository {
     return readLogs().filter((log) => log.date >= startDate && log.date <= endDate);
   }
 
+  async getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
+    return { habits: readHabits(), logs: readLogs() };
+  }
+
   async toggleLog(habitId: string, date: string, completed: boolean): Promise<HabitLog> {
     const logs = readLogs();
     const existingIndex = logs.findIndex((log) => log.habitId === habitId && log.date === date);

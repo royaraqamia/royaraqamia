@@ -29,6 +29,7 @@ function makeRepo(overrides: Partial<IHabitRepository> = {}) {
     getLogs: vi.fn(),
     toggleLog: vi.fn(),
     restoreFromBackup: vi.fn(),
+    getLocalData: vi.fn(),
     ...overrides,
   };
   return { repository, service: new HabitService(repository) };
@@ -169,6 +170,16 @@ describe('HabitService', () => {
       await expect(service.deleteHabit('h-1')).resolves.toBe(true);
       expect(repository.deleteHabit).toHaveBeenCalledWith('h-1');
     });
+
+    it('throws a 404 AppError when the habit does not exist', async () => {
+      const { repository, service } = makeRepo();
+      (repository.deleteHabit as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+      await expect(service.deleteHabit('h-missing')).rejects.toMatchObject({
+        name: AppError.name,
+        statusCode: 404,
+      });
+      expect(repository.deleteHabit).toHaveBeenCalledWith('h-missing');
+    });
   });
 
   describe('toggleHabitLog', () => {
@@ -197,6 +208,23 @@ describe('HabitService', () => {
         service.toggleHabitLog({ habitId: 'h-1', date: '2026-08-02', completed: true })
       ).resolves.toEqual(logFixture);
       expect(repository.toggleLog).toHaveBeenCalledWith('h-1', '2026-08-02', true);
+    });
+  });
+
+  describe('getLocalData', () => {
+    it('returns raw persisted data with the habit count', async () => {
+      const { repository, service } = makeRepo();
+      (repository.getLocalData as ReturnType<typeof vi.fn>).mockResolvedValue({
+        habits: [habitFixture],
+        logs: [logFixture],
+      });
+
+      await expect(service.getLocalData()).resolves.toEqual({
+        habits: [habitFixture],
+        logs: [logFixture],
+        count: 1,
+      });
+      expect(repository.getLocalData).toHaveBeenCalledTimes(1);
     });
   });
 });

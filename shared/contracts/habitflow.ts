@@ -25,6 +25,7 @@ export interface IHabitRepository {
   getLogs(startDate: string, endDate: string): Promise<HabitLog[]>;
   toggleLog(habitId: string, date: string, completed: boolean): Promise<HabitLog>;
   restoreFromBackup(input: HabitRestoreInput): Promise<void>;
+  getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }>;
 }
 
 export interface HabitBackupHabit {

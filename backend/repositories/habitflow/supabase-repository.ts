@@ -190,6 +190,31 @@ export class SupabaseHabitRepository implements IHabitRepository {
     }
   }
 
+  async getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
+    let habitsQuery = this.client.from('habits').select('*');
+    let logsQuery = this.client.from('habit_logs').select('*');
+
+    if (this.userId) {
+      habitsQuery = habitsQuery.eq('user_id', this.userId);
+      logsQuery = logsQuery.eq('user_id', this.userId);
+    }
+
+    const [{ data: habitRows, error: habitsError }, { data: logRows, error: logsError }] =
+      await Promise.all([habitsQuery, logsQuery]);
+
+    if (habitsError) {
+      throw habitsError;
+    }
+    if (logsError) {
+      throw logsError;
+    }
+
+    return {
+      habits: (habitRows || []).map(toHabit),
+      logs: (logRows || []).map(toLog),
+    };
+  }
+
   async getLogs(startDate: string, endDate: string): Promise<HabitLog[]> {
     let query = this.client
       .from('habit_logs')
