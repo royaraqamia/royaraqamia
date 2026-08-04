@@ -17,7 +17,7 @@ import { useDashboard } from '@/frontend/state/habitflow/use-dashboard';
 import { useLogout } from '@/frontend/state/use-logout';
 import { useSession } from '@/frontend/state/session-provider';
 import { Button } from '@/frontend/ui/ui/button';
-import { Card } from '@/frontend/ui/ui/card';
+import { EmptyState } from '@/frontend/ui/ui/empty-state';
 import { StatsCard } from '@/frontend/ui/habitflow/components/stats-card';
 import { HabitCard } from '@/frontend/ui/habitflow/components/habit-card';
 import { CalendarGrid } from '@/frontend/ui/habitflow/components/calendar-grid';
@@ -242,27 +242,24 @@ export function DashboardShell({
               </div>
 
               {habits.length === 0 ? (
-                <Card className="border-dashed p-12 text-center space-y-4 card-lift">
-                  <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mx-auto">
-                    <CheckSquare className="w-8 h-8 text-primary/60" />
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-base font-bold text-foreground">ابدأ رحلة عاداتك</p>
-                    <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
-                      أنشئ أول عادة يومية أو أسبوعية. التغييرات الصغيرة تصنع نتائج كبيرة.
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      setIsAddModalOpen(true);
-                      setFormError('');
-                    }}
-                    className="mt-2 touch-target btn-press focus-ring"
-                  >
-                    <Plus className="w-4 h-4 ms-1.5" />
-                    إنشاء عادة روتينية
-                  </Button>
-                </Card>
+                <EmptyState
+                  icon={CheckSquare}
+                  variant="card"
+                  title="ابدأ رحلة عاداتك"
+                  description="أنشئ أول عادة يومية أو أسبوعية. التغييرات الصغيرة تصنع نتائج كبيرة."
+                  action={
+                    <Button
+                      onClick={() => {
+                        setIsAddModalOpen(true);
+                        setFormError('');
+                      }}
+                      className="mt-2 touch-target btn-press focus-ring"
+                    >
+                      <Plus className="w-4 h-4 ms-1.5" />
+                      إنشاء عادة روتينية
+                    </Button>
+                  }
+                />
               ) : (
                 <div className="space-y-3">
                   {habits.map((habit) => (

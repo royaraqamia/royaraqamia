@@ -11,7 +11,7 @@ interface AnalyticsChartProps {
 export function AnalyticsChart({ stats }: AnalyticsChartProps) {
   const reducedMotion = useReducedMotion();
   const [animate, setAnimate] = useState(reducedMotion ?? false);
-  const [tooltipBg, setTooltipBg] = useState('15 23 42');
+  const [tooltipBg, setTooltipBg] = useState('240 8% 11%');
 
   useEffect(() => {
     if (reducedMotion) {
@@ -25,8 +25,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
   useEffect(() => {
     const update = () => {
       setTooltipBg(
-        getComputedStyle(document.documentElement).getPropertyValue('--color-on-surface').trim() ||
-          '15 23 42'
+        getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '240 8% 11%'
       );
     };
     update();
@@ -178,7 +177,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                   width="70"
                   height="22"
                   rx="4"
-                  fill={`rgb(${tooltipBg})`}
+                  fill={`hsl(${tooltipBg})`}
                 />
                 <text
                   x={Math.max(p.x, paddingLeft + 35)}

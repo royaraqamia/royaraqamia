@@ -11,6 +11,7 @@ import {
 } from '@/frontend/ui/ui/dialog';
 import { Trash2, Loader2, Receipt } from 'lucide-react';
 import { CreateExpenseDialog, EditExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
+import { EmptyState } from '@/frontend/ui/ui/empty-state';
 import { useDeleteExpense, useExpensePagination } from '@/frontend/state/spendtrack/use-expenses';
 import { parseISO } from 'date-fns';
 
@@ -45,20 +46,12 @@ export function ExpenseList({
 
   if (expenses.length === 0) {
     return (
-      <div className="flex flex-col items-center gap-4 py-12 animate-fade-in">
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-primary/10 animate-pulse-slow">
-          <Receipt className="size-6 text-primary" aria-hidden="true" />
-        </div>
-        <div className="text-center space-y-1">
-          <p className="text-muted-foreground text-lg font-medium">
-            {hasFilters ? 'لا توجد نتائج تطابق الفلترة' : 'لا توجد مصروفات بعد'}
-          </p>
-          <p className="text-sm text-muted-foreground">
-            {hasFilters ? 'حاول تغيير نطاق الفلترة' : 'ابدأ بتتبع إنفاقك بإضافة أول مصروف'}
-          </p>
-        </div>
-        {!hasFilters && <CreateExpenseDialog categories={categories} />}
-      </div>
+      <EmptyState
+        icon={Receipt}
+        title={hasFilters ? 'لا توجد نتائج تطابق الفلترة' : 'لا توجد مصروفات بعد'}
+        description={hasFilters ? 'حاول تغيير نطاق الفلترة' : 'ابدأ بتتبع إنفاقك بإضافة أول مصروف'}
+        action={!hasFilters ? <CreateExpenseDialog categories={categories} /> : undefined}
+      />
     );
   }
 

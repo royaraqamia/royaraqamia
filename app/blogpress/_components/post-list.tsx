@@ -20,6 +20,7 @@ import {
   Clock,
 } from 'lucide-react';
 import { Button } from '@/frontend/ui/ui/button';
+import { EmptyState } from '@/frontend/ui/ui/empty-state';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -182,46 +183,45 @@ export function PostList({ posts }: PostListProps) {
         aria-labelledby={`tab-${activeFilter}`}
       >
         {filteredPosts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center">
-            <div className="size-16 rounded-2xl bg-muted flex items-center justify-center mb-5">
-              <FileText className="size-7 text-muted-foreground/50" />
-            </div>
-            <h3 className="text-lg font-semibold">
-              {searchQuery ? 'لا توجد نتائج للبحث' : 'لا توجد مقالات بعد'}
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1.5 max-w-xs">
-              {searchQuery
+          <EmptyState
+            icon={FileText}
+            className="py-16"
+            title={searchQuery ? 'لا توجد نتائج للبحث' : 'لا توجد مقالات بعد'}
+            description={
+              searchQuery
                 ? 'لم نعثر على مقالات تطابق بحثك.'
                 : activeFilter === 'all'
                   ? 'أنشئ مقالك الأوَّل للبدء في الكتابة.'
-                  : 'لا توجد مقالات في هذا التَّصنيف.'}
-            </p>
-            {!searchQuery && activeFilter === 'all' && (
-              <Button
-                className="mt-5 transition-smooth shadow-sm hover:shadow-md rounded-full"
-                disabled={pending}
-                onClick={() =>
-                  startTransition(async () => {
-                    try {
-                      const { id } = await createPost();
-                      router.push(`/blogpress/editor/${id}`);
-                    } catch {
-                      // Navigation will not occur on failure
-                    }
-                  })
-                }
-                aria-busy={pending}
-                aria-live="polite"
-              >
-                {pending ? (
-                  <Loader2 className="ms-2 size-4 animate-spin" />
-                ) : (
-                  <Plus className="ms-2 size-4" />
-                )}
-                {pending ? 'جارٍ الإنشاء...' : 'مقال جديد'}
-              </Button>
-            )}
-          </div>
+                  : 'لا توجد مقالات في هذا التَّصنيف.'
+            }
+            action={
+              !searchQuery && activeFilter === 'all' ? (
+                <Button
+                  className="transition-smooth shadow-sm hover:shadow-md rounded-full"
+                  disabled={pending}
+                  onClick={() =>
+                    startTransition(async () => {
+                      try {
+                        const { id } = await createPost();
+                        router.push(`/blogpress/editor/${id}`);
+                      } catch {
+                        // Navigation will not occur on failure
+                      }
+                    })
+                  }
+                  aria-busy={pending}
+                  aria-live="polite"
+                >
+                  {pending ? (
+                    <Loader2 className="ms-2 size-4 animate-spin" />
+                  ) : (
+                    <Plus className="ms-2 size-4" />
+                  )}
+                  {pending ? 'جارٍ الإنشاء...' : 'مقال جديد'}
+                </Button>
+              ) : undefined
+            }
+          />
         ) : (
           filteredPosts.map((post) => <PostRow key={post.id} post={post} />)
         )}
