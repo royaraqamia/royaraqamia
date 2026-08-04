@@ -157,7 +157,9 @@ export function createPostsRepository(supabase: Client): IPostsRepository {
         queryBuilder = queryBuilder.in('id', postIds);
       }
 
-      const { data } = await queryBuilder.order('updated_at', { ascending: false });
+      const { data } = await queryBuilder
+        .order('featured', { ascending: false })
+        .order('updated_at', { ascending: false });
       return (data as Post[]) ?? [];
     },
 
@@ -284,6 +286,16 @@ export function createPostsRepository(supabase: Client): IPostsRepository {
       if (error) throw new Error('فشل حذف المقال');
 
       return { slug: data.slug };
+    },
+
+    async setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void> {
+      const { error } = await supabase
+        .from('posts')
+        .update({ featured })
+        .eq('id', postId)
+        .eq('author_id', authorId);
+
+      if (error) throw new Error('فشل تحديث تثبيت المقال');
     },
 
     async listCategoriesByAuthor(authorId: string): Promise<PostCategory[]> {

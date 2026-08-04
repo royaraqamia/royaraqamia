@@ -13,6 +13,7 @@ export interface Post {
   published_at: string | null;
   publish_at: string | null;
   view_count: number;
+  featured: boolean;
   blog_visible: boolean;
   created_at: string;
   updated_at: string;

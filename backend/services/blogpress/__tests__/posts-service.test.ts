@@ -16,6 +16,7 @@ const postFixture = {
   published_at: '2026-08-01T00:00:00.000Z',
   publish_at: null,
   view_count: 3,
+  featured: false,
   blog_visible: true,
   created_at: '2026-08-01T00:00:00.000Z',
   updated_at: '2026-08-01T00:00:00.000Z',
@@ -39,6 +40,7 @@ function makeRepo(overrides: Partial<IPostsRepository> = {}) {
     publishPost: vi.fn(),
     unpublishPost: vi.fn(),
     deletePost: vi.fn(),
+    setPostFeatured: vi.fn(),
     listCategoriesByAuthor: vi.fn(),
     createCategory: vi.fn(),
     deleteCategory: vi.fn(),
@@ -200,6 +202,13 @@ describe('BlogpressPostsService (thin delegation)', () => {
     expect(repository.publishPost).toHaveBeenCalledWith('p-1', 'u-1', false);
     await expect(service.unpublishPost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
     await expect(service.deletePost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
+  });
+
+  it('delegates setPostFeatured', async () => {
+    const { repository, service } = makeRepo();
+    (repository.setPostFeatured as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    await service.setPostFeatured('p-1', 'u-1', true);
+    expect(repository.setPostFeatured).toHaveBeenCalledWith('p-1', 'u-1', true);
   });
 
   it('propagates repository errors', async () => {

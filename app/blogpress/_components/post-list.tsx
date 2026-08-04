@@ -18,6 +18,8 @@ import {
   X,
   ExternalLink,
   Clock,
+  Pin,
+  PinOff,
 } from 'lucide-react';
 import { Button } from '@/frontend/ui/ui/button';
 import { EmptyState } from '@/frontend/ui/ui/empty-state';
@@ -36,8 +38,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/frontend/ui/ui/dialog';
-import { deletePost, unpublishPost, publishPost, createPost } from '@/frontend/api/blogpress';
-import type { Post, PostStatus } from '@/shared/contracts/blogpress';
+import {
+  deletePost,
+  unpublishPost,
+  publishPost,
+  createPost,
+  setPostFeatured,
+} from '@/frontend/api/blogpress';
+import type { Post, PostCategory, PostStatus } from '@/shared/contracts/blogpress';
 import { cn } from '@/frontend/shared/cn';
 import {
   estimateWordCount,
@@ -48,6 +56,8 @@ import { toast } from 'sonner';
 
 interface PostListProps {
   posts: Post[];
+  categories: PostCategory[];
+  activeCategory?: string;
 }
 
 const filters: { label: string; value: PostStatus | 'all' }[] = [
@@ -57,7 +67,7 @@ const filters: { label: string; value: PostStatus | 'all' }[] = [
   { label: 'منشور', value: 'published' },
 ];
 
-export function PostList({ posts }: PostListProps) {
+export function PostList({ posts, categories, activeCategory }: PostListProps) {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<PostStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -102,6 +112,30 @@ export function PostList({ posts }: PostListProps) {
 
   return (
     <div>
+      {categories.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 mb-4" role="group" aria-label="تصفية حسب التصنيف">
+          <CategoryChip
+            label="كل التصنيفات"
+            slug={undefined}
+            active={!activeCategory}
+            onSelect={(nextSlug) =>
+              router.push(`/blogpress${nextSlug ? `?category=${nextSlug}` : ''}`)
+            }
+          />
+          {categories.map((category) => (
+            <CategoryChip
+              key={category.id}
+              label={category.name}
+              slug={category.slug}
+              active={activeCategory === category.slug}
+              onSelect={(nextSlug) =>
+                router.push(`/blogpress${nextSlug ? `?category=${nextSlug}` : ''}`)
+              }
+            />
+          ))}
+        </div>
+      )}
+
       <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
         <div
           className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border/50"
@@ -259,12 +293,17 @@ function PostRow({ post }: { post: Post }) {
       </Link>
 
       <div className="flex-1 min-w-0">
-        <Link
-          href={`/blogpress/editor/${post.id}`}
-          className="text-sm font-medium hover:text-primary transition-smooth truncate block"
-        >
-          {post.title || 'بدون عنوان'}
-        </Link>
+        <div className="flex items-center gap-1.5 min-w-0">
+          {post.featured && (
+            <Pin className="size-3.5 shrink-0 text-primary" aria-label="مثبّت" />
+          )}
+          <Link
+            href={`/blogpress/editor/${post.id}`}
+            className="text-sm font-medium hover:text-primary transition-smooth truncate block"
+          >
+            {post.title || 'بدون عنوان'}
+          </Link>
+        </div>
         <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-0.5">
           <span className="text-xs text-muted-foreground/60">/{post.slug}</span>
           <span className="text-muted-foreground/30">&middot;</span>
@@ -274,10 +313,17 @@ function PostRow({ post }: { post: Post }) {
             {formatReadingTime(readingTime)}
           </span>
           <span className="text-muted-foreground/30">&middot;</span>
+          <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
+            <Eye className="size-3" />
+            {(post.view_count ?? 0).toLocaleString('ar-u-nu-latn')}
+          </span>
+          <span className="text-muted-foreground/30">&middot;</span>
           <span className="text-xs text-muted-foreground/60">
             {post.status === 'published'
               ? `نُشر ${post.published_at ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.published_at)) : ''}`
-              : `آخر تعديل ${new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.updated_at))}`}
+              : post.status === 'scheduled'
+                ? `يُنشر في ${post.publish_at ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.publish_at)) : ''}`
+                : `آخر تعديل ${new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.updated_at))}`}
           </span>
         </div>
       </div>
@@ -288,10 +334,16 @@ function PostRow({ post }: { post: Post }) {
             'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
             post.status === 'published'
               ? 'bg-success/10 text-success'
-              : 'bg-warning/10 text-warning'
+              : post.status === 'scheduled'
+                ? 'bg-info/10 text-info'
+                : 'bg-warning/10 text-warning'
           )}
         >
-          {post.status === 'published' ? 'منشور' : 'مسودَّة'}
+          {post.status === 'published'
+            ? 'منشور'
+            : post.status === 'scheduled'
+              ? 'مجدولة'
+              : 'مسودّة'}
         </span>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -338,18 +390,44 @@ function PostRow({ post }: { post: Post }) {
               <DropdownMenuItem
                 onClick={async () => {
                   try {
-                    await unpublishPost(post.id);
+                    if (post.status === 'scheduled') {
+                      await publishPost(post.id);
+                    } else {
+                      await unpublishPost(post.id);
+                    }
                     router.refresh();
                   } catch {
-                    toast.error('فشل إلغاء النَّشر');
+                    toast.error(post.status === 'scheduled' ? 'فشل النشر الآن' : 'فشل إلغاء النَّشر');
                   }
                 }}
                 className="cursor-pointer"
               >
-                <EyeOff className="ms-2 size-4" />
-                إلغاء النَّشر
+                {post.status === 'scheduled' ? (
+                  <Eye className="ms-2 size-4" />
+                ) : (
+                  <EyeOff className="ms-2 size-4" />
+                )}
+                {post.status === 'scheduled' ? 'نشر الآن' : 'إلغاء النَّشر'}
               </DropdownMenuItem>
             )}
+            <DropdownMenuItem
+              onClick={async () => {
+                try {
+                  await setPostFeatured(post.id, !post.featured);
+                  router.refresh();
+                } catch {
+                  toast.error('فشل تحديث التثبيت');
+                }
+              }}
+              className="cursor-pointer"
+            >
+              {post.featured ? (
+                <PinOff className="ms-2 size-4" />
+              ) : (
+                <Pin className="ms-2 size-4" />
+              )}
+              {post.featured ? 'إلغاء التثبيت' : 'تثبيت'}
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <Dialog>
               <DialogTrigger asChild>
@@ -395,5 +473,29 @@ function PostRow({ post }: { post: Post }) {
         </DropdownMenu>
       </div>
     </div>
+  );
+}
+
+interface CategoryChipProps {
+  label: string;
+  slug: string | undefined;
+  active: boolean;
+  onSelect: (slug: string | undefined) => void;
+}
+
+function CategoryChip({ label, slug, active, onSelect }: CategoryChipProps) {
+  return (
+    <button
+      onClick={() => onSelect(slug)}
+      aria-pressed={active}
+      className={cn(
+        'inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-full border transition-smooth cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+        active
+          ? 'bg-primary/10 text-primary border-primary/20 font-medium'
+          : 'bg-muted/40 text-muted-foreground border-border/50 hover:text-foreground hover:border-border'
+      )}
+    >
+      {label}
+    </button>
   );
 }

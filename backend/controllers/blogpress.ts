@@ -112,6 +112,24 @@ export async function unpublishPost(id: string): Promise<HttpResult> {
   }
 }
 
+export async function setPostFeatured(
+  id: string,
+  featured: boolean
+): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+
+    await createBlogpressPostsService(supabase).setPostFeatured(id, user.id, featured);
+
+    return jsonResult(200, { success: true }, { revalidate: [{ path: '/blogpress' }] });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل تحديث تثبيت المقال',
+    });
+  }
+}
+
 export async function saveAndPublishPost(
   id: string,
   body: Record<string, unknown>

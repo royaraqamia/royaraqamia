@@ -1,10 +1,9 @@
 import type { Metadata } from 'next';
 import { verifySession } from '@/backend/middleware/session-guard';
-import { loadBlogpressDashboard } from '@/backend/loaders/blogpress';
+import { loadBlogpressDashboard, loadBlogCategories } from '@/backend/loaders/blogpress';
 import { PostList } from '../_components/post-list';
 import { CreatePostButton } from '../_components/create-post-button';
-import { FileText, Eye, PenLine, BookOpen } from 'lucide-react';
-import { estimateWordCount } from '@/frontend/shared/reading-time';
+import { FileText, Eye, CalendarClock, BarChart3 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,15 +11,27 @@ export const metadata: Metadata = {
   description: 'لوحة تحكُّم BlogPress – إدارة المقالات وإنشاء محتوى جديد.',
 };
 
-export default async function DashboardPage() {
+interface DashboardSearchParams {
+  category?: string;
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<DashboardSearchParams>;
+}) {
+  const { category } = await searchParams;
   const session = await verifySession();
-  const postList = await loadBlogpressDashboard(session.userId);
+  const [postList, categories] = await Promise.all([
+    loadBlogpressDashboard(session.userId, category),
+    loadBlogCategories(session.userId),
+  ]);
 
   const stats = {
     total: postList.length,
     published: postList.filter((p) => p.status === 'published').length,
-    drafts: postList.filter((p) => p.status === 'draft').length,
-    totalWords: postList.reduce((sum, p) => sum + estimateWordCount(p.content), 0),
+    scheduled: postList.filter((p) => p.status === 'scheduled').length,
+    views: postList.reduce((sum, p) => sum + (p.view_count ?? 0), 0),
   };
 
   const statCards = [
@@ -33,18 +44,18 @@ export default async function DashboardPage() {
     },
     { label: 'منشورة', value: stats.published, icon: Eye, bg: 'bg-success/10', tx: 'text-success' },
     {
-      label: 'مسودَّة',
-      value: stats.drafts,
-      icon: PenLine,
-      bg: 'bg-warning/10',
-      tx: 'text-warning',
-    },
-    {
-      label: 'إجمالي الكلمات',
-      value: stats.totalWords.toLocaleString('ar-u-nu-latn'),
-      icon: BookOpen,
+      label: 'مجدولة',
+      value: stats.scheduled,
+      icon: CalendarClock,
       bg: 'bg-info/10',
       tx: 'text-info',
+    },
+    {
+      label: 'إجمالي المشاهدات',
+      value: stats.views.toLocaleString('ar-u-nu-latn'),
+      icon: BarChart3,
+      bg: 'bg-warning/10',
+      tx: 'text-warning',
     },
   ] as const;
 
@@ -81,7 +92,7 @@ export default async function DashboardPage() {
         })}
       </div>
 
-      <PostList posts={postList} />
+      <PostList posts={postList} categories={categories} activeCategory={category} />
     </div>
   );
 }

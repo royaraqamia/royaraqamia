@@ -327,6 +327,7 @@ export type Database = {
           content: string | null;
           cover_image: string | null;
           created_at: string;
+          featured: boolean;
           id: string;
           meta_desc: string | null;
           meta_title: string | null;
@@ -344,6 +345,7 @@ export type Database = {
           content?: string | null;
           cover_image?: string | null;
           created_at?: string;
+          featured?: boolean;
           id?: string;
           meta_desc?: string | null;
           meta_title?: string | null;
@@ -361,6 +363,7 @@ export type Database = {
           content?: string | null;
           cover_image?: string | null;
           created_at?: string;
+          featured?: boolean;
           id?: string;
           meta_desc?: string | null;
           meta_title?: string | null;

@@ -63,3 +63,13 @@ export async function setPostCategories(
   const supabase = await createServerSupabaseClient(cookieStore);
   return createBlogpressPostsService(supabase).setPostCategories(postId, authorId, categoryIds);
 }
+
+export async function setPostFeatured(
+  postId: string,
+  authorId: string,
+  featured: boolean
+): Promise<void> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).setPostFeatured(postId, authorId, featured);
+}

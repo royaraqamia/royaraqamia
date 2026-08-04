@@ -93,6 +93,10 @@ export class BlogpressPostsService {
     return this.repository.deletePost(postId, authorId);
   }
 
+  async setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void> {
+    return this.repository.setPostFeatured(postId, authorId, featured);
+  }
+
   async listCategoriesByAuthor(authorId: string): Promise<PostCategory[]> {
     return this.repository.listCategoriesByAuthor(authorId);
   }

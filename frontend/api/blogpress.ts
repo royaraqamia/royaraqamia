@@ -51,6 +51,13 @@ export async function deletePost(postId: string): Promise<void> {
   await request(`/api/blogpress/posts/${encodeURIComponent(postId)}`, { method: 'DELETE' });
 }
 
+export async function setPostFeatured(postId: string, featured: boolean): Promise<void> {
+  await request(`/api/blogpress/posts/${encodeURIComponent(postId)}/featured`, {
+    method: 'POST',
+    body: JSON.stringify({ featured }),
+  });
+}
+
 export async function uploadImage(
   formData: FormData
 ): Promise<{ url: string } | { error: string }> {

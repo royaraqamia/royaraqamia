@@ -39,6 +39,7 @@ export interface IPostsRepository {
   publishPost(postId: string, authorId: string, blogVisible: boolean): Promise<{ slug: string }>;
   unpublishPost(postId: string, authorId: string): Promise<{ slug: string }>;
   deletePost(postId: string, authorId: string): Promise<{ slug: string }>;
+  setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void>;
   listCategoriesByAuthor(authorId: string): Promise<PostCategory[]>;
   createCategory(authorId: string, name: string, slug: string): Promise<PostCategory>;
   deleteCategory(categoryId: string, authorId: string): Promise<void>;
