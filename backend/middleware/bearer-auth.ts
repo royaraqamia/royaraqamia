@@ -1,4 +1,5 @@
 import { getPublicSupabase } from '@/backend/config/supabase';
+import { logger } from '@/shared/logger';
 
 interface AuthenticatedUser {
   id: string;
@@ -33,7 +34,7 @@ export async function getAuthenticatedUser(
       email: user.email || '',
     };
   } catch (err) {
-    console.error('Error authenticating token:', err);
+    logger.error('Error authenticating token', { error: String(err) });
     return null;
   }
 }

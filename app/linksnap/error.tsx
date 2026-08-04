@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { logger } from '@/shared/logger';
 import { AlertTriangle, RefreshCw, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,7 +13,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('Unhandled error:', error);
+    logger.error('Unhandled error', { error: error.message, digest: error.digest });
   }, [error]);
 
   return (

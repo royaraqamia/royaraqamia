@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { LocalStorageHabitRepository } from '@/frontend/api/habitflow/local-storage-repository';
+import { logger } from '@/shared/logger';
 
 export function getTodayString(): string {
   const tzOffset = new Date().getTimezoneOffset() * 60000;
@@ -90,7 +91,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
       setMode(freshData.mode);
       setUser(freshUser);
     } catch (e) {
-      console.error('Failed to sync local data to cloud', e);
+      logger.error('Failed to sync local data to cloud', { error: String(e) });
     }
   };
 
@@ -118,7 +119,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
     try {
       await syncLocalToCloud();
     } catch (e) {
-      console.error('Failed to sync local data to cloud', e);
+      logger.error('Failed to sync local data to cloud', { error: String(e) });
     }
   };
 
@@ -157,7 +158,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
               }
             }
           } catch (e) {
-            console.error('Auto-sync failed:', e);
+            logger.error('Auto-sync failed', { error: String(e) });
           }
         }
       }

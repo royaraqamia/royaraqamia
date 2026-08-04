@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
+import { logger } from '@/shared/logger';
 
 interface HabitRow {
   id: string;
@@ -125,12 +126,12 @@ export class SupabaseHabitRepository implements HabitRepository {
     const { data, error } = await query.select();
 
     if (error) {
-      console.error('Supabase deleteHabit error:', error.message);
+      logger.error('Supabase deleteHabit error', { message: error.message });
       return false;
     }
 
     if (!data || data.length === 0) {
-      console.error('Supabase deleteHabit: no rows updated');
+      logger.error('Supabase deleteHabit: no rows updated');
       return false;
     }
 
@@ -153,7 +154,7 @@ export class SupabaseHabitRepository implements HabitRepository {
       .eq('user_id', userId);
 
     if (clearLogsError || clearHabitsError) {
-      console.error('Failed to clear Supabase data for restore:', {
+      logger.error('Failed to clear Supabase data for restore', {
         clearHabitsError,
         clearLogsError,
       });

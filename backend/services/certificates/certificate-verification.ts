@@ -1,6 +1,7 @@
 import type { CertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
 import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';
 import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
+import { logger } from '@/shared/logger';
 
 export { CERT_CODE_REGEX };
 
@@ -98,7 +99,7 @@ export class CertificateVerifier {
 
       return { success: true, certificate };
     } catch (e) {
-      console.error('[verifyCertificateByCode] Unexpected error:', e);
+      logger.error('Unexpected error in verifyCertificateByCode', { error: String(e), code, ip });
       this.deps.captureException(e, {
         extra: { code, ip, source: 'verifyCertificateByCode' },
       });

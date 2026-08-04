@@ -2,6 +2,7 @@ import { getAuthenticatedUser } from '@/backend/middleware/bearer-auth';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { AppError, getErrorMessage } from '@/backend/shared/errors';
 import { env } from '@/backend/config/env';
+import { logger } from '@/shared/logger';
 import {
   createBulkShortenService,
   createDeleteLinkService,
@@ -29,7 +30,7 @@ function linkView(l: { code: string; originalUrl: string; createdAt: Date; isBlo
 const UNAUTHORIZED_BODY = { success: false, error: 'غير مصرح. يرجى تسجيل الدخول أولاً.' };
 
 function errorResponse(err: unknown, log: string): HttpResult {
-  console.error(log, err);
+  logger.error(log, { error: String(err) });
   const status = err instanceof AppError ? err.statusCode : 500;
   return jsonResult(status, { success: false, error: getErrorMessage(err) });
 }
@@ -233,7 +234,7 @@ export async function redirectShortCode(
     }
 
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    console.error(`Redirect failed for code [${code}]:`, errorMessage);
+    logger.error(`Redirect failed for code [${code}]`, { error: errorMessage });
 
     const baseUrl = env.appUrl || info.origin;
     const errorCode =

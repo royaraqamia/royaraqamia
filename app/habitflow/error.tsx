@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { logger } from '@/shared/logger';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw, House } from 'lucide-react';
 import { Button } from '@/frontend/ui/ui/button';
@@ -13,7 +14,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('HabitFlow error:', error);
+    logger.error('HabitFlow error', { error: error.message, digest: error.digest });
   }, [error]);
 
   return (

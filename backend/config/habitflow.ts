@@ -3,6 +3,7 @@ import { HabitService } from '@/backend/services/habitflow/habit-service';
 import { HabitBackupService } from '@/backend/services/habitflow/backup-service';
 import type { HabitRepository } from '@/shared/contracts/habitflow';
 import { JsonFileHabitRepository } from '@/backend/repositories/habitflow/json-file-repository';
+import { logger } from '@/shared/logger';
 import { SupabaseHabitRepository } from '@/backend/repositories/habitflow/supabase-repository';
 import { env } from '@/backend/config/env';
 import { getDbPath } from '@/backend/config/habitflow/data-path';
@@ -29,7 +30,7 @@ export function getHabitRepository(
         mode: 'supabase',
       };
     } catch (e) {
-      console.warn('Supabase init failed, falling back to local storage:', e);
+      logger.warn('Supabase init failed, falling back to local storage', { error: String(e) });
     }
   }
 

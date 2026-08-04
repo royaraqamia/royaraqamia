@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { logger } from '@/shared/logger';
 import { AlertTriangle, RefreshCw, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 
@@ -12,7 +13,7 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error('BlogPress error:', error);
+    logger.error('BlogPress error', { error: error.message, digest: error.digest });
   }, [error]);
 
   return (

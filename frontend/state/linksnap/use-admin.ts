@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { fetchAdminStats, moderateLink, type AdminStats } from '@/frontend/api/linksnap';
+import { logger } from '@/shared/logger';
 
 export function useAdminLinks(token: string) {
   const [stats, setStats] = useState<AdminStats | null>(null);
@@ -17,7 +18,7 @@ export function useAdminLinks(token: string) {
     try {
       setStats(await fetchAdminStats(token));
     } catch (err: unknown) {
-      console.error(err);
+      logger.error('Failed to fetch admin stats', { error: String(err) });
       setError(err instanceof Error ? err.message : 'فشل في جلب البيانات الإدارية.');
     } finally {
       setLoading(false);

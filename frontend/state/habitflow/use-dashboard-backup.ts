@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { logger } from '@/shared/logger';
 
 export interface DashboardBackup {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -29,7 +30,7 @@ export function useDashboardBackup(refreshData: () => Promise<void>): DashboardB
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } catch (e) {
-      console.error('Failed to download backup', e);
+      logger.error('Failed to download backup', { error: String(e) });
       toast.error('فشل تحميل النسخة الاحتياطية');
     }
   };

@@ -1,6 +1,7 @@
 import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
+import { logger } from '@/shared/logger';
 
 export function isReservedShortCode(code: string): boolean {
   return code.startsWith('_') || code.includes('.') || code === 'api' || code === 'favicon.ico';
@@ -56,7 +57,7 @@ export class RedirectUrlService {
         ipCountry: metadata.ipCountry,
       })
       .catch((err) => {
-        console.error(`Failed to log analytics click for code [${code}]:`, err);
+        logger.error(`Failed to log analytics click for code [${code}]`, { error: String(err) });
       });
 
     return link.originalUrl;

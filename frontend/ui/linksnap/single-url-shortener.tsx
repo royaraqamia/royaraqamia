@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Link, Sparkles, Copy, Check, Share2, QrCode, ArrowLeft, RotateCcw } from 'lucide-react';
+import { logger } from '@/shared/logger';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
@@ -71,7 +72,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
       toast.success('تم نسخ الرابط!');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy text:', err);
+      logger.error('Failed to copy text', { error: String(err) });
       toast.error('فشل نسخ الرابط');
     }
   };
@@ -86,7 +87,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
         copyToClipboard();
       }
     } catch (err) {
-      console.error('Error sharing:', err);
+      logger.error('Error sharing', { error: String(err) });
     }
   };
 

@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
+import { logger } from '@/shared/logger';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,7 +30,7 @@ async function ensureTestUser() {
   });
 
   if (error) {
-    console.error('Failed to create test user:', error.message);
+    logger.error('Failed to create test user', { error: error.message });
     process.exit(1);
   }
 

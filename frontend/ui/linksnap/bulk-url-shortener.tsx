@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Layers, FileText, AlertCircle, ArrowLeft, Copy, Check, RefreshCw } from 'lucide-react';
+import { logger } from '@/shared/logger';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
 import type { BulkShortenResultItem } from '@/frontend/state/linksnap/use-shorten';
@@ -56,7 +57,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
       toast.success('تم نسخ الرابط!');
       setTimeout(() => setCopiedIndexes((prev) => ({ ...prev, [index]: false })), 2000);
     } catch (err) {
-      console.error('Failed to copy text:', err);
+      logger.error('Failed to copy text', { error: String(err) });
       toast.error('فشل نسخ الرابط');
     }
   };
@@ -73,7 +74,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
       toast.success(`تم نسخ ${successCount} رابط!`);
       setTimeout(() => setAllCopied(false), 2000);
     } catch (err) {
-      console.error('Failed to copy all:', err);
+      logger.error('Failed to copy all', { error: String(err) });
       toast.error('فشل نسخ الروابط');
     }
   };

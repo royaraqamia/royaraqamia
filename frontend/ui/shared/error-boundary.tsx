@@ -4,6 +4,7 @@ import { Component, type ReactNode, type ErrorInfo } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { Button } from '@/frontend/ui/ui/button';
 import { IS_DEVELOPMENT, IS_PRODUCTION } from '@/frontend/shared/constants';
+import { logger } from '@/shared/logger';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -29,7 +30,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     if (IS_PRODUCTION) {
       Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
     } else {
-      console.error('[ErrorBoundary]', error, errorInfo);
+      logger.error('[ErrorBoundary]', { error: error.message, componentStack: errorInfo.componentStack ?? undefined });
     }
   }
 

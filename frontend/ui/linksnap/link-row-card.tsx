@@ -12,6 +12,7 @@ import {
   Calendar,
   AlertTriangle,
 } from 'lucide-react';
+import { logger } from '@/shared/logger';
 import { LinkEditForm } from './link-edit-form';
 import { LinkAnalyticsDrawer } from './link-analytics-drawer';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
@@ -57,7 +58,7 @@ export function LinkRowCard({
       toast.success('تم نسخ الرابط!');
       setTimeout(() => setCopiedCode(null), 2000);
     } catch (err) {
-      console.error('Copy failed:', err);
+      logger.error('Copy failed', { error: String(err) });
       toast.error('فشل نسخ الرابط');
     }
   };

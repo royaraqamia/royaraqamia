@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import { logger } from '@/shared/logger';
 
 interface Schema {
   habits: Habit[];
@@ -35,7 +36,7 @@ export class JsonFileHabitRepository implements HabitRepository {
       const content = fs.readFileSync(this.dbFile, 'utf-8');
       return JSON.parse(content);
     } catch (e) {
-      console.error('Error reading JSON DB, resetting to empty', e);
+      logger.error('Error reading JSON DB, resetting to empty', { error: String(e) });
       return { habits: [], logs: [] };
     }
   }
