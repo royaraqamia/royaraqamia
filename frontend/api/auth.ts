@@ -1,6 +1,32 @@
 import { request } from '@/frontend/transport/http';
+import { createClient } from '@/frontend/transport/supabase/client';
+import type { Session, User } from '@supabase/supabase-js';
+
+export type { Session, User };
 
 export type AuthActionResult = { message?: string } | null;
+
+export type SessionChangeListener = (session: Session | null) => void;
+
+export async function getSession(): Promise<Session | null> {
+  const {
+    data: { session },
+  } = await createClient().auth.getSession();
+  return session;
+}
+
+export function subscribeToSessionChanges(listener: SessionChangeListener): () => void {
+  const {
+    data: { subscription },
+  } = createClient().auth.onAuthStateChange((_event: string, session: Session | null) => {
+    listener(session);
+  });
+  return () => subscription.unsubscribe();
+}
+
+export async function signOutSession(): Promise<void> {
+  await createClient().auth.signOut();
+}
 
 export async function logout(): Promise<void> {
   try {

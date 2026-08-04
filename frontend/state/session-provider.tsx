@@ -2,8 +2,13 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-import { createClient } from '@/frontend/transport/supabase/client';
-import type { User, Session } from '@supabase/supabase-js';
+import {
+  getSession,
+  subscribeToSessionChanges,
+  signOutSession,
+  type Session,
+  type User,
+} from '@/frontend/api/auth';
 
 interface SessionContextType {
   user: User | null;
@@ -27,30 +32,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const supabaseRef = useRef<ReturnType<typeof createClient> | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
-    const supabase = createClient();
-    supabaseRef.current = supabase;
-
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }: { data: { session: Session | null } }) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        setIsLoading(false);
-      });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event: string, session: Session | null) => {
+    getSession().then((session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    const unsubscribe = subscribeToSessionChanges((session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return unsubscribe;
   }, []);
 
   const prevPathname = useRef(pathname);
@@ -58,19 +55,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     if (prevPathname.current === pathname) return;
     prevPathname.current = pathname;
 
-    if (supabaseRef.current) {
-      supabaseRef.current.auth
-        .getSession()
-        .then(({ data: { session } }: { data: { session: Session | null } }) => {
-          setSession(session);
-          setUser(session?.user ?? null);
-        });
-    }
+    getSession().then((session) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+    });
   }, [pathname]);
 
   const signOut = useCallback(async () => {
-    if (!supabaseRef.current) return;
-    await supabaseRef.current.auth.signOut();
+    await signOutSession();
   }, []);
 
   return (
