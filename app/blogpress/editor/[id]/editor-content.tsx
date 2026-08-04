@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/frontend/ui/ui/dialog';
-import { ArrowRight, Loader2, Check, X, Save, Send, Upload } from 'lucide-react';
+import { ArrowRight, Loader2, Check, X, Save, Send, Upload, Focus } from 'lucide-react';
 import { updatePost, saveAndPublishPost } from '@/frontend/api/blogpress';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
@@ -75,6 +75,7 @@ export function EditorContent({ post }: EditorContentProps) {
   const [publishDialogOpen, setPublishDialogOpen] = useState(false);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
+  const [distractionFree, setDistractionFree] = useState(false);
   const [, forceRender] = useReducer((x) => x + 1, 0);
 
   const wordCount = useMemo(() => estimateWordCount(content), [content]);
@@ -226,10 +227,13 @@ export function EditorContent({ post }: EditorContentProps) {
         e.preventDefault();
         if (!pending && post.status === 'draft') handlePublish();
       }
+      if (e.key === 'Escape' && distractionFree) {
+        setDistractionFree(false);
+      }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [pending, handleSave, handlePublish, post.status]);
+  }, [pending, handleSave, handlePublish, post.status, distractionFree]);
 
   const publishChecks = getPublishChecks();
 
@@ -270,51 +274,75 @@ export function EditorContent({ post }: EditorContentProps) {
             className="hidden"
             onChange={handleFileSelect}
           />
+          {!distractionFree && (
+            <>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="text-muted-foreground hover:text-foreground transition-smooth inline-flex min-h-11"
+              >
+                {isUploading ? (
+                  <Loader2 className="size-4 ms-1.5 animate-spin" />
+                ) : (
+                  <Upload className="size-4 ms-1.5" />
+                )}
+                {isUploading ? 'جارٍ الرَّفع...' : 'صورة'}
+              </Button>
+              <PostSettingsDialog
+                title={title}
+                slug={slug}
+                onSlugChange={(value) => setSlug(generateSlug(value))}
+                coverImage={coverImage}
+                setCoverImage={setCoverImage}
+                coverImageError={coverImageError}
+                setCoverImageError={setCoverImageError}
+                isCoverUploading={isCoverUploading}
+                coverFileInputRef={coverFileInputRef}
+                handleCoverFileSelect={handleCoverFileSelect}
+                metaTitle={metaTitle}
+                setMetaTitle={setMetaTitle}
+                metaDesc={metaDesc}
+                setMetaDesc={setMetaDesc}
+              />
+            </>
+          )}
           <Button
             variant="ghost"
-            size="sm"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className="text-muted-foreground hover:text-foreground transition-smooth inline-flex min-h-11"
+            size="icon-sm"
+            onClick={() => setDistractionFree((v) => !v)}
+            aria-label={distractionFree ? 'الخروج من وضع التركيز' : 'وضع التركيز'}
+            title={distractionFree ? 'الخروج من وضع التركيز' : 'وضع التركيز'}
+            className="text-muted-foreground hover:text-foreground transition-smooth shrink-0"
           >
-            {isUploading ? (
-              <Loader2 className="size-4 ms-1.5 animate-spin" />
-            ) : (
-              <Upload className="size-4 ms-1.5" />
-            )}
-            {isUploading ? 'جارٍ الرَّفع...' : 'صورة'}
+            <Focus className="size-4" />
           </Button>
-          <PostSettingsDialog
-            title={title}
-            slug={slug}
-            onSlugChange={(value) => setSlug(generateSlug(value))}
-            coverImage={coverImage}
-            setCoverImage={setCoverImage}
-            coverImageError={coverImageError}
-            setCoverImageError={setCoverImageError}
-            isCoverUploading={isCoverUploading}
-            coverFileInputRef={coverFileInputRef}
-            handleCoverFileSelect={handleCoverFileSelect}
-            metaTitle={metaTitle}
-            setMetaTitle={setMetaTitle}
-            metaDesc={metaDesc}
-            setMetaDesc={setMetaDesc}
-          />
         </div>
       </div>
 
-      <EditorToolbar
-        editorRef={editorRef}
-        fileInputRef={fileInputRef}
-        onOpenLink={(href) => {
-          setLinkUrl(href);
-          setLinkDialogOpen(true);
-        }}
-        onOpenShortcuts={() => setShortcutsOpen(true)}
-      />
+      {!distractionFree && (
+        <EditorToolbar
+          editorRef={editorRef}
+          fileInputRef={fileInputRef}
+          onOpenLink={(href) => {
+            setLinkUrl(href);
+            setLinkDialogOpen(true);
+          }}
+          onOpenShortcuts={() => setShortcutsOpen(true)}
+        />
+      )}
 
-      <div className="flex flex-1 overflow-hidden px-4 md:px-8 lg:px-12">
-        <div className="flex-1 max-w-3xl mx-auto bg-background rounded-2xl shadow-xs border border-border/30 overflow-hidden my-4 md:my-6">
+      <div
+        className={`flex flex-1 overflow-hidden ${
+          distractionFree ? 'px-0 py-2' : 'px-4 md:px-8 lg:px-12'
+        }`}
+      >
+        <div
+          className={`flex-1 mx-auto bg-background rounded-2xl shadow-xs border border-border/30 overflow-hidden my-4 md:my-6 ${
+            distractionFree ? 'max-w-4xl' : 'max-w-3xl'
+          }`}
+        >
           <TiptapEditor
             ref={editorRef}
             initialContent={content}
@@ -326,92 +354,94 @@ export function EditorContent({ post }: EditorContentProps) {
         </div>
       </div>
 
-      <div
-        className="flex items-center justify-between border-t border-border/50 px-4 py-2.5 bg-background/80 backdrop-blur-sm"
-        role="status"
-        aria-label="إحصائيَّات المقال"
-      >
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-smooth ${
-                post.status === 'published'
-                  ? 'bg-success/10 text-success'
-                  : 'bg-warning/10 text-warning'
-              }`}
-            >
+      {!distractionFree && (
+        <div
+          className="flex items-center justify-between border-t border-border/50 px-4 py-2.5 bg-background/80 backdrop-blur-sm"
+          role="status"
+          aria-label="إحصائيَّات المقال"
+        >
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <div className="flex items-center gap-2">
               <span
-                className={`size-1.5 rounded-full ${post.status === 'published' ? 'bg-success' : 'bg-warning animate-pulse'}`}
-              />
-              {post.status === 'published' ? 'منشور' : 'مسودَّة'}
-            </span>
-            <span
-              className={`size-2 rounded-full transition-smooth ${isDirty ? 'bg-warning' : 'bg-success'}`}
-            />
-            <span className="text-xs text-muted-foreground hidden sm:inline">
-              {isDirty ? 'تغييرات غير محفوظة' : 'تمَّ الحفظ'}
-            </span>
-          </div>
-          <span className="text-muted-foreground/40 hidden sm:inline">·</span>
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            {wordCount.toLocaleString('ar-u-nu-latn')} كلمة
-          </span>
-          <span className="text-muted-foreground/40 hidden sm:inline">·</span>
-          <span className="text-xs text-muted-foreground hidden sm:inline">
-            {readingTimeMinutes}
-          </span>
-          {lastSaved && (
-            <>
-              <span className="text-muted-foreground/40 hidden sm:inline">·</span>
-              <span className="text-xs text-muted-foreground hidden sm:inline">
-                حفظ{' '}
-                {lastSaved.toLocaleTimeString('ar-u-nu-latn', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium transition-smooth ${
+                  post.status === 'published'
+                    ? 'bg-success/10 text-success'
+                    : 'bg-warning/10 text-warning'
+                }`}
+              >
+                <span
+                  className={`size-1.5 rounded-full ${post.status === 'published' ? 'bg-success' : 'bg-warning animate-pulse'}`}
+                />
+                {post.status === 'published' ? 'منشور' : 'مسودَّة'}
               </span>
-            </>
-          )}
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            disabled={pending}
-            onClick={() => handleSave()}
-            className="transition-smooth min-h-11 rounded-full"
-          >
-            {pending ? (
+              <span
+                className={`size-2 rounded-full transition-smooth ${isDirty ? 'bg-warning' : 'bg-success'}`}
+              />
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                {isDirty ? 'تغييرات غير محفوظة' : 'تمَّ الحفظ'}
+              </span>
+            </div>
+            <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              {wordCount.toLocaleString('ar-u-nu-latn')} كلمة
+            </span>
+            <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+            <span className="text-xs text-muted-foreground hidden sm:inline">
+              {readingTimeMinutes}
+            </span>
+            {lastSaved && (
               <>
-                <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ الحفظ...
-              </>
-            ) : (
-              <>
-                <Save className="ms-1.5 size-3.5" /> حفظ
+                <span className="text-muted-foreground/40 hidden sm:inline">·</span>
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  حفظ{' '}
+                  {lastSaved.toLocaleTimeString('ar-u-nu-latn', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                </span>
               </>
             )}
-          </Button>
-          {post.status === 'draft' && (
+          </div>
+          <div className="flex items-center gap-2">
             <Button
+              type="button"
+              variant="outline"
               size="sm"
-              onClick={handlePublishClick}
               disabled={pending}
-              className="transition-smooth shadow-sm hover:shadow-md min-h-11 rounded-full"
+              onClick={() => handleSave()}
+              className="transition-smooth min-h-11 rounded-full"
             >
               {pending ? (
                 <>
-                  <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ النَّشر...
+                  <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ الحفظ...
                 </>
               ) : (
                 <>
-                  <Send className="ms-1.5 size-3.5" /> نشر
+                  <Save className="ms-1.5 size-3.5" /> حفظ
                 </>
               )}
             </Button>
-          )}
+            {post.status === 'draft' && (
+              <Button
+                size="sm"
+                onClick={handlePublishClick}
+                disabled={pending}
+                className="transition-smooth shadow-sm hover:shadow-md min-h-11 rounded-full"
+              >
+                {pending ? (
+                  <>
+                    <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ النَّشر...
+                  </>
+                ) : (
+                  <>
+                    <Send className="ms-1.5 size-3.5" /> نشر
+                  </>
+                )}
+              </Button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Link Dialog */}
       <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>

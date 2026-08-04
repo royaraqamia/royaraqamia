@@ -6,6 +6,7 @@ import {
   AlignLeft,
   AlignRight,
   Bold,
+  ChevronDown,
   Code2,
   Heading1,
   Heading2,
@@ -22,6 +23,12 @@ import {
   TextQuote,
   Undo2,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/frontend/ui/ui/dropdown-menu';
 
 interface EditorToolbarProps {
   editorRef: React.RefObject<{ editor: Editor | null } | null>;
@@ -29,6 +36,29 @@ interface EditorToolbarProps {
   onOpenLink: (href: string) => void;
   onOpenShortcuts: () => void;
 }
+
+const CODE_LANGUAGES: { value: string; label: string }[] = [
+  { value: 'plaintext', label: 'نص عادي' },
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'jsx', label: 'JSX' },
+  { value: 'tsx', label: 'TSX' },
+  { value: 'python', label: 'Python' },
+  { value: 'json', label: 'JSON' },
+  { value: 'html', label: 'HTML' },
+  { value: 'css', label: 'CSS' },
+  { value: 'bash', label: 'Bash / Shell' },
+  { value: 'sql', label: 'SQL' },
+  { value: 'java', label: 'Java' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'c', label: 'C' },
+  { value: 'go', label: 'Go' },
+  { value: 'rust', label: 'Rust' },
+  { value: 'php', label: 'PHP' },
+  { value: 'ruby', label: 'Ruby' },
+  { value: 'yaml', label: 'YAML' },
+  { value: 'markdown', label: 'Markdown' },
+];
 
 const toolbarButtons: {
   action: string;
@@ -202,6 +232,47 @@ export function EditorToolbar({
         </button>
       );
     });
+
+    if (editor?.isActive('codeBlock')) {
+      const currentLang = editor.getAttributes('codeBlock').language as string | null | undefined;
+      const currentLabel =
+        CODE_LANGUAGES.find((l) => l.value === currentLang)?.label ?? 'plaintext';
+      elements.push(
+        <DropdownMenu key="code-lang">
+          <DropdownMenuTrigger asChild>
+            <button
+              className="mx-1 h-8 px-2 rounded-full flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/15 transition-all shrink-0 cursor-pointer"
+              aria-label="لغة كتلة الكود"
+              title="لغة كتلة الكود"
+            >
+              <Code2 className="size-3.5" />
+              <span className="max-w-28 truncate">{currentLabel}</span>
+              <ChevronDown className="size-3" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="max-h-64 overflow-y-auto min-w-36">
+            {CODE_LANGUAGES.map((lang) => (
+              <DropdownMenuItem
+                key={lang.value}
+                onClick={() =>
+                  editor
+                    .chain()
+                    .focus()
+                    .updateAttributes('codeBlock', {
+                      language: lang.value === 'plaintext' ? null : lang.value,
+                    })
+                    .run()
+                }
+                className="cursor-pointer"
+              >
+                {lang.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    }
+
     return elements;
   };
 

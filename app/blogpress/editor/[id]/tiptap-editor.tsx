@@ -6,9 +6,19 @@ import ImageExtension from '@tiptap/extension-image';
 import LinkExtension from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import TextAlign from '@tiptap/extension-text-align';
-import { forwardRef, useImperativeHandle, useEffect, useRef } from 'react';
+import { forwardRef, useImperativeHandle, useEffect, useRef, useState, useMemo } from 'react';
 import { marked } from 'marked';
 import TurndownService from 'turndown';
+import {
+  Heading1,
+  Heading2,
+  Heading3,
+  List,
+  ListOrdered,
+  TextQuote,
+  Code,
+  Minus,
+} from 'lucide-react';
 import type { Editor } from '@tiptap/core';
 
 const turndown = new TurndownService({
@@ -35,6 +45,80 @@ interface TiptapEditorProps {
   className?: string;
 }
 
+interface SlashCommandItem {
+  id: string;
+  label: string;
+  keywords: string;
+  icon: React.ElementType;
+  run: (editor: Editor) => void;
+}
+
+interface SlashState {
+  from: number;
+  text: string;
+  x: number;
+  y: number;
+}
+
+const SLASH_COMMANDS: SlashCommandItem[] = [
+  {
+    id: 'h1',
+    label: 'عنوان 1',
+    keywords: 'h1 heading1 عنوان',
+    icon: Heading1,
+    run: (editor) => editor.chain().focus().toggleHeading({ level: 1 }).run(),
+  },
+  {
+    id: 'h2',
+    label: 'عنوان 2',
+    keywords: 'h2 heading2 عنوان',
+    icon: Heading2,
+    run: (editor) => editor.chain().focus().toggleHeading({ level: 2 }).run(),
+  },
+  {
+    id: 'h3',
+    label: 'عنوان 3',
+    keywords: 'h3 heading3 عنوان',
+    icon: Heading3,
+    run: (editor) => editor.chain().focus().toggleHeading({ level: 3 }).run(),
+  },
+  {
+    id: 'list',
+    label: 'قائمة نقطية',
+    keywords: 'list bullet قائمة',
+    icon: List,
+    run: (editor) => editor.chain().focus().toggleBulletList().run(),
+  },
+  {
+    id: 'orderedList',
+    label: 'قائمة مرقّمة',
+    keywords: 'ordered list numbered قائمة مرقمة',
+    icon: ListOrdered,
+    run: (editor) => editor.chain().focus().toggleOrderedList().run(),
+  },
+  {
+    id: 'quote',
+    label: 'اقتباس',
+    keywords: 'quote اقتباس',
+    icon: TextQuote,
+    run: (editor) => editor.chain().focus().toggleBlockquote().run(),
+  },
+  {
+    id: 'codeBlock',
+    label: 'كتلة كود',
+    keywords: 'code block كود برمجي',
+    icon: Code,
+    run: (editor) => editor.chain().focus().toggleCodeBlock().run(),
+  },
+  {
+    id: 'hr',
+    label: 'فاصل أفقي',
+    keywords: 'hr divider فاصل',
+    icon: Minus,
+    run: (editor) => editor.chain().focus().setHorizontalRule().run(),
+  },
+];
+
 const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
   ({ initialContent, onUpdate, onImageUpload, onStateChange, className }, ref) => {
     const onUpdateRef = useRef(onUpdate);
@@ -43,6 +127,34 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
     onImageUploadRef.current = onImageUpload;
     const onStateChangeRef = useRef(onStateChange);
     onStateChangeRef.current = onStateChange;
+
+    const [slash, setSlash] = useState<SlashState | null>(null);
+    const [slashIndex, setSlashIndex] = useState(0);
+    const slashRef = useRef<SlashState | null>(null);
+    slashRef.current = slash;
+    const slashIndexRef = useRef(0);
+    slashIndexRef.current = slashIndex;
+
+    const filteredCommands = useMemo(() => {
+      if (!slash) return SLASH_COMMANDS;
+      const q = slash.text.trim().toLowerCase();
+      if (!q) return SLASH_COMMANDS;
+      return SLASH_COMMANDS.filter(
+        (cmd) => cmd.id.includes(q) || cmd.keywords.toLowerCase().includes(q)
+      );
+    }, [slash]);
+
+    const insertSlashCommand = (cmd: SlashCommandItem) => {
+      const ed = editor;
+      const active = slashRef.current;
+      if (!ed || !active) return;
+      const { from } = active;
+      const to = ed.state.selection.$from.pos;
+      ed.chain().focus().deleteRange({ from, to }).run();
+      cmd.run(ed);
+      setSlash(null);
+      setSlashIndex(0);
+    };
 
     const editor = useEditor({
       extensions: [
@@ -92,6 +204,45 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
           }
           return false;
         },
+        handleKeyDown: (_view, event) => {
+          const active = slashRef.current;
+          if (!active) return false;
+
+          if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            setSlashIndex((i) => (i + 1) % Math.max(filteredCommands.length, 1));
+            return true;
+          }
+          if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            setSlashIndex(
+              (i) =>
+                (i - 1 + Math.max(filteredCommands.length, 1)) %
+                Math.max(filteredCommands.length, 1)
+            );
+            return true;
+          }
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            setSlash(null);
+            return true;
+          }
+          if (event.key === 'Enter') {
+            if (filteredCommands.length === 0) {
+              setSlash(null);
+              return false;
+            }
+            const command =
+              filteredCommands[Math.min(slashIndexRef.current, filteredCommands.length - 1)];
+            if (!command) {
+              return false;
+            }
+            event.preventDefault();
+            insertSlashCommand(command);
+            return true;
+          }
+          return false;
+        },
       },
       onUpdate: ({ editor: ed }) => {
         const md = turndown.turndown(ed.getHTML());
@@ -109,6 +260,49 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
         editor.off('update', handler);
       };
     }, [editor]);
+
+    useEffect(() => {
+      if (!editor) return;
+      const detect = () => {
+        const { state } = editor;
+        const { selection } = state;
+        const $from = selection.$from;
+        if (
+          selection.empty &&
+          ($from.parent.type.name === 'paragraph' || $from.parent.type.name === 'heading')
+        ) {
+          const textBefore = $from.parent.textBetween(0, $from.parentOffset);
+          const match = textBefore.match(/(^|\s)\/(\S*)$/);
+          if (match && match[2] !== undefined && match[2].length <= 20) {
+            const query = match[2];
+            const slashPos = $from.parentOffset - query.length - 1;
+            const absStart = $from.start() + slashPos;
+            const coords = editor.view.coordsAtPos(absStart);
+            setSlash((prev) =>
+              prev && prev.from === absStart
+                ? prev
+                : { from: absStart, text: query, x: coords.left, y: coords.bottom }
+            );
+            return;
+          }
+        }
+        setSlash((prev) => (prev ? null : prev));
+      };
+      editor.on('transaction', detect);
+      return () => {
+        editor.off('transaction', detect);
+      };
+    }, [editor]);
+
+    useEffect(() => {
+      if (!editor || !slash) return;
+      const onResize = () => {
+        const coords = editor.view.coordsAtPos(slash.from);
+        setSlash((prev) => (prev ? { ...prev, x: coords.left, y: coords.bottom } : prev));
+      };
+      window.addEventListener('resize', onResize);
+      return () => window.removeEventListener('resize', onResize);
+    }, [editor, slash]);
 
     useEffect(() => {
       if (!editor) return;
@@ -157,12 +351,52 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
       );
     }
 
+    const slashMenuX = Math.min(slash?.x ?? 0, Math.max(window.innerWidth - 240, 8));
+    const slashMenuY = Math.min(slash?.y ?? 0, Math.max(window.innerHeight - 280, 8));
+
     return (
       <div className={className ?? 'flex-1'}>
         <EditorContent
           editor={editor}
           className="h-full [&_.ProseMirror]:h-full [&_.ProseMirror]:overflow-y-auto [&_.ProseMirror]:outline-none"
         />
+
+        {slash && (
+          <div
+            role="listbox"
+            aria-label="قائمة الأوامر"
+            className="fixed z-50 w-60 rounded-xl border border-border/50 bg-popover shadow-lg shadow-black/5 backdrop-blur-sm overflow-hidden"
+            style={{ left: slashMenuX, top: slashMenuY }}
+          >
+            {filteredCommands.length === 0 ? (
+              <div className="px-3 py-2.5 text-xs text-muted-foreground">لا توجد أوامر مطابقة</div>
+            ) : (
+              filteredCommands.map((cmd, index) => {
+                const Icon = cmd.icon;
+                const isSelected = index === slashIndex % filteredCommands.length;
+                return (
+                  <button
+                    key={cmd.id}
+                    role="option"
+                    aria-selected={isSelected}
+                    onMouseEnter={() => setSlashIndex(index)}
+                    onClick={() => insertSlashCommand(cmd)}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-sm text-start transition-smooth cursor-pointer ${
+                      isSelected
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-foreground hover:bg-muted/60'
+                    }`}
+                  >
+                    <span className="size-7 rounded-md bg-muted/60 flex items-center justify-center shrink-0">
+                      <Icon className="size-3.5" />
+                    </span>
+                    {cmd.label}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        )}
       </div>
     );
   }
