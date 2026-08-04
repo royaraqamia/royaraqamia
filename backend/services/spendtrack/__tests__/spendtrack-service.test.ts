@@ -27,7 +27,7 @@ const validExpense = {
   description: 'غداء',
 };
 
-const validCategory = { name: 'طعام', color_hex: '#FF5733' };
+const validCategory = { name: 'طعام', colorHex: '#FF5733' };
 
 describe('SpendtrackService', () => {
   describe('read operations (delegation)', () => {
@@ -161,18 +161,18 @@ describe('SpendtrackService', () => {
     it('trims whitespace from the category name before delegating', async () => {
       const { repository, service } = makeRepo();
       (repository.createCategory as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
-      await service.createCategory('u-1', { name: '  طعام  ', color_hex: '#FF5733' });
+      await service.createCategory('u-1', { name: '  طعام  ', colorHex: '#FF5733' });
       expect(repository.createCategory).toHaveBeenCalledWith({
         user_id: 'u-1',
         name: 'طعام',
-        color_hex: '#FF5733',
+        colorHex: '#FF5733',
       });
     });
 
     it('rejects an empty category name', async () => {
       const { repository, service } = makeRepo();
       await expect(
-        service.createCategory('u-1', { name: '', color_hex: '#FF5733' })
+        service.createCategory('u-1', { name: '', colorHex: '#FF5733' })
       ).rejects.toThrow('الاسم مطلوب ويجب أن يكون أقل من 50 حرفًا');
       expect(repository.createCategory).not.toHaveBeenCalled();
     });
@@ -180,7 +180,7 @@ describe('SpendtrackService', () => {
     it('rejects a category name longer than 50 chars (boundary)', async () => {
       const { repository, service } = makeRepo();
       await expect(
-        service.createCategory('u-1', { name: 'أ'.repeat(51), color_hex: '#FF5733' })
+        service.createCategory('u-1', { name: 'أ'.repeat(51), colorHex: '#FF5733' })
       ).rejects.toThrow('الاسم مطلوب ويجب أن يكون أقل من 50 حرفًا');
       expect(repository.createCategory).not.toHaveBeenCalled();
     });
@@ -189,7 +189,7 @@ describe('SpendtrackService', () => {
       const { repository, service } = makeRepo();
       (repository.createCategory as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       await expect(
-        service.createCategory('u-1', { name: 'أ'.repeat(50), color_hex: '#FF5733' })
+        service.createCategory('u-1', { name: 'أ'.repeat(50), colorHex: '#FF5733' })
       ).resolves.toBeUndefined();
     });
 
@@ -197,7 +197,7 @@ describe('SpendtrackService', () => {
       const { repository, service } = makeRepo();
       for (const bad of ['red', '#FF57', '#FF57331', '#gg5733', '', '#FFF', '#fffff']) {
         await expect(
-          service.createCategory('u-1', { name: 'طعام', color_hex: bad })
+          service.createCategory('u-1', { name: 'طعام', colorHex: bad })
         ).rejects.toThrow('اللون غير صالح');
       }
       expect(repository.createCategory).not.toHaveBeenCalled();
@@ -207,14 +207,14 @@ describe('SpendtrackService', () => {
       const { repository, service } = makeRepo();
       (repository.createCategory as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       await expect(
-        service.createCategory('u-1', { name: 'طعام', color_hex: '#ff5733' })
+        service.createCategory('u-1', { name: 'طعام', colorHex: '#ff5733' })
       ).resolves.toBeUndefined();
     });
 
     it('validates on update too', async () => {
       const { repository, service } = makeRepo();
       await expect(
-        service.updateCategory('cat-1', 'u-1', { name: '', color_hex: '#FF5733' })
+        service.updateCategory('cat-1', 'u-1', { name: '', colorHex: '#FF5733' })
       ).rejects.toThrow('الاسم مطلوب ويجب أن يكون أقل من 50 حرفًا');
       expect(repository.updateCategory).not.toHaveBeenCalled();
     });

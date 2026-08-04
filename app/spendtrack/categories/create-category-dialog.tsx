@@ -20,7 +20,7 @@ import { Plus } from 'lucide-react';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'الاسم مطلوب'),
-  color_hex: z.string().min(1, 'اللون مطلوب'),
+  colorHex: z.string().min(1, 'اللون مطلوب'),
 });
 
 type CategoryFormValues = z.input<typeof categorySchema>;
@@ -50,17 +50,17 @@ export function CreateCategoryDialog() {
     mode: 'onBlur',
     defaultValues: {
       name: '',
-      color_hex: '#8f6fe5',
+      colorHex: '#8f6fe5',
     },
   });
 
   const [colorValue, setColorValue] = useState('#8f6fe5');
-  const { onChange: rhfColorOnChange, ...colorRegister } = register('color_hex');
+  const { onChange: rhfColorOnChange, ...colorRegister } = register('colorHex');
 
   function onSubmit(data: CategoryFormValues) {
     setPending(true);
     setState(undefined);
-    createCategory({ name: data.name, color_hex: data.color_hex })
+    createCategory({ name: data.name, colorHex: data.colorHex })
       .then((result) => {
         setState(result);
         setShowToast(true);
@@ -107,7 +107,7 @@ export function CreateCategoryDialog() {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="color_hex" className="text-sm font-medium">
+            <Label htmlFor="colorHex" className="text-sm font-medium">
               اللون{' '}
               <span className="text-destructive" aria-hidden="true">
                 *
@@ -115,11 +115,11 @@ export function CreateCategoryDialog() {
             </Label>
             <div className="flex items-center gap-2">
               <Input
-                id="color_hex"
+                id="colorHex"
                 type="color"
                 className="w-12 h-11 p-1"
                 {...colorRegister}
-                aria-describedby={errors.color_hex ? 'create-color-error' : undefined}
+                aria-describedby={errors.colorHex ? 'create-color-error' : undefined}
                 onChange={(e) => {
                   setColorValue(e.target.value);
                   rhfColorOnChange(e);
@@ -127,9 +127,9 @@ export function CreateCategoryDialog() {
               />
               <Input readOnly className="flex-1" value={colorValue} tabIndex={-1} />
             </div>
-            {errors.color_hex && (
+            {errors.colorHex && (
               <p id="create-color-error" className="text-sm text-destructive" role="alert">
-                {errors.color_hex.message}
+                {errors.colorHex.message}
               </p>
             )}
           </div>

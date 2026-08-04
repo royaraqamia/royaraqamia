@@ -134,12 +134,12 @@ export async function createCategory(body: Record<string, unknown>): Promise<Htt
     }
 
     const name = String(body.name ?? '').trim();
-    const color_hex = String(body.color_hex ?? '').trim();
+    const colorHex = String(body.color_hex ?? '').trim();
 
     try {
       await createSpendtrackService(supabase).createCategory(user.id, {
         name,
-        color_hex,
+        colorHex,
       } satisfies SpendtrackCategoryInput);
     } catch (error) {
       return jsonResult(500, {
@@ -175,12 +175,12 @@ export async function updateCategory(
     }
 
     const name = String(body.name ?? '').trim();
-    const color_hex = String(body.color_hex ?? '').trim();
+    const colorHex = String(body.color_hex ?? '').trim();
 
     try {
       await createSpendtrackService(supabase).updateCategory(id, user.id, {
         name,
-        color_hex,
+        colorHex,
       } satisfies SpendtrackCategoryInput);
     } catch (error) {
       return jsonResult(500, {

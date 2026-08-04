@@ -157,7 +157,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                   />
                   <div
                     className="size-3 rounded-full shrink-0 ring-2 ring-border"
-                    style={{ backgroundColor: cat.color_hex }}
+                    style={{ backgroundColor: cat.colorHex }}
                   />
                   {cat.name}
                 </label>

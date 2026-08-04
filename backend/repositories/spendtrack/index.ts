@@ -16,8 +16,8 @@ export function createSpendtrackRepository(
         .from('categories')
         .select('*')
         .or(`user_id.eq.${userId},is_default.eq.true`)
-        .order('name')) as { data: Category[] | null };
-      return data ?? [];
+        .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
+      return (data ?? []).map((row) => ({ ...row, colorHex: row.color_hex })) as Category[];
     },
 
     async getTotalExpenses(
@@ -40,14 +40,20 @@ export function createSpendtrackRepository(
       start: string,
       end: string,
       catFilter: string[] | null
-    ): Promise<{ category_id: string; color_hex: string; name: string; total: number }[] | null> {
+    ): Promise<{ categoryId: string; colorHex: string; name: string; total: number }[] | null> {
       const { data } = await supabase.rpc('get_category_breakdown', {
         p_user_id: userId,
         p_start: start,
         p_end: end,
         p_categories: catFilter,
       });
-      return data;
+      if (!data) return null;
+      return data.map((row: { category_id: string; color_hex: string; name: string; total: number }) => ({
+        categoryId: row.category_id,
+        colorHex: row.color_hex,
+        name: row.name,
+        total: row.total,
+      }));
     },
 
     async getDailyTotals(
@@ -74,9 +80,9 @@ export function createSpendtrackRepository(
         .from('categories')
         .select('*')
         .or(`user_id.eq.${userId},is_default.eq.true`)
-        .order('name')) as { data: Category[] | null };
+        .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
 
-      const safeCategories = categories ?? [];
+      const safeCategories = (categories ?? []).map((row) => ({ ...row, colorHex: row.color_hex })) as Category[];
 
       const { count: totalCount } = await supabase
         .from('expenses')
@@ -107,12 +113,17 @@ export function createSpendtrackRepository(
         queryBuilder = queryBuilder.limit(pageSize);
       }
 
-      const { data: expenses } = (await queryBuilder) as {
-        data: ExpenseWithCategory[] | null;
-      };
+      const { data: rawExpenses } = await queryBuilder;
+      const expenses = (rawExpenses ?? []).map((row: Record<string, unknown>) => {
+        const cats = row.categories as { name: string; color_hex: string } | null;
+        return {
+          ...row,
+          categories: cats ? { name: cats.name, colorHex: cats.color_hex } : undefined,
+        };
+      }) as ExpenseWithCategory[];
 
       return {
-        expenses: expenses ?? [],
+        expenses: expenses,
         categories: safeCategories,
         totalCount: totalCount ?? 0,
       };
@@ -161,20 +172,20 @@ export function createSpendtrackRepository(
     async createCategory(input: {
       user_id: string;
       name: string;
-      color_hex: string;
+      colorHex: string;
     }): Promise<void> {
-      const { error } = await supabase.from('categories').insert(input);
+      const { error } = await supabase.from('categories').insert({ ...input, color_hex: input.colorHex });
       if (error) throw new Error(error.message);
     },
 
     async updateCategory(
       categoryId: string,
       userId: string,
-      input: { name: string; color_hex: string }
+      input: { name: string; colorHex: string }
     ): Promise<void> {
       const { error } = await supabase
         .from('categories')
-        .update(input)
+        .update({ ...input, color_hex: input.colorHex })
         .eq('id', categoryId)
         .eq('user_id', userId);
 

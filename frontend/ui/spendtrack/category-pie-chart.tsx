@@ -13,7 +13,7 @@ import {
 
 type CategorySpending = {
   name: string;
-  color_hex: string;
+  colorHex: string;
   total: number;
   category_id?: string;
 };
@@ -23,7 +23,7 @@ function CustomTooltip({
   payload,
 }: {
   active?: boolean;
-  payload?: Array<{ name: string; value: number; payload: { color_hex: string } }>;
+  payload?: Array<{ name: string; value: number; payload: { colorHex: string } }>;
 }) {
   if (!active || !payload?.length || !payload[0]) return null;
   const item = payload[0];
@@ -32,7 +32,7 @@ function CustomTooltip({
       <div className="flex items-center gap-2">
         <div
           className="size-2.5 rounded-full"
-          style={{ backgroundColor: item.payload.color_hex }}
+          style={{ backgroundColor: item.payload.colorHex }}
         />
         <span className="text-sm font-medium">{item.name}</span>
       </div>
@@ -146,7 +146,7 @@ export function CategoryPieChart({ data }: { data: CategorySpending[] }) {
               {data.map((entry, index) => (
                 <Cell
                   key={index}
-                  fill={entry.color_hex}
+                  fill={entry.colorHex}
                   onClick={() => handleClick(entry)}
                   stroke={
                     entry.category_id &&

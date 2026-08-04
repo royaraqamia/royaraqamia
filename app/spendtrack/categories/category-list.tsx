@@ -20,7 +20,7 @@ import type { Category } from '@/shared/contracts/spendtrack';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'الاسم مطلوب'),
-  color_hex: z.string().min(1, 'اللون مطلوب'),
+  colorHex: z.string().min(1, 'اللون مطلوب'),
 });
 
 type CategoryFormValues = z.input<typeof categorySchema>;
@@ -59,7 +59,7 @@ export function CategoryList({ categories, userId }: { categories: Category[]; u
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div
               className="size-3.5 rounded-full shrink-0 ring-2 ring-border transition-transform duration-200 group-hover/row:scale-110"
-              style={{ backgroundColor: category.color_hex }}
+              style={{ backgroundColor: category.colorHex }}
             />
             <span className="font-medium text-sm truncate">{category.name}</span>
             {category.user_id === null && (
@@ -93,17 +93,17 @@ function EditCategoryDialog({ category }: { category: Category }) {
     mode: 'onBlur',
     defaultValues: {
       name: category.name,
-      color_hex: category.color_hex,
+      colorHex: category.colorHex,
     },
   });
 
-  const [colorValue, setColorValue] = useState(category.color_hex);
-  const { onChange: rhfColorOnChange, ...colorRegister } = register('color_hex');
+  const [colorValue, setColorValue] = useState(category.colorHex);
+  const { onChange: rhfColorOnChange, ...colorRegister } = register('colorHex');
 
   function onSubmit(data: CategoryFormValues) {
     setPending(true);
     setState(undefined);
-    updateCategory(category.id, { name: data.name, color_hex: data.color_hex })
+    updateCategory(category.id, { name: data.name, colorHex: data.colorHex })
       .then((result) => {
         setState(result);
         if (result?.error) {
@@ -151,7 +151,7 @@ function EditCategoryDialog({ category }: { category: Category }) {
             )}
           </div>
           <div className="space-y-2">
-            <Label htmlFor="color_hex" className="text-sm font-medium">
+            <Label htmlFor="colorHex" className="text-sm font-medium">
               اللون{' '}
               <span className="text-destructive" aria-hidden="true">
                 *
@@ -159,11 +159,11 @@ function EditCategoryDialog({ category }: { category: Category }) {
             </Label>
             <div className="flex items-center gap-2">
               <Input
-                id="color_hex"
+                id="colorHex"
                 type="color"
                 className="w-12 h-11 p-1"
                 {...colorRegister}
-                aria-describedby={errors.color_hex ? 'edit-color-error' : undefined}
+                aria-describedby={errors.colorHex ? 'edit-color-error' : undefined}
                 onChange={(e) => {
                   setColorValue(e.target.value);
                   rhfColorOnChange(e);
@@ -171,9 +171,9 @@ function EditCategoryDialog({ category }: { category: Category }) {
               />
               <Input readOnly className="flex-1" value={colorValue} tabIndex={-1} />
             </div>
-            {errors.color_hex && (
+            {errors.colorHex && (
               <p id="edit-color-error" className="text-sm text-destructive" role="alert">
-                {errors.color_hex.message}
+                {errors.colorHex.message}
               </p>
             )}
           </div>

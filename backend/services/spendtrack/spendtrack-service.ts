@@ -7,7 +7,7 @@ import type { Category } from '@/shared/contracts/spendtrack';
 
 export interface SpendtrackCategoryInput {
   name: string;
-  color_hex: string;
+  colorHex: string;
 }
 
 export interface SpendtrackExpenseInput {
@@ -38,7 +38,7 @@ export class SpendtrackService {
     start: string,
     end: string,
     catFilter: string[] | null
-  ): Promise<{ category_id: string; color_hex: string; name: string; total: number }[] | null> {
+  ): Promise<{ categoryId: string; colorHex: string; name: string; total: number }[] | null> {
     return this.repository.getCategoryBreakdown(userId, start, end, catFilter);
   }
 
@@ -111,7 +111,7 @@ export class SpendtrackService {
     if (!name || name.length > 50) {
       throw new Error('الاسم مطلوب ويجب أن يكون أقل من 50 حرفًا');
     }
-    if (!/^#[0-9a-fA-F]{6}$/.test(input.color_hex)) {
+    if (!/^#[0-9a-fA-F]{6}$/.test(input.colorHex)) {
       throw new Error('اللون غير صالح');
     }
   }

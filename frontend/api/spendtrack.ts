@@ -61,7 +61,7 @@ export async function deleteExpense(expenseId: string): Promise<ActionState> {
 
 export async function createCategory(data: {
   name: string;
-  color_hex: string;
+  colorHex: string;
 }): Promise<ActionState> {
   try {
     await request('/spendtrack/api/categories', {
@@ -76,7 +76,7 @@ export async function createCategory(data: {
 
 export async function updateCategory(
   categoryId: string,
-  data: { name: string; color_hex: string }
+  data: { name: string; colorHex: string }
 ): Promise<ActionState> {
   try {
     await request(`/spendtrack/api/categories/${categoryId}`, {

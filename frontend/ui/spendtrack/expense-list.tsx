@@ -108,7 +108,7 @@ function ExpenseRow({
         {expense.categories && (
           <div
             className="size-3 rounded-full shrink-0 ring-2 ring-border transition-transform duration-200 group-hover/row:scale-110"
-            style={{ backgroundColor: expense.categories.color_hex }}
+            style={{ backgroundColor: expense.categories.colorHex }}
             aria-hidden="true"
           />
         )}

@@ -35,7 +35,7 @@ export async function loadCategoryBreakdown(
   start: string,
   end: string,
   catFilter: string[] | null
-): Promise<{ category_id: string; color_hex: string; name: string; total: number }[] | null> {
+): Promise<{ categoryId: string; colorHex: string; name: string; total: number }[] | null> {
   const service = await createService();
   return service.getCategoryBreakdown(userId, start, end, catFilter);
 }

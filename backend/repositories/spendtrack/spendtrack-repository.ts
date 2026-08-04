@@ -29,7 +29,7 @@ export interface ISpendtrackRepository {
     start: string,
     end: string,
     catFilter: string[] | null
-  ): Promise<{ category_id: string; color_hex: string; name: string; total: number }[] | null>;
+  ): Promise<{ categoryId: string; colorHex: string; name: string; total: number }[] | null>;
   getDailyTotals(
     userId: string,
     start: string,
@@ -55,11 +55,11 @@ export interface ISpendtrackRepository {
     }
   ): Promise<void>;
   deleteExpense(expenseId: string, userId: string): Promise<void>;
-  createCategory(input: { user_id: string; name: string; color_hex: string }): Promise<void>;
+  createCategory(input: { user_id: string; name: string; colorHex: string }): Promise<void>;
   updateCategory(
     categoryId: string,
     userId: string,
-    input: { name: string; color_hex: string }
+    input: { name: string; colorHex: string }
   ): Promise<void>;
   deleteCategory(categoryId: string, userId: string): Promise<void>;
 }

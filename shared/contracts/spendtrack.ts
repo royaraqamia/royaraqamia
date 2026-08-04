@@ -2,7 +2,7 @@ export type Category = {
   id: string;
   user_id: string | null;
   name: string;
-  color_hex: string;
+  colorHex: string;
   created_at: string;
 };
 
@@ -15,9 +15,9 @@ export type Expense = {
   date: string;
   created_at: string;
   updated_at: string;
-  categories?: Pick<Category, 'name' | 'color_hex'>;
+  categories?: Pick<Category, 'name' | 'colorHex'>;
 };
 
 export type ExpenseWithCategory = Expense & {
-  categories?: Pick<Category, 'name' | 'color_hex'>;
+  categories?: Pick<Category, 'name' | 'colorHex'>;
 };

@@ -101,7 +101,7 @@ export function EditExpenseDialog({
   expense,
   categories,
 }: {
-  expense: Expense & { categories?: Pick<Category, 'name' | 'color_hex'> };
+  expense: Expense & { categories?: Pick<Category, 'name' | 'colorHex'> };
   categories: Category[];
 }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -242,7 +242,7 @@ function ExpenseForm({
                     <div className="flex items-center gap-2">
                       <div
                         className="size-3 rounded-full"
-                        style={{ backgroundColor: cat.color_hex }}
+                        style={{ backgroundColor: cat.colorHex }}
                       />
                       {cat.name}
                     </div>
