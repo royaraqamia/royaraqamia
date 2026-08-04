@@ -13,10 +13,8 @@ import {
   createUpdateLinkService,
   createRedirectUrlService,
 } from '@/backend/config/linksnap';
-import {
-  isReservedShortCode,
-  ShortLinkRedirectError,
-} from '@/backend/services/linksnap/redirect-url';
+import { bulkShortenRateLimitPolicy, shortenRateLimitPolicy } from '@/backend/config/rate-limiter';
+import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
 function linkView(l: { code: string; originalUrl: string; createdAt: Date; isBlocked: boolean }) {
@@ -121,17 +119,7 @@ export async function shortenUrl(
     const user = await getAuthenticatedUser(authorization);
     const userId = user ? user.id : null;
 
-    const rateLimitKey = `shorten:${userId || ip}`;
-    const limit = userId ? 50 : 5;
-    const message = userId
-      ? 'تم تجاوز حد الطلب: الحسابات الموثقة محدودة بـ 50 رابطًا كل 10 دقائق لمنع إساءة استخدام النظام.'
-      : 'تم تجاوز حد الطلب: إنشاء الروابط للمستخدمين المجهولين محدود بـ 5 روابط كل 10 دقائق. يرجى تسجيل الدخول أو إنشاء حساب للحدود الأعلى.';
-    const rateLimitResult = await checkRateLimitApi({
-      key: rateLimitKey,
-      limit,
-      windowMs: 10 * 60 * 1000,
-      message,
-    });
+    const rateLimitResult = await checkRateLimitApi(shortenRateLimitPolicy(userId, ip));
     if (rateLimitResult) return rateLimitResult;
 
     const newLink = await createShortenUrlService().execute(
@@ -168,13 +156,7 @@ export async function bulkShorten(
       });
     }
 
-    const rateLimitResult = await checkRateLimitApi({
-      key: `bulk-shorten:${user.id}`,
-      limit: 10,
-      windowMs: 10 * 60 * 1000,
-      message:
-        'تم تجاوز حد الطلب: طلبات الاختصار بالجملة محدودة بـ 10 دفعات كل 10 دقائق لحماية سلامة قاعدة البيانات.',
-    });
+    const rateLimitResult = await checkRateLimitApi(bulkShortenRateLimitPolicy(user.id));
     if (rateLimitResult) return rateLimitResult;
 
     const { urls } = body;
@@ -295,10 +277,6 @@ export async function redirectShortCode(
     origin: string;
   }
 ): Promise<HttpResult> {
-  if (isReservedShortCode(code)) {
-    return jsonResult(404, null);
-  }
-
   try {
     const originalUrl = await createRedirectUrlService().execute(code, {
       referrer: info.referrer,
@@ -308,6 +286,10 @@ export async function redirectShortCode(
 
     return { status: 302, redirect: originalUrl };
   } catch (err: unknown) {
+    if (err instanceof ShortLinkRedirectError && err.kind === 'reserved') {
+      return jsonResult(404, null);
+    }
+
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
     console.error(`Redirect failed for code [${code}]:`, errorMessage);
 

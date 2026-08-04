@@ -112,6 +112,21 @@ describe('RedirectUrlService.execute', () => {
     expect(analyticsRepository.recordClick).not.toHaveBeenCalled();
   });
 
+  it('rejects reserved codes without querying the repository', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+
+    const service = new RedirectUrlService(shortLinkRepository, analyticsRepository);
+
+    await expect(
+      service.execute('_private', { referrer: null, userAgent: null, ipCountry: null })
+    ).rejects.toThrow(ShortLinkRedirectError);
+    await expect(
+      service.execute('page.json', { referrer: null, userAgent: null, ipCountry: null })
+    ).rejects.toThrow('Short link not found.');
+    expect(shortLinkRepository.findByCode).not.toHaveBeenCalled();
+    expect(analyticsRepository.recordClick).not.toHaveBeenCalled();
+  });
+
   it('throws when the link is blocked', async () => {
     const { shortLinkRepository, analyticsRepository } = makeDeps();
     (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({

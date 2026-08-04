@@ -9,7 +9,7 @@ export function isReservedShortCode(code: string): boolean {
 export class ShortLinkRedirectError extends Error {
   constructor(
     message: string,
-    public readonly kind: 'not-found' | 'blocked'
+    public readonly kind: 'not-found' | 'blocked' | 'reserved'
   ) {
     super(message);
     this.name = 'ShortLinkRedirectError';
@@ -30,6 +30,10 @@ export class RedirectUrlService {
       ipCountry: string | null;
     }
   ): Promise<string> {
+    if (isReservedShortCode(code)) {
+      throw new ShortLinkRedirectError('Short link not found.', 'reserved');
+    }
+
     const link: ShortLink | null = await this.shortLinkRepository.findByCode(code);
 
     if (!link) {

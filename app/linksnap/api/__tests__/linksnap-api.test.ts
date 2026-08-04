@@ -468,11 +468,14 @@ describe('GET /[code] redirect route', () => {
   it('returns 404 for reserved codes', async () => {
     const reserved = ['_private', 'api', 'favicon.ico', 'page.json'];
     for (const code of reserved) {
+      mockRedirect.execute.mockRejectedValue(
+        new ShortLinkRedirectError('Short link not found.', 'reserved')
+      );
       const res = await redirectGET(makeReq(undefined, {}), {
         params: Promise.resolve({ code }),
       });
       expect(res.status).toBe(404);
-      expect(mockRedirect.execute).not.toHaveBeenCalled();
+      expect(mockRedirect.execute).toHaveBeenCalledWith(code, expect.any(Object));
     }
   });
 });
