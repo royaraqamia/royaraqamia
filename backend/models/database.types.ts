@@ -58,6 +58,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      blog_categories: {
+        Row: {
+          created_at: string;
+          id: string;
+          name: string;
+          slug: string;
+          user_id: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: string;
+          name: string;
+          slug: string;
+          user_id: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: string;
+          name?: string;
+          slug?: string;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
       categories: {
         Row: {
           color_hex: string;
@@ -307,10 +331,12 @@ export type Database = {
           meta_desc: string | null;
           meta_title: string | null;
           published_at: string | null;
+          publish_at: string | null;
           slug: string;
           status: Database['public']['Enums']['post_status'];
           title: string;
           updated_at: string;
+          view_count: number;
         };
         Insert: {
           author_id: string;
@@ -322,10 +348,12 @@ export type Database = {
           meta_desc?: string | null;
           meta_title?: string | null;
           published_at?: string | null;
+          publish_at?: string | null;
           slug: string;
           status?: Database['public']['Enums']['post_status'];
           title: string;
           updated_at?: string;
+          view_count?: number;
         };
         Update: {
           author_id?: string;
@@ -337,10 +365,12 @@ export type Database = {
           meta_desc?: string | null;
           meta_title?: string | null;
           published_at?: string | null;
+          publish_at?: string | null;
           slug?: string;
           status?: Database['public']['Enums']['post_status'];
           title?: string;
           updated_at?: string;
+          view_count?: number;
         };
         Relationships: [
           {
@@ -348,6 +378,36 @@ export type Database = {
             columns: ['author_id'];
             isOneToOne: false;
             referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      post_categories: {
+        Row: {
+          category_id: string;
+          post_id: string;
+        };
+        Insert: {
+          category_id: string;
+          post_id: string;
+        };
+        Update: {
+          category_id?: string;
+          post_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'post_categories_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'blog_categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'post_categories_post_id_fkey';
+            columns: ['post_id'];
+            isOneToOne: false;
+            referencedRelation: 'posts';
             referencedColumns: ['id'];
           },
         ];
@@ -450,6 +510,7 @@ export type Database = {
         };
         Returns: number;
       };
+      increment_post_view_count: { Args: { p_post_id: string }; Returns: undefined };
       increment_otp_attempts: { Args: { row_id: string }; Returns: number };
       is_admin: { Args: never; Returns: boolean };
       recompute_admin_flags: {
@@ -458,7 +519,7 @@ export type Database = {
       };
     };
     Enums: {
-      post_status: 'draft' | 'published';
+      post_status: 'draft' | 'published' | 'scheduled';
     };
     CompositeTypes: {
       [_ in never]: never;
