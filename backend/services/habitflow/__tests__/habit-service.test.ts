@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { HabitService } from '@/backend/services/habitflow/habit-service';
+import { AppError } from '@/backend/shared/habitflow/errors';
 import type { IHabitRepository, Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 const habitFixture: Habit = {
@@ -47,6 +48,31 @@ describe('HabitService', () => {
       await expect(service.getLogs('2026-07-01', '2026-08-02')).resolves.toEqual([logFixture]);
       expect(repository.getLogs).toHaveBeenCalledWith('2026-07-01', '2026-08-02');
     });
+
+    it('defaults to the last 35 days when the window is missing', async () => {
+      const { repository, service } = makeRepo();
+      (repository.getLogs as ReturnType<typeof vi.fn>).mockResolvedValue([logFixture]);
+
+      await expect(service.getLogs('', '')).resolves.toEqual([logFixture]);
+
+      const expectedStart = new Date();
+      expectedStart.setDate(expectedStart.getDate() - HabitService.DEFAULT_LOGS_WINDOW_DAYS);
+      const expectedEnd = new Date();
+      expect(repository.getLogs).toHaveBeenCalledWith(
+        expectedStart.toISOString().split('T')[0],
+        expectedEnd.toISOString().split('T')[0]
+      );
+    });
+
+    it('defaults only the missing end date', async () => {
+      const { repository, service } = makeRepo();
+      (repository.getLogs as ReturnType<typeof vi.fn>).mockResolvedValue([logFixture]);
+
+      await service.getLogs('2026-07-01', '');
+
+      const today = new Date().toISOString().split('T')[0];
+      expect(repository.getLogs).toHaveBeenCalledWith('2026-07-01', today);
+    });
   });
 
   describe('createHabit', () => {
@@ -85,6 +111,14 @@ describe('HabitService', () => {
         'اسم العادة مطلوب'
       );
       expect(repository.createHabit).not.toHaveBeenCalled();
+    });
+
+    it('throws a 400 AppError for missing names', async () => {
+      const { service } = makeRepo();
+      await expect(service.createHabit({})).rejects.toMatchObject({
+        name: AppError.name,
+        statusCode: 400,
+      });
     });
   });
 

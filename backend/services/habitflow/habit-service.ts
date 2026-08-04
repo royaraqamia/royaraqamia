@@ -1,6 +1,9 @@
 import { Habit, HabitLog, IHabitRepository } from '@/shared/contracts/habitflow';
+import { AppError } from '@/backend/shared/habitflow/errors';
 
 export class HabitService {
+  static readonly DEFAULT_LOGS_WINDOW_DAYS = 35;
+
   constructor(private repository: IHabitRepository) {}
 
   async getAllHabits(): Promise<Habit[]> {
@@ -9,7 +12,7 @@ export class HabitService {
 
   async createHabit(data: Partial<Habit>): Promise<Habit> {
     if (!data.name || data.name.trim() === '') {
-      throw new Error('اسم العادة مطلوب');
+      throw new AppError('اسم العادة مطلوب', 400);
     }
     return this.repository.createHabit({
       name: data.name.trim(),
@@ -19,7 +22,7 @@ export class HabitService {
   }
 
   async updateHabit(id: string, data: Partial<Habit>): Promise<Habit> {
-    if (!id) throw new Error('معرّف العادة مطلوب');
+    if (!id) throw new AppError('معرّف العادة مطلوب', 400);
     return this.repository.updateHabit(id, {
       ...(data.name !== undefined && { name: data.name.trim() }),
       ...(data.icon !== undefined && { icon: data.icon }),
@@ -29,7 +32,7 @@ export class HabitService {
   }
 
   async deleteHabit(id: string): Promise<boolean> {
-    if (!id) throw new Error('معرّف العادة مطلوب');
+    if (!id) throw new AppError('معرّف العادة مطلوب', 400);
     return this.repository.deleteHabit(id);
   }
 
@@ -39,12 +42,24 @@ export class HabitService {
     completed: boolean;
   }): Promise<HabitLog> {
     if (!data.habitId || !data.date || data.completed === undefined) {
-      throw new Error('حقول مطلوبة مفقودة للتسجيل');
+      throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
     }
     return this.repository.toggleLog(data.habitId, data.date, data.completed);
   }
 
   async getLogs(startDate: string, endDate: string): Promise<HabitLog[]> {
-    return this.repository.getLogs(startDate, endDate);
+    const start = startDate || this.defaultLogWindowStart();
+    const end = endDate || this.defaultLogWindowEnd();
+    return this.repository.getLogs(start, end);
+  }
+
+  private defaultLogWindowStart(): string {
+    const past = new Date();
+    past.setDate(past.getDate() - HabitService.DEFAULT_LOGS_WINDOW_DAYS);
+    return past.toISOString().split('T')[0]!;
+  }
+
+  private defaultLogWindowEnd(): string {
+    return new Date().toISOString().split('T')[0]!;
   }
 }

@@ -27,9 +27,6 @@ export async function createHabit(body: Partial<Habit>): Promise<HttpResult> {
     const habit = await service.createHabit(body);
     return jsonResult(201, { habit, mode });
   } catch (error) {
-    if (error instanceof AppError || (error instanceof Error && error.message.includes('مطلوب'))) {
-      return errorResult(error, 400);
-    }
     return errorResult(error);
   }
 }
@@ -72,19 +69,8 @@ export async function getLogs(
 ): Promise<HttpResult> {
   try {
     const { user, client } = await getOptionalUser();
-    let start = startDate;
-    let end = endDate;
-
-    if (!start || !end) {
-      const today = new Date();
-      const past = new Date();
-      past.setDate(past.getDate() - 35);
-      start = start || past.toISOString().split('T')[0]!;
-      end = end || today.toISOString().split('T')[0]!;
-    }
-
     const { service, mode } = createHabitService(user?.id, client ?? undefined);
-    const logs = await service.getLogs(start, end);
+    const logs = await service.getLogs(startDate ?? '', endDate ?? '');
     return jsonResult(200, { logs, mode });
   } catch (error) {
     return errorResult(error);
