@@ -9,7 +9,7 @@ import { sendOtpEmail, sendPasswordResetEmail } from '@/backend/config/email';
 import { checkRateLimit, getRateLimitRemaining } from '@/backend/config/rate-limiter';
 import { createTurnstileVerifier } from '@/backend/config/turnstile';
 import { env } from '@/backend/config/env';
-import { createCookiePendingLoginStore } from '@/backend/transport/cookies';
+import { createServerPendingLoginStore } from '@/backend/transport/pending-login-server-store';
 
 export async function createServerAuthService(): Promise<AuthService> {
   return createAuthService(
@@ -36,7 +36,7 @@ export function createAuthService(
       getRateLimitRemaining,
     },
     verifyTurnstile: createTurnstileVerifier(env.turnstileSecret),
-    pendingLoginStore: createCookiePendingLoginStore(),
+    pendingLoginStore: createServerPendingLoginStore(),
     otpTtlMinutes: OTP_CONFIG.TTL_MINUTES,
     otpResendCooldownSeconds: OTP_CONFIG.RESEND_COOLDOWN_SECONDS,
     otpMaxAttempts: OTP_CONFIG.MAX_ATTEMPTS,
