@@ -166,6 +166,22 @@ describe('createSupabaseAuthGateway', () => {
     expect(supabase.auth.updateUser).toHaveBeenCalledWith({ password: 'NewStrongP@ss1' });
   });
 
+  it('updateUserPassword uses the admin client to set a specific user password', async () => {
+    (admin.auth.admin.updateUserById as ReturnType<typeof vi.fn>).mockResolvedValue({
+      error: null,
+    });
+    const gateway = createSupabaseAuthGateway(
+      supabase as unknown as SupabaseClient<Database>,
+      admin as unknown as SupabaseClient<Database>
+    );
+    await expect(gateway.updateUserPassword('user-1', 'NewStrongP@ss1')).resolves.toEqual({
+      error: null,
+    });
+    expect(admin.auth.admin.updateUserById).toHaveBeenCalledWith('user-1', {
+      password: 'NewStrongP@ss1',
+    });
+  });
+
   it('signOut calls auth.signOut', async () => {
     (supabase.auth.signOut as ReturnType<typeof vi.fn>).mockResolvedValue({ error: null });
     const gateway = createSupabaseAuthGateway(

@@ -6,8 +6,9 @@ import type { UserProfileRepository } from '@/backend/repositories/users/user-pr
 
 vi.mock('@/backend/shared/otp/generator', () => ({
   generateOtp: () => '123456',
+  generateResetToken: () => 'reset-token-123',
   hashOtp: () => ({ hash: 'hash', salt: 'salt' }),
-  verifyOtp: (input: string) => input === '123456',
+  verifyOtp: (input: string) => input === '123456' || input === 'reset-token-123',
 }));
 
 function makeOtpRecord(overrides: Partial<OtpRecordData> = {}): OtpRecordData {
@@ -37,6 +38,11 @@ function createService(
     incrementOtpAttempts: vi.fn().mockResolvedValue(undefined),
     markOtpVerified: vi.fn().mockResolvedValue(undefined),
   };
+  const passwordResetTokenRepository = {
+    createToken: vi.fn().mockResolvedValue(undefined),
+    findLatestValidToken: vi.fn().mockResolvedValue(null),
+    markTokenAsUsed: vi.fn().mockResolvedValue(undefined),
+  };
   const rateLimiter = {
     checkRateLimit: vi.fn().mockResolvedValue(overrides.rateLimitAllowed ?? true),
     getRateLimitRemaining: vi.fn().mockResolvedValue(5),
@@ -47,6 +53,9 @@ function createService(
     confirmUserEmail: vi.fn().mockResolvedValue(undefined),
     signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
     signUp: vi.fn().mockResolvedValue({ user: null, error: null }),
+    updateUser: vi.fn().mockResolvedValue({ error: null }),
+    updateUserPassword: vi.fn().mockResolvedValue({ error: null }),
+    resetPasswordForEmail: vi.fn().mockResolvedValue({ error: null }),
   } as unknown as AuthGateway;
   const pendingLoginStore = {
     readPassword: vi.fn().mockResolvedValue(null),
@@ -57,13 +66,15 @@ function createService(
     upsert: vi.fn().mockResolvedValue(undefined),
   } as unknown as UserProfileRepository;
 
+  const emailClient = {
+    sendOtpEmail: vi.fn().mockResolvedValue(undefined),
+    sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
+  };
   const service = new AuthService(gateway, {
     otpRepository,
     userProfileRepository,
-    emailClient: {
-      sendOtpEmail: vi.fn().mockResolvedValue(undefined),
-      sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
-    },
+    passwordResetTokenRepository,
+    emailClient,
     rateLimiter,
     verifyTurnstile: vi.fn().mockResolvedValue(true),
     pendingLoginStore,
@@ -71,10 +82,20 @@ function createService(
     otpResendCooldownSeconds: 60,
     otpMaxAttempts: 5,
     otpVerifyMaxPerMinute: 10,
+    passwordResetTokenTtlMinutes: 60,
     siteUrl: 'https://royaraqamia.com',
   });
 
-  return { service, otpRepository, rateLimiter, pendingLoginStore, gateway, userProfileRepository };
+  return {
+    service,
+    otpRepository,
+    passwordResetTokenRepository,
+    rateLimiter,
+    emailClient,
+    pendingLoginStore,
+    gateway,
+    userProfileRepository,
+  };
 }
 
 const verifyInput = {
@@ -263,5 +284,229 @@ describe('AuthService.resendOtp', () => {
       expiresAt: expect.any(Date),
       maxAttempts: 5,
     });
+  });
+});
+
+describe('AuthService.resetPassword', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('rate-limits reset requests', async () => {
+    const { service, rateLimiter } = createService({ rateLimitAllowed: false });
+    await expect(service.resetPassword({ email: 'user@example.com' })).resolves.toEqual({
+      ok: false,
+      message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً',
+    });
+    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith('reset:user@example.com', 3, 3_600_000);
+  });
+
+  it('returns success even when the user does not exist', async () => {
+    const { service, gateway, passwordResetTokenRepository } = createService();
+    vi.mocked(gateway.getUserByEmail).mockResolvedValue({ user: null });
+
+    const result = await service.resetPassword({ email: 'noone@example.com' });
+    expect(result).toEqual({
+      ok: true,
+      message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
+    });
+    expect(passwordResetTokenRepository.createToken).not.toHaveBeenCalled();
+  });
+
+  it('creates a token and sends a password-reset email via Resend', async () => {
+    const { service, gateway, passwordResetTokenRepository, emailClient } = createService();
+    vi.mocked(gateway.getUserByEmail).mockResolvedValue({
+      user: { id: 'user-1', email: 'user@example.com', email_confirmed_at: null },
+    });
+
+    const result = await service.resetPassword({
+      email: 'user@example.com',
+      redirectTo: '/dashboard',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(passwordResetTokenRepository.createToken).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      userId: 'user-1',
+      tokenHash: 'hash',
+      salt: 'salt',
+      expiresAt: expect.any(Date),
+    });
+    expect(emailClient.sendPasswordResetEmail).toHaveBeenCalledTimes(1);
+    const [email, resetUrl] = emailClient.sendPasswordResetEmail.mock.calls[0] as [string, string];
+    expect(email).toBe('user@example.com');
+    expect(resetUrl).toContain('/auth/update-password');
+    expect(resetUrl).toContain('token=reset-token-123');
+    expect(resetUrl).toContain('email=user%40example.com');
+    expect(resetUrl).toContain('redirect=%2Fdashboard');
+  });
+
+  it('continues even if the email delivery fails', async () => {
+    const { service, gateway, passwordResetTokenRepository } = createService();
+    vi.mocked(gateway.getUserByEmail).mockResolvedValue({
+      user: { id: 'user-1', email: 'user@example.com', email_confirmed_at: null },
+    });
+
+    const result = await service.resetPassword({ email: 'user@example.com' });
+    expect(result.ok).toBe(true);
+    expect(passwordResetTokenRepository.createToken).toHaveBeenCalled();
+  });
+});
+
+describe('AuthService.updatePassword', () => {
+  const makeTokenRecord = (overrides: Record<string, unknown> = {}) => ({
+    id: 'token-1',
+    tokenHash: 'hash',
+    salt: 'salt',
+    expiresAt: new Date(Date.now() + 60_000),
+    usedAt: null,
+    userId: 'user-1',
+    email: 'user@example.com',
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('rejects when passwords do not match', async () => {
+    const { service } = createService();
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'different',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: null,
+    });
+    expect(result).toEqual({ ok: false, message: 'كلمة المرور غير متطابقة' });
+  });
+
+  it('rejects when the password fails schema validation', async () => {
+    const { service } = createService();
+    const result = await service.updatePassword({
+      password: 'weak',
+      confirmPassword: 'weak',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: null,
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.message).toContain('كلمة المرور');
+    }
+  });
+
+  it('returns invalid when no valid token record exists', async () => {
+    const { service, passwordResetTokenRepository } = createService();
+    vi.mocked(passwordResetTokenRepository.findLatestValidToken).mockResolvedValue(null);
+
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: null,
+    });
+    expect(result).toEqual({
+      ok: false,
+      message: 'رمز إعادة تعيين كلمة المرور غير صالح',
+    });
+  });
+
+  it('returns expired when the token has passed expiry', async () => {
+    const { service, passwordResetTokenRepository } = createService();
+    vi.mocked(passwordResetTokenRepository.findLatestValidToken).mockResolvedValue(
+      makeTokenRecord({ expiresAt: new Date(Date.now() - 1000) }) as never
+    );
+
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: null,
+    });
+    expect(result).toEqual({
+      ok: false,
+      message: 'انتهت صلاحية رابط إعادة تعيين كلمة المرور',
+    });
+  });
+
+  it('returns already-used when the token has been consumed', async () => {
+    const { service, passwordResetTokenRepository } = createService();
+    vi.mocked(passwordResetTokenRepository.findLatestValidToken).mockResolvedValue(
+      makeTokenRecord({ usedAt: new Date() }) as never
+    );
+
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: null,
+    });
+    expect(result).toEqual({
+      ok: false,
+      message: 'تم استخدام رابط إعادة تعيين كلمة المرور بالفعل',
+    });
+  });
+
+  it('returns invalid when the token does not match the stored hash', async () => {
+    const { service, passwordResetTokenRepository } = createService();
+    vi.mocked(passwordResetTokenRepository.findLatestValidToken).mockResolvedValue(
+      makeTokenRecord() as never
+    );
+
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      token: 'wrong-token',
+      email: 'user@example.com',
+      redirectTo: null,
+    });
+    expect(result).toEqual({
+      ok: false,
+      message: 'رمز إعادة تعيين كلمة المرور غير صالح',
+    });
+    expect(passwordResetTokenRepository.markTokenAsUsed).not.toHaveBeenCalled();
+  });
+
+  it('marks the token as used and updates the password for a valid token', async () => {
+    const { service, passwordResetTokenRepository, gateway } = createService();
+    vi.mocked(passwordResetTokenRepository.findLatestValidToken).mockResolvedValue(
+      makeTokenRecord() as never
+    );
+    vi.mocked(gateway.updateUserPassword).mockResolvedValue({ error: null });
+
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: '/dashboard',
+    });
+
+    expect(result).toEqual({ ok: true, redirectUrl: '/dashboard' });
+    expect(passwordResetTokenRepository.markTokenAsUsed).toHaveBeenCalledWith('token-1');
+    expect(gateway.updateUserPassword).toHaveBeenCalledWith('user-1', 'Password1!');
+  });
+
+  it('returns an error when the gateway fails to update the password', async () => {
+    const { service, passwordResetTokenRepository, gateway } = createService();
+    vi.mocked(passwordResetTokenRepository.findLatestValidToken).mockResolvedValue(
+      makeTokenRecord() as never
+    );
+    vi.mocked(gateway.updateUserPassword).mockResolvedValue({
+      error: { message: 'Update failed' },
+    });
+
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: null,
+    });
+    expect(result).toEqual({ ok: false, message: 'Update failed' });
   });
 });

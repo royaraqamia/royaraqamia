@@ -121,6 +121,8 @@ export async function resetPassword(email: string): Promise<{ message: string }>
 export async function updatePassword(data: {
   password: string;
   confirmPassword: string;
+  token: string;
+  email: string;
   redirectTo: string | null;
 }): Promise<{ ok: true; redirectUrl: string } | { ok: false; message: string }> {
   try {

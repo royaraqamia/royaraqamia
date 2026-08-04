@@ -16,6 +16,10 @@ export interface AuthGateway {
   }>;
   getUser(): Promise<{ user: AuthUser | null }>;
   updateUser(input: { password: string }): Promise<{ error: { message: string } | null }>;
+  updateUserPassword(
+    userId: string,
+    password: string
+  ): Promise<{ error: { message: string } | null }>;
   signOut(): Promise<void>;
   signInWithOAuth(
     provider: 'google',

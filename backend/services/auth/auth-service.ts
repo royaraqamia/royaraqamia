@@ -1,4 +1,9 @@
-import { generateOtp, hashOtp, verifyOtp } from '@/backend/shared/otp/generator';
+import {
+  generateOtp,
+  generateResetToken,
+  hashOtp,
+  verifyOtp,
+} from '@/backend/shared/otp/generator';
 import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
 import { safeRedirect } from '@/backend/shared/safe-redirect';
 import type { PendingLoginStore } from '@/backend/shared/auth/pending-login-store';
@@ -6,6 +11,7 @@ import type { AuthGateway } from '@/backend/clients/auth-gateway';
 import type { OtpRepository } from '@/backend/repositories/otp/otp-repository';
 import type { UserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import type { EmailClient } from '@/backend/clients/email';
+import type { PasswordResetTokenRepository } from '@/backend/repositories/password-reset/password-reset-token-repository';
 import type { RateLimiter } from '@/backend/clients/rate-limiter';
 
 export type SignupResult = { ok: true; redirectUrl: string } | { ok: false; message: string };
@@ -21,11 +27,16 @@ export type VerifyOtpResult =
 
 export type SimpleResult = { ok: true; message?: string } | { ok: false; message: string };
 
+export type UpdatePasswordResult =
+  | { ok: true; redirectUrl: string }
+  | { ok: false; message: string };
+
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
 
 export interface AuthServiceDeps {
   otpRepository: OtpRepository;
   userProfileRepository: UserProfileRepository;
+  passwordResetTokenRepository: PasswordResetTokenRepository;
   emailClient: EmailClient;
   rateLimiter: RateLimiter;
   verifyTurnstile: (token: string) => Promise<boolean>;
@@ -34,12 +45,14 @@ export interface AuthServiceDeps {
   otpResendCooldownSeconds: number;
   otpMaxAttempts: number;
   otpVerifyMaxPerMinute: number;
+  passwordResetTokenTtlMinutes: number;
   siteUrl: string;
 }
 
 export class AuthService {
   private readonly otpRepository: OtpRepository;
   private readonly userProfileRepository: UserProfileRepository;
+  private readonly passwordResetTokenRepository: PasswordResetTokenRepository;
   private readonly emailClient: EmailClient;
   private readonly rateLimiter: RateLimiter;
   private readonly verifyTurnstile: (token: string) => Promise<boolean>;
@@ -48,6 +61,7 @@ export class AuthService {
   private readonly otpResendCooldownSeconds: number;
   private readonly otpMaxAttempts: number;
   private readonly otpVerifyMaxPerMinute: number;
+  private readonly passwordResetTokenTtlMinutes: number;
   private readonly siteUrl: string;
 
   constructor(
@@ -56,6 +70,7 @@ export class AuthService {
   ) {
     this.otpRepository = deps.otpRepository;
     this.userProfileRepository = deps.userProfileRepository;
+    this.passwordResetTokenRepository = deps.passwordResetTokenRepository;
     this.emailClient = deps.emailClient;
     this.rateLimiter = deps.rateLimiter;
     this.verifyTurnstile = deps.verifyTurnstile;
@@ -64,6 +79,7 @@ export class AuthService {
     this.otpResendCooldownSeconds = deps.otpResendCooldownSeconds;
     this.otpMaxAttempts = deps.otpMaxAttempts;
     this.otpVerifyMaxPerMinute = deps.otpVerifyMaxPerMinute;
+    this.passwordResetTokenTtlMinutes = deps.passwordResetTokenTtlMinutes;
     this.siteUrl = deps.siteUrl;
   }
 
@@ -315,7 +331,7 @@ export class AuthService {
     return { ok: true, message: 'تم إعادة إرسال رمز التحقق' };
   }
 
-  async resetPassword(input: { email: string }): Promise<SimpleResult> {
+  async resetPassword(input: { email: string; redirectTo?: string | null }): Promise<SimpleResult> {
     const resetRateOk = await this.rateLimiter.checkRateLimit(
       `reset:${input.email}`,
       3,
@@ -325,38 +341,101 @@ export class AuthService {
       return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
     }
 
-    const { error } = await this.gateway.resetPasswordForEmail(
-      input.email,
-      `${this.siteUrl}/auth/update-password`
-    );
+    const { user } = await this.gateway.getUserByEmail(input.email);
 
-    if (error) {
-      return { ok: false, message: error.message };
+    if (!user) {
+      return {
+        ok: true,
+        message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
+      };
     }
 
-    return { ok: true, message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني' };
+    const token = generateResetToken();
+    const { hash, salt } = hashOtp(token);
+    const expiresAt = new Date(Date.now() + this.passwordResetTokenTtlMinutes * 60 * 1000);
+
+    await this.passwordResetTokenRepository.createToken({
+      email: input.email,
+      userId: user.id,
+      tokenHash: hash,
+      salt,
+      expiresAt,
+    });
+
+    const redirectTo = safeRedirect(input.redirectTo ?? null);
+    const resetUrl =
+      `${this.siteUrl}/auth/update-password` +
+      `?token=${encodeURIComponent(token)}` +
+      `&email=${encodeURIComponent(input.email)}` +
+      `&redirect=${encodeURIComponent(redirectTo)}`;
+
+    try {
+      await this.emailClient.sendPasswordResetEmail(input.email, resetUrl);
+    } catch {
+      // Email delivery failure — token is still created; user can request a new one
+    }
+
+    return {
+      ok: true,
+      message: 'تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني',
+    };
   }
 
   async updatePassword(input: {
     password: string;
     confirmPassword: string;
-  }): Promise<SimpleResult> {
+    token: string;
+    email: string;
+    redirectTo: string | null;
+  }): Promise<UpdatePasswordResult> {
     if (input.password !== input.confirmPassword) {
       return { ok: false, message: 'كلمة المرور غير متطابقة' };
     }
 
     const parsed = UpdatePasswordSchema.safeParse({ password: input.password });
     if (!parsed.success) {
-      return { ok: false, message: parsed.error.issues[0]?.message || 'كلمة المرور غير صحيحة' };
+      return { ok: false, message: parsed.error.issues[0]?.message || 'كلمة المرور غير صالحة' };
     }
 
-    const { error } = await this.gateway.updateUser({ password: input.password });
+    const verifyRateOk = await this.rateLimiter.checkRateLimit(
+      `reset_verify:${input.email}`,
+      10,
+      60 * 1000
+    );
+    if (!verifyRateOk) {
+      return {
+        ok: false,
+        message: 'تم تجاوز عدد محاولات التحقق المسموح بها. يرجى المحاولة لاحقاً',
+      };
+    }
+
+    const record = await this.passwordResetTokenRepository.findLatestValidToken(input.email);
+
+    if (!record) {
+      return { ok: false, message: 'رمز إعادة تعيين كلمة المرور غير صالح' };
+    }
+
+    if (record.expiresAt.getTime() < Date.now()) {
+      return { ok: false, message: 'انتهت صلاحية رابط إعادة تعيين كلمة المرور' };
+    }
+
+    if (record.usedAt) {
+      return { ok: false, message: 'تم استخدام رابط إعادة تعيين كلمة المرور بالفعل' };
+    }
+
+    if (!verifyOtp(input.token, record.tokenHash, record.salt)) {
+      return { ok: false, message: 'رمز إعادة تعيين كلمة المرور غير صالح' };
+    }
+
+    await this.passwordResetTokenRepository.markTokenAsUsed(record.id);
+
+    const { error } = await this.gateway.updateUserPassword(record.userId, input.password);
 
     if (error) {
       return { ok: false, message: error.message };
     }
 
-    return { ok: true };
+    return { ok: true, redirectUrl: safeRedirect(input.redirectTo) };
   }
 
   async logout(): Promise<void> {

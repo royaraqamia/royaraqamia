@@ -12,6 +12,8 @@ import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 
 export default function UpdatePasswordPage() {
   const searchParams = useSearchParams();
+  const token = searchParams.get('token') ?? '';
+  const email = searchParams.get('email') ?? '';
   const redirectTo = searchParams.get('redirect') ?? '/';
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -30,6 +32,8 @@ export default function UpdatePasswordPage() {
       const result = await updatePassword({
         password: formData.get('password') as string,
         confirmPassword: formData.get('confirmPassword') as string,
+        token,
+        email,
         redirectTo: formData.get('redirectTo') as string | null,
       });
       if (result.ok) {
@@ -46,6 +50,8 @@ export default function UpdatePasswordPage() {
     <AuthCard title="كلمة مرور جديدة" description="أدخل كلمة المرور الجديدة التي ترغب في تعيينها">
       <form onSubmit={handleSubmit} className="space-y-5">
         <input type="hidden" name="redirectTo" value={redirectTo} />
+        <input type="hidden" name="token" value={token} />
+        <input type="hidden" name="email" value={email} />
 
         <div className="space-y-5">
           <div className="space-y-2">

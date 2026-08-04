@@ -1,5 +1,9 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'crypto';
 
+export function generateResetToken(): string {
+  return randomBytes(32).toString('base64url');
+}
+
 export function generateOtp(): string {
   const range = 1_000_000;
   const maxUnbiased = Math.floor(0x1000000 / range) * range; // 16,000,000

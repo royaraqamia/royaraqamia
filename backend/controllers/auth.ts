@@ -1,11 +1,11 @@
 import { createServerAuthService } from '@/backend/config/auth';
-import { safeRedirect } from '@/backend/shared/safe-redirect';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import type {
   LoginResult,
   OAuthResult,
   SignupResult,
   SimpleResult,
+  UpdatePasswordResult,
   VerifyOtpResult,
 } from '@/backend/services/auth/auth-service';
 
@@ -78,6 +78,7 @@ export async function resetPassword(body: Record<string, unknown>): Promise<Http
   const authService = await createServerAuthService();
   const result: SimpleResult = await authService.resetPassword({
     email: (body.email ?? '') as string,
+    redirectTo: (body.redirectTo ?? null) as string | null,
   });
 
   if (!result.ok) {
@@ -89,9 +90,12 @@ export async function resetPassword(body: Record<string, unknown>): Promise<Http
 
 export async function updatePassword(body: Record<string, unknown>): Promise<HttpResult> {
   const authService = await createServerAuthService();
-  const result: SimpleResult = await authService.updatePassword({
+  const result: UpdatePasswordResult = await authService.updatePassword({
     password: (body.password ?? '') as string,
     confirmPassword: (body.confirmPassword ?? '') as string,
+    token: (body.token ?? '') as string,
+    email: (body.email ?? '') as string,
+    redirectTo: (body.redirectTo ?? null) as string | null,
   });
 
   if (!result.ok) {
@@ -99,7 +103,7 @@ export async function updatePassword(body: Record<string, unknown>): Promise<Htt
   }
 
   return jsonResult(200, {
-    redirectUrl: safeRedirect((body.redirectTo ?? null) as string | null),
+    redirectUrl: result.redirectUrl,
   });
 }
 
