@@ -8,7 +8,14 @@ import { env } from '@/backend/config/env';
 function isSafeRedirect(path: string): boolean {
   if (!path) return false;
   try {
-    const decoded = decodeURIComponent(path);
+    // Decode repeatedly to neutralize double/triple encoding
+    let decoded = path;
+    let prev: string;
+    do {
+      prev = decoded;
+      decoded = decodeURIComponent(decoded);
+    } while (decoded !== prev);
+
     if (!decoded.startsWith('/')) return false;
     if (decoded.startsWith('//') || decoded.startsWith('\\\\')) return false;
     if (/^(javascript|data|vbscript):/i.test(decoded)) return false;
