@@ -31,11 +31,11 @@ export interface CertificateVerifierDeps {
 export class CertificateVerifier {
   constructor(private readonly deps: CertificateVerifierDeps) {}
 
-  getCertificateByCode = async (code: string): Promise<Certificate | null> => {
+  async getCertificateByCode(code: string): Promise<Certificate | null> {
     return this.deps.repository.getByCode(code.trim().toUpperCase());
-  };
+  }
 
-  verifyCertificateByCode = async (code: string, ip: string): Promise<VerifyResult> => {
+  async verifyCertificateByCode(code: string, ip: string): Promise<VerifyResult> {
     try {
       const sanitized = code.trim().toUpperCase();
 
@@ -107,7 +107,7 @@ export class CertificateVerifier {
         error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
       };
     }
-  };
+  }
 }
 
 export function createCertificateVerifier(deps: CertificateVerifierDeps): CertificateVerifier {

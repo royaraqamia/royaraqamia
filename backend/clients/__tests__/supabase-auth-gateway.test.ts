@@ -223,7 +223,7 @@ describe('createSupabaseAuthGateway', () => {
     expect(admin.auth.admin.updateUserById).toHaveBeenCalledWith('u-1', { email_confirm: true });
   });
 
-  it('listUsers maps the returned users', async () => {
+  it('getUserByEmail maps the found user', async () => {
     (admin.auth.admin.listUsers as ReturnType<typeof vi.fn>).mockResolvedValue({
       data: { users: [makeUser()] },
       error: null,
@@ -232,13 +232,25 @@ describe('createSupabaseAuthGateway', () => {
       supabase as unknown as SupabaseClient<Database>,
       admin as unknown as SupabaseClient<Database>
     );
-    const result = await gateway.listUsers();
-    expect(result.users).toHaveLength(1);
-    expect(result.users[0]).toEqual({
+    const result = await gateway.getUserByEmail('user@example.com');
+    expect(result.user).toEqual({
       id: 'u-1',
       email: 'user@example.com',
       name: 'مستخدم',
       email_confirmed_at: '2026-01-01T00:00:00.000Z',
     });
+  });
+
+  it('getUserByEmail returns null when no user matches', async () => {
+    (admin.auth.admin.listUsers as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { users: [] },
+      error: null,
+    });
+    const gateway = createSupabaseAuthGateway(
+      supabase as unknown as SupabaseClient<Database>,
+      admin as unknown as SupabaseClient<Database>
+    );
+    const result = await gateway.getUserByEmail('nobody@example.com');
+    expect(result.user).toBeNull();
   });
 });
