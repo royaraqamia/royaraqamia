@@ -31,6 +31,7 @@ export interface AuthServiceDeps {
   otpTtlMinutes: number;
   otpResendCooldownSeconds: number;
   otpMaxAttempts: number;
+  otpVerifyMaxPerMinute: number;
   siteUrl: string;
 }
 
@@ -43,6 +44,7 @@ export class AuthService {
   private readonly otpTtlMinutes: number;
   private readonly otpResendCooldownSeconds: number;
   private readonly otpMaxAttempts: number;
+  private readonly otpVerifyMaxPerMinute: number;
   private readonly siteUrl: string;
 
   constructor(
@@ -57,6 +59,7 @@ export class AuthService {
     this.otpTtlMinutes = deps.otpTtlMinutes;
     this.otpResendCooldownSeconds = deps.otpResendCooldownSeconds;
     this.otpMaxAttempts = deps.otpMaxAttempts;
+    this.otpVerifyMaxPerMinute = deps.otpVerifyMaxPerMinute;
     this.siteUrl = deps.siteUrl;
   }
 
@@ -203,6 +206,15 @@ export class AuthService {
     otp: string;
     redirectTo: string | null;
   }): Promise<VerifyOtpResult> {
+    const verifyRateOk = await this.rateLimiter.checkRateLimit(
+      `verify:${input.email}`,
+      this.otpVerifyMaxPerMinute,
+      60 * 1000
+    );
+    if (!verifyRateOk) {
+      return { ok: false, message: 'تم تجاوز عدد محاولات التحقق المسموح بها. يرجى المحاولة لاحقاً' };
+    }
+
     const pendingPassword = await this.pendingLoginStore.readPassword();
     const record = await this.otpRepository.findLatestPendingOtp(input.email);
 
@@ -270,6 +282,11 @@ export class AuthService {
     );
     if (!resendRateOk) {
       return { ok: false, message: 'يرجى الانتظار قبل إعادة الإرسال' };
+    }
+
+    const existing = await this.otpRepository.findLatestPendingOtp(input.email);
+    if (!existing) {
+      return { ok: false, message: 'لا يوجد رمز تحقق نشط لهذا البريد الإلكتروني' };
     }
 
     const otp = generateOtp();

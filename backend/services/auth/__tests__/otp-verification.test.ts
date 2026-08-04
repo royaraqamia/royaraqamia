@@ -21,7 +21,9 @@ function makeOtpRecord(overrides: Partial<OtpRecordData> = {}): OtpRecordData {
   };
 }
 
-function createService(overrides: { record?: OtpRecordData | null } = {}) {
+function createService(
+  overrides: { record?: OtpRecordData | null; rateLimitAllowed?: boolean } = {}
+) {
   const findLatestPendingOtp = vi.fn();
   if (overrides.record === undefined) {
     findLatestPendingOtp.mockResolvedValue(makeOtpRecord());
@@ -33,6 +35,10 @@ function createService(overrides: { record?: OtpRecordData | null } = {}) {
     findLatestPendingOtp,
     incrementOtpAttempts: vi.fn().mockResolvedValue(undefined),
     markOtpVerified: vi.fn().mockResolvedValue(undefined),
+  };
+  const rateLimiter = {
+    checkRateLimit: vi.fn().mockResolvedValue(overrides.rateLimitAllowed ?? true),
+    getRateLimitRemaining: vi.fn().mockResolvedValue(5),
   };
   const gateway = {
     getUser: vi.fn().mockResolvedValue({ user: null }),
@@ -52,19 +58,17 @@ function createService(overrides: { record?: OtpRecordData | null } = {}) {
       sendOtpEmail: vi.fn().mockResolvedValue(undefined),
       sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
     },
-    rateLimiter: {
-      checkRateLimit: vi.fn().mockResolvedValue(true),
-      getRateLimitRemaining: vi.fn().mockResolvedValue(5),
-    },
+    rateLimiter,
     verifyTurnstile: vi.fn().mockResolvedValue(true),
     pendingLoginStore,
     otpTtlMinutes: 5,
     otpResendCooldownSeconds: 60,
     otpMaxAttempts: 5,
+    otpVerifyMaxPerMinute: 10,
     siteUrl: 'https://royaraqamia.com',
   });
 
-  return { service, otpRepository, pendingLoginStore, gateway };
+  return { service, otpRepository, rateLimiter, pendingLoginStore, gateway };
 }
 
 const verifyInput = {
@@ -84,6 +88,19 @@ describe('AuthService.verifyOtp', () => {
       ok: false,
       message: 'لم يتم العثور على رمز التحقق',
     });
+  });
+
+  it('rejects verification when the per-email rate limit is exceeded', async () => {
+    const { service, rateLimiter } = createService({ rateLimitAllowed: false });
+    await expect(service.verifyOtp(verifyInput)).resolves.toEqual({
+      ok: false,
+      message: 'تم تجاوز عدد محاولات التحقق المسموح بها. يرجى المحاولة لاحقاً',
+    });
+    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith(
+      'verify:user@example.com',
+      10,
+      60 * 1000
+    );
   });
 
   it('returns expired when the record is past expiry', async () => {
@@ -185,5 +202,32 @@ describe('AuthService.login', () => {
     });
     expect(result).toEqual({ ok: true, redirectUrl: '/' });
     expect(pendingLoginStore.setPassword).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService.resendOtp', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('rejects resend when there is no pending OTP record for the email', async () => {
+    const { service } = createService({ record: null });
+    await expect(service.resendOtp({ email: 'user@example.com' })).resolves.toEqual({
+      ok: false,
+      message: 'لا يوجد رمز تحقق نشط لهذا البريد الإلكتروني',
+    });
+  });
+
+  it('creates and sends a new OTP when a pending record exists', async () => {
+    const { service, otpRepository } = createService();
+    const result = await service.resendOtp({ email: 'user@example.com' });
+    expect(result).toEqual({ ok: true, message: 'تم إعادة إرسال رمز التحقق' });
+    expect(otpRepository.createOtpRecord).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      otpHash: 'hash',
+      salt: 'salt',
+      expiresAt: expect.any(Date),
+      maxAttempts: 5,
+    });
   });
 });

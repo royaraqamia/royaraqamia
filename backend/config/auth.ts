@@ -35,6 +35,7 @@ export function createAuthService(
     otpTtlMinutes: OTP_CONFIG.TTL_MINUTES,
     otpResendCooldownSeconds: OTP_CONFIG.RESEND_COOLDOWN_SECONDS,
     otpMaxAttempts: OTP_CONFIG.MAX_ATTEMPTS,
+    otpVerifyMaxPerMinute: OTP_CONFIG.VERIFY_MAX_PER_MINUTE,
     siteUrl: env.siteUrl,
     ...deps,
   });
