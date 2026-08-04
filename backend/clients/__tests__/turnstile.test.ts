@@ -7,11 +7,6 @@ beforeEach(() => {
 });
 
 describe('verifyTurnstileToken', () => {
-  it('returns true when secret key is missing (graceful degradation)', async () => {
-    const result = await verifyTurnstileToken('any-token', undefined);
-    expect(result).toBe(true);
-  });
-
   it('returns true when Cloudflare responds with success', async () => {
     vi.stubGlobal(
       'fetch',

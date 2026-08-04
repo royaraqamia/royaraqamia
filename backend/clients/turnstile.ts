@@ -1,9 +1,4 @@
-export async function verifyTurnstileToken(
-  token: string,
-  secret: string | undefined
-): Promise<boolean> {
-  if (!secret) return true;
-
+export async function verifyTurnstileToken(token: string, secret: string): Promise<boolean> {
   try {
     const formData = new URLSearchParams();
     formData.append('secret', secret);

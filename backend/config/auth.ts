@@ -6,7 +6,7 @@ import { OTP_CONFIG } from '@/backend/config/otp';
 import { SupabaseOtpRepository } from '@/backend/repositories/otp/supabase-otp-repository';
 import { sendOtpEmail, sendPasswordResetEmail } from '@/backend/config/email';
 import { checkRateLimit, getRateLimitRemaining } from '@/backend/config/rate-limiter';
-import { verifyTurnstileToken } from '@/backend/clients/turnstile';
+import { createTurnstileVerifier } from '@/backend/config/turnstile';
 import { env } from '@/backend/config/env';
 import { createCookiePendingLoginStore } from '@/backend/transport/cookies';
 
@@ -30,7 +30,7 @@ export function createAuthService(
       checkRateLimit,
       getRateLimitRemaining,
     },
-    verifyTurnstile: (token: string) => verifyTurnstileToken(token, env.turnstileSecret),
+    verifyTurnstile: createTurnstileVerifier(env.turnstileSecret),
     pendingLoginStore: createCookiePendingLoginStore(),
     otpTtlMinutes: OTP_CONFIG.TTL_MINUTES,
     otpResendCooldownSeconds: OTP_CONFIG.RESEND_COOLDOWN_SECONDS,
