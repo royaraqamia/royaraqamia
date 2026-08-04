@@ -3,7 +3,7 @@ import type {
   PostAuthor,
   PublishedPostsResult,
 } from '@/backend/repositories/blogpress/posts-repository';
-import type { Post } from '@/shared/contracts/blogpress';
+import type { Post, PostCategory } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 import { AdminValidator } from '@/shared/admin-validator';
 
@@ -16,9 +16,10 @@ export class BlogpressPostsService {
   async getPublishedPosts(
     page: number,
     query: string,
-    pageSize: number
+    pageSize: number,
+    categorySlug?: string
   ): Promise<PublishedPostsResult> {
-    return this.repository.getPublishedPosts(page, query, pageSize);
+    return this.repository.getPublishedPosts(page, query, pageSize, categorySlug);
   }
 
   async getPublishedPostBySlug(slug: string): Promise<Post | null> {
@@ -33,8 +34,20 @@ export class BlogpressPostsService {
     return this.repository.getRelatedPosts(slug);
   }
 
-  async listPostsByAuthor(authorId: string): Promise<Post[]> {
-    return this.repository.listPostsByAuthor(authorId);
+  async getPublishedCategories(): Promise<PostCategory[]> {
+    return this.repository.getPublishedCategories();
+  }
+
+  async getPublishedPostCategories(postId: string): Promise<PostCategory[]> {
+    return this.repository.getPublishedPostCategories(postId);
+  }
+
+  async incrementPostViewCount(postId: string): Promise<void> {
+    return this.repository.incrementPostViewCount(postId);
+  }
+
+  async listPostsByAuthor(authorId: string, categorySlug?: string): Promise<Post[]> {
+    return this.repository.listPostsByAuthor(authorId, categorySlug);
   }
 
   async getPostForUser(id: string, userId: string): Promise<Post | null> {
@@ -78,5 +91,29 @@ export class BlogpressPostsService {
 
   async deletePost(postId: string, authorId: string): Promise<{ slug: string }> {
     return this.repository.deletePost(postId, authorId);
+  }
+
+  async listCategoriesByAuthor(authorId: string): Promise<PostCategory[]> {
+    return this.repository.listCategoriesByAuthor(authorId);
+  }
+
+  async createCategory(authorId: string, name: string, slug: string): Promise<PostCategory> {
+    return this.repository.createCategory(authorId, name, slug);
+  }
+
+  async deleteCategory(categoryId: string, authorId: string): Promise<void> {
+    return this.repository.deleteCategory(categoryId, authorId);
+  }
+
+  async getPostCategories(postId: string): Promise<PostCategory[]> {
+    return this.repository.getPostCategories(postId);
+  }
+
+  async setPostCategories(
+    postId: string,
+    authorId: string,
+    categoryIds: string[]
+  ): Promise<void> {
+    return this.repository.setPostCategories(postId, authorId, categoryIds);
   }
 }

@@ -14,6 +14,8 @@ const postFixture = {
   meta_title: null,
   meta_desc: null,
   published_at: '2026-08-01T00:00:00.000Z',
+  publish_at: null,
+  view_count: 3,
   blog_visible: true,
   created_at: '2026-08-01T00:00:00.000Z',
   updated_at: '2026-08-01T00:00:00.000Z',
@@ -25,6 +27,9 @@ function makeRepo(overrides: Partial<IPostsRepository> = {}) {
     getPublishedPostBySlug: vi.fn(),
     getPostAuthor: vi.fn(),
     getRelatedPosts: vi.fn(),
+    getPublishedCategories: vi.fn(),
+    getPublishedPostCategories: vi.fn(),
+    incrementPostViewCount: vi.fn(),
     listPostsByAuthor: vi.fn(),
     getPostForUser: vi.fn(),
     getPostTitleById: vi.fn(),
@@ -34,6 +39,11 @@ function makeRepo(overrides: Partial<IPostsRepository> = {}) {
     publishPost: vi.fn(),
     unpublishPost: vi.fn(),
     deletePost: vi.fn(),
+    listCategoriesByAuthor: vi.fn(),
+    createCategory: vi.fn(),
+    deleteCategory: vi.fn(),
+    getPostCategories: vi.fn(),
+    setPostCategories: vi.fn(),
     ...overrides,
   };
   return { repository, service: new BlogpressPostsService(repository, ['admin@example.com']) };
@@ -52,7 +62,7 @@ describe('BlogpressPostsService (thin delegation)', () => {
       posts: [postFixture],
       totalPages: 1,
     });
-    expect(repository.getPublishedPosts).toHaveBeenCalledWith(1, 'query', 10);
+    expect(repository.getPublishedPosts).toHaveBeenCalledWith(1, 'query', 10, undefined);
   });
 
   it('delegates getPublishedPostBySlug and returns null for missing', async () => {
@@ -84,7 +94,51 @@ describe('BlogpressPostsService (thin delegation)', () => {
     const { repository, service } = makeRepo();
     (repository.listPostsByAuthor as ReturnType<typeof vi.fn>).mockResolvedValue([postFixture]);
     await expect(service.listPostsByAuthor('u-1')).resolves.toEqual([postFixture]);
-    expect(repository.listPostsByAuthor).toHaveBeenCalledWith('u-1');
+    expect(repository.listPostsByAuthor).toHaveBeenCalledWith('u-1', undefined);
+  });
+
+  it('delegates listPostsByAuthor with a category filter', async () => {
+    const { repository, service } = makeRepo();
+    (repository.listPostsByAuthor as ReturnType<typeof vi.fn>).mockResolvedValue([postFixture]);
+    await service.listPostsByAuthor('u-1', 'tech');
+    expect(repository.listPostsByAuthor).toHaveBeenCalledWith('u-1', 'tech');
+  });
+
+  it('delegates getPublishedPosts with a category filter', async () => {
+    const { repository, service } = makeRepo();
+    (repository.getPublishedPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      posts: [postFixture],
+      totalPages: 1,
+    });
+    await service.getPublishedPosts(1, '', 10, 'tech');
+    expect(repository.getPublishedPosts).toHaveBeenCalledWith(1, '', 10, 'tech');
+  });
+
+  it('delegates category methods', async () => {
+    const { repository, service } = makeRepo();
+    const category = { id: 'c-1', name: 'تقنية', slug: 'tech' };
+    (repository.getPublishedCategories as ReturnType<typeof vi.fn>).mockResolvedValue([category]);
+    (repository.getPublishedPostCategories as ReturnType<typeof vi.fn>).mockResolvedValue([
+      category,
+    ]);
+    (repository.listCategoriesByAuthor as ReturnType<typeof vi.fn>).mockResolvedValue([category]);
+    (repository.createCategory as ReturnType<typeof vi.fn>).mockResolvedValue(category);
+    (repository.getPostCategories as ReturnType<typeof vi.fn>).mockResolvedValue([category]);
+
+    await expect(service.getPublishedCategories()).resolves.toEqual([category]);
+    await expect(service.getPublishedPostCategories('p-1')).resolves.toEqual([category]);
+    await expect(service.listCategoriesByAuthor('u-1')).resolves.toEqual([category]);
+    await expect(service.createCategory('u-1', 'تقنية', 'tech')).resolves.toEqual(category);
+    expect(repository.createCategory).toHaveBeenCalledWith('u-1', 'تقنية', 'tech');
+
+    await service.deleteCategory('c-1', 'u-1');
+    expect(repository.deleteCategory).toHaveBeenCalledWith('c-1', 'u-1');
+
+    await service.setPostCategories('p-1', 'u-1', ['c-1']);
+    expect(repository.setPostCategories).toHaveBeenCalledWith('p-1', 'u-1', ['c-1']);
+
+    await service.incrementPostViewCount('p-1');
+    expect(repository.incrementPostViewCount).toHaveBeenCalledWith('p-1');
   });
 
   it('delegates getPostForUser', async () => {

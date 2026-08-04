@@ -3,12 +3,15 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createBlogpressPostsService } from '@/backend/config/blogpress';
-import type { Post } from '@/shared/contracts/blogpress';
+import type { Post, PostCategory } from '@/shared/contracts/blogpress';
 
-export async function loadBlogpressDashboard(userId: string): Promise<Post[]> {
+export async function loadBlogpressDashboard(
+  userId: string,
+  categorySlug?: string
+): Promise<Post[]> {
   const cookieStore = await cookies();
   const supabase = await createServerSupabaseClient(cookieStore);
-  return createBlogpressPostsService(supabase).listPostsByAuthor(userId);
+  return createBlogpressPostsService(supabase).listPostsByAuthor(userId, categorySlug);
 }
 
 export async function loadEditorPost(id: string, userId: string): Promise<Post | null> {
@@ -21,4 +24,42 @@ export async function loadEditorPostTitle(id: string): Promise<string | null> {
   const cookieStore = await cookies();
   const supabase = await createServerSupabaseClient(cookieStore);
   return createBlogpressPostsService(supabase).getPostTitleById(id);
+}
+
+export async function loadBlogCategories(authorId: string): Promise<PostCategory[]> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).listCategoriesByAuthor(authorId);
+}
+
+export async function loadPostCategories(postId: string): Promise<PostCategory[]> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).getPostCategories(postId);
+}
+
+export async function createBlogCategory(
+  authorId: string,
+  name: string,
+  slug: string
+): Promise<PostCategory> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).createCategory(authorId, name, slug);
+}
+
+export async function deleteBlogCategory(categoryId: string, authorId: string): Promise<void> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).deleteCategory(categoryId, authorId);
+}
+
+export async function setPostCategories(
+  postId: string,
+  authorId: string,
+  categoryIds: string[]
+): Promise<void> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).setPostCategories(postId, authorId, categoryIds);
 }

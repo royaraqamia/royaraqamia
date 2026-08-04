@@ -10,16 +10,40 @@ import type {
   PublishedPostsResult,
   PostAuthor,
 } from '@/backend/repositories/blogpress/posts-repository';
-import type { Post } from '@/shared/contracts/blogpress';
+import type { Post, PostCategory } from '@/shared/contracts/blogpress';
 
 export async function loadBlogIndex(
   page: number,
   query: string,
-  pageSize: number
+  pageSize: number,
+  categorySlug?: string
 ): Promise<PublishedPostsResult> {
   const cookieStore = await cookies();
   const supabase = await createServerSupabaseClient(cookieStore);
-  return createBlogpressPostsService(supabase).getPublishedPosts(page, query, pageSize);
+  return createBlogpressPostsService(supabase).getPublishedPosts(
+    page,
+    query,
+    pageSize,
+    categorySlug
+  );
+}
+
+export async function loadPublishedCategories(): Promise<PostCategory[]> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).getPublishedCategories();
+}
+
+export async function loadPublishedPostCategories(postId: string): Promise<PostCategory[]> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).getPublishedPostCategories(postId);
+}
+
+export async function loadIncrementPostViewCount(postId: string): Promise<void> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).incrementPostViewCount(postId);
 }
 
 export async function loadPublishedPostBySlug(slug: string): Promise<Post | null> {

@@ -10,6 +10,8 @@ export const PostSchema = z.object({
   cover_image: z.string().optional(),
   meta_title: z.string().max(70).optional(),
   meta_desc: z.string().max(160).optional(),
+  status: z.enum(['draft', 'published', 'scheduled']).optional(),
+  publish_at: z.string().nullable().optional(),
 });
 
 export type PostInput = z.infer<typeof PostSchema>;

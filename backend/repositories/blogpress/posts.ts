@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
-import type { Post } from '@/shared/contracts/blogpress';
+import type { Post, PostCategory } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 import type {
   IPostsRepository,
@@ -8,28 +8,76 @@ import type {
   PublishedPostsResult,
 } from '@/backend/repositories/blogpress/posts-repository';
 
-export function createPostsRepository(supabase: SupabaseClient<Database>): IPostsRepository {
+const PUBLISHED_POSTS_FILTER = 'or(status.eq.published,and(status.eq.scheduled,publish_at.lte.now))';
+
+type Client = SupabaseClient<Database>;
+
+export function createPostsRepository(supabase: Client): IPostsRepository {
+  async function resolveCategoryIdBySlug(slug: string): Promise<string | null> {
+    const { data } = await supabase
+      .from('blog_categories')
+      .select('id')
+      .eq('slug', slug)
+      .maybeSingle();
+    return data?.id ?? null;
+  }
+
+  async function postIdsForCategory(categoryId: string): Promise<string[]> {
+    const { data } = await supabase
+      .from('post_categories')
+      .select('post_id')
+      .eq('category_id', categoryId);
+    return (data ?? []).map((row) => row.post_id);
+  }
+
+  function mapCategoryRows(rows: Array<{ blog_categories: PostCategory | null }>): PostCategory[] {
+    const seen = new Set<string>();
+    const categories: PostCategory[] = [];
+    for (const row of rows) {
+      const category = row.blog_categories;
+      if (category && !seen.has(category.id)) {
+        seen.add(category.id);
+        categories.push(category);
+      }
+    }
+    return categories;
+  }
+
   return {
     async getPublishedPosts(
       page: number,
       query: string,
-      pageSize: number
+      pageSize: number,
+      categorySlug?: string
     ): Promise<PublishedPostsResult> {
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
+      let postIds: string[] | null = null;
+      if (categorySlug) {
+        const categoryId = await resolveCategoryIdBySlug(categorySlug);
+        if (!categoryId) {
+          return { posts: [], totalPages: 0 };
+        }
+        postIds = await postIdsForCategory(categoryId);
+      }
+
       let queryBuilder = supabase
         .from('posts')
         .select('*', { count: 'exact' })
-        .eq('status', 'published')
+        .or(PUBLISHED_POSTS_FILTER)
         .eq('blog_visible', true);
+
+      if (postIds) {
+        queryBuilder = queryBuilder.in('id', postIds);
+      }
 
       if (query) {
         queryBuilder = queryBuilder.or(`title.ilike.%${query}%,meta_desc.ilike.%${query}%`);
       }
 
       const { data: posts, count } = await queryBuilder
-        .order('published_at', { ascending: false })
+        .order('published_at', { ascending: false, nullsFirst: true })
         .range(from, to);
 
       return {
@@ -43,7 +91,8 @@ export function createPostsRepository(supabase: SupabaseClient<Database>): IPost
         .from('posts')
         .select('*')
         .eq('slug', slug)
-        .eq('status', 'published')
+        .or(PUBLISHED_POSTS_FILTER)
+        .eq('blog_visible', true)
         .single();
       return (data as Post) ?? null;
     },
@@ -61,20 +110,54 @@ export function createPostsRepository(supabase: SupabaseClient<Database>): IPost
       const { data } = await supabase
         .from('posts')
         .select('id, title, slug, cover_image, published_at, content')
-        .eq('status', 'published')
+        .or(PUBLISHED_POSTS_FILTER)
         .eq('blog_visible', true)
         .neq('slug', slug)
-        .order('published_at', { ascending: false })
+        .order('published_at', { ascending: false, nullsFirst: true })
         .limit(3);
       return (data as Post[]) ?? [];
     },
 
-    async listPostsByAuthor(authorId: string): Promise<Post[]> {
+    async getPublishedCategories(): Promise<PostCategory[]> {
       const { data } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('author_id', authorId)
-        .order('updated_at', { ascending: false });
+        .from('post_categories')
+        .select('blog_categories(id, name, slug)');
+      return mapCategoryRows(data ?? []);
+    },
+
+    async getPublishedPostCategories(postId: string): Promise<PostCategory[]> {
+      const { data } = await supabase
+        .from('post_categories')
+        .select('blog_categories(id, name, slug)')
+        .eq('post_id', postId);
+      return mapCategoryRows(data ?? []);
+    },
+
+    async incrementPostViewCount(postId: string): Promise<void> {
+      await supabase.rpc('increment_post_view_count', { p_post_id: postId });
+    },
+
+    async listPostsByAuthor(authorId: string, categorySlug?: string): Promise<Post[]> {
+      let queryBuilder = supabase.from('posts').select('*').eq('author_id', authorId);
+
+      if (categorySlug) {
+        const { data: category } = await supabase
+          .from('blog_categories')
+          .select('id')
+          .eq('user_id', authorId)
+          .eq('slug', categorySlug)
+          .maybeSingle();
+        if (!category) {
+          return [];
+        }
+        const postIds = await postIdsForCategory(category.id);
+        if (postIds.length === 0) {
+          return [];
+        }
+        queryBuilder = queryBuilder.in('id', postIds);
+      }
+
+      const { data } = await queryBuilder.order('updated_at', { ascending: false });
       return (data as Post[]) ?? [];
     },
 
@@ -201,6 +284,59 @@ export function createPostsRepository(supabase: SupabaseClient<Database>): IPost
       if (error) throw new Error('فشل حذف المقال');
 
       return { slug: data.slug };
+    },
+
+    async listCategoriesByAuthor(authorId: string): Promise<PostCategory[]> {
+      const { data } = await supabase
+        .from('blog_categories')
+        .select('id, name, slug')
+        .eq('user_id', authorId)
+        .order('created_at', { ascending: true });
+      return (data as PostCategory[]) ?? [];
+    },
+
+    async createCategory(authorId: string, name: string, slug: string): Promise<PostCategory> {
+      const { data, error } = await supabase
+        .from('blog_categories')
+        .insert({ user_id: authorId, name, slug })
+        .select('id, name, slug')
+        .single();
+
+      if (error) throw new Error('فشل إنشاء التصنيف');
+
+      return data as PostCategory;
+    },
+
+    async deleteCategory(categoryId: string, authorId: string): Promise<void> {
+      const { error } = await supabase
+        .from('blog_categories')
+        .delete()
+        .eq('id', categoryId)
+        .eq('user_id', authorId);
+
+      if (error) throw new Error('فشل حذف التصنيف');
+    },
+
+    async getPostCategories(postId: string): Promise<PostCategory[]> {
+      const { data } = await supabase
+        .from('post_categories')
+        .select('blog_categories(id, name, slug)')
+        .eq('post_id', postId);
+      return mapCategoryRows(data ?? []);
+    },
+
+    async setPostCategories(
+      postId: string,
+      _authorId: string,
+      categoryIds: string[]
+    ): Promise<void> {
+      await supabase.from('post_categories').delete().eq('post_id', postId);
+
+      if (categoryIds.length === 0) return;
+
+      const rows = categoryIds.map((category_id) => ({ post_id: postId, category_id }));
+      const { error } = await supabase.from('post_categories').insert(rows);
+      if (error) throw new Error('فشل تحديث تصنيفات المقال');
     },
   };
 }

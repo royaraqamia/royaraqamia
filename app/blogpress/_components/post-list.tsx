@@ -52,7 +52,8 @@ interface PostListProps {
 
 const filters: { label: string; value: PostStatus | 'all' }[] = [
   { label: 'الكل', value: 'all' },
-  { label: 'مسودَّة', value: 'draft' },
+  { label: 'مسودّة', value: 'draft' },
+  { label: 'مجدولة', value: 'scheduled' },
   { label: 'منشور', value: 'published' },
 ];
 
@@ -93,6 +94,7 @@ export function PostList({ posts }: PostListProps) {
   const countByStatus = useMemo(
     () => ({
       draft: posts.filter((p) => p.status === 'draft').length,
+      scheduled: posts.filter((p) => p.status === 'scheduled').length,
       published: posts.filter((p) => p.status === 'published').length,
     }),
     [posts]
