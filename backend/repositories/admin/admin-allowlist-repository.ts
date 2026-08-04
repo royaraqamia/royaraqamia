@@ -17,8 +17,7 @@ export function createAdminAllowlistRepository(
         .maybeSingle();
 
       const current = (data?.admin_emails ?? []) as string[];
-      const isSame =
-        current.length === emails.length && emails.every((e) => current.includes(e));
+      const isSame = current.length === emails.length && emails.every((e) => current.includes(e));
       if (isSame) return;
 
       await supabase.from('app_settings').upsert({ id: true, admin_emails: emails });

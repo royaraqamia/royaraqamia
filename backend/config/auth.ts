@@ -12,9 +12,12 @@ import { env } from '@/backend/config/env';
 import { createCookiePendingLoginStore } from '@/backend/transport/cookies';
 
 export async function createServerAuthService(): Promise<AuthService> {
-  return createAuthService(createSupabaseAuthGateway(await createServerSupabaseClient(), getAdminSupabase()), {
-    otpRepository: new SupabaseOtpRepository(getAdminSupabase()),
-  });
+  return createAuthService(
+    createSupabaseAuthGateway(await createServerSupabaseClient(), getAdminSupabase()),
+    {
+      otpRepository: new SupabaseOtpRepository(getAdminSupabase()),
+    }
+  );
 }
 
 export function createAuthService(

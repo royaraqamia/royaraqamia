@@ -4,15 +4,15 @@ import type { Database } from '@/backend/models/database.types';
 import { createAdminAllowlistRepository } from '@/backend/repositories/admin/admin-allowlist-repository';
 
 function makeClient(adminEmails: string[] | null = null) {
-  const maybeSingle = vi.fn().mockResolvedValue({ data: adminEmails ? { admin_emails: adminEmails } : null });
+  const maybeSingle = vi
+    .fn()
+    .mockResolvedValue({ data: adminEmails ? { admin_emails: adminEmails } : null });
   const select = vi.fn().mockReturnValue({ eq: vi.fn().mockReturnValue({ maybeSingle }) });
   const upsert = vi.fn().mockResolvedValue(undefined);
   const rpc = vi.fn().mockResolvedValue(undefined);
   const from = vi
     .fn()
-    .mockImplementation((table: string) =>
-      table === 'app_settings' ? { select, upsert } : {}
-    );
+    .mockImplementation((table: string) => (table === 'app_settings' ? { select, upsert } : {}));
   return {
     client: { from, rpc } as unknown as SupabaseClient<Database>,
     select,

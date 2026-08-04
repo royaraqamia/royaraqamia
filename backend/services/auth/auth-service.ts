@@ -216,7 +216,10 @@ export class AuthService {
       60 * 1000
     );
     if (!verifyRateOk) {
-      return { ok: false, message: 'تم تجاوز عدد محاولات التحقق المسموح بها. يرجى المحاولة لاحقاً' };
+      return {
+        ok: false,
+        message: 'تم تجاوز عدد محاولات التحقق المسموح بها. يرجى المحاولة لاحقاً',
+      };
     }
 
     const pendingPassword = await this.pendingLoginStore.readPassword();

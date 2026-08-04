@@ -71,10 +71,14 @@ describe('ResendEmailClient', () => {
 
   it('uses the configured sender in the from field', async () => {
     mockSend.mockResolvedValue({ id: 'email-3' });
-    const client = new ResendEmailClient(makeResend(), {
-      fromName: 'Custom Sender',
-      fromEmail: 'custom@example.com',
-    }, makeValidity());
+    const client = new ResendEmailClient(
+      makeResend(),
+      {
+        fromName: 'Custom Sender',
+        fromEmail: 'custom@example.com',
+      },
+      makeValidity()
+    );
 
     await client.sendOtpEmail('a@b.com', '000000');
 
