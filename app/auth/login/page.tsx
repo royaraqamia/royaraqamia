@@ -16,7 +16,10 @@ import { Turnstile } from '@/frontend/ui/auth/Turnstile';
 export default function LoginPage() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
-  const [message, setMessage] = useState<string | null>(null);
+  const sessionExpired = searchParams.get('session_expired') === '1';
+  const [message, setMessage] = useState<string | null>(
+    sessionExpired ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' : null
+  );
   const [isPending, setIsPending] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [googleLoading, setGoogleLoading] = useState(false);

@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   getSession,
   subscribeToSessionChanges,
@@ -28,27 +28,39 @@ export function useSession() {
   return useContext(SessionContext);
 }
 
+const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/verify-otp', '/auth/reset-password', '/auth/update-password'];
+
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const pathname = usePathname();
+  const router = useRouter();
+  const prevSessionRef = useRef<Session | null>(null);
 
   useEffect(() => {
     getSession().then((session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      prevSessionRef.current = session;
     });
 
     const unsubscribe = subscribeToSessionChanges((session) => {
+      const prevSession = prevSessionRef.current;
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
+      prevSessionRef.current = session;
+
+      // Session expired (had a session, now null) — not on an auth page
+      if (prevSession && !session && !AUTH_PATHS.some((p) => pathname.startsWith(p))) {
+        router.push('/auth/login?session_expired=1');
+      }
     });
 
     return unsubscribe;
-  }, []);
+  }, [pathname, router]);
 
   const prevPathname = useRef(pathname);
   useEffect(() => {
