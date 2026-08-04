@@ -26,5 +26,5 @@ export interface AuthGateway {
     redirectTo: string
   ): Promise<{ error: { message: string } | null }>;
   confirmUserEmail(userId: string): Promise<void>;
-  listUsers(): Promise<{ users: AuthUser[]; error: { message: string } | null }>;
+  getUserByEmail(email: string): Promise<{ user: AuthUser | null }>;
 }

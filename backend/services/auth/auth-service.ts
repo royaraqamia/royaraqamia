@@ -252,24 +252,23 @@ export class AuthService {
       return { ok: true, redirectUrl: safeRedirect(input.redirectTo), consumedPendingLogin: false };
     }
 
-    const { users, error: listError } = await this.gateway.listUsers();
+    // Targeted lookup by email (login flow — no active session yet)
+    const { user: targetUser } = await this.gateway.getUserByEmail(input.email);
     let consumedPendingLogin = false;
-    if (!listError && users) {
-      const targetUser = users.find((u) => u.email === input.email);
-      if (targetUser && targetUser.email_confirmed_at === null) {
-        await this.gateway.confirmUserEmail(targetUser.id);
 
-        // Auto-sign-in if user came from login flow (has pending_login cookie)
-        if (pendingPassword) {
-          consumedPendingLogin = true;
-          try {
-            await this.gateway.signInWithPassword({
-              email: input.email,
-              password: pendingPassword,
-            });
-          } catch {
-            // Cookie expired or password changed — user will need to log in manually
-          }
+    if (targetUser && targetUser.email_confirmed_at === null) {
+      await this.gateway.confirmUserEmail(targetUser.id);
+
+      // Auto-sign-in if user came from login flow (has pending password)
+      if (pendingPassword) {
+        consumedPendingLogin = true;
+        const { error: signInError } = await this.gateway.signInWithPassword({
+          email: input.email,
+          password: pendingPassword,
+        });
+        if (signInError) {
+          // Password may have changed or pending store expired — user can log in manually
+          consumedPendingLogin = false;
         }
       }
     }

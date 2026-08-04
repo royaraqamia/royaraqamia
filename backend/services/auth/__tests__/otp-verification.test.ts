@@ -43,7 +43,7 @@ function createService(
   };
   const gateway = {
     getUser: vi.fn().mockResolvedValue({ user: null }),
-    listUsers: vi.fn().mockResolvedValue({ users: [], error: null }),
+    getUserByEmail: vi.fn().mockResolvedValue({ user: null }),
     confirmUserEmail: vi.fn().mockResolvedValue(undefined),
     signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
     signUp: vi.fn().mockResolvedValue({ user: null, error: null }),
@@ -157,9 +157,8 @@ describe('AuthService.verifyOtp', () => {
       record: makeOtpRecord({ attempts: 0 }),
     });
     pendingLoginStore.readPassword.mockResolvedValue('hunter2');
-    vi.mocked(gateway.listUsers).mockResolvedValue({
-      users: [{ id: 'user-1', email: 'user@example.com', email_confirmed_at: null }],
-      error: null,
+    vi.mocked(gateway.getUserByEmail).mockResolvedValue({
+      user: { id: 'user-1', email: 'user@example.com', email_confirmed_at: null },
     });
 
     const result = await service.verifyOtp(verifyInput);

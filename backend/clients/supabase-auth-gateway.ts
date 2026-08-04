@@ -64,12 +64,14 @@ export function createSupabaseAuthGateway(
       await admin.auth.admin.updateUserById(userId, { email_confirm: true });
     },
 
-    async listUsers() {
-      const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 10000 });
-      return {
-        users: data ? data.users.map(toAuthUser) : [],
-        error: error ? { message: error.message } : null,
-      };
+    async getUserByEmail(email) {
+      const { data, error } = await admin.auth.admin.listUsers({
+        page: 1,
+        perPage: 1,
+        filter: { email },
+      });
+      if (error || !data?.users?.length) return { user: null };
+      return { user: toAuthUser(data.users[0]) };
     },
   };
 }
