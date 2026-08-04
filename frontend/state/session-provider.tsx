@@ -28,7 +28,13 @@ export function useSession() {
   return useContext(SessionContext);
 }
 
-const AUTH_PATHS = ['/auth/login', '/auth/signup', '/auth/verify-otp', '/auth/reset-password', '/auth/update-password'];
+const AUTH_PATHS = [
+  '/auth/login',
+  '/auth/signup',
+  '/auth/verify-otp',
+  '/auth/reset-password',
+  '/auth/update-password',
+];
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
