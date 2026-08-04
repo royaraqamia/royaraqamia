@@ -1,6 +1,6 @@
 import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
 
-export interface INotificationRepository {
+export interface NotificationRepository {
   findByUserId(userId: string, limit?: number, offset?: number): Promise<Notification[]>;
   findUnreadCount(userId: string): Promise<number>;
   create(input: NotificationCreateInput): Promise<Notification | null>;

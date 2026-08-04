@@ -17,7 +17,7 @@ export interface CertificateUpdateInput {
   grade_or_status: string | null;
 }
 
-export interface ICertificatesReader {
+export interface CertificatesReader {
   getByCode(code: string): Promise<Certificate | null>;
   list(
     page: number,
@@ -27,10 +27,10 @@ export interface ICertificatesReader {
   getById(id: string): Promise<Certificate | null>;
 }
 
-export interface ICertificatesWriter {
+export interface CertificatesWriter {
   create(input: CertificateCreateInput): Promise<Certificate>;
   update(id: string, input: CertificateUpdateInput): Promise<Certificate>;
   delete(id: string): Promise<void>;
 }
 
-export interface ICertificatesRepository extends ICertificatesReader, ICertificatesWriter {}
+export interface CertificatesRepository extends CertificatesReader, CertificatesWriter {}

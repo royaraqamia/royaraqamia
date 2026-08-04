@@ -5,7 +5,7 @@ import {
   CertificateCodeFormatError,
   CertificateDuplicateCodeError,
 } from '@/backend/services/certificates/certificates-service';
-import type { ICertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
+import type { CertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
 import type { Certificate } from '@/shared/contracts/certificates';
 
 const validInput = {
@@ -25,8 +25,8 @@ const sampleCertificate = {
   created_at: '2026-01-01',
 } as unknown as Certificate;
 
-function makeRepo(overrides: Partial<ICertificatesRepository> = {}) {
-  const repository: ICertificatesRepository = {
+function makeRepo(overrides: Partial<CertificatesRepository> = {}) {
+  const repository: CertificatesRepository = {
     getByCode: vi.fn(),
     list: vi.fn(),
     getById: vi.fn(),

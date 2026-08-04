@@ -3,7 +3,7 @@ import type { Database } from '@/backend/models/database.types';
 import type { Post, PostCategory } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 import type {
-  IPostsRepository,
+  PostsRepository,
   PostAuthor,
   PublishedPostsResult,
 } from '@/backend/repositories/blogpress/posts-repository';
@@ -12,7 +12,7 @@ const PUBLISHED_POSTS_FILTER = 'or(status.eq.published,and(status.eq.scheduled,p
 
 type Client = SupabaseClient<Database>;
 
-export function createPostsRepository(supabase: Client): IPostsRepository {
+export function createPostsRepository(supabase: Client): PostsRepository {
   async function resolveCategoryIdBySlug(slug: string): Promise<string | null> {
     const { data } = await supabase
       .from('blog_categories')

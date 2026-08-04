@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
-import type { IOtpRepository, OtpRecordData } from '@/backend/repositories/otp/otp-repository';
+import type { OtpRepository, OtpRecordData } from '@/backend/repositories/otp/otp-repository';
 
-export class SupabaseOtpRepository implements IOtpRepository {
+export class SupabaseOtpRepository implements OtpRepository {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
   async createOtpRecord(input: {

@@ -1,4 +1,4 @@
-import { IHabitRepository, Habit, HabitLog, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import { HabitRepository, Habit, HabitLog, HabitRestoreInput } from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
 
 export interface HabitBackupPayload {
@@ -9,7 +9,7 @@ export interface HabitBackupPayload {
 }
 
 export class HabitBackupService {
-  constructor(private repository: IHabitRepository) {}
+  constructor(private repository: HabitRepository) {}
 
   async exportBackup(): Promise<HabitBackupPayload> {
     const habits = await this.repository.getHabits();

@@ -1,4 +1,4 @@
-import { Habit, HabitLog, IHabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
 
 const HABITS_KEY = 'habitflow_habits';
 const LOGS_KEY = 'habitflow_logs';
@@ -33,7 +33,7 @@ function writeLogs(logs: HabitLog[]): void {
   localStorage.setItem(LOGS_KEY, JSON.stringify(logs));
 }
 
-export class LocalStorageHabitRepository implements IHabitRepository {
+export class LocalStorageHabitRepository implements HabitRepository {
   async getHabits(): Promise<Habit[]> {
     return readHabits().filter((h) => !h.archived);
   }

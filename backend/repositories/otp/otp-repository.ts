@@ -7,7 +7,7 @@ export interface OtpRecordData {
   maxAttempts: number;
 }
 
-export interface IOtpRepository {
+export interface OtpRepository {
   createOtpRecord(input: {
     email: string;
     otpHash: string;

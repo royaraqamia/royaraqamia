@@ -1,4 +1,4 @@
-export interface IMediaRepository {
+export interface MediaRepository {
   uploadImage(
     bucketName: string,
     fileName: string,

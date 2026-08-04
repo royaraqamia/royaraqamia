@@ -1,4 +1,4 @@
-import { IAnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
+import { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { AnalyticsEvent, LinkAnalyticsSummary, DailyClickStat } from '@/shared/contracts/linksnap';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
@@ -17,7 +17,7 @@ interface ReferrerEntry {
   count: number;
 }
 
-export class SupabaseAnalyticsRepository implements IAnalyticsRepository {
+export class SupabaseAnalyticsRepository implements AnalyticsRepository {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
   private toDomain(row: AnalyticsEventDbRow): AnalyticsEvent {

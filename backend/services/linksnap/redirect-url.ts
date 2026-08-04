@@ -1,5 +1,5 @@
-import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
-import { IAnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
+import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 
 export function isReservedShortCode(code: string): boolean {
@@ -18,8 +18,8 @@ export class ShortLinkRedirectError extends Error {
 
 export class RedirectUrlService {
   constructor(
-    private shortLinkRepository: IShortLinkRepository,
-    private analyticsRepository: IAnalyticsRepository
+    private shortLinkRepository: ShortLinkRepository,
+    private analyticsRepository: AnalyticsRepository
   ) {}
 
   async execute(

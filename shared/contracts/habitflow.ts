@@ -17,7 +17,7 @@ export interface HabitLog {
   user_id?: string;
 }
 
-export interface IHabitRepository {
+export interface HabitRepository {
   getHabits(): Promise<Habit[]>;
   createHabit(habit: Omit<Habit, 'id' | 'createdAt' | 'archived'>): Promise<Habit>;
   updateHabit(id: string, updates: Partial<Habit>): Promise<Habit>;

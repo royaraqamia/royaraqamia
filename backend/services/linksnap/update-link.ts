@@ -1,10 +1,10 @@
-import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 import { AppError } from '@/backend/shared/errors';
 
 export class UpdateLinkService {
-  constructor(private shortLinkRepository: IShortLinkRepository) {}
+  constructor(private shortLinkRepository: ShortLinkRepository) {}
 
   /**
    * Validates and updates the destination URL of an existing short link.

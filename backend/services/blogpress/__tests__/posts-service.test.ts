@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { BlogpressPostsService } from '@/backend/services/blogpress/posts-service';
-import type { IPostsRepository } from '@/backend/repositories/blogpress/posts-repository';
+import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import type { Post } from '@/shared/contracts/blogpress';
 
 const postFixture = {
@@ -22,8 +22,8 @@ const postFixture = {
   updated_at: '2026-08-01T00:00:00.000Z',
 } as unknown as Post;
 
-function makeRepo(overrides: Partial<IPostsRepository> = {}) {
-  const repository: IPostsRepository = {
+function makeRepo(overrides: Partial<PostsRepository> = {}) {
+  const repository: PostsRepository = {
     getPublishedPosts: vi.fn(),
     getPublishedPostBySlug: vi.fn(),
     getPostAuthor: vi.fn(),

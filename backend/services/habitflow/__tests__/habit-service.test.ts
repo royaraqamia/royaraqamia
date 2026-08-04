@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { HabitService } from '@/backend/services/habitflow/habit-service';
 import { AppError } from '@/backend/shared/errors';
-import type { IHabitRepository, Habit, HabitLog } from '@/shared/contracts/habitflow';
+import type { HabitRepository, Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 const habitFixture: Habit = {
   id: 'h-1',
@@ -20,8 +20,8 @@ const logFixture: HabitLog = {
   completedAt: '2026-08-02T08:00:00.000Z',
 };
 
-function makeRepo(overrides: Partial<IHabitRepository> = {}) {
-  const repository: IHabitRepository = {
+function makeRepo(overrides: Partial<HabitRepository> = {}) {
+  const repository: HabitRepository = {
     getHabits: vi.fn(),
     createHabit: vi.fn(),
     updateHabit: vi.fn(),

@@ -1,5 +1,5 @@
 import {
-  IAdminRepository,
+  AdminRepository,
   SystemStatsReportData,
 } from '@/backend/repositories/linksnap/admin-repository';
 import { isAdmin } from '@/shared/admin-validator';
@@ -8,7 +8,7 @@ type SystemStatsReport = SystemStatsReportData;
 
 export class GetSystemStatsService {
   constructor(
-    private adminRepository: IAdminRepository,
+    private adminRepository: AdminRepository,
     private readonly adminEmails: string[]
   ) {}
 

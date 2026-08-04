@@ -5,7 +5,7 @@ import {
   type CertificateVerifierDeps,
 } from '@/backend/services/certificates/certificate-verification';
 import type { Certificate } from '@/shared/contracts/certificates';
-import type { ICertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
+import type { CertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
 
 // ============================================================
 // Test the certificate code validation logic
@@ -53,7 +53,7 @@ describe('Certificate code format validation', () => {
 // ============================================================
 
 function makeDeps(overrides: Partial<CertificateVerifierDeps> = {}) {
-  const repository: ICertificatesReader = {
+  const repository: CertificatesReader = {
     getByCode: vi.fn(),
     list: vi.fn(),
     getById: vi.fn(),

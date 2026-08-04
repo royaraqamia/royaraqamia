@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
-import { Habit, HabitLog, IHabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
 
 interface Schema {
   habits: Habit[];
   logs: HabitLog[];
 }
 
-export class JsonFileHabitRepository implements IHabitRepository {
+export class JsonFileHabitRepository implements HabitRepository {
   private readonly dbFile: string;
 
   constructor(dbPath: string) {

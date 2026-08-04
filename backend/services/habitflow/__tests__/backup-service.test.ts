@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { HabitBackupService } from '@/backend/services/habitflow/backup-service';
 import { AppError } from '@/backend/shared/errors';
-import type { IHabitRepository, Habit, HabitLog } from '@/shared/contracts/habitflow';
+import type { HabitRepository, Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 function makeRepository() {
-  const repository: IHabitRepository = {
+  const repository: HabitRepository = {
     getHabits: vi.fn().mockResolvedValue([]),
     createHabit: vi.fn(),
     updateHabit: vi.fn(),

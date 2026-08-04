@@ -2,14 +2,14 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
 import type {
-  ISpendtrackRepository,
+  SpendtrackRepository,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/backend/repositories/spendtrack/spendtrack-repository';
 
 export function createSpendtrackRepository(
   supabase: SupabaseClient<Database>
-): ISpendtrackRepository {
+): SpendtrackRepository {
   return {
     async getUserCategories(userId: string): Promise<Category[]> {
       const { data } = (await supabase

@@ -4,12 +4,12 @@ import type { Certificate } from '@/shared/contracts/certificates';
 import type {
   CertificateCreateInput,
   CertificateUpdateInput,
-  ICertificatesRepository,
+  CertificatesRepository,
 } from '@/backend/repositories/certificates/certificates-repository';
 
 export function createCertificatesRepository(
   supabase: SupabaseClient<Database>
-): ICertificatesRepository {
+): CertificatesRepository {
   return {
     async getByCode(code: string): Promise<Certificate | null> {
       const { data, error } = await supabase

@@ -5,8 +5,8 @@ import {
   ShortLinkRedirectError,
 } from '@/backend/services/linksnap/redirect-url';
 import { GetUrlAnalyticsService } from '@/backend/services/linksnap/get-url-analytics';
-import type { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
-import type { IAnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
+import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import type { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import type { ShortLink, LinkAnalyticsSummary } from '@/shared/contracts/linksnap';
 
 const now = new Date('2026-08-02T08:00:00.000Z');
@@ -28,7 +28,7 @@ const summaryFixture: LinkAnalyticsSummary = {
 };
 
 function makeDeps() {
-  const shortLinkRepository: IShortLinkRepository = {
+  const shortLinkRepository: ShortLinkRepository = {
     findByCode: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),
@@ -36,7 +36,7 @@ function makeDeps() {
     delete: vi.fn(),
     exists: vi.fn(),
   };
-  const analyticsRepository: IAnalyticsRepository = {
+  const analyticsRepository: AnalyticsRepository = {
     recordClick: vi.fn(),
     getLinkOwner: vi.fn(),
     getSummaryForLink: vi.fn(),

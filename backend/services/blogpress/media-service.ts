@@ -1,7 +1,7 @@
-import type { IMediaRepository } from '@/backend/repositories/blogpress/media-repository';
+import type { MediaRepository } from '@/backend/repositories/blogpress/media-repository';
 
 export class BlogpressMediaService {
-  constructor(private readonly repository: IMediaRepository) {}
+  constructor(private readonly repository: MediaRepository) {}
 
   async uploadImage(
     formData: FormData,

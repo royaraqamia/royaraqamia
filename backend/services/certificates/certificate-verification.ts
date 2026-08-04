@@ -1,4 +1,4 @@
-import type { ICertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
+import type { CertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
 import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';
 import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
 
@@ -10,7 +10,7 @@ const CODE_LIMIT = 5;
 const WINDOW_MS = 60_000;
 
 export interface CertificateVerifierDeps {
-  repository: ICertificatesReader;
+  repository: CertificatesReader;
   checkRateLimit: (key: string, limit: number, windowMs: number) => Promise<boolean>;
   captureMessage: (
     message: string,

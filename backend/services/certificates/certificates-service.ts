@@ -1,6 +1,6 @@
 import { randomInt } from 'crypto';
 import { z } from 'zod';
-import type { ICertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
+import type { CertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
 import { CERT_CODE_REGEX, type Certificate } from '@/shared/contracts/certificates';
 
 export class CertificateValidationError extends Error {
@@ -88,7 +88,7 @@ function generateCode(): string {
 }
 
 export class CertificatesService {
-  constructor(private readonly repository: ICertificatesRepository) {}
+  constructor(private readonly repository: CertificatesRepository) {}
 
   async list(
     page: number,

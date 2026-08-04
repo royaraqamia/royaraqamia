@@ -12,7 +12,7 @@ export interface PublishedPostsResult {
   totalPages: number;
 }
 
-export interface IPostsRepository {
+export interface PostsRepository {
   getPublishedPosts(
     page: number,
     query: string,

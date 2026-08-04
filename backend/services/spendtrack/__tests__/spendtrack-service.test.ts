@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { SpendtrackService } from '@/backend/services/spendtrack/spendtrack-service';
-import type { ISpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
+import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
 
-function makeRepo(overrides: Partial<ISpendtrackRepository> = {}) {
-  const repository: ISpendtrackRepository = {
+function makeRepo(overrides: Partial<SpendtrackRepository> = {}) {
+  const repository: SpendtrackRepository = {
     getUserCategories: vi.fn(),
     getTotalExpenses: vi.fn(),
     getCategoryBreakdown: vi.fn(),

@@ -1,6 +1,6 @@
 import { ShortLink } from '@/shared/contracts/linksnap';
 
-export interface IShortLinkRepository {
+export interface ShortLinkRepository {
   findByCode(code: string): Promise<ShortLink | null>;
   create(link: ShortLink): Promise<ShortLink>;
   listByUserId(userId: string): Promise<ShortLink[]>;

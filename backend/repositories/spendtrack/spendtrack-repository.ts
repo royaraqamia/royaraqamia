@@ -16,7 +16,7 @@ export interface SpendtrackTransactionsResult {
   totalCount: number;
 }
 
-export interface ISpendtrackRepository {
+export interface SpendtrackRepository {
   getUserCategories(userId: string): Promise<Category[]>;
   getTotalExpenses(
     userId: string,

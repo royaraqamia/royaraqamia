@@ -1,5 +1,5 @@
 import type {
-  ISpendtrackRepository,
+  SpendtrackRepository,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/backend/repositories/spendtrack/spendtrack-repository';
@@ -18,7 +18,7 @@ export interface SpendtrackExpenseInput {
 }
 
 export class SpendtrackService {
-  constructor(private readonly repository: ISpendtrackRepository) {}
+  constructor(private readonly repository: SpendtrackRepository) {}
 
   async getUserCategories(userId: string): Promise<Category[]> {
     return this.repository.getUserCategories(userId);

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthService } from '@/backend/services/auth/auth-service';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
-import type { IOtpRepository, OtpRecordData } from '@/backend/repositories/otp/otp-repository';
+import type { OtpRepository, OtpRecordData } from '@/backend/repositories/otp/otp-repository';
 import type { UserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 
 vi.mock('@/backend/shared/otp/generator', () => ({
@@ -31,7 +31,7 @@ function createService(
   } else {
     findLatestPendingOtp.mockResolvedValue(overrides.record);
   }
-  const otpRepository: IOtpRepository = {
+  const otpRepository: OtpRepository = {
     createOtpRecord: vi.fn().mockResolvedValue(undefined),
     findLatestPendingOtp,
     incrementOtpAttempts: vi.fn().mockResolvedValue(undefined),

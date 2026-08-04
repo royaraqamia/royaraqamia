@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { HabitService } from '@/backend/services/habitflow/habit-service';
 import { HabitBackupService } from '@/backend/services/habitflow/backup-service';
-import type { IHabitRepository } from '@/shared/contracts/habitflow';
+import type { HabitRepository } from '@/shared/contracts/habitflow';
 import { JsonFileHabitRepository } from '@/backend/repositories/habitflow/json-file-repository';
 import { SupabaseHabitRepository } from '@/backend/repositories/habitflow/supabase-repository';
 import { env } from '@/backend/config/env';
@@ -15,7 +15,7 @@ export function getHabitRepository(
   userId?: string,
   client?: SupabaseClient
 ): {
-  repository: IHabitRepository;
+  repository: HabitRepository;
   mode: 'supabase' | 'local';
 } {
   const url = env.habitflowSupabaseUrl;

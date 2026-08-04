@@ -1,9 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { BlogpressMediaService } from '@/backend/services/blogpress/media-service';
-import type { IMediaRepository } from '@/backend/repositories/blogpress/media-repository';
+import type { MediaRepository } from '@/backend/repositories/blogpress/media-repository';
 
-function makeRepo(overrides: Partial<IMediaRepository> = {}) {
-  const repository: IMediaRepository = {
+function makeRepo(overrides: Partial<MediaRepository> = {}) {
+  const repository: MediaRepository = {
     uploadImage: vi.fn(),
     ...overrides,
   };

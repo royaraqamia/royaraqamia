@@ -1,5 +1,5 @@
 import type {
-  IPostsRepository,
+  PostsRepository,
   PostAuthor,
   PublishedPostsResult,
 } from '@/backend/repositories/blogpress/posts-repository';
@@ -9,7 +9,7 @@ import { isAdmin } from '@/shared/admin-validator';
 
 export class BlogpressPostsService {
   constructor(
-    private readonly repository: IPostsRepository,
+    private readonly repository: PostsRepository,
     private readonly adminEmails: string[]
   ) {}
 

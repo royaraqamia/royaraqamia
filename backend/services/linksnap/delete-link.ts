@@ -1,8 +1,8 @@
-import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { AppError } from '@/backend/shared/errors';
 
 export class DeleteLinkService {
-  constructor(private shortLinkRepository: IShortLinkRepository) {}
+  constructor(private shortLinkRepository: ShortLinkRepository) {}
 
   async execute(code: string, userId: string): Promise<boolean> {
     if (!code) {

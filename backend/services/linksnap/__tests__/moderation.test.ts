@@ -1,8 +1,8 @@
 ﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ModerateLinkService } from '@/backend/services/linksnap/moderate-link';
 import { GetSystemStatsService } from '@/backend/services/linksnap/get-system-stats';
-import type { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
-import type { IAdminRepository } from '@/backend/repositories/linksnap/admin-repository';
+import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import type { AdminRepository } from '@/backend/repositories/linksnap/admin-repository';
 import type { ShortLink } from '@/shared/contracts/linksnap';
 
 const adminEmails = ['admin@example.com'];
@@ -18,8 +18,8 @@ const linkFixture: ShortLink = {
   isBlocked: false,
 };
 
-function makeLinkRepo(overrides: Partial<IShortLinkRepository> = {}) {
-  const repository: IShortLinkRepository = {
+function makeLinkRepo(overrides: Partial<ShortLinkRepository> = {}) {
+  const repository: ShortLinkRepository = {
     findByCode: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),
@@ -123,7 +123,7 @@ describe('GetSystemStatsService', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('returns stats for an admin', async () => {
-    const adminRepository: IAdminRepository = { getSystemStats: vi.fn() };
+    const adminRepository: AdminRepository = { getSystemStats: vi.fn() };
     (adminRepository.getSystemStats as ReturnType<typeof vi.fn>).mockResolvedValue(statsFixture);
 
     const service = new GetSystemStatsService(adminRepository, adminEmails);
@@ -132,7 +132,7 @@ describe('GetSystemStatsService', () => {
   });
 
   it('denies non-admin users', async () => {
-    const adminRepository: IAdminRepository = { getSystemStats: vi.fn() };
+    const adminRepository: AdminRepository = { getSystemStats: vi.fn() };
     const service = new GetSystemStatsService(adminRepository, adminEmails);
 
     await expect(service.execute('user@example.com')).rejects.toThrow(
@@ -142,7 +142,7 @@ describe('GetSystemStatsService', () => {
   });
 
   it('propagates repository errors for admins', async () => {
-    const adminRepository: IAdminRepository = { getSystemStats: vi.fn() };
+    const adminRepository: AdminRepository = { getSystemStats: vi.fn() };
     (adminRepository.getSystemStats as ReturnType<typeof vi.fn>).mockRejectedValue(
       new Error('stats unavailable')
     );

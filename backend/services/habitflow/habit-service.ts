@@ -1,10 +1,10 @@
-import { Habit, HabitLog, IHabitRepository } from '@/shared/contracts/habitflow';
+import { Habit, HabitLog, HabitRepository } from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
 
 export class HabitService {
   static readonly DEFAULT_LOGS_WINDOW_DAYS = 35;
 
-  constructor(private repository: IHabitRepository) {}
+  constructor(private repository: HabitRepository) {}
 
   async getAllHabits(): Promise<Habit[]> {
     return this.repository.getHabits();

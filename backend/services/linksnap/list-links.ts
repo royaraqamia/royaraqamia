@@ -1,8 +1,8 @@
-import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 
 export class ListLinksService {
-  constructor(private shortLinkRepository: IShortLinkRepository) {}
+  constructor(private shortLinkRepository: ShortLinkRepository) {}
 
   async execute(userId: string): Promise<ShortLink[]> {
     if (!userId) {

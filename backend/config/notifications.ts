@@ -4,12 +4,12 @@ import {
   NotificationService,
   type NotificationServiceDeps,
 } from '@/backend/services/notifications/notification-service';
-import type { INotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
+import type { NotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
 import { createSupabaseNotificationRepository } from '@/backend/repositories/notifications/supabase-repository';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 
 export function createNotificationService(
-  repo: INotificationRepository,
+  repo: NotificationRepository,
   deps: Partial<NotificationServiceDeps> = {}
 ): NotificationService {
   return new NotificationService(repo, {

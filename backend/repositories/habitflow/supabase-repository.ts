@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Habit, HabitLog, IHabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
 
 interface HabitRow {
@@ -44,7 +44,7 @@ function toLog(row: LogRow): HabitLog {
   };
 }
 
-export class SupabaseHabitRepository implements IHabitRepository {
+export class SupabaseHabitRepository implements HabitRepository {
   private client: SupabaseClient;
   private userId: string | undefined;
 

@@ -3,7 +3,7 @@ import {
   NotificationService,
   type NotificationServiceDeps,
 } from '@/backend/services/notifications/notification-service';
-import type { INotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
+import type { NotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
 import type { Notification } from '@/shared/contracts/notifications';
 
 const notificationFixture: Notification = {
@@ -19,7 +19,7 @@ const notificationFixture: Notification = {
 };
 
 function makeDeps(overrides: { checkRateLimit?: ReturnType<typeof vi.fn> } = {}) {
-  const repository: INotificationRepository = {
+  const repository: NotificationRepository = {
     findByUserId: vi.fn(),
     findUnreadCount: vi.fn(),
     create: vi.fn(),

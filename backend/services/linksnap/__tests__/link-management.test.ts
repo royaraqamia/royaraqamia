@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { ListLinksService } from '@/backend/services/linksnap/list-links';
 import { UpdateLinkService } from '@/backend/services/linksnap/update-link';
 import { DeleteLinkService } from '@/backend/services/linksnap/delete-link';
-import type { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import type { ShortLink } from '@/shared/contracts/linksnap';
 
 const now = new Date('2026-08-02T08:00:00.000Z');
@@ -16,8 +16,8 @@ const linkFixture: ShortLink = {
   isBlocked: false,
 };
 
-function makeRepo(overrides: Partial<IShortLinkRepository> = {}) {
-  const repository: IShortLinkRepository = {
+function makeRepo(overrides: Partial<ShortLinkRepository> = {}) {
+  const repository: ShortLinkRepository = {
     findByCode: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),

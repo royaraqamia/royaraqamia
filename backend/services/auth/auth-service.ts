@@ -3,7 +3,7 @@ import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contra
 import { safeRedirect } from '@/backend/shared/safe-redirect';
 import type { PendingLoginStore } from '@/backend/shared/auth/pending-login-store';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
-import type { IOtpRepository } from '@/backend/repositories/otp/otp-repository';
+import type { OtpRepository } from '@/backend/repositories/otp/otp-repository';
 import type { UserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import type { EmailClient } from '@/backend/clients/email';
 import type { RateLimiter } from '@/backend/clients/rate-limiter';
@@ -24,7 +24,7 @@ export type SimpleResult = { ok: true; message?: string } | { ok: false; message
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
 
 export interface AuthServiceDeps {
-  otpRepository: IOtpRepository;
+  otpRepository: OtpRepository;
   userProfileRepository: UserProfileRepository;
   emailClient: EmailClient;
   rateLimiter: RateLimiter;
@@ -38,7 +38,7 @@ export interface AuthServiceDeps {
 }
 
 export class AuthService {
-  private readonly otpRepository: IOtpRepository;
+  private readonly otpRepository: OtpRepository;
   private readonly userProfileRepository: UserProfileRepository;
   private readonly emailClient: EmailClient;
   private readonly rateLimiter: RateLimiter;

@@ -1,4 +1,4 @@
-import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
@@ -13,7 +13,7 @@ interface ShortLinkDbRow {
   is_blocked: boolean;
 }
 
-export class SupabaseShortLinkRepository implements IShortLinkRepository {
+export class SupabaseShortLinkRepository implements ShortLinkRepository {
   constructor(
     private readonly adminClient: SupabaseClient<Database>,
     private readonly publicClient: SupabaseClient<Database>

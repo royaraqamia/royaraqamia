@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/backend/models/database.types';
-import type { INotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
+import type { NotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
 import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
 
 type NotificationRow = Database['public']['Tables']['notifications']['Row'];
@@ -21,7 +21,7 @@ function toNotification(row: NotificationRow): Notification {
 
 export function createSupabaseNotificationRepository(
   supabase: SupabaseClient<Database>
-): INotificationRepository {
+): NotificationRepository {
   return {
     async findByUserId(userId: string, limit = 20, offset = 0) {
       const { data } = await supabase

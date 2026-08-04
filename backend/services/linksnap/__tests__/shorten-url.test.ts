@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ShortenUrlService } from '@/backend/services/linksnap/shorten-url';
-import type { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 
-function makeRepo(overrides: Partial<IShortLinkRepository> = {}) {
-  const repository: IShortLinkRepository = {
+function makeRepo(overrides: Partial<ShortLinkRepository> = {}) {
+  const repository: ShortLinkRepository = {
     findByCode: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),

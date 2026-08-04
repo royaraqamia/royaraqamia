@@ -12,6 +12,6 @@ export interface SystemStatsReportData {
   }>;
 }
 
-export interface IAdminRepository {
+export interface AdminRepository {
   getSystemStats(): Promise<SystemStatsReportData>;
 }

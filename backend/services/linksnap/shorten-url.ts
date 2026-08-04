@@ -1,4 +1,4 @@
-import { IShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 import { CodeGenerator } from '@/backend/services/linksnap/code-generator';
@@ -7,7 +7,7 @@ import { AppError } from '@/backend/shared/errors';
 const MAX_CODE_ATTEMPTS = 5;
 
 export class ShortenUrlService {
-  constructor(private shortLinkRepository: IShortLinkRepository) {}
+  constructor(private shortLinkRepository: ShortLinkRepository) {}
 
   async execute(
     originalUrl: string,

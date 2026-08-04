@@ -1,4 +1,4 @@
-import type { INotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
+import type { NotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
 import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
 
 export interface NotificationServiceDeps {
@@ -9,7 +9,7 @@ export class NotificationService {
   private readonly checkRateLimit: NotificationServiceDeps['checkRateLimit'];
 
   constructor(
-    private readonly repo: INotificationRepository,
+    private readonly repo: NotificationRepository,
     deps: NotificationServiceDeps
   ) {
     this.checkRateLimit = deps.checkRateLimit;
