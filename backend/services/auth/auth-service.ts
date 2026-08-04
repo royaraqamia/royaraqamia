@@ -4,6 +4,7 @@ import { safeRedirect } from '@/backend/shared/safe-redirect';
 import type { PendingLoginStore } from '@/backend/shared/auth/pending-login-store';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
 import type { IOtpRepository } from '@/backend/repositories/otp/otp-repository';
+import type { UserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import type { EmailClient } from '@/backend/clients/email';
 import type { RateLimiter } from '@/backend/clients/rate-limiter';
 
@@ -24,6 +25,7 @@ export type OAuthResult = { ok: true; url: string } | { ok: false; message: stri
 
 export interface AuthServiceDeps {
   otpRepository: IOtpRepository;
+  userProfileRepository: UserProfileRepository;
   emailClient: EmailClient;
   rateLimiter: RateLimiter;
   verifyTurnstile: (token: string) => Promise<boolean>;
@@ -37,6 +39,7 @@ export interface AuthServiceDeps {
 
 export class AuthService {
   private readonly otpRepository: IOtpRepository;
+  private readonly userProfileRepository: UserProfileRepository;
   private readonly emailClient: EmailClient;
   private readonly rateLimiter: RateLimiter;
   private readonly verifyTurnstile: (token: string) => Promise<boolean>;
@@ -52,6 +55,7 @@ export class AuthService {
     deps: AuthServiceDeps
   ) {
     this.otpRepository = deps.otpRepository;
+    this.userProfileRepository = deps.userProfileRepository;
     this.emailClient = deps.emailClient;
     this.rateLimiter = deps.rateLimiter;
     this.verifyTurnstile = deps.verifyTurnstile;
@@ -109,7 +113,7 @@ export class AuthService {
     }
 
     if (user?.id) {
-      await this.gateway.upsertUserProfile({
+      await this.userProfileRepository.upsert({
         id: user.id,
         email: input.email,
         name: input.name,

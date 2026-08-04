@@ -241,22 +241,4 @@ describe('createSupabaseAuthGateway', () => {
       email_confirmed_at: '2026-01-01T00:00:00.000Z',
     });
   });
-
-  it('upsertUserProfile upserts the public users table via admin client', async () => {
-    const maybeSingle = vi.fn().mockResolvedValue({ data: null });
-    const upsert = vi.fn().mockReturnValue({ maybeSingle });
-    (admin.from as ReturnType<typeof vi.fn>).mockReturnValue({ upsert });
-
-    const gateway = createSupabaseAuthGateway(
-      supabase as unknown as SupabaseClient<Database>,
-      admin as unknown as SupabaseClient<Database>
-    );
-    await gateway.upsertUserProfile({ id: 'u-1', email: 'user@example.com', name: 'مستخدم' });
-
-    expect(admin.from).toHaveBeenCalledWith('users');
-    const [payload] = upsert.mock.calls[0] as [Record<string, unknown>];
-    expect(payload).toMatchObject({ id: 'u-1', email: 'user@example.com', name: 'مستخدم' });
-    expect(payload.created_at).toBeDefined();
-    expect(maybeSingle).toHaveBeenCalled();
-  });
 });

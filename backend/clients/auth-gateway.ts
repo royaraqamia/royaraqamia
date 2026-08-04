@@ -27,10 +27,4 @@ export interface AuthGateway {
   ): Promise<{ error: { message: string } | null }>;
   confirmUserEmail(userId: string): Promise<void>;
   listUsers(): Promise<{ users: AuthUser[]; error: { message: string } | null }>;
-  upsertUserProfile(input: {
-    id: string;
-    email: string;
-    name: string;
-    avatar_url?: string | null;
-  }): Promise<void>;
 }

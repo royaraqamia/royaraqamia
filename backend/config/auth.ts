@@ -4,6 +4,7 @@ import { createSupabaseAuthGateway } from '@/backend/clients/supabase-auth-gatew
 import { createServerSupabaseClient, getAdminSupabase } from '@/backend/config/supabase';
 import { OTP_CONFIG } from '@/backend/config/otp';
 import { SupabaseOtpRepository } from '@/backend/repositories/otp/supabase-otp-repository';
+import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import { sendOtpEmail, sendPasswordResetEmail } from '@/backend/config/email';
 import { checkRateLimit, getRateLimitRemaining } from '@/backend/config/rate-limiter';
 import { createTurnstileVerifier } from '@/backend/config/turnstile';
@@ -22,6 +23,7 @@ export function createAuthService(
 ): AuthService {
   return new AuthService(gateway, {
     otpRepository: new SupabaseOtpRepository(getAdminSupabase()),
+    userProfileRepository: createUserProfileRepository(getAdminSupabase()),
     emailClient: {
       sendOtpEmail,
       sendPasswordResetEmail,

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthService } from '@/backend/services/auth/auth-service';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
 import type { IOtpRepository, OtpRecordData } from '@/backend/repositories/otp/otp-repository';
+import type { UserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 
 vi.mock('@/backend/shared/otp/generator', () => ({
   generateOtp: () => '123456',
@@ -45,15 +46,20 @@ function createService(
     listUsers: vi.fn().mockResolvedValue({ users: [], error: null }),
     confirmUserEmail: vi.fn().mockResolvedValue(undefined),
     signInWithPassword: vi.fn().mockResolvedValue({ error: null }),
+    signUp: vi.fn().mockResolvedValue({ user: null, error: null }),
   } as unknown as AuthGateway;
   const pendingLoginStore = {
     readPassword: vi.fn().mockResolvedValue(null),
     setPassword: vi.fn().mockResolvedValue(undefined),
     clear: vi.fn().mockResolvedValue(undefined),
   };
+  const userProfileRepository = {
+    upsert: vi.fn().mockResolvedValue(undefined),
+  } as unknown as UserProfileRepository;
 
   const service = new AuthService(gateway, {
     otpRepository,
+    userProfileRepository,
     emailClient: {
       sendOtpEmail: vi.fn().mockResolvedValue(undefined),
       sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
@@ -68,7 +74,7 @@ function createService(
     siteUrl: 'https://royaraqamia.com',
   });
 
-  return { service, otpRepository, rateLimiter, pendingLoginStore, gateway };
+  return { service, otpRepository, rateLimiter, pendingLoginStore, gateway, userProfileRepository };
 }
 
 const verifyInput = {
@@ -202,6 +208,35 @@ describe('AuthService.login', () => {
     });
     expect(result).toEqual({ ok: true, redirectUrl: '/' });
     expect(pendingLoginStore.setPassword).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService.signup', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('upserts the public user profile after a successful sign-up', async () => {
+    const { service, userProfileRepository, gateway } = createService();
+    vi.mocked(gateway.signUp).mockResolvedValue({
+      user: { id: 'u-1' },
+      error: null,
+    });
+
+    const result = await service.signup({
+      name: 'منتج',
+      email: 'user@example.com',
+      password: 'Hunter2!',
+      redirectTo: null,
+      turnstileToken: '',
+    });
+
+    expect(result.ok).toBe(true);
+    expect(userProfileRepository.upsert).toHaveBeenCalledWith({
+      id: 'u-1',
+      email: 'user@example.com',
+      name: 'منتج',
+    });
   });
 });
 

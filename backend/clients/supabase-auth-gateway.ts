@@ -71,19 +71,6 @@ export function createSupabaseAuthGateway(
         error: error ? { message: error.message } : null,
       };
     },
-
-    async upsertUserProfile(input) {
-      await admin
-        .from('users')
-        .upsert({
-          id: input.id,
-          email: input.email,
-          name: input.name,
-          avatar_url: input.avatar_url ?? null,
-          created_at: new Date().toISOString(),
-        })
-        .maybeSingle();
-    },
   };
 }
 

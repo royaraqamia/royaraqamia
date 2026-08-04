@@ -1,7 +1,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminSupabase } from '@/backend/config/supabase';
-import { createSupabaseAuthGateway } from '@/backend/clients/supabase-auth-gateway';
+import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import { env } from '@/backend/config/env';
 
 const protectedRoutes: Record<string, string> = {
@@ -70,8 +70,7 @@ export async function updateSession(request: NextRequest) {
         data: { user },
       } = await supabase.auth.getUser();
       if (user && user.app_metadata?.provider === 'google') {
-        const gateway = createSupabaseAuthGateway(supabase, getAdminSupabase());
-        await gateway.upsertUserProfile({
+        await createUserProfileRepository(getAdminSupabase()).upsert({
           id: user.id,
           email: user.email ?? '',
           name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? '',
