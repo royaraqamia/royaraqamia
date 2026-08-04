@@ -2,22 +2,8 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
+import { PROTECTED_ROUTES, AUTH_ROUTES } from '@/backend/config/routes';
 import { env } from '@/backend/config/env';
-
-const protectedRoutes: Record<string, string> = {
-  '/linksnap/app': '/auth/login',
-  '/blogpress/app': '/auth/login',
-  '/habitflow/app': '/auth/login',
-  '/spendtrack/app': '/auth/login',
-  '/admin': '/auth/login',
-};
-
-const authRoutes: Record<string, string> = {
-  '/auth/login': '/',
-  '/auth/signup': '/',
-  '/auth/verify-otp': '/',
-  '/auth/reset-password': '/',
-};
 
 function isSafeRedirect(path: string): boolean {
   if (!path) return false;
@@ -96,14 +82,14 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Redirect logged-in users away from auth pages
-  for (const [path, redirect] of Object.entries(authRoutes)) {
+  for (const [path, redirect] of Object.entries(AUTH_ROUTES)) {
     if (request.nextUrl.pathname === path && user) {
       return applyCookies(NextResponse.redirect(new URL(redirect, request.url)));
     }
   }
 
   // Protect authenticated routes
-  for (const [path, redirect] of Object.entries(protectedRoutes)) {
+  for (const [path, redirect] of Object.entries(PROTECTED_ROUTES)) {
     if (request.nextUrl.pathname.startsWith(path) && !user) {
       const url = request.nextUrl.clone();
       url.pathname = redirect;
