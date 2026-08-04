@@ -1,3 +1,10 @@
+export function parseAdminEmails(raw: string): string[] {
+  return raw
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 export function isAdmin(email: string, adminEmails: string[]): boolean {
   if (!email) return false;
   if (adminEmails.length === 0) return false;
