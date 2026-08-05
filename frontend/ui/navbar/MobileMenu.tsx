@@ -4,7 +4,7 @@ import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { X, CaretDown, type Icon } from '@phosphor-icons/react';
-import { useFocusTrap } from '../../state/use-focus-trap';
+import { useFocusTrap } from '../../shared/use-focus-trap';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
 // ============================================================================

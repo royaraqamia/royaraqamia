@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, X, type LucideIcon } from 'lucide-react';
-import { useFocusTrap } from '@/frontend/state/use-focus-trap';
+import { useFocusTrap } from '@/frontend/shared/use-focus-trap';
 
 interface ConfirmDialogProps {
   open: boolean;

@@ -2,7 +2,7 @@
 
 import { memo, useState } from 'react';
 import { motion, useScroll, useSpring, useReducedMotion, LayoutGroup } from 'motion/react';
-import { useHorizontalScroll } from '../../state/use-horizontal-scroll';
+import { useHorizontalScroll } from '../../shared/use-horizontal-scroll';
 import { HorizontalScrollArrows } from '../HorizontalScrollArrows';
 import { SectionBackground } from '../SectionBackground';
 import {

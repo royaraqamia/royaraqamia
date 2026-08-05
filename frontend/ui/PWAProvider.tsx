@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
-import { usePWA, type PWAState } from '../state/use-pwa';
+import { usePWA, type PWAState } from '../shared/use-pwa';
 import { IS_DEVELOPMENT } from '@/frontend/shared/constants';
 
 const SW_PATH = '/sw.js';
