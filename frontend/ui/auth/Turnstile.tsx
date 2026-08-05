@@ -30,6 +30,7 @@ interface TurnstileProps {
 export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const siteKey = TURNSTILE_SITE_KEY;
 
   useEffect(() => {
@@ -68,10 +69,12 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
           renderTurnstile();
         }
       }, 100);
+      pollTimerRef.current = checkTurnstile;
       setTimeout(() => clearInterval(checkTurnstile), 10000);
     }
 
     return () => {
+      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
       if (widgetIdRef.current && window.turnstile) {
         window.turnstile.remove(widgetIdRef.current);
       }
