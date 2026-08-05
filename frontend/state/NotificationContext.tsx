@@ -99,13 +99,17 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       },
       onUpdate: (payload) => {
         const updated = payload.new as Notification;
+        const prevItem = notificationsRef.current.find((n) => n.id === updated.id);
+        const wasUnreadLocally = !!prevItem && !prevItem.is_read;
         setNotifications((prev) =>
           prev.map((n) =>
             n.id === updated.id ? { ...updated, timeAgo: calculateTimeAgo(updated.created_at) } : n
           )
         );
-        if (updated.is_read) {
+        if (updated.is_read && wasUnreadLocally) {
           setUnreadCount((prev) => Math.max(0, prev - 1));
+        } else if (!updated.is_read && prevItem?.is_read) {
+          setUnreadCount((prev) => prev + 1);
         }
       },
       onDelete: (payload) => {
