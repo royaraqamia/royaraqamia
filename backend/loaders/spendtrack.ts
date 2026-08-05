@@ -4,10 +4,10 @@ import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
 import type {
+  Category,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
-} from '@/backend/repositories/spendtrack/spendtrack-repository';
-import type { Category } from '@/shared/contracts/spendtrack';
+} from '@/shared/contracts/spendtrack';
 
 async function createService() {
   const cookieStore = await cookies();

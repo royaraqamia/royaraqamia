@@ -1,16 +1,10 @@
-import type { Post, PostCategory } from '@/shared/contracts/blogpress';
+import type {
+  Post,
+  PostCategory,
+  PostAuthor,
+  PublishedPostsResult,
+} from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
-
-export interface PostAuthor {
-  name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-}
-
-export interface PublishedPostsResult {
-  posts: Post[];
-  totalPages: number;
-}
 
 export interface PostsRepository {
   getPublishedPosts(

@@ -1,9 +1,10 @@
+import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import type {
-  PostsRepository,
+  Post,
+  PostCategory,
   PostAuthor,
   PublishedPostsResult,
-} from '@/backend/repositories/blogpress/posts-repository';
-import type { Post, PostCategory } from '@/shared/contracts/blogpress';
+} from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 import { isAdmin } from '@/backend/shared/admin-validator';
 

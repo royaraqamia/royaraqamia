@@ -7,10 +7,11 @@ import {
   createBlogpressPostsService,
 } from '@/backend/config/blogpress';
 import type {
-  PublishedPostsResult,
+  Post,
+  PostCategory,
   PostAuthor,
-} from '@/backend/repositories/blogpress/posts-repository';
-import type { Post, PostCategory } from '@/shared/contracts/blogpress';
+  PublishedPostsResult,
+} from '@/shared/contracts/blogpress';
 
 export async function loadBlogIndex(
   page: number,

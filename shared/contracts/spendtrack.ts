@@ -21,3 +21,19 @@ export type Expense = {
 export type ExpenseWithCategory = Expense & {
   categories?: Pick<Category, 'name' | 'colorHex'>;
 };
+
+export interface SpendtrackTransactionsQuery {
+  userId: string;
+  start: string;
+  end: string;
+  filterCategories: string[];
+  sort: string;
+  pageSize: number;
+  offset?: number;
+}
+
+export interface SpendtrackTransactionsResult {
+  expenses: ExpenseWithCategory[];
+  categories: Category[];
+  totalCount: number;
+}

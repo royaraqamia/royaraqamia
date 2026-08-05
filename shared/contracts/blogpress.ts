@@ -24,3 +24,14 @@ export interface PostCategory {
   name: string;
   slug: string;
 }
+
+export interface PostAuthor {
+  name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+}
+
+export interface PublishedPostsResult {
+  posts: Post[];
+  totalPages: number;
+}

@@ -1,9 +1,9 @@
+import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
 import type {
-  SpendtrackRepository,
+  Category,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
-} from '@/backend/repositories/spendtrack/spendtrack-repository';
-import type { Category } from '@/shared/contracts/spendtrack';
+} from '@/shared/contracts/spendtrack';
 
 export interface SpendtrackCategoryInput {
   name: string;

@@ -1,20 +1,8 @@
-import type { Category, ExpenseWithCategory } from '@/shared/contracts/spendtrack';
-
-export interface SpendtrackTransactionsQuery {
-  userId: string;
-  start: string;
-  end: string;
-  filterCategories: string[];
-  sort: string;
-  pageSize: number;
-  offset?: number;
-}
-
-export interface SpendtrackTransactionsResult {
-  expenses: ExpenseWithCategory[];
-  categories: Category[];
-  totalCount: number;
-}
+import type {
+  Category,
+  SpendtrackTransactionsQuery,
+  SpendtrackTransactionsResult,
+} from '@/shared/contracts/spendtrack';
 
 export interface SpendtrackRepository {
   getUserCategories(userId: string): Promise<Category[]>;
