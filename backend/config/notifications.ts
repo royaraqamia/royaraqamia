@@ -36,7 +36,12 @@ export function createSupabaseNotificationService(
  * but can never insert.
  */
 export function createAdminNotificationService(): NotificationService {
-  return createNotificationService(createSupabaseNotificationRepository(getAdminSupabase()));
+  return createNotificationService(createSupabaseNotificationRepository(getAdminSupabase()), {
+    findAllUserIds: async () => {
+      const { data } = await getAdminSupabase().from('users').select('id');
+      return (data ?? []).map((row) => row.id);
+    },
+  });
 }
 
 /**

@@ -1,6 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database, Json } from '@/backend/models/database.types';
-import type { NotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
+import type {
+  NotificationRepository,
+  NotificationBroadcastInput,
+} from '@/backend/repositories/notifications/notifications-repository';
 import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
 
 type NotificationRow = Database['public']['Tables']['notifications']['Row'];
@@ -58,6 +61,21 @@ export function createSupabaseNotificationRepository(
         .single();
 
       return data ? toNotification(data) : null;
+    },
+
+    async broadcast(input: NotificationBroadcastInput, userIds: string[]) {
+      if (userIds.length === 0) return 0;
+      const rows = userIds.map((userId) => ({
+        user_id: userId,
+        type: input.type,
+        title: input.title,
+        body: input.body ?? null,
+        metadata: (input.metadata ?? {}) as Json,
+        is_read: false,
+      }));
+
+      const { data } = await supabase.from('notifications').insert(rows).select('id');
+      return data?.length ?? 0;
     },
 
     async markAsRead(id: string, userId: string) {

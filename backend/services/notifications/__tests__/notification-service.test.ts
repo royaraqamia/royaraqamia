@@ -23,6 +23,7 @@ function makeDeps(overrides: { checkRateLimit?: ReturnType<typeof vi.fn> } = {})
     findByUserId: vi.fn(),
     findUnreadCount: vi.fn(),
     create: vi.fn(),
+    broadcast: vi.fn(),
     markAsRead: vi.fn(),
     markAllAsRead: vi.fn(),
     delete: vi.fn(),
@@ -71,6 +72,44 @@ describe('NotificationService', () => {
         service.create({ user_id: 'u-1', type: 'expense_alert', title: 'تنبيه' })
       ).rejects.toThrow('تم تجاوز الحد الأقصى للإشعارات في الساعة');
       expect(repository.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('broadcast', () => {
+    it('fans out to every user when findAllUserIds is provided', async () => {
+      const repository: NotificationRepository = {
+        findByUserId: vi.fn(),
+        findUnreadCount: vi.fn(),
+        create: vi.fn(),
+        broadcast: vi.fn(async (_input, userIds) => userIds.length),
+        markAsRead: vi.fn(),
+        markAllAsRead: vi.fn(),
+        delete: vi.fn(),
+      };
+      const findAllUserIds = vi.fn(async () => ['u-1', 'u-2', 'u-3']);
+      const service = new NotificationService(repository, {
+        checkRateLimit: vi.fn(async () => true) as NotificationServiceDeps['checkRateLimit'],
+        findAllUserIds,
+      });
+
+      await expect(
+        service.broadcast({ type: 'system_announcement', title: 'إعلان', body: 'نص' })
+      ).resolves.toBe(3);
+      expect(findAllUserIds).toHaveBeenCalledTimes(1);
+      expect(repository.broadcast).toHaveBeenCalledWith(
+        { type: 'system_announcement', title: 'إعلان', body: 'نص' },
+        ['u-1', 'u-2', 'u-3']
+      );
+    });
+
+    it('returns 0 (no-op) when findAllUserIds is not provided', async () => {
+      const { repository, service } = makeDeps();
+      (repository.broadcast as ReturnType<typeof vi.fn>).mockResolvedValue(0);
+
+      await expect(
+        service.broadcast({ type: 'system_announcement', title: 'إعلان' })
+      ).resolves.toBe(0);
+      expect(repository.broadcast).not.toHaveBeenCalled();
     });
   });
 
