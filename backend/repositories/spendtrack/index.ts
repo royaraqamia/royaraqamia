@@ -18,10 +18,10 @@ export function createSpendtrackRepository(
         .select('*')
         .or(`user_id.eq.${userId},is_default.eq.true`)
         .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
-      return (data ?? []).map((row) => ({
+      return (data ?? []).map(({ color_hex, ...row }) => ({
         ...row,
-        colorHex: row.color_hex,
-      })) as unknown as Category[];
+        colorHex: color_hex,
+      })) as Category[];
     },
 
     async getTotalExpenses(
@@ -88,10 +88,10 @@ export function createSpendtrackRepository(
         .or(`user_id.eq.${userId},is_default.eq.true`)
         .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
 
-      const safeCategories = (categories ?? []).map((row) => ({
+      const safeCategories = (categories ?? []).map(({ color_hex, ...row }) => ({
         ...row,
-        colorHex: row.color_hex,
-      })) as unknown as Category[];
+        colorHex: color_hex,
+      })) as Category[];
 
       const { count: totalCount } = await supabase
         .from('expenses')
