@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
-import { logger } from '@/shared/logger';
+import { logger } from '@/frontend/shared/logger';
 
 export interface DashboardBackup {
   fileInputRef: React.RefObject<HTMLInputElement | null>;

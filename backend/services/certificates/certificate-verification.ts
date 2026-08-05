@@ -1,7 +1,7 @@
 import type { CertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
 import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';
 import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
-import { logger } from '@/shared/logger';
+import { logger } from '@/backend/shared/logger';
 
 export { CERT_CODE_REGEX };
 

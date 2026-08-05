@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { logger } from '@/shared/logger';
+import { logger } from '@/frontend/shared/logger';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw, House } from 'lucide-react';
 import { Button } from '@/frontend/ui/ui/button';

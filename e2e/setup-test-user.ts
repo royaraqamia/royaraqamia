@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { createClient } from '@supabase/supabase-js';
-import { logger } from '@/shared/logger';
+import { logger } from '@/backend/shared/logger';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,

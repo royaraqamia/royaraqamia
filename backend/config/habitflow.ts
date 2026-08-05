@@ -3,7 +3,7 @@ import { HabitService } from '@/backend/services/habitflow/habit-service';
 import { HabitBackupService } from '@/backend/services/habitflow/backup-service';
 import type { HabitRepository } from '@/shared/contracts/habitflow';
 import { JsonFileHabitRepository } from '@/backend/repositories/habitflow/json-file-repository';
-import { logger } from '@/shared/logger';
+import { logger } from '@/backend/shared/logger';
 import { SupabaseHabitRepository } from '@/backend/repositories/habitflow/supabase-repository';
 import { env } from '@/backend/config/env';
 import { getDbPath } from '@/backend/config/habitflow/data-path';

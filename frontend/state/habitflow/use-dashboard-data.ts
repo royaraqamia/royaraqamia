@@ -8,7 +8,7 @@ import {
 } from 'react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { LocalStorageHabitRepository } from '@/frontend/api/habitflow/local-storage-repository';
-import { logger } from '@/shared/logger';
+import { logger } from '@/frontend/shared/logger';
 
 export function getTodayString(): string {
   const tzOffset = new Date().getTimezoneOffset() * 60000;

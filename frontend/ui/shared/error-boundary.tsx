@@ -4,7 +4,7 @@ import { Component, type ReactNode, type ErrorInfo } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { Button } from '@/frontend/ui/ui/button';
 import { IS_DEVELOPMENT, IS_PRODUCTION } from '@/frontend/shared/constants';
-import { logger } from '@/shared/logger';
+import { logger } from '@/frontend/shared/logger';
 
 interface ErrorBoundaryProps {
   children: ReactNode;

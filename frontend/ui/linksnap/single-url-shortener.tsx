@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Link, Sparkles, Copy, Check, Share2, QrCode, ArrowLeft, RotateCcw } from 'lucide-react';
-import { logger } from '@/shared/logger';
+import { logger } from '@/frontend/shared/logger';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';

@@ -1,7 +1,7 @@
 import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
-import { logger } from '@/shared/logger';
+import { logger } from '@/backend/shared/logger';
 
 export function isReservedShortCode(code: string): boolean {
   return code.startsWith('_') || code.includes('.') || code === 'api' || code === 'favicon.ico';

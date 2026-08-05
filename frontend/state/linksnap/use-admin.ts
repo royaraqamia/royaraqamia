@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { fetchAdminStats, moderateLink, type AdminStats } from '@/frontend/api/linksnap';
-import { logger } from '@/shared/logger';
+import { logger } from '@/frontend/shared/logger';
 
 export function useAdminLinks(token: string) {
   const [stats, setStats] = useState<AdminStats | null>(null);

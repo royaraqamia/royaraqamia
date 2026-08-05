@@ -1,5 +1,5 @@
 import { getPublicSupabase } from '@/backend/config/supabase';
-import { logger } from '@/shared/logger';
+import { logger } from '@/backend/shared/logger';
 
 interface AuthenticatedUser {
   id: string;

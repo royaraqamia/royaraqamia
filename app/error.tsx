@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { logger } from '@/shared/logger';
+import { logger } from '@/frontend/shared/logger';
 
 export default function Error({
   error,

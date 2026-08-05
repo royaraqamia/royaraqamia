@@ -2,7 +2,7 @@ import { getAuthenticatedUser } from '@/backend/middleware/bearer-auth';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { AppError, getErrorMessage } from '@/backend/shared/errors';
 import { env } from '@/backend/config/env';
-import { logger } from '@/shared/logger';
+import { logger } from '@/backend/shared/logger';
 import {
   createBulkShortenService,
   createDeleteLinkService,

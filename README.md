@@ -41,7 +41,7 @@ The application is a single Next.js 16 (App Router) deployment that serves multi
 - **Certificates** — certificate issuance, admin management, and QR-based public verification (`app/admin/certificates`, `app/verify`).
 - **Auth & Accounts** — OTP-based email authentication, password reset, and admin role management (`app/auth`).
 
-The backend is intentionally decoupled from Next.js: business logic lives in `backend/services`, data access behind interfaces in `backend/repositories`, external integrations behind interfaces in `backend/clients`, and thin inbound handlers in `backend/controllers`. Server-side data fetching for React Server Components lives in `backend/loaders`. The frontend is organized by feature (`frontend/ui`, `frontend/state`, `frontend/api`) with shared utilities, transport layers, and a structured logger (`shared/logger`). All DI wiring is centralized in `backend/config` factory functions.
+The backend is intentionally decoupled from Next.js: business logic lives in `backend/services`, data access behind interfaces in `backend/repositories`, external integrations behind interfaces in `backend/clients`, and thin inbound handlers in `backend/controllers`. Server-side data fetching for React Server Components lives in `backend/loaders`. The frontend is organized by feature (`frontend/ui`, `frontend/state`, `frontend/api`) with shared utilities, transport layers, and a structured logger per side (`backend/shared/logger`, `frontend/shared/logger`). All DI wiring is centralized in `backend/config` factory functions.
 
 ---
 
@@ -79,24 +79,22 @@ royaraqamia/
 │   ├── repositories/             #   Data access — the only code that knows the DB, behind interfaces
 │   ├── services/                 #   Pure business logic (auth, blogpress, certificates, habitflow,
 │   │                             #   linksnap, notifications, spendtrack)
-│   ├── shared/                   #   Rate limiters, error classes
+│   ├── shared/                   #   Leaf utilities — logger, admin-validator, rate limiters, error classes
 │   └── transport/                #   Network mechanics — HTTP helpers, cookies, cache revalidation
 │
 ├── frontend/                     # Client-side code, organized by layer
 │   ├── api/                      #   Domain-meaningful API calls (auth, blogpress, spendtrack, …)
 │   ├── state/                    #   React hooks & contexts (session, notifications, product state)
 │   ├── transport/                #   Network mechanics — HTTP client (request<T>), Supabase browser client
-│   ├── shared/                   #   Leaf utilities — constants, fonts, formatting, metadata (no app imports)
+│   ├── shared/                   #   Leaf utilities — logger, constants, fonts, formatting, metadata (no app imports)
 │   └── ui/                       #   Components / views / screens — presentation only
 │       ├── ui/                   #     Primitives (shadcn/ui: button, dialog, input, …)
 │       ├── shared/               #     Cross-cutting UI (error boundary, navbar, page-header)
 │       ├── app-shell/            #     App layout shell
 │       └── <product>/            #     Product-specific components (blogpress, habitflow, linksnap, …)
 │
-├── shared/                       # Contracts & leaf utilities shared across frontend & backend
-│   ├── contracts/                #   Zod schemas + TS types per domain (auth, blog, certificates, …)
-│   ├── logger.ts                 #   Structured logger (error/warn/info) — single logging boundary
-│   └── admin-validator.ts        #   isAdmin() + parseAdminEmails() — pure functions, no state
+├── shared/                       # The API contract — request/response types both sides import
+│   └── contracts/                #   Zod schemas + TS types per domain (auth, blog, certificates, …)
 │
 ├── supabase/
 │   └── migrations/               #   Versioned SQL migrations (schema, RLS, storage buckets)
@@ -122,7 +120,7 @@ royaraqamia/
 └── tsconfig.json                 # Strict TypeScript configuration
 ```
 
-> **Separation of concerns:** The dependency rule flows inward: `controller → service → repository / client`. Controllers never contain business logic; services depend on interfaces, never on HTTP or SQL directly; repositories are the only code that knows the database. All DI wiring is centralized in `backend/config/` factory functions. `shared/contracts` keeps request/response shapes typed and identical on both sides of the network boundary. `shared/logger` is the single logging boundary — no `console.error` or `console.warn` calls exist outside the logger itself.
+> **Separation of concerns:** The dependency rule flows inward: `controller → service → repository / client`. Controllers never contain business logic; services depend on interfaces, never on HTTP or SQL directly; repositories are the only code that knows the database. All DI wiring is centralized in `backend/config/` factory functions. `shared/contracts` keeps request/response shapes typed and identical on both sides of the network boundary. `backend/shared/logger` and `frontend/shared/logger` are the single logging boundary per deployment side — no `console.error` or `console.warn` calls exist outside the logger itself.
 
 ---
 

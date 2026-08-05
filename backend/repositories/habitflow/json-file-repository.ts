@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
-import { logger } from '@/shared/logger';
+import { logger } from '@/backend/shared/logger';
 
 interface Schema {
   habits: Habit[];
