@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import { BlogpressPostsService } from '@/backend/services/blogpress/posts-service';
+import {
+  BlogpressPostsService,
+  type PostPublishedNotifier,
+} from '@/backend/services/blogpress/posts-service';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import type { Post } from '@/shared/contracts/blogpress';
 
@@ -22,7 +25,10 @@ const postFixture = {
   updated_at: '2026-08-01T00:00:00.000Z',
 } as unknown as Post;
 
-function makeRepo(overrides: Partial<PostsRepository> = {}) {
+function makeRepo(
+  overrides: Partial<PostsRepository> = {},
+  onPostPublished?: PostPublishedNotifier
+) {
   const repository: PostsRepository = {
     getPublishedPosts: vi.fn(),
     getPublishedPostBySlug: vi.fn(),
@@ -48,7 +54,10 @@ function makeRepo(overrides: Partial<PostsRepository> = {}) {
     setPostCategories: vi.fn(),
     ...overrides,
   };
-  return { repository, service: new BlogpressPostsService(repository, ['admin@example.com']) };
+  return {
+    repository,
+    service: new BlogpressPostsService(repository, ['admin@example.com'], onPostPublished),
+  };
 }
 
 const postData = { title: 'مقال', slug: 'post-1' };
@@ -202,6 +211,45 @@ describe('BlogpressPostsService (thin delegation)', () => {
     expect(repository.publishPost).toHaveBeenCalledWith('p-1', 'u-1', false);
     await expect(service.unpublishPost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
     await expect(service.deletePost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
+  });
+
+  it('fires the publish notifier after saveAndPublishPost', async () => {
+    const onPostPublished = vi.fn();
+    const { repository, service } = makeRepo({}, onPostPublished);
+    (repository.saveAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+      slug: 'post-1',
+    });
+
+    await service.saveAndPublishPost('p-1', 'u-1', postData, 'user@example.com');
+
+    expect(onPostPublished).toHaveBeenCalledWith({
+      postId: 'p-1',
+      authorId: 'u-1',
+      slug: 'post-1',
+    });
+  });
+
+  it('fires the publish notifier after publishPost', async () => {
+    const onPostPublished = vi.fn();
+    const { repository, service } = makeRepo({}, onPostPublished);
+    (repository.publishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
+
+    await service.publishPost('p-1', 'u-1', 'user@example.com');
+
+    expect(onPostPublished).toHaveBeenCalledWith({
+      postId: 'p-1',
+      authorId: 'u-1',
+      slug: 'post-1',
+    });
+  });
+
+  it('does not fire the publish notifier when publish fails', async () => {
+    const onPostPublished = vi.fn();
+    const { repository, service } = makeRepo({}, onPostPublished);
+    (repository.publishPost as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('db down'));
+
+    await expect(service.publishPost('p-1', 'u-1', 'user@example.com')).rejects.toThrow('db down');
+    expect(onPostPublished).not.toHaveBeenCalled();
   });
 
   it('delegates setPostFeatured', async () => {

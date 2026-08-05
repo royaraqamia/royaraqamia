@@ -8,10 +8,15 @@ import type {
 import type { PostInput } from '@/shared/contracts/blog';
 import { isAdmin } from '@/backend/shared/admin-validator';
 
+export interface PostPublishedNotifier {
+  (info: { postId: string; authorId: string; slug: string }): void;
+}
+
 export class BlogpressPostsService {
   constructor(
     private readonly repository: PostsRepository,
-    private readonly adminEmails: string[]
+    private readonly adminEmails: string[],
+    private readonly onPostPublished?: PostPublishedNotifier
   ) {}
 
   async getPublishedPosts(
@@ -74,7 +79,9 @@ export class BlogpressPostsService {
     authorEmail: string
   ): Promise<{ slug: string }> {
     const blogVisible = isAdmin(authorEmail, this.adminEmails);
-    return this.repository.saveAndPublishPost(postId, authorId, data, blogVisible);
+    const result = await this.repository.saveAndPublishPost(postId, authorId, data, blogVisible);
+    this.onPostPublished?.({ postId, authorId, slug: result.slug });
+    return result;
   }
 
   async publishPost(
@@ -83,7 +90,9 @@ export class BlogpressPostsService {
     authorEmail: string
   ): Promise<{ slug: string }> {
     const blogVisible = isAdmin(authorEmail, this.adminEmails);
-    return this.repository.publishPost(postId, authorId, blogVisible);
+    const result = await this.repository.publishPost(postId, authorId, blogVisible);
+    this.onPostPublished?.({ postId, authorId, slug: result.slug });
+    return result;
   }
 
   async unpublishPost(postId: string, authorId: string): Promise<{ slug: string }> {
