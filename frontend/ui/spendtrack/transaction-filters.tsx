@@ -1,16 +1,16 @@
 'use client';
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Button } from '@/frontend/ui/ui/button';
-import { Input } from '@/frontend/ui/ui/input';
-import { Popover, PopoverContent, PopoverTrigger } from '@/frontend/ui/ui/popover';
+import { Button } from '@/frontend/ui/primitives/button';
+import { Input } from '@/frontend/ui/primitives/input';
+import { Popover, PopoverContent, PopoverTrigger } from '@/frontend/ui/primitives/popover';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/frontend/ui/ui/select';
+} from '@/frontend/ui/primitives/select';
 import { ChevronDown, X } from 'lucide-react';
 import type { Category } from '@/shared/contracts/spendtrack';
 

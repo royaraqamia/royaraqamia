@@ -7,7 +7,7 @@ import { motion } from 'motion/react';
 import { WarningCircle, ArrowLeft, Clock, CheckCircle } from '@phosphor-icons/react';
 import { OtpInput } from '@/frontend/ui/shared/otp-input';
 import { verifyOtp, resendOtp } from '@/frontend/api/auth';
-import { Button } from '@/frontend/ui/ui/button';
+import { Button } from '@/frontend/ui/primitives/button';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 
 const OTP_EXPIRY_SECONDS = 5 * 60;

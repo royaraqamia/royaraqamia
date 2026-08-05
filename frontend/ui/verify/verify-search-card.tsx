@@ -1,9 +1,9 @@
 'use client';
 
 import { type RefObject } from 'react';
-import { Button } from '@/frontend/ui/ui/button';
-import { Input } from '@/frontend/ui/ui/input';
-import { Card, CardContent } from '@/frontend/ui/ui/card';
+import { Button } from '@/frontend/ui/primitives/button';
+import { Input } from '@/frontend/ui/primitives/input';
+import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { Hash, ScanLine, CheckCircle2, AlertCircle, Search } from 'lucide-react';
 import { m } from 'motion/react';
 import { cardVariants } from './verify-variants';

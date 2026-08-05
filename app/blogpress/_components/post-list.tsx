@@ -21,15 +21,15 @@ import {
   Pin,
   PinOff,
 } from 'lucide-react';
-import { Button } from '@/frontend/ui/ui/button';
-import { EmptyState } from '@/frontend/ui/ui/empty-state';
+import { Button } from '@/frontend/ui/primitives/button';
+import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/frontend/ui/ui/dropdown-menu';
+} from '@/frontend/ui/primitives/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/frontend/ui/ui/dialog';
+} from '@/frontend/ui/primitives/dialog';
 import {
   deletePost,
   unpublishPost,

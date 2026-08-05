@@ -14,7 +14,7 @@ import {
 } from '@phosphor-icons/react';
 import { useNotifications } from '@/frontend/state/NotificationContext';
 import { cn } from '@/frontend/shared/cn';
-import { ScrollArea } from '@/frontend/ui/ui/scroll-area';
+import { ScrollArea } from '@/frontend/ui/primitives/scroll-area';
 
 const typeIcons: Record<string, React.ReactNode> = {
   certificate_issued: <Certificate size={18} />,

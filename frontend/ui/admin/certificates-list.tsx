@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import type { Certificate } from '@/shared/contracts/certificates';
-import { Button } from '@/frontend/ui/ui/button';
-import { Card, CardContent } from '@/frontend/ui/ui/card';
-import { Badge } from '@/frontend/ui/ui/badge';
+import { Button } from '@/frontend/ui/primitives/button';
+import { Card, CardContent } from '@/frontend/ui/primitives/card';
+import { Badge } from '@/frontend/ui/primitives/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from '@/frontend/ui/ui/alert-dialog';
+} from '@/frontend/ui/primitives/alert-dialog';
 import { m, AnimatePresence } from 'motion/react';
 import {
   Trash2,

@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense } from 'react';
 import { loadBlogIndex } from '@/backend/loaders/blog';
-import { Button } from '@/frontend/ui/ui/button';
+import { Button } from '@/frontend/ui/primitives/button';
 import {
   ChevronLeft,
   ChevronRight,

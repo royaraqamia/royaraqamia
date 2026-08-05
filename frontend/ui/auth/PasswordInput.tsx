@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Eye, EyeSlash } from '@phosphor-icons/react';
-import { Input } from '@/frontend/ui/ui/input';
+import { Input } from '@/frontend/ui/primitives/input';
 
 interface PasswordInputProps {
   id: string;

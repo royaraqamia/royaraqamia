@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/ui/card';
-import { Skeleton } from '@/frontend/ui/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
+import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { DollarSign, PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
 import { CreateExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
 import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';

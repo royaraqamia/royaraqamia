@@ -11,7 +11,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from '@/frontend/ui/ui/command';
+} from '@/frontend/ui/primitives/command';
 import { APP_PRODUCTS } from './constants';
 
 interface PaletteItem {

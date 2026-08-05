@@ -88,7 +88,7 @@ royaraqamia/
 │   ├── transport/                #   Network mechanics — HTTP client (request<T>), Supabase browser client
 │   ├── shared/                   #   Leaf utilities — logger, constants, fonts, formatting, metadata (no app imports)
 │   └── ui/                       #   Components / views / screens — presentation only
-│       ├── ui/                   #     Primitives (shadcn/ui: button, dialog, input, …)
+│       ├── primitives/           #     Low-level UI primitives (shadcn/ui: button, dialog, input, …)
 │       ├── shared/               #     Cross-cutting UI (error boundary, navbar, page-header)
 │       ├── app-shell/            #     App layout shell
 │       └── <product>/            #     Product-specific components (blogpress, habitflow, linksnap, …)

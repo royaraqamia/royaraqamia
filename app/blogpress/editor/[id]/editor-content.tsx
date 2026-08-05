@@ -10,16 +10,16 @@ import {
   useReducer,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/frontend/ui/ui/button';
-import { Input } from '@/frontend/ui/ui/input';
-import { Label } from '@/frontend/ui/ui/label';
+import { Button } from '@/frontend/ui/primitives/button';
+import { Input } from '@/frontend/ui/primitives/input';
+import { Label } from '@/frontend/ui/primitives/label';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-} from '@/frontend/ui/ui/dialog';
+} from '@/frontend/ui/primitives/dialog';
 import { ArrowRight, Loader2, Check, X, Save, Send, Upload, Focus } from 'lucide-react';
 import { updatePost, saveAndPublishPost } from '@/frontend/api/blogpress';
 import { toast } from 'sonner';

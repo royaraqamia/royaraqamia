@@ -1,17 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/frontend/ui/ui/button';
+import { Button } from '@/frontend/ui/primitives/button';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-} from '@/frontend/ui/ui/dialog';
+} from '@/frontend/ui/primitives/dialog';
 import { Trash2, Loader2, Receipt } from 'lucide-react';
 import { CreateExpenseDialog, EditExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
-import { EmptyState } from '@/frontend/ui/ui/empty-state';
+import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { useDeleteExpense, useExpensePagination } from '@/frontend/state/spendtrack/use-expenses';
 import { parseISO } from 'date-fns';
 

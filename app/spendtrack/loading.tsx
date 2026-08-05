@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/ui/card';
-import { Skeleton } from '@/frontend/ui/ui/skeleton';
+import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
+import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { DollarSign } from 'lucide-react';
 
 export default function DashboardLoading() {

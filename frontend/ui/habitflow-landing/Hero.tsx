@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import { ArrowLeft, CheckCircle, Fire } from '@phosphor-icons/react';
-import { Button } from '@/frontend/ui/ui/button';
+import { Button } from '@/frontend/ui/primitives/button';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
 import { useLandingCta } from '@/frontend/ui/landing-shared/useLandingCta';

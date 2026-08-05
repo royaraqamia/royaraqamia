@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, Filter } from 'lucide-react';
-import { Input } from '@/frontend/ui/ui/input';
+import { Input } from '@/frontend/ui/primitives/input';
 
 export type StatusFilter = 'all' | 'valid' | 'expired';
 

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { logger } from '@/frontend/shared/logger';
 import Link from 'next/link';
 import { AlertTriangle, RefreshCw, House } from 'lucide-react';
-import { Button } from '@/frontend/ui/ui/button';
+import { Button } from '@/frontend/ui/primitives/button';
 
 export default function Error({
   error,

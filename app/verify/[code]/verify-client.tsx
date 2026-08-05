@@ -1,9 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent } from '@/frontend/ui/ui/card';
-import { Badge } from '@/frontend/ui/ui/badge';
-import { Button } from '@/frontend/ui/ui/button';
+import { Card, CardContent } from '@/frontend/ui/primitives/card';
+import { Badge } from '@/frontend/ui/primitives/badge';
+import { Button } from '@/frontend/ui/primitives/button';
 import {
   ShieldCheck,
   ShieldAlert,

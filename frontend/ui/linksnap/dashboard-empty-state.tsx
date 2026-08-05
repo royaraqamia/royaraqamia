@@ -1,6 +1,6 @@
 import { Link2, Plus } from 'lucide-react';
 import Link from 'next/link';
-import { EmptyState } from '@/frontend/ui/ui/empty-state';
+import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 
 export function DashboardEmptyState() {
   return (

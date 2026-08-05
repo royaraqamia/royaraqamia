@@ -9,7 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/frontend/ui/ui/dropdown-menu';
+} from '@/frontend/ui/primitives/dropdown-menu';
 import { cn } from '@/frontend/shared/cn';
 import { APP_PRODUCTS, getAppProduct, type AppProduct } from './constants';
 

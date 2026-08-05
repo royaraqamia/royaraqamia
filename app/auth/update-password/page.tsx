@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { WarningCircle } from '@phosphor-icons/react';
 import { updatePassword } from '@/frontend/api/auth';
-import { Button } from '@/frontend/ui/ui/button';
+import { Button } from '@/frontend/ui/primitives/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { PasswordStrength } from '@/frontend/ui/auth/PasswordStrength';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';

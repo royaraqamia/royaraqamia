@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { CaretDown, type Icon } from '@phosphor-icons/react';
-import { Button } from '../ui/button';
+import { Button } from '../primitives/button';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { NotificationDropdown } from '../shared/notification-dropdown';
 import { UserDropdown } from '../shared/user-dropdown';

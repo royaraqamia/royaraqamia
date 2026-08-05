@@ -28,7 +28,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/frontend/ui/ui/dropdown-menu';
+} from '@/frontend/ui/primitives/dropdown-menu';
 
 interface EditorToolbarProps {
   editorRef: React.RefObject<{ editor: Editor | null } | null>;

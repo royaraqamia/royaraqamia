@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Button } from './ui/button';
+import { Button } from './primitives/button';
 import { Code, Rocket, ShieldCheck, DeviceMobile, Monitor, Globe } from '@phosphor-icons/react';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 import { SectionBackground } from './SectionBackground';

@@ -8,7 +8,7 @@ import {
   WhatsappLogo,
   ArrowLeft,
 } from '@phosphor-icons/react';
-import { Button } from './ui/button';
+import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 
 export function ConsultationCards() {

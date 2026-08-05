@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent } from '@/frontend/ui/ui/card';
-import { Badge } from '@/frontend/ui/ui/badge';
+import { Card, CardContent } from '@/frontend/ui/primitives/card';
+import { Badge } from '@/frontend/ui/primitives/badge';
 import type { Certificate } from '@/shared/contracts/certificates';
 import { formatDateArabic } from '@/frontend/shared/format';
 import {

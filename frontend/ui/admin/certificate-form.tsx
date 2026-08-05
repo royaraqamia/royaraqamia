@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/frontend/ui/ui/button';
-import { Input } from '@/frontend/ui/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/ui/card';
+import { Button } from '@/frontend/ui/primitives/button';
+import { Input } from '@/frontend/ui/primitives/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
 import { toast } from 'sonner';
 import { ArrowRight, CalendarDays, User, GraduationCap, Trophy, Hash } from 'lucide-react';
 

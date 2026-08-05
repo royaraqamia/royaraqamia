@@ -1,4 +1,4 @@
-import { Skeleton } from '@/frontend/ui/ui/skeleton';
+import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 
 export default function BlogLoading() {
   return (

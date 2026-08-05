@@ -7,7 +7,7 @@ import { useHorizontalScroll } from '../shared/use-horizontal-scroll';
 import { useUI } from '../state/UIContext';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
 import { testimonials } from '../../data/testimonials';
-import { Sheet, SheetContent } from './ui/sheet';
+import { Sheet, SheetContent } from './primitives/sheet';
 
 export function Testimonials() {
   const { setIsReviewSheetOpen } = useUI();

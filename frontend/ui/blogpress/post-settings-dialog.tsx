@@ -1,10 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { Button } from '@/frontend/ui/ui/button';
-import { Input } from '@/frontend/ui/ui/input';
-import { Label } from '@/frontend/ui/ui/label';
-import { Textarea } from '@/frontend/ui/ui/textarea';
+import { Button } from '@/frontend/ui/primitives/button';
+import { Input } from '@/frontend/ui/primitives/input';
+import { Label } from '@/frontend/ui/primitives/label';
+import { Textarea } from '@/frontend/ui/primitives/textarea';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/frontend/ui/ui/dialog';
+} from '@/frontend/ui/primitives/dialog';
 import { Settings, Upload, Loader2, ImageIcon, Link2, Search, X } from 'lucide-react';
 import { SITE_URL } from '@/frontend/shared/constants';
 

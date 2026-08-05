@@ -1,7 +1,7 @@
 'use client';
 
 import { Search, ChevronLeft, ChevronRight, X, AlertTriangle, Unlock, Lock } from 'lucide-react';
-import { Badge } from '@/frontend/ui/ui/badge';
+import { Badge } from '@/frontend/ui/primitives/badge';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 
 export interface AdminSystemLink {

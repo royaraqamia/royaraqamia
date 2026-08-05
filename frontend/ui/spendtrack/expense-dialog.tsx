@@ -5,23 +5,23 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSaveExpense } from '@/frontend/state/spendtrack/use-expenses';
-import { Button } from '@/frontend/ui/ui/button';
-import { Input } from '@/frontend/ui/ui/input';
-import { Label } from '@/frontend/ui/ui/label';
+import { Button } from '@/frontend/ui/primitives/button';
+import { Input } from '@/frontend/ui/primitives/input';
+import { Label } from '@/frontend/ui/primitives/label';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/frontend/ui/ui/dialog';
+} from '@/frontend/ui/primitives/dialog';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/frontend/ui/ui/select';
+} from '@/frontend/ui/primitives/select';
 import { Plus, Pencil, Loader2 } from 'lucide-react';
 import type { Category, Expense } from '@/shared/contracts/spendtrack';
 

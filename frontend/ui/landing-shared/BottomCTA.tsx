@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import { ArrowLeft, Sparkle } from '@phosphor-icons/react';
-import { Button } from '@/frontend/ui/ui/button';
+import { Button } from '@/frontend/ui/primitives/button';
 import { useLandingCta } from './useLandingCta';
 
 const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];

@@ -1,8 +1,8 @@
 'use client';
 
-import { Button } from '@/frontend/ui/ui/button';
-import { Card, CardContent } from '@/frontend/ui/ui/card';
-import { Badge } from '@/frontend/ui/ui/badge';
+import { Button } from '@/frontend/ui/primitives/button';
+import { Card, CardContent } from '@/frontend/ui/primitives/card';
+import { Badge } from '@/frontend/ui/primitives/badge';
 import { AlertCircle, RotateCcw } from 'lucide-react';
 import { m } from 'motion/react';
 import { resultVariants } from './verify-variants';

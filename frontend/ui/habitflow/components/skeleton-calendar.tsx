@@ -1,5 +1,5 @@
-import { Skeleton } from '@/frontend/ui/ui/skeleton';
-import { Card } from '@/frontend/ui/ui/card';
+import { Skeleton } from '@/frontend/ui/primitives/skeleton';
+import { Card } from '@/frontend/ui/primitives/card';
 
 export function SkeletonCalendar() {
   return (

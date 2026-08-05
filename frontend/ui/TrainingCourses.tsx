@@ -15,7 +15,7 @@ import {
   Star,
   Lightning,
 } from '@phosphor-icons/react';
-import { Button } from './ui/button';
+import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 

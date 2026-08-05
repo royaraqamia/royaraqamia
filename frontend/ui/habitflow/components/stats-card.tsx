@@ -1,7 +1,7 @@
 import { motion, useReducedMotion, useSpring, useMotionValue } from 'motion/react';
 import { useEffect, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { Card } from '@/frontend/ui/ui/card';
+import { Card } from '@/frontend/ui/primitives/card';
 
 interface StatsCardProps {
   icon: LucideIcon;

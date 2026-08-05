@@ -5,8 +5,8 @@ import Link from 'next/link';
 import { motion } from 'motion/react';
 import { WarningCircle, CheckCircle, ArrowLeft } from '@phosphor-icons/react';
 import { resetPassword } from '@/frontend/api/auth';
-import { Input } from '@/frontend/ui/ui/input';
-import { Button } from '@/frontend/ui/ui/button';
+import { Input } from '@/frontend/ui/primitives/input';
+import { Button } from '@/frontend/ui/primitives/button';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 
 const isSuccessMessage = (msg: string) => msg.includes('تم إرسال');

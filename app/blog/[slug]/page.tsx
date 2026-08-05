@@ -5,7 +5,7 @@ import { isValidElement } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
-import { Button } from '@/frontend/ui/ui/button';
+import { Button } from '@/frontend/ui/primitives/button';
 import { ArrowRight, Clock, Calendar, BookOpen, User, ChevronLeft } from 'lucide-react';
 import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
