@@ -27,8 +27,13 @@ vi.mock('@/backend/middleware/auth-guard', () => ({
   getAuthUser: () => mockGetAuthUser(),
 }));
 
+vi.mock('@/backend/middleware/admin-auth-guard', () => ({
+  requireAdminAuth: vi.fn(),
+}));
+
 vi.mock('@/backend/config/notifications', () => ({
   createSupabaseNotificationService: () => mockService,
+  createAdminNotificationService: vi.fn(),
 }));
 
 import { GET as listGET, PATCH as markAllPATCH } from '@/app/api/notifications/route';
