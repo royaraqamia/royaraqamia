@@ -11,10 +11,12 @@ import {
   ChevronDown,
   Calendar,
   AlertTriangle,
+  QrCode,
 } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { LinkEditForm } from './link-edit-form';
 import { LinkAnalyticsDrawer } from './link-analytics-drawer';
+import { LinkQrModal } from './link-qr-modal';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { cn } from '@/frontend/shared/cn';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
@@ -45,6 +47,7 @@ export function LinkRowCard({
   const [editingCode, setEditingCode] = useState<string | null>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showQr, setShowQr] = useState(false);
   const { deleteLink, deleteError } = useDeleteLink(token);
   const { analytics, analyticsLoading, analyticsError, loadAnalytics, resetAnalytics } =
     useLinkAnalytics(code, token);
@@ -156,6 +159,15 @@ export function LinkRowCard({
           </button>
 
           <button
+            onClick={() => setShowQr(true)}
+            aria-label="عرض رمز الاستجابة السريعة"
+            className="p-3.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground hover:text-primary rounded-full transition-colors cursor-pointer btn-press focus-ring touch-target"
+            title="رمز الاستجابة السريعة"
+          >
+            <QrCode aria-hidden="true" className="w-4 h-4" />
+          </button>
+
+          <button
             onClick={handleAnalyticsToggle}
             aria-expanded={isExpanded}
             aria-controls={`analytics-panel-${code}`}
@@ -217,6 +229,8 @@ export function LinkRowCard({
         onConfirm={handleDeleteConfirmed}
         onCancel={() => setShowDeleteConfirm(false)}
       />
+
+      <LinkQrModal code={code} baseUrl={getBaseUrl()} open={showQr} onOpenChange={setShowQr} />
     </div>
   );
 }
