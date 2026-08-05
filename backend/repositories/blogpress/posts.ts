@@ -1,6 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
-import type { Post, PostCategory, PostAuthor, PublishedPostsResult } from '@/shared/contracts/blogpress';
+import type {
+  Post,
+  PostCategory,
+  PostAuthor,
+  PublishedPostsResult,
+} from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 

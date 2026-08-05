@@ -2,7 +2,12 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/frontend/ui/primitives/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/frontend/ui/primitives/dialog';
 import { projectImages, projectData, visibleIndices, PORTFOLIO_IMAGES } from './portfolio-data';
 
 type GalleryIndexUpdater = React.Dispatch<React.SetStateAction<number>>;
