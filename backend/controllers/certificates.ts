@@ -27,6 +27,7 @@ interface CertificateInput {
   issue_date: string;
   expiration_date?: string;
   grade_or_status?: string;
+  recipient_email?: string;
 }
 
 export async function listCertificates(

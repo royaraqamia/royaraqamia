@@ -7,6 +7,7 @@ export interface CertificateCreateInput {
   issue_date: string;
   expiration_date: string | null;
   grade_or_status: string | null;
+  recipient_email?: string | null;
 }
 
 export interface CertificateUpdateInput {
@@ -15,6 +16,7 @@ export interface CertificateUpdateInput {
   issue_date: string;
   expiration_date: string | null;
   grade_or_status: string | null;
+  recipient_email?: string | null;
 }
 
 export interface CertificatesReader {

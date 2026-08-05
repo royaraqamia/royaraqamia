@@ -118,6 +118,7 @@ export type Database = {
           grade_or_status: string | null;
           id: string;
           issue_date: string;
+          recipient_email: string | null;
           student_name: string;
         };
         Insert: {
@@ -128,6 +129,7 @@ export type Database = {
           grade_or_status?: string | null;
           id?: string;
           issue_date: string;
+          recipient_email?: string | null;
           student_name: string;
         };
         Update: {
@@ -138,6 +140,7 @@ export type Database = {
           grade_or_status?: string | null;
           id?: string;
           issue_date?: string;
+          recipient_email?: string | null;
           student_name?: string;
         };
         Relationships: [];

@@ -10,6 +10,7 @@ export interface Certificate {
   issue_date: string;
   expiration_date: string | null;
   grade_or_status: string | null;
+  recipient_email: string | null;
   created_at: string;
 }
 

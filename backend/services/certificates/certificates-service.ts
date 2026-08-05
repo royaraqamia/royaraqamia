@@ -37,6 +37,10 @@ const certificateSchema = z
       .optional()
       .refine((d) => !d || !isNaN(Date.parse(d)), 'تاريخ الانتهاء غير صالح'),
     grade_or_status: z.string().max(100).optional(),
+    recipient_email: z
+      .string()
+      .optional()
+      .refine((e) => !e || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e), 'البريد الإلكتروني غير صالح'),
   })
   .refine(
     (data) => {
@@ -61,6 +65,7 @@ function parseCertificate(data: {
   issue_date: string;
   expiration_date?: string;
   grade_or_status?: string;
+  recipient_email?: string;
 }) {
   const parsed = certificateSchema.safeParse(data);
   if (!parsed.success) {
@@ -72,6 +77,7 @@ function parseCertificate(data: {
     issue_date: parsed.data.issue_date,
     expiration_date: parsed.data.expiration_date || null,
     grade_or_status: parsed.data.grade_or_status || null,
+    recipient_email: parsed.data.recipient_email?.trim() || null,
   };
 }
 
@@ -87,8 +93,15 @@ function generateCode(): string {
   return `COMP-${year}-${random}`;
 }
 
+export interface CertificateIssuedNotifier {
+  (info: { recipientEmail: string; certificate: Certificate }): void;
+}
+
 export class CertificatesService {
-  constructor(private readonly repository: CertificatesRepository) {}
+  constructor(
+    private readonly repository: CertificatesRepository,
+    private readonly onCertificateIssued?: CertificateIssuedNotifier
+  ) {}
 
   async list(
     page: number,
@@ -109,6 +122,7 @@ export class CertificatesService {
       issue_date: string;
       expiration_date?: string;
       grade_or_status?: string;
+      recipient_email?: string;
     },
     customCode?: string
   ): Promise<Certificate> {
@@ -119,8 +133,9 @@ export class CertificatesService {
       throw new CertificateCodeFormatError();
     }
 
+    let certificate: Certificate;
     try {
-      return await this.repository.create({
+      certificate = await this.repository.create({
         certificate_code: code,
         ...parsed,
       });
@@ -130,6 +145,15 @@ export class CertificatesService {
       }
       throw error;
     }
+
+    if (parsed.recipient_email) {
+      this.onCertificateIssued?.({
+        recipientEmail: parsed.recipient_email,
+        certificate,
+      });
+    }
+
+    return certificate;
   }
 
   async update(
@@ -140,6 +164,7 @@ export class CertificatesService {
       issue_date: string;
       expiration_date?: string;
       grade_or_status?: string;
+      recipient_email?: string;
     }
   ): Promise<Certificate> {
     const parsed = parseCertificate(input);
