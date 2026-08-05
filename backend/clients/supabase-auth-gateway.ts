@@ -70,11 +70,20 @@ export function createSupabaseAuthGateway(
     },
 
     async getUserByEmail(email) {
-      const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 100 });
-      if (error || !data?.users?.length) return { user: null };
-      const found = data.users.find((u) => u.email === email);
-      if (!found) return { user: null };
-      return { user: toAuthUser(found) };
+      const target = email.trim().toLowerCase();
+      const perPage = 1000;
+      const maxPages = 100;
+
+      // listUsers has no email filter, so paginate until the account is found
+      // or the result set is exhausted (users beyond page 1 were previously unreachable).
+      for (let page = 1; page <= maxPages; page++) {
+        const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
+        if (error || !data?.users?.length) return { user: null };
+        const found = data.users.find((u) => u.email?.trim().toLowerCase() === target);
+        if (found) return { user: toAuthUser(found) };
+        if (data.users.length < perPage) return { user: null };
+      }
+      return { user: null };
     },
   };
 }
