@@ -126,9 +126,7 @@ export async function logout(): Promise<HttpResult> {
     const service = await createServerAuthService();
     await service.logout();
     return jsonResult(200, { success: true });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تسجيل الخروج',
-    });
+  } catch {
+    return jsonResult(500, { error: 'فشل تسجيل الخروج' });
   }
 }
