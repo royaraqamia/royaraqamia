@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitiv
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { DollarSign, PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
 import { CreateExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
+import { BudgetCard } from '@/frontend/ui/spendtrack/budget-card';
 import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
 import { CategoryPieChart } from '@/frontend/ui/spendtrack/category-pie-chart';
 import { DailyBarChart } from '@/frontend/ui/spendtrack/daily-bar-chart';
@@ -98,6 +99,19 @@ async function TotalCard({
 async function CreateExpenseButton({ userId }: { userId: string }) {
   const categories = await loadUserCategories(userId);
   return <CreateExpenseDialog categories={categories} />;
+}
+
+async function BudgetSection({ userId }: { userId: string }) {
+  const now = new Date();
+  const month = format(now, 'yyyy-MM');
+  const total =
+    (await loadTotalExpenses(
+      userId,
+      format(startOfMonth(now), 'yyyy-MM-dd'),
+      format(endOfMonth(now), 'yyyy-MM-dd'),
+      null
+    )) ?? 0;
+  return <BudgetCard month={month} total={total} />;
 }
 
 async function CategoryPieSection({
@@ -236,9 +250,14 @@ export default async function DashboardPage(props: {
       </div>
 
       <div className="animate-slide-up stagger-2">
-        <Suspense fallback={<TotalSkeleton />}>
-          <TotalCard userId={user.id} start={start} end={end} catFilter={catFilter} />
-        </Suspense>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Suspense fallback={<TotalSkeleton />}>
+            <TotalCard userId={user.id} start={start} end={end} catFilter={catFilter} />
+          </Suspense>
+          <Suspense fallback={<TotalSkeleton />}>
+            <BudgetSection userId={user.id} />
+          </Suspense>
+        </div>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2 animate-slide-up stagger-3">

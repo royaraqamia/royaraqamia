@@ -17,8 +17,16 @@ export interface SpendtrackExpenseInput {
   description: string | null;
 }
 
+export interface ExpenseAlertInfo {
+  userId: string;
+  month: string;
+}
+
 export class SpendtrackService {
-  constructor(private readonly repository: SpendtrackRepository) {}
+  constructor(
+    private readonly repository: SpendtrackRepository,
+    private readonly onExpenseAlert?: (info: ExpenseAlertInfo) => void
+  ) {}
 
   async getUserCategories(userId: string): Promise<Category[]> {
     return this.repository.getUserCategories(userId);
@@ -67,6 +75,26 @@ export class SpendtrackService {
     }
 
     await this.repository.createExpense({ user_id: userId, ...input });
+
+    const month = input.date.slice(0, 7);
+    this.onExpenseAlert?.({ userId, month });
+  }
+
+  async getBudget(userId: string, month: string): Promise<number | null> {
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      throw new Error('شهر غير صالح');
+    }
+    return this.repository.getBudget(userId, month);
+  }
+
+  async setBudget(userId: string, month: string, amount: number): Promise<void> {
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      throw new Error('شهر غير صالح');
+    }
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error('مبلغ غير صالح');
+    }
+    await this.repository.setBudget(userId, month, amount);
   }
 
   async updateExpense(

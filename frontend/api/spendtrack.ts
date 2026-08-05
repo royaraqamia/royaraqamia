@@ -59,6 +59,26 @@ export async function deleteExpense(expenseId: string): Promise<ActionState> {
   }
 }
 
+export async function getBudget(month: string): Promise<number | null> {
+  const params = new URLSearchParams({ month });
+  const data = await request<{ budget: number | null }>(
+    `/spendtrack/api/budget?${params.toString()}`
+  );
+  return data?.budget ?? null;
+}
+
+export async function setBudgetForMonth(month: string, amount: number): Promise<ActionState> {
+  try {
+    await request('/spendtrack/api/budget', {
+      method: 'PUT',
+      body: JSON.stringify({ month, amount }),
+    });
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل حفظ الميزانية' };
+  }
+}
+
 export async function createCategory(data: {
   name: string;
   colorHex: string;

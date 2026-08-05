@@ -126,6 +126,48 @@ export async function deleteExpense(id: string): Promise<HttpResult> {
   }
 }
 
+export async function getBudget(month: string): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+
+    const budget = await createSpendtrackService(supabase).getBudget(user.id, month);
+    return jsonResult(200, { budget });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل تحميل الميزانية',
+    });
+  }
+}
+
+export async function setBudget(body: Record<string, unknown>): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+
+    const month = String(body.month ?? '');
+    const amount = Number(body.amount);
+
+    try {
+      await createSpendtrackService(supabase).setBudget(user.id, month, amount);
+    } catch (error) {
+      return jsonResult(400, {
+        error: error instanceof Error ? error.message : 'فشل حفظ الميزانية',
+      });
+    }
+
+    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل حفظ الميزانية',
+    });
+  }
+}
+
 export async function createCategory(body: Record<string, unknown>): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();

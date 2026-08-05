@@ -178,6 +178,29 @@ export function createSpendtrackRepository(
       if (error) throw new Error(error.message);
     },
 
+    async getBudget(userId: string, month: string): Promise<number | null> {
+      const { data } = await supabase
+        .from('budgets')
+        .select('amount')
+        .eq('user_id', userId)
+        .eq('month', month)
+        .maybeSingle();
+      return data ? Number(data.amount) : null;
+    },
+
+    async setBudget(userId: string, month: string, amount: number): Promise<void> {
+      const { error } = await supabase.from('budgets').upsert(
+        {
+          user_id: userId,
+          month,
+          amount,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: 'user_id,month' }
+      );
+      if (error) throw new Error(error.message);
+    },
+
     async createCategory(input: {
       user_id: string;
       name: string;
