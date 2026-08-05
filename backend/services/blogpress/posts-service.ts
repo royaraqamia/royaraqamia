@@ -5,7 +5,7 @@ import type {
 } from '@/backend/repositories/blogpress/posts-repository';
 import type { Post, PostCategory } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
-import { isAdmin } from '@/shared/admin-validator';
+import { isAdmin } from '@/backend/shared/admin-validator';
 
 export class BlogpressPostsService {
   constructor(

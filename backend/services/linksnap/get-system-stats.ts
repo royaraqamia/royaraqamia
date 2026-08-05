@@ -2,7 +2,7 @@ import {
   AdminRepository,
   SystemStatsReportData,
 } from '@/backend/repositories/linksnap/admin-repository';
-import { isAdmin } from '@/shared/admin-validator';
+import { isAdmin } from '@/backend/shared/admin-validator';
 
 type SystemStatsReport = SystemStatsReportData;
 

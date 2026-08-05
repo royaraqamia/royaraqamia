@@ -1,5 +1,5 @@
 import { getAuthUser } from '@/backend/middleware/auth-guard';
-import { isAdmin } from '@/shared/admin-validator';
+import { isAdmin } from '@/backend/shared/admin-validator';
 import { env } from '@/backend/config/env';
 import { LinkSnapAppView } from '@/frontend/ui/linksnap/link-snap-app-view';
 

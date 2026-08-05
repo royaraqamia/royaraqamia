@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseAdminEmails, isAdmin } from '@/shared/admin-validator';
+import { parseAdminEmails, isAdmin } from '@/backend/shared/admin-validator';
 
 describe('parseAdminEmails', () => {
   it('returns an empty array when the input is empty', () => {
