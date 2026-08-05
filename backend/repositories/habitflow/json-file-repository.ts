@@ -108,7 +108,11 @@ export class JsonFileHabitRepository implements HabitRepository {
         habits: data.habits || [],
         logs: data.logs || [],
       };
-    } catch {
+    } catch (error) {
+      logger.warn('Habit data file is corrupted; falling back to empty state', {
+        file: this.dbFile,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return { habits: [], logs: [] };
     }
   }
