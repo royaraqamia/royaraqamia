@@ -22,9 +22,11 @@ function encrypt(value: string): string {
   const cipher = createCipheriv(ALGORITHM, getEncryptionKey(), iv);
   const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
-  return [iv.toString('base64url'), tag.toString('base64url'), encrypted.toString('base64url')].join(
-    '.'
-  );
+  return [
+    iv.toString('base64url'),
+    tag.toString('base64url'),
+    encrypted.toString('base64url'),
+  ].join('.');
 }
 
 function decrypt(payload: string): string | null {
