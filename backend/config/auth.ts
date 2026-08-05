@@ -36,8 +36,10 @@ export function createAuthService(
       sendPasswordResetEmail,
     },
     rateLimiter: {
-      checkRateLimit,
-      getRateLimitRemaining,
+      checkRateLimit: (key, limit, windowMs) =>
+        checkRateLimit(key, limit, windowMs, { failClosed: true }),
+      getRateLimitRemaining: (key, limit, windowMs) =>
+        getRateLimitRemaining(key, limit, windowMs, { failClosed: true }),
     },
     verifyTurnstile: createTurnstileVerifier(env.turnstileSecret),
     pendingLoginStore: createServerPendingLoginStore(),

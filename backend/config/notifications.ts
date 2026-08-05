@@ -13,7 +13,8 @@ export function createNotificationService(
   deps: Partial<NotificationServiceDeps> = {}
 ): NotificationService {
   return new NotificationService(repo, {
-    checkRateLimit,
+    checkRateLimit: (key, limit, windowMs) =>
+      checkRateLimit(key, limit, windowMs, { failClosed: true }),
     ...deps,
   });
 }

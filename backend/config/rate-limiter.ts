@@ -1,4 +1,5 @@
 import { createRateLimiter, type RateLimiter } from '@/backend/clients/rate-limiter';
+import type { RateLimiterOptions } from '@/backend/clients/rate-limiter';
 import { env } from '@/backend/config/env';
 
 let defaultRateLimiter: RateLimiter | null = null;
@@ -13,16 +14,22 @@ export function getDefaultRateLimiter(): RateLimiter {
   return defaultRateLimiter;
 }
 
-export function checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
-  return getDefaultRateLimiter().checkRateLimit(key, limit, windowMs);
+export function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number,
+  options?: RateLimiterOptions
+): Promise<boolean> {
+  return getDefaultRateLimiter().checkRateLimit(key, limit, windowMs, options);
 }
 
 export function getRateLimitRemaining(
   key: string,
   limit: number,
-  windowMs: number
+  windowMs: number,
+  options?: RateLimiterOptions
 ): Promise<number> {
-  return getDefaultRateLimiter().getRateLimitRemaining(key, limit, windowMs);
+  return getDefaultRateLimiter().getRateLimitRemaining(key, limit, windowMs, options);
 }
 
 export interface RateLimitPolicy {

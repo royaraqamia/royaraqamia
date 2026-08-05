@@ -70,6 +70,17 @@ describe('RateLimiterService (in-memory fallback)', () => {
     expect(result).toBe(true);
   });
 
+  it('fails closed (denies) when requested and the backing store errors', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Redis unreachable')));
+
+    const limiter = createRateLimiter({
+      redisUrl: 'https://test.upstash.io',
+      redisToken: 'test-token',
+    });
+    const result = await limiter.checkRateLimit('redis-key', 5, 60_000, { failClosed: true });
+    expect(result).toBe(false);
+  });
+
   it('returns remaining count decreasing as requests are made', async () => {
     const limiter = makeLimiter();
 

@@ -6,9 +6,29 @@ export interface RateLimiterConfig {
   redisToken?: string;
 }
 
+export interface RateLimiterOptions {
+  /**
+   * When the backing store errors (e.g. Redis unreachable), fail closed by
+   * denying the request instead of allowing it through. Enable this for
+   * security-sensitive paths so a rate-limit outage never disables brute-force
+   * protection silently.
+   */
+  failClosed?: boolean;
+}
+
 export interface RateLimiter {
-  checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean>;
-  getRateLimitRemaining(key: string, limit: number, windowMs: number): Promise<number>;
+  checkRateLimit(
+    key: string,
+    limit: number,
+    windowMs: number,
+    options?: RateLimiterOptions
+  ): Promise<boolean>;
+  getRateLimitRemaining(
+    key: string,
+    limit: number,
+    windowMs: number,
+    options?: RateLimiterOptions
+  ): Promise<number>;
 }
 
 export class RateLimiterService implements RateLimiter {
@@ -66,23 +86,33 @@ export class RateLimiterService implements RateLimiter {
     return limiter;
   }
 
-  async checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  async checkRateLimit(
+    key: string,
+    limit: number,
+    windowMs: number,
+    options: RateLimiterOptions = {}
+  ): Promise<boolean> {
     try {
       const limiter = this.getLimiter(key, limit, windowMs);
       const { success } = await limiter.limit(key);
       return success;
     } catch {
-      return true;
+      return options.failClosed ? false : true;
     }
   }
 
-  async getRateLimitRemaining(key: string, limit: number, windowMs: number): Promise<number> {
+  async getRateLimitRemaining(
+    key: string,
+    limit: number,
+    windowMs: number,
+    options: RateLimiterOptions = {}
+  ): Promise<number> {
     try {
       const limiter = this.getLimiter(key, limit, windowMs);
       const { remaining } = await limiter.limit(key);
       return remaining;
     } catch {
-      return limit;
+      return options.failClosed ? 0 : limit;
     }
   }
 }
