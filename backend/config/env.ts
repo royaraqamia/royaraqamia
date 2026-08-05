@@ -17,6 +17,9 @@ export const env = {
   get turnstileSecret(): string | undefined {
     return read('TURNSTILE_SECRET_KEY');
   },
+  get pendingLoginSecret(): string | undefined {
+    return read('PENDING_LOGIN_SECRET');
+  },
   get resendApiKey(): string | undefined {
     return read('RESEND_API_KEY');
   },
