@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
-import React from 'react';
 import { NotificationProvider, useNotifications } from '@/frontend/state/NotificationContext';
 import type { PostgresChangeHandlers } from '@/frontend/transport/supabase/realtime';
 
