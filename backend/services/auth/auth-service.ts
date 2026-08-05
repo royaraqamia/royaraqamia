@@ -260,10 +260,17 @@ export class AuthService {
 
     await this.otpRepository.markOtpVerified(record.id);
 
-    // Try session-first (signup flow — user already has unconfirmed session)
+    // Try session-first (signup flow — user already has unconfirmed session).
+    // Only confirm the session account if it is the account whose OTP is being
+    // verified, otherwise a stale session for a different unconfirmed account
+    // would be confirmed instead of the intended one.
     const { user } = await this.gateway.getUser();
 
-    if (user && user.email_confirmed_at === null) {
+    if (
+      user &&
+      user.email_confirmed_at === null &&
+      user.email?.trim().toLowerCase() === input.email.trim().toLowerCase()
+    ) {
       await this.gateway.confirmUserEmail(user.id);
       return { ok: true, redirectUrl: safeRedirect(input.redirectTo), consumedPendingLogin: false };
     }
