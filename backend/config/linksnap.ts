@@ -9,8 +9,13 @@ import { DeleteLinkService } from '@/backend/services/linksnap/delete-link';
 import { ModerateLinkService } from '@/backend/services/linksnap/moderate-link';
 import { GetUrlAnalyticsService } from '@/backend/services/linksnap/get-url-analytics';
 import { GetSystemStatsService } from '@/backend/services/linksnap/get-system-stats';
-import { RedirectUrlService } from '@/backend/services/linksnap/redirect-url';
+import {
+  RedirectUrlService,
+  type LinkClickedNotifier,
+} from '@/backend/services/linksnap/redirect-url';
 import { getAdminSupabase, getPublicSupabase } from '@/backend/config/supabase';
+import { checkRateLimit } from '@/backend/config/rate-limiter';
+import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { env } from '@/backend/config/env';
 
 /**
@@ -62,5 +67,38 @@ export function createGetSystemStatsService(): GetSystemStatsService {
 }
 
 export function createRedirectUrlService(): RedirectUrlService {
-  return new RedirectUrlService(createShortLinkRepository(), createAnalyticsRepository());
+  return new RedirectUrlService(
+    createShortLinkRepository(),
+    createAnalyticsRepository(),
+    createLinkClickedNotifier()
+  );
+}
+
+const LINK_CLICK_NOTIFY_WINDOW_MS = 30 * 60 * 1000;
+
+/**
+ * Notifies the link owner about a click, throttled to one notification per
+ * link per 30 minutes to avoid spam. Fail-open: if the limiter is unreachable
+ * the click notification still goes out.
+ */
+export function createLinkClickedNotifier(): LinkClickedNotifier {
+  const notify = createAdminNotificationProducer();
+  return async ({ userId, code, originalUrl }) => {
+    const allowed = await checkRateLimit(
+      `linksnap:click-notify:${userId}:${code}`,
+      1,
+      LINK_CLICK_NOTIFY_WINDOW_MS,
+      {
+        failClosed: false,
+      }
+    );
+    if (!allowed) return;
+    await notify({
+      user_id: userId,
+      type: 'link_clicked',
+      title: 'تم النقر على رابطك',
+      body: `تم فتح رابطك القصير /${code} لمرة جديدة.`,
+      metadata: { code, originalUrl },
+    });
+  };
 }

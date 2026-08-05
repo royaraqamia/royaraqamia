@@ -17,10 +17,15 @@ export class ShortLinkRedirectError extends Error {
   }
 }
 
+export interface LinkClickedNotifier {
+  (input: { userId: string; code: string; originalUrl: string }): Promise<void>;
+}
+
 export class RedirectUrlService {
   constructor(
     private shortLinkRepository: ShortLinkRepository,
-    private analyticsRepository: AnalyticsRepository
+    private analyticsRepository: AnalyticsRepository,
+    private readonly notifyLinkClicked?: LinkClickedNotifier
   ) {}
 
   async execute(
@@ -59,6 +64,18 @@ export class RedirectUrlService {
       .catch((err) => {
         logger.error(`Failed to log analytics click for code [${code}]`, { error: String(err) });
       });
+
+    // Fire-and-forget notifying the link owner about the click (if they are
+    // signed in). Cooldown/spam control is the caller's responsibility.
+    if (link.userId) {
+      this.notifyLinkClicked?.({
+        userId: link.userId,
+        code,
+        originalUrl: link.originalUrl,
+      }).catch((err) => {
+        logger.error(`Failed to notify link owner for code [${code}]`, { error: String(err) });
+      });
+    }
 
     return link.originalUrl;
   }

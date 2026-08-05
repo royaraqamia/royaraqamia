@@ -167,6 +167,81 @@ describe('RedirectUrlService.execute', () => {
     expect(errorSpy).toHaveBeenCalled();
     errorSpy.mockRestore();
   });
+
+  it('notifies the link owner when the link has an owner', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (analyticsRepository.recordClick as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'x' });
+    const notifyLinkClicked = vi.fn(async () => {});
+
+    const service = new RedirectUrlService(
+      shortLinkRepository,
+      analyticsRepository,
+      notifyLinkClicked
+    );
+
+    const url = await service.execute('abc123', {
+      referrer: null,
+      userAgent: null,
+      ipCountry: null,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(url).toBe('https://example.com');
+    expect(notifyLinkClicked).toHaveBeenCalledWith({
+      userId: 'u-1',
+      code: 'abc123',
+      originalUrl: 'https://example.com',
+    });
+  });
+
+  it('does not notify the owner for anonymous links', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...linkFixture,
+      userId: null,
+    });
+    (analyticsRepository.recordClick as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'x' });
+    const notifyLinkClicked = vi.fn(async () => {});
+
+    const service = new RedirectUrlService(
+      shortLinkRepository,
+      analyticsRepository,
+      notifyLinkClicked
+    );
+
+    await service.execute('abc123', { referrer: null, userAgent: null, ipCountry: null });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(notifyLinkClicked).not.toHaveBeenCalled();
+  });
+
+  it('swallows notifier failures and still redirects', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (analyticsRepository.recordClick as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'x' });
+    const notifyLinkClicked = vi.fn(async () => {
+      throw new Error('notify down');
+    });
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const service = new RedirectUrlService(
+      shortLinkRepository,
+      analyticsRepository,
+      notifyLinkClicked
+    );
+
+    const url = await service.execute('abc123', {
+      referrer: null,
+      userAgent: null,
+      ipCountry: null,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(url).toBe('https://example.com');
+    expect(notifyLinkClicked).toHaveBeenCalled();
+    errorSpy.mockRestore();
+  });
 });
 
 describe('GetUrlAnalyticsService.execute', () => {
