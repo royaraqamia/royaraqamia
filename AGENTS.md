@@ -1,0 +1,70 @@
+# Project Agent Contract — royaraqamia (رؤية رقمية)
+
+Per-project facts that make the global skills (`~/.agents/skills/plan`, `implement`, `review`) executable for THIS repo. Authoritative source: `README.md`.
+
+## Project identity
+
+- **Name:** رؤية رقمية (royaraqamia)
+- **Primary stack / platform:** Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Single web deployment, multiple SaaS products (Blog, BlogPress, HabitFlow, LinkSnap, SpendTrack, Certificates) + Auth.
+- **Language / runtime / SDK:** Node 22 LTS (CI-verified), npm >= 10 with `.npmrc` `legacy-peer-deps=true`. Supabase Postgres 17.
+- **Monorepo layout:**
+  - `app/` — Next.js App Router: pages, layouts, route handlers (product routes live under `app/<product>/`).
+  - `backend/` — Clean/hexagonal architecture (ports & adapters). Dependency rule: `controller → service → repository / client`.
+  - `frontend/` — Client-side by layer: `api/`, `state/`, `transport/`, `shared/`, `ui/`.
+  - `shared/contracts/` — API contract: Zod schemas + TS types imported by both sides.
+  - `supabase/migrations/` — versioned SQL migrations (schema, RLS, storage).
+  - `e2e/` — Playwright tests.
+  - `data/`, `public/`, `scripts/` — static content / assets / tooling.
+
+## Commands (source of truth for the review skill)
+
+- **Install deps:** `npm ci`
+- **Type check:** `npx tsc --noEmit`
+- **Lint:** `npm run lint` (ESLint); `npm run lint:fix` to auto-fix
+- **Format check:** `npx prettier --check .`; `npm run format` to write
+- **Unit tests:** `npm test` (Vitest, once); `npm run test:watch`; single file: `npx vitest run <path>`
+- **Integration/E2E tests:** `npm run test:e2e` (Playwright; needs `E2E_TEST_EMAIL` + `E2E_TEST_PASSWORD`). `npx playwright test --grep responsive` for viewport suite.
+- **Build:** `npm run build` (icons → `tsc --noEmit` → `next build`). Requires `NEXT_PUBLIC_WHATSAPP_PHONE`.
+- **Env docs check:** `npm run check:env-docs`
+
+## Conventions to respect (override agent guesswork)
+
+- **Layering (critical).** Flow is `controller → service → repository/client`; controllers are thin (parse → call ONE service → shape response), no business logic. Services depend on interfaces, never HTTP/SQL directly. **Repositories are the only code that knows the DB.** All DI wiring centralized in `backend/config/` factory functions. Server-side data loaders for RSC in `backend/loaders`.
+- **SDK isolation:** Supabase `.from()` / external calls stay in `backend/repositories` / `backend/clients` (behind interfaces) and `frontend/transport` — never in UI components.
+- **Feature folders:** product code in `app/<product>/`, `frontend/ui/<product>/`, `backend/services/<product>/`, `backend/repositories/<product>/`.
+- **Shared contracts:** request/response shapes defined in `shared/contracts` (Zod), not duplicated.
+- **Naming / style:** Prettier config — `singleQuote`, `semi`, `printWidth: 100`, `trailingComma: es5`, `tabWidth: 2`, `endOfLine: lf`. Arabic primary (RTL). Marker-file identity: `*__tests__*` for test co-location.
+- **No direct console logging:** `console.error/warn` outside `backend/shared/logger` / `frontend/shared/logger` is forbidden — use the structured loggers.
+- **UI:** RTL-first; design tokens/CSS custom properties; Radix + shadcn primitives; no inline styles.
+
+## Data & persistence
+
+- **Database:** Supabase (PostgreSQL 17, Auth, Storage, Realtime).
+- **RLS / access control:** RLS on tables; admin-only writes via `ADMIN_EMAILS` allowlist + `backend/shared/admin-validator`; service-role key is server-only and never in the browser.
+- **Migrations convention:** incremental timestamped files in `supabase/migrations/`, applied in filename order via `supabase db push`. **Never edit an applied migration.** The base schema lives only on the remote project (first migration `20260718105449` is an intentional stub) — add new changes as NEW migration files only.
+
+## Secrets & environment
+
+- Env lives in `.env.local` (copy from `example.env`); never commit real secrets (`.env` is git-ignored).
+- **`NEXT_PUBLIC_*` are NOT secrets** (inlined to client). Everything else is server-only.
+- **Secret vars, never log or leak:** `SUPABASE_SERVICE_ROLE_KEY`, `RESEND_API_KEY`, `SENTRY_AUTH_TOKEN`, `UPSTASH_REDIS_REST_TOKEN`, `TURNSTILE_SECRET_KEY`, `E2E_TEST_PASSWORD`.
+- Send a `.runnable` check first: build + type-check need `NEXT_PUBLIC_WHATSAPP_PHONE`; tests inject test values automatically.
+
+## Security baseline (confirm unless overridden)
+
+- Validate all external inputs via Zod (`shared/contracts`); Turnstile on auth forms; Upstash rate limiting; strict TS config (`noUncheckedIndexedAccess`, `noImplicitReturns`, `noUnusedLocals/Parameters`).
+- Keep DB/SDK/3rd-party off the UI boundary.
+- Never hardcode secrets; load from `backend/config/env`.
+
+## Git discipline
+
+- **Branch/PR:** match repo style (CI gates merges on main/master).
+- **Commit style:** conventional commits (feat/fix/test/style/…) as seen in history; concise imperative.
+- **Micro-commits:** one atomic unit per commit; never commit red; never destructive (reset/force-push).
+
+## Definition of done (overlaps review skill)
+
+- Plan skill exit criteria pass.
+- `npx prettier --check .`, `npm run lint`, `npx tsc --noEmit`, `npm test`, and `npm run build` all green.
+- E2E (Playwright) green when the change touches covered flows.
+- No secrets leaked; RLS / access control preserved; new DB change added as a new migration file.
