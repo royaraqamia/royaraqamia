@@ -30,7 +30,7 @@ describe('Navbar', () => {
 
   it('renders the navigation landmark', () => {
     renderWithProviders(<Navbar />);
-    expect(screen.getByRole('navigation')).toBeInTheDocument();
+    expect(screen.getByRole('navigation', { name: 'القائمة الرئيسية' })).toBeInTheDocument();
   });
 
   it('renders the mobile menu button', () => {

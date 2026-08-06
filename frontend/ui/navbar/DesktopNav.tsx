@@ -52,7 +52,7 @@ export function DesktopNav({
   const servicesTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const productsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Close dropdowns when clicking outside (handled slightly differently inside component)
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -94,39 +94,50 @@ export function DesktopNav({
 
   return (
     <>
+      {/* Brand Identity / Logo */}
       <Link
         href={isHomePage ? '#home' : '/'}
-        className="flex items-center gap-3"
+        className="group relative flex items-center gap-3 rounded-2xl py-1 px-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 transition-all duration-300 shrink-0 select-none"
         aria-label="رؤية رقمية - الصفحة الرئيسية"
         onClick={scrollToHomeNode}
       >
-        <NextImage
-          src={logoProp ?? ''}
-          alt="شعار رؤية رقمية"
-          width={48}
-          height={48}
-          priority
-          className={`transition-all duration-300 ${
-            isScrolled ? 'h-8 w-8 lg:h-10 lg:w-10 logo-glow' : 'h-10 w-10 lg:h-12 lg:w-12'
-          }`}
-          style={{
-            transform: isScrolled ? 'scale(0.95)' : 'scale(1)',
-          }}
-        />
+        <div className="relative flex items-center justify-center">
+          <NextImage
+            src={logoProp ?? ''}
+            alt="شعار رؤية رقمية"
+            width={48}
+            height={48}
+            priority
+            className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 ${
+              isScrolled ? 'h-8 w-8 lg:h-9 lg:w-9 logo-glow' : 'h-10 w-10 lg:h-11 lg:w-11'
+            }`}
+            style={{
+              transform: isScrolled ? 'scale(0.95)' : 'scale(1)',
+            }}
+          />
+        </div>
         <span
-          className={`logo-text font-bold font-heading transition-all duration-300 ${isScrolled ? 'text-lg lg:text-xl' : 'text-xl lg:text-2xl'}`}
+          className={`logo-text font-bold font-heading tracking-tight text-neutral-900 dark:text-white transition-all duration-300 group-hover:text-violet-600 dark:group-hover:text-violet-400 ${
+            isScrolled ? 'text-lg lg:text-xl' : 'text-xl lg:text-2xl'
+          }`}
         >
           رؤية رقمية
         </span>
       </Link>
 
-      <div className="hidden lg:flex items-center element-gap">
+      {/* Navigation Links - Floating Pill Container */}
+      <nav
+        data-app-navbar
+        aria-label="روابط التنقل الرئيسية"
+        className="hidden lg:flex items-center gap-1 xl:gap-1.5 px-3 py-1.5 transition-all duration-300"
+      >
         {navLinks
           .filter((link) => link.visible !== false)
           .map((link) => {
             const isActive = link.hasDropdown
               ? isLinkActive(link.href) || isSubItemActive(link.subItems)
               : isLinkActive(link.href);
+
             if (link.hasDropdown) {
               const isDropdownOpen =
                 link.dropdownKey === 'services' ? isServicesDropdownOpen : isProductsDropdownOpen;
@@ -157,13 +168,18 @@ export function DesktopNav({
               return (
                 <div
                   key={link.label}
-                  className="relative"
+                  className="relative group/dropdown"
                   onMouseEnter={handleMouseEnter}
                   onMouseLeave={handleMouseLeave}
                   ref={dropdownRefToUse}
                 >
                   <button
-                    className={`flex items-center gap-1.5 text-foreground transition-all duration-200 rounded-full px-3 py-2 min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary hover:bg-white/5'}`}
+                    type="button"
+                    className={`relative inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 active:scale-95 ${
+                      isActive
+                        ? 'bg-white dark:bg-neutral-800 text-violet-600 dark:text-violet-300 shadow-sm border border-neutral-200/80 dark:border-neutral-700/80 font-semibold'
+                        : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-white/70 dark:hover:bg-neutral-800/60'
+                    }`}
                     aria-label={link.label}
                     aria-haspopup="menu"
                     aria-expanded={isDropdownOpen}
@@ -188,22 +204,32 @@ export function DesktopNav({
                   >
                     {link.icon &&
                       (() => {
-                        const Icon = link.icon;
-                        return <Icon className="w-4 h-4" weight="duotone" />;
+                        const IconComponent = link.icon;
+                        return (
+                          <IconComponent
+                            className={`w-4 h-4 transition-transform duration-200 ${
+                              isActive
+                                ? 'text-violet-600 dark:text-violet-400'
+                                : 'text-neutral-500 dark:text-neutral-400'
+                            }`}
+                            weight="duotone"
+                          />
+                        );
                       })()}
                     <span>{link.label}</span>
                     <CaretDown
-                      className={`w-3 h-3 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : 'rotate-0'}`}
+                      className={`w-3.5 h-3.5 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                        isDropdownOpen
+                          ? 'rotate-180 text-violet-600 dark:text-violet-400'
+                          : 'text-neutral-400 dark:text-neutral-500'
+                      }`}
                     />
                   </button>
+
                   {isDropdownOpen && (
                     <div
                       id={link.dropdownKey ? `${link.dropdownKey}-dropdown` : undefined}
-                      className="absolute inset-e-0 mt-2 w-56 bg-background/98 backdrop-blur-xl rounded-2xl shadow-2xl border border-border/30 overflow-hidden z-50 animate-in fade-in-0 zoom-in-95 duration-200"
-                      style={{
-                        boxShadow:
-                          '0 20px 60px rgba(119, 102, 238, 0.2), 0 0 0 1px rgba(167, 139, 250, 0.1)',
-                      }}
+                      className="absolute inset-e-0 top-full mt-2.5 w-60 p-1.5 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 shadow-2xl shadow-neutral-950/10 dark:shadow-neutral-950/50 z-50 transition-all duration-200 ease-out animate-in fade-in-0 zoom-in-95 origin-top-right"
                       role="menu"
                       aria-orientation="vertical"
                       onMouseEnter={handleMouseEnter}
@@ -248,90 +274,124 @@ export function DesktopNav({
                         }
                       }}
                     >
-                      {link.subItems?.map((sub: NavLink, subIndex: number) => {
-                        const itemClasses = `block text-sm text-foreground/90 transition-all duration-200 whitespace-nowrap px-5 py-3.5 hover:bg-violet-500/10 hover:text-violet-400 focus-visible:bg-violet-500/10 focus-visible:text-violet-400 focus-visible:outline-none`;
-                        const borderStyle =
-                          subIndex < (link.subItems?.length || 0) - 1
-                            ? '1px solid rgba(255, 255, 255, 0.05)'
-                            : 'none';
+                      <div className="flex flex-col space-y-0.5">
+                        {link.subItems?.map((sub: NavLink, subIndex: number) => {
+                          const itemClasses = `group/item relative flex items-center justify-between w-full text-start text-sm font-medium rounded-xl px-4 py-3 transition-all duration-150 ease-out text-neutral-700 dark:text-neutral-200 hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:text-violet-600 dark:hover:text-violet-300 focus-visible:bg-violet-50 dark:focus-visible:bg-violet-950/40 focus-visible:text-violet-600 dark:focus-visible:text-violet-300 focus-visible:outline-none select-none ${
+                            subIndex < (link.subItems?.length || 0) - 1
+                              ? 'border-b border-neutral-100 dark:border-neutral-800/60'
+                              : ''
+                          }`;
 
-                        const content = sub.isRoute ? (
-                          <Link
-                            key={sub.href}
-                            href={sub.href}
-                            className={itemClasses}
-                            style={{ borderBottom: borderStyle, textDecoration: 'none' }}
-                            role="menuitem"
-                            onClick={() => {
-                              window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-                            }}
-                          >
-                            {sub.label}
-                          </Link>
-                        ) : (
-                          <a
-                            key={sub.href}
-                            href={sub.href}
-                            onClick={(e) => {
-                              const hashMatch = sub.href.match(/#(.+)$/);
-                              if (hashMatch) {
-                                handleHashClick(e, `#${hashMatch[1]}`);
-                              }
-                            }}
-                            className={itemClasses}
-                            style={{ borderBottom: borderStyle }}
-                            role="menuitem"
-                          >
-                            {sub.label}
-                          </a>
-                        );
-                        return content;
-                      })}
+                          if (sub.isRoute) {
+                            return (
+                              <Link
+                                key={sub.href}
+                                href={sub.href}
+                                className={itemClasses}
+                                role="menuitem"
+                                onClick={() => {
+                                  window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+                                }}
+                              >
+                                <span>{sub.label}</span>
+                                <span className="text-violet-500 opacity-0 -translate-x-1 transition-all duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
+                                  ←
+                                </span>
+                              </Link>
+                            );
+                          }
+
+                          return (
+                            <a
+                              key={sub.href}
+                              href={sub.href}
+                              onClick={(e) => {
+                                const hashMatch = sub.href.match(/#(.+)$/);
+                                if (hashMatch) {
+                                  handleHashClick(e, `#${hashMatch[1]}`);
+                                }
+                              }}
+                              className={itemClasses}
+                              role="menuitem"
+                            >
+                              <span>{sub.label}</span>
+                              <span className="text-violet-500 opacity-0 -translate-x-1 transition-all duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
+                                ←
+                              </span>
+                            </a>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
               );
             }
-            return link.isRoute ? (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={`text-foreground transition-colors link-underline ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary'}`}
-                aria-label={link.label}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                <span className="flex items-center gap-1.5">
+
+            const navItemClasses = `relative group/link inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 active:scale-95 ${
+              isActive
+                ? 'bg-white dark:bg-neutral-800 text-violet-600 dark:text-violet-300 shadow-sm border border-neutral-200/80 dark:border-neutral-700/80 font-semibold'
+                : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-white/70 dark:hover:bg-neutral-800/60'
+            }`;
+
+            if (link.isRoute) {
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={navItemClasses}
+                  aria-label={link.label}
+                  aria-current={isActive ? 'page' : undefined}
+                >
                   {link.icon &&
                     (() => {
-                      const Icon = link.icon;
-                      return <Icon className="w-4 h-4" />;
+                      const IconComponent = link.icon;
+                      return (
+                        <IconComponent
+                          className={`w-4 h-4 transition-transform duration-200 group-hover/link:scale-110 ${
+                            isActive
+                              ? 'text-violet-600 dark:text-violet-400'
+                              : 'text-neutral-500 dark:text-neutral-400'
+                          }`}
+                          weight="duotone"
+                        />
+                      );
                     })()}
-                  {link.label}
-                </span>
-              </Link>
-            ) : (
+                  <span>{link.label}</span>
+                </Link>
+              );
+            }
+
+            return (
               <a
                 key={link.href}
                 href={link.href}
-                className={`text-foreground transition-colors link-underline ${isActive ? 'nav-active text-foreground' : 'text-foreground/87 hover:text-primary'}`}
+                className={navItemClasses}
                 aria-label={link.label}
                 aria-current={isActive ? 'page' : undefined}
               >
-                <span className="flex items-center gap-1.5">
-                  {link.icon &&
-                    (() => {
-                      const Icon = link.icon;
-                      return <Icon className="w-4 h-4" />;
-                    })()}
-                  {link.label}
-                </span>
+                {link.icon &&
+                  (() => {
+                    const IconComponent = link.icon;
+                    return (
+                      <IconComponent
+                        className={`w-4 h-4 transition-transform duration-200 group-hover/link:scale-110 ${
+                          isActive
+                            ? 'text-violet-600 dark:text-violet-400'
+                            : 'text-neutral-500 dark:text-neutral-400'
+                        }`}
+                        weight="duotone"
+                      />
+                    );
+                  })()}
+                <span>{link.label}</span>
               </a>
             );
           })}
-      </div>
+      </nav>
 
-      {/* CTA Buttons */}
-      <div className="hidden lg:flex items-center gap-1">
+      {/* Primary Actions & Controls Container */}
+      <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
         <NotificationDropdown />
         <UserDropdown />
         <a
@@ -339,15 +399,19 @@ export function DesktopNav({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="احجز مكالمة مجانية عبر واتساب"
-          className="group"
+          className="group/cta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 rounded-full"
         >
           <Button
-            className={`relative overflow-hidden transition-all duration-300 motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white hover:opacity-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background min-h-11 ${
-              isScrolled ? 'text-sm px-5' : 'text-base px-6 shadow-lg shadow-primary/30'
+            className={`relative overflow-hidden font-semibold transition-all duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white cursor-pointer hover:opacity-95 active:scale-[0.98] border border-violet-400/30 dark:border-violet-500/30 ${
+              isScrolled
+                ? 'h-10 text-xs xl:text-sm px-5 shadow-sm shadow-violet-600/20'
+                : 'h-11 text-sm xl:text-base px-6 shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40'
             }`}
           >
-            <span className="relative z-10 flex items-center gap-2">تواصل معنا الآن</span>
-            <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 motion-reduce:hidden bg-linear-to-r from-transparent via-white/20 to-transparent" />
+            <span className="relative z-10 flex items-center gap-2 tracking-tight">
+              تواصل معنا الآن
+            </span>
+            <span className="absolute inset-0 -translate-x-full group-hover/cta:translate-x-full transition-transform duration-1000 ease-in-out motion-reduce:hidden bg-linear-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
           </Button>
         </a>
       </div>

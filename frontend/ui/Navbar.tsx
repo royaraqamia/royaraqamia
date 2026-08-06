@@ -136,9 +136,15 @@ export function Navbar() {
     },
   ];
 
+  // Dynamic Glassmorphism & Elevation Generator for Tailwind v4 Architecture
   const getNavbarClass = () => {
-    if (isMobileMenuOpen) return 'bg-background/95 backdrop-blur-lg border-b border-border/10';
-    return isScrolled ? 'glass-navbar-enhanced' : 'glass-navbar-hero';
+    if (isMobileMenuOpen) {
+      return 'bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl border-b border-neutral-200/80 dark:border-neutral-800/80 shadow-lg shadow-black/5 dark:shadow-black/20';
+    }
+    if (isScrolled) {
+      return 'bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl backdrop-saturate-150 border-b border-neutral-200/60 dark:border-neutral-800/60 shadow-sm shadow-neutral-950/5 dark:shadow-neutral-950/30 glass-navbar-enhanced';
+    }
+    return 'bg-white/40 dark:bg-neutral-950/40 backdrop-blur-md border-b border-neutral-200/30 dark:border-neutral-800/30 glass-navbar-hero';
   };
 
   return (
@@ -146,19 +152,26 @@ export function Navbar() {
       {/* Skip Navigation Link for Accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:right-4 focus:z-100 focus:bg-violet-600 focus:text-white focus:px-4 focus:py-2 focus:rounded-full focus:outline-none focus:ring-2 focus:ring-violet-400"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:inset-s-4 focus:z-100 focus:inline-flex focus:items-center focus:gap-2 focus:px-4 focus:py-2.5 focus:rounded-xl focus:bg-violet-600 focus:text-white focus:font-medium focus:text-sm focus:shadow-xl focus:shadow-violet-600/25 focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 dark:focus:ring-offset-neutral-950 focus:outline-none transition-all duration-200"
       >
         تخطي إلى المحتوى الرئيسي
       </a>
 
       <nav
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 motion-reduce:transition-none ${isVisible ? 'navbar-visible' : 'navbar-hidden'} ${getNavbarClass()}`}
+        data-app-navbar
+        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+          isVisible
+            ? 'translate-y-0 opacity-100 navbar-visible'
+            : '-translate-y-full opacity-0 pointer-events-none navbar-hidden'
+        } ${getNavbarClass()}`}
         role="navigation"
         aria-label="القائمة الرئيسية"
       >
-        <div className="max-w-7xl mx-auto container-padding">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 container-padding">
           <div
-            className={`flex justify-between items-center transition-all duration-300 motion-reduce:transition-none ${isScrolled || isMobileMenuOpen ? 'h-16' : 'h-20'}`}
+            className={`flex items-center justify-between transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+              isScrolled || isMobileMenuOpen ? 'h-16' : 'h-16 lg:h-20'
+            }`}
           >
             <DesktopNav
               navLinks={navLinks}
@@ -171,22 +184,36 @@ export function Navbar() {
               setIsMobileMenuOpen={setIsMobileMenuOpen}
             />
 
-            {/* Mobile Menu Toggle - 44px touch target for accessibility */}
-            <div className="lg:hidden flex items-center gap-1">
+            {/* Mobile Navigation Controls & Dropdowns */}
+            <div className="flex items-center gap-1.5 sm:gap-2.5 lg:hidden">
               <NotificationDropdown />
               <UserDropdown />
               <button
-                className="flex items-center justify-center w-11 h-11 text-foreground hover:bg-muted rounded-full transition-colors motion-reduce:transition-none"
+                type="button"
+                className="relative flex h-11 w-11 items-center justify-center rounded-xl text-neutral-700 dark:text-neutral-200 transition-all duration-200 ease-out hover:bg-neutral-100/80 dark:hover:bg-neutral-800/80 active:scale-95 active:bg-neutral-200/80 dark:active:bg-neutral-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 motion-reduce:transition-none"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label={isMobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
                 aria-expanded={isMobileMenuOpen}
                 aria-controls="mobile-menu"
               >
-                {isMobileMenuOpen ? (
-                  <X size={24} weight="bold" />
-                ) : (
-                  <List size={24} weight="bold" />
-                )}
+                <span className="sr-only">
+                  {isMobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
+                </span>
+                <div className="relative flex items-center justify-center">
+                  {isMobileMenuOpen ? (
+                    <X
+                      size={22}
+                      weight="bold"
+                      className="rotate-0 scale-100 transition-all duration-200 ease-out"
+                    />
+                  ) : (
+                    <List
+                      size={22}
+                      weight="bold"
+                      className="rotate-0 scale-100 transition-all duration-200 ease-out"
+                    />
+                  )}
+                </div>
               </button>
             </div>
           </div>

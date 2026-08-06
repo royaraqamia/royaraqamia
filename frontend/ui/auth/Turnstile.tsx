@@ -83,5 +83,55 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
 
   if (!siteKey) return null;
 
-  return <div ref={containerRef} className="flex justify-center" />;
+  return (
+    <div className="my-4 w-full max-w-md mx-auto">
+      <div
+        role="region"
+        aria-label="فحص الأمان للتَّحقُّق البشري"
+        className="group relative overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-3.5 sm:p-4 shadow-xs backdrop-blur-md transition-all duration-300 ease-out hover:border-neutral-300 hover:shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:hover:border-neutral-700"
+      >
+        {/* توهج شبكي محيطي خفيف */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -top-12 left-1/2 -z-10 h-28 w-48 -translate-x-1/2 rounded-full bg-linear-to-tr from-emerald-500/10 via-sky-500/10 to-indigo-500/10 blur-2xl transition-opacity duration-500 group-hover:opacity-100 dark:from-emerald-500/15 dark:via-sky-500/15 dark:to-indigo-500/15"
+        />
+
+        {/* رأس البطاقة ومؤشر الحالة */}
+        <div className="mb-3 flex items-center justify-between gap-2 px-0.5">
+          <div className="flex items-center gap-2">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400">
+              <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path
+                  fillRule="evenodd"
+                  d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
+            <span className="text-xs font-semibold tracking-tight text-neutral-800 dark:text-neutral-200">
+              التَّحقُّق الأمني
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-1.5 w-1.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            </span>
+            <span className="text-[11px] font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
+              مُشفَّر
+            </span>
+          </div>
+        </div>
+
+        {/* حاوية تركيب Turnstile */}
+        <div className="relative flex min-h-16.25 w-full items-center justify-center rounded-xl bg-white/80 p-1 ring-1 ring-neutral-200/50 dark:bg-neutral-950/80 dark:ring-neutral-800/50">
+          <div
+            ref={containerRef}
+            className="flex min-h-16.25 w-full max-w-full items-center justify-center overflow-x-auto transition-opacity duration-300 ease-in-out"
+          />
+        </div>
+      </div>
+    </div>
+  );
 }

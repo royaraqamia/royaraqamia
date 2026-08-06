@@ -9,49 +9,59 @@ interface InputProps extends React.ComponentProps<'input'> {
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, error, ...props }, ref) => {
     return (
-      <div className="relative">
+      <div className="relative w-full">
         <input
           type={type}
           ref={ref}
           data-slot="input"
+          data-error={error ? 'true' : undefined}
+          aria-invalid={error ? 'true' : props['aria-invalid']}
           autoComplete={getAutoComplete(type, props.name)}
           spellCheck={type === 'text' || type === 'textarea' ? 'true' : 'false'}
           className={cn(
-            // Base styles - optimized touch target and spacing
-            'flex h-12 w-full rounded-xl border border-input bg-background px-3.5 py-2.5 text-base leading-tight',
-            // Typography and selection
-            'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground',
-            // Enhanced focus states with premium ring and transitions
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 focus-visible:border-ring',
-            'focus-visible:shadow-md',
-            // Disabled states
-            'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/50',
-            // File input styles
-            'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground file:me-3',
-            // Enhanced error states with better visual feedback
-            error &&
-              'border-destructive/80 bg-destructive/5 focus-visible:border-destructive focus-visible:ring-destructive/30',
-            // Premium hover effects with subtle lift
-            'hover:border-ring/30 hover:shadow-sm',
-            // Premium transition for all state changes
-            'transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
-            // RTL support
-            '[dir=rtl]:text-right',
-            // Enhanced shadow system
-            'shadow-sm',
+            // Base Layout & Dimensions (44px WCAG touch target height)
+            'flex h-11 w-full rounded-xl border border-input/80 bg-background/80 backdrop-blur-xs text-sm sm:text-base text-foreground font-normal',
+            'py-2 pe-3.5 transition-all duration-200 ease-out',
+            // Dynamic Logical Padding (prevents text overlap when error icon is active)
+            error ? 'ps-10' : 'ps-3.5',
+            // Typography & Text Selection Aesthetics
+            'placeholder:text-muted-foreground/60 selection:bg-primary/15 selection:text-primary tracking-tight',
+            // Multi-layered Shadow System
+            'shadow-2xs',
+            // Interactive Hover & Focus Halo Effects
+            'hover:border-ring/40 hover:bg-background hover:shadow-xs',
+            'focus-visible:outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20 focus-visible:bg-background focus-visible:shadow-xs',
+            // Disabled State Precision
+            'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/30 disabled:border-border/50 disabled:shadow-none hover:disabled:border-border/50 hover:disabled:bg-muted/30',
+            // File Upload Styling
+            'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground file:me-3 file:cursor-pointer',
+            // High-Contrast Error State Overrides
+            error && [
+              'border-destructive/70 bg-destructive/3',
+              'hover:border-destructive/90',
+              'focus-visible:border-destructive focus-visible:ring-destructive/20',
+            ],
+            // Bi-directional & Logical Text Alignment
+            'text-start',
             className
           )}
           {...props}
         />
         {error && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-destructive">
+          <div
+            className="pointer-events-none absolute inset-s-3.5 top-1/2 -translate-y-1/2 text-destructive transition-transform duration-200 ease-out"
+            aria-hidden="true"
+          >
             <svg
               width="16"
               height="16"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="2.25"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="size-4 shrink-0"
             >
               <circle cx="12" cy="12" r="10" />
               <line x1="12" y1="8" x2="12" y2="12" />

@@ -1,8 +1,8 @@
 import { verifyTurnstileToken } from '@/backend/clients/turnstile';
 
 /**
- * Wires Turnstile verification with the configured secret.
- * When no secret is configured, verification is skipped (graceful degradation).
+ * يربط التحقق من Turnstile بالسر المُهيّأ.
+ * عندما لا يوجد سر مُهيّأ، يتم تخطّي التحقق (تدهور سلس).
  */
 export function createTurnstileVerifier(secret: string | undefined) {
   return (token: string): Promise<boolean> =>

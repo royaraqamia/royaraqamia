@@ -30,7 +30,9 @@ const DialogOverlay = React.forwardRef<
     ref={ref}
     data-slot="dialog-overlay"
     className={cn(
-      'fixed inset-0 z-10000 bg-black/50 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
+      'fixed inset-0 z-10000 bg-black/60 backdrop-blur-sm transition-all duration-300 ease-out',
+      'data-[state=open]:animate-in data-[state=open]:fade-in-0',
+      'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
       className
     )}
     {...props}
@@ -51,29 +53,28 @@ const DialogContent = React.forwardRef<
       aria-labelledby="dialog-title"
       data-slot="dialog-content"
       className={cn(
-        'fixed z-10000 w-full grid gap-4 p-6 shadow-xl duration-300',
-        'ease-[cubic-bezier(0.16,1,0.3,1)]',
-        'border border-border/50 bg-background/95 backdrop-blur-md',
-        'top-1/2 left-1/2 max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-3xl',
-        'max-h-[85dvh] overflow-y-auto dialog-scrollbar',
+        'fixed z-10000 grid w-[calc(100%-2rem)] gap-5 p-6 text-foreground shadow-2xl duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'border border-border/60 bg-background/95 backdrop-blur-xl',
+        'rounded-3xl sm:rounded-2xl',
+        'max-h-[calc(100dvh-3rem)] overflow-y-auto dialog-scrollbar',
+        // Mobile-first positioning: Floating card on mobile -> Perfectly centered dialog on desktop
+        'bottom-4 left-1/2 -translate-x-1/2 translate-y-0 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg',
+        // Entrance & Exit Motion Animations
         'data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95',
         'data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95',
-        'max-md:bottom-6 max-md:top-auto',
-        'max-md:w-[calc(100%-48px)] max-md:max-w-none',
-        'max-md:translate-y-0',
-        'max-md:rounded-3xl',
-        'max-md:data-[state=open]:slide-in-from-bottom-4',
-        'max-md:data-[state=closed]:slide-out-to-bottom',
+        'max-sm:data-[state=open]:slide-in-from-bottom-6 max-sm:data-[state=closed]:slide-out-to-bottom-6',
+        'sm:data-[state=open]:slide-in-from-top-[48%]',
+        'sm:data-[state=closed]:slide-out-to-top-[48%]',
         className
       )}
       {...props}
     >
       {children}
       <DialogPrimitive.Close
-        className="absolute top-4 right-4 rounded-full opacity-70 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:opacity-100 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
+        className="absolute top-4 right-4 rounded-full p-2 text-muted-foreground/80 opacity-80 ring-offset-background transition-all duration-200 hover:bg-accent/80 hover:text-foreground hover:opacity-100 hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4"
         aria-label="إغلاق"
       >
-        <XIcon className="size-5" />
+        <XIcon className="size-4" />
         <span className="sr-only">إغلاق</span>
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
@@ -85,7 +86,7 @@ function DialogHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-header"
-      className={cn('flex flex-col gap-2 text-center', className)}
+      className={cn('flex flex-col space-y-1.5 text-center sm:text-left pr-8', className)}
       {...props}
     />
   );
@@ -95,7 +96,10 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="dialog-footer"
-      className={cn('flex flex-col-reverse gap-2 sm:flex-row sm:justify-end', className)}
+      className={cn(
+        'flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3 pt-2',
+        className
+      )}
       {...props}
     />
   );
@@ -106,7 +110,7 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
     <DialogPrimitive.Title
       id="dialog-title"
       data-slot="dialog-title"
-      className={cn('text-lg font-semibold leading-none', className)}
+      className={cn('text-xl font-semibold leading-none tracking-tight text-foreground', className)}
       {...props}
     />
   );
@@ -119,7 +123,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn('text-sm text-muted-foreground', className)}
+      className={cn('text-sm leading-relaxed text-muted-foreground', className)}
       {...props}
     />
   );

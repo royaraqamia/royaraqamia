@@ -13,6 +13,7 @@ interface PasswordInputProps {
   disabled?: boolean;
   'aria-describedby'?: string;
   onChange?: (value: string) => void;
+  className?: string;
 }
 
 export function PasswordInput({
@@ -24,11 +25,12 @@ export function PasswordInput({
   disabled,
   'aria-describedby': ariaDescribedby,
   onChange,
+  className,
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   return (
-    <div className="relative">
+    <div className="group relative flex w-full items-center">
       <Input
         id={id}
         name={name}
@@ -40,19 +42,29 @@ export function PasswordInput({
         placeholder={placeholder}
         aria-describedby={ariaDescribedby}
         onChange={(e) => onChange?.(e.target.value)}
-        className="pl-11"
+        className={`pl-11 transition-all duration-200 ease-out placeholder:text-muted-foreground/50 ${className ?? ''}`.trim()}
       />
       <button
         type="button"
+        disabled={disabled}
         onClick={() => setShowPassword((prev) => !prev)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') setShowPassword((prev) => !prev);
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setShowPassword((prev) => !prev);
+          }
         }}
-        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-none focus-visible:text-foreground rounded-full"
-        tabIndex={0}
+        className="absolute left-2.5 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-all duration-200 ease-out hover:bg-neutral-100 hover:text-foreground active:scale-95 disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-neutral-800/80 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+        tabIndex={disabled ? -1 : 0}
         aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+        aria-pressed={showPassword}
+        aria-controls={id}
       >
-        {showPassword ? <EyeSlash size={18} /> : <Eye size={18} />}
+        {showPassword ? (
+          <EyeSlash size={18} className="transition-transform duration-200 ease-out" />
+        ) : (
+          <Eye size={18} className="transition-transform duration-200 ease-out" />
+        )}
       </button>
     </div>
   );

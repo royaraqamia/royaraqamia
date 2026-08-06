@@ -36,30 +36,33 @@ export const Hero = memo(function Hero() {
     <>
       <section
         id="home"
-        className="relative min-h-[90vh] flex items-center overflow-hidden pt-24 md:pt-32 pb-12 lg:py-0"
+        className="relative min-h-[92vh] flex items-center justify-center overflow-hidden pt-32 md:pt-40 pb-16 lg:pt-20 lg:pb-16 bg-slate-950"
       >
-        {/* Background with Gradient */}
-        <div className="absolute inset-0 bg-linear-to-br from-slate-950 via-purple-950/80 to-slate-900 z-0 overflow-hidden">
-          <div className="absolute inset-0 bg-linear-to-b from-transparent via-primary-600/5 to-transparent" />
-          {/* Reduced blur radius and opacity for cleaner look */}
-          <div className="absolute top-0 right-1/4 w-[min(500px,80vw)] h-[min(500px,80vw)] bg-primary-600 opacity-[0.03] blur-[60px] rounded-full" />
-          <div className="absolute bottom-0 left-1/4 w-[min(500px,80vw)] h-[min(500px,80vw)] bg-primary-400 opacity-[0.03] blur-[60px] rounded-full" />
+        {/* Background Layer - High-End SaaS Mesh & Ambient Lighting */}
+        <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-purple-950/40 to-slate-950 z-0 overflow-hidden pointer-events-none">
+          {/* Subtle grid pattern overlay */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29370f_1px,transparent_1px),linear-gradient(to_bottom,#1f29370f_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
-          {/* Floating Particles - Subtler */}
+          {/* Glowing radial ambient lights */}
+          <div className="absolute top-1/4 right-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-purple-600/10 blur-[120px] rounded-full transform translate-x-1/3 -translate-y-1/3" />
+          <div className="absolute bottom-1/4 left-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-indigo-600/10 blur-[120px] rounded-full transform -translate-x-1/3 translate-y-1/3" />
+
+          {/* Floating Particles - Ultra subtle background ambient details */}
           {particles.map((particle) => (
             <m.div
               key={particle.id}
-              className="absolute rounded-full bg-white"
+              className="absolute rounded-full bg-white/30 backdrop-blur-xs"
               style={{
                 width: particle.size,
                 height: particle.size,
                 left: `${particle.x}%`,
                 top: `${particle.y}%`,
-                opacity: 0.1, // Fixed low opacity base
+                opacity: 0.15,
               }}
               animate={{
-                y: [0, -40, 0],
-                opacity: [0.1, 0.3, 0.1],
+                y: [0, -50, 0],
+                opacity: [0.1, 0.35, 0.1],
               }}
               transition={{
                 duration: particle.duration,
@@ -71,35 +74,40 @@ export const Hero = memo(function Hero() {
           ))}
         </div>
 
-        <div className="max-w-7xl mx-auto container-padding relative z-10 w-full">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
           <m.div
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center"
-            transition={{ staggerChildren: 0.1, delayChildren: 0.2 }}
+            className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center"
+            transition={{ staggerChildren: 0.12, delayChildren: 0.15 }}
           >
-            {/* Left side - Content (RTL: will appear on right naturally in RTL layout) */}
-            <div className="text-center lg:text-right space-y-4 order-1">
-              {/* Badge - Static Glow for performance */}
-              <m.div variants={itemVariants} className="flex justify-center lg:justify-start mb-2!">
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-900/50 backdrop-blur-md text-white border border-slate-700/50 relative overflow-hidden group hover:border-primary-500/30 transition-colors duration-300">
+            {/* Left/Right side - Primary Copy & CTA (RTL Support) */}
+            <div className="text-center lg:text-right space-y-3 order-1">
+              {/* Pill Badge */}
+              <m.div variants={itemVariants} className="flex justify-center lg:justify-start">
+                <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/4 hover:bg-white/8 backdrop-blur-xl text-white border border-white/10 hover:border-white/20 transition-all duration-300 shadow-sm group">
                   <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
                   </span>
-                  <span className="text-sm font-medium text-slate-200">ابدأ رحلتك الرَّقميَّة</span>
-
-                  {/* Subtle sheen */}
-                  <div className="absolute inset-0 w-full h-full bg-linear-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shine-slide_1.5s_infinite]" />
+                  <span className="text-xs sm:text-sm font-medium tracking-wide text-neutral-200">
+                    ابدأ رحلتك الرَّقميَّة
+                  </span>
+                  <span className="w-1 h-1 rounded-full bg-white/20" />
+                  <span className="text-[11px] font-semibold text-purple-300/90 tracking-wider">
+                    1448 هـ
+                  </span>
                 </div>
               </m.div>
 
               {/* Main Headline */}
-              <m.div variants={itemVariants} className="space-y-1 mt-1!">
-                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight">
-                  <span className="block gradient-text mb-0.5 lg:mb-1">شريكك الاستراتيجي</span>
-                  <span className="text-white drop-shadow-xl whitespace-normal lg:whitespace-nowrap wrap-break-word">
+              <m.div variants={itemVariants} className="space-y-2 -mt-2">
+                <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight font-arabic leading-[1.45] sm:leading-[1.45]">
+                  <span className="block bg-linear-to-r from-white via-slate-100 to-purple-200 bg-clip-text text-transparent pb-1.5">
+                    شريكك الاستراتيجي
+                  </span>
+                  <span className="block bg-linear-to-r from-purple-400 via-violet-300 to-indigo-300 bg-clip-text text-transparent whitespace-normal lg:whitespace-nowrap pb-2">
                     للتَّحوُّل الرَّقمي
                   </span>
                 </h1>
@@ -108,7 +116,7 @@ export const Hero = memo(function Hero() {
               {/* Description */}
               <m.p
                 variants={itemVariants}
-                className="text-sm sm:text-base lg:text-lg text-slate-300 max-w-2xl mx-auto lg:mx-0 leading-relaxed"
+                className="text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal -mt-2 pt-1"
               >
                 نبني مواقع وتطبيقات برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛
                 <br />
@@ -120,33 +128,39 @@ export const Hero = memo(function Hero() {
               <m.a
                 variants={itemVariants}
                 href="#testimonials"
-                className="flex flex-wrap items-center justify-center lg:justify-start gap-2 pt-2 group cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white rounded-full"
+                className="inline-flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition-transform active:scale-[0.99]"
                 aria-label="انتقل إلى آراء العملاء"
               >
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm transition-all duration-300 group-hover:bg-white/10 group-hover:border-white/30">
-                  <div className="flex -space-x-2">
+                <div className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-white/3 hover:bg-white/8 border border-white/10 hover:border-white/20 backdrop-blur-md transition-all duration-300 shadow-xs">
+                  <div className="flex">
                     {['أ', 'ز', 'ك'].map((letter, i) => (
                       <div
                         key={i}
-                        className="w-7 h-7 rounded-full bg-linear-to-br from-indigo-400 to-purple-600 border-2 border-slate-900 flex items-center justify-center text-[10px] font-bold text-white"
+                        className={`w-7 h-7 rounded-full bg-linear-to-br from-indigo-500 via-purple-600 to-violet-700 border-2 border-slate-950 flex items-center justify-center text-[10px] font-bold text-white shadow-xs group-hover:scale-105 transition-transform ${
+                          i > 0 ? '-ms-2' : ''
+                        }`}
                       >
                         <span className="leading-none">{letter}</span>
                       </div>
                     ))}
                   </div>
-                  <span className="text-xs sm:text-sm text-slate-300">
+                  <span className="text-xs sm:text-sm text-neutral-300 font-medium">
                     ثقة <span className="font-bold text-white">25+</span> شخص
                   </span>
                 </div>
-                <div className="flex items-center gap-2 text-slate-300 transition-all duration-300 group-hover:text-slate-200">
-                  <span className="flex gap-0.5 text-purple-400">
-                    <Star size={14} weight="fill" />
-                    <Star size={14} weight="fill" />
-                    <Star size={14} weight="fill" />
-                    <Star size={14} weight="fill" />
-                    <Star size={14} weight="fill" />
+
+                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/2 border border-white/5 backdrop-blur-xs text-neutral-300 transition-all duration-300 group-hover:bg-white/6 group-hover:border-white/10">
+                  <span className="flex gap-0.5 text-amber-400">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        size={14}
+                        weight="fill"
+                        className="drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]"
+                      />
+                    ))}
                   </span>
-                  <span className="text-xs sm:text-sm">
+                  <span className="text-xs sm:text-sm font-semibold text-neutral-200">
                     <span className="font-bold text-white">4.9</span>/5
                   </span>
                 </div>
@@ -155,35 +169,30 @@ export const Hero = memo(function Hero() {
               {/* CTA Buttons */}
               <m.div
                 variants={itemVariants}
-                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4 items-center w-full sm:w-auto"
+                className="flex flex-col sm:flex-row gap-3.5 justify-center lg:justify-start pt-3 items-center w-full sm:w-auto"
               >
                 <a
                   href={getWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
                   aria-label="تواصل معنا عبر واتساب"
-                  className="group relative h-14 w-auto min-w-50 max-w-full flex items-center justify-center px-8 rounded-full gradient-primary text-white text-lg font-bold transition-transform active:scale-95 cta-shine overflow-hidden cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className="group relative h-13 sm:h-14 w-auto min-w-44 sm:min-w-50 flex items-center justify-center px-6 sm:px-8 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white text-base sm:text-lg font-bold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)] hover:shadow-[0_15px_35px_-5px_rgba(147,51,234,0.7)] border border-white/20 overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
-                  {/* Hover Glow via Opacity (Performant) - Adjusted for gradient */}
-                  <div className="absolute inset-0 bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                  {/* Shadow via pseudo-element */}
-                  <div className="absolute -inset-1 rounded-full bg-primary-600/40 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  {/* Sheen effect on hover */}
+                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
 
                   <span className="relative z-10 flex items-center gap-3">
                     تواصل معنا الآن
-                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1.5 transition-transform duration-300" />
                   </span>
-
-                  {/* Shine element */}
-                  <span className="shine-element absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent skew-x-12" />
                 </a>
 
                 <a
                   href="#portfolio"
-                  className="group relative h-14 px-8 rounded-full border border-white/20 bg-white/5 text-white text-lg font-bold backdrop-blur-sm transition-all duration-300 hover:bg-white/10 hover:border-white/30 flex items-center gap-3 cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                  className="group relative h-13 sm:h-14 w-auto px-6 sm:px-8 rounded-full border border-white/15 hover:border-white/30 bg-white/4 hover:bg-white/8 text-white text-base sm:text-lg font-bold backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-xs flex items-center justify-center gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
-                  نبذة عن أعمالنا
+                  <span className="relative z-10">نبذة عن أعمالنا</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-white transition-colors" />
                 </a>
               </m.div>
             </div>
@@ -191,7 +200,7 @@ export const Hero = memo(function Hero() {
             {/* Right side - Visual Element */}
             <m.div
               variants={itemVariants}
-              className="relative order-2 w-full flex justify-center lg:justify-end mt-8 lg:mt-0"
+              className="relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0"
             >
               <HeroVisual />
             </m.div>

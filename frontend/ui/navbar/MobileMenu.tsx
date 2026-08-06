@@ -144,7 +144,11 @@ export function MobileMenu({
     if (!Icon) return null;
     return (
       <Icon
-        className={`w-5 h-5 shrink-0 translate-y-px ${isActive ? 'text-violet-400' : 'text-violet-400/60'}`}
+        className={`w-5 h-5 shrink-0 transition-colors duration-200 ${
+          isActive
+            ? 'text-violet-600 dark:text-violet-400'
+            : 'text-neutral-500 dark:text-neutral-400 group-hover:text-violet-600 dark:group-hover:text-violet-400'
+        }`}
         weight="duotone"
       />
     );
@@ -154,25 +158,28 @@ export function MobileMenu({
     const isActive = link.hasDropdown
       ? isLinkActive(link.href) || isSubItemActive(link.subItems)
       : isLinkActive(link.href);
+
     const baseClasses = `
-            flex items-center gap-3 w-full px-4 py-4 rounded-full
-            font-semibold text-[17px] leading-relaxed
-            transition-colors duration-150 ease-out
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
-        `;
+      group relative flex items-center justify-between w-full min-h-[52px] px-4 py-3.5 rounded-2xl
+      font-semibold text-base leading-snug tracking-tight
+      transition-all duration-200 ease-out select-none cursor-pointer
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
+      active:scale-[0.98]
+    `;
+
     const stateClasses = isActive
-      ? 'bg-violet-500/15 border border-violet-500/20 text-violet-200'
-      : 'border border-transparent text-slate-200 hover:bg-white/5';
+      ? 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200/80 dark:border-violet-800/60 shadow-xs font-bold'
+      : 'text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100/80 dark:hover:bg-neutral-900/60 border border-transparent';
 
     const content = (
-      <span className="flex items-center gap-3">
+      <span className="flex items-center gap-3.5">
         {renderNavIcon(link.icon, isActive)}
-        <span className={isActive ? 'text-violet-200' : ''}>{link.label}</span>
+        <span className="truncate">{link.label}</span>
       </span>
     );
 
     return (
-      <div key={link.href}>
+      <div key={link.href} className="w-full">
         {link.isRoute ? (
           <Link
             href={link.href}
@@ -180,6 +187,15 @@ export function MobileMenu({
             onClick={handleMainLinkClick}
           >
             {content}
+            <span
+              className={`text-xs transition-transform duration-200 ${
+                isActive
+                  ? 'text-violet-600 dark:text-violet-400 font-bold'
+                  : 'text-neutral-400 opacity-0 group-hover:opacity-100 group-hover:-translate-x-1'
+              }`}
+            >
+              ←
+            </span>
           </Link>
         ) : (
           <a
@@ -188,6 +204,15 @@ export function MobileMenu({
             onClick={handleMainLinkClick}
           >
             {content}
+            <span
+              className={`text-xs transition-transform duration-200 ${
+                isActive
+                  ? 'text-violet-600 dark:text-violet-400 font-bold'
+                  : 'text-neutral-400 opacity-0 group-hover:opacity-100 group-hover:-translate-x-1'
+              }`}
+            >
+              ←
+            </span>
           </a>
         )}
       </div>
@@ -196,67 +221,85 @@ export function MobileMenu({
 
   const renderDropdownItem = (link: NavLink) => {
     const isExpanded = expandedDropdown === link.dropdownKey;
+    const isActive = isLinkActive(link.href) || isSubItemActive(link.subItems);
 
     return (
-      <div key={link.label}>
+      <div key={link.label} className="w-full">
         <button
+          type="button"
           onClick={() => toggleDropdown(link.dropdownKey!)}
           aria-expanded={isExpanded}
-          className="
-                        flex items-center justify-between w-full px-4 py-4 rounded-full
-                        font-semibold text-[17px] text-slate-200
-                        border border-transparent
-                        transition-colors duration-150 ease-out
-                        hover:bg-white/5
-                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
-                    "
+          className={`
+            group flex items-center justify-between w-full min-h-13 px-4 py-3.5 rounded-2xl
+            font-semibold text-base leading-snug tracking-tight
+            transition-all duration-200 ease-out select-none cursor-pointer
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
+            active:scale-[0.98]
+            ${
+              isActive
+                ? 'bg-violet-50/80 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-800/40'
+                : 'text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100/80 dark:hover:bg-neutral-900/60 border border-transparent'
+            }
+          `}
         >
-          <span className="flex items-center gap-3">
-            {renderNavIcon(link.icon, false)}
-            <span>{link.label}</span>
+          <span className="flex items-center gap-3.5">
+            {renderNavIcon(link.icon, isActive)}
+            <span className="truncate">{link.label}</span>
           </span>
           <CaretDown
             weight="bold"
-            className={`w-4 h-4 text-violet-400/50 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+            className={`w-4 h-4 shrink-0 text-neutral-400 dark:text-neutral-500 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              isExpanded ? 'rotate-180 text-violet-600 dark:text-violet-400' : ''
+            }`}
           />
         </button>
 
         <div
-          className={`overflow-hidden transition-all duration-200 ease-out ${isExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}
+          className={`grid transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            isExpanded
+              ? 'grid-rows-[1fr] opacity-100 my-1.5'
+              : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+          }`}
         >
-          <div className="relative ms-3 pr-5 pt-2 pb-1">
-            <div className="absolute inset-e-2 top-0 bottom-2 w-px bg-linear-to-b from-white/10 to-transparent" />
-            <div className="flex flex-col gap-1">
+          <div className="overflow-hidden">
+            <div className="ms-4 ps-3 border-s-2 border-violet-500/20 dark:border-violet-500/30 flex flex-col gap-1 py-1">
               {link.subItems?.map((sub) => (
-                <div key={sub.href} className="relative">
-                  <div className="absolute -inset-e-3 top-1/2 -translate-y-1/2 w-3 h-px bg-white/10" />
+                <div key={sub.href} className="w-full">
                   {sub.isRoute ? (
                     <Link
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
                       className="
-                                                block pr-6 pl-4 py-3 rounded-full
-                                                text-[15px] font-medium text-slate-300
-                                                transition-colors duration-150
-                                                hover:bg-violet-500/10 hover:text-violet-300
-                                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
-                                            "
+                        group/sub relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl
+                        text-sm font-medium text-neutral-600 dark:text-neutral-400
+                        transition-all duration-150 ease-out
+                        hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:text-violet-600 dark:hover:text-violet-300
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
+                        active:scale-[0.98]
+                      "
                     >
-                      {sub.label}
+                      <span className="truncate">{sub.label}</span>
+                      <span className="text-xs text-violet-500 opacity-0 -translate-x-1 transition-all duration-150 group-hover/sub:opacity-100 group-hover/sub:translate-x-0">
+                        ←
+                      </span>
                     </Link>
                   ) : (
                     <a
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
                       className="
-                                                block pr-6 pl-4 py-3 rounded-full
-                                                text-[15px] font-medium text-slate-300
-                                                transition-colors duration-150
-                                                hover:bg-violet-500/10 hover:text-violet-300
-                                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
-                                            "
+                        group/sub relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl
+                        text-sm font-medium text-neutral-600 dark:text-neutral-400
+                        transition-all duration-150 ease-out
+                        hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:text-violet-600 dark:hover:text-violet-300
+                        focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
+                        active:scale-[0.98]
+                      "
                     >
-                      {sub.label}
+                      <span className="truncate">{sub.label}</span>
+                      <span className="text-xs text-violet-500 opacity-0 -translate-x-1 transition-all duration-150 group-hover/sub:opacity-100 group-hover/sub:translate-x-0">
+                        ←
+                      </span>
                     </a>
                   )}
                 </div>
@@ -276,16 +319,18 @@ export function MobileMenu({
   return (
     <>
       {createPortal(
-        <div className="fixed inset-0 z-10001 md:hidden" style={{ position: 'fixed' }}>
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-10001 md:hidden">
+          {/* Gaussian Blur Backdrop */}
           <div
-            className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+            className={`fixed inset-0 bg-neutral-950/60 dark:bg-black/75 backdrop-blur-md transition-opacity duration-300 ease-out ${
+              isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+            }`}
             onClick={handleClose}
             tabIndex={-1}
             role="presentation"
           />
 
-          {/* Menu Panel */}
+          {/* Fullscreen Mobile Menu Dialog Sheet */}
           <div
             ref={mobileMenuRef}
             role="dialog"
@@ -294,102 +339,115 @@ export function MobileMenu({
             dir="rtl"
             onKeyDown={(e) => e.key === 'Escape' && handleClose()}
             className={`
-                    absolute inset-0
-                    w-screen h-screen
-                    bg-background
-                    transition-all duration-200 ease-out
-                    will-change-transform
-                    ${isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.98]'}
-                `}
-            style={{ transformOrigin: 'center top' }}
+              fixed inset-0 w-full h-full
+              bg-white dark:bg-neutral-950
+              text-neutral-900 dark:text-neutral-100
+              transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+              will-change-transform flex flex-col
+              ${
+                isVisible
+                  ? 'opacity-100 scale-100 translate-y-0'
+                  : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+              }
+            `}
           >
-            {/* Content Container */}
-            <div className="relative z-10 flex flex-col h-full">
-              {/* Header */}
-              <header className="flex items-center justify-between px-5 h-20 shrink-0">
-                <Link
-                  href={isHomePage ? '#home' : '/'}
-                  onClick={scrollToHome}
-                  className="flex items-center gap-3 no-underline group"
-                >
+            {/* Header */}
+            <header
+              data-mobile-menu
+              className="flex items-center justify-between px-5 sm:px-6 h-20 shrink-0 border-b border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-950"
+            >
+              <Link
+                href={isHomePage ? '#home' : '/'}
+                onClick={scrollToHome}
+                className="group relative flex items-center gap-3 no-underline rounded-xl py-1 px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+              >
+                {logoProp && (
                   <img
                     src={logoProp}
                     alt="شعار رؤية رقمية"
                     width={40}
                     height={40}
                     loading="eager"
-                    className="h-10 w-10 logo-glow transition-transform duration-200 group-hover:scale-105"
+                    className="h-10 w-10 logo-glow transition-transform duration-300 ease-out group-hover:scale-105"
                   />
-                  <span className="text-xl font-bold font-heading">رؤية رقمية</span>
-                </Link>
+                )}
+                <span className="text-xl font-bold font-heading tracking-tight text-neutral-900 dark:text-white transition-colors duration-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">
+                  رؤية رقمية
+                </span>
+              </Link>
 
-                <button
-                  onClick={() => {
-                    triggerHaptic();
-                    handleClose();
-                  }}
-                  aria-label="إغلاق القائمة"
-                  className="
-                                flex items-center justify-center
-                                w-11 h-11 rounded-full
-                                bg-white/3 border border-white/8
-                                text-slate-300
-                                transition-colors duration-150
-                                hover:bg-violet-500/10 hover:border-violet-500/25 hover:text-violet-400
-                                active:scale-95
-                                focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
-                            "
-                >
-                  <X size={20} weight="bold" />
-                </button>
-              </header>
-
-              {/* Navigation */}
-              <nav
+              <button
+                type="button"
+                onClick={() => {
+                  triggerHaptic();
+                  handleClose();
+                }}
+                aria-label="إغلاق القائمة"
                 className="
-                        flex-1 overflow-y-auto
-                        px-5 py-6
-                        flex flex-col gap-1
-                        overscroll-contain
-                    "
+                  flex items-center justify-center
+                  w-11 h-11 rounded-full
+                  bg-neutral-100 dark:bg-neutral-900
+                  border border-neutral-200/80 dark:border-neutral-800/80
+                  text-neutral-700 dark:text-neutral-300
+                  transition-all duration-200 ease-out
+                  hover:bg-neutral-200/80 dark:hover:bg-neutral-800/80 hover:text-neutral-950 dark:hover:text-white
+                  active:scale-90
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
+                "
               >
-                {navLinks
-                  .filter((link) => link.visible !== false)
-                  .map((link) =>
-                    link.hasDropdown && link.dropdownKey
-                      ? renderDropdownItem(link)
-                      : renderNavItem(link)
-                  )}
-              </nav>
+                <X size={20} weight="bold" />
+              </button>
+            </header>
 
-              {/* Footer */}
-              <footer className="px-5 pt-5 pb-10 shrink-0">
-                {/* CTA Button - Primary */}
-                <a
-                  href={getWhatsAppUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => {
-                    triggerHaptic();
-                    handleClose();
-                  }}
-                  className="
-                relative
-                w-full mb-5 h-14
-                rounded-full
-                gradient-primary text-white font-bold
-                flex items-center justify-center
-                transition-transform duration-150
-                active:scale-95
-                overflow-hidden
+            {/* Navigation Body */}
+            <nav
+              data-mobile-menu
+              className="
+                flex-1 overflow-y-auto
+                px-4 sm:px-6 py-6
+                flex flex-col gap-2
+                overscroll-contain
+                bg-white dark:bg-neutral-950
               "
-                >
-                  <span className="relative z-10 flex items-center gap-2">
-                    <span>تواصل معنا الآن</span>
-                  </span>
-                </a>
-              </footer>
-            </div>
+            >
+              {navLinks
+                .filter((link) => link.visible !== false)
+                .map((link) =>
+                  link.hasDropdown && link.dropdownKey
+                    ? renderDropdownItem(link)
+                    : renderNavItem(link)
+                )}
+            </nav>
+
+            {/* Footer with Primary CTA Button */}
+            <footer
+              data-mobile-menu
+              className="px-5 sm:px-6 py-5 shrink-0 border-t border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-950"
+            >
+              <a
+                href={getWhatsAppUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => {
+                  triggerHaptic();
+                  handleClose();
+                }}
+                className="
+                  group relative flex items-center justify-center
+                  w-full h-13 rounded-full
+                  gradient-primary text-white font-bold text-base tracking-tight
+                  shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40
+                  transition-all duration-300 ease-out
+                  active:scale-[0.98] overflow-hidden
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
+                "
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  <span>تواصل معنا الآن</span>
+                </span>
+                <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out bg-linear-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+              </a>
+            </footer>
           </div>
         </div>,
         document.body

@@ -26,187 +26,546 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12 md:py-20" dir="rtl">
-      <header className="mb-10">
-        <h1 className="mb-3 text-3xl font-bold tracking-tight md:text-4xl">سياسة الخصوصيَّة</h1>
-        <p className="text-muted-foreground text-sm">آخر تحديث: 19 صَفَر 1448 هـ</p>
-      </header>
+    <div
+      className="min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-emerald-500/20 selection:text-emerald-300 relative overflow-hidden"
+      dir="rtl"
+    >
+      {/* Subtle Ambient Radial Lighting Effects */}
+      <div className="absolute top-0 right-1/2 translate-x-1/2 w-200 sm:w-300 h-125 bg-linear-to-b from-emerald-500/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-1/3 left-0 w-100 h-100 bg-emerald-500/5 blur-[120px] pointer-events-none -z-10" />
+      <div className="absolute inset-0 bg-[radial-gradient(#262626_1px,transparent_1px)] bg-size-[24px_24px] opacity-30 pointer-events-none -z-10" />
 
-      <div className="space-y-8 text-base leading-relaxed text-foreground/90">
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. المُقدِّمة</h2>
-          <p>
-            مرحبًا بك في <strong>رؤية رقمية</strong> (&quot;نحن&quot; أو &quot;المُشغِّل&quot;).
-            نُقدِّر ثقتك بنا. تشرح هذه السِّياسة كيفيَّة جمع معلوماتك الشَّخصيَّة واستخدامها
-            وحمايتها عند استخدامك لمواقعنا وخدماتنا إلكترونيًّا.
-          </p>
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. المعلومات التي نجمعها</h2>
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold">أ) معلومات التَّسجيل والدُّخول</h3>
-            <p>عند إنشاء حساب أو تسجيل الدُّخول، نجمع:</p>
-            <ul className="list-disc space-y-1 pr-6">
-              <li>الاسم الكامل</li>
-              <li>البريد الإلكتروني</li>
-              <li>كلمة المرور المُشفَّرة (لا نُخزِّن كلمات المرور بنسختها الأصليَّة)</li>
-            </ul>
-
-            <h3 className="text-lg font-semibold">ب) معلومات الدُّخول عبر Google</h3>
-            <p>
-              عند اختيار تسجيل الدُّخول باستخدام حساب Google، نتلقَّى المعلومات التَّالية من Google
-              وِفقًا لتصريح خصوصيَّتك في حسابك:
-            </p>
-            <ul className="list-disc space-y-1 pr-6">
-              <li>الاسم الكامل المرتبط بحساب Google</li>
-              <li>عنوان البريد الإلكتروني</li>
-              <li>صورة الملف الشَّخصي (إن وُجِدت)</li>
-            </ul>
-            <p>
-              نستخدم هذه المعلومات فقط لأغراض المُصادقة وإنشاء حسابك على منصَّتنا. لن نُشارك هذه
-              المعلومات مع Google أو أي طرف ثالث لأغراض تسويقيَّة.
-            </p>
-
-            <h3 className="text-lg font-semibold">ج) معلومات الاستخدام</h3>
-            <p>قد نجمع تلقائيًّا معلومات معيَّنة عند استخدامك للمنصَّة، منها:</p>
-            <ul className="list-disc space-y-1 pr-6">
-              <li>عنوان IP</li>
-              <li>نوع المتصفِّح ونظام التَّشغيل</li>
-              <li>صفحات الموقع التي تزورها ووقت الزِّيارة</li>
-              <li>البيانات التي تُدخلها في نماذج التَّواصل</li>
-            </ul>
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20">
+        {/* Hero Header */}
+        <header className="mb-10 sm:mb-14 border-b border-neutral-800/80 pb-8 sm:pb-12">
+          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm font-medium mb-6 backdrop-blur-md">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span>وثيقة رسمية • آخر تحديث: 19 صَفَر 1448 هـ</span>
           </div>
-        </section>
 
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. كيفيَّة استخدام معلوماتك</h2>
-          <p>نستخدم المعلومات التي نجمعها للأغراض التَّالية:</p>
-          <ul className="list-disc space-y-1 pr-6">
-            <li>توفير وتشغيل خدماتنا (الدَّورات التَّدريبيَّة، الشَّهادات، التَّطبيقات)</li>
-            <li>المُصادقة وتأمين حسابك</li>
-            <li>التَّواصل معك بخصوص حسابك أو خدماتنا</li>
-            <li>تحسين تجربتك على المنصَّة</li>
-            <li>الامتثال للالتزامات القانونيَّة</li>
-            <li>منع الاحتيال وسوء الاستخدام</li>
-          </ul>
-        </section>
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-4 leading-tight">
+            سياسة الخصوصيَّة
+          </h1>
 
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. مشاركة المعلومات مع أطراف ثالثة</h2>
-          <p>
-            نحنُ لا نبيع معلوماتك الشَّخصيَّة لأيِّ طرفٍ ثالث. قد نُشارك معلوماتك فقط في الحالات
-            التَّالية:
+          <p className="text-base sm:text-lg text-neutral-400 max-w-2xl leading-relaxed">
+            سياسة الخصوصيَّة لـ <strong className="text-white font-semibold">رؤية رقمية</strong> –
+            تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.
           </p>
-          <ul className="list-disc space-y-1 pr-6">
-            <li>
-              <strong>مُزوِّدو الخدمات:</strong> نستخدم خدمات مُزوِّدين موثوقين مثل Supabase (لتخزين
-              البيانات والمُصادقة) و Vercel (لاستضافת الموقع) و Resend (لإرسال رسائل البريد
-              الإلكتروني). تُخزَّن هذه البيانات على خوادمهم بما يتوافق مع معايير الأمان.
-            </li>
-            <li>
-              <strong>الالتزامات القانونيَّة:</strong> قد نكشف معلوماتك إذا طُلِب ذلك قانونيًّا أو
-              ردًّا على إجراءات قانونيَّة صالحة.
-            </li>
-          </ul>
-        </section>
+        </header>
 
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. الأمان والتَّخزين</h2>
-          <ul className="list-disc space-y-1 pr-6">
-            <li>
-              نتَّبع إجراءات أمنيَّة معقولة لحماية معلوماتك من الوصول غير المُصرَّح به أو استخدامها
-              أو تعديلها أو إتلافها.
-            </li>
-            <li>
-              تُخزَّن بياناتك على خوادم مُزوِّدي الخدمات الموثوقين مع تشفير أثناء النَّقل (TLS/SSL)
-              وعند التَّخزين.
-            </li>
-            <li>
-              نحتفظ بمعلوماتك الشَّخصيَّة فقط للمدَّة اللازمة لتحقيق الأغراض التي جُمِعت من أجلها،
-              أو كما يقتضي القانون.
-            </li>
-          </ul>
-        </section>
-
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. حقوقك</h2>
-          <p>لك حقوق فيما يتعلَّق بمعلوماتك الشَّخصيَّة:</p>
-          <ul className="list-disc space-y-1 pr-6">
-            <li>
-              <strong>حقُّ الوصول:</strong> يمكنك طلب نسخة من معلوماتك الشَّخصيَّة المُخزَّنة لدينا.
-            </li>
-            <li>
-              <strong>حقُّ التَّصحيح:</strong> يمكنك طلب تصحيح أي معلومات غير دقيقة.
-            </li>
-            <li>
-              <strong>حقُّ الحذف:</strong> يمكنك طلب حذف معلوماتك الشَّخصيَّة، شريطة أن لا يكون
-              لدينا التزام قانوني للاحتفاظ بها.
-            </li>
-            <li>
-              <strong>حقُّ الاعتراض:</strong> يمكنك الاعتراض على معالجة معلوماتك في ظروف مُعيَّنة.
-            </li>
-          </ul>
-          <p>
-            لممارسة أيٍّ من هذه الحقوق، يُرجَى التَّواصل معنا عبر البريد الإلكتروني:{' '}
+        {/* Quick Navigation Scroll Pill */}
+        <nav
+          className="mb-10 sm:mb-12 overflow-x-auto pb-2 scrollbar-none"
+          aria-label="فهرس السِّياسة"
+        >
+          <div className="inline-flex gap-2 min-w-full sm:min-w-0">
             <a
-              href="mailto:contact@royaraqamia.com"
-              className="text-primary underline underline-offset-4 hover:text-primary/80"
+              href="#intro"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
-              contact@royaraqamia.com
+              01. المُقدِّمة
             </a>
-          </p>
-        </section>
+            <a
+              href="#collected-data"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            >
+              02. المعلومات المجمعة
+            </a>
+            <a
+              href="#data-usage"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            >
+              03. الاستخدام
+            </a>
+            <a
+              href="#third-parties"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            >
+              04. المشاركة
+            </a>
+            <a
+              href="#security"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            >
+              05. الأمان
+            </a>
+            <a
+              href="#rights"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            >
+              06. حقوقك
+            </a>
+            <a
+              href="#contact"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            >
+              11. التَّواصل
+            </a>
+          </div>
+        </nav>
 
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. ملفَّات تعريف الارتباط (Cookies)</h2>
-          <p>
-            نستخدم ملفَّات تعريف الارتباط الضَّروريَّة لتشغيل الموقع وتأمين الجلسات. لا نستخدم
-            ملفَّات تعريف ارتباط التَّتبُّع لأغراض تحليليَّة أو تسويقيَّة.
-          </p>
-        </section>
+        {/* Content Stream */}
+        <div className="space-y-8 sm:space-y-10">
+          {/* Section 01 */}
+          <section
+            id="intro"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                01
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">. المُقدِّمة</h2>
+            </div>
+            <p className="text-neutral-300 text-base sm:text-lg leading-relaxed">
+              مرحبًا بك في <strong className="text-white font-semibold">رؤية رقمية</strong>{' '}
+              (&quot;نحن&quot; أو &quot;المُشغِّل&quot;). نُقدِّر ثقتك بنا. تشرح هذه السِّياسة
+              كيفيَّة جمع معلوماتك الشَّخصيَّة واستخدامها وحمايتها عند استخدامك لمواقعنا وخدماتنا
+              إلكترونيًّا.
+            </p>
+          </section>
 
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. خصوصيَّة الأحداث</h2>
-          <p>
-            قد تتمُّ معالجة بعض بياناتك من خلال خدمات مُزوِّدين مثل Vercel Analytics وSentry لتحسين
-            أداء الموقع واكتشاف الأخطاء. تُعالج هذه البيانات بشكل مُجمَّع وغير مُحدَّد الهويَّة.
-          </p>
-        </section>
+          {/* Section 02 */}
+          <section
+            id="collected-data"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                02
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">. المعلومات التي نجمعها</h2>
+            </div>
 
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. الأطفال</h2>
-          <p>
-            خدماتنا غير مُوجَّهة لأقل من عامًا. لا نجمع عن عمد معلومات شخصيَّة من الأطفال. إذا علمنا
-            أنَّنا جمعنا معلومات من طفل دون عامًا، سنقوم بمحو هذه المعلومات فورًا.
-          </p>
-        </section>
+            <div className="space-y-6">
+              {/* Card 2.A */}
+              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 sm:p-6 transition-colors hover:border-neutral-700">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                  <span className="text-emerald-400 font-mono">أ)</span> معلومات التَّسجيل والدُّخول
+                </h3>
+                <p className="text-neutral-400 text-sm sm:text-base mb-4">
+                  عند إنشاء حساب أو تسجيل الدُّخول، نجمع:
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    'الاسم الكامل',
+                    'البريد الإلكتروني',
+                    'كلمة المرور المُشفَّرة (لا نُخزِّن كلمات المرور بنسختها الأصليَّة)',
+                  ].map((item, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-3 text-neutral-300 text-sm sm:text-base"
+                    >
+                      <svg
+                        className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
 
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. التَّغييرات على هذه السِّياسة</h2>
-          <p>
-            قد نُحدِّث هذه السِّياسة من وقت لآخر. سنُعلن عن أي تغييرات جوهريَّة عبر الموقع أو عبر
-            البريد الإلكتروني. نُشجِّعك على مراجعة هذه السِّياسة بانتظام.
-          </p>
-        </section>
+              {/* Card 2.B */}
+              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 sm:p-6 transition-colors hover:border-neutral-700">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                  <span className="text-emerald-400 font-mono">ب)</span> معلومات الدُّخول عبر Google
+                </h3>
+                <p className="text-neutral-400 text-sm sm:text-base mb-4">
+                  عند اختيار تسجيل الدُّخول باستخدام حساب Google، نتلقَّى المعلومات التَّالية من
+                  Google وِفقًا لتصريح خصوصيَّتك في حسابك:
+                </p>
+                <ul className="space-y-2.5 mb-4">
+                  {[
+                    'الاسم الكامل المرتبط بحساب Google',
+                    'عنوان البريد الإلكتروني',
+                    'صورة الملف الشَّخصي (إن وُجِدت)',
+                  ].map((item, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-3 text-neutral-300 text-sm sm:text-base"
+                    >
+                      <svg
+                        className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-4 text-xs sm:text-sm text-emerald-300/90 leading-relaxed">
+                  نستخدم هذه المعلومات فقط لأغراض المُصادقة وإنشاء حسابك على منصَّتنا. لن نُشارك هذه
+                  المعلومات مع Google أو أي طرف ثالث لأغراض تسويقيَّة.
+                </div>
+              </div>
 
-        <section>
-          <h2 className="mb-3 text-xl font-bold">. التَّواصل معنا</h2>
-          <p>لأيِّ استفسارات أو طلبات تتعلَّق بسياسة الخصوصيَّة هذه، يُرجَى التَّواصل عبر:</p>
-          <ul className="list-disc space-y-1 pr-6">
-            <li>
-              البريد الإلكتروني:{' '}
+              {/* Card 2.C */}
+              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 sm:p-6 transition-colors hover:border-neutral-700">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
+                  <span className="text-emerald-400 font-mono">ج)</span> معلومات الاستخدام
+                </h3>
+                <p className="text-neutral-400 text-sm sm:text-base mb-4">
+                  قد نجمع تلقائيًّا معلومات معيَّنة عند استخدامك للمنصَّة، منها:
+                </p>
+                <ul className="space-y-2.5">
+                  {[
+                    'عنوان IP',
+                    'نوع المتصفِّح ونظام التَّشغيل',
+                    'صفحات الموقع التي تزورها ووقت الزِّيارة',
+                    'البيانات التي تُدخلها في نماذج التَّواصل',
+                  ].map((item, idx) => (
+                    <li
+                      key={idx}
+                      className="flex items-start gap-3 text-neutral-300 text-sm sm:text-base"
+                    >
+                      <svg
+                        className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 03 */}
+          <section
+            id="data-usage"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                03
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                . كيفيَّة استخدام معلوماتك
+              </h2>
+            </div>
+            <p className="text-neutral-400 text-sm sm:text-base mb-6">
+              نستخدم المعلومات التي نجمعها للأغراض التَّالية:
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3.5">
+              {[
+                'توفير وتشغيل خدماتنا (الدَّورات التَّدريبيَّة، الشَّهادات، التَّطبيقات)',
+                'المُصادقة وتأمين حسابك',
+                'التَّواصل معك بخصوص حسابك أو خدماتنا',
+                'تحسين تجربتك على المنصَّة',
+                'الامتثال للالتزامات القانونيَّة',
+                'منع الاحتيال وسوء الاستخدام',
+              ].map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-neutral-800/60 bg-neutral-950/40 text-neutral-300 text-sm sm:text-base"
+                >
+                  <div className="h-2 w-2 rounded-full bg-emerald-400 mt-2 shrink-0" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Section 04 */}
+          <section
+            id="third-parties"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                04
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">
+                . مشاركة المعلومات مع أطراف ثالثة
+              </h2>
+            </div>
+            <p className="text-neutral-300 text-base sm:text-lg mb-6 leading-relaxed">
+              نحنُ لا نبيع معلوماتك الشَّخصيَّة لأيِّ طرفٍ ثالث. قد نُشارك معلوماتك فقط في الحالات
+              التَّالية:
+            </p>
+            <div className="space-y-4">
+              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 leading-relaxed">
+                <strong className="text-white block mb-2 text-base">مُزوِّدو الخدمات:</strong>
+                <span className="text-neutral-300 text-sm sm:text-base">
+                  نستخدم خدمات مُزوِّدين موثوقين مثل{' '}
+                  <span className="text-emerald-400 font-medium">Supabase</span> (لتخزين البيانات
+                  والمُصادقة) و <span className="text-emerald-400 font-medium">Vercel</span>{' '}
+                  (لاستضافة الموقع) و <span className="text-emerald-400 font-medium">Resend</span>{' '}
+                  (لإرسال رسائل البريد الإلكتروني). تُخزَّن هذه البيانات على خوادمهم بما يتوافق مع
+                  معايير الأمان.
+                </span>
+              </div>
+              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 leading-relaxed">
+                <strong className="text-white block mb-2 text-base">الالتزامات القانونيَّة:</strong>
+                <span className="text-neutral-300 text-sm sm:text-base">
+                  قد نكشف معلوماتك إذا طُلِب ذلك قانونيًّا أو ردًّا على إجراءات قانونيَّة صالحة.
+                </span>
+              </div>
+            </div>
+          </section>
+
+          {/* Section 05 */}
+          <section
+            id="security"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                05
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">. الأمان والتَّخزين</h2>
+            </div>
+            <div className="space-y-3">
+              {[
+                'نتَّبع إجراءات أمنيَّة معقولة لحماية معلوماتك من الوصول غير المُصرَّح به أو استخدامها أو تعديلها أو إتلافها.',
+                'تُخزَّن بياناتك على خوادم مُزوِّدي الخدمات الموثوقين مع تشفير أثناء النَّقل (TLS/SSL) وعند التَّخزين.',
+                'نحتفظ بمعلوماتك الشَّخصيَّة فقط للمدَّة اللازمة لتحقيق الأغراض التي جُمِعت من أجلها، أو كما يقتضي القانون.',
+              ].map((item, idx) => (
+                <div
+                  key={idx}
+                  className="flex items-start gap-3 p-4 rounded-xl border border-neutral-800/80 bg-neutral-950/40 text-neutral-300 text-sm sm:text-base"
+                >
+                  <svg
+                    className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    />
+                  </svg>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Section 06 */}
+          <section
+            id="rights"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                06
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">. حقوقك</h2>
+            </div>
+            <p className="text-neutral-400 text-sm sm:text-base mb-6">
+              لك حقوق فيما يتعلَّق بمعلوماتك الشَّخصيَّة:
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-4 mb-6">
+              {[
+                {
+                  title: 'حقُّ الوصول:',
+                  desc: 'يمكنك طلب نسخة من معلوماتك الشَّخصيَّة المُخزَّنة لدينا.',
+                },
+                { title: 'حقُّ التَّصحيح:', desc: 'يمكنك طلب تصحيح أي معلومات غير دقيقة.' },
+                {
+                  title: 'حقُّ الحذف:',
+                  desc: 'يمكنك طلب حذف معلوماتك الشَّخصيَّة، شريطة أن لا يكون لدينا التزام قانوني للاحتفاظ بها.',
+                },
+                {
+                  title: 'حقُّ الاعتراض:',
+                  desc: 'يمكنك الاعتراض على معالجة معلوماتك في ظروف مُعيَّنة.',
+                },
+              ].map((right, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-4 leading-relaxed"
+                >
+                  <strong className="text-white block mb-1 text-sm sm:text-base">
+                    {right.title}
+                  </strong>
+                  <p className="text-neutral-400 text-xs sm:text-sm">{right.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-neutral-300 text-sm sm:text-base pt-4 border-t border-neutral-800/80">
+              لممارسة أيٍّ من هذه الحقوق، يُرجَى التَّواصل معنا عبر البريد الإلكتروني:{' '}
               <a
                 href="mailto:contact@royaraqamia.com"
-                className="text-primary underline underline-offset-4 hover:text-primary/80"
+                className="inline-flex items-center gap-1 text-emerald-400 font-medium underline underline-offset-4 hover:text-emerald-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded-sm"
               >
                 contact@royaraqamia.com
               </a>
-            </li>
-            <li>الموقع الإلكتروني: https://royaraqamia.com</li>
-          </ul>
-        </section>
-      </div>
+            </p>
+          </section>
+
+          {/* Section 07 & 08 Dual Grid Layout */}
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Section 07 */}
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                  07
+                </span>
+                <h2 className="text-lg sm:text-xl font-bold text-white">
+                  . ملفَّات تعريف الارتباط (Cookies)
+                </h2>
+              </div>
+              <p className="text-neutral-300 text-sm sm:text-base leading-relaxed">
+                نستخدم ملفَّات تعريف الارتباط الضَّروريَّة لتشغيل الموقع وتأمين الجلسات. لا نستخدم
+                ملفَّات تعريف ارتباط التَّتبُّع لأغراض تحليليَّة أو تسويقيَّة.
+              </p>
+            </section>
+
+            {/* Section 08 */}
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                  08
+                </span>
+                <h2 className="text-lg sm:text-xl font-bold text-white">. خصوصيَّة الأحداث</h2>
+              </div>
+              <p className="text-neutral-300 text-sm sm:text-base leading-relaxed">
+                قد تتمُّ معالجة بعض بياناتك من خلال خدمات مُزوِّدين مثل Vercel Analytics وSentry
+                لتحسين أداء الموقع واكتشاف الأخطاء. تُعالج هذه البيانات بشكل مُجمَّع وغير مُحدَّد
+                الهويَّة.
+              </p>
+            </section>
+          </div>
+
+          {/* Section 09 & 10 Dual Grid Layout */}
+          <div className="grid sm:grid-cols-2 gap-6">
+            {/* Section 09 */}
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                  09
+                </span>
+                <h2 className="text-lg sm:text-xl font-bold text-white">. الأطفال</h2>
+              </div>
+              <p className="text-neutral-300 text-sm sm:text-base leading-relaxed">
+                خدماتنا غير مُوجَّهة لأقل من عامًا. لا نجمع عن عمد معلومات شخصيَّة من الأطفال. إذا
+                علمنا أنَّنا جمعنا معلومات من طفل دون عامًا، سنقوم بمحو هذه المعلومات فورًا.
+              </p>
+            </section>
+
+            {/* Section 10 */}
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                  10
+                </span>
+                <h2 className="text-lg sm:text-xl font-bold text-white">
+                  . التَّغييرات على هذه السِّياسة
+                </h2>
+              </div>
+              <p className="text-neutral-300 text-sm sm:text-base leading-relaxed">
+                قد نُحدِّث هذه السِّياسة من وقت لآخر. سنُعلن عن أي تغييرات جوهريَّة عبر الموقع أو
+                عبر البريد الإلكتروني. نُشجِّعك على مراجعة هذه السِّياسة بانتظام.
+              </p>
+            </section>
+          </div>
+
+          {/* Section 11 - Contact CTA Section */}
+          <section
+            id="contact"
+            className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-emerald-500/30 bg-linear-to-br from-neutral-900 via-neutral-900/90 to-emerald-950/20 p-6 sm:p-10 shadow-2xl"
+          >
+            <div className="flex items-center gap-3 mb-4">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold">
+                11
+              </span>
+              <h2 className="text-xl sm:text-2xl font-bold text-white">. التَّواصل معنا</h2>
+            </div>
+            <p className="text-neutral-300 text-sm sm:text-base mb-6 leading-relaxed">
+              لأيِّ استفسارات أو طلبات تتعلَّق بسياسة الخصوصيَّة هذه، يُرجَى التَّواصل عبر:
+            </p>
+
+            <div className="grid sm:grid-cols-2 gap-4">
+              <a
+                href="mailto:contact@royaraqamia.com"
+                className="group flex items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 hover:border-emerald-500/50 hover:bg-neutral-900 transition-all duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              >
+                <div className="space-y-1">
+                  <span className="text-xs text-neutral-400 block">البريد الإلكتروني</span>
+                  <span className="text-sm sm:text-base text-white font-medium group-hover:text-emerald-400 transition-colors">
+                    contact@royaraqamia.com
+                  </span>
+                </div>
+                <svg
+                  className="w-5 h-5 text-neutral-500 group-hover:text-emerald-400 transition-colors shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 002-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              </a>
+
+              <a
+                href="https://royaraqamia.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 hover:border-emerald-500/50 hover:bg-neutral-900 transition-all duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              >
+                <div className="space-y-1">
+                  <span className="text-xs text-neutral-400 block">الموقع الإلكتروني</span>
+                  <span className="text-sm sm:text-base text-white font-medium group-hover:text-emerald-400 transition-colors">
+                    https://royaraqamia.com
+                  </span>
+                </div>
+                <svg
+                  className="w-5 h-5 text-neutral-500 group-hover:text-emerald-400 transition-colors shrink-0"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
+              </a>
+            </div>
+          </section>
+        </div>
+      </main>
     </div>
   );
 }

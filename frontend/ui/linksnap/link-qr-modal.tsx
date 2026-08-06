@@ -13,6 +13,7 @@ import { getShortLinkUrl } from '@/frontend/shared/linksnap/get-short-link-url';
 import { cn } from '@/frontend/shared/cn';
 import { Loader2, Download } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
+import { hslToHex } from '@/frontend/shared/hsl-to-hex';
 
 interface LinkQrModalProps {
   code: string;
@@ -23,34 +24,39 @@ interface LinkQrModalProps {
 
 export function LinkQrModal({ code, baseUrl, open, onOpenChange }: LinkQrModalProps) {
   const [svg, setSvg] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+  const [generationKey, setGenerationKey] = useState(0);
 
   const shortUrl = getShortLinkUrl(baseUrl, code);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
+    setError(false);
 
     const style = getComputedStyle(document.documentElement);
-    const fg = style.getPropertyValue('--foreground').trim();
-    const bg = style.getPropertyValue('--background').trim();
+    const dark = hslToHex(style.getPropertyValue('--foreground').trim());
+    const light = hslToHex(style.getPropertyValue('--background').trim());
 
     QRCode.toString(shortUrl, {
       type: 'svg',
       width: 240,
       margin: 1,
-      color: { dark: `hsl(${fg})`, light: `hsl(${bg})` },
+      errorCorrectionLevel: 'M',
+      color: { dark: dark ?? '#000000', light: light ?? '#ffffff' },
     })
       .then((value) => {
         if (!cancelled) setSvg(value);
       })
       .catch((err: unknown) => {
         logger.error('QR generation failed', { error: String(err) });
+        if (!cancelled) setError(true);
       });
 
     return () => {
       cancelled = true;
     };
-  }, [open, shortUrl]);
+  }, [open, shortUrl, generationKey]);
 
   const handleDownload = () => {
     if (!svg) return;
@@ -96,6 +102,23 @@ export function LinkQrModal({ code, baseUrl, open, onOpenChange }: LinkQrModalPr
                 تحميل الرمز (SVG)
               </button>
             </>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center w-60 h-60 gap-3 text-center">
+              <p className="text-xs font-medium text-destructive">
+                تعذّر إنشاء رمز الاستجابة السريعة
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setSvg(null);
+                  setError(false);
+                  setGenerationKey((key) => key + 1);
+                }}
+                className="px-4 py-2 rounded-full text-xs font-medium bg-muted text-muted-foreground hover:bg-muted/80 transition-all cursor-pointer focus-ring touch-target"
+              >
+                إعادة المحاولة
+              </button>
+            </div>
           ) : (
             <div className="flex items-center justify-center w-60 h-60">
               <Loader2 className="text-muted-foreground size-6 animate-spin" />

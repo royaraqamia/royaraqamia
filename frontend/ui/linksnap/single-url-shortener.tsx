@@ -7,6 +7,7 @@ import { logger } from '@/frontend/shared/logger';
 import QRCode from 'qrcode';
 import confetti from 'canvas-confetti';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
+import { hslToHex } from '@/frontend/shared/hsl-to-hex';
 import { toast } from 'sonner';
 import { useShortenLink } from '@/frontend/state/linksnap/use-shorten';
 
@@ -99,12 +100,13 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     if (!qrDataUrl && shortenedUrl) {
       try {
         const style = getComputedStyle(document.documentElement);
-        const fg = style.getPropertyValue('--foreground').trim();
-        const bg = style.getPropertyValue('--background').trim();
+        const dark = hslToHex(style.getPropertyValue('--foreground').trim());
+        const light = hslToHex(style.getPropertyValue('--background').trim());
         const dataUrl = await QRCode.toDataURL(shortenedUrl, {
           width: 180,
           margin: 1,
-          color: { dark: `hsl(${fg})`, light: `hsl(${bg})` },
+          errorCorrectionLevel: 'M',
+          color: { dark: dark ?? '#000000', light: light ?? '#ffffff' },
         });
         setQrDataUrl(dataUrl);
       } catch {

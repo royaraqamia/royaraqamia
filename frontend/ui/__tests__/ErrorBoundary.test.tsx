@@ -2,6 +2,16 @@ import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ErrorBoundary } from '../shared/error-boundary';
 
+const stripTashkeel = (text: string) => text.replace(/[\u064B-\u0652\u0670\u06D6-\u06ED]/g, '');
+
+function findByTextIgnoringTashkeel(text: string) {
+  const normalized = stripTashkeel(text);
+  return screen.getByText(
+    (_content: string, node: Element | null) =>
+      node !== null && stripTashkeel(node.textContent ?? '').trim() === normalized
+  );
+}
+
 describe('ErrorBoundary', () => {
   it('renders children when there is no error', () => {
     render(
@@ -22,7 +32,7 @@ describe('ErrorBoundary', () => {
         <Broken />
       </ErrorBoundary>
     );
-    expect(screen.getByText('حدث خطأ غير متوقع')).toBeInTheDocument();
+    expect(findByTextIgnoringTashkeel('حدث خطأ غير متوقع')).toBeInTheDocument();
     spy.mockRestore();
   });
 });

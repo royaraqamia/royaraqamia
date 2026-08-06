@@ -70,7 +70,12 @@ export function OtpInput({
   }, []);
 
   return (
-    <div className="flex gap-3 justify-center" dir="ltr">
+    <div
+      className="flex items-center justify-center gap-1.5 min-[380px]:gap-2 sm:gap-3 w-full max-w-full py-2 select-none"
+      dir="ltr"
+      role="group"
+      aria-label="One-time password input"
+    >
       {Array.from({ length }, (_, i) => {
         const isFocused = focusedIndex === i;
         const isFilled = value[i] !== undefined && value[i] !== '';
@@ -81,11 +86,15 @@ export function OtpInput({
             animate={
               hasError && !isFocused
                 ? {
-                    x: [0, -4, 4, -4, 4, 0],
-                    transition: { duration: 0.4, ease: 'easeInOut' },
+                    x: [0, -6, 6, -4, 4, -2, 2, 0],
+                    transition: { duration: 0.45, ease: 'easeInOut' },
                   }
-                : {}
+                : {
+                    scale: isFocused ? 1.04 : 1,
+                    transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
+                  }
             }
+            className="relative flex items-center justify-center shrink-0"
           >
             <input
               ref={(el) => {
@@ -94,6 +103,10 @@ export function OtpInput({
               type="text"
               inputMode="numeric"
               maxLength={1}
+              autoComplete="one-time-code"
+              aria-label={`Digit ${i + 1} of ${length}`}
+              aria-invalid={hasError}
+              aria-disabled={disabled}
               value={value[i] ?? ''}
               onChange={(e) => handleChange(i, e.target.value)}
               onKeyDown={(e) => handleKeyDown(i, e)}
@@ -101,23 +114,28 @@ export function OtpInput({
               onFocus={() => setFocusedIndex(i)}
               onBlur={() => setFocusedIndex(null)}
               disabled={disabled}
-              className="size-12 sm:size-14 text-center text-xl font-bold rounded-xl border-2 bg-muted text-foreground outline-none transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] disabled:opacity-50"
-              style={{
-                borderColor:
+              className={`
+                w-10 h-12 min-[380px]:w-12 min-[380px]:h-14 sm:w-14 sm:h-16
+                text-center font-mono font-semibold text-xl sm:text-2xl tabular-nums tracking-widest
+                rounded-xl sm:rounded-2xl border-2 outline-none backdrop-blur-md
+                transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+                disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none
+                ${
                   hasError && !isFocused
-                    ? 'hsl(var(--destructive))'
+                    ? 'border-destructive/80 bg-destructive/10 text-destructive shadow-[0_0_15px_-2px_rgba(239,68,68,0.25)]'
                     : isFocused
-                      ? 'hsl(var(--ring))'
+                      ? 'border-primary bg-background text-foreground ring-4 ring-primary/20 shadow-lg z-10'
                       : isFilled
-                        ? 'hsl(var(--primary) / 0.5)'
-                        : 'hsl(var(--border))',
-                boxShadow: isFocused
-                  ? '0 0 0 3px hsl(var(--ring) / 0.15), 0 4px 12px hsl(var(--ring) / 0.1)'
-                  : hasError && !isFocused
-                    ? '0 0 0 3px hsl(var(--destructive) / 0.1)'
-                    : 'none',
-              }}
+                        ? 'border-primary/50 bg-primary/3 text-foreground shadow-xs'
+                        : 'border-border/60 bg-muted/30 hover:border-foreground/20 hover:bg-muted/60 text-foreground/90'
+                }
+              `}
             />
+
+            {/* Active slot indicator pill */}
+            {isFocused && (
+              <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-0.5 rounded-full bg-primary animate-pulse pointer-events-none z-20" />
+            )}
           </motion.div>
         );
       })}

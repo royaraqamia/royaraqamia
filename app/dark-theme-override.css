@@ -128,10 +128,10 @@ textarea::placeholder {
 section {
   background-color: transparent;
 }
-nav {
+nav:not([data-app-navbar]):not([data-mobile-menu]) {
   background-color: hsl(var(--background) / 0.95);
 }
-footer {
+footer:not([data-mobile-menu]) {
   background-color: hsl(var(--card) / 0.5);
 }
 
@@ -143,8 +143,8 @@ footer {
 }
 
 /* Backdrop Elements */
-.backdrop-blur-xl,
-.backdrop-blur-lg,
-.backdrop-blur-sm {
+.backdrop-blur-xl:not([data-app-navbar]):not([data-glass-panel]),
+.backdrop-blur-lg:not([data-app-navbar]):not([data-glass-panel]),
+.backdrop-blur-sm:not([data-app-navbar]):not([data-glass-panel]) {
   background-color: hsl(var(--background) / 0.8);
 }
