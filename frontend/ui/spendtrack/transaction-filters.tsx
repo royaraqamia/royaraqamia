@@ -2,8 +2,8 @@
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Button } from '@/frontend/ui/primitives/button';
-import { Input } from '@/frontend/ui/primitives/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/frontend/ui/primitives/popover';
+import { DateRangePicker } from '@/frontend/ui/primitives/date-picker';
 import {
   Select,
   SelectContent,
@@ -89,24 +89,20 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
       </Select>
 
       {currentRange === 'all' && (
-        <>
-          <Input
-            type="date"
-            className="w-full sm:w-35 focus-ring"
-            value={customStart}
-            onChange={(e) => updateParam('from', e.target.value)}
-            placeholder="من"
-            aria-label="تاريخ البداية"
-          />
-          <Input
-            type="date"
-            className="w-full sm:w-35 focus-ring"
-            value={customEnd}
-            onChange={(e) => updateParam('to', e.target.value)}
-            placeholder="إلى"
-            aria-label="تاريخ النهاية"
-          />
-        </>
+        <DateRangePicker
+          from={customStart}
+          to={customEnd}
+          onChange={(from, to) => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (from) params.set('from', from);
+            else params.delete('from');
+            if (to) params.set('to', to);
+            else params.delete('to');
+            router.push(`${pathname}?${params.toString()}`);
+          }}
+          className="w-full sm:w-56"
+          aria-label="الفترة الزمنية"
+        />
       )}
 
       <Popover>
