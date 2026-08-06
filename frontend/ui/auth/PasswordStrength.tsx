@@ -24,10 +24,6 @@ function getStrength(password: string): { score: number; label: string; color: s
 export function PasswordStrength({ password }: PasswordStrengthProps) {
   const { score, label, color } = useMemo(() => getStrength(password), [password]);
 
-  if (!password) return null;
-
-  // Dynamic visual tier styles for high-end SaaS aesthetic & dynamic dynamic status state styling
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const tierStyle = useMemo(() => {
     if (score <= 1) {
       return {
@@ -64,6 +60,8 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       dot: 'bg-emerald-500',
     };
   }, [score]);
+
+  if (!password) return null;
 
   return (
     <motion.div
