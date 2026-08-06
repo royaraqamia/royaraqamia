@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 
-const tempDir = path.join(os.tmpdir(), `habitflow-test-${Date.now()}`);
+const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'habitflow-test-'));
 
 function loadRepo() {
   return import('@/backend/repositories/habitflow/json-file-repository').then(
