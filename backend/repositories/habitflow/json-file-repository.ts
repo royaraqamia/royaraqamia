@@ -43,7 +43,17 @@ export class JsonFileHabitRepository implements HabitRepository {
 
   private writeDb(data: Schema): void {
     this.initDb();
-    fs.writeFileSync(this.dbFile, JSON.stringify(data, null, 2), 'utf-8');
+    const fd = fs.openSync(this.dbFile, fs.constants.O_WRONLY);
+    try {
+      const stats = fs.fstatSync(fd);
+      if (!stats.isFile()) {
+        throw new Error(`Refusing to write non-regular file: ${this.dbFile}`);
+      }
+      fs.ftruncateSync(fd, 0);
+      fs.writeFileSync(fd, JSON.stringify(data, null, 2), 'utf-8');
+    } finally {
+      fs.closeSync(fd);
+    }
   }
 
   async getHabits(): Promise<Habit[]> {
