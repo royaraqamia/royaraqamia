@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
+import { DatePicker } from '@/frontend/ui/primitives/date-picker';
 import { toast } from 'sonner';
 import { ArrowRight, CalendarDays, User, GraduationCap, Trophy, Hash } from 'lucide-react';
 
@@ -186,7 +187,6 @@ export function CertificateForm({ mode, initialData, onSubmit }: CertificateForm
                 value={form.issue_date}
                 onChange={(v) => updateField('issue_date', v)}
                 error={errors.issue_date}
-                icon={<CalendarDays className="size-4" />}
               />
               <FormField
                 label="تاريخ الانتهاء"
@@ -245,22 +245,32 @@ function FormField({
   return (
     <div className="form-field">
       <label className="form-label">{label}</label>
-      <div className="relative">
-        {icon && (
-          <div className="text-muted-foreground pointer-events-none absolute top-1/2 inset-s-3 -translate-y-1/2">
-            {icon}
-          </div>
-        )}
-        <Input
-          type={type}
+      {type === 'date' ? (
+        <DatePicker
           value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          error={!!error}
-          required={label.includes('*')}
-          className={icon ? 'ps-10' : ''}
+          onChange={onChange}
+          placeholder="اختر التاريخ"
+          className="bg-muted border border-border rounded-xl focus-ring"
+          aria-invalid={error ? true : undefined}
         />
-      </div>
+      ) : (
+        <div className="relative">
+          {icon && (
+            <div className="text-muted-foreground pointer-events-none absolute top-1/2 inset-s-3 -translate-y-1/2">
+              {icon}
+            </div>
+          )}
+          <Input
+            type={type}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            error={!!error}
+            required={label.includes('*')}
+            className={icon ? 'ps-10' : ''}
+          />
+        </div>
+      )}
       {error && <p className="form-error">{error}</p>}
     </div>
   );
