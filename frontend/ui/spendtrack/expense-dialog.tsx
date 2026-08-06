@@ -8,6 +8,7 @@ import { useSaveExpense } from '@/frontend/state/spendtrack/use-expenses';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
+import { DatePicker } from '@/frontend/ui/primitives/date-picker';
 import {
   Dialog,
   DialogContent,
@@ -259,19 +260,25 @@ function ExpenseForm({
         )}
       </div>
       <div className="form-field">
-        <Label htmlFor="date" className="form-label">
+        <Label className="form-label">
           التاريخ{' '}
           <span className="text-destructive" aria-hidden="true">
             *
           </span>
         </Label>
-        <Input
-          id="date"
-          type="date"
-          className="bg-muted border-border rounded-xl focus-ring"
-          {...register('date')}
-          aria-invalid={errors.date ? true : undefined}
-          aria-describedby={errors.date ? 'date-error' : undefined}
+        <Controller
+          name="date"
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              value={field.value}
+              onChange={field.onChange}
+              placeholder="اختر التاريخ"
+              className="bg-muted border border-border rounded-xl focus-ring"
+              aria-invalid={errors.date ? true : undefined}
+              aria-describedby={errors.date ? 'date-error' : undefined}
+            />
+          )}
         />
         {errors.date && (
           <p id="date-error" className="form-error" role="alert">
