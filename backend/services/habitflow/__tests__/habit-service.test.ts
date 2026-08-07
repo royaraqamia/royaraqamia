@@ -28,6 +28,7 @@ function makeRepo(overrides: Partial<HabitRepository> = {}) {
     deleteHabit: vi.fn(),
     getLogs: vi.fn(),
     toggleLog: vi.fn(),
+    setLogKind: vi.fn(),
     restoreFromBackup: vi.fn(),
     getLocalData: vi.fn(),
     ...overrides,
@@ -208,6 +209,49 @@ describe('HabitService', () => {
         service.toggleHabitLog({ habitId: 'h-1', date: '2026-08-02', completed: true })
       ).resolves.toEqual(logFixture);
       expect(repository.toggleLog).toHaveBeenCalledWith('h-1', '2026-08-02', true);
+    });
+  });
+
+  describe('setHabitLogKind', () => {
+    it('requires habitId and date', async () => {
+      const { repository, service } = makeRepo();
+      await expect(
+        service.setHabitLogKind({ habitId: '', date: '2026-08-02', kind: 'skip' })
+      ).rejects.toThrow('حقول مطلوبة مفقودة للتسجيل');
+      await expect(
+        service.setHabitLogKind({ habitId: 'h-1', date: '', kind: 'skip' })
+      ).rejects.toThrow('حقول مطلوبة مفقودة للتسجيل');
+      expect(repository.setLogKind).not.toHaveBeenCalled();
+    });
+
+    it('rejects an unknown log kind', async () => {
+      const { repository, service } = makeRepo();
+      await expect(
+        service.setHabitLogKind({
+          habitId: 'h-1',
+          date: '2026-08-02',
+          kind: 'whatever' as 'skip',
+        })
+      ).rejects.toThrow('نوع تسجيل غير صالح');
+      expect(repository.setLogKind).not.toHaveBeenCalled();
+    });
+
+    it('delegates a valid skip/complete/none kind to the repository', async () => {
+      const { repository, service } = makeRepo();
+      const skipLog: HabitLog = {
+        id: 'l-skip',
+        habitId: 'h-1',
+        date: '2026-08-02',
+        completed: false,
+        completedAt: null,
+        kind: 'skip',
+      };
+      (repository.setLogKind as ReturnType<typeof vi.fn>).mockResolvedValue(skipLog);
+
+      await expect(
+        service.setHabitLogKind({ habitId: 'h-1', date: '2026-08-02', kind: 'skip' })
+      ).resolves.toEqual(skipLog);
+      expect(repository.setLogKind).toHaveBeenCalledWith('h-1', '2026-08-02', 'skip');
     });
   });
 

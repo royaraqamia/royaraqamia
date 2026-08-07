@@ -84,6 +84,23 @@ export async function toggleLog(body: Record<string, unknown>): Promise<HttpResu
   }
 }
 
+export async function setHabitLogKind(body: Record<string, unknown>): Promise<HttpResult> {
+  try {
+    const { user, client } = await getOptionalUser();
+    const { habitId, date, kind } = body;
+    const { service, mode } = createHabitService(user?.id, client ?? undefined);
+    const log = await service.setHabitLogKind({
+      habitId: habitId as string,
+      date: date as string,
+      kind: kind as 'complete' | 'skip' | 'miss' | 'none',
+    });
+
+    return jsonResult(200, { log, mode });
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
 export async function exportBackup(): Promise<HttpResult> {
   try {
     const { user, client } = await getOptionalUser();

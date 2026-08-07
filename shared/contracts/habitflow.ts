@@ -8,12 +8,15 @@ export interface Habit {
   user_id?: string;
 }
 
+export type HabitLogKind = 'complete' | 'skip' | 'miss';
+
 export interface HabitLog {
   id: string;
   habitId: string;
   date: string;
   completed: boolean;
   completedAt: string | null;
+  kind?: HabitLogKind;
   user_id?: string;
 }
 
@@ -24,6 +27,7 @@ export interface HabitRepository {
   deleteHabit(id: string): Promise<boolean>;
   getLogs(startDate: string, endDate: string): Promise<HabitLog[]>;
   toggleLog(habitId: string, date: string, completed: boolean): Promise<HabitLog>;
+  setLogKind(habitId: string, date: string, kind: HabitLogKind | 'none'): Promise<HabitLog>;
   restoreFromBackup(input: HabitRestoreInput): Promise<void>;
   getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }>;
 }
@@ -43,6 +47,7 @@ export interface HabitBackupLog {
   date: string;
   completed: boolean;
   completedAt?: string | null;
+  kind?: string;
 }
 
 export interface HabitRestoreInput {

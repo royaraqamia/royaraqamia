@@ -79,6 +79,17 @@ export class ApiClient {
     });
   }
 
+  static async setLogKind(
+    habitId: string,
+    date: string,
+    kind: 'complete' | 'skip' | 'miss' | 'none'
+  ) {
+    return request<{ log: HabitLog; mode: 'supabase' | 'local' }>('/habitflow/api/logs/kind', {
+      method: 'POST',
+      body: JSON.stringify({ habitId, date, kind }),
+    });
+  }
+
   static async exportBackup() {
     return request<{ version: string; exportedAt: string; habits: unknown[]; logs: unknown[] }>(
       '/habitflow/api/backup'

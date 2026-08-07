@@ -4,53 +4,80 @@ function getCompletedDateSet(habitId: string, logs: HabitLog[]): Set<string> {
   return new Set(logs.filter((l) => l.habitId === habitId && l.completed).map((l) => l.date));
 }
 
-function calcCurrentStreak(completedDates: Set<string>, todayStr: string): number {
-  const today = new Date(`${todayStr}T00:00:00Z`);
-  const yesterday = new Date(today);
-  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+function getSkippedDateSet(habitId: string, logs: HabitLog[]): Set<string> {
+  return new Set(logs.filter((l) => l.habitId === habitId && l.kind === 'skip').map((l) => l.date));
+}
 
-  const yesterdayStr = yesterday.toISOString().split('T')[0]!;
-  const hasToday = completedDates.has(todayStr);
-  const hasYesterday = completedDates.has(yesterdayStr);
-
-  if (!hasToday && !hasYesterday) return 0;
-
-  let checkDate = hasToday ? new Date(today) : new Date(yesterday);
-  let streak = 0;
+function countActiveStreak(
+  activeDates: Set<string>,
+  completedDates: Set<string>,
+  anchorDate: string
+): number {
+  let count = 0;
+  let checkDate = new Date(`${anchorDate}T00:00:00Z`);
 
   while (true) {
     const checkStr = checkDate.toISOString().split('T')[0]!;
-    if (completedDates.has(checkStr)) {
-      streak++;
+    if (activeDates.has(checkStr)) {
+      if (completedDates.has(checkStr)) {
+        count++;
+      }
       checkDate.setUTCDate(checkDate.getUTCDate() - 1);
     } else {
       break;
     }
   }
 
-  return streak;
+  return count;
 }
 
-function calcLongestStreak(completedDates: string[]): number {
-  if (completedDates.length === 0) return 0;
+function calcCurrentStreak(
+  completedDates: Set<string>,
+  skippedDates: Set<string>,
+  todayStr: string
+): number {
+  const activeDates = new Set([...completedDates, ...skippedDates]);
+  const today = new Date(`${todayStr}T00:00:00Z`);
+  const yesterday = new Date(today);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
 
-  const ascending = [...completedDates].reverse();
+  const yesterdayStr = yesterday.toISOString().split('T')[0]!;
+
+  let anchor: string | null = null;
+  if (activeDates.has(todayStr)) {
+    anchor = todayStr;
+  } else if (activeDates.has(yesterdayStr)) {
+    anchor = yesterdayStr;
+  }
+
+  if (anchor === null) return 0;
+
+  return countActiveStreak(activeDates, completedDates, anchor);
+}
+
+function calcLongestStreak(completedDates: Set<string>, skippedDates: Set<string>): number {
+  const activeDates = Array.from(new Set([...completedDates, ...skippedDates])).sort();
+
+  if (activeDates.length === 0) return 0;
+
   let longest = 0;
   let tempStreak = 0;
   let prevDate: Date | null = null;
 
-  for (const dStr of ascending) {
+  for (const dStr of activeDates) {
     const currentDate = new Date(`${dStr}T00:00:00Z`);
     if (prevDate === null) {
-      tempStreak = 1;
+      tempStreak = completedDates.has(dStr) ? 1 : 0;
     } else {
       const diffMs = Math.abs(currentDate.getTime() - prevDate.getTime());
       const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
       if (diffDays === 1) {
-        tempStreak++;
-      } else if (diffDays > 1) {
+        if (completedDates.has(dStr)) {
+          tempStreak++;
+        }
+      } else {
         if (tempStreak > longest) longest = tempStreak;
-        tempStreak = 1;
+        tempStreak = completedDates.has(dStr) ? 1 : 0;
       }
     }
     prevDate = currentDate;
@@ -83,6 +110,7 @@ export function calculateHabitStats(
   todayStr: string
 ): HabitStats {
   const completedDates = getCompletedDateSet(habitId, logs);
+  const skippedDates = getSkippedDateSet(habitId, logs);
   const completedArray = Array.from(completedDates).sort((a, b) => b.localeCompare(a));
 
   if (completedArray.length === 0) {
@@ -90,8 +118,8 @@ export function calculateHabitStats(
   }
 
   return {
-    currentStreak: calcCurrentStreak(completedDates, todayStr),
-    longestStreak: calcLongestStreak(completedArray),
+    currentStreak: calcCurrentStreak(completedDates, skippedDates, todayStr),
+    longestStreak: calcLongestStreak(completedDates, skippedDates),
     completionRate: calcCompletionRate(completedDates, todayStr),
     totalCompleted: completedArray.length,
   };

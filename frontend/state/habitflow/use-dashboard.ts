@@ -53,7 +53,12 @@ export function useDashboard(seed: DashboardSeed) {
     closeEditModal,
   } = useDashboardForm(user, setHabits);
 
-  const { togglingHabitId, handleToggleLog } = useDashboardToggle(user, logs, setLogs, activeDate);
+  const { togglingHabitId, skippingHabitId, handleToggleLog, handleSkipHabit } = useDashboardToggle(
+    user,
+    logs,
+    setLogs,
+    activeDate
+  );
 
   const {
     fileInputRef,
@@ -94,6 +99,7 @@ export function useDashboard(seed: DashboardSeed) {
     cancelArchive,
     confirmArchiveHabitId,
     handleToggleLog,
+    handleSkipHabit,
     handleDownloadBackup,
     handleImportBackupFile,
     showImportConfirm,
@@ -103,6 +109,7 @@ export function useDashboard(seed: DashboardSeed) {
     confirmSyncToCloud,
     cancelSyncToCloud,
     togglingHabitId,
+    skippingHabitId,
     handleDateShift,
     getReadableActiveDate,
     openEditModal,

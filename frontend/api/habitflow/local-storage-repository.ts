@@ -1,4 +1,10 @@
-import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import {
+  Habit,
+  HabitLog,
+  HabitLogKind,
+  HabitRepository,
+  HabitRestoreInput,
+} from '@/shared/contracts/habitflow';
 
 const HABITS_KEY = 'habitflow_habits';
 const LOGS_KEY = 'habitflow_logs';
@@ -87,6 +93,11 @@ export class LocalStorageHabitRepository implements HabitRepository {
     if (existingIndex !== -1) {
       logs[existingIndex]!.completed = completed;
       logs[existingIndex]!.completedAt = completed ? new Date().toISOString() : null;
+      if (completed) {
+        logs[existingIndex]!.kind = 'complete';
+      } else {
+        delete logs[existingIndex]!.kind;
+      }
       writeLogs(logs);
       return logs[existingIndex]!;
     } else {
@@ -96,11 +107,39 @@ export class LocalStorageHabitRepository implements HabitRepository {
         date,
         completed,
         completedAt: completed ? new Date().toISOString() : null,
+        ...(completed ? { kind: 'complete' as const } : {}),
       };
       logs.push(newLog);
       writeLogs(logs);
       return newLog;
     }
+  }
+
+  async setLogKind(habitId: string, date: string, kind: HabitLogKind | 'none'): Promise<HabitLog> {
+    const logs = readLogs();
+    const existingIndex = logs.findIndex((log) => log.habitId === habitId && log.date === date);
+    const completed = kind === 'complete';
+
+    if (existingIndex !== -1) {
+      const existing = logs[existingIndex]!;
+      existing.completed = completed;
+      existing.completedAt = completed ? new Date().toISOString() : null;
+      existing.kind = kind === 'none' ? undefined : kind;
+      writeLogs(logs);
+      return existing;
+    }
+
+    const newLog: HabitLog = {
+      id: `l-${Math.random().toString(36).substring(2, 9)}`,
+      habitId,
+      date,
+      completed,
+      completedAt: completed ? new Date().toISOString() : null,
+      ...(kind !== 'none' ? { kind } : {}),
+    };
+    logs.push(newLog);
+    writeLogs(logs);
+    return newLog;
   }
 
   async restoreFromBackup(input: HabitRestoreInput): Promise<void> {

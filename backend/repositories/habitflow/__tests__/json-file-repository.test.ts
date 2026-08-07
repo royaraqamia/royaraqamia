@@ -99,6 +99,23 @@ describe('JsonFileHabitRepository', () => {
     expect(unchecked.id).toBe(completed.id);
   });
 
+  it('sets, reads and clears a skip kind on a log', async () => {
+    const repo = await loadRepo();
+    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+
+    const skipped = await repo.setLogKind(habit.id, '2026-08-01', 'skip');
+    expect(skipped.completed).toBe(false);
+    expect(skipped.completedAt).toBeNull();
+    expect(skipped.kind).toBe('skip');
+
+    const [persisted] = await repo.getLogs('2026-08-01', '2026-08-01');
+    expect(persisted?.kind).toBe('skip');
+
+    const cleared = await repo.setLogKind(habit.id, '2026-08-01', 'none');
+    expect(cleared.completed).toBe(false);
+    expect(cleared.kind).toBeUndefined();
+  });
+
   it('keeps one log per habit+date (upsert behaviour)', async () => {
     const repo = await loadRepo();
     const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });

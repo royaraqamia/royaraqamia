@@ -1,5 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import {
+  Habit,
+  HabitLog,
+  HabitLogKind,
+  HabitRepository,
+  HabitRestoreInput,
+} from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
 import { logger } from '@/backend/shared/logger';
 
@@ -19,6 +25,7 @@ interface LogRow {
   date: string;
   completed: boolean;
   completed_at: string | null;
+  log_kind?: string | null;
   user_id?: string;
 }
 
@@ -34,6 +41,13 @@ function toHabit(row: HabitRow): Habit {
   };
 }
 
+function toLogKind(dbKind: string | null | undefined): HabitLogKind | undefined {
+  if (dbKind === 'complete' || dbKind === 'skip' || dbKind === 'miss') {
+    return dbKind;
+  }
+  return undefined;
+}
+
 function toLog(row: LogRow): HabitLog {
   return {
     id: row.id,
@@ -41,6 +55,7 @@ function toLog(row: LogRow): HabitLog {
     date: row.date,
     completed: row.completed,
     completedAt: row.completed_at,
+    kind: toLogKind(row.log_kind),
     user_id: row.user_id,
   };
 }
@@ -181,6 +196,7 @@ export class SupabaseHabitRepository implements HabitRepository {
       date: l.date,
       completed: l.completed,
       completed_at: l.completedAt || new Date().toISOString(),
+      log_kind: l.kind || (l.completed ? 'complete' : 'none'),
       user_id: userId,
     }));
 
@@ -261,6 +277,7 @@ export class SupabaseHabitRepository implements HabitRepository {
         .update({
           completed,
           completed_at: completed ? new Date().toISOString() : null,
+          log_kind: completed ? 'complete' : 'none',
         })
         .eq('id', existing.id);
 
@@ -282,6 +299,7 @@ export class SupabaseHabitRepository implements HabitRepository {
           date,
           completed,
           completed_at: completed ? new Date().toISOString() : null,
+          log_kind: completed ? 'complete' : 'none',
           user_id: this.userId,
         })
         .select()
@@ -294,5 +312,66 @@ export class SupabaseHabitRepository implements HabitRepository {
     }
 
     return toLog(result);
+  }
+
+  async setLogKind(habitId: string, date: string, kind: HabitLogKind | 'none'): Promise<HabitLog> {
+    const completed = kind === 'complete';
+    const completedAt = completed ? new Date().toISOString() : null;
+
+    let fetchQuery = this.client
+      .from('habit_logs')
+      .select('*')
+      .eq('habit_id', habitId)
+      .eq('date', date);
+
+    if (this.userId) {
+      fetchQuery = fetchQuery.eq('user_id', this.userId);
+    }
+
+    const { data: existing, error: fetchError } = await fetchQuery.maybeSingle();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    if (existing) {
+      let updateQuery = this.client
+        .from('habit_logs')
+        .update({
+          completed,
+          completed_at: completedAt,
+          log_kind: kind,
+        })
+        .eq('id', existing.id);
+
+      if (this.userId) {
+        updateQuery = updateQuery.eq('user_id', this.userId);
+      }
+
+      const { data, error } = await updateQuery.select().single();
+
+      if (error) {
+        throw error;
+      }
+      return toLog(data);
+    }
+
+    const { data, error } = await this.client
+      .from('habit_logs')
+      .insert({
+        habit_id: habitId,
+        date,
+        completed,
+        completed_at: completedAt,
+        log_kind: kind,
+        user_id: this.userId,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+    return toLog(data);
   }
 }

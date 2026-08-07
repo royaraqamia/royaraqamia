@@ -8,7 +8,9 @@ const localRepo = new LocalStorageHabitRepository();
 
 export interface DashboardToggle {
   togglingHabitId: string | null;
+  skippingHabitId: string | null;
   handleToggleLog: (habitId: string) => Promise<void>;
+  handleSkipHabit: (habitId: string) => Promise<void>;
 }
 
 export function useDashboardToggle(
@@ -18,6 +20,25 @@ export function useDashboardToggle(
   activeDate: string
 ): DashboardToggle {
   const [togglingHabitId, setTogglingHabitId] = useState<string | null>(null);
+  const [skippingHabitId, setSkippingHabitId] = useState<string | null>(null);
+
+  const applyLogLocally = (updatedLogs: HabitLog[], habitId: string, patch: Partial<HabitLog>) => {
+    const existingIndex = updatedLogs.findIndex(
+      (l) => l.habitId === habitId && l.date === activeDate
+    );
+    if (existingIndex !== -1) {
+      updatedLogs[existingIndex] = { ...updatedLogs[existingIndex]!, ...patch };
+    } else {
+      updatedLogs.push({
+        id: `temp-${Math.random().toString(36).substring(2, 9)}`,
+        habitId,
+        date: activeDate,
+        completed: false,
+        completedAt: null,
+        ...patch,
+      });
+    }
+  };
 
   const handleToggleLog = async (habitId: string) => {
     if (togglingHabitId === habitId) return;
@@ -29,24 +50,11 @@ export function useDashboardToggle(
       const nextCompleted = !isCompleted;
 
       const updatedLogs = [...logs];
-      const existingIndex = updatedLogs.findIndex(
-        (l) => l.habitId === habitId && l.date === activeDate
-      );
-      if (existingIndex !== -1) {
-        updatedLogs[existingIndex] = {
-          ...updatedLogs[existingIndex]!,
-          completed: nextCompleted,
-          completedAt: nextCompleted ? new Date().toISOString() : null,
-        };
-      } else {
-        updatedLogs.push({
-          id: `temp-${Math.random().toString(36).substring(2, 9)}`,
-          habitId,
-          date: activeDate,
-          completed: nextCompleted,
-          completedAt: nextCompleted ? new Date().toISOString() : null,
-        });
-      }
+      applyLogLocally(updatedLogs, habitId, {
+        completed: nextCompleted,
+        completedAt: nextCompleted ? new Date().toISOString() : null,
+        ...(nextCompleted ? { kind: 'complete' } : { kind: undefined }),
+      });
       setLogs(updatedLogs);
 
       if (user) {
@@ -78,5 +86,59 @@ export function useDashboardToggle(
     }
   };
 
-  return { togglingHabitId, handleToggleLog };
+  const handleSkipHabit = async (habitId: string) => {
+    if (skippingHabitId === habitId) return;
+    setSkippingHabitId(habitId);
+    try {
+      const currentLog = logs.find((l) => l.habitId === habitId && l.date === activeDate);
+      const isSkipped = currentLog?.kind === 'skip';
+      const nextKind = isSkipped ? 'none' : 'skip';
+
+      const updatedLogs = [...logs];
+      applyLogLocally(updatedLogs, habitId, {
+        completed: false,
+        completedAt: null,
+        kind: nextKind === 'none' ? undefined : 'skip',
+      });
+      setLogs(updatedLogs);
+
+      if (user) {
+        try {
+          const result = await ApiClient.setLogKind(
+            habitId,
+            activeDate,
+            nextKind as 'skip' | 'none'
+          );
+          setLogs((prev) =>
+            prev.map((l) => (l.habitId === habitId && l.date === activeDate ? result.log : l))
+          );
+          if (nextKind === 'skip') toast.success('تم تخطي اليوم — سلسلتك محفوظة');
+        } catch {
+          setLogs((prev) =>
+            prev.map((l) =>
+              l.habitId === habitId && l.date === activeDate
+                ? {
+                    ...l,
+                    kind: isSkipped ? 'skip' : undefined,
+                    completed: false,
+                    completedAt: null,
+                  }
+                : l
+            )
+          );
+          toast.error('حدث خطأ أثناء تخطي اليوم. يرجى المحاولة مرة أخرى.');
+        }
+      } else {
+        const log = await localRepo.setLogKind(habitId, activeDate, nextKind as 'skip' | 'none');
+        setLogs((prev) =>
+          prev.map((l) => (l.habitId === habitId && l.date === activeDate ? log : l))
+        );
+        if (nextKind === 'skip') toast.success('تم تخطي اليوم — سلسلتك محفوظة');
+      }
+    } finally {
+      setSkippingHabitId(null);
+    }
+  };
+
+  return { togglingHabitId, skippingHabitId, handleToggleLog, handleSkipHabit };
 }

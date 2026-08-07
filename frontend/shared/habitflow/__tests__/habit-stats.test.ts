@@ -8,13 +8,19 @@ import type { Habit, HabitLog } from '@/shared/contracts/habitflow';
 
 const TODAY = '2026-08-02';
 
-function makeLog(habitId: string, date: string, completed: boolean): HabitLog {
+function makeLog(
+  habitId: string,
+  date: string,
+  completed: boolean,
+  kind?: HabitLog['kind']
+): HabitLog {
   return {
     id: `l-${habitId}-${date}`,
     habitId,
     date,
     completed,
     completedAt: completed ? `${date}T08:00:00.000Z` : null,
+    kind,
   };
 }
 
@@ -112,6 +118,53 @@ describe('calculateHabitStats', () => {
     const stats = calculateHabitStats('h-1', logs, TODAY);
     expect(stats.completionRate).toBe(3); // 1 of 30, rounded up
     expect(stats.totalCompleted).toBe(2);
+  });
+
+  it('freezes the streak when today is skipped', () => {
+    // Completed yesterday, today skipped → streak is preserved (1 active day).
+    const logs = [makeLog('h-1', '2026-08-01', true), makeLog('h-1', '2026-08-02', false, 'skip')];
+    const stats = calculateHabitStats('h-1', logs, TODAY);
+    expect(stats.currentStreak).toBe(1);
+  });
+
+  it('keeps the current streak alive through a skipped day', () => {
+    // Mon + Tue done, Wed skipped, Thu done: the skip does not break the run.
+    const logs = [
+      makeLog('h-1', '2026-07-30', true),
+      makeLog('h-1', '2026-07-31', true),
+      makeLog('h-1', '2026-08-01', false, 'skip'),
+      makeLog('h-1', '2026-08-02', true),
+    ];
+    const stats = calculateHabitStats('h-1', logs, TODAY);
+    expect(stats.currentStreak).toBe(3);
+    expect(stats.longestStreak).toBe(3);
+  });
+
+  it('does not count skipped days as completions', () => {
+    const logs = [makeLog('h-1', '2026-07-30', true), makeLog('h-1', '2026-08-01', false, 'skip')];
+    const stats = calculateHabitStats('h-1', logs, TODAY);
+    expect(stats.totalCompleted).toBe(1);
+    expect(stats.completionRate).toBe(3); // 1 of 30
+  });
+
+  it('breaks the streak when a day is explicitly missed', () => {
+    // Completed and missing consecutive: miss breaks the chain.
+    const logs = [
+      makeLog('h-1', '2026-07-29', true),
+      makeLog('h-1', '2026-07-30', true),
+      makeLog('h-1', '2026-07-31', false, 'miss'),
+      makeLog('h-1', '2026-08-01', true),
+    ];
+    const stats = calculateHabitStats('h-1', logs, TODAY);
+    expect(stats.currentStreak).toBe(1);
+    expect(stats.longestStreak).toBe(2);
+  });
+
+  it('a skipped yesterday freezes the streak even before today is logged', () => {
+    // Yesterday skipped, today not logged: streak still counts the frozen run.
+    const logs = [makeLog('h-1', '2026-07-31', true), makeLog('h-1', '2026-08-01', false, 'skip')];
+    const stats = calculateHabitStats('h-1', logs, TODAY);
+    expect(stats.currentStreak).toBe(1);
   });
 });
 

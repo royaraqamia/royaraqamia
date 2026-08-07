@@ -1,6 +1,12 @@
 import fs from 'fs';
 import path from 'path';
-import { Habit, HabitLog, HabitRepository, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import {
+  Habit,
+  HabitLog,
+  HabitLogKind,
+  HabitRepository,
+  HabitRestoreInput,
+} from '@/shared/contracts/habitflow';
 import { logger } from '@/backend/shared/logger';
 
 interface Schema {
@@ -143,6 +149,7 @@ export class JsonFileHabitRepository implements HabitRepository {
         date: l.date,
         completed: l.completed,
         completedAt: l.completedAt || null,
+        kind: l.kind === 'skip' || l.kind === 'miss' || l.kind === 'complete' ? l.kind : undefined,
       })),
     };
     this.writeDb(restoredData);
@@ -155,6 +162,11 @@ export class JsonFileHabitRepository implements HabitRepository {
     if (existingIndex !== -1) {
       db.logs[existingIndex]!.completed = completed;
       db.logs[existingIndex]!.completedAt = completed ? new Date().toISOString() : null;
+      if (completed) {
+        db.logs[existingIndex]!.kind = 'complete';
+      } else {
+        delete db.logs[existingIndex]!.kind;
+      }
       this.writeDb(db);
       return db.logs[existingIndex]!;
     } else {
@@ -164,10 +176,38 @@ export class JsonFileHabitRepository implements HabitRepository {
         date,
         completed,
         completedAt: completed ? new Date().toISOString() : null,
+        ...(completed ? { kind: 'complete' as const } : {}),
       };
       db.logs.push(newLog);
       this.writeDb(db);
       return newLog;
     }
+  }
+
+  async setLogKind(habitId: string, date: string, kind: HabitLogKind | 'none'): Promise<HabitLog> {
+    const db = this.readDb();
+    const existingIndex = db.logs.findIndex((log) => log.habitId === habitId && log.date === date);
+    const completed = kind === 'complete';
+
+    if (existingIndex !== -1) {
+      const existing = db.logs[existingIndex]!;
+      existing.completed = completed;
+      existing.completedAt = completed ? new Date().toISOString() : null;
+      existing.kind = kind === 'none' ? undefined : kind;
+      this.writeDb(db);
+      return existing;
+    }
+
+    const newLog: HabitLog = {
+      id: `l-${Math.random().toString(36).substr(2, 9)}`,
+      habitId,
+      date,
+      completed,
+      completedAt: completed ? new Date().toISOString() : null,
+      ...(kind !== 'none' ? { kind } : {}),
+    };
+    db.logs.push(newLog);
+    this.writeDb(db);
+    return newLog;
   }
 }

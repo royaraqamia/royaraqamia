@@ -1,4 +1,4 @@
-import { Habit, HabitLog, HabitRepository } from '@/shared/contracts/habitflow';
+import { Habit, HabitLog, HabitLogKind, HabitRepository } from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
 
 export class HabitService {
@@ -52,6 +52,21 @@ export class HabitService {
       throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
     }
     return this.repository.toggleLog(data.habitId, data.date, data.completed);
+  }
+
+  async setHabitLogKind(data: {
+    habitId: string;
+    date: string;
+    kind: HabitLogKind | 'none';
+  }): Promise<HabitLog> {
+    if (!data.habitId || !data.date) {
+      throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
+    }
+    const kind = data.kind;
+    if (kind !== 'complete' && kind !== 'skip' && kind !== 'miss' && kind !== 'none') {
+      throw new AppError('نوع تسجيل غير صالح', 400);
+    }
+    return this.repository.setLogKind(data.habitId, data.date, kind);
   }
 
   async getLogs(startDate: string, endDate: string): Promise<HabitLog[]> {
