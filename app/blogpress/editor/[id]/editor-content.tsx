@@ -26,6 +26,7 @@ import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
 import type { Post } from '@/shared/contracts/blogpress';
 import { estimateWordCount, formatReadingTimeLong } from '@/frontend/shared/reading-time';
+import { estimateContentStats } from '@/frontend/shared/blogpress/content-stats';
 import { usePostAutosave } from '@/frontend/state/blogpress/use-post-autosave';
 import { usePostUpload } from '@/frontend/state/blogpress/use-post-upload';
 import { EditorToolbar } from '@/frontend/ui/blogpress/editor-toolbar';
@@ -80,6 +81,7 @@ export function EditorContent({ post }: EditorContentProps) {
   const [, forceRender] = useReducer((x) => x + 1, 0);
 
   const wordCount = useMemo(() => estimateWordCount(content), [content]);
+  const contentStats = useMemo(() => estimateContentStats(content), [content]);
 
   const readingTimeMinutes = useMemo(
     () => formatReadingTimeLong(Math.ceil(wordCount / 180)),
@@ -331,6 +333,7 @@ export function EditorContent({ post }: EditorContentProps) {
             setLinkDialogOpen(true);
           }}
           onOpenShortcuts={() => setShortcutsOpen(true)}
+          stats={contentStats}
         />
       )}
 

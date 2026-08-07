@@ -29,12 +29,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/frontend/ui/primitives/dropdown-menu';
+import type { ContentStats } from '@/frontend/shared/blogpress/content-stats';
 
 interface EditorToolbarProps {
   editorRef: React.RefObject<{ editor: Editor | null } | null>;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   onOpenLink: (href: string) => void;
   onOpenShortcuts: () => void;
+  stats?: ContentStats;
 }
 
 const CODE_LANGUAGES: { value: string; label: string }[] = [
@@ -70,12 +72,12 @@ const toolbarButtons: {
   { action: 'redo', icon: Redo2, label: 'إعادة', group: 'history' },
   { action: 'bold', icon: Bold, label: 'عريض', group: 'format' },
   { action: 'italic', icon: Italic, label: 'مائل', group: 'format' },
-  { action: 'strike', icon: Strikethrough, label: 'يتوسّط', group: 'format' },
+  { action: 'strike', icon: Strikethrough, label: 'يتوسَّط', group: 'format' },
   { action: 'h1', icon: Heading1, label: 'عنوان 1', group: 'heading' },
   { action: 'h2', icon: Heading2, label: 'عنوان 2', group: 'heading' },
   { action: 'h3', icon: Heading3, label: 'عنوان 3', group: 'heading' },
-  { action: 'list', icon: List, label: 'قائمة نقطية', group: 'list' },
-  { action: 'orderedList', icon: ListOrdered, label: 'قائمة مرقّمة', group: 'list' },
+  { action: 'list', icon: List, label: 'قائمة نقطيَّة', group: 'list' },
+  { action: 'orderedList', icon: ListOrdered, label: 'قائمة مُرقَّمة', group: 'list' },
   { action: 'quote', icon: TextQuote, label: 'اقتباس', group: 'block' },
   { action: 'code', icon: Code2, label: 'كود', group: 'block' },
   { action: 'hr', icon: Minus, label: 'فاصل', group: 'insert' },
@@ -92,6 +94,7 @@ export function EditorToolbar({
   fileInputRef,
   onOpenLink,
   onOpenShortcuts,
+  stats,
 }: EditorToolbarProps) {
   const editor = editorRef.current?.editor;
 
@@ -196,7 +199,11 @@ export function EditorToolbar({
 
       if (btn.group && lastGroup && btn.group !== lastGroup) {
         elements.push(
-          <div key={`sep-${btn.action}`} className="w-px h-5 bg-border/40 mx-1 shrink-0" />
+          <div
+            key={`sep-${btn.action}`}
+            className="mx-1 h-4 w-px shrink-0 bg-border/60"
+            aria-hidden="true"
+          />
         );
       }
       lastGroup = btn.group;
@@ -206,7 +213,7 @@ export function EditorToolbar({
           <button
             key={btn.action}
             onClick={onOpenShortcuts}
-            className="size-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all shrink-0 cursor-pointer"
+            className="relative inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             aria-label={btn.label}
             title={btn.label}
           >
@@ -220,12 +227,13 @@ export function EditorToolbar({
         <button
           key={btn.action}
           onClick={() => run(btn.action)}
-          className={`size-8 rounded-full flex items-center justify-center transition-all shrink-0 cursor-pointer ${
+          className={`relative inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
             active
-              ? 'bg-primary/15 text-primary shadow-xs'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              ? 'bg-primary text-primary-foreground font-semibold shadow-xs scale-[1.02]'
+              : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground active:scale-95'
           }`}
           aria-label={btn.label}
+          aria-pressed={Boolean(active)}
           title={btn.label}
         >
           <btn.icon className="size-4" />
@@ -241,16 +249,21 @@ export function EditorToolbar({
         <DropdownMenu key="code-lang">
           <DropdownMenuTrigger asChild>
             <button
-              className="mx-1 h-8 px-2 rounded-full flex items-center gap-1.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/15 transition-all shrink-0 cursor-pointer"
+              className="mx-1 inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 text-xs font-medium text-primary transition-all duration-150 ease-out hover:bg-primary/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               aria-label="لغة كتلة الكود"
               title="لغة كتلة الكود"
             >
-              <Code2 className="size-3.5" />
-              <span className="max-w-28 truncate">{currentLabel}</span>
-              <ChevronDown className="size-3" />
+              <Code2 className="size-3.5 shrink-0" />
+              <span className="max-w-28 truncate font-mono text-[11px] font-medium">
+                {currentLabel}
+              </span>
+              <ChevronDown className="size-3 shrink-0 opacity-70" />
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="max-h-64 overflow-y-auto min-w-36">
+          <DropdownMenuContent
+            align="end"
+            className="max-h-64 min-w-40 overflow-y-auto rounded-xl border border-border/80 bg-background/95 p-1 shadow-lg backdrop-blur-md"
+          >
             {CODE_LANGUAGES.map((lang) => (
               <DropdownMenuItem
                 key={lang.value}
@@ -263,9 +276,12 @@ export function EditorToolbar({
                     })
                     .run()
                 }
-                className="cursor-pointer"
+                className="flex cursor-pointer items-center justify-between rounded-md px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
               >
-                {lang.label}
+                <span>{lang.label}</span>
+                {lang.value === (currentLang ?? 'plaintext') && (
+                  <span className="size-1.5 rounded-full bg-primary" />
+                )}
               </DropdownMenuItem>
             ))}
           </DropdownMenuContent>
@@ -277,12 +293,42 @@ export function EditorToolbar({
   };
 
   return (
-    <div className="flex items-center gap-0.5 px-3 py-1.5 border-b border-border/50 bg-muted/30 overflow-x-auto scrollbar-hide">
-      {render()}
-      <div className="me-auto flex items-center gap-2 text-xs text-muted-foreground/50">
-        <kbd className="px-1.5 py-0.5 rounded bg-muted/50 text-[10px] font-mono">Ctrl+S</kbd>
-        <span>حفظ</span>
+    <nav
+      aria-label="شريط أدوات المُحرِّر"
+      className="sticky top-0 z-20 flex w-full items-center justify-between gap-2 border-b border-border/60 bg-background/80 px-2.5 py-1.5 backdrop-blur-xl transition-colors sm:px-3.5"
+    >
+      <div className="flex items-center gap-0.5 overflow-x-auto py-0.5 scrollbar-none touch-pan-x select-none">
+        {render()}
       </div>
-    </div>
+      <div className="ms-auto flex shrink-0 items-center gap-2 border-s border-border/50 ps-2.5 text-xs text-muted-foreground">
+        {stats && (
+          <div
+            className="hidden items-center gap-2 sm:flex"
+            role="status"
+            aria-label="إحصائيَّات المحتوى"
+          >
+            <span className="whitespace-nowrap font-medium" title="عدد الكلمات">
+              {stats.words.toLocaleString('ar-u-nu-latn')} كلمة
+            </span>
+            <span className="text-muted-foreground/50">·</span>
+            <span className="whitespace-nowrap" title="وقت القراءة">
+              {stats.readingTimeMinutes} د
+            </span>
+            <span className="text-muted-foreground/50">·</span>
+            <span className="whitespace-nowrap" title="عدد العناوين">
+              {stats.headingCount} عناوين
+            </span>
+          </div>
+        )}
+        <kbd className="inline-flex items-center gap-0.5 rounded-md border border-border/80 bg-muted/60 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-tight text-muted-foreground shadow-2xs transition-colors hover:border-border hover:bg-muted">
+          <span>Ctrl</span>
+          <span className="text-muted-foreground/60">+</span>
+          <span>S</span>
+        </kbd>
+        <span className="hidden text-[11px] font-medium text-muted-foreground/80 sm:inline">
+          حفظ
+        </span>
+      </div>
+    </nav>
   );
 }
