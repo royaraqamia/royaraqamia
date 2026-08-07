@@ -36,12 +36,15 @@ function makeDeps() {
     listByUserId: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    deleteMany: vi.fn(),
+    setExpiryMany: vi.fn(),
     exists: vi.fn(),
   };
   const analyticsRepository: AnalyticsRepository = {
     recordClick: vi.fn(),
     getLinkOwner: vi.fn(),
     getSummaryForLink: vi.fn(),
+    getExportEvents: vi.fn(),
   };
   return { shortLinkRepository, analyticsRepository };
 }
@@ -258,7 +261,7 @@ describe('GetUrlAnalyticsService.execute', () => {
 
     await expect(service.execute('abc123', 'u-1')).resolves.toEqual(summaryFixture);
     expect(analyticsRepository.getLinkOwner).toHaveBeenCalledWith('abc123');
-    expect(analyticsRepository.getSummaryForLink).toHaveBeenCalledWith('abc123');
+    expect(analyticsRepository.getSummaryForLink).toHaveBeenCalledWith('abc123', undefined);
   });
 
   it('throws when the code is missing', async () => {
@@ -294,5 +297,48 @@ describe('GetUrlAnalyticsService.execute', () => {
     );
     const service = new GetUrlAnalyticsService(analyticsRepository);
     await expect(service.execute('abc123', 'u-1')).rejects.toThrow('analytics down');
+  });
+});
+
+describe('GetUrlAnalyticsService.exportCsv', () => {
+  it('returns export rows with parsed device breakdge fields', async () => {
+    const { analyticsRepository } = makeDeps();
+    (analyticsRepository.getLinkOwner as ReturnType<typeof vi.fn>).mockResolvedValue('u-1');
+    (analyticsRepository.getExportEvents as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        id: 'e1',
+        linkCode: 'abc123',
+        clickedAt: new Date('2026-08-01T10:00:00Z'),
+        referrer: 'https://news.example.com',
+        userAgent:
+          'Mozilla/5.0 (Linux; Android 13; SM-G998B) AppleWebKit/537.36 Chrome/126.0 Mobile Safari/537.36',
+        ipCountry: 'EG',
+      },
+    ]);
+
+    const service = new GetUrlAnalyticsService(analyticsRepository);
+    const rows = await service.exportCsv('abc123', 'u-1');
+
+    expect(rows).toHaveLength(1);
+    const first = rows[0] as { os: string; browser: string };
+    expect(first).toMatchObject({
+      clickedAt: '2026-08-01T10:00:00.000Z',
+      referrer: 'https://news.example.com',
+      ipCountry: 'EG',
+      device: 'mobile',
+    });
+    expect(first.os).toBeTruthy();
+    expect(first.browser).toBeTruthy();
+    expect(analyticsRepository.getExportEvents).toHaveBeenCalledWith('abc123', undefined);
+  });
+
+  it('rejects when the caller does not own the link', async () => {
+    const { analyticsRepository } = makeDeps();
+    (analyticsRepository.getLinkOwner as ReturnType<typeof vi.fn>).mockResolvedValue('u-1');
+    const service = new GetUrlAnalyticsService(analyticsRepository);
+    await expect(service.exportCsv('abc123', 'u-2')).rejects.toThrow(
+      'Unauthorized: You do not own this link.'
+    );
+    expect(analyticsRepository.getExportEvents).not.toHaveBeenCalled();
   });
 });

@@ -26,6 +26,8 @@ function makeLinkRepo(overrides: Partial<ShortLinkRepository> = {}) {
     listByUserId: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    deleteMany: vi.fn(),
+    setExpiryMany: vi.fn(),
     exists: vi.fn(),
     ...overrides,
   };

@@ -1,4 +1,7 @@
-import { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
+import {
+  AnalyticsRepository,
+  AnalyticsDateRange,
+} from '@/backend/repositories/linksnap/analytics-repository';
 import { AnalyticsEvent, LinkAnalyticsSummary, DailyClickStat } from '@/shared/contracts/linksnap';
 import { aggregateDeviceBreakdown } from '@/backend/services/linksnap/device-breakdown';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -17,6 +20,9 @@ interface ReferrerEntry {
   name: string;
   count: number;
 }
+
+const MAX_EXPORT_ROWS = 10_000;
+const MAX_CHART_DAYS = 366;
 
 export class SupabaseAnalyticsRepository implements AnalyticsRepository {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
@@ -66,29 +72,58 @@ export class SupabaseAnalyticsRepository implements AnalyticsRepository {
     return data.user_id ?? '';
   }
 
-  async getSummaryForLink(code: string): Promise<LinkAnalyticsSummary> {
+  async getSummaryForLink(code: string, range?: AnalyticsDateRange): Promise<LinkAnalyticsSummary> {
     const supabase = this.supabase;
-    const events = await this.fetchEvents(supabase, code);
+    const events = await this.fetchEvents(supabase, code, range);
     const totalClicks = events.length;
 
     return {
       totalClicks,
       recentClicks: events.slice(0, 10),
-      clicksByDate: this.aggregateClicksByDate(events),
+      clicksByDate: this.aggregateClicksByDate(events, range),
       topReferrers: this.aggregateTopReferrers(events),
       device: aggregateDeviceBreakdown(events),
     };
   }
 
+  async getExportEvents(code: string, range?: AnalyticsDateRange): Promise<AnalyticsEvent[]> {
+    const supabase = this.supabase;
+    let query = supabase.from('analytics_events').select('*').eq('link_code', code);
+
+    if (range?.from) {
+      query = query.gte('clicked_at', range.from.toISOString());
+    }
+    if (range?.to) {
+      query = query.lte('clicked_at', range.to.toISOString());
+    }
+
+    const { data, error } = await query
+      .order('clicked_at', { ascending: true })
+      .limit(MAX_EXPORT_ROWS);
+
+    if (error) {
+      throw new Error(`Failed to retrieve analytics events: ${error.message}`);
+    }
+    return (data as AnalyticsEventDbRow[]).map((row) => this.toDomain(row));
+  }
+
   private async fetchEvents(
     supabase: SupabaseClient<Database>,
-    code: string
+    code: string,
+    range?: AnalyticsDateRange
   ): Promise<AnalyticsEvent[]> {
-    const { data: eventsData, error: eventsError } = await supabase
-      .from('analytics_events')
-      .select('*')
-      .eq('link_code', code)
-      .order('clicked_at', { ascending: false });
+    let query = supabase.from('analytics_events').select('*').eq('link_code', code);
+
+    if (range?.from) {
+      query = query.gte('clicked_at', range.from.toISOString());
+    }
+    if (range?.to) {
+      query = query.lte('clicked_at', range.to.toISOString());
+    }
+
+    const { data: eventsData, error: eventsError } = await query.order('clicked_at', {
+      ascending: false,
+    });
 
     if (eventsError) {
       throw new Error(`Failed to retrieve analytics events: ${eventsError.message}`);
@@ -96,17 +131,33 @@ export class SupabaseAnalyticsRepository implements AnalyticsRepository {
     return (eventsData as AnalyticsEventDbRow[]).map((row) => this.toDomain(row));
   }
 
-  private aggregateClicksByDate(events: AnalyticsEvent[]): DailyClickStat[] {
+  private aggregateClicksByDate(
+    events: AnalyticsEvent[],
+    range?: AnalyticsDateRange
+  ): DailyClickStat[] {
+    const now = new Date();
+    const from = range?.from ?? new Date(now.getTime() - 6 * 24 * 60 * 60 * 1000);
+    const to = range?.to ?? now;
+
+    const start = new Date(from.getFullYear(), from.getMonth(), from.getDate());
+    const end = new Date(to.getFullYear(), to.getMonth(), to.getDate());
+    const spanDays = Math.floor((end.getTime() - start.getTime()) / 86_400_000);
+    if (spanDays > MAX_CHART_DAYS) {
+      end.setDate(start.getDate() + MAX_CHART_DAYS);
+    }
+
     const dailyMap = new Map<string, number>();
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      dailyMap.set(d.toISOString().split('T')[0]!, 0);
+    const cursor = new Date(start);
+    while (cursor.getTime() <= end.getTime()) {
+      dailyMap.set(cursor.toISOString().split('T')[0]!, 0);
+      cursor.setDate(cursor.getDate() + 1);
     }
 
     events.forEach((ev) => {
       const key = ev.clickedAt.toISOString().split('T')[0]!;
-      dailyMap.set(key, (dailyMap.get(key) || 0) + 1);
+      if (dailyMap.has(key)) {
+        dailyMap.set(key, (dailyMap.get(key) || 0) + 1);
+      }
     });
 
     return Array.from(dailyMap.entries())

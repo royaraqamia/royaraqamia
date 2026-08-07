@@ -6,6 +6,7 @@ import { BulkShortenService } from '@/backend/services/linksnap/bulk-shorten';
 import { ListLinksService } from '@/backend/services/linksnap/list-links';
 import { UpdateLinkService } from '@/backend/services/linksnap/update-link';
 import { DeleteLinkService } from '@/backend/services/linksnap/delete-link';
+import { BulkLinkActionService } from '@/backend/services/linksnap/bulk-link-action';
 import { ModerateLinkService } from '@/backend/services/linksnap/moderate-link';
 import { GetUrlAnalyticsService } from '@/backend/services/linksnap/get-url-analytics';
 import { GetSystemStatsService } from '@/backend/services/linksnap/get-system-stats';
@@ -52,6 +53,10 @@ export function createUpdateLinkService(): UpdateLinkService {
 
 export function createDeleteLinkService(): DeleteLinkService {
   return new DeleteLinkService(createShortLinkRepository());
+}
+
+export function createBulkLinkActionService(): BulkLinkActionService {
+  return new BulkLinkActionService(createShortLinkRepository());
 }
 
 export function createModerateLinkService(): ModerateLinkService {

@@ -38,12 +38,23 @@ export interface AdminStats {
 
 export type RecentClick = Omit<AnalyticsEvent, 'clickedAt'> & { clickedAt: string };
 
+export type AnalyticsRangeFilter = { from?: string; to?: string };
+
 export interface LinkAnalyticsSummary {
   totalClicks: number;
   recentClicks: RecentClick[];
   clicksByDate: DailyClickStat[];
   topReferrers: { name: string; count: number }[];
   device: LinkDeviceBreakdown;
+}
+
+export interface AnalyticsExportRow {
+  clickedAt: string;
+  referrer: string | null;
+  ipCountry: string | null;
+  device: string;
+  os: string;
+  browser: string;
 }
 
 export interface BulkShortenResultItem {
@@ -119,10 +130,53 @@ export async function moderateLink(code: string, isBlocked: boolean, token: stri
   });
 }
 
-export async function fetchAnalytics(code: string, token: string): Promise<LinkAnalyticsSummary> {
+export type BulkLinkActionType = 'delete' | 'setExpiry';
+
+export async function bulkLinkAction(
+  token: string,
+  action: BulkLinkActionType,
+  codes: string[],
+  expiresAt?: string | null
+): Promise<number> {
+  const data = await request<{ affected: number }>('/linksnap/api/links/bulk', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ action, codes, expiresAt: expiresAt ?? undefined }),
+  });
+  return data.affected;
+}
+
+export async function fetchAnalytics(
+  code: string,
+  token: string,
+  range?: AnalyticsRangeFilter
+): Promise<LinkAnalyticsSummary> {
+  const query = toRangeQuery(range);
   const data = await request<{ analytics: LinkAnalyticsSummary }>(
-    `/linksnap/api/analytics/${encodeURIComponent(code)}`,
+    `/linksnap/api/analytics/${encodeURIComponent(code)}${query}`,
     { headers: { Authorization: `Bearer ${token}` } }
   );
   return data.analytics;
+}
+
+export async function exportAnalyticsCsv(
+  code: string,
+  token: string,
+  range?: AnalyticsRangeFilter
+): Promise<AnalyticsExportRow[]> {
+  const query = toRangeQuery(range);
+  const data = await request<{ rows: AnalyticsExportRow[] }>(
+    `/linksnap/api/analytics/${encodeURIComponent(code)}/export${query}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return data.rows || [];
+}
+
+function toRangeQuery(range?: AnalyticsRangeFilter): string {
+  if (!range) return '';
+  const params = new URLSearchParams();
+  if (range.from) params.set('from', range.from);
+  if (range.to) params.set('to', range.to);
+  const qs = params.toString();
+  return qs ? `?${qs}` : '';
 }

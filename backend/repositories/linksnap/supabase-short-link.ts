@@ -138,6 +138,34 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     return true;
   }
 
+  async deleteMany(codes: string[], userId: string): Promise<void> {
+    if (codes.length === 0) return;
+    const supabase = this.adminClient;
+    const { error } = await supabase
+      .from('short_links')
+      .delete()
+      .in('code', codes)
+      .eq('user_id', userId);
+
+    if (error) {
+      throw new Error(`Failed to delete short links: ${error.message}`);
+    }
+  }
+
+  async setExpiryMany(codes: string[], expiresAt: Date | null, userId: string): Promise<void> {
+    if (codes.length === 0) return;
+    const supabase = this.adminClient;
+    const { error } = await supabase
+      .from('short_links')
+      .update({ expires_at: expiresAt ? expiresAt.toISOString() : null })
+      .in('code', codes)
+      .eq('user_id', userId);
+
+    if (error) {
+      throw new Error(`Failed to update short links expiry: ${error.message}`);
+    }
+  }
+
   async exists(code: string): Promise<boolean> {
     const supabase = this.publicClient;
     const { count, error } = await supabase

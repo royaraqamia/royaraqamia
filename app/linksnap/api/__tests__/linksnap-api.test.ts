@@ -23,6 +23,7 @@ const mockAnalytics = { execute: vi.fn() };
 const mockModerate = { execute: vi.fn() };
 const mockStats = { execute: vi.fn() };
 const mockRedirect = { execute: vi.fn() };
+const mockBulkAction = { execute: vi.fn() };
 
 vi.mock('next/server', () => ({
   NextResponse: class MockNextResponse {
@@ -71,6 +72,7 @@ vi.mock('@/backend/config/linksnap', () => ({
   createModerateLinkService: () => mockModerate,
   createGetSystemStatsService: () => mockStats,
   createRedirectUrlService: () => mockRedirect,
+  createBulkLinkActionService: () => mockBulkAction,
 }));
 
 import { POST as shortenPOST } from '@/app/linksnap/api/shorten/route';
@@ -81,6 +83,7 @@ import {
   DELETE as linksDELETE,
 } from '@/app/linksnap/api/links/route';
 import { GET as analyticsGET } from '@/app/linksnap/api/analytics/[code]/route';
+import { POST as bulkActionPOST } from '@/app/linksnap/api/links/bulk/route';
 import { POST as moderatePOST } from '@/app/linksnap/api/admin/moderate/route';
 import { GET as statsGET } from '@/app/linksnap/api/admin/stats/route';
 import { GET as redirectGET } from '@/app/[code]/route';
@@ -364,7 +367,43 @@ describe('GET /linksnap/api/analytics/[code]', () => {
 
     expect(res.status).toBe(200);
     expect(readBody<{ analytics: { totalClicks: number } }>(res).analytics.totalClicks).toBe(3);
-    expect(mockAnalytics.execute).toHaveBeenCalledWith('abc123', 'u-1');
+    expect(mockAnalytics.execute).toHaveBeenCalledWith('abc123', 'u-1', undefined);
+  });
+});
+
+describe('POST /linksnap/api/links/bulk', () => {
+  it('returns 401 without authentication', async () => {
+    mockGetAuthenticatedUser.mockResolvedValue(null);
+    mockBulkAction.execute.mockResolvedValue({ action: 'delete', affected: 0 });
+    const res = await bulkActionPOST(makeReq({ action: 'delete', codes: ['a', 'b'] }));
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 400 when the action is invalid', async () => {
+    mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockBulkAction.execute.mockRejectedValue(
+      new AppError("القيمة 'action' يجب أن تكون صالحة.", 400)
+    );
+    const res = await bulkActionPOST(makeReq({ action: 'copy', codes: ['a'] }));
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 when no codes are provided', async () => {
+    mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockBulkAction.execute.mockRejectedValue(new AppError('يجب اختيار رابط واحد على الأقل.', 400));
+    const res = await bulkActionPOST(makeReq({ action: 'delete', codes: [] }));
+    expect(res.status).toBe(400);
+  });
+
+  it('deletes the selected links', async () => {
+    mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
+    mockBulkAction.execute.mockResolvedValue({ action: 'delete', affected: 2 });
+
+    const res = await bulkActionPOST(makeReq({ action: 'delete', codes: ['a', 'b'] }));
+
+    expect(res.status).toBe(200);
+    expect(readBody<{ affected: number }>(res)).toEqual({ success: true, affected: 2 });
+    expect(mockBulkAction.execute).toHaveBeenCalled();
   });
 });
 

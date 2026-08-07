@@ -24,6 +24,8 @@ function makeRepo(overrides: Partial<ShortLinkRepository> = {}) {
     listByUserId: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
+    deleteMany: vi.fn(),
+    setExpiryMany: vi.fn(),
     exists: vi.fn(),
     ...overrides,
   };
@@ -84,9 +86,9 @@ describe('UpdateLinkService', () => {
   it('throws when the user id is missing', async () => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
-    await expect(
-      service.execute('abc123', '', { originalUrl: 'https://new.com' })
-    ).rejects.toThrow('رمز الرابط والمستخدم مطلوبان.');
+    await expect(service.execute('abc123', '', { originalUrl: 'https://new.com' })).rejects.toThrow(
+      'رمز الرابط والمستخدم مطلوبان.'
+    );
   });
 
   it('throws when the link is not found', async () => {

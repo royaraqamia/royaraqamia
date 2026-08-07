@@ -53,6 +53,8 @@ interface LinkRowCardProps {
   token: string;
   onDeleted: (code: string) => void;
   onUpdated: (link: ShortenedLink) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (code: string) => void;
 }
 
 export function LinkRowCard({
@@ -64,6 +66,8 @@ export function LinkRowCard({
   token,
   onDeleted,
   onUpdated,
+  isSelected = false,
+  onToggleSelect,
 }: LinkRowCardProps) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [editingCode, setEditingCode] = useState<string | null>(null);
@@ -71,8 +75,16 @@ export function LinkRowCard({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const { deleteLink, deleteError } = useDeleteLink(token);
-  const { analytics, analyticsLoading, analyticsError, loadAnalytics, resetAnalytics } =
-    useLinkAnalytics(code, token);
+  const {
+    analytics,
+    analyticsLoading,
+    analyticsError,
+    exportingCsv,
+    exportCsvError,
+    loadAnalytics,
+    exportCsv,
+    resetAnalytics,
+  } = useLinkAnalytics(code, token);
 
   const fullShortUrl = `${getBaseUrl()}/${code}`;
 
@@ -108,12 +120,27 @@ export function LinkRowCard({
       return;
     }
     setIsExpanded(true);
-    loadAnalytics();
   };
 
   return (
     <div className="bg-card border-border rounded-2xl border shadow-sm transition-all duration-200 hover:border-primary/30 card-lift">
       <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {onToggleSelect ? (
+          <button
+            type="button"
+            onClick={() => onToggleSelect(code)}
+            aria-pressed={isSelected}
+            aria-label={isSelected ? 'إلغاء تحديد الرابط' : 'تحديد الرابط'}
+            className={`shrink-0 w-5.5 h-5.5 rounded-md border transition-colors cursor-pointer focus-ring touch-target btn-press flex items-center justify-center ${
+              isSelected
+                ? 'bg-primary border-primary text-primary-foreground'
+                : 'border-border bg-muted/40 text-transparent hover:border-primary/40'
+            }`}
+          >
+            <Check aria-hidden="true" className="w-3.5 h-3.5" strokeWidth={3} />
+          </button>
+        ) : null}
+
         {editingCode === code ? (
           <LinkEditForm
             code={code}
@@ -249,6 +276,11 @@ export function LinkRowCard({
           analyticsError={analyticsError}
           analytics={analytics}
           status={status}
+          loadAnalytics={loadAnalytics}
+          exportCsv={exportCsv}
+          exportingCsv={exportingCsv}
+          exportCsvError={exportCsvError}
+          code={code}
         />
       </div>
 

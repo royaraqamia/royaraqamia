@@ -1,10 +1,27 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { AlertTriangle, Globe, Smartphone, Monitor, Cpu } from 'lucide-react';
+import { AlertTriangle, Download, Globe, Smartphone, Monitor, Cpu, Loader2 } from 'lucide-react';
 import { AnalyticsChart } from './analytics-chart';
 import { AnalyticsSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 import type { LinkStatus } from '@/shared/contracts/linksnap';
+import type { AnalyticsRangeFilter } from '@/frontend/api/linksnap';
+
+type RangePreset = '7d' | '30d' | '90d';
+
+const RANGE_PRESETS: { value: RangePreset; label: string; days: number }[] = [
+  { value: '7d', label: '7 أيام', days: 7 },
+  { value: '30d', label: '30 يوم', days: 30 },
+  { value: '90d', label: '90 يوم', days: 90 },
+];
+
+function rangeToFilter(preset: RangePreset): AnalyticsRangeFilter {
+  const now = new Date();
+  const presetConfig = RANGE_PRESETS.find((p) => p.value === preset);
+  const from = new Date(now.getTime() - (presetConfig?.days ?? 7) * 24 * 60 * 60 * 1000);
+  return { from: from.toISOString() };
+}
 
 const STATUS_META: Record<LinkStatus, { label: string; className: string }> = {
   active: { label: 'نشط وسليم', className: 'text-success bg-success/10 border-success/30' },
@@ -42,6 +59,11 @@ interface LinkAnalyticsDrawerProps {
   analyticsError: string | null;
   analytics: AnalyticsData | null;
   status: LinkStatus;
+  loadAnalytics: (range?: AnalyticsRangeFilter) => Promise<void>;
+  exportCsv: (range: AnalyticsRangeFilter | undefined, filename: string) => Promise<boolean>;
+  exportingCsv: boolean;
+  exportCsvError: string | null;
+  code: string;
 }
 
 function BreakdownRows({
@@ -84,8 +106,25 @@ export function LinkAnalyticsDrawer({
   analyticsError,
   analytics,
   status,
+  loadAnalytics,
+  exportCsv,
+  exportingCsv,
+  exportCsvError,
+  code,
 }: LinkAnalyticsDrawerProps) {
   const reducedMotion = useReducedMotion();
+  const [range, setRange] = useState<RangePreset>('7d');
+
+  useEffect(() => {
+    if (isExpanded) {
+      void loadAnalytics(rangeToFilter(range));
+    }
+  }, [isExpanded, range, loadAnalytics]);
+
+  const handleExport = () => {
+    void exportCsv(rangeToFilter(range), `linksnap-${code}-${range}.csv`);
+  };
+
   return (
     <AnimatePresence>
       {isExpanded && (
@@ -105,6 +144,50 @@ export function LinkAnalyticsDrawer({
               </div>
             ) : analytics ? (
               <div className="space-y-6">
+                <div className="flex items-center justify-between gap-3 flex-wrap">
+                  <div
+                    className="flex items-center gap-1 bg-muted/70 rounded-lg p-1"
+                    role="group"
+                    aria-label="الفترة الزمنية"
+                  >
+                    {RANGE_PRESETS.map((preset) => (
+                      <button
+                        key={preset.value}
+                        type="button"
+                        onClick={() => setRange(preset.value)}
+                        aria-pressed={range === preset.value}
+                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                          range === preset.value
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleExport}
+                    disabled={exportingCsv || analytics.totalClicks === 0}
+                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {exportingCsv ? (
+                      <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download aria-hidden="true" className="w-4 h-4" />
+                    )}
+                    تصدير CSV
+                  </button>
+                </div>
+
+                {exportCsvError ? (
+                  <div className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center gap-1.5">
+                    <AlertTriangle aria-hidden="true" className="w-4 h-4 shrink-0" />
+                    <span>{exportCsvError}</span>
+                  </div>
+                ) : null}
+
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col justify-between card-lift">
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">

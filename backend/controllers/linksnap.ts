@@ -4,6 +4,7 @@ import { AppError, getErrorMessage } from '@/backend/shared/errors';
 import { env } from '@/backend/config/env';
 import { logger } from '@/backend/shared/logger';
 import {
+  createBulkLinkActionService,
   createBulkShortenService,
   createDeleteLinkService,
   createGetSystemStatsService,
@@ -17,7 +18,27 @@ import {
 import { bulkShortenRateLimitPolicy, shortenRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
 import { getLinkStatus } from '@/backend/services/linksnap/link-status';
+import type { AnalyticsDateRange } from '@/backend/repositories/linksnap/analytics-repository';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+
+function parseDate(value: unknown): Date | undefined {
+  if (typeof value !== 'string' || !value.trim()) return undefined;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    throw new AppError('تاريخ غير صالح في معاملات الاستعلام.', 400);
+  }
+  return d;
+}
+
+function parseDateRange(search: URLSearchParams): AnalyticsDateRange | undefined {
+  const from = parseDate(search.get('from'));
+  const to = parseDate(search.get('to'));
+  if (!from && !to) return undefined;
+  if (from && to && from.getTime() > to.getTime()) {
+    throw new AppError('تاريخ البداية يجب أن يكون قبل تاريخ النهاية.', 400);
+  }
+  return { from, to };
+}
 
 function parseExpiresAt(value: unknown): Date | null | undefined {
   if (value === undefined) return undefined;
@@ -216,7 +237,8 @@ export async function getSystemStats(authorization: string | null): Promise<Http
 
 export async function getUrlAnalytics(
   authorization: string | null,
-  code: string
+  code: string,
+  search?: URLSearchParams
 ): Promise<HttpResult> {
   try {
     const user = await getAuthenticatedUser(authorization);
@@ -224,11 +246,72 @@ export async function getUrlAnalytics(
       return jsonResult(401, UNAUTHORIZED_BODY);
     }
 
-    const analytics = await createGetUrlAnalyticsService().execute(code, user.id);
+    const range = search ? parseDateRange(search) : undefined;
+
+    const analytics = await createGetUrlAnalyticsService().execute(code, user.id, range);
 
     return jsonResult(200, { success: true, analytics });
   } catch (err: unknown) {
     return errorResponse(err, 'Error in link analytics API route:');
+  }
+}
+
+export async function exportUrlAnalytics(
+  authorization: string | null,
+  code: string,
+  search?: URLSearchParams
+): Promise<HttpResult> {
+  try {
+    const user = await getAuthenticatedUser(authorization);
+    if (!user) {
+      return jsonResult(401, UNAUTHORIZED_BODY);
+    }
+
+    const range = search ? parseDateRange(search) : undefined;
+
+    const rows = await createGetUrlAnalyticsService().exportCsv(code, user.id, range);
+
+    return jsonResult(200, { success: true, rows });
+  } catch (err: unknown) {
+    return errorResponse(err, 'Error in link analytics export route:');
+  }
+}
+
+export async function bulkLinkAction(
+  authorization: string | null,
+  body: {
+    action?: unknown;
+    codes?: unknown;
+    expiresAt?: unknown;
+  }
+): Promise<HttpResult> {
+  try {
+    const user = await getAuthenticatedUser(authorization);
+    if (!user) {
+      return jsonResult(401, UNAUTHORIZED_BODY);
+    }
+
+    if (body.action !== 'delete' && body.action !== 'setExpiry') {
+      throw new AppError("القيمة 'action' يجب أن تكون delete أو setExpiry.", 400);
+    }
+
+    if (!Array.isArray(body.codes) || body.codes.length === 0) {
+      throw new AppError('يجب اختيار رابط واحد على الأقل.', 400);
+    }
+    const codes = body.codes.filter((code): code is string => typeof code === 'string');
+
+    const expiresAt = parseExpiresAt(body.expiresAt);
+
+    const result = await createBulkLinkActionService().execute(
+      body.action,
+      codes,
+      user.id,
+      expiresAt
+    );
+
+    return jsonResult(200, { success: true, affected: result.affected });
+  } catch (err: unknown) {
+    return errorResponse(err, 'Error in bulk link action route:');
   }
 }
 

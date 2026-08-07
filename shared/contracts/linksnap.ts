@@ -36,6 +36,23 @@ export interface LinkDeviceBreakdown {
   browsers: DeviceStat[];
 }
 
+export interface AnalyticsExportRow {
+  clickedAt: string;
+  referrer: string | null;
+  ipCountry: string | null;
+  device: string;
+  os: string;
+  browser: string;
+}
+
+export type BulkLinkAction = 'delete' | 'setExpiry';
+
+export interface BulkLinkActionRequest {
+  action: BulkLinkAction;
+  codes: string[];
+  expiresAt?: string | null;
+}
+
 export interface LinkAnalyticsSummary {
   totalClicks: number;
   recentClicks: AnalyticsEvent[];
