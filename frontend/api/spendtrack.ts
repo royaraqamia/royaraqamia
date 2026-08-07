@@ -125,6 +125,7 @@ export async function getExpensesPage(options: {
   end: string;
   categories: string[];
   sort: string;
+  search?: string;
 }): Promise<{ expenses: ExpenseWithCategory[] }> {
   const params = new URLSearchParams();
   params.set('offset', String(options.offset));
@@ -133,6 +134,7 @@ export async function getExpensesPage(options: {
   if (options.end) params.set('end', options.end);
   if (options.categories.length) params.set('categories', options.categories.join(','));
   if (options.sort) params.set('sort', options.sort);
+  if (options.search) params.set('search', options.search);
 
   const data = await request<{ expenses: ExpenseWithCategory[] }>(
     `/spendtrack/api/expenses?${params.toString()}`

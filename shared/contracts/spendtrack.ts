@@ -30,6 +30,7 @@ export interface SpendtrackTransactionsQuery {
   sort: string;
   pageSize: number;
   offset?: number;
+  search?: string;
 }
 
 export interface SpendtrackTransactionsResult {

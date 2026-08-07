@@ -1,7 +1,9 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { Button } from '@/frontend/ui/primitives/button';
+import { Input } from '@/frontend/ui/primitives/input';
 import { Popover, PopoverContent, PopoverTrigger } from '@/frontend/ui/primitives/popover';
 import { DateRangePicker } from '@/frontend/ui/primitives/date-picker';
 import {
@@ -11,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/frontend/ui/primitives/select';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X, Search } from 'lucide-react';
 import type { Category } from '@/shared/contracts/spendtrack';
 
 const datePresets = [
@@ -37,6 +39,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
   const currentSort = searchParams.get('sort') || 'date_desc';
   const customStart = searchParams.get('from') || '';
   const customEnd = searchParams.get('to') || '';
+  const searchTerm = searchParams.get('search') || '';
   const selectedCategories = searchParams.get('categories')
     ? searchParams.get('categories')!.split(',').filter(Boolean)
     : [];
@@ -75,6 +78,8 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
 
   return (
     <div className="flex flex-wrap items-center gap-2">
+      <DebouncedSearch value={searchTerm} onChange={(v) => updateParam('search', v)} />
+
       <Select value={currentRange} onValueChange={(v) => updateParam('range', v)}>
         <SelectTrigger className="w-full sm:w-35 btn-press" aria-label="نطاق التاريخ">
           <SelectValue />
@@ -193,6 +198,43 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
           )}
         </Button>
       )}
+    </div>
+  );
+}
+
+function DebouncedSearch({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const [input, setInput] = useState(value);
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+  useEffect(() => {
+    setInput(value);
+  }, [value]);
+
+  useEffect(() => {
+    return () => {
+      if (timer.current) clearTimeout(timer.current);
+    };
+  }, []);
+
+  return (
+    <div className="relative w-full sm:w-56">
+      <Search
+        className="absolute start-3 top-1/2 size-4 -translate-y-1/2 pointer-events-none text-muted-foreground"
+        aria-hidden="true"
+      />
+      <Input
+        type="search"
+        value={input}
+        placeholder="ابحث في الوصف..."
+        aria-label="البحث في المصروفات"
+        className="w-full bg-muted border-border rounded-xl focus-ring ps-9"
+        onChange={(e) => {
+          const next = e.target.value;
+          setInput(next);
+          if (timer.current) clearTimeout(timer.current);
+          timer.current = setTimeout(() => onChange(next), 300);
+        }}
+      />
     </div>
   );
 }

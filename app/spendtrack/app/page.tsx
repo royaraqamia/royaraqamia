@@ -150,12 +150,14 @@ async function TransactionsSection({
   end,
   filterCategories,
   sort,
+  search,
 }: {
   userId: string;
   start: string;
   end: string;
   filterCategories: string[];
   sort: string;
+  search?: string;
 }) {
   const {
     expenses: safeExpenses,
@@ -168,13 +170,14 @@ async function TransactionsSection({
     filterCategories,
     sort,
     pageSize: PAGE_SIZE,
+    search,
   });
 
   return (
     <>
       <TransactionFilters categories={safeCategories} />
       <ExpenseList
-        key={`${start}-${end}-${filterCategories.join(',')}-${sort}`}
+        key={`${start}-${end}-${filterCategories.join(',')}-${sort}-${search ?? ''}`}
         expenses={safeExpenses}
         categories={safeCategories}
         totalCount={totalCount}
@@ -182,6 +185,7 @@ async function TransactionsSection({
         end={end}
         filterCategories={filterCategories}
         sort={sort}
+        search={search}
       />
     </>
   );
@@ -228,6 +232,7 @@ export default async function DashboardPage(props: {
     sort?: string;
     from?: string;
     to?: string;
+    search?: string;
   }>;
 }) {
   const searchParams = await props.searchParams;
@@ -239,6 +244,7 @@ export default async function DashboardPage(props: {
     ? searchParams.categories.split(',').filter(Boolean)
     : [];
   const sort = searchParams.sort || 'date_desc';
+  const search = searchParams.search?.trim() || undefined;
   const { start, end } = getDateRange(range, searchParams.from, searchParams.to);
   const catFilter: string[] | null = filterCategories.length > 0 ? filterCategories : null;
 
@@ -311,6 +317,7 @@ export default async function DashboardPage(props: {
                 end={end}
                 filterCategories={filterCategories}
                 sort={sort}
+                search={search}
               />
             </Suspense>
           </CardContent>

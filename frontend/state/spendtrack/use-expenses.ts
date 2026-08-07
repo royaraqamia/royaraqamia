@@ -74,6 +74,7 @@ export function useExpensePagination(options: {
   filterCategories: string[];
   sort: string;
   totalCount: number;
+  search?: string;
 }) {
   const [expenses, setExpenses] = useState(options.initialExpenses);
   const [loading, setLoading] = useState(false);
@@ -94,6 +95,7 @@ export function useExpensePagination(options: {
         end: options.end,
         categories: options.filterCategories,
         sort: options.sort,
+        search: options.search,
       });
       setExpenses((prev) => [...prev, ...result.expenses]);
     } finally {

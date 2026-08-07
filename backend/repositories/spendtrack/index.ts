@@ -80,7 +80,7 @@ export function createSpendtrackRepository(
     async getTransactions(
       query: SpendtrackTransactionsQuery
     ): Promise<SpendtrackTransactionsResult> {
-      const { userId, start, end, filterCategories, sort, pageSize, offset } = query;
+      const { userId, start, end, filterCategories, sort, pageSize, offset, search } = query;
 
       const { data: categories } = (await supabase
         .from('categories')
@@ -93,12 +93,18 @@ export function createSpendtrackRepository(
         colorHex: color_hex,
       })) as Category[];
 
-      const { count: totalCount } = await supabase
+      let countQuery = supabase
         .from('expenses')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
         .gte('date', start)
         .lte('date', end);
+
+      if (search && search.trim().length > 0) {
+        countQuery = countQuery.ilike('description', `%${search.trim()}%`);
+      }
+
+      const { count: totalCount } = await countQuery;
 
       let queryBuilder = supabase
         .from('expenses')
@@ -106,6 +112,10 @@ export function createSpendtrackRepository(
         .eq('user_id', userId)
         .gte('date', start)
         .lte('date', end);
+
+      if (search && search.trim().length > 0) {
+        queryBuilder = queryBuilder.ilike('description', `%${search.trim()}%`);
+      }
 
       if (filterCategories.length > 0) {
         queryBuilder = queryBuilder.in('category_id', filterCategories);

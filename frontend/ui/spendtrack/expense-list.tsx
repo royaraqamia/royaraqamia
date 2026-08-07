@@ -25,6 +25,7 @@ export function ExpenseList({
   end,
   filterCategories,
   sort,
+  search,
 }: {
   expenses: ExpenseWithCategory[];
   categories: Category[];
@@ -33,6 +34,7 @@ export function ExpenseList({
   end: string;
   filterCategories: string[];
   sort: string;
+  search?: string;
 }) {
   const { expenses, loading, hasMore, loadMore } = useExpensePagination({
     initialExpenses,
@@ -41,8 +43,9 @@ export function ExpenseList({
     filterCategories,
     sort,
     totalCount,
+    search,
   });
-  const hasFilters = filterCategories.length > 0 || sort !== 'date_desc';
+  const hasFilters = filterCategories.length > 0 || sort !== 'date_desc' || Boolean(search);
 
   if (expenses.length === 0) {
     return (

@@ -21,6 +21,7 @@ export async function getExpenses(query: URLSearchParams): Promise<HttpResult> {
     const end = query.get('end') ?? '';
     const categories = (query.get('categories') ?? '').split(',').filter(Boolean);
     const sort = query.get('sort') ?? '';
+    const search = query.get('search') ?? undefined;
 
     const { expenses } = await createSpendtrackService(supabase).getTransactions({
       userId: user.id,
@@ -30,6 +31,7 @@ export async function getExpenses(query: URLSearchParams): Promise<HttpResult> {
       sort,
       pageSize: limit,
       offset,
+      search,
     });
 
     return jsonResult(200, { expenses });
