@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { updatePost } from '@/frontend/api/blogpress';
 import type { Post } from '@/shared/contracts/blogpress';
 
+const AUTOSAVE_DEBOUNCE_MS = 1200;
+
 export function usePostAutosave(post: Post) {
   const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content ?? '');
@@ -13,6 +15,7 @@ export function usePostAutosave(post: Post) {
   const [metaDesc, setMetaDesc] = useState(post.meta_desc ?? '');
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const contentRef = useRef(content);
   const titleRef = useRef(title);
@@ -21,6 +24,7 @@ export function usePostAutosave(post: Post) {
   const metaTitleRef = useRef(metaTitle);
   const metaDescRef = useRef(metaDesc);
   const isDirtyRef = useRef(false);
+  const isSavingRef = useRef(false);
 
   useEffect(() => {
     contentRef.current = content;
@@ -41,13 +45,22 @@ export function usePostAutosave(post: Post) {
     metaDescRef.current = metaDesc;
   }, [metaDesc]);
 
+  // A ref that tracks whether the user edited anything since mount, so the
+  // debounce never fires a redundant save on initial load.
+  const hasEditedRef = useRef(false);
+
   useEffect(() => {
-    isDirtyRef.current = true;
-    setIsDirty(true);
+    if (hasEditedRef.current) {
+      isDirtyRef.current = true;
+      setIsDirty(true);
+    }
+    hasEditedRef.current = true;
   }, [title, content, slug, coverImage, metaTitle, metaDesc]);
 
   const saveAllFields = useCallback(async () => {
-    if (!isDirtyRef.current) return;
+    if (!isDirtyRef.current || isSavingRef.current) return;
+    isSavingRef.current = true;
+    setIsSaving(true);
     const fields = {
       title: titleRef.current,
       slug: slugRef.current,
@@ -65,6 +78,9 @@ export function usePostAutosave(post: Post) {
       }
     } catch {
       // Silently fail on auto-save
+    } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
     }
   }, [post.id]);
 
@@ -74,6 +90,16 @@ export function usePostAutosave(post: Post) {
     setLastSaved(new Date());
   }, []);
 
+  // Debounced auto-save on every field change (guarded to skip mount).
+  useEffect(() => {
+    if (!hasEditedRef.current) return;
+    const timer = setTimeout(() => {
+      saveAllFields();
+    }, AUTOSAVE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [title, content, slug, coverImage, metaTitle, metaDesc, saveAllFields]);
+
+  // Flush pending changes whenever the tab is hidden or the page is left.
   useEffect(() => {
     const handler = (e: Event) => {
       if (isDirtyRef.current) {
@@ -93,15 +119,6 @@ export function usePostAutosave(post: Post) {
     };
   }, [saveAllFields]);
 
-  useEffect(() => {
-    const autoSaveRef = setInterval(() => {
-      saveAllFields();
-    }, 30000);
-    return () => {
-      clearInterval(autoSaveRef);
-    };
-  }, [saveAllFields]);
-
   return {
     title,
     setTitle,
@@ -117,6 +134,7 @@ export function usePostAutosave(post: Post) {
     setMetaDesc,
     isDirty,
     lastSaved,
+    isSaving,
     saveAllFields,
     markSaved,
   };

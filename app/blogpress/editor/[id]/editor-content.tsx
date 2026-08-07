@@ -53,6 +53,7 @@ export function EditorContent({ post }: EditorContentProps) {
     setMetaDesc,
     isDirty,
     lastSaved,
+    isSaving,
     saveAllFields,
     markSaved,
   } = usePostAutosave(post);
@@ -378,7 +379,7 @@ export function EditorContent({ post }: EditorContentProps) {
                 className={`size-2 rounded-full transition-smooth ${isDirty ? 'bg-warning' : 'bg-success'}`}
               />
               <span className="text-xs text-muted-foreground hidden sm:inline">
-                {isDirty ? 'تغييرات غير محفوظة' : 'تمَّ الحفظ'}
+                {isSaving ? 'جارٍ الحفظ...' : isDirty ? 'تغييرات غير محفوظة' : 'تمَّ الحفظ'}
               </span>
             </div>
             <span className="text-muted-foreground/40 hidden sm:inline">·</span>
@@ -393,7 +394,7 @@ export function EditorContent({ post }: EditorContentProps) {
               <>
                 <span className="text-muted-foreground/40 hidden sm:inline">·</span>
                 <span className="text-xs text-muted-foreground hidden sm:inline">
-                  حفظ{' '}
+                  آخر حفظ{' '}
                   {lastSaved.toLocaleTimeString('ar-u-nu-latn', {
                     hour: '2-digit',
                     minute: '2-digit',
@@ -411,7 +412,7 @@ export function EditorContent({ post }: EditorContentProps) {
               onClick={() => handleSave()}
               className="transition-smooth min-h-11 rounded-full"
             >
-              {pending ? (
+              {pending || isSaving ? (
                 <>
                   <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ الحفظ...
                 </>
