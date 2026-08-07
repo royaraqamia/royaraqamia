@@ -22,13 +22,14 @@ import { useDashboard } from '@/frontend/state/habitflow/use-dashboard';
 import { useLogout } from '@/frontend/state/use-logout';
 import { useSession } from '@/frontend/state/session-provider';
 import { Button } from '@/frontend/ui/primitives/button';
-import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { StatsCard } from '@/frontend/ui/habitflow/components/stats-card';
 import { HabitCard } from '@/frontend/ui/habitflow/components/habit-card';
 import { CalendarGrid } from '@/frontend/ui/habitflow/components/calendar-grid';
 import { AddHabitModal } from '@/frontend/ui/habitflow/components/add-habit-modal';
 import { EditHabitModal } from '@/frontend/ui/habitflow/components/edit-habit-modal';
 import { NotesDialog } from '@/frontend/ui/habitflow/components/notes-dialog';
+import { HabitOnboarding } from '@/frontend/ui/habitflow/components/habit-onboarding';
+import type { HabitTemplate } from '@/frontend/shared/habitflow/habit-templates';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 interface DashboardShellProps {
@@ -285,26 +286,22 @@ export function DashboardShell({
               </div>
 
               {habits.length === 0 ? (
-                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md p-8 sm:p-12 text-center shadow-xs">
-                  <EmptyState
-                    icon={CheckSquare}
-                    variant="card"
-                    title="ابدأ رحلة عاداتك"
-                    description="أنشِئ أوَّل عادة يوميَّة أو أسبوعيَّة. التَّغييرات الصَّغيرة تصنع نتائج كبيرة."
-                    action={
-                      <Button
-                        onClick={() => {
-                          setIsAddModalOpen(true);
-                          setFormError('');
-                        }}
-                        className="mt-4 rounded-xl shadow-xs transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                      >
-                        <Plus className="w-4 h-4 ms-1.5" />
-                        إنشاء عادة روتينيَّة
-                      </Button>
-                    }
-                  />
-                </div>
+                <HabitOnboarding
+                  onTemplateSelect={(template: HabitTemplate) => {
+                    setHabitName(template.name);
+                    setHabitIcon(template.icon);
+                    setHabitFrequency(template.frequency);
+                    setFormError('');
+                    setIsAddModalOpen(true);
+                  }}
+                  onCreateBlank={() => {
+                    setHabitName('');
+                    setHabitIcon('Activity');
+                    setHabitFrequency('daily');
+                    setFormError('');
+                    setIsAddModalOpen(true);
+                  }}
+                />
               ) : (
                 <div className="space-y-3.5">
                   {habits.map((habit) => (
