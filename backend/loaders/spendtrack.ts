@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
 import type {
   Category,
+  CategoryBudget,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -55,4 +56,13 @@ export async function loadTransactions(
 ): Promise<SpendtrackTransactionsResult> {
   const service = await createService();
   return service.getTransactions(query);
+}
+
+export async function loadCategoryBudgets(
+  userId: string,
+  month: string
+): Promise<CategoryBudget[]> {
+  const service = await createService();
+  const categories = await service.getUserCategories(userId);
+  return service.getCategoryBudgets(userId, month, categories);
 }

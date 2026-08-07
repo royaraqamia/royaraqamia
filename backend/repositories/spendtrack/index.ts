@@ -188,27 +188,117 @@ export function createSpendtrackRepository(
       if (error) throw new Error(error.message);
     },
 
-    async getBudget(userId: string, month: string): Promise<number | null> {
-      const { data } = await supabase
+    async getBudget(
+      userId: string,
+      month: string,
+      categoryId?: string | null
+    ): Promise<number | null> {
+      let query = supabase
         .from('budgets')
         .select('amount')
         .eq('user_id', userId)
-        .eq('month', month)
-        .maybeSingle();
+        .eq('month', month);
+
+      if (categoryId) {
+        query = query.eq('category_id', categoryId);
+      } else {
+        query = query.is('category_id', null);
+      }
+
+      const { data } = await query.maybeSingle();
       return data ? Number(data.amount) : null;
     },
 
-    async setBudget(userId: string, month: string, amount: number): Promise<void> {
-      const { error } = await supabase.from('budgets').upsert(
-        {
+    async setBudget(
+      userId: string,
+      month: string,
+      amount: number,
+      categoryId?: string | null
+    ): Promise<void> {
+      const rowUpdate = { amount, updated_at: new Date().toISOString() };
+
+      if (categoryId) {
+        const { data: existing } = await supabase
+          .from('budgets')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('month', month)
+          .eq('category_id', categoryId)
+          .maybeSingle();
+        if (existing) {
+          const { error } = await supabase
+            .from('budgets')
+            .update(rowUpdate)
+            .eq('user_id', userId)
+            .eq('month', month)
+            .eq('category_id', categoryId);
+          if (error) throw new Error(error.message);
+          return;
+        }
+        const { error } = await supabase.from('budgets').insert({
           user_id: userId,
           month,
           amount,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id,month' }
-      );
+          category_id: categoryId,
+        });
+        if (error) throw new Error(error.message);
+        return;
+      }
+
+      const { data: existing } = await supabase
+        .from('budgets')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('month', month)
+        .is('category_id', null)
+        .maybeSingle();
+      if (existing) {
+        const { error } = await supabase
+          .from('budgets')
+          .update(rowUpdate)
+          .eq('user_id', userId)
+          .eq('month', month)
+          .is('category_id', null);
+        if (error) throw new Error(error.message);
+        return;
+      }
+
+      const { error } = await supabase.from('budgets').insert({
+        user_id: userId,
+        month,
+        amount,
+        category_id: null,
+      });
       if (error) throw new Error(error.message);
+    },
+
+    async deleteBudget(userId: string, month: string, categoryId?: string | null): Promise<void> {
+      const { error } = categoryId
+        ? await supabase
+            .from('budgets')
+            .delete()
+            .eq('user_id', userId)
+            .eq('month', month)
+            .eq('category_id', categoryId)
+        : await supabase
+            .from('budgets')
+            .delete()
+            .eq('user_id', userId)
+            .eq('month', month)
+            .is('category_id', null);
+      if (error) throw new Error(error.message);
+    },
+
+    async getBudgets(
+      userId: string,
+      month: string
+    ): Promise<{ category_id: string | null; amount: number }[]> {
+      const { data } = await supabase
+        .from('budgets')
+        .select('category_id, amount')
+        .eq('user_id', userId)
+        .eq('month', month);
+      return (data ?? []) as { category_id: string | null; amount: number }[];
     },
 
     async createCategory(input: {

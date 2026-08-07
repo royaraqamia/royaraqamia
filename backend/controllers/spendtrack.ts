@@ -128,14 +128,14 @@ export async function deleteExpense(id: string): Promise<HttpResult> {
   }
 }
 
-export async function getBudget(month: string): Promise<HttpResult> {
+export async function getBudget(month: string, categoryId?: string): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();
     if (!user) {
       return jsonResult(401, { error: 'غير مصرح' });
     }
 
-    const budget = await createSpendtrackService(supabase).getBudget(user.id, month);
+    const budget = await createSpendtrackService(supabase).getBudget(user.id, month, categoryId);
     return jsonResult(200, { budget });
   } catch (error) {
     return jsonResult(500, {
@@ -153,9 +153,13 @@ export async function setBudget(body: Record<string, unknown>): Promise<HttpResu
 
     const month = String(body.month ?? '');
     const amount = Number(body.amount);
+    const categoryId =
+      body.categoryId === undefined || body.categoryId === null
+        ? undefined
+        : String(body.categoryId);
 
     try {
-      await createSpendtrackService(supabase).setBudget(user.id, month, amount);
+      await createSpendtrackService(supabase).setBudget(user.id, month, amount, categoryId);
     } catch (error) {
       return jsonResult(400, {
         error: error instanceof Error ? error.message : 'فشل حفظ الميزانية',
@@ -166,6 +170,29 @@ export async function setBudget(body: Record<string, unknown>): Promise<HttpResu
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل حفظ الميزانية',
+    });
+  }
+}
+
+export async function deleteBudget(month: string, categoryId?: string): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+
+    try {
+      await createSpendtrackService(supabase).deleteBudget(user.id, month, categoryId);
+    } catch (error) {
+      return jsonResult(400, {
+        error: error instanceof Error ? error.message : 'فشل حذف الميزانية',
+      });
+    }
+
+    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل حذف الميزانية',
     });
   }
 }

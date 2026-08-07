@@ -59,23 +59,42 @@ export async function deleteExpense(expenseId: string): Promise<ActionState> {
   }
 }
 
-export async function getBudget(month: string): Promise<number | null> {
+export async function getBudget(month: string, categoryId?: string): Promise<number | null> {
   const params = new URLSearchParams({ month });
+  if (categoryId) params.set('categoryId', categoryId);
   const data = await request<{ budget: number | null }>(
     `/spendtrack/api/budget?${params.toString()}`
   );
   return data?.budget ?? null;
 }
 
-export async function setBudgetForMonth(month: string, amount: number): Promise<ActionState> {
+export async function setBudgetForMonth(
+  month: string,
+  amount: number,
+  categoryId?: string
+): Promise<ActionState> {
   try {
     await request('/spendtrack/api/budget', {
       method: 'PUT',
-      body: JSON.stringify({ month, amount }),
+      body: JSON.stringify({ month, amount, categoryId }),
     });
     return { success: true };
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'فشل حفظ الميزانية' };
+  }
+}
+
+export async function deleteBudgetForMonth(
+  month: string,
+  categoryId?: string
+): Promise<ActionState> {
+  try {
+    const params = new URLSearchParams({ month });
+    if (categoryId) params.set('categoryId', categoryId);
+    await request(`/spendtrack/api/budget?${params.toString()}`, { method: 'DELETE' });
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل حذف الميزانية' };
   }
 }
 

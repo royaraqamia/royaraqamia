@@ -38,3 +38,17 @@ export interface SpendtrackTransactionsResult {
   categories: Category[];
   totalCount: number;
 }
+
+export type Budget = {
+  id: string;
+  month: string;
+  amount: number;
+  category_id: string | null;
+};
+
+export type CategoryBudget = {
+  categoryId: string;
+  name: string;
+  colorHex: string;
+  budget: number | null;
+};

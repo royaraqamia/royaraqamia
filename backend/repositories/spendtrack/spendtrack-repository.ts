@@ -43,8 +43,18 @@ export interface SpendtrackRepository {
     }
   ): Promise<void>;
   deleteExpense(expenseId: string, userId: string): Promise<void>;
-  getBudget(userId: string, month: string): Promise<number | null>;
-  setBudget(userId: string, month: string, amount: number): Promise<void>;
+  getBudget(userId: string, month: string, categoryId?: string | null): Promise<number | null>;
+  setBudget(
+    userId: string,
+    month: string,
+    amount: number,
+    categoryId?: string | null
+  ): Promise<void>;
+  getBudgets(
+    userId: string,
+    month: string
+  ): Promise<{ category_id: string | null; amount: number }[]>;
+  deleteBudget(userId: string, month: string, categoryId?: string | null): Promise<void>;
   createCategory(input: { user_id: string; name: string; colorHex: string }): Promise<void>;
   updateCategory(
     categoryId: string,

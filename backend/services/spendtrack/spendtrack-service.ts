@@ -1,6 +1,7 @@
 import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
 import type {
   Category,
+  CategoryBudget,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -20,6 +21,7 @@ export interface SpendtrackExpenseInput {
 export interface ExpenseAlertInfo {
   userId: string;
   month: string;
+  categoryId: string;
 }
 
 export class SpendtrackService {
@@ -77,24 +79,65 @@ export class SpendtrackService {
     await this.repository.createExpense({ user_id: userId, ...input });
 
     const month = input.date.slice(0, 7);
-    this.onExpenseAlert?.({ userId, month });
+    this.onExpenseAlert?.({ userId, month, categoryId: input.category_id });
   }
 
-  async getBudget(userId: string, month: string): Promise<number | null> {
+  async getBudget(
+    userId: string,
+    month: string,
+    categoryId?: string | null
+  ): Promise<number | null> {
     if (!/^\d{4}-\d{2}$/.test(month)) {
       throw new Error('شهر غير صالح');
     }
-    return this.repository.getBudget(userId, month);
+    return this.repository.getBudget(userId, month, categoryId);
   }
 
-  async setBudget(userId: string, month: string, amount: number): Promise<void> {
+  async setBudget(
+    userId: string,
+    month: string,
+    amount: number,
+    categoryId?: string | null
+  ): Promise<void> {
     if (!/^\d{4}-\d{2}$/.test(month)) {
       throw new Error('شهر غير صالح');
     }
     if (isNaN(amount) || amount <= 0) {
       throw new Error('مبلغ غير صالح');
     }
-    await this.repository.setBudget(userId, month, amount);
+    await this.repository.setBudget(userId, month, amount, categoryId);
+  }
+
+  async deleteBudget(userId: string, month: string, categoryId?: string | null): Promise<void> {
+    if (!/^\d{4}-\d{2}$/.test(month)) {
+      throw new Error('شهر غير صالح');
+    }
+    await this.repository.deleteBudget(userId, month, categoryId);
+  }
+
+  async getCategoryBudgets(
+    userId: string,
+    month: string,
+    categories: { id: string; name: string; colorHex: string }[]
+  ): Promise<CategoryBudget[]> {
+    const rows = await this.repository.getBudgets(userId, month);
+    const byId = new Map<string, number>();
+    for (const row of rows) {
+      if (row.category_id) byId.set(row.category_id, row.amount);
+    }
+    return categories
+      .map((cat) => ({
+        categoryId: cat.id,
+        name: cat.name,
+        colorHex: cat.colorHex,
+        budget: byId.get(cat.id) ?? null,
+      }))
+      .sort((a, b) => {
+        if (a.budget === null && b.budget === null) return a.name.localeCompare(b.name);
+        if (a.budget === null) return 1;
+        if (b.budget === null) return -1;
+        return b.budget - a.budget;
+      });
   }
 
   async updateExpense(
