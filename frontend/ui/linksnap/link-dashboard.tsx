@@ -14,7 +14,7 @@ interface LinkDashboardProps {
 
 export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   const reducedMotion = useReducedMotion();
-  const { links, loading, error, fetchLinks, handleDelete, handleUpdate } = useLinks(
+  const { links, loading, error, fetchLinks, handleDelete, applyLinkUpdate } = useLinks(
     token,
     refreshTrigger
   );
@@ -80,10 +80,11 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
                 code={link.code}
                 originalUrl={link.originalUrl}
                 createdAt={link.createdAt}
-                isBlocked={link.isBlocked}
+                expiresAt={link.expiresAt}
+                status={link.status}
                 token={token}
                 onDeleted={handleDelete}
-                onUpdated={handleUpdate}
+                onUpdated={applyLinkUpdate}
               />
             </motion.div>
           ))}

@@ -10,7 +10,7 @@ export function isReservedShortCode(code: string): boolean {
 export class ShortLinkRedirectError extends Error {
   constructor(
     message: string,
-    public readonly kind: 'not-found' | 'blocked' | 'reserved'
+    public readonly kind: 'not-found' | 'blocked' | 'reserved' | 'expired'
   ) {
     super(message);
     this.name = 'ShortLinkRedirectError';
@@ -51,6 +51,10 @@ export class RedirectUrlService {
         'This link has been deactivated due to terms of service violations.',
         'blocked'
       );
+    }
+
+    if (link.expiresAt && link.expiresAt.getTime() < Date.now()) {
+      throw new ShortLinkRedirectError('This short link has expired.', 'expired');
     }
 
     // Fire-and-forget logging click analytics to keep redirect under 100ms

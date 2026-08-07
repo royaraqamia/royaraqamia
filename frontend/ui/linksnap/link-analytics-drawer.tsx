@@ -4,6 +4,19 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { AlertTriangle, Globe, Smartphone } from 'lucide-react';
 import { AnalyticsChart } from './analytics-chart';
 import { AnalyticsSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
+import type { LinkStatus } from '@/shared/contracts/linksnap';
+
+const STATUS_META: Record<LinkStatus, { label: string; className: string }> = {
+  active: { label: 'نشط وسليم', className: 'text-success bg-success/10 border-success/30' },
+  expired: {
+    label: 'منتهية الصلاحية',
+    className: 'text-muted-foreground bg-muted/50 border-border/40',
+  },
+  blocked: {
+    label: 'محظور',
+    className: 'text-destructive bg-destructive/10 border-destructive/30',
+  },
+};
 
 export interface AnalyticsData {
   totalClicks: number;
@@ -23,6 +36,7 @@ interface LinkAnalyticsDrawerProps {
   analyticsLoading: boolean;
   analyticsError: string | null;
   analytics: AnalyticsData | null;
+  status: LinkStatus;
 }
 
 export function LinkAnalyticsDrawer({
@@ -30,6 +44,7 @@ export function LinkAnalyticsDrawer({
   analyticsLoading,
   analyticsError,
   analytics,
+  status,
 }: LinkAnalyticsDrawerProps) {
   const reducedMotion = useReducedMotion();
   return (
@@ -72,9 +87,13 @@ export function LinkAnalyticsDrawer({
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       حالة الرابط
                     </span>
-                    <span className="text-xs font-semibold text-success bg-success/10 border border-success/30 px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 bg-success rounded-full animate-pulse" />
-                      نشط وسليم
+                    <span
+                      className={`text-xs font-semibold border px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1 ${
+                        STATUS_META[status]?.className ?? STATUS_META.active.className
+                      } ${status === 'active' ? 'animate-pulse' : ''}`}
+                    >
+                      <span className="w-1.5 h-1.5 bg-current rounded-full" />
+                      {STATUS_META[status]?.label ?? 'نشط وسليم'}
                     </span>
                   </div>
                 </div>

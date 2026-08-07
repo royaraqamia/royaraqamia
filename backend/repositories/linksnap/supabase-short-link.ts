@@ -11,6 +11,7 @@ interface ShortLinkDbRow {
   created_at: string;
   updated_at: string;
   is_blocked: boolean;
+  expires_at: string | null;
 }
 
 export class SupabaseShortLinkRepository implements ShortLinkRepository {
@@ -27,6 +28,7 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
       isBlocked: row.is_blocked,
+      expiresAt: row.expires_at ? new Date(row.expires_at) : null,
     };
   }
 
@@ -38,6 +40,7 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       created_at: domain.createdAt.toISOString(),
       updated_at: domain.updatedAt.toISOString(),
       is_blocked: domain.isBlocked,
+      expires_at: domain.expiresAt ? domain.expiresAt.toISOString() : null,
     };
   }
 
@@ -91,7 +94,7 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
 
   async update(
     code: string,
-    updates: Partial<Pick<ShortLink, 'originalUrl' | 'isBlocked'>>
+    updates: Partial<Pick<ShortLink, 'originalUrl' | 'isBlocked' | 'expiresAt'>>
   ): Promise<ShortLink> {
     const dbUpdates: Partial<ShortLinkDbRow> = {};
     if (updates.originalUrl !== undefined) {
@@ -99,6 +102,9 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     }
     if (updates.isBlocked !== undefined) {
       dbUpdates.is_blocked = updates.isBlocked;
+    }
+    if (updates.expiresAt !== undefined) {
+      dbUpdates.expires_at = updates.expiresAt ? updates.expiresAt.toISOString() : null;
     }
     dbUpdates.updated_at = new Date().toISOString();
 

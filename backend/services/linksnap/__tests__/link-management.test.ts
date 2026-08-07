@@ -14,6 +14,7 @@ const linkFixture: ShortLink = {
   createdAt: now,
   updatedAt: now,
   isBlocked: false,
+  expiresAt: null,
 };
 
 function makeRepo(overrides: Partial<ShortLinkRepository> = {}) {
@@ -57,7 +58,7 @@ describe('UpdateLinkService', () => {
       originalUrl: 'https://new.com',
     });
 
-    const result = await service.execute('abc123', 'u-1', 'https://new.com');
+    const result = await service.execute('abc123', 'u-1', { originalUrl: 'https://new.com' });
 
     expect(result.originalUrl).toBe('https://new.com');
     expect(repository.update).toHaveBeenCalledWith('abc123', { originalUrl: 'https://new.com' });
@@ -66,16 +67,16 @@ describe('UpdateLinkService', () => {
   it('throws when the code is missing', async () => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
-    await expect(service.execute('', 'u-1', 'https://new.com')).rejects.toThrow(
-      "كل من 'code' و 'originalUrl' مطلوبان."
+    await expect(service.execute('', 'u-1', { originalUrl: 'https://new.com' })).rejects.toThrow(
+      'رمز الرابط والمستخدم مطلوبان.'
     );
   });
 
-  it('throws when the new URL is missing', async () => {
+  it('throws when there is nothing to update', async () => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
-    await expect(service.execute('abc123', 'u-1', '')).rejects.toThrow(
-      "كل من 'code' و 'originalUrl' مطلوبان."
+    await expect(service.execute('abc123', 'u-1', {})).rejects.toThrow(
+      'لا توجد تغييرات لتطبيقها على الرابط.'
     );
     expect(repository.findByCode).not.toHaveBeenCalled();
   });
@@ -83,9 +84,9 @@ describe('UpdateLinkService', () => {
   it('throws when the user id is missing', async () => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
-    await expect(service.execute('abc123', '', 'https://new.com')).rejects.toThrow(
-      'User authorization is required to update a link.'
-    );
+    await expect(
+      service.execute('abc123', '', { originalUrl: 'https://new.com' })
+    ).rejects.toThrow('رمز الرابط والمستخدم مطلوبان.');
   });
 
   it('throws when the link is not found', async () => {
@@ -93,9 +94,9 @@ describe('UpdateLinkService', () => {
     const service = new UpdateLinkService(repository);
     (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-    await expect(service.execute('abc123', 'u-1', 'https://new.com')).rejects.toThrow(
-      'Short link not found.'
-    );
+    await expect(
+      service.execute('abc123', 'u-1', { originalUrl: 'https://new.com' })
+    ).rejects.toThrow('Short link not found.');
   });
 
   it('throws when the user does not own the link', async () => {
@@ -103,9 +104,9 @@ describe('UpdateLinkService', () => {
     const service = new UpdateLinkService(repository);
     (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
 
-    await expect(service.execute('abc123', 'u-2', 'https://new.com')).rejects.toThrow(
-      'Unauthorized: You do not own this short link.'
-    );
+    await expect(
+      service.execute('abc123', 'u-2', { originalUrl: 'https://new.com' })
+    ).rejects.toThrow('Unauthorized: You do not own this short link.');
     expect(repository.update).not.toHaveBeenCalled();
   });
 
@@ -114,9 +115,9 @@ describe('UpdateLinkService', () => {
     const service = new UpdateLinkService(repository);
     (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
 
-    await expect(service.execute('abc123', 'u-1', 'javascript:alert(1)')).rejects.toThrow(
-      'Invalid URL format. Please include http:// or https://'
-    );
+    await expect(
+      service.execute('abc123', 'u-1', { originalUrl: 'javascript:alert(1)' })
+    ).rejects.toThrow('Invalid URL format. Please include http:// or https://');
     expect(repository.update).not.toHaveBeenCalled();
   });
 });

@@ -1,3 +1,5 @@
+export type LinkStatus = 'active' | 'expired' | 'blocked';
+
 export interface ShortLink {
   code: string;
   originalUrl: string;
@@ -5,6 +7,7 @@ export interface ShortLink {
   createdAt: Date;
   updatedAt: Date;
   isBlocked: boolean;
+  expiresAt: Date | null;
 }
 
 export interface AnalyticsEvent {

@@ -103,6 +103,7 @@ const shortLink = {
   createdAt: now,
   updatedAt: now,
   isBlocked: false,
+  expiresAt: null,
 };
 
 beforeEach(() => {
@@ -130,6 +131,8 @@ describe('POST /linksnap/api/shorten', () => {
       originalUrl: 'https://example.com',
       createdAt: now.toISOString(),
       userId: 'u-1',
+      expiresAt: null,
+      status: 'active',
     });
     expect(mockCheckRateLimitApi).toHaveBeenCalledWith(
       expect.objectContaining({ key: 'shorten:u-1', limit: 50, windowMs: 600_000 })
@@ -249,6 +252,8 @@ describe('GET /linksnap/api/links', () => {
           originalUrl: 'https://example.com',
           createdAt: now.toISOString(),
           isBlocked: false,
+          expiresAt: null,
+          status: 'active',
         },
       ],
     });
@@ -288,7 +293,9 @@ describe('PATCH /linksnap/api/links', () => {
     expect(readBody<{ link: { originalUrl: string } }>(res).link.originalUrl).toBe(
       'https://new.com'
     );
-    expect(mockUpdateLink.execute).toHaveBeenCalledWith('abc123', 'u-1', 'https://new.com');
+    expect(mockUpdateLink.execute).toHaveBeenCalledWith('abc123', 'u-1', {
+      originalUrl: 'https://new.com',
+    });
   });
 
   it('returns 401 without authentication', async () => {

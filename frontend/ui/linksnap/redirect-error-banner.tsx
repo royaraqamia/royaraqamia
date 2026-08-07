@@ -32,7 +32,9 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
                 ? `فشل تسجيل الدخول عبر Google. حاول مرة أخرى أو استخدم البريد الإلكتروني.${error.code ? ` (${error.code})` : ''}`
                 : error.type === 'blocked'
                   ? `الرمز المختصر /${error.code} تم إلغاء تنشيطه بسبب انتهاك إرشادات المجتمع.`
-                  : `الرمز المختصر /${error.code} غير موجود أو منتهي الصلاحية.`}
+                  : error.type === 'expired'
+                    ? `انتهت صلاحية الرمز المختصر /${error.code}.`
+                    : `الرمز المختصر /${error.code} غير موجود.`}
             </p>
           </div>
           <button

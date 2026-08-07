@@ -1,4 +1,4 @@
-import type { AnalyticsEvent, DailyClickStat } from '@/shared/contracts/linksnap';
+import type { AnalyticsEvent, DailyClickStat, LinkStatus } from '@/shared/contracts/linksnap';
 import { request } from '@/frontend/transport/http';
 
 export interface ShortenedLink {
@@ -6,6 +6,13 @@ export interface ShortenedLink {
   originalUrl: string;
   createdAt: string;
   isBlocked: boolean;
+  expiresAt: string | null;
+  status: LinkStatus;
+}
+
+export interface LinkUpdateBody {
+  originalUrl?: string;
+  expiresAt?: string | null;
 }
 
 export interface AdminSystemLink {
@@ -80,13 +87,13 @@ export async function deleteLink(code: string, token: string): Promise<void> {
 
 export async function updateLink(
   code: string,
-  originalUrl: string,
-  token: string
+  token: string,
+  changes: LinkUpdateBody
 ): Promise<ShortenedLink> {
   const data = await request<{ link: ShortenedLink }>('/linksnap/api/links', {
     method: 'PATCH',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ code, originalUrl }),
+    body: JSON.stringify({ code, ...changes }),
   });
   return data.link;
 }

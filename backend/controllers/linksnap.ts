@@ -16,14 +16,33 @@ import {
 } from '@/backend/config/linksnap';
 import { bulkShortenRateLimitPolicy, shortenRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
+import { getLinkStatus } from '@/backend/services/linksnap/link-status';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
-function linkView(l: { code: string; originalUrl: string; createdAt: Date; isBlocked: boolean }) {
+function parseExpiresAt(value: unknown): Date | null | undefined {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  const d = new Date(String(value));
+  if (Number.isNaN(d.getTime())) {
+    throw new AppError('تاريخ انتهاء صلاحية غير صالح.', 400);
+  }
+  return d;
+}
+
+function linkView(l: {
+  code: string;
+  originalUrl: string;
+  createdAt: Date;
+  isBlocked: boolean;
+  expiresAt: Date | null;
+}) {
   return {
     code: l.code,
     originalUrl: l.originalUrl,
     createdAt: l.createdAt.toISOString(),
     isBlocked: l.isBlocked,
+    expiresAt: l.expiresAt ? l.expiresAt.toISOString() : null,
+    status: getLinkStatus(l.isBlocked, l.expiresAt),
   };
 }
 
@@ -52,7 +71,7 @@ export async function listLinks(authorization: string | null): Promise<HttpResul
 
 export async function updateLink(
   authorization: string | null,
-  body: { code?: unknown; originalUrl?: unknown }
+  body: { code?: unknown; originalUrl?: unknown; expiresAt?: unknown }
 ): Promise<HttpResult> {
   try {
     const user = await getAuthenticatedUser(authorization);
@@ -60,11 +79,10 @@ export async function updateLink(
       return jsonResult(401, UNAUTHORIZED_BODY);
     }
 
-    const updatedLink = await createUpdateLinkService().execute(
-      body.code as string,
-      user.id,
-      body.originalUrl as string
-    );
+    const updatedLink = await createUpdateLinkService().execute(body.code as string, user.id, {
+      originalUrl: body.originalUrl as string | undefined,
+      expiresAt: parseExpiresAt(body.expiresAt),
+    });
 
     return jsonResult(200, { success: true, link: linkView(updatedLink) });
   } catch (err: unknown) {
@@ -93,7 +111,7 @@ export async function deleteLink(
 export async function shortenUrl(
   authorization: string | null,
   ip: string,
-  body: { originalUrl?: unknown; customCode?: unknown }
+  body: { originalUrl?: unknown; customCode?: unknown; expiresAt?: unknown }
 ): Promise<HttpResult> {
   try {
     const { originalUrl, customCode } = body;
@@ -107,7 +125,8 @@ export async function shortenUrl(
     const newLink = await createShortenUrlService().execute(
       originalUrl as string,
       userId,
-      customCode as string | undefined
+      customCode as string | undefined,
+      parseExpiresAt(body.expiresAt)
     );
 
     return jsonResult(200, {
@@ -117,6 +136,8 @@ export async function shortenUrl(
         originalUrl: newLink.originalUrl,
         createdAt: newLink.createdAt.toISOString(),
         userId: newLink.userId,
+        expiresAt: newLink.expiresAt ? newLink.expiresAt.toISOString() : null,
+        status: getLinkStatus(newLink.isBlocked, newLink.expiresAt),
       },
     });
   } catch (err: unknown) {
@@ -238,7 +259,9 @@ export async function redirectShortCode(
 
     const baseUrl = env.appUrl || info.origin;
     const errorCode =
-      err instanceof ShortLinkRedirectError && err.kind === 'blocked' ? 'blocked' : 'not-found';
+      err instanceof ShortLinkRedirectError && (err.kind === 'blocked' || err.kind === 'expired')
+        ? err.kind
+        : 'not-found';
     return {
       status: 302,
       redirect: `${baseUrl}/linksnap?error=${errorCode}&code=${code}`,

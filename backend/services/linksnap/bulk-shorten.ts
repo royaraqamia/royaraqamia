@@ -64,6 +64,7 @@ export class BulkShortenService {
           createdAt: new Date(),
           updatedAt: new Date(),
           isBlocked: false,
+          expiresAt: null,
         });
         results.push({ originalUrl: sanitized, shortLink });
       } catch (err: unknown) {

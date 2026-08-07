@@ -1,7 +1,13 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { listLinks, updateLink, deleteLink, type ShortenedLink } from '@/frontend/api/linksnap';
+import {
+  listLinks,
+  updateLink,
+  deleteLink,
+  type LinkUpdateBody,
+  type ShortenedLink,
+} from '@/frontend/api/linksnap';
 
 export function useLinks(token: string, refreshTrigger: number) {
   const [links, setLinks] = useState<ShortenedLink[]>([]);
@@ -36,7 +42,11 @@ export function useLinks(token: string, refreshTrigger: number) {
     setLinks((prev) => prev.map((l) => (l.code === code ? { ...l, originalUrl: newUrl } : l)));
   }, []);
 
-  return { links, loading, error, fetchLinks, handleDelete, handleUpdate };
+  const applyLinkUpdate = useCallback((link: ShortenedLink) => {
+    setLinks((prev) => prev.map((l) => (l.code === link.code ? { ...l, ...link } : l)));
+  }, []);
+
+  return { links, loading, error, fetchLinks, handleDelete, handleUpdate, applyLinkUpdate };
 }
 
 export function useUpdateLink(token: string) {
@@ -44,11 +54,11 @@ export function useUpdateLink(token: string) {
   const [updateError, setUpdateError] = useState<string | null>(null);
 
   const updateLinkAction = useCallback(
-    async (code: string, url: string) => {
+    async (code: string, changes: LinkUpdateBody) => {
       setUpdateLoading(true);
       setUpdateError(null);
       try {
-        return await updateLink(code, url, token);
+        return await updateLink(code, token, changes);
       } catch (err: unknown) {
         setUpdateError(err instanceof Error ? err.message : 'خطأ في تحديث الرابط.');
         throw err;

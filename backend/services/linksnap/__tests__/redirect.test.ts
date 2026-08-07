@@ -18,6 +18,7 @@ const linkFixture: ShortLink = {
   createdAt: now,
   updatedAt: now,
   isBlocked: false,
+  expiresAt: null,
 };
 
 const summaryFixture: LinkAnalyticsSummary = {

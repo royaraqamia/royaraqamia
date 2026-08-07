@@ -23,22 +23,44 @@ import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
 import { useDeleteLink } from '@/frontend/state/linksnap/use-links';
 import { useLinkAnalytics } from '@/frontend/state/linksnap/use-analytics';
+import type { LinkStatus } from '@/shared/contracts/linksnap';
+import type { ShortenedLink } from '@/frontend/api/linksnap';
+
+const STATUS_META: Record<LinkStatus, { label: string; className: string; dotClass: string }> = {
+  active: {
+    label: 'نشط',
+    className: 'text-success bg-success/10 border-success/25',
+    dotClass: 'bg-success',
+  },
+  expired: {
+    label: 'منتهي الصلاحية',
+    className: 'text-muted-foreground bg-muted/50 border-border',
+    dotClass: 'bg-muted-foreground',
+  },
+  blocked: {
+    label: 'محظور',
+    className: 'text-destructive bg-destructive/10 border-destructive/25',
+    dotClass: 'bg-destructive',
+  },
+};
 
 interface LinkRowCardProps {
   code: string;
   originalUrl: string;
   createdAt: string;
-  isBlocked: boolean;
+  expiresAt: string | null;
+  status: LinkStatus;
   token: string;
   onDeleted: (code: string) => void;
-  onUpdated: (code: string, newUrl: string) => void;
+  onUpdated: (link: ShortenedLink) => void;
 }
 
 export function LinkRowCard({
   code,
   originalUrl,
   createdAt,
-  isBlocked,
+  expiresAt,
+  status,
   token,
   onDeleted,
   onUpdated,
@@ -96,9 +118,10 @@ export function LinkRowCard({
           <LinkEditForm
             code={code}
             currentUrl={originalUrl}
+            currentExpiresAt={expiresAt}
             token={token}
-            onSaved={(c, newUrl) => {
-              onUpdated(c, newUrl);
+            onSaved={(link) => {
+              onUpdated(link);
               setEditingCode(null);
             }}
             onCancel={() => setEditingCode(null)}
@@ -123,11 +146,21 @@ export function LinkRowCard({
                   numberingSystem: 'latn',
                 }).format(new Date(createdAt))}
               </span>
-              {isBlocked && (
-                <span className="text-xs text-destructive bg-destructive/10 border border-destructive/20 px-2 py-0.5 rounded-full font-bold">
-                  محظور من قِبَل الإدارة
-                </span>
-              )}
+              {(() => {
+                const meta = STATUS_META[status] ?? STATUS_META.active;
+                return (
+                  <span
+                    className={`text-xs font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1.5 shrink-0 ${meta.className}`}
+                    title={expiresAt ? `ينتهي في ${expiresAt}` : undefined}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`w-1.5 h-1.5 rounded-full ${meta.dotClass} ${status === 'active' ? 'animate-pulse' : ''}`}
+                    />
+                    {meta.label}
+                  </span>
+                );
+              })()}
             </div>
             <p className="text-xs text-muted-foreground truncate" title={originalUrl}>
               {originalUrl}
@@ -215,6 +248,7 @@ export function LinkRowCard({
           analyticsLoading={analyticsLoading}
           analyticsError={analyticsError}
           analytics={analytics}
+          status={status}
         />
       </div>
 

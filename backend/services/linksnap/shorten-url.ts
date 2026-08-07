@@ -12,7 +12,8 @@ export class ShortenUrlService {
   async execute(
     originalUrl: string,
     userId: string | null,
-    customCode?: string
+    customCode?: string,
+    expiresAt?: Date | null
   ): Promise<ShortLink> {
     const sanitizedUrl = SecurityValidator.validateUrl(originalUrl);
 
@@ -56,6 +57,7 @@ export class ShortenUrlService {
       createdAt: now,
       updatedAt: now,
       isBlocked: false,
+      expiresAt: expiresAt ?? null,
     };
 
     return await this.shortLinkRepository.create(shortLink);

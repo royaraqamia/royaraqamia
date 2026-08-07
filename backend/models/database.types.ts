@@ -594,6 +594,7 @@ export type Database = {
         Row: {
           code: string;
           created_at: string;
+          expires_at: string | null;
           is_blocked: boolean;
           original_url: string;
           updated_at: string;
@@ -602,6 +603,7 @@ export type Database = {
         Insert: {
           code: string;
           created_at?: string;
+          expires_at?: string | null;
           is_blocked?: boolean;
           original_url: string;
           updated_at?: string;
@@ -610,6 +612,7 @@ export type Database = {
         Update: {
           code?: string;
           created_at?: string;
+          expires_at?: string | null;
           is_blocked?: boolean;
           original_url?: string;
           updated_at?: string;
