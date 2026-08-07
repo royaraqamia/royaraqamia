@@ -408,9 +408,7 @@ export function createSpendtrackRepository(
         if (error) throw new Error(error.message);
         return;
       }
-      const { error } = await supabase
-        .from('user_settings')
-        .insert({ user_id: userId, currency });
+      const { error } = await supabase.from('user_settings').insert({ user_id: userId, currency });
       if (error) throw new Error(error.message);
     },
   };

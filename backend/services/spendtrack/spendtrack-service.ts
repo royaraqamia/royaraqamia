@@ -1,9 +1,5 @@
 import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
-import {
-  DEFAULT_CURRENCY,
-  isSupportedCurrency,
-  type CurrencyCode,
-} from '@/shared/currency';
+import { DEFAULT_CURRENCY, isSupportedCurrency, type CurrencyCode } from '@/shared/currency';
 import type {
   Category,
   CategoryBudget,

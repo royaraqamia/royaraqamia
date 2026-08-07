@@ -10,6 +10,7 @@ import {
   Legend,
   type PieLabelRenderProps,
 } from 'recharts';
+import { formatMoney } from '@/shared/currency';
 
 type CategorySpending = {
   name: string;
@@ -21,9 +22,11 @@ type CategorySpending = {
 function CustomTooltip({
   active,
   payload,
+  currency,
 }: {
   active?: boolean;
   payload?: Array<{ name: string; value: number; payload: { colorHex: string } }>;
+  currency?: string;
 }) {
   if (!active || !payload?.length || !payload[0]) return null;
   const item = payload[0];
@@ -33,9 +36,7 @@ function CustomTooltip({
         <div className="size-2.5 rounded-full" style={{ backgroundColor: item.payload.colorHex }} />
         <span className="text-sm font-medium">{item.name}</span>
       </div>
-      <p className="text-sm text-muted-foreground mt-1">
-        {Number(item.value).toLocaleString('ar-SA-u-nu-latn')} ل.س
-      </p>
+      <p className="text-sm text-muted-foreground mt-1">{formatMoney(item.value, currency)}</p>
     </div>
   );
 }
@@ -66,7 +67,13 @@ function renderCustomLabel(props: PieLabelRenderProps) {
   );
 }
 
-export function CategoryPieChart({ data }: { data: CategorySpending[] }) {
+export function CategoryPieChart({
+  data,
+  currency,
+}: {
+  data: CategorySpending[];
+  currency?: string;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -157,11 +164,11 @@ export function CategoryPieChart({ data }: { data: CategorySpending[] }) {
                       ? 2
                       : 0
                   }
-                  aria-label={`${entry.name}: ${Number(entry.total).toLocaleString('ar-SA-u-nu-latn')} ل.س`}
+                  aria-label={`${entry.name}: ${formatMoney(entry.total, currency)}`}
                 />
               ))}
             </Pie>
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip currency={currency} />} />
             <Legend />
           </PieChart>
         </ResponsiveContainer>
@@ -169,7 +176,7 @@ export function CategoryPieChart({ data }: { data: CategorySpending[] }) {
       <div className="sr-only" role="list" aria-label="التصنيفات">
         {data.map((entry, index) => (
           <div key={index} role="listitem">
-            {entry.name}: {Number(entry.total).toLocaleString('ar-SA-u-nu-latn')} ل.س
+            {entry.name}: {formatMoney(entry.total, currency)}
           </div>
         ))}
       </div>

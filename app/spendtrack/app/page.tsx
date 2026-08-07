@@ -21,7 +21,10 @@ import {
   loadTotalExpenses,
   loadTransactions,
   loadUserCategories,
+  loadUserCurrency,
 } from '@/backend/loaders/spendtrack';
+import { formatMoney } from '@/shared/currency';
+import { CurrencySelector } from '@/frontend/ui/spendtrack/currency-selector';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
@@ -56,17 +59,19 @@ async function TotalCard({
   start,
   end,
   catFilter,
+  currency,
 }: {
   userId: string;
   start: string;
   end: string;
   catFilter: string[] | null;
+  currency: string;
 }) {
   const data = await loadTotalExpenses(userId, start, end, catFilter);
   return (
     <Card
       className="group/card card-lift"
-      aria-label={`إجمالي الإنفاق: ${Number(data ?? 0).toFixed(2)} دولار`}
+      aria-label={`إجمالي الإنفاق: ${formatMoney(data ?? 0, currency)}`}
     >
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي الإنفاق</CardTitle>
@@ -76,7 +81,7 @@ async function TotalCard({
       </CardHeader>
       <CardContent>
         <p className="text-2xl sm:text-3xl font-bold tracking-tight truncate" aria-live="polite">
-          ${Number(data ?? 0).toFixed(2)}
+          {formatMoney(data ?? 0, currency)}
         </p>
         <p className="text-xs sm:text-sm text-muted-foreground mt-1">
           {new Intl.DateTimeFormat('ar-SA', {
@@ -100,12 +105,12 @@ async function TotalCard({
   );
 }
 
-async function CreateExpenseButton({ userId }: { userId: string }) {
+async function CreateExpenseButton({ userId, currency }: { userId: string; currency: string }) {
   const categories = await loadUserCategories(userId);
-  return <CreateExpenseDialog categories={categories} />;
+  return <CreateExpenseDialog categories={categories} currency={currency} />;
 }
 
-async function BudgetSection({ userId }: { userId: string }) {
+async function BudgetSection({ userId, currency }: { userId: string; currency: string }) {
   const now = new Date();
   const month = format(now, 'yyyy-MM');
   const total =
@@ -115,7 +120,7 @@ async function BudgetSection({ userId }: { userId: string }) {
       format(endOfMonth(now), 'yyyy-MM-dd'),
       null
     )) ?? 0;
-  return <BudgetCard month={month} total={total} />;
+  return <BudgetCard month={month} total={total} currency={currency} />;
 }
 
 async function CategoryBudgetsSection({ userId }: { userId: string }) {
@@ -124,12 +129,20 @@ async function CategoryBudgetsSection({ userId }: { userId: string }) {
   return <CategoryBudgets month={month} initialBudgets={budgets} />;
 }
 
-async function RecurringExpensesSection({ userId }: { userId: string }) {
+async function RecurringExpensesSection({
+  userId,
+  currency,
+}: {
+  userId: string;
+  currency: string;
+}) {
   const [categories, recurring] = await Promise.all([
     loadUserCategories(userId),
     loadRecurringExpenses(userId),
   ]);
-  return <RecurringExpenses categories={categories} initialRecurring={recurring} />;
+  return (
+    <RecurringExpenses categories={categories} initialRecurring={recurring} currency={currency} />
+  );
 }
 
 async function CategoryPieSection({
@@ -137,14 +150,16 @@ async function CategoryPieSection({
   start,
   end,
   catFilter,
+  currency,
 }: {
   userId: string;
   start: string;
   end: string;
   catFilter: string[] | null;
+  currency: string;
 }) {
   const data = await loadCategoryBreakdown(userId, start, end, catFilter);
-  return <CategoryPieChart data={data ?? []} />;
+  return <CategoryPieChart data={data ?? []} currency={currency} />;
 }
 
 async function DailyBarSection({
@@ -152,14 +167,16 @@ async function DailyBarSection({
   start,
   end,
   catFilter,
+  currency,
 }: {
   userId: string;
   start: string;
   end: string;
   catFilter: string[] | null;
+  currency: string;
 }) {
   const data = await loadDailyTotals(userId, start, end, catFilter);
-  return <DailyBarChart data={data ?? []} />;
+  return <DailyBarChart data={data ?? []} currency={currency} />;
 }
 
 async function TransactionsSection({
@@ -169,6 +186,7 @@ async function TransactionsSection({
   filterCategories,
   sort,
   search,
+  currency,
 }: {
   userId: string;
   start: string;
@@ -176,6 +194,7 @@ async function TransactionsSection({
   filterCategories: string[];
   sort: string;
   search?: string;
+  currency: string;
 }) {
   const {
     expenses: safeExpenses,
@@ -195,7 +214,7 @@ async function TransactionsSection({
     <>
       <TransactionFilters categories={safeCategories} />
       <ExpenseList
-        key={`${start}-${end}-${filterCategories.join(',')}-${sort}-${search ?? ''}`}
+        key={`${start}-${end}-${filterCategories.join(',')}-${sort}-${search ?? ''}-${currency}`}
         expenses={safeExpenses}
         categories={safeCategories}
         totalCount={totalCount}
@@ -204,6 +223,7 @@ async function TransactionsSection({
         filterCategories={filterCategories}
         sort={sort}
         search={search}
+        currency={currency}
       />
     </>
   );
@@ -257,6 +277,8 @@ export default async function DashboardPage(props: {
   const { user } = await getAuthUser();
   if (!user) redirect('/auth/login?redirect=/spendtrack');
 
+  const currency = await loadUserCurrency(user.id);
+
   const range = searchParams.range || 'this_month';
   const filterCategories = searchParams.categories
     ? searchParams.categories.split(',').filter(Boolean)
@@ -270,16 +292,25 @@ export default async function DashboardPage(props: {
     <div className="space-y-6 pb-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
         <h1 className="text-3xl font-display font-bold tracking-tight">إدارة المصروف</h1>
-        <CreateExpenseButton userId={user.id} />
+        <div className="flex items-center gap-3">
+          <CurrencySelector currency={currency} />
+          <CreateExpenseButton userId={user.id} currency={currency} />
+        </div>
       </div>
 
       <div className="animate-slide-up stagger-2">
         <div className="grid gap-4 md:grid-cols-2">
           <Suspense fallback={<TotalSkeleton />}>
-            <TotalCard userId={user.id} start={start} end={end} catFilter={catFilter} />
+            <TotalCard
+              userId={user.id}
+              start={start}
+              end={end}
+              catFilter={catFilter}
+              currency={currency}
+            />
           </Suspense>
           <Suspense fallback={<TotalSkeleton />}>
-            <BudgetSection userId={user.id} />
+            <BudgetSection userId={user.id} currency={currency} />
           </Suspense>
         </div>
       </div>
@@ -289,7 +320,7 @@ export default async function DashboardPage(props: {
       </Suspense>
 
       <Suspense fallback={<TotalSkeleton />}>
-        <RecurringExpensesSection userId={user.id} />
+        <RecurringExpensesSection userId={user.id} currency={currency} />
       </Suspense>
 
       <div className="grid gap-4 lg:grid-cols-2 animate-slide-up stagger-3">
@@ -305,7 +336,13 @@ export default async function DashboardPage(props: {
           </CardHeader>
           <CardContent>
             <Suspense fallback={<ChartSkeleton />}>
-              <CategoryPieSection userId={user.id} start={start} end={end} catFilter={catFilter} />
+              <CategoryPieSection
+                userId={user.id}
+                start={start}
+                end={end}
+                catFilter={catFilter}
+                currency={currency}
+              />
             </Suspense>
           </CardContent>
         </Card>
@@ -321,7 +358,13 @@ export default async function DashboardPage(props: {
           </CardHeader>
           <CardContent>
             <Suspense fallback={<ChartSkeleton />}>
-              <DailyBarSection userId={user.id} start={start} end={end} catFilter={catFilter} />
+              <DailyBarSection
+                userId={user.id}
+                start={start}
+                end={end}
+                catFilter={catFilter}
+                currency={currency}
+              />
             </Suspense>
           </CardContent>
         </Card>
@@ -344,6 +387,7 @@ export default async function DashboardPage(props: {
                 filterCategories={filterCategories}
                 sort={sort}
                 search={search}
+                currency={currency}
               />
             </Suspense>
           </CardContent>

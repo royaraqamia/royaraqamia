@@ -29,13 +29,16 @@ import {
   deleteRecurringExpense,
 } from '@/frontend/api/spendtrack';
 import type { Category, RecurringExpense } from '@/shared/contracts/spendtrack';
+import { formatMoney, getCurrencySymbol } from '@/shared/currency';
 
 export function RecurringExpenses({
   categories,
   initialRecurring,
+  currency,
 }: {
   categories: Category[];
   initialRecurring: RecurringExpense[];
+  currency?: string;
 }) {
   const router = useRouter();
   const currentMonth = new Date().toISOString().slice(0, 7);
@@ -63,6 +66,7 @@ export function RecurringExpenses({
           <RecurringDialog
             categories={categories}
             currentMonth={currentMonth}
+            currency={currency}
             trigger={
               <Button variant="outline" size="sm" className="btn-press touch-target focus-ring">
                 <Plus className="size-4" />
@@ -109,12 +113,13 @@ export function RecurringExpenses({
                 </div>
                 <div className="flex shrink-0 items-center gap-1.5">
                   <span className="text-sm font-semibold tabular-nums">
-                    ${Number(item.amount).toFixed(2)}
+                    {formatMoney(item.amount, currency)}
                   </span>
                   <RecurringDialog
                     categories={categories}
                     currentMonth={currentMonth}
                     item={item}
+                    currency={currency}
                     trigger={
                       <Button
                         variant="ghost"
@@ -150,11 +155,13 @@ function RecurringDialog({
   currentMonth,
   item,
   trigger,
+  currency,
 }: {
   categories: Category[];
   currentMonth: string;
   item?: RecurringExpense;
   trigger: React.ReactNode;
+  currency?: string;
 }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
@@ -219,7 +226,7 @@ function RecurringDialog({
           <div className="grid grid-cols-2 gap-3">
             <div className="form-field">
               <Label htmlFor="rec-amount" className="form-label">
-                المبلغ ($)
+                المبلغ ({getCurrencySymbol(currency)})
               </Label>
               <Input
                 id="rec-amount"

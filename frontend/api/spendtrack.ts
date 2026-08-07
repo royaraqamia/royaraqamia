@@ -196,3 +196,24 @@ export async function getExpensesPage(options: {
   );
   return { expenses: data.expenses ?? [] };
 }
+
+export async function getCurrency(): Promise<string | null> {
+  try {
+    const data = await request<{ currency: string }>('/spendtrack/api/settings/currency');
+    return data?.currency ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function setCurrency(currency: string): Promise<ActionState> {
+  try {
+    await request('/spendtrack/api/settings/currency', {
+      method: 'PUT',
+      body: JSON.stringify({ currency }),
+    });
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل حفظ العملة' };
+  }
+}

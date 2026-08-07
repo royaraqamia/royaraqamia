@@ -8,7 +8,7 @@ import {
   getCurrencyName,
   getCurrencySymbol,
   isSupportedCurrency,
-} from '@/frontend/shared/currency';
+} from '@/shared/currency';
 
 describe('getCurrencyInfo', () => {
   it('returns USD by default', () => {
