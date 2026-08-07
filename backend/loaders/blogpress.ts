@@ -86,9 +86,7 @@ export async function loadPostTags(postId: string): Promise<PostTag[]> {
   return createBlogpressPostsService(supabase).getPostTags(postId);
 }
 
-export async function loadManyPostTags(
-  postIds: string[]
-): Promise<Record<string, PostTag[]>> {
+export async function loadManyPostTags(postIds: string[]): Promise<Record<string, PostTag[]>> {
   const cookieStore = await cookies();
   const supabase = await createServerSupabaseClient(cookieStore);
   const service = createBlogpressPostsService(supabase);

@@ -239,7 +239,11 @@ export async function setBlogPostTags(
 
     await createBlogpressPostsService(supabase).setPostTags(id, user.id, validated.data.tagIds);
 
-    return jsonResult(200, { success: true }, { revalidate: [{ path: `/blogpress/editor/${id}` }] });
+    return jsonResult(
+      200,
+      { success: true },
+      { revalidate: [{ path: `/blogpress/editor/${id}` }] }
+    );
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل تحديث وسوم المقال',

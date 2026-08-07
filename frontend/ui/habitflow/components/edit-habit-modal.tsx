@@ -1,6 +1,7 @@
 'use client';
 
-import { Trash2 } from 'lucide-react';
+import React from 'react';
+import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
 import { Habit } from '@/shared/contracts/habitflow';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -45,28 +46,42 @@ export function EditHabitModal({
         if (!open) onClose();
       }}
     >
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>تعديل خصائص العادة</DialogTitle>
+      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] mx-auto p-0 rounded-3xl overflow-hidden border border-border/50 bg-background/95 backdrop-blur-xl shadow-2xl transition-all duration-300">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/40 text-right">
+          <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+            تعديل خصائص العادة
+          </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="p-4 sm:p-6 space-y-5">
+        <form onSubmit={onSubmit} className="p-6 space-y-6 text-right" dir="rtl">
           {formError && (
             <div
               id="edit-habit-error"
-              className="bg-destructive/10 border border-destructive/30 text-destructive text-xs font-semibold rounded-lg px-4 py-3 text-center"
+              className="flex items-center gap-3 p-3.5 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs sm:text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-200"
               role="alert"
             >
-              {formError}
+              <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+              <span className="flex-1">{formError}</span>
             </div>
           )}
+
           <div className="space-y-2">
-            <label
-              htmlFor="input-edit-habit-name"
-              className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
-            >
-              اسم العادة
-            </label>
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="input-edit-habit-name"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90"
+              >
+                اسم العادة
+              </label>
+              <span
+                className={`text-xs font-mono font-medium transition-colors ${
+                  habitName.length >= 45 ? 'text-amber-500 font-bold' : 'text-muted-foreground/70'
+                }`}
+                dir="ltr"
+              >
+                {habitName.length} / 50
+              </span>
+            </div>
             <div className="relative">
               <Input
                 type="text"
@@ -79,49 +94,46 @@ export function EditHabitModal({
                 id="input-edit-habit-name"
                 autoFocus
                 aria-describedby={formError ? 'edit-habit-error' : undefined}
-                className="touch-target"
+                className="w-full h-11 px-4 rounded-xl border-border/60 bg-muted/30 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-sm font-medium placeholder:text-muted-foreground/50"
               />
             </div>
-            <p className="text-xs text-muted-foreground text-left" dir="ltr">
-              {habitName.length}/50
-            </p>
           </div>
 
-          <fieldset className="space-y-2">
-            <legend className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              وتيرة التتبع
+          <fieldset className="space-y-2 border-0 p-0 m-0">
+            <legend className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 mb-2">
+              وتيرة التَّتبُّع
             </legend>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-muted/40 rounded-2xl border border-border/40 backdrop-blur-sm">
               <button
                 type="button"
                 onClick={() => onFrequencyChange('daily')}
-                className={`py-3 px-4 text-xs font-semibold rounded-full border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
+                className={`flex items-center justify-center py-2.5 px-4 text-xs font-semibold rounded-xl transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[0.98] ${
                   habitFrequency === 'daily'
-                    ? 'bg-primary border-primary text-primary-foreground shadow-sm'
-                    : 'border-border bg-muted text-foreground hover:bg-accent'
+                    ? 'bg-background text-foreground shadow-sm border border-border/50 font-bold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/40 border border-transparent'
                 }`}
               >
-                يومية
+                يوميَّة
               </button>
               <button
                 type="button"
                 onClick={() => onFrequencyChange('weekly')}
-                className={`py-3 px-4 text-xs font-semibold rounded-full border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
+                className={`flex items-center justify-center py-2.5 px-4 text-xs font-semibold rounded-xl transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[0.98] ${
                   habitFrequency === 'weekly'
-                    ? 'bg-primary border-primary text-primary-foreground shadow-sm'
-                    : 'border-border bg-muted text-foreground hover:bg-accent'
+                    ? 'bg-background text-foreground shadow-sm border border-border/50 font-bold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/40 border border-transparent'
                 }`}
               >
-                أسبوعية
+                أسبوعيَّة
               </button>
             </div>
           </fieldset>
 
-          <fieldset className="space-y-2">
-            <legend className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+          <fieldset className="space-y-2 border-0 p-0 m-0">
+            <legend className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 mb-2">
               أيقونة العادة
             </legend>
-            <div className="grid grid-cols-4 gap-2 sm:gap-3 p-1">
+            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5 max-h-52 overflow-y-auto p-2 rounded-2xl bg-muted/20 border border-border/30">
               {HABIT_ICONS.map((item) => {
                 const IconComp = item.icon;
                 const isSelected = habitIcon === item.name;
@@ -132,36 +144,41 @@ export function EditHabitModal({
                     onClick={() => onIconChange(item.name)}
                     aria-label={item.name}
                     aria-pressed={isSelected}
-                    className={`aspect-square rounded-full flex items-center justify-center border transition-all duration-200 ease-out btn-press touch-target focus-ring ${
+                    className={`group relative aspect-square rounded-xl flex items-center justify-center transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 ${
                       isSelected
-                        ? 'border-primary ring-2 ring-primary bg-primary/10 text-primary'
-                        : 'border-border bg-muted text-muted-foreground hover:bg-accent hover:border-border'
+                        ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]'
+                        : 'bg-background/80 hover:bg-background border border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:scale-105 shadow-xs'
                     }`}
                   >
-                    <IconComp className="w-5 h-5" aria-hidden="true" />
+                    <IconComp
+                      className="w-5 h-5 transition-transform duration-200 group-hover:scale-110"
+                      aria-hidden="true"
+                    />
                   </button>
                 );
               })}
             </div>
           </fieldset>
 
-          <div className="pt-2 border-t border-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          <div className="pt-4 border-t border-border/40 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
             <Button
               type="button"
-              onClick={() => onArchive(habit!.id)}
-              className="flex items-center gap-2 bg-warning/10 text-warning hover:bg-warning/20 border-0 shadow-none touch-target btn-press focus-ring"
+              onClick={() => habit && onArchive(habit.id)}
+              disabled={!habit}
+              variant="ghost"
+              className="group hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all duration-200 rounded-xl px-3.5 py-2.5 text-xs font-medium flex items-center justify-center gap-2 h-auto"
               id="btn-archive-habit"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              أرشفة العادة
+              <Trash2 className="w-4 h-4 transition-transform group-hover:scale-110 text-muted-foreground group-hover:text-destructive" />
+              <span>أرشفة العادة</span>
             </Button>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="touch-target btn-press focus-ring"
+                className="flex-1 sm:flex-none rounded-xl px-4 py-2.5 text-xs font-medium border-border/60 hover:bg-muted/80 transition-all duration-200 h-auto"
               >
                 إلغاء
               </Button>
@@ -169,9 +186,16 @@ export function EditHabitModal({
                 type="submit"
                 disabled={isSubmitting}
                 id="btn-submit-edit-habit"
-                className="touch-target btn-press focus-ring"
+                className="flex-1 sm:flex-none rounded-xl px-5 py-2.5 text-xs font-semibold shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-70 h-auto flex items-center justify-center gap-2"
               >
-                {isSubmitting ? 'جارٍ التطبيق...' : 'تطبيق التغييرات'}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    <span>جارٍ التَّطبيق...</span>
+                  </>
+                ) : (
+                  'تطبيق التَّغييرات'
+                )}
               </Button>
             </div>
           </div>

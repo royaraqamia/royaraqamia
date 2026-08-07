@@ -82,10 +82,10 @@ export async function createTag(input: {
   name: string;
   slug: string;
 }): Promise<{ tag: PostTag } | { errors?: Record<string, string[]> }> {
-  return request<{ tag: PostTag } | { errors?: Record<string, string[]> }>(
-    '/api/blogpress/tags',
-    { method: 'POST', body: JSON.stringify(input) }
-  );
+  return request<{ tag: PostTag } | { errors?: Record<string, string[]> }>('/api/blogpress/tags', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
 }
 
 export async function deleteTag(tagId: string): Promise<void> {

@@ -1,7 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { verifySession } from '@/backend/middleware/session-guard';
-import { loadEditorPost, loadEditorPostTitle, loadBlogTags, loadPostTags } from '@/backend/loaders/blogpress';
+import {
+  loadEditorPost,
+  loadEditorPostTitle,
+  loadBlogTags,
+  loadPostTags,
+} from '@/backend/loaders/blogpress';
 import { EditorContent } from './editor-content';
 
 export async function generateMetadata(props: {

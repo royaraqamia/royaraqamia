@@ -1,6 +1,10 @@
 import type { Metadata } from 'next';
 import { verifySession } from '@/backend/middleware/session-guard';
-import { loadBlogpressDashboard, loadBlogCategories, loadManyPostTags } from '@/backend/loaders/blogpress';
+import {
+  loadBlogpressDashboard,
+  loadBlogCategories,
+  loadManyPostTags,
+} from '@/backend/loaders/blogpress';
 import { PostList } from '../_components/post-list';
 import { CreatePostButton } from '../_components/create-post-button';
 import { FileText, Eye, CalendarClock, BarChart3 } from 'lucide-react';
@@ -93,7 +97,12 @@ export default async function DashboardPage({
         })}
       </div>
 
-      <PostList posts={postList} categories={categories} activeCategory={category} tagsByPost={tagsByPost} />
+      <PostList
+        posts={postList}
+        categories={categories}
+        activeCategory={category}
+        tagsByPost={tagsByPost}
+      />
     </div>
   );
 }
