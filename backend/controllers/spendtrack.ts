@@ -418,3 +418,40 @@ export async function deleteCategory(id: string): Promise<HttpResult> {
     });
   }
 }
+
+export async function getCurrency(): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+    const currency = await createSpendtrackService(supabase).getCurrency(user.id);
+    return jsonResult(200, { currency });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل تحميل العملة',
+    });
+  }
+}
+
+export async function updateCurrency(body: Record<string, unknown>): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+    const code = String(body.currency ?? '');
+    try {
+      await createSpendtrackService(supabase).updateCurrency(user.id, code);
+    } catch (error) {
+      return jsonResult(400, {
+        error: error instanceof Error ? error.message : 'فشل حفظ العملة',
+      });
+    }
+    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل حفظ العملة',
+    });
+  }
+}

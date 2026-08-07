@@ -1,4 +1,9 @@
 import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
+import {
+  DEFAULT_CURRENCY,
+  isSupportedCurrency,
+  type CurrencyCode,
+} from '@/shared/currency';
 import type {
   Category,
   CategoryBudget,
@@ -202,6 +207,18 @@ export class SpendtrackService {
 
   async deleteRecurringExpense(expenseId: string, userId: string): Promise<void> {
     await this.repository.deleteRecurringExpense(expenseId, userId);
+  }
+
+  async getCurrency(userId: string): Promise<CurrencyCode> {
+    const stored = await this.repository.getUserCurrency(userId);
+    return stored && isSupportedCurrency(stored) ? stored : DEFAULT_CURRENCY;
+  }
+
+  async updateCurrency(userId: string, code: string): Promise<void> {
+    if (!isSupportedCurrency(code)) {
+      throw new Error('عملة غير مدعومة');
+    }
+    await this.repository.setUserCurrency(userId, code);
   }
 
   private validateRecurringInput(input: RecurringExpenseInput): void {

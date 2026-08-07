@@ -72,3 +72,8 @@ export async function loadRecurringExpenses(userId: string): Promise<RecurringEx
   const service = await createService();
   return service.getRecurringExpenses(userId);
 }
+
+export async function loadUserCurrency(userId: string): Promise<string> {
+  const service = await createService();
+  return service.getCurrency(userId);
+}

@@ -26,6 +26,8 @@ function makeRepo(overrides: Partial<SpendtrackRepository> = {}) {
     createCategory: vi.fn(),
     updateCategory: vi.fn(),
     deleteCategory: vi.fn(),
+    getUserCurrency: vi.fn(),
+    setUserCurrency: vi.fn(),
     ...overrides,
   };
   return { repository };
@@ -201,5 +203,48 @@ describe('SpendtrackService expense alert', () => {
     await service.createExpense('u-1', expenseInput);
 
     expect(repository.createExpense).toHaveBeenCalled();
+  });
+});
+
+describe('SpendtrackService currency settings', () => {
+  it('defaults to USD when no stored currency exists', async () => {
+    const { repository } = makeRepo();
+    (repository.getUserCurrency as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    const service = makeService(repository);
+
+    await expect(service.getCurrency('u-1')).resolves.toBe('USD');
+  });
+
+  it('returns the stored currency when valid', async () => {
+    const { repository } = makeRepo();
+    (repository.getUserCurrency as ReturnType<typeof vi.fn>).mockResolvedValue('SYP');
+    const service = makeService(repository);
+
+    await expect(service.getCurrency('u-1')).resolves.toBe('SYP');
+  });
+
+  it('falls back to USD for an invalid stored currency', async () => {
+    const { repository } = makeRepo();
+    (repository.getUserCurrency as ReturnType<typeof vi.fn>).mockResolvedValue('XYZ');
+    const service = makeService(repository);
+
+    await expect(service.getCurrency('u-1')).resolves.toBe('USD');
+  });
+
+  it('persists a supported currency', async () => {
+    const { repository } = makeRepo();
+    (repository.setUserCurrency as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const service = makeService(repository);
+
+    await service.updateCurrency('u-1', 'SAR');
+    expect(repository.setUserCurrency).toHaveBeenCalledWith('u-1', 'SAR');
+  });
+
+  it('rejects an unsupported currency', async () => {
+    const { repository } = makeRepo();
+    const service = makeService(repository);
+
+    await expect(service.updateCurrency('u-1', 'XYZ')).rejects.toThrow('عملة غير مدعومة');
+    expect(repository.setUserCurrency).not.toHaveBeenCalled();
   });
 });

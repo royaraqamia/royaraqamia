@@ -9,6 +9,7 @@ import { getAdminSupabase } from '@/backend/config/supabase';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
 import { logger } from '@/backend/shared/logger';
+import { formatMoney } from '@/shared/currency';
 
 export function createSpendtrackService(supabase: SupabaseClient<Database>): SpendtrackService {
   return new SpendtrackService(createSpendtrackRepository(supabase), createExpenseAlertNotifier());
@@ -33,6 +34,13 @@ export function createExpenseAlertNotifier(): (info: ExpenseAlertInfo) => void {
       try {
         const admin = getAdminSupabase();
         const monthCat = `${month}-${categoryId}`;
+
+        const { data: settings } = await admin
+          .from('user_settings')
+          .select('currency')
+          .eq('user_id', userId)
+          .maybeSingle();
+        const currency = settings ? (settings.currency as string) : null;
 
         const alerts: {
           title: string;
@@ -60,7 +68,10 @@ export function createExpenseAlertNotifier(): (info: ExpenseAlertInfo) => void {
           if (overallTotal > overallBudget) {
             alerts.push({
               title: 'تجاوزت ميزانيتك الشهرية',
-              body: `أنفقت ${overallTotal.toFixed(2)}$ من ميزانية ${overallBudget.toFixed(2)}$ لهذا الشهر.`,
+              body: `أنفقت ${formatMoney(overallTotal, currency)} من ميزانية ${formatMoney(
+                overallBudget,
+                currency
+              )} لهذا الشهر.`,
               metadata: { month, total: overallTotal, budget: overallBudget },
               keys: [`spendtrack:alert:${userId}:${month}`],
             });
@@ -87,7 +98,10 @@ export function createExpenseAlertNotifier(): (info: ExpenseAlertInfo) => void {
           if (catTotal > budget) {
             alerts.push({
               title: 'تجاوزت ميزانية التصنيف',
-              body: `أنفقت ${catTotal.toFixed(2)}$ من ميزانية ${budget.toFixed(2)}$ لذا التصنيف هذا الشهر.`,
+              body: `أنفقت ${formatMoney(catTotal, currency)} من ميزانية ${formatMoney(
+                budget,
+                currency
+              )} لذا التصنيف هذا الشهر.`,
               metadata: { month, category_id: categoryId, total: catTotal, budget },
               keys: [`spendtrack:alert:${userId}:${monthCat}`],
             });

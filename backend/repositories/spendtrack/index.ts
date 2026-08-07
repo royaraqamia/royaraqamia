@@ -382,5 +382,36 @@ export function createSpendtrackRepository(
 
       if (error) throw new Error(error.message);
     },
+
+    async getUserCurrency(userId: string): Promise<string | null> {
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('currency')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data ? (data.currency as string) : null;
+    },
+
+    async setUserCurrency(userId: string, currency: string): Promise<void> {
+      const { data: existing, error: readError } = await supabase
+        .from('user_settings')
+        .select('user_id')
+        .eq('user_id', userId)
+        .maybeSingle();
+      if (readError) throw new Error(readError.message);
+      if (existing) {
+        const { error } = await supabase
+          .from('user_settings')
+          .update({ currency, updated_at: new Date().toISOString() })
+          .eq('user_id', userId);
+        if (error) throw new Error(error.message);
+        return;
+      }
+      const { error } = await supabase
+        .from('user_settings')
+        .insert({ user_id: userId, currency });
+      if (error) throw new Error(error.message);
+    },
   };
 }

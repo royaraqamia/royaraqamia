@@ -72,4 +72,6 @@ export interface SpendtrackRepository {
     input: { name: string; colorHex: string }
   ): Promise<void>;
   deleteCategory(categoryId: string, userId: string): Promise<void>;
+  getUserCurrency(userId: string): Promise<string | null>;
+  setUserCurrency(userId: string, currency: string): Promise<void>;
 }
