@@ -1,4 +1,4 @@
-import type { ExpenseWithCategory } from '@/shared/contracts/spendtrack';
+import type { ExpenseWithCategory, RecurringExpenseInput } from '@/shared/contracts/spendtrack';
 import { request } from '@/frontend/transport/http';
 
 type ActionState = { error?: string; success?: boolean } | undefined;
@@ -95,6 +95,42 @@ export async function deleteBudgetForMonth(
     return { success: true };
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'فشل حذف الميزانية' };
+  }
+}
+
+export async function createRecurringExpense(data: RecurringExpenseInput): Promise<ActionState> {
+  try {
+    await request('/spendtrack/api/recurring', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل إنشاء المصروف المتكرر' };
+  }
+}
+
+export async function updateRecurringExpense(
+  id: string,
+  data: RecurringExpenseInput
+): Promise<ActionState> {
+  try {
+    await request(`/spendtrack/api/recurring/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل تحديث المصروف المتكرر' };
+  }
+}
+
+export async function deleteRecurringExpense(id: string): Promise<ActionState> {
+  try {
+    await request(`/spendtrack/api/recurring/${id}`, { method: 'DELETE' });
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل حذف المصروف المتكرر' };
   }
 }
 

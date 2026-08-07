@@ -7,6 +7,7 @@ import { DollarSign, PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
 import { CreateExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
 import { BudgetCard } from '@/frontend/ui/spendtrack/budget-card';
 import { CategoryBudgets } from '@/frontend/ui/spendtrack/category-budgets';
+import { RecurringExpenses } from '@/frontend/ui/spendtrack/recurring-expenses';
 import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
 import { CategoryPieChart } from '@/frontend/ui/spendtrack/category-pie-chart';
 import { DailyBarChart } from '@/frontend/ui/spendtrack/daily-bar-chart';
@@ -16,6 +17,7 @@ import {
   loadCategoryBreakdown,
   loadCategoryBudgets,
   loadDailyTotals,
+  loadRecurringExpenses,
   loadTotalExpenses,
   loadTransactions,
   loadUserCategories,
@@ -120,6 +122,14 @@ async function CategoryBudgetsSection({ userId }: { userId: string }) {
   const month = format(new Date(), 'yyyy-MM');
   const budgets = await loadCategoryBudgets(userId, month);
   return <CategoryBudgets month={month} initialBudgets={budgets} />;
+}
+
+async function RecurringExpensesSection({ userId }: { userId: string }) {
+  const [categories, recurring] = await Promise.all([
+    loadUserCategories(userId),
+    loadRecurringExpenses(userId),
+  ]);
+  return <RecurringExpenses categories={categories} initialRecurring={recurring} />;
 }
 
 async function CategoryPieSection({
@@ -276,6 +286,10 @@ export default async function DashboardPage(props: {
 
       <Suspense fallback={<TotalSkeleton />}>
         <CategoryBudgetsSection userId={user.id} />
+      </Suspense>
+
+      <Suspense fallback={<TotalSkeleton />}>
+        <RecurringExpensesSection userId={user.id} />
       </Suspense>
 
       <div className="grid gap-4 lg:grid-cols-2 animate-slide-up stagger-3">

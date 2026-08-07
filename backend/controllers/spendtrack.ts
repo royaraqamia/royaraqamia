@@ -5,6 +5,7 @@ import type {
   SpendtrackCategoryInput,
   SpendtrackExpenseInput,
 } from '@/backend/services/spendtrack/spendtrack-service';
+import type { RecurringExpenseInput } from '@/shared/contracts/spendtrack';
 
 const SPENDTRACK_LAYOUT_REVALIDATION = [{ path: '/spendtrack', type: 'layout' as const }];
 
@@ -193,6 +194,116 @@ export async function deleteBudget(month: string, categoryId?: string): Promise<
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل حذف الميزانية',
+    });
+  }
+}
+
+function parseRecurringInput(body: Record<string, unknown>) {
+  return {
+    amount: Number(body.amount),
+    category_id: String(body.category_id ?? ''),
+    description: (body.description ?? null) as string | null,
+    day_of_month: Number(body.day_of_month),
+    start_month: String(body.start_month ?? ''),
+  } satisfies RecurringExpenseInput;
+}
+
+export async function getRecurringExpenses(): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+
+    const recurring = await createSpendtrackService(supabase).getRecurringExpenses(user.id);
+    return jsonResult(200, { recurring });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل تحميل المصروفات المتكررة',
+    });
+  }
+}
+
+export async function createRecurringExpense(body: Record<string, unknown>): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+
+    try {
+      const created = await createSpendtrackService(supabase).createRecurringExpense(
+        user.id,
+        parseRecurringInput(body)
+      );
+      return jsonResult(
+        200,
+        { success: true, recurring: created },
+        {
+          revalidate: SPENDTRACK_LAYOUT_REVALIDATION,
+        }
+      );
+    } catch (error) {
+      return jsonResult(400, {
+        error: error instanceof Error ? error.message : 'فشل إنشاء المصروف المتكرر',
+      });
+    }
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل إنشاء المصروف المتكرر',
+    });
+  }
+}
+
+export async function updateRecurringExpense(
+  id: string,
+  body: Record<string, unknown>
+): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+
+    try {
+      await createSpendtrackService(supabase).updateRecurringExpense(
+        id,
+        user.id,
+        parseRecurringInput(body)
+      );
+    } catch (error) {
+      return jsonResult(400, {
+        error: error instanceof Error ? error.message : 'فشل تحديث المصروف المتكرر',
+      });
+    }
+
+    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل تحديث المصروف المتكرر',
+    });
+  }
+}
+
+export async function deleteRecurringExpense(id: string): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+
+    try {
+      await createSpendtrackService(supabase).deleteRecurringExpense(id, user.id);
+    } catch (error) {
+      return jsonResult(400, {
+        error: error instanceof Error ? error.message : 'فشل حذف المصروف المتكرر',
+      });
+    }
+
+    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل حذف المصروف المتكرر',
     });
   }
 }

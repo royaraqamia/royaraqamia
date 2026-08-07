@@ -2,6 +2,8 @@ import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spe
 import type {
   Category,
   CategoryBudget,
+  RecurringExpense,
+  RecurringExpenseInput,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -175,6 +177,50 @@ export class SpendtrackService {
 
   async deleteCategory(categoryId: string, userId: string): Promise<void> {
     await this.repository.deleteCategory(categoryId, userId);
+  }
+
+  async getRecurringExpenses(userId: string): Promise<RecurringExpense[]> {
+    return this.repository.getRecurringExpenses(userId);
+  }
+
+  async createRecurringExpense(
+    userId: string,
+    input: RecurringExpenseInput
+  ): Promise<RecurringExpense> {
+    this.validateRecurringInput(input);
+    return this.repository.createRecurringExpense(userId, input);
+  }
+
+  async updateRecurringExpense(
+    expenseId: string,
+    userId: string,
+    input: RecurringExpenseInput
+  ): Promise<void> {
+    this.validateRecurringInput(input);
+    await this.repository.updateRecurringExpense(expenseId, userId, input);
+  }
+
+  async deleteRecurringExpense(expenseId: string, userId: string): Promise<void> {
+    await this.repository.deleteRecurringExpense(expenseId, userId);
+  }
+
+  private validateRecurringInput(input: RecurringExpenseInput): void {
+    if (isNaN(input.amount) || input.amount <= 0) {
+      throw new Error('مبلغ غير صالح');
+    }
+    if (!input.category_id) {
+      throw new Error('التصنيف مطلوب');
+    }
+    if (
+      !Number.isInteger(input.day_of_month) ||
+      input.day_of_month < 1 ||
+      input.day_of_month > 31
+    ) {
+      throw new Error('يوم الشهر غير صالح');
+    }
+    if (!/^\d{4}-\d{2}$/.test(input.start_month)) {
+      throw new Error('شهر البداية غير صالح');
+    }
   }
 
   private validateCategoryInput(input: SpendtrackCategoryInput): void {

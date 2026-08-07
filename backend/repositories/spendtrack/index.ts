@@ -3,6 +3,8 @@ import type { Database } from '@/backend/models/database.types';
 import type {
   Category,
   ExpenseWithCategory,
+  RecurringExpense,
+  RecurringExpenseInput,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -286,6 +288,51 @@ export function createSpendtrackRepository(
             .eq('user_id', userId)
             .eq('month', month)
             .is('category_id', null);
+      if (error) throw new Error(error.message);
+    },
+
+    async getRecurringExpenses(userId: string): Promise<RecurringExpense[]> {
+      const { data, error } = await supabase
+        .from('recurring_expenses')
+        .select('id, amount, category_id, description, day_of_month, start_month, active')
+        .eq('user_id', userId)
+        .order('day_of_month');
+      if (error) throw new Error(error.message);
+      return (data ?? []) as RecurringExpense[];
+    },
+
+    async createRecurringExpense(
+      userId: string,
+      input: RecurringExpenseInput
+    ): Promise<RecurringExpense> {
+      const { data, error } = await supabase
+        .from('recurring_expenses')
+        .insert({ user_id: userId, ...input })
+        .select('id, amount, category_id, description, day_of_month, start_month, active')
+        .single();
+      if (error) throw new Error(error.message);
+      return data as RecurringExpense;
+    },
+
+    async updateRecurringExpense(
+      expenseId: string,
+      userId: string,
+      input: RecurringExpenseInput
+    ): Promise<void> {
+      const { error } = await supabase
+        .from('recurring_expenses')
+        .update({ ...input, updated_at: new Date().toISOString() })
+        .eq('id', expenseId)
+        .eq('user_id', userId);
+      if (error) throw new Error(error.message);
+    },
+
+    async deleteRecurringExpense(expenseId: string, userId: string): Promise<void> {
+      const { error } = await supabase
+        .from('recurring_expenses')
+        .delete()
+        .eq('id', expenseId)
+        .eq('user_id', userId);
       if (error) throw new Error(error.message);
     },
 

@@ -1,5 +1,7 @@
 import type {
   Category,
+  RecurringExpense,
+  RecurringExpenseInput,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -55,6 +57,14 @@ export interface SpendtrackRepository {
     month: string
   ): Promise<{ category_id: string | null; amount: number }[]>;
   deleteBudget(userId: string, month: string, categoryId?: string | null): Promise<void>;
+  getRecurringExpenses(userId: string): Promise<RecurringExpense[]>;
+  createRecurringExpense(userId: string, input: RecurringExpenseInput): Promise<RecurringExpense>;
+  updateRecurringExpense(
+    expenseId: string,
+    userId: string,
+    input: RecurringExpenseInput
+  ): Promise<void>;
+  deleteRecurringExpense(expenseId: string, userId: string): Promise<void>;
   createCategory(input: { user_id: string; name: string; colorHex: string }): Promise<void>;
   updateCategory(
     categoryId: string,

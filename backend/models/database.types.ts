@@ -224,6 +224,53 @@ export type Database = {
           },
         ];
       };
+      recurring_expenses: {
+        Row: {
+          active: boolean;
+          amount: number;
+          category_id: string;
+          created_at: string;
+          day_of_month: number;
+          description: string | null;
+          id: string;
+          start_month: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          amount: number;
+          category_id: string;
+          created_at?: string;
+          day_of_month: number;
+          description?: string | null;
+          id?: string;
+          start_month: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          active?: boolean;
+          amount?: number;
+          category_id?: string;
+          created_at?: string;
+          day_of_month?: number;
+          description?: string | null;
+          id?: string;
+          start_month?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recurring_expenses_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       habit_logs: {
         Row: {
           completed: boolean;

@@ -6,6 +6,7 @@ import { createSpendtrackService } from '@/backend/config/spendtrack';
 import type {
   Category,
   CategoryBudget,
+  RecurringExpense,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -65,4 +66,9 @@ export async function loadCategoryBudgets(
   const service = await createService();
   const categories = await service.getUserCategories(userId);
   return service.getCategoryBudgets(userId, month, categories);
+}
+
+export async function loadRecurringExpenses(userId: string): Promise<RecurringExpense[]> {
+  const service = await createService();
+  return service.getRecurringExpenses(userId);
 }

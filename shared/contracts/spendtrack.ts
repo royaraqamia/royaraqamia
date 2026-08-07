@@ -52,3 +52,21 @@ export type CategoryBudget = {
   colorHex: string;
   budget: number | null;
 };
+
+export type RecurringExpense = {
+  id: string;
+  amount: number;
+  category_id: string;
+  description: string | null;
+  day_of_month: number;
+  start_month: string;
+  active: boolean;
+};
+
+export type RecurringExpenseInput = {
+  amount: number;
+  category_id: string;
+  description: string | null;
+  day_of_month: number;
+  start_month: string;
+};

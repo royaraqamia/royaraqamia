@@ -19,6 +19,10 @@ function makeRepo(overrides: Partial<SpendtrackRepository> = {}) {
     setBudget: vi.fn(),
     getBudgets: vi.fn(),
     deleteBudget: vi.fn(),
+    getRecurringExpenses: vi.fn(),
+    createRecurringExpense: vi.fn(),
+    updateRecurringExpense: vi.fn(),
+    deleteRecurringExpense: vi.fn(),
     createCategory: vi.fn(),
     updateCategory: vi.fn(),
     deleteCategory: vi.fn(),
@@ -101,6 +105,71 @@ describe('SpendtrackService budget', () => {
       { categoryId: 'cat-1', name: 'طعام', colorHex: '#000000', budget: 500 },
       { categoryId: 'cat-2', name: 'مواصلات', colorHex: '#ffffff', budget: null },
     ]);
+  });
+});
+
+describe('SpendtrackService recurring expenses', () => {
+  it('validates the recurring input before creating', async () => {
+    const { repository } = makeRepo();
+    (repository.createRecurringExpense as ReturnType<typeof vi.fn>).mockResolvedValue({
+      id: 'r-1',
+      amount: 90,
+      category_id: 'c-1',
+      description: 'فاتورة',
+      day_of_month: 5,
+      start_month: '2026-08',
+      active: true,
+    });
+    const service = makeService(repository);
+
+    const created = await service.createRecurringExpense('u-1', {
+      amount: 90,
+      category_id: 'c-1',
+      description: 'فاتورة',
+      day_of_month: 5,
+      start_month: '2026-08',
+    });
+
+    expect(created.id).toBe('r-1');
+    await expect(
+      service.createRecurringExpense('u-1', {
+        amount: -3,
+        category_id: 'c-1',
+        description: null,
+        day_of_month: 5,
+        start_month: '2026-08',
+      })
+    ).rejects.toThrow('مبلغ غير صالح');
+    await expect(
+      service.createRecurringExpense('u-1', {
+        amount: 10,
+        category_id: 'c-1',
+        description: null,
+        day_of_month: 35,
+        start_month: '2026-08',
+      })
+    ).rejects.toThrow('يوم الشهر غير صالح');
+    await expect(
+      service.createRecurringExpense('u-1', {
+        amount: 10,
+        category_id: 'c-1',
+        description: null,
+        day_of_month: 5,
+        start_month: 'bad',
+      })
+    ).rejects.toThrow('شهر البداية غير صالح');
+  });
+
+  it('delegates delete and list', async () => {
+    const { repository } = makeRepo();
+    (repository.getRecurringExpenses as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+    const service = makeService(repository);
+
+    await service.getRecurringExpenses('u-1');
+    await service.deleteRecurringExpense('r-1', 'u-1');
+
+    expect(repository.getRecurringExpenses).toHaveBeenCalledWith('u-1');
+    expect(repository.deleteRecurringExpense).toHaveBeenCalledWith('r-1', 'u-1');
   });
 });
 
