@@ -3,7 +3,7 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createBlogpressPostsService } from '@/backend/config/blogpress';
-import type { Post, PostCategory } from '@/shared/contracts/blogpress';
+import type { Post, PostCategory, PostTag } from '@/shared/contracts/blogpress';
 
 export async function loadBlogpressDashboard(
   userId: string,
@@ -72,4 +72,26 @@ export async function setPostFeatured(
   const cookieStore = await cookies();
   const supabase = await createServerSupabaseClient(cookieStore);
   return createBlogpressPostsService(supabase).setPostFeatured(postId, authorId, featured);
+}
+
+export async function loadBlogTags(authorId: string): Promise<PostTag[]> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).listTagsByAuthor(authorId);
+}
+
+export async function loadPostTags(postId: string): Promise<PostTag[]> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).getPostTags(postId);
+}
+
+export async function loadManyPostTags(
+  postIds: string[]
+): Promise<Record<string, PostTag[]>> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  const service = createBlogpressPostsService(supabase);
+  const results = await Promise.all(postIds.map((id) => service.getPostTags(id)));
+  return Object.fromEntries(postIds.map((id, i) => [id, results[i] ?? []]));
 }

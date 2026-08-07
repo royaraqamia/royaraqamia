@@ -11,7 +11,11 @@ import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { estimateReadingTime, formatReadingTimeLong } from '@/frontend/shared/reading-time';
-import { loadPublishedPostBySlug, loadBlogPost } from '@/backend/loaders/blog';
+import {
+  loadPublishedPostBySlug,
+  loadBlogPost,
+  loadPublishedPostTags,
+} from '@/backend/loaders/blog';
 import { env } from '@/backend/config/env';
 import type { Metadata } from 'next';
 
@@ -88,6 +92,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
   const headings = extractHeadings(p.content ?? '');
   const postUrl = `${env.siteUrl}/blog/${slug}`;
   const hasHeadings = headings.length > 0;
+  const postTags = await loadPublishedPostTags(p.id);
 
   const markdownComponents = {
     h2: (props: React.ComponentPropsWithoutRef<'h2'>) => {
@@ -242,6 +247,14 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                     <Clock className="size-3.5 text-primary/70 shrink-0" />
                     <span>{formatReadingTimeLong(readingTime)}</span>
                   </div>
+                  {postTags.map((tag) => (
+                    <span
+                      key={tag.id}
+                      className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-semibold text-primary"
+                    >
+                      #{tag.name}
+                    </span>
+                  ))}
                 </div>
               </header>
 

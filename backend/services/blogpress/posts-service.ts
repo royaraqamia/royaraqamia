@@ -2,6 +2,7 @@ import type { PostsRepository } from '@/backend/repositories/blogpress/posts-rep
 import type {
   Post,
   PostCategory,
+  PostTag,
   PostAuthor,
   PublishedPostsResult,
 } from '@/shared/contracts/blogpress';
@@ -125,5 +126,29 @@ export class BlogpressPostsService {
 
   async setPostCategories(postId: string, authorId: string, categoryIds: string[]): Promise<void> {
     return this.repository.setPostCategories(postId, authorId, categoryIds);
+  }
+
+  async getPublishedPostTags(postId: string): Promise<PostTag[]> {
+    return this.repository.getPublishedPostTags(postId);
+  }
+
+  async listTagsByAuthor(authorId: string): Promise<PostTag[]> {
+    return this.repository.listTagsByAuthor(authorId);
+  }
+
+  async createTag(authorId: string, name: string, slug: string): Promise<PostTag> {
+    return this.repository.createTag(authorId, name, slug);
+  }
+
+  async deleteTag(tagId: string, authorId: string): Promise<void> {
+    return this.repository.deleteTag(tagId, authorId);
+  }
+
+  async getPostTags(postId: string): Promise<PostTag[]> {
+    return this.repository.getPostTags(postId);
+  }
+
+  async setPostTags(postId: string, authorId: string, tagIds: string[]): Promise<void> {
+    return this.repository.setPostTags(postId, authorId, tagIds);
   }
 }

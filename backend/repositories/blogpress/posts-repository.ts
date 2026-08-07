@@ -1,6 +1,7 @@
 import type {
   Post,
   PostCategory,
+  PostTag,
   PostAuthor,
   PublishedPostsResult,
 } from '@/shared/contracts/blogpress';
@@ -39,4 +40,10 @@ export interface PostsRepository {
   deleteCategory(categoryId: string, authorId: string): Promise<void>;
   getPostCategories(postId: string): Promise<PostCategory[]>;
   setPostCategories(postId: string, authorId: string, categoryIds: string[]): Promise<void>;
+  getPublishedPostTags(postId: string): Promise<PostTag[]>;
+  listTagsByAuthor(authorId: string): Promise<PostTag[]>;
+  createTag(authorId: string, name: string, slug: string): Promise<PostTag>;
+  deleteTag(tagId: string, authorId: string): Promise<void>;
+  getPostTags(postId: string): Promise<PostTag[]>;
+  setPostTags(postId: string, authorId: string, tagIds: string[]): Promise<void>;
 }

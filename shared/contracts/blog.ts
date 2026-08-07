@@ -15,3 +15,21 @@ export const PostSchema = z.object({
 });
 
 export type PostInput = z.infer<typeof PostSchema>;
+
+export const TagInputSchema = z.object({
+  name: z.string().trim().min(1, 'اسم الوسم مطلوب').max(30, 'الاسم طويل جداً'),
+  slug: z
+    .string()
+    .trim()
+    .min(1, 'رابط الوسم مطلوب')
+    .max(60, 'الرابط طويل جداً')
+    .regex(/^[\w\u0600-\u06FF-]+$/, 'الرابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط'),
+});
+
+export type TagInput = z.infer<typeof TagInputSchema>;
+
+export const PostTagIdsSchema = z.object({
+  tagIds: z.array(z.string().uuid('معرّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم'),
+});
+
+export type PostTagIdsInput = z.infer<typeof PostTagIdsSchema>;

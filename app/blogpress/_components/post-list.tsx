@@ -45,7 +45,7 @@ import {
   createPost,
   setPostFeatured,
 } from '@/frontend/api/blogpress';
-import type { Post, PostCategory, PostStatus } from '@/shared/contracts/blogpress';
+import type { Post, PostTag, PostCategory, PostStatus } from '@/shared/contracts/blogpress';
 import { cn } from '@/frontend/shared/cn';
 import {
   estimateWordCount,
@@ -58,16 +58,17 @@ interface PostListProps {
   posts: Post[];
   categories: PostCategory[];
   activeCategory?: string;
+  tagsByPost?: Record<string, PostTag[]>;
 }
 
 const filters: { label: string; value: PostStatus | 'all' }[] = [
   { label: 'الكل', value: 'all' },
-  { label: 'مسودّة', value: 'draft' },
+  { label: 'مسودَّة', value: 'draft' },
   { label: 'مجدولة', value: 'scheduled' },
   { label: 'منشور', value: 'published' },
 ];
 
-export function PostList({ posts, categories, activeCategory }: PostListProps) {
+export function PostList({ posts, categories, activeCategory, tagsByPost }: PostListProps) {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<PostStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -111,15 +112,14 @@ export function PostList({ posts, categories, activeCategory }: PostListProps) {
   );
 
   return (
-    <div>
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       {categories.length > 0 && (
-        <div
-          className="flex flex-wrap items-center gap-1.5 mb-4"
-          role="group"
-          aria-label="تصفية حسب التصنيف"
+        <nav
+          className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar -mx-1 px-1"
+          aria-label="تصفية حسب التَّصنيف"
         >
           <CategoryChip
-            label="كل التصنيفات"
+            label="كلّ التَّصنيفات"
             slug={undefined}
             active={!activeCategory}
             onSelect={(nextSlug) =>
@@ -137,12 +137,12 @@ export function PostList({ posts, categories, activeCategory }: PostListProps) {
               }
             />
           ))}
-        </div>
+        </nav>
       )}
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div
-          className="inline-flex items-center gap-1 p-1 rounded-xl bg-muted/60 border border-border/50"
+          className="inline-flex items-center p-1 rounded-2xl bg-neutral-100/80 dark:bg-neutral-900/80 border border-neutral-200/60 dark:border-neutral-800/60 backdrop-blur-md shadow-2xs overflow-x-auto no-scrollbar max-w-full"
           role="tablist"
           aria-label="تصفية المقالات"
         >
@@ -155,20 +155,20 @@ export function PostList({ posts, categories, activeCategory }: PostListProps) {
               id={`tab-${f.value}`}
               onClick={() => setActiveFilter(f.value)}
               className={cn(
-                'relative inline-flex items-center gap-1.5 px-3.5 py-2 text-sm rounded-lg transition-smooth cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+                'relative inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all duration-200 ease-out shrink-0 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
                 activeFilter === f.value
-                  ? 'bg-background text-foreground font-medium shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold'
+                  : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/40 dark:hover:bg-neutral-800/40'
               )}
             >
-              {f.label}
+              <span>{f.label}</span>
               {f.value !== 'all' && (
                 <span
                   className={cn(
-                    'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[11px] font-normal rounded-full leading-none transition-smooth',
+                    'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-semibold rounded-full transition-all duration-200',
                     activeFilter === f.value
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-muted-foreground/10 text-muted-foreground'
+                      ? 'bg-primary/10 text-primary dark:bg-primary/20'
+                      : 'bg-neutral-200/70 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
                   )}
                 >
                   {countByStatus[f.value]}
@@ -178,8 +178,8 @@ export function PostList({ posts, categories, activeCategory }: PostListProps) {
           ))}
         </div>
 
-        <div className="relative sm:ms-auto sm:min-w-56">
-          <Search className="absolute inset-e-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground/40 pointer-events-none" />
+        <div className="relative w-full sm:w-64 md:w-72 group">
+          <Search className="absolute inset-s-3 top-1/2 -translate-y-1/2 size-4 text-neutral-400 pointer-events-none transition-colors group-focus-within:text-primary" />
           <input
             ref={searchRef}
             type="text"
@@ -187,7 +187,7 @@ export function PostList({ posts, categories, activeCategory }: PostListProps) {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="بحث في المقالات..."
             aria-label="بحث في المقالات"
-            className="w-full h-9 pr-9 pl-8 rounded-lg bg-muted/50 border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs placeholder:text-muted-foreground/40 outline-none transition-all"
+            className="w-full h-9 ps-9 pe-9 rounded-xl bg-neutral-100/60 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800/80 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 outline-none transition-all duration-200"
           />
           {searchQuery ? (
             <button
@@ -195,13 +195,13 @@ export function PostList({ posts, categories, activeCategory }: PostListProps) {
                 setSearchQuery('');
                 searchRef.current?.focus();
               }}
-              className="absolute inset-s-2 top-1/2 -translate-y-1/2 size-6 flex items-center justify-center rounded-full text-muted-foreground/40 hover:text-foreground hover:bg-muted transition-smooth cursor-pointer"
+              className="absolute inset-e-2 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-all cursor-pointer"
               aria-label="مسح البحث"
             >
               <X className="size-3" />
             </button>
           ) : (
-            <kbd className="absolute inset-s-2 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium text-muted-foreground/30 border border-border/50 bg-muted/30 leading-none pointer-events-none">
+            <kbd className="absolute inset-e-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold text-neutral-400 border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800 pointer-events-none select-none">
               <span className="text-[9px]">⌘</span>K
             </kbd>
           )}
@@ -209,167 +209,222 @@ export function PostList({ posts, categories, activeCategory }: PostListProps) {
       </div>
 
       {searchQuery && (
-        <div className="mb-4 text-xs text-muted-foreground/60">
-          {filteredPosts.length === 0
-            ? 'لا توجد نتائج للبحث'
-            : `عُثر على ${filteredPosts.length} نتيجة`}
+        <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
+          <span>
+            {filteredPosts.length === 0
+              ? 'لا توجد نتائج للبحث'
+              : `عُثِرَ على ${filteredPosts.length} نتيجة`}
+          </span>
         </div>
       )}
 
       <div
-        className="divide-y divide-border/50"
+        className="space-y-2.5"
         role="tabpanel"
         id="tabpanel-posts"
         aria-labelledby={`tab-${activeFilter}`}
       >
         {filteredPosts.length === 0 ? (
-          <EmptyState
-            icon={FileText}
-            className="py-16"
-            title={searchQuery ? 'لا توجد نتائج للبحث' : 'لا توجد مقالات بعد'}
-            description={
-              searchQuery
-                ? 'لم نعثر على مقالات تطابق بحثك.'
-                : activeFilter === 'all'
-                  ? 'أنشئ مقالك الأوَّل للبدء في الكتابة.'
-                  : 'لا توجد مقالات في هذا التَّصنيف.'
-            }
-            action={
-              !searchQuery && activeFilter === 'all' ? (
-                <Button
-                  className="transition-smooth shadow-sm hover:shadow-md rounded-full"
-                  disabled={pending}
-                  onClick={() =>
-                    startTransition(async () => {
-                      try {
-                        const { id } = await createPost();
-                        router.push(`/blogpress/editor/${id}`);
-                      } catch {
-                        // Navigation will not occur on failure
-                      }
-                    })
-                  }
-                  aria-busy={pending}
-                  aria-live="polite"
-                >
-                  {pending ? (
-                    <Loader2 className="ms-2 size-4 animate-spin" />
-                  ) : (
-                    <Plus className="ms-2 size-4" />
-                  )}
-                  {pending ? 'جارٍ الإنشاء...' : 'مقال جديد'}
-                </Button>
-              ) : undefined
-            }
-          />
+          <div className="rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/20 p-8 text-center transition-all">
+            <EmptyState
+              icon={FileText}
+              className="py-12"
+              title={searchQuery ? 'لا توجد نتائج للبحث' : 'لا توجد مقالات بعد'}
+              description={
+                searchQuery
+                  ? 'لم نعثر على مقالات تُطابق بحثك.'
+                  : activeFilter === 'all'
+                    ? 'أنشِئ مقالك الأوَّل للبدء في الكتابة.'
+                    : 'لا توجد مقالات في هذا التَّصنيف.'
+              }
+              action={
+                !searchQuery && activeFilter === 'all' ? (
+                  <Button
+                    className="transition-all duration-200 shadow-sm hover:shadow-md rounded-xl active:scale-[0.98] font-medium"
+                    disabled={pending}
+                    onClick={() =>
+                      startTransition(async () => {
+                        try {
+                          const { id } = await createPost();
+                          router.push(`/blogpress/editor/${id}`);
+                        } catch {
+                          // Navigation will not occur on failure
+                        }
+                      })
+                    }
+                    aria-busy={pending}
+                    aria-live="polite"
+                  >
+                    {pending ? (
+                      <Loader2 className="ms-2 size-4 animate-spin" />
+                    ) : (
+                      <Plus className="ms-2 size-4" />
+                    )}
+                    {pending ? 'جاري الإنشاء...' : 'مقال جديد'}
+                  </Button>
+                ) : undefined
+              }
+            />
+          </div>
         ) : (
-          filteredPosts.map((post) => <PostRow key={post.id} post={post} />)
+          filteredPosts.map((post) => (
+            <PostRow key={post.id} post={post} tags={tagsByPost?.[post.id] ?? []} />
+          ))
         )}
       </div>
     </div>
   );
 }
 
-function PostRow({ post }: { post: Post }) {
+function PostRow({ post, tags }: { post: Post; tags: PostTag[] }) {
   const router = useRouter();
   const wordCount = estimateWordCount(post.content);
   const readingTime = estimateReadingTime(post.content);
 
   return (
-    <div className="flex items-center gap-4 py-4 transition-smooth hover:bg-muted/30 -mx-2 px-2 rounded-lg">
-      <Link href={`/blogpress/editor/${post.id}`} className="shrink-0">
-        {post.cover_image ? (
-          <div className="size-12 rounded-lg overflow-hidden bg-muted ring-1 ring-border/50">
-            <Image
-              src={post.cover_image}
-              alt=""
-              width={48}
-              height={48}
-              className="object-cover size-full"
-              unoptimized
-            />
-          </div>
-        ) : (
-          <div className="size-12 rounded-lg bg-linear-to-br from-primary/10 to-primary/5 flex items-center justify-center ring-1 ring-border/50">
-            <FileText className="size-5 text-primary/40" />
-          </div>
-        )}
-      </Link>
+    <article className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-neutral-900/50 border border-neutral-200/70 dark:border-neutral-800/80 hover:border-neutral-300 dark:hover:border-neutral-700/80 hover:shadow-md dark:hover:shadow-neutral-950/50 transition-all duration-300 ease-out">
+      <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+        <Link
+          href={`/blogpress/editor/${post.id}`}
+          className="shrink-0 relative group/thumb overflow-hidden rounded-xl ring-1 ring-neutral-200/80 dark:ring-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          {post.cover_image ? (
+            <div className="size-12 sm:size-14 rounded-xl overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+              <Image
+                src={post.cover_image}
+                alt=""
+                width={56}
+                height={56}
+                className="object-cover size-full group-hover/thumb:scale-105 transition-transform duration-300 ease-out"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="size-12 sm:size-14 rounded-xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent flex items-center justify-center group-hover/thumb:scale-105 transition-transform duration-300 ease-out">
+              <FileText className="size-5 sm:size-6 text-primary/60" />
+            </div>
+          )}
+        </Link>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1.5 min-w-0">
-          {post.featured && <Pin className="size-3.5 shrink-0 text-primary" aria-label="مثبّت" />}
-          <Link
-            href={`/blogpress/editor/${post.id}`}
-            className="text-sm font-medium hover:text-primary transition-smooth truncate block"
-          >
-            {post.title || 'بدون عنوان'}
-          </Link>
-        </div>
-        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-0.5 mt-0.5">
-          <span className="text-xs text-muted-foreground/60">/{post.slug}</span>
-          <span className="text-muted-foreground/30">&middot;</span>
-          <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
-            <Clock className="size-3" />
-            {wordCount.toLocaleString('ar-u-nu-latn')} كلمة &middot;{' '}
-            {formatReadingTime(readingTime)}
-          </span>
-          <span className="text-muted-foreground/30">&middot;</span>
-          <span className="text-xs text-muted-foreground/60 flex items-center gap-1">
-            <Eye className="size-3" />
-            {(post.view_count ?? 0).toLocaleString('ar-u-nu-latn')}
-          </span>
-          <span className="text-muted-foreground/30">&middot;</span>
-          <span className="text-xs text-muted-foreground/60">
-            {post.status === 'published'
-              ? `نُشر ${post.published_at ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.published_at)) : ''}`
-              : post.status === 'scheduled'
-                ? `يُنشر في ${post.publish_at ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.publish_at)) : ''}`
-                : `آخر تعديل ${new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.updated_at))}`}
-          </span>
+        <div className="flex-1 min-w-0 space-y-1">
+          <div className="flex items-center gap-2 min-w-0">
+            {post.featured && (
+              <span
+                className="inline-flex items-center shrink-0 p-1 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 ring-1 ring-amber-500/20"
+                title="مُثبَّت"
+              >
+                <Pin className="size-3 fill-amber-500/20" aria-label="مُثبَّت" />
+              </span>
+            )}
+            <Link
+              href={`/blogpress/editor/${post.id}`}
+              className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-100 hover:text-primary transition-colors truncate block focus-visible:outline-none focus-visible:underline"
+            >
+              {post.title || 'بدون عنوان'}
+            </Link>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-neutral-500 dark:text-neutral-400">
+            <span className="font-mono text-[11px] text-neutral-400 dark:text-neutral-500 truncate max-w-35 sm:max-w-50">
+              /{post.slug}
+            </span>
+            <span className="text-neutral-300 dark:text-neutral-700">&bull;</span>
+            <span className="flex items-center gap-1 font-medium">
+              <Clock className="size-3 text-neutral-400" />
+              {wordCount.toLocaleString('ar-u-nu-latn')} كلمة &bull;{' '}
+              {formatReadingTime(readingTime)}
+            </span>
+            <span className="text-neutral-300 dark:text-neutral-700">&bull;</span>
+            <span className="flex items-center gap-1">
+              <Eye className="size-3 text-neutral-400" />
+              {(post.view_count ?? 0).toLocaleString('ar-u-nu-latn')}
+            </span>
+            <span className="text-neutral-300 dark:text-neutral-700">&bull;</span>
+            <span className="text-neutral-500 dark:text-neutral-400">
+              {post.status === 'published'
+                ? `نُشِرَ ${post.published_at ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.published_at)) : ''}`
+                : post.status === 'scheduled'
+                  ? `يُنشَر في ${post.publish_at ? new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.publish_at)) : ''}`
+                  : `آخر تعديل ${new Intl.DateTimeFormat('ar-SA-u-nu-latn', { year: 'numeric', month: '2-digit', day: '2-digit', calendar: 'islamic-umalqura' }).format(new Date(post.updated_at))}`}
+            </span>
+          </div>
+
+          {tags.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 pt-1">
+              {tags.map((tag) => (
+                <span
+                  key={tag.id}
+                  className="inline-flex items-center rounded-full bg-primary/5 text-primary border border-primary/15 px-2 py-0.5 text-[11px] font-medium"
+                >
+                  #{tag.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100 dark:border-neutral-800/60">
         <span
           className={cn(
-            'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium',
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border shadow-2xs',
             post.status === 'published'
-              ? 'bg-success/10 text-success'
+              ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
               : post.status === 'scheduled'
-                ? 'bg-info/10 text-info'
-                : 'bg-warning/10 text-warning'
+                ? 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20'
+                : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
           )}
         >
+          <span
+            className={cn(
+              'size-1.5 rounded-full',
+              post.status === 'published'
+                ? 'bg-emerald-500'
+                : post.status === 'scheduled'
+                  ? 'bg-sky-500'
+                  : 'bg-amber-500'
+            )}
+          />
           {post.status === 'published'
             ? 'منشور'
             : post.status === 'scheduled'
               ? 'مجدولة'
-              : 'مسودّة'}
+              : 'مسودَّة'}
         </span>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               size="icon-sm"
               aria-label="إجراءات المقال"
-              className="transition-smooth"
+              className="rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <MoreHorizontal className="size-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="min-w-40">
+          <DropdownMenuContent
+            align="end"
+            className="min-w-44 rounded-xl p-1.5 shadow-lg border border-neutral-200/80 dark:border-neutral-800 bg-white dark:bg-neutral-900"
+          >
             <DropdownMenuItem asChild>
-              <Link href={`/blogpress/editor/${post.id}`} className="cursor-pointer">
-                <PenLine className="ms-2 size-4" />
-                تعديل
+              <Link
+                href={`/blogpress/editor/${post.id}`}
+                className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
+              >
+                <PenLine className="size-4 text-neutral-500 me-2" />
+                <span>تعديل</span>
               </Link>
             </DropdownMenuItem>
             {post.status === 'published' && (
               <DropdownMenuItem asChild>
-                <Link href={`/blog/${post.slug}`} target="_blank" className="cursor-pointer">
-                  <ExternalLink className="ms-2 size-4" />
-                  عرض
+                <Link
+                  href={`/blog/${post.slug}`}
+                  target="_blank"
+                  className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
+                >
+                  <ExternalLink className="size-4 text-neutral-500 me-2" />
+                  <span>عرض</span>
                 </Link>
               </DropdownMenuItem>
             )}
@@ -383,10 +438,10 @@ function PostRow({ post }: { post: Post }) {
                     toast.error('فشل نشر المقال');
                   }
                 }}
-                className="cursor-pointer"
+                className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
               >
-                <Eye className="ms-2 size-4" />
-                نشر
+                <Eye className="size-4 text-neutral-500 me-2" />
+                <span>نشر</span>
               </DropdownMenuItem>
             ) : (
               <DropdownMenuItem
@@ -400,18 +455,18 @@ function PostRow({ post }: { post: Post }) {
                     router.refresh();
                   } catch {
                     toast.error(
-                      post.status === 'scheduled' ? 'فشل النشر الآن' : 'فشل إلغاء النَّشر'
+                      post.status === 'scheduled' ? 'فشل النَّشر الآن' : 'فشل إلغاء النَّشر'
                     );
                   }
                 }}
-                className="cursor-pointer"
+                className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
               >
                 {post.status === 'scheduled' ? (
-                  <Eye className="ms-2 size-4" />
+                  <Eye className="size-4 text-neutral-500 me-2" />
                 ) : (
-                  <EyeOff className="ms-2 size-4" />
+                  <EyeOff className="size-4 text-neutral-500 me-2" />
                 )}
-                {post.status === 'scheduled' ? 'نشر الآن' : 'إلغاء النَّشر'}
+                <span>{post.status === 'scheduled' ? 'نشر الآن' : 'إلغاء النَّشر'}</span>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -420,33 +475,46 @@ function PostRow({ post }: { post: Post }) {
                   await setPostFeatured(post.id, !post.featured);
                   router.refresh();
                 } catch {
-                  toast.error('فشل تحديث التثبيت');
+                  toast.error('فشل تحديث التَّثبيت');
                 }
               }}
-              className="cursor-pointer"
+              className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
             >
-              {post.featured ? <PinOff className="ms-2 size-4" /> : <Pin className="ms-2 size-4" />}
-              {post.featured ? 'إلغاء التثبيت' : 'تثبيت'}
+              {post.featured ? (
+                <PinOff className="size-4 text-neutral-500 me-2" />
+              ) : (
+                <Pin className="size-4 text-neutral-500 me-2" />
+              )}
+              <span>{post.featured ? 'إلغاء التَّثبيت' : 'تثبيت'}</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            <DropdownMenuSeparator className="my-1 border-neutral-100 dark:border-neutral-800" />
             <Dialog>
               <DialogTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="cursor-pointer">
-                  <Trash2 className="ms-2 size-4 text-destructive" />
-                  <span className="text-destructive">حذف</span>
+                <DropdownMenuItem
+                  onSelect={(e) => e.preventDefault()}
+                  className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium text-red-600 dark:text-red-400 focus:bg-red-50 dark:focus:bg-red-950/30"
+                >
+                  <Trash2 className="size-4 text-red-500 me-2" />
+                  <span>حذف</span>
                 </DropdownMenuItem>
               </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>حذف المقال</DialogTitle>
-                  <DialogDescription>
+              <DialogContent className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 backdrop-blur-xl max-w-md p-6">
+                <DialogHeader className="space-y-2 text-start">
+                  <DialogTitle className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                    حذف المقال
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
                     هل أنت متأكِّد من حذف &ldquo;{post.title || 'بدون عنوان'}&rdquo;؟ لا يمكن
                     التَّراجع عن هذا الإجراء.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex justify-end gap-2">
+                <div className="flex items-center justify-end gap-2.5 mt-6">
                   <DialogTrigger asChild>
-                    <Button variant="outline" type="button" className="rounded-full">
+                    <Button
+                      variant="outline"
+                      type="button"
+                      className="rounded-xl text-xs font-medium h-9 px-4"
+                    >
                       إلغاء
                     </Button>
                   </DialogTrigger>
@@ -461,7 +529,7 @@ function PostRow({ post }: { post: Post }) {
                           toast.error('فشل حذف المقال');
                         }
                       }}
-                      className="rounded-full"
+                      className="rounded-xl text-xs font-medium h-9 px-4 bg-red-600 hover:bg-red-700 text-white"
                     >
                       حذف
                     </Button>
@@ -472,7 +540,7 @@ function PostRow({ post }: { post: Post }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -489,10 +557,10 @@ function CategoryChip({ label, slug, active, onSelect }: CategoryChipProps) {
       onClick={() => onSelect(slug)}
       aria-pressed={active}
       className={cn(
-        'inline-flex items-center gap-1 px-3 py-1.5 text-xs rounded-full border transition-smooth cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background',
+        'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-medium transition-all duration-200 ease-out shrink-0 cursor-pointer select-none border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
         active
-          ? 'bg-primary/10 text-primary border-primary/20 font-medium'
-          : 'bg-muted/40 text-muted-foreground border-border/50 hover:text-foreground hover:border-border'
+          ? 'bg-primary/10 text-primary border-primary/30 dark:bg-primary/20 shadow-2xs font-semibold'
+          : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200/80 dark:border-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
       )}
     >
       {label}

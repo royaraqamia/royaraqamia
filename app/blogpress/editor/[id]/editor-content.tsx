@@ -21,10 +21,10 @@ import {
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
 import { ArrowRight, Loader2, Check, X, Save, Send, Upload, Focus, PanelRight } from 'lucide-react';
-import { updatePost, saveAndPublishPost } from '@/frontend/api/blogpress';
+import { updatePost, saveAndPublishPost, setPostTags, createTag } from '@/frontend/api/blogpress';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
-import type { Post } from '@/shared/contracts/blogpress';
+import type { Post, PostTag } from '@/shared/contracts/blogpress';
 import { estimateWordCount, formatReadingTimeLong } from '@/frontend/shared/reading-time';
 import { estimateContentStats } from '@/frontend/shared/blogpress/content-stats';
 import { usePostAutosave } from '@/frontend/state/blogpress/use-post-autosave';
@@ -35,9 +35,11 @@ import { EditorSidePanel } from '@/frontend/ui/blogpress/editor-side-panel';
 
 interface EditorContentProps {
   post: Post;
+  availableTags: PostTag[];
+  initialPostTags: PostTag[];
 }
 
-export function EditorContent({ post }: EditorContentProps) {
+export function EditorContent({ post, availableTags, initialPostTags }: EditorContentProps) {
   const router = useRouter();
   const editorRef = useRef<TiptapEditorRef>(null);
   const {
@@ -80,6 +82,8 @@ export function EditorContent({ post }: EditorContentProps) {
   const [linkUrl, setLinkUrl] = useState('');
   const [distractionFree, setDistractionFree] = useState(false);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
+  const [availableTagList, setAvailableTagList] = useState<PostTag[]>(availableTags);
+  const [selectedTags, setSelectedTags] = useState<PostTag[]>(initialPostTags);
   const [, forceRender] = useReducer((x) => x + 1, 0);
 
   const wordCount = useMemo(() => estimateWordCount(content), [content]);
@@ -148,6 +152,48 @@ export function EditorContent({ post }: EditorContentProps) {
     if (slug === '' || slug.startsWith('post-')) return;
     if (title && slug === generateSlug(title)) setSlug(generateSlug(title));
   }, [title, slug, setSlug, generateSlug]);
+
+  const persistPostTags = useCallback(
+    (next: PostTag[]) => {
+      setSelectedTags(next);
+      setPostTags(
+        post.id,
+        next.map((t) => t.id)
+      ).catch(() => {
+        toast.error('فشل حفظ الوسوم');
+      });
+    },
+    [post.id]
+  );
+
+  const handleToggleTag = useCallback(
+    (tag: PostTag) => {
+      const selectedIds = new Set(selectedTags.map((t) => t.id));
+      const next = selectedIds.has(tag.id)
+        ? selectedTags.filter((t) => t.id !== tag.id)
+        : [...selectedTags, tag];
+      persistPostTags(next);
+    },
+    [selectedTags, persistPostTags]
+  );
+
+  const handleCreateTag = useCallback(
+    async (name: string, slug: string): Promise<PostTag | null> => {
+      const result = await createTag({ name, slug });
+      if ('errors' in result && result.errors) {
+        toast.error('فشل إنشاء الوسم');
+        return null;
+      }
+      if ('tag' in result) {
+        setAvailableTagList((prev) =>
+          prev.some((t) => t.id === result.tag.id) ? prev : [...prev, result.tag]
+        );
+        return result.tag;
+      }
+      return null;
+    },
+    []
+  );
 
   const getPublishChecks = useCallback(
     () => [
@@ -384,6 +430,10 @@ export function EditorContent({ post }: EditorContentProps) {
             metaDesc={metaDesc}
             setMetaDesc={setMetaDesc}
             stats={contentStats}
+            availableTags={availableTagList}
+            selectedTags={selectedTags}
+            onToggleTag={handleToggleTag}
+            onCreateTag={handleCreateTag}
           />
         )}
       </div>

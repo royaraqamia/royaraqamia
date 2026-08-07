@@ -1,4 +1,5 @@
 import { request } from '@/frontend/transport/http';
+import type { PostTag } from '@/shared/contracts/blogpress';
 
 export interface PostFields {
   title: string;
@@ -69,4 +70,34 @@ export async function uploadImage(
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'فشل رفع الصُّورة' };
   }
+}
+
+export async function listTags(): Promise<PostTag[]> {
+  return request<{ tags: PostTag[] }>('/api/blogpress/tags', { method: 'GET' }).then(
+    (res) => res.tags
+  );
+}
+
+export async function createTag(input: {
+  name: string;
+  slug: string;
+}): Promise<{ tag: PostTag } | { errors?: Record<string, string[]> }> {
+  return request<{ tag: PostTag } | { errors?: Record<string, string[]> }>(
+    '/api/blogpress/tags',
+    { method: 'POST', body: JSON.stringify(input) }
+  );
+}
+
+export async function deleteTag(tagId: string): Promise<void> {
+  await request(`/api/blogpress/tags/${encodeURIComponent(tagId)}`, { method: 'DELETE' });
+}
+
+export async function setPostTags(
+  postId: string,
+  tagIds: string[]
+): Promise<{ success?: boolean } | { errors?: Record<string, string[]> }> {
+  return request<{ success?: boolean } | { errors?: Record<string, string[]> }>(
+    `/api/blogpress/posts/${encodeURIComponent(postId)}/tags`,
+    { method: 'PUT', body: JSON.stringify({ tagIds }) }
+  );
 }

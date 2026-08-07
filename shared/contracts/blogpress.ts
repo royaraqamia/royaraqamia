@@ -25,6 +25,12 @@ export interface PostCategory {
   slug: string;
 }
 
+export interface PostTag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface PostAuthor {
   name: string | null;
   avatar_url: string | null;

@@ -52,6 +52,12 @@ function makeRepo(
     deleteCategory: vi.fn(),
     getPostCategories: vi.fn(),
     setPostCategories: vi.fn(),
+    getPublishedPostTags: vi.fn(),
+    listTagsByAuthor: vi.fn(),
+    createTag: vi.fn(),
+    deleteTag: vi.fn(),
+    getPostTags: vi.fn(),
+    setPostTags: vi.fn(),
     ...overrides,
   };
   return {
@@ -150,6 +156,27 @@ describe('BlogpressPostsService (thin delegation)', () => {
 
     await service.incrementPostViewCount('p-1');
     expect(repository.incrementPostViewCount).toHaveBeenCalledWith('p-1');
+  });
+
+  it('delegates tag methods', async () => {
+    const { repository, service } = makeRepo();
+    const tag = { id: 't-1', name: 'تقنية', slug: 'tech' };
+    (repository.getPublishedPostTags as ReturnType<typeof vi.fn>).mockResolvedValue([tag]);
+    (repository.listTagsByAuthor as ReturnType<typeof vi.fn>).mockResolvedValue([tag]);
+    (repository.createTag as ReturnType<typeof vi.fn>).mockResolvedValue(tag);
+    (repository.getPostTags as ReturnType<typeof vi.fn>).mockResolvedValue([tag]);
+
+    await expect(service.getPublishedPostTags('p-1')).resolves.toEqual([tag]);
+    await expect(service.listTagsByAuthor('u-1')).resolves.toEqual([tag]);
+    await expect(service.createTag('u-1', 'تقنية', 'tech')).resolves.toEqual(tag);
+    expect(repository.createTag).toHaveBeenCalledWith('u-1', 'تقنية', 'tech');
+    await expect(service.getPostTags('p-1')).resolves.toEqual([tag]);
+
+    await service.deleteTag('t-1', 'u-1');
+    expect(repository.deleteTag).toHaveBeenCalledWith('t-1', 'u-1');
+
+    await service.setPostTags('p-1', 'u-1', ['t-1']);
+    expect(repository.setPostTags).toHaveBeenCalledWith('p-1', 'u-1', ['t-1']);
   });
 
   it('delegates getPostForUser', async () => {

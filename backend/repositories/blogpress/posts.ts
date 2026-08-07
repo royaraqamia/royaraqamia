@@ -3,6 +3,7 @@ import type { Database } from '@/backend/models/database.types';
 import type {
   Post,
   PostCategory,
+  PostTag,
   PostAuthor,
   PublishedPostsResult,
 } from '@/shared/contracts/blogpress';
@@ -43,6 +44,19 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       }
     }
     return categories;
+  }
+
+  function mapTagRows(rows: Array<{ blog_tags: PostTag | null }>): PostTag[] {
+    const seen = new Set<string>();
+    const tags: PostTag[] = [];
+    for (const row of rows) {
+      const tag = row.blog_tags;
+      if (tag && !seen.has(tag.id)) {
+        seen.add(tag.id);
+        tags.push(tag);
+      }
+    }
+    return tags;
   }
 
   return {
@@ -351,6 +365,63 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       const rows = categoryIds.map((category_id) => ({ post_id: postId, category_id }));
       const { error } = await supabase.from('post_categories').insert(rows);
       if (error) throw new Error('فشل تحديث تصنيفات المقال');
+    },
+
+    async getPublishedPostTags(postId: string): Promise<PostTag[]> {
+      const { data } = await supabase
+        .from('post_tags')
+        .select('blog_tags(id, name, slug)')
+        .eq('post_id', postId);
+      return mapTagRows(data ?? []);
+    },
+
+    async listTagsByAuthor(authorId: string): Promise<PostTag[]> {
+      const { data } = await supabase
+        .from('blog_tags')
+        .select('id, name, slug')
+        .eq('user_id', authorId)
+        .order('created_at', { ascending: true });
+      return (data as PostTag[]) ?? [];
+    },
+
+    async createTag(authorId: string, name: string, slug: string): Promise<PostTag> {
+      const { data, error } = await supabase
+        .from('blog_tags')
+        .insert({ user_id: authorId, name, slug })
+        .select('id, name, slug')
+        .single();
+
+      if (error) throw new Error('فشل إنشاء الوسم');
+
+      return data as PostTag;
+    },
+
+    async deleteTag(tagId: string, authorId: string): Promise<void> {
+      const { error } = await supabase
+        .from('blog_tags')
+        .delete()
+        .eq('id', tagId)
+        .eq('user_id', authorId);
+
+      if (error) throw new Error('فشل حذف الوسم');
+    },
+
+    async getPostTags(postId: string): Promise<PostTag[]> {
+      const { data } = await supabase
+        .from('post_tags')
+        .select('blog_tags(id, name, slug)')
+        .eq('post_id', postId);
+      return mapTagRows(data ?? []);
+    },
+
+    async setPostTags(postId: string, _authorId: string, tagIds: string[]): Promise<void> {
+      await supabase.from('post_tags').delete().eq('post_id', postId);
+
+      if (tagIds.length === 0) return;
+
+      const rows = tagIds.map((tag_id) => ({ post_id: postId, tag_id }));
+      const { error } = await supabase.from('post_tags').insert(rows);
+      if (error) throw new Error('فشل تحديث وسوم المقال');
     },
   };
 }

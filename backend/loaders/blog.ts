@@ -9,6 +9,7 @@ import {
 import type {
   Post,
   PostCategory,
+  PostTag,
   PostAuthor,
   PublishedPostsResult,
 } from '@/shared/contracts/blogpress';
@@ -39,6 +40,12 @@ export async function loadPublishedPostCategories(postId: string): Promise<PostC
   const cookieStore = await cookies();
   const supabase = await createServerSupabaseClient(cookieStore);
   return createBlogpressPostsService(supabase).getPublishedPostCategories(postId);
+}
+
+export async function loadPublishedPostTags(postId: string): Promise<PostTag[]> {
+  const cookieStore = await cookies();
+  const supabase = await createServerSupabaseClient(cookieStore);
+  return createBlogpressPostsService(supabase).getPublishedPostTags(postId);
 }
 
 export async function loadIncrementPostViewCount(postId: string): Promise<void> {
