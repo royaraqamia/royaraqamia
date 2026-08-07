@@ -1,6 +1,6 @@
 import { createElement } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { Check, Flame, Edit3, Snowflake } from 'lucide-react';
+import { Check, Flame, Edit3, Snowflake, NotebookPen } from 'lucide-react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { calculateHabitStats } from '@/frontend/shared/habitflow/habit-stats';
 import { getIconComponent, getIconColorClass } from '@/frontend/shared/habitflow/habit-icons';
@@ -13,6 +13,7 @@ interface HabitCardProps {
   activeDate: string;
   onToggle: (habitId: string) => void;
   onSkip: (habitId: string) => void;
+  onNote: (habitId: string) => void;
   onEdit: (habit: Habit) => void;
   togglingHabitId?: string | null;
   skippingHabitId?: string | null;
@@ -24,6 +25,7 @@ export function HabitCard({
   activeDate,
   onToggle,
   onSkip,
+  onNote,
   onEdit,
   togglingHabitId,
   skippingHabitId,
@@ -35,6 +37,7 @@ export function HabitCard({
   const isSkipped = logs.some(
     (l) => l.habitId === habit.id && l.date === activeDate && l.kind === 'skip'
   );
+  const hasNote = logs.some((l) => l.habitId === habit.id && l.date === activeDate && !!l.note);
   const isToggling = togglingHabitId === habit.id;
   const isSkipping = skippingHabitId === habit.id;
   const stats = calculateHabitStats(habit.id, logs, activeDate);
@@ -149,6 +152,23 @@ export function HabitCard({
           title="تخطي هذا اليوم دون كسر السلسلة"
         >
           <Snowflake className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onNote(habit.id)}
+          aria-label={`ملاحظة عادة ${habit.name} لهذا اليوم`}
+          aria-pressed={hasNote}
+          id={`note-habit-${habit.id}`}
+          className={`shrink-0 rounded-xl transition-all duration-200 touch-target focus-ring btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
+            hasNote
+              ? 'bg-primary/10 text-primary border border-primary/25'
+              : 'text-muted-foreground/70 hover:text-primary hover:bg-primary/10 opacity-70 group-hover:opacity-100'
+          }`}
+          title={hasNote ? 'تعديل ملاحظة اليوم' : 'إضافة ملاحظة'}
+        >
+          <NotebookPen className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
         </Button>
 
         <Button

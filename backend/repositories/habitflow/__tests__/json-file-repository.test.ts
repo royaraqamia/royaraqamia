@@ -116,6 +116,20 @@ describe('JsonFileHabitRepository', () => {
     expect(cleared.kind).toBeUndefined();
   });
 
+  it('sets, reads and clears a note on a log', async () => {
+    const repo = await loadRepo();
+    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+
+    const saved = await repo.setLogNote(habit.id, '2026-08-01', 'شعرت بالتركيز بعد القراءة');
+    expect(saved.note).toBe('شعرت بالتركيز بعد القراءة');
+
+    const [persisted] = await repo.getLogs('2026-08-01', '2026-08-01');
+    expect(persisted?.note).toBe('شعرت بالتركيز بعد القراءة');
+
+    const cleared = await repo.setLogNote(habit.id, '2026-08-01', null);
+    expect(cleared.note).toBeNull();
+  });
+
   it('keeps one log per habit+date (upsert behaviour)', async () => {
     const repo = await loadRepo();
     const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });

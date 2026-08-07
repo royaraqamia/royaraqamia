@@ -142,6 +142,29 @@ export class LocalStorageHabitRepository implements HabitRepository {
     return newLog;
   }
 
+  async setLogNote(habitId: string, date: string, note: string | null): Promise<HabitLog> {
+    const logs = readLogs();
+    const existingIndex = logs.findIndex((log) => log.habitId === habitId && log.date === date);
+
+    if (existingIndex !== -1) {
+      logs[existingIndex]!.note = note;
+      writeLogs(logs);
+      return logs[existingIndex]!;
+    }
+
+    const newLog: HabitLog = {
+      id: `l-${Math.random().toString(36).substring(2, 9)}`,
+      habitId,
+      date,
+      completed: false,
+      completedAt: null,
+      note,
+    };
+    logs.push(newLog);
+    writeLogs(logs);
+    return newLog;
+  }
+
   async restoreFromBackup(input: HabitRestoreInput): Promise<void> {
     writeHabits(
       input.habits.map((h) => ({
@@ -160,6 +183,8 @@ export class LocalStorageHabitRepository implements HabitRepository {
         date: l.date,
         completed: l.completed,
         completedAt: l.completedAt || null,
+        kind: l.kind === 'skip' || l.kind === 'miss' || l.kind === 'complete' ? l.kind : undefined,
+        note: l.note ?? null,
       }))
     );
   }

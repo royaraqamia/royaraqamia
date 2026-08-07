@@ -53,12 +53,8 @@ export function useDashboard(seed: DashboardSeed) {
     closeEditModal,
   } = useDashboardForm(user, setHabits);
 
-  const { togglingHabitId, skippingHabitId, handleToggleLog, handleSkipHabit } = useDashboardToggle(
-    user,
-    logs,
-    setLogs,
-    activeDate
-  );
+  const { togglingHabitId, skippingHabitId, handleToggleLog, handleSkipHabit, handleSaveNote } =
+    useDashboardToggle(user, logs, setLogs, activeDate);
 
   const {
     fileInputRef,
@@ -100,6 +96,7 @@ export function useDashboard(seed: DashboardSeed) {
     confirmArchiveHabitId,
     handleToggleLog,
     handleSkipHabit,
+    handleSaveNote,
     handleDownloadBackup,
     handleImportBackupFile,
     showImportConfirm,

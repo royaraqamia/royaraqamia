@@ -150,6 +150,7 @@ export class JsonFileHabitRepository implements HabitRepository {
         completed: l.completed,
         completedAt: l.completedAt || null,
         kind: l.kind === 'skip' || l.kind === 'miss' || l.kind === 'complete' ? l.kind : undefined,
+        note: l.note ?? null,
       })),
     };
     this.writeDb(restoredData);
@@ -205,6 +206,29 @@ export class JsonFileHabitRepository implements HabitRepository {
       completed,
       completedAt: completed ? new Date().toISOString() : null,
       ...(kind !== 'none' ? { kind } : {}),
+    };
+    db.logs.push(newLog);
+    this.writeDb(db);
+    return newLog;
+  }
+
+  async setLogNote(habitId: string, date: string, note: string | null): Promise<HabitLog> {
+    const db = this.readDb();
+    const existingIndex = db.logs.findIndex((log) => log.habitId === habitId && log.date === date);
+
+    if (existingIndex !== -1) {
+      db.logs[existingIndex]!.note = note;
+      this.writeDb(db);
+      return db.logs[existingIndex]!;
+    }
+
+    const newLog: HabitLog = {
+      id: `l-${Math.random().toString(36).substr(2, 9)}`,
+      habitId,
+      date,
+      completed: false,
+      completedAt: null,
+      note,
     };
     db.logs.push(newLog);
     this.writeDb(db);

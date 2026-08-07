@@ -84,6 +84,23 @@ export async function toggleLog(body: Record<string, unknown>): Promise<HttpResu
   }
 }
 
+export async function setHabitLogNote(body: Record<string, unknown>): Promise<HttpResult> {
+  try {
+    const { user, client } = await getOptionalUser();
+    const { habitId, date, note } = body;
+    const { service, mode } = createHabitService(user?.id, client ?? undefined);
+    const log = await service.setHabitLogNote({
+      habitId: habitId as string,
+      date: date as string,
+      note: (note as string | null | undefined) ?? null,
+    });
+
+    return jsonResult(200, { log, mode });
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
 export async function setHabitLogKind(body: Record<string, unknown>): Promise<HttpResult> {
   try {
     const { user, client } = await getOptionalUser();

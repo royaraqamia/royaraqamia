@@ -28,6 +28,7 @@ import { HabitCard } from '@/frontend/ui/habitflow/components/habit-card';
 import { CalendarGrid } from '@/frontend/ui/habitflow/components/calendar-grid';
 import { AddHabitModal } from '@/frontend/ui/habitflow/components/add-habit-modal';
 import { EditHabitModal } from '@/frontend/ui/habitflow/components/edit-habit-modal';
+import { NotesDialog } from '@/frontend/ui/habitflow/components/notes-dialog';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 interface DashboardShellProps {
@@ -74,6 +75,7 @@ export function DashboardShell({
     confirmArchiveHabitId,
     handleToggleLog,
     handleSkipHabit,
+    handleSaveNote,
     handleDownloadBackup,
     handleImportBackupFile,
     showImportConfirm,
@@ -99,6 +101,7 @@ export function DashboardShell({
 
   const shouldReduce = useReducedMotion();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [noteHabitId, setNoteHabitId] = useState<string | null>(null);
   const { signOut, isLoggingOut } = useLogout();
 
   useEffect(() => {
@@ -312,6 +315,7 @@ export function DashboardShell({
                       activeDate={activeDate}
                       onToggle={handleToggleLog}
                       onSkip={handleSkipHabit}
+                      onNote={setNoteHabitId}
                       onEdit={openEditModal}
                       togglingHabitId={togglingHabitId}
                       skippingHabitId={skippingHabitId}
@@ -425,6 +429,22 @@ export function DashboardShell({
             onFrequencyChange={setHabitFrequency}
             onSubmit={handleEditHabit}
             onArchive={handleArchiveHabit}
+          />
+
+          <NotesDialog
+            isOpen={!!noteHabitId}
+            habitName={habits.find((h) => h.id === noteHabitId)?.name ?? 'العادة'}
+            dateLabel={getReadableActiveDate()}
+            initialNote={
+              noteHabitId
+                ? (logs.find((l) => l.habitId === noteHabitId && l.date === activeDate)?.note ?? '')
+                : ''
+            }
+            onClose={() => setNoteHabitId(null)}
+            onSave={(note) => {
+              if (noteHabitId) handleSaveNote(noteHabitId, note);
+              setNoteHabitId(null);
+            }}
           />
 
           <ConfirmDialog

@@ -11,6 +11,7 @@ export interface DashboardToggle {
   skippingHabitId: string | null;
   handleToggleLog: (habitId: string) => Promise<void>;
   handleSkipHabit: (habitId: string) => Promise<void>;
+  handleSaveNote: (habitId: string, note: string) => Promise<void>;
 }
 
 export function useDashboardToggle(
@@ -140,5 +141,33 @@ export function useDashboardToggle(
     }
   };
 
-  return { togglingHabitId, skippingHabitId, handleToggleLog, handleSkipHabit };
+  const handleSaveNote = async (habitId: string, note: string) => {
+    try {
+      const trimmed = note.trim();
+      const nextNote = trimmed === '' ? null : trimmed;
+
+      setLogs((prev) =>
+        prev.map((l) =>
+          l.habitId === habitId && l.date === activeDate ? { ...l, note: nextNote } : l
+        )
+      );
+
+      if (user) {
+        await ApiClient.setLogNote(habitId, activeDate, nextNote);
+      } else {
+        await localRepo.setLogNote(habitId, activeDate, nextNote);
+      }
+      toast.success(nextNote ? 'تم حفظ الملاحظة' : 'تم مسح الملاحظة');
+    } catch {
+      toast.error('حدث خطأ أثناء حفظ الملاحظة. يرجى المحاولة مرة أخرى.');
+    }
+  };
+
+  return {
+    togglingHabitId,
+    skippingHabitId,
+    handleToggleLog,
+    handleSkipHabit,
+    handleSaveNote,
+  };
 }

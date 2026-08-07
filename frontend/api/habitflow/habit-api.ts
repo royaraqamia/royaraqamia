@@ -90,6 +90,13 @@ export class ApiClient {
     });
   }
 
+  static async setLogNote(habitId: string, date: string, note: string | null) {
+    return request<{ log: HabitLog; mode: 'supabase' | 'local' }>('/habitflow/api/logs/note', {
+      method: 'POST',
+      body: JSON.stringify({ habitId, date, note }),
+    });
+  }
+
   static async exportBackup() {
     return request<{ version: string; exportedAt: string; habits: unknown[]; logs: unknown[] }>(
       '/habitflow/api/backup'

@@ -69,6 +69,23 @@ export class HabitService {
     return this.repository.setLogKind(data.habitId, data.date, kind);
   }
 
+  async setHabitLogNote(data: {
+    habitId: string;
+    date: string;
+    note: string | null;
+  }): Promise<HabitLog> {
+    if (!data.habitId || !data.date) {
+      throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
+    }
+    const note =
+      typeof data.note === 'string'
+        ? data.note.trim() === ''
+          ? null
+          : data.note.trim().slice(0, 500)
+        : null;
+    return this.repository.setLogNote(data.habitId, data.date, note);
+  }
+
   async getLogs(startDate: string, endDate: string): Promise<HabitLog[]> {
     const start = startDate || this.defaultLogWindowStart();
     const end = endDate || this.defaultLogWindowEnd();

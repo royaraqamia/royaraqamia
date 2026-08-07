@@ -26,6 +26,7 @@ interface LogRow {
   completed: boolean;
   completed_at: string | null;
   log_kind?: string | null;
+  note?: string | null;
   user_id?: string;
 }
 
@@ -56,6 +57,7 @@ function toLog(row: LogRow): HabitLog {
     completed: row.completed,
     completedAt: row.completed_at,
     kind: toLogKind(row.log_kind),
+    note: row.note ?? null,
     user_id: row.user_id,
   };
 }
@@ -364,6 +366,58 @@ export class SupabaseHabitRepository implements HabitRepository {
         completed,
         completed_at: completedAt,
         log_kind: kind,
+        user_id: this.userId,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+    return toLog(data);
+  }
+
+  async setLogNote(habitId: string, date: string, note: string | null): Promise<HabitLog> {
+    let fetchQuery = this.client
+      .from('habit_logs')
+      .select('*')
+      .eq('habit_id', habitId)
+      .eq('date', date);
+
+    if (this.userId) {
+      fetchQuery = fetchQuery.eq('user_id', this.userId);
+    }
+
+    const { data: existing, error: fetchError } = await fetchQuery.maybeSingle();
+
+    if (fetchError) {
+      throw fetchError;
+    }
+
+    if (existing) {
+      let updateQuery = this.client.from('habit_logs').update({ note }).eq('id', existing.id);
+
+      if (this.userId) {
+        updateQuery = updateQuery.eq('user_id', this.userId);
+      }
+
+      const { data, error } = await updateQuery.select().single();
+
+      if (error) {
+        throw error;
+      }
+      return toLog(data);
+    }
+
+    const { data, error } = await this.client
+      .from('habit_logs')
+      .insert({
+        habit_id: habitId,
+        date,
+        completed: false,
+        completed_at: null,
+        log_kind: 'none',
+        note,
         user_id: this.userId,
       })
       .select()

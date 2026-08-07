@@ -12,6 +12,7 @@ function makeRepository() {
     getLogs: vi.fn().mockResolvedValue([]),
     toggleLog: vi.fn(),
     setLogKind: vi.fn(),
+    setLogNote: vi.fn(),
     restoreFromBackup: vi.fn().mockResolvedValue(undefined),
     getLocalData: vi.fn().mockResolvedValue({ habits: [], logs: [] }),
   };

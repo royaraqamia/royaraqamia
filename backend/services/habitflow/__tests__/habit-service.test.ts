@@ -29,6 +29,7 @@ function makeRepo(overrides: Partial<HabitRepository> = {}) {
     getLogs: vi.fn(),
     toggleLog: vi.fn(),
     setLogKind: vi.fn(),
+    setLogNote: vi.fn(),
     restoreFromBackup: vi.fn(),
     getLocalData: vi.fn(),
     ...overrides,
@@ -252,6 +253,39 @@ describe('HabitService', () => {
         service.setHabitLogKind({ habitId: 'h-1', date: '2026-08-02', kind: 'skip' })
       ).resolves.toEqual(skipLog);
       expect(repository.setLogKind).toHaveBeenCalledWith('h-1', '2026-08-02', 'skip');
+    });
+  });
+
+  describe('setHabitLogNote', () => {
+    it('requires habitId and date', async () => {
+      const { repository, service } = makeRepo();
+      await expect(
+        service.setHabitLogNote({ habitId: '', date: '2026-08-02', note: 'شعرت بالانتعاش' })
+      ).rejects.toThrow('حقول مطلوبة مفقودة للتسجيل');
+      await expect(
+        service.setHabitLogNote({ habitId: 'h-1', date: '', note: 'شعور جيد' })
+      ).rejects.toThrow('حقول مطلوبة مفقودة للتسجيل');
+      expect(repository.setLogNote).not.toHaveBeenCalled();
+    });
+
+    it('trims the note before persisting', async () => {
+      const { repository, service } = makeRepo();
+      (repository.setLogNote as ReturnType<typeof vi.fn>).mockResolvedValue(logFixture);
+
+      await service.setHabitLogNote({ habitId: 'h-1', date: '2026-08-02', note: '  يوم رائع  ' });
+
+      expect(repository.setLogNote).toHaveBeenCalledWith('h-1', '2026-08-02', 'يوم رائع');
+    });
+
+    it('normalises an empty/whitespace note to null', async () => {
+      const { repository, service } = makeRepo();
+      (repository.setLogNote as ReturnType<typeof vi.fn>).mockResolvedValue(logFixture);
+
+      await service.setHabitLogNote({ habitId: 'h-1', date: '2026-08-02', note: '   ' });
+      await service.setHabitLogNote({ habitId: 'h-1', date: '2026-08-02', note: '' });
+
+      expect(repository.setLogNote).toHaveBeenNthCalledWith(1, 'h-1', '2026-08-02', null);
+      expect(repository.setLogNote).toHaveBeenNthCalledWith(2, 'h-1', '2026-08-02', null);
     });
   });
 
