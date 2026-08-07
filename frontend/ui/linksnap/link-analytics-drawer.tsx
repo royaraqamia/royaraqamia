@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { AlertTriangle, Globe, Smartphone } from 'lucide-react';
+import { AlertTriangle, Globe, Smartphone, Monitor, Cpu } from 'lucide-react';
 import { AnalyticsChart } from './analytics-chart';
 import { AnalyticsSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 import type { LinkStatus } from '@/shared/contracts/linksnap';
@@ -29,6 +29,11 @@ export interface AnalyticsData {
     userAgent: string | null;
     ipCountry: string | null;
   }[];
+  device: {
+    devices: { name: string; count: number; percent: number }[];
+    os: { name: string; count: number; percent: number }[];
+    browsers: { name: string; count: number; percent: number }[];
+  };
 }
 
 interface LinkAnalyticsDrawerProps {
@@ -37,6 +42,40 @@ interface LinkAnalyticsDrawerProps {
   analyticsError: string | null;
   analytics: AnalyticsData | null;
   status: LinkStatus;
+}
+
+function BreakdownRows({
+  rows,
+  total,
+  emptyLabel,
+}: {
+  rows: { name: string; count: number; percent: number }[];
+  total: number;
+  emptyLabel: string;
+}) {
+  if (rows.length === 0) {
+    return <p className="text-xs text-muted-foreground/70 text-center py-3">{emptyLabel}</p>;
+  }
+  return (
+    <div className="space-y-2.5">
+      {rows.map((row) => (
+        <div key={row.name} className="space-y-1">
+          <div className="flex items-center justify-between text-xs">
+            <span className="font-medium text-foreground/85 truncate">{row.name}</span>
+            <span className="font-mono text-muted-foreground shrink-0 ms-2">
+              {row.count} · {row.percent}%
+            </span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-muted/70 overflow-hidden">
+            <div
+              className="h-full rounded-full bg-primary/70 transition-all duration-500 ease-out"
+              style={{ width: `${total > 0 ? (row.count / total) * 100 : 0}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function LinkAnalyticsDrawer({
@@ -99,6 +138,42 @@ export function LinkAnalyticsDrawer({
                 </div>
 
                 <AnalyticsChart stats={analytics.clicksByDate} />
+
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Cpu className="w-4 h-4 text-primary" />
+                      الأجهزة
+                    </p>
+                    <BreakdownRows
+                      rows={analytics.device.devices}
+                      total={analytics.totalClicks}
+                      emptyLabel="لا توجد بيانات أجهزة بعد."
+                    />
+                  </div>
+                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Globe className="w-4 h-4 text-primary" />
+                      أنظمة التشغيل
+                    </p>
+                    <BreakdownRows
+                      rows={analytics.device.os}
+                      total={analytics.totalClicks}
+                      emptyLabel="لا توجد بيانات أنظمة تشغيل بعد."
+                    />
+                  </div>
+                  <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                      <Monitor className="w-4 h-4 text-primary" />
+                      المتصفحات
+                    </p>
+                    <BreakdownRows
+                      rows={analytics.device.browsers}
+                      total={analytics.totalClicks}
+                      emptyLabel="لا توجد بيانات متصفحات بعد."
+                    />
+                  </div>
+                </div>
 
                 <div className="grid md:grid-cols-2 gap-6">
                   <div className="bg-card p-5 rounded-xl border border-border shadow-sm space-y-3.5 card-lift">

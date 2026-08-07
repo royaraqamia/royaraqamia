@@ -1,4 +1,9 @@
-import type { AnalyticsEvent, DailyClickStat, LinkStatus } from '@/shared/contracts/linksnap';
+import type {
+  AnalyticsEvent,
+  DailyClickStat,
+  LinkDeviceBreakdown,
+  LinkStatus,
+} from '@/shared/contracts/linksnap';
 import { request } from '@/frontend/transport/http';
 
 export interface ShortenedLink {
@@ -38,6 +43,7 @@ export interface LinkAnalyticsSummary {
   recentClicks: RecentClick[];
   clicksByDate: DailyClickStat[];
   topReferrers: { name: string; count: number }[];
+  device: LinkDeviceBreakdown;
 }
 
 export interface BulkShortenResultItem {

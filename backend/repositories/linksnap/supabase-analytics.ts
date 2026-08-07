@@ -1,5 +1,6 @@
 import { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
 import { AnalyticsEvent, LinkAnalyticsSummary, DailyClickStat } from '@/shared/contracts/linksnap';
+import { aggregateDeviceBreakdown } from '@/backend/services/linksnap/device-breakdown';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 
@@ -75,6 +76,7 @@ export class SupabaseAnalyticsRepository implements AnalyticsRepository {
       recentClicks: events.slice(0, 10),
       clicksByDate: this.aggregateClicksByDate(events),
       topReferrers: this.aggregateTopReferrers(events),
+      device: aggregateDeviceBreakdown(events),
     };
   }
 

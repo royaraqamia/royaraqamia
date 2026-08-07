@@ -24,9 +24,22 @@ export interface DailyClickStat {
   clicks: number;
 }
 
+export interface DeviceStat {
+  name: string;
+  count: number;
+  percent: number;
+}
+
+export interface LinkDeviceBreakdown {
+  devices: DeviceStat[];
+  os: DeviceStat[];
+  browsers: DeviceStat[];
+}
+
 export interface LinkAnalyticsSummary {
   totalClicks: number;
   recentClicks: AnalyticsEvent[];
   clicksByDate: DailyClickStat[];
   topReferrers: { name: string; count: number }[];
+  device: LinkDeviceBreakdown;
 }

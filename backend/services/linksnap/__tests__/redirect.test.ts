@@ -26,6 +26,7 @@ const summaryFixture: LinkAnalyticsSummary = {
   recentClicks: [],
   clicksByDate: [],
   topReferrers: [],
+  device: { devices: [], os: [], browsers: [] },
 };
 
 function makeDeps() {
