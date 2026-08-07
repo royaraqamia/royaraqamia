@@ -10,7 +10,7 @@
   },
   "scripts": {
     "postinstall": "node -e \"const fs=require('fs'),p=require('path');const d=p.join('node_modules','typescript','lib');if(!fs.existsSync(d)){fs.mkdirSync(d,{recursive:true})}const f=p.join(d,'typescript.js');if(!fs.existsSync(f)){fs.writeFileSync(f,\\\"module.exports = require('typescript/unstable/sync');\\\\n\\\")}\"",
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "prebuild": "node scripts/generate-icons.mjs",
     "build": "tsc --noEmit && next build",
     "start": "next start",
@@ -106,7 +106,6 @@
     "@radix-ui/react-dismissable-layer": "1.1.19"
   },
   "devDependencies": {
-    "@axe-core/react": "^4.12.1",
     "@babel/eslint-parser": "^8.0.1",
     "@babel/parser": "^8.0.4",
     "@babel/preset-react": "^8.0.1",

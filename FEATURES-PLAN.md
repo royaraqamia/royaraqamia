@@ -77,22 +77,22 @@
 | QR code modal                                                        | ✅     |
 | Admin panel: stats cards, links directory, moderate/block            | ✅     |
 | Redirect handler `app/[code]`, security validator, rate limiting     | ✅     |
+| **Link expiry + status chips** (active / expired / blocked)          | ✅     |
+| **Device/OS/browser breakdown** (dependency-free UA parser)          | ✅     |
+| **Analytics date-range filter + CSV export** (7/30/90d, client-side) | ✅     |
+| **Bulk action bar** — select-all, copy URLs, set expiry, delete      | ✅     |
 
 ### Backlog
 
-| Priority | Feature                                                                  | UX rationale                                     | Files / layers                                                                                           |
-| -------- | ------------------------------------------------------------------------ | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
-| P0       | **Link expiry + status chips** (active / expired / blocked / protected)  | Lifecycle clarity at a glance                    | Migration (`expires_at`), `shared/contracts/linksnap.ts`, repo, `frontend/ui/linksnap/link-row-card.tsx` |
-| P0       | **Device/OS/browser breakdown** — userAgent is captured but unexposed    | Marketers want audience detail                   | `backend/services/linksnap/get-url-analytics.ts` (parse UA), new chart in drawer                         |
-| P1       | **Date-range filter + CSV export** for analytics                         | Reporting workflow                               | `backend/services/linksnap/get-url-analytics.ts`, API query params, export util                          |
-| P1       | **Bulk action bar on links table** — select → copy / deactivate / delete | Efficiency for link managers                     | `frontend/ui/linksnap/link-dashboard.tsx`                                                                |
-| P1       | **Share sheet + copy feedback** (toast) per row                          | Immediate gratification, mobile-friendly sharing | `frontend/ui/linksnap/link-row-card.tsx`, Sonner                                                         |
-| P2       | **Password-protected links** (per-link secret, RLS-safe)                 | Private/campaign links                           | Migration (`password_hash`), redirect flow, edit form                                                    |
-| P2       | **Custom slugs validation UX** — live availability check while typing    | Error prevention before submit                   | `frontend/ui/linksnap/link-edit-form.tsx`                                                                |
+| Priority | Feature                                                               | UX rationale                                     | Files / layers                                        |
+| -------- | --------------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------- |
+| P1       | **Share sheet + copy feedback** (toast) per row                       | Immediate gratification, mobile-friendly sharing | `frontend/ui/linksnap/link-row-card.tsx`, Sonner      |
+| P2       | **Password-protected links** (per-link secret, RLS-safe)              | Private/campaign links                           | Migration (`password_hash`), redirect flow, edit form |
+| P2       | **Custom slugs validation UX** — live availability check while typing | Error prevention before submit                   | `frontend/ui/linksnap/link-edit-form.tsx`             |
 
 ### DB impact
 
-- ⬜ New migration: `links.expires_at`, `links.password_hash`, indexes.
+- ✅ New migration: `links.expires_at` (applied via MCP, `20260807220000_links_expiry.sql`). `links.password_hash` + indexes still pending (P2).
 
 ---
 
@@ -182,7 +182,7 @@ Recommended sequence. Each phase ships green (`prettier`, `lint`, `tsc`, `vitest
 - **Phase 1 — SpendTrack core** ✅ _(search, per-category budgets, recurring — all shipped)_: per-category budgets → recurring expenses → search. _Highest user value, clean extension of existing `budgets`._
 - **Phase 2 — HabitFlow core**: onboarding + empty state → skip/miss (streak-freeze) → per-habit notes → insights. _Progress: skip/miss ✅ `aec2b09`, notes ✅ `e850a48`, onboarding ✅ `952f0a0`, insights ✅ `1a000b6` — Phase 2 complete._
 - **Phase 3 — BlogPress core**: auto-save → in-editor SEO panel + content stats → tags.
-- **Phase 4 — LinkSnap core**: expiry + status chips → device/OS analytics → date-range + CSV export → bulk actions.
+- **Phase 4 — LinkSnap core** ✅ shipped: expiry + status chips → device/OS/browser analytics → date-range + CSV export → bulk actions.
 - **Phase 5 — Cross-cutting polish**: palette, optimistic UI, undo toasts, onboarding consistency, a11y.
 - **Phase 6 — P2 backlog** per product (export, splits, multi-currency, custom reminder times, focus mode, password-protected links).
 

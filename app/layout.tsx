@@ -9,13 +9,11 @@ import { NotificationProvider } from '../frontend/state/NotificationContext';
 import { SessionProvider } from '../frontend/state/session-provider';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
-import { AccessibilityCheck } from '../frontend/ui/AccessibilityCheck';
 import { VersionChecker } from '../frontend/ui/VersionChecker';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
 import { GoUpButton } from '../frontend/ui/GoUpButton';
 import { WhatsAppFloat } from '../frontend/ui/WhatsAppFloat';
 import { SITE_NAME } from '@/frontend/shared/metadata';
-import { IS_DEVELOPMENT } from '@/frontend/shared/constants';
 import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
 
@@ -135,7 +133,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <WhatsAppFloat />
                   </PWAProvider>
                   <Toaster position="top-center" richColors />
-                  {IS_DEVELOPMENT && <AccessibilityCheck />}
                 </NotificationProvider>
               </UIProvider>
             </MotionProvider>

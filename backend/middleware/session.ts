@@ -25,7 +25,23 @@ function isSafeRedirect(path: string): boolean {
   }
 }
 
+const isDev = process.env.NODE_ENV === 'development';
+
+// @supabase/ssr names its auth session cookie `sb-<ref>-auth-token`.
+function hasAuthSession(request: NextRequest): boolean {
+  return request.cookies.getAll().some((c) => c.name.endsWith('-auth-token'));
+}
+
 export async function updateSession(request: NextRequest) {
+  // Dev-only speedup: a request with no session cookie and no auth code is
+  // anonymous, so the two remote Supabase calls below (getSession/ getUser)
+  // would return "no user" anyway. Skip them to avoid a network round-trip on
+  // every page load while testing. Production behavior is untouched.
+  const hasAuthCode = request.nextUrl.searchParams.has('code');
+  if (isDev && !hasAuthCode && !hasAuthSession(request)) {
+    return NextResponse.next({ request });
+  }
+
   const pendingCookies: {
     name: string;
     value: string;
