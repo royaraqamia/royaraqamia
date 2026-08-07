@@ -20,7 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
-import { ArrowRight, Loader2, Check, X, Save, Send, Upload, Focus } from 'lucide-react';
+import { ArrowRight, Loader2, Check, X, Save, Send, Upload, Focus, PanelRight } from 'lucide-react';
 import { updatePost, saveAndPublishPost } from '@/frontend/api/blogpress';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
@@ -31,6 +31,7 @@ import { usePostAutosave } from '@/frontend/state/blogpress/use-post-autosave';
 import { usePostUpload } from '@/frontend/state/blogpress/use-post-upload';
 import { EditorToolbar } from '@/frontend/ui/blogpress/editor-toolbar';
 import { PostSettingsDialog } from '@/frontend/ui/blogpress/post-settings-dialog';
+import { EditorSidePanel } from '@/frontend/ui/blogpress/editor-side-panel';
 
 interface EditorContentProps {
   post: Post;
@@ -78,6 +79,7 @@ export function EditorContent({ post }: EditorContentProps) {
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [linkUrl, setLinkUrl] = useState('');
   const [distractionFree, setDistractionFree] = useState(false);
+  const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [, forceRender] = useReducer((x) => x + 1, 0);
 
   const wordCount = useMemo(() => estimateWordCount(content), [content]);
@@ -314,6 +316,18 @@ export function EditorContent({ post }: EditorContentProps) {
           <Button
             variant="ghost"
             size="icon-sm"
+            onClick={() => setSidePanelOpen((v) => !v)}
+            aria-label={sidePanelOpen ? 'إغلاق اللوحة الجانبيَّة' : 'فتح اللوحة الجانبيَّة'}
+            title={sidePanelOpen ? 'إغلاق اللوحة الجانبيَّة' : 'اللوحة الجانبيَّة (SEO والإحصاءات)'}
+            className={`text-muted-foreground hover:text-foreground transition-smooth shrink-0 ${
+              sidePanelOpen ? 'bg-muted text-foreground' : ''
+            }`}
+          >
+            <PanelRight className="size-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon-sm"
             onClick={() => setDistractionFree((v) => !v)}
             aria-label={distractionFree ? 'الخروج من وضع التركيز' : 'وضع التركيز'}
             title={distractionFree ? 'الخروج من وضع التركيز' : 'وضع التركيز'}
@@ -337,25 +351,41 @@ export function EditorContent({ post }: EditorContentProps) {
         />
       )}
 
-      <div
-        className={`flex flex-1 overflow-hidden ${
-          distractionFree ? 'px-0 py-2' : 'px-4 md:px-8 lg:px-12'
-        }`}
-      >
+      <div className="flex flex-1 overflow-hidden">
         <div
-          className={`flex-1 mx-auto bg-background rounded-2xl shadow-xs border border-border/30 overflow-hidden my-4 md:my-6 ${
-            distractionFree ? 'max-w-4xl' : 'max-w-3xl'
+          className={`flex flex-1 overflow-hidden ${
+            distractionFree ? 'px-0 py-2' : 'px-4 md:px-8 lg:px-12'
           }`}
         >
-          <TiptapEditor
-            ref={editorRef}
-            initialContent={content}
-            onUpdate={setContent}
-            onImageUpload={handleImageUpload}
-            onStateChange={() => forceRender()}
-            className="flex-1"
-          />
+          <div
+            className={`flex-1 mx-auto bg-background rounded-2xl shadow-xs border border-border/30 overflow-hidden my-4 md:my-6 ${
+              distractionFree ? 'max-w-4xl' : 'max-w-3xl'
+            }`}
+          >
+            <TiptapEditor
+              ref={editorRef}
+              initialContent={content}
+              onUpdate={setContent}
+              onImageUpload={handleImageUpload}
+              onStateChange={() => forceRender()}
+              className="flex-1"
+            />
+          </div>
         </div>
+
+        {!distractionFree && (
+          <EditorSidePanel
+            open={sidePanelOpen}
+            onClose={() => setSidePanelOpen(false)}
+            title={title}
+            slug={slug}
+            metaTitle={metaTitle}
+            setMetaTitle={setMetaTitle}
+            metaDesc={metaDesc}
+            setMetaDesc={setMetaDesc}
+            stats={contentStats}
+          />
+        )}
       </div>
 
       {!distractionFree && (
