@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import {
   Plus,
@@ -29,7 +29,9 @@ import { AddHabitModal } from '@/frontend/ui/habitflow/components/add-habit-moda
 import { EditHabitModal } from '@/frontend/ui/habitflow/components/edit-habit-modal';
 import { NotesDialog } from '@/frontend/ui/habitflow/components/notes-dialog';
 import { HabitOnboarding } from '@/frontend/ui/habitflow/components/habit-onboarding';
+import { InsightsRow } from '@/frontend/ui/habitflow/components/insights-row';
 import type { HabitTemplate } from '@/frontend/shared/habitflow/habit-templates';
+import { calculateInsights } from '@/frontend/shared/habitflow/habit-insights';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 interface DashboardShellProps {
@@ -104,6 +106,11 @@ export function DashboardShell({
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [noteHabitId, setNoteHabitId] = useState<string | null>(null);
   const { signOut, isLoggingOut } = useLogout();
+
+  const insights = useMemo(
+    () => calculateInsights(habits, logs, todayDate),
+    [habits, logs, todayDate]
+  );
 
   useEffect(() => {
     if (sessionUser) {
@@ -246,6 +253,8 @@ export function DashboardShell({
               />
             </div>
           </section>
+
+          {insights && <InsightsRow insights={insights} />}
 
           {/* Main Workspace Layout */}
           <motion.div
