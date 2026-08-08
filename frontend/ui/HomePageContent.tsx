@@ -1,5 +1,3 @@
-'use client';
-
 import { Hero } from './Hero';
 import { MetricCards } from './MetricCards';
 import { Services } from './Services';

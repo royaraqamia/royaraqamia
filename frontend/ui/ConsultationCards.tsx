@@ -1,5 +1,3 @@
-'use client';
-
 import {
   Microphone,
   CheckCircle,
@@ -7,7 +5,7 @@ import {
   Sparkle,
   WhatsappLogo,
   ArrowLeft,
-} from '@phosphor-icons/react';
+} from '@phosphor-icons/react/ssr';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 

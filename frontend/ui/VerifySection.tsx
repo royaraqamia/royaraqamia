@@ -1,6 +1,4 @@
-'use client';
-
-import { ShieldCheck, ArrowLeft, Copy } from '@phosphor-icons/react';
+import { ShieldCheck, ArrowLeft, Copy } from '@phosphor-icons/react/ssr';
 import { ScanLine, Lock, Database, QrCode, CheckCircle, FileText } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
 import Link from 'next/link';

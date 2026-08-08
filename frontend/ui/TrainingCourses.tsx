@@ -1,5 +1,3 @@
-'use client';
-
 import {
   Trophy,
   Clock,
@@ -14,7 +12,7 @@ import {
   ShieldCheck,
   Star,
   Lightning,
-} from '@phosphor-icons/react';
+} from '@phosphor-icons/react/ssr';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';

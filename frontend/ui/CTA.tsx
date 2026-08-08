@@ -1,7 +1,5 @@
-'use client';
-
 import { ScrollAnimation } from './ScrollAnimations';
-import { ArrowLeft } from '@phosphor-icons/react';
+import { ArrowLeft } from '@phosphor-icons/react/ssr';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
 export function CTA() {
