@@ -9,23 +9,37 @@ export type AuthActionResult = { message?: string } | null;
 export type SessionChangeListener = (session: Session | null) => void;
 
 export async function getSession(): Promise<Session | null> {
+  const client = await createClient();
   const {
     data: { session },
-  } = await createClient().auth.getSession();
+  } = await client.auth.getSession();
   return session;
 }
 
 export function subscribeToSessionChanges(listener: SessionChangeListener): () => void {
-  const {
-    data: { subscription },
-  } = createClient().auth.onAuthStateChange((_event: string, session: Session | null) => {
-    listener(session);
-  });
-  return () => subscription.unsubscribe();
+  let unsubscribe: (() => void) | null = null;
+
+  createClient()
+    .then((client) => {
+      const {
+        data: { subscription },
+      } = client.auth.onAuthStateChange((_event: string, session: Session | null) => {
+        listener(session);
+      });
+      unsubscribe = () => subscription.unsubscribe();
+    })
+    .catch(() => {
+      unsubscribe = () => {};
+    });
+
+  return () => {
+    unsubscribe?.();
+  };
 }
 
 export async function signOutSession(): Promise<void> {
-  await createClient().auth.signOut();
+  const client = await createClient();
+  await client.auth.signOut();
 }
 
 export async function logout(): Promise<void> {

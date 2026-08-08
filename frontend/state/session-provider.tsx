@@ -9,6 +9,7 @@ import {
   type Session,
   type User,
 } from '@/frontend/api/auth';
+import { hasBrowserSessionToken } from '@/frontend/transport/supabase/client';
 
 interface SessionContextType {
   user: User | null;
@@ -45,6 +46,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const prevSessionRef = useRef<Session | null>(null);
 
   useEffect(() => {
+    if (!hasBrowserSessionToken()) {
+      setIsLoading(false);
+      return;
+    }
+
     getSession().then((session) => {
       setSession(session);
       setUser(session?.user ?? null);
@@ -72,6 +78,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (prevPathname.current === pathname) return;
     prevPathname.current = pathname;
+
+    if (!hasBrowserSessionToken()) return;
 
     getSession().then((session) => {
       setSession(session);

@@ -15,43 +15,53 @@ export interface PostgresChangesOptions {
 }
 
 export function subscribeToPostgresChanges(options: PostgresChangesOptions): () => void {
-  const supabase = createClient();
+  let cleanup: (() => void) | null = null;
 
-  const channel = supabase
-    .channel(options.channel)
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: options.table,
-        ...(options.filter ? { filter: options.filter } : {}),
-      },
-      options.handlers.onInsert
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'UPDATE',
-        schema: 'public',
-        table: options.table,
-        ...(options.filter ? { filter: options.filter } : {}),
-      },
-      options.handlers.onUpdate
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'DELETE',
-        schema: 'public',
-        table: options.table,
-        ...(options.filter ? { filter: options.filter } : {}),
-      },
-      options.handlers.onDelete
-    )
-    .subscribe();
+  createClient()
+    .then((supabase) => {
+      const channel = supabase
+        .channel(options.channel)
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: options.table,
+            ...(options.filter ? { filter: options.filter } : {}),
+          },
+          options.handlers.onInsert
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: options.table,
+            ...(options.filter ? { filter: options.filter } : {}),
+          },
+          options.handlers.onUpdate
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: 'DELETE',
+            schema: 'public',
+            table: options.table,
+            ...(options.filter ? { filter: options.filter } : {}),
+          },
+          options.handlers.onDelete
+        )
+        .subscribe();
+
+      cleanup = () => {
+        supabase.removeChannel(channel);
+      };
+    })
+    .catch(() => {
+      cleanup = () => {};
+    });
 
   return () => {
-    supabase.removeChannel(channel);
+    cleanup?.();
   };
 }
