@@ -23,7 +23,9 @@ export function LazyImage({
   height,
   sizes,
   priority = false,
+  webpSrc,
 }: LazyImageProps) {
+  const [currentSrc, setCurrentSrc] = useState(webpSrc ?? src);
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const imgRef = useRef<HTMLDivElement>(null);
@@ -42,7 +44,8 @@ export function LazyImage({
 
       {!hasError && (
         <Image
-          src={src}
+          key={currentSrc}
+          src={currentSrc}
           alt={alt}
           width={width}
           height={height}
@@ -50,7 +53,13 @@ export function LazyImage({
           priority={priority}
           loading={priority ? undefined : 'lazy'}
           onLoad={() => setIsLoaded(true)}
-          onError={() => setHasError(true)}
+          onError={() => {
+            if (webpSrc && currentSrc === webpSrc && src !== webpSrc) {
+              setCurrentSrc(src);
+            } else {
+              setHasError(true);
+            }
+          }}
           className={`w-full h-full object-cover transition-opacity duration-500 ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
