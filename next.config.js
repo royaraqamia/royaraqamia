@@ -32,7 +32,6 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ['motion'],
-  optimizePackageImports: ['lucide-react', '@phosphor-icons/react'],
   typescript: {
     ignoreBuildErrors: true,
   },
