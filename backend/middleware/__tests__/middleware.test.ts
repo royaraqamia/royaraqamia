@@ -19,6 +19,14 @@ const mockRequest: Record<string, unknown> = {
   nextUrl: mockNextUrl,
 };
 
+function getCookieMock() {
+  return (mockRequest.cookies as { getAll: ReturnType<typeof vi.fn> }).getAll;
+}
+
+function mockSessionCookie() {
+  getCookieMock().mockReturnValue([{ name: 'sb-test-ref-auth-token', value: 'session' }]);
+}
+
 function convertRedirectUrl(
   url:
     | string
@@ -85,6 +93,7 @@ beforeEach(() => {
     searchParams: new URLSearchParams(),
   });
   mockRequest.url = 'https://royaraqamia.com/';
+  getCookieMock().mockReturnValue([]);
   mockExchangeCodeForSession.mockReset();
   mockGetSession.mockReset();
   mockGetUser.mockReset();
@@ -94,9 +103,18 @@ beforeEach(() => {
 });
 
 describe('middleware', () => {
-  it('calls getSession to refresh tokens on every request', async () => {
-    mockGetSession.mockResolvedValue({ data: { session: null } });
-    mockGetUser.mockResolvedValue({ data: { user: null } });
+  it('skips remote session calls for anonymous public page requests', async () => {
+    const { middleware } = await import('@/middleware');
+    await middleware(mockRequest as never);
+
+    expect(mockGetSession).not.toHaveBeenCalled();
+    expect(mockGetUser).not.toHaveBeenCalled();
+  });
+
+  it('calls getSession to refresh tokens when a session cookie is present', async () => {
+    mockSessionCookie();
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
 
     const { middleware } = await import('@/middleware');
     await middleware(mockRequest as never);
@@ -105,6 +123,7 @@ describe('middleware', () => {
   });
 
   it('redirects logged-in users away from auth pages to root', async () => {
+    mockSessionCookie();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
     mockNextUrl.pathname = '/auth/login';
@@ -129,6 +148,7 @@ describe('middleware', () => {
   });
 
   it('allows authenticated users through to protected routes', async () => {
+    mockSessionCookie();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
     mockNextUrl.pathname = '/habitflow';
@@ -198,6 +218,7 @@ describe('middleware', () => {
   });
 
   it('does not bounce authenticated users away from the update-password page', async () => {
+    mockSessionCookie();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
     mockNextUrl.pathname = '/auth/update-password';
@@ -221,6 +242,7 @@ describe('middleware', () => {
   });
 
   it('redirects auth signup page to root when user is logged in', async () => {
+    mockSessionCookie();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
     mockNextUrl.pathname = '/auth/signup';

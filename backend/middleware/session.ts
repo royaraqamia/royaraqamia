@@ -25,20 +25,25 @@ function isSafeRedirect(path: string): boolean {
   }
 }
 
-const isDev = process.env.NODE_ENV === 'development';
-
 // @supabase/ssr names its auth session cookie `sb-<ref>-auth-token`.
 function hasAuthSession(request: NextRequest): boolean {
   return request.cookies.getAll().some((c) => c.name.endsWith('-auth-token'));
 }
 
+function isProtectedRoute(pathname: string): boolean {
+  return Object.keys(PROTECTED_ROUTES).some((path) => pathname.startsWith(path));
+}
+
 export async function updateSession(request: NextRequest) {
-  // Dev-only speedup: a request with no session cookie and no auth code is
-  // anonymous, so the two remote Supabase calls below (getSession/ getUser)
-  // would return "no user" anyway. Skip them to avoid a network round-trip on
-  // every page load while testing. Production behavior is untouched.
   const hasAuthCode = request.nextUrl.searchParams.has('code');
-  if (isDev && !hasAuthCode && !hasAuthSession(request)) {
+
+  // Fast path (dev + prod): a request with no session cookie and no auth code
+  // is anonymous. On public pages the remote getSession/getUser calls below
+  // would resolve to "no user" anyway (nothing to refresh, no redirect), so
+  // skip them to avoid a network round-trip on every page load while
+  // development. Protected routes keep their guard; auth-code exchanges keep
+  // running regardless of environment.
+  if (!hasAuthCode && !hasAuthSession(request) && !isProtectedRoute(request.nextUrl.pathname)) {
     return NextResponse.next({ request });
   }
 
