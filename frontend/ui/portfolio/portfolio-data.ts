@@ -3,14 +3,14 @@ const IMAGE_FILENAME_PADDING = 2;
 
 export const PORTFOLIO_IMAGES = Array.from({ length: PORTFOLIO_IMAGE_COUNT }, (_, i) => {
   const num = (i + 1).toString().padStart(IMAGE_FILENAME_PADDING, '0');
-  return { webp: `/${num}.webp`, png: `/${num}.png` };
+  return { webp: `/${num}.webp` };
 });
 
 export const CARD_COUNT = 13;
 
 const removedIndices = new Set([4, 7, 11, 19, 16, 8, 22, 17, 21, 23, 9, 15]);
 
-export const projectImages: Record<number, { webp: string; png: string }[]> = {
+export const projectImages: Record<number, { webp: string }[]> = {
   0: [PORTFOLIO_IMAGES[0]!, PORTFOLIO_IMAGES[4]!],
   1: [PORTFOLIO_IMAGES[1]!, PORTFOLIO_IMAGES[7]!],
   2: [PORTFOLIO_IMAGES[2]!, PORTFOLIO_IMAGES[11]!],

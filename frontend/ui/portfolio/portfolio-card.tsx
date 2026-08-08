@@ -9,7 +9,7 @@ interface PortfolioCardProps {
   actualIndex: number;
   displayIdx: number;
   project: ProjectData;
-  imagePath: { webp: string; png: string };
+  imagePath: { webp: string };
   onSelect: (index: number) => void;
   onImageError: (index: number) => void;
 }
