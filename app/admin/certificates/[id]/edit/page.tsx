@@ -4,7 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { getCertificateById, updateCertificate } from '@/frontend/api/certificates';
 import type { AdminCertificate } from '@/frontend/api/certificates';
 import { CertificateForm } from '@/frontend/ui/admin/certificate-form';
-import { Loader2 } from 'lucide-react';
+import { PageLoader } from '@/frontend/ui/shared/page-loader';
 
 export default function EditCertificatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -27,14 +27,7 @@ export default function EditCertificatePage({ params }: { params: Promise<{ id: 
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="text-primary size-8 animate-spin" />
-          <p className="text-muted-foreground text-sm">جارٍ تحميل بيانات الشهادة...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader />;
   }
 
   if (!cert) {

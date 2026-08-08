@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
-import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { DollarSign, PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
 import { CreateExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
 import { BudgetCard } from '@/frontend/ui/spendtrack/budget-card';
@@ -229,40 +227,6 @@ async function TransactionsSection({
   );
 }
 
-function TotalSkeleton() {
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي الإنفاق</CardTitle>
-        <DollarSign className="size-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-9 w-32 mb-2" />
-        <Skeleton className="h-4 w-48" />
-      </CardContent>
-    </Card>
-  );
-}
-
-function ChartSkeleton() {
-  return <Skeleton className="h-50 sm:h-75 w-full rounded-xl" />;
-}
-
-function TransactionsSkeleton() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>المعاملات</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-13 w-full" />
-        ))}
-      </CardContent>
-    </Card>
-  );
-}
-
 export default async function DashboardPage(props: {
   searchParams: Promise<{
     range?: string;
@@ -300,28 +264,20 @@ export default async function DashboardPage(props: {
 
       <div className="animate-slide-up stagger-2">
         <div className="grid gap-4 md:grid-cols-2">
-          <Suspense fallback={<TotalSkeleton />}>
-            <TotalCard
-              userId={user.id}
-              start={start}
-              end={end}
-              catFilter={catFilter}
-              currency={currency}
-            />
-          </Suspense>
-          <Suspense fallback={<TotalSkeleton />}>
-            <BudgetSection userId={user.id} currency={currency} />
-          </Suspense>
+          <TotalCard
+            userId={user.id}
+            start={start}
+            end={end}
+            catFilter={catFilter}
+            currency={currency}
+          />
+          <BudgetSection userId={user.id} currency={currency} />
         </div>
       </div>
 
-      <Suspense fallback={<TotalSkeleton />}>
-        <CategoryBudgetsSection userId={user.id} />
-      </Suspense>
+      <CategoryBudgetsSection userId={user.id} />
 
-      <Suspense fallback={<TotalSkeleton />}>
-        <RecurringExpensesSection userId={user.id} currency={currency} />
-      </Suspense>
+      <RecurringExpensesSection userId={user.id} currency={currency} />
 
       <div className="grid gap-4 lg:grid-cols-2 animate-slide-up stagger-3">
         <Card
@@ -335,15 +291,13 @@ export default async function DashboardPage(props: {
             </div>
           </CardHeader>
           <CardContent>
-            <Suspense fallback={<ChartSkeleton />}>
-              <CategoryPieSection
-                userId={user.id}
-                start={start}
-                end={end}
-                catFilter={catFilter}
-                currency={currency}
-              />
-            </Suspense>
+            <CategoryPieSection
+              userId={user.id}
+              start={start}
+              end={end}
+              catFilter={catFilter}
+              currency={currency}
+            />
           </CardContent>
         </Card>
         <Card
@@ -357,15 +311,13 @@ export default async function DashboardPage(props: {
             </div>
           </CardHeader>
           <CardContent>
-            <Suspense fallback={<ChartSkeleton />}>
-              <DailyBarSection
-                userId={user.id}
-                start={start}
-                end={end}
-                catFilter={catFilter}
-                currency={currency}
-              />
-            </Suspense>
+            <DailyBarSection
+              userId={user.id}
+              start={start}
+              end={end}
+              catFilter={catFilter}
+              currency={currency}
+            />
           </CardContent>
         </Card>
       </div>
@@ -379,17 +331,15 @@ export default async function DashboardPage(props: {
             </div>
           </CardHeader>
           <CardContent>
-            <Suspense fallback={<TransactionsSkeleton />}>
-              <TransactionsSection
-                userId={user.id}
-                start={start}
-                end={end}
-                filterCategories={filterCategories}
-                sort={sort}
-                search={search}
-                currency={currency}
-              />
-            </Suspense>
+            <TransactionsSection
+              userId={user.id}
+              start={start}
+              end={end}
+              filterCategories={filterCategories}
+              sort={sort}
+              search={search}
+              currency={currency}
+            />
           </CardContent>
         </Card>
       </div>

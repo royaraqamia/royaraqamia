@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Suspense } from 'react';
 import { loadBlogIndex } from '@/backend/loaders/blog';
 import { Button } from '@/frontend/ui/primitives/button';
 import {
@@ -60,13 +59,7 @@ export default async function BlogPage(props: {
           </p>
 
           <div className="w-full max-w-lg relative z-20">
-            <Suspense
-              fallback={
-                <div className="h-14 w-full rounded-2xl bg-muted/30 border border-border animate-pulse backdrop-blur-xl" />
-              }
-            >
-              <BlogSearch />
-            </Suspense>
+            <BlogSearch />
           </div>
         </div>
       </section>
