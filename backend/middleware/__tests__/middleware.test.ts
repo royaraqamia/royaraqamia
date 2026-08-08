@@ -23,8 +23,12 @@ function getCookieMock() {
   return (mockRequest.cookies as { getAll: ReturnType<typeof vi.fn> }).getAll;
 }
 
-function mockSessionCookie() {
-  getCookieMock().mockReturnValue([{ name: 'sb-test-ref-auth-token', value: 'session' }]);
+function mockSessionCookie(names: string[] = ['sb-test-ref-auth-token']) {
+  getCookieMock().mockReturnValue(names.map((name) => ({ name, value: 'session' })));
+}
+
+function mockChunkedSessionCookie() {
+  mockSessionCookie(['sb-test-ref-auth-token.0', 'sb-test-ref-auth-token.1']);
 }
 
 function convertRedirectUrl(
@@ -113,6 +117,17 @@ describe('middleware', () => {
 
   it('calls getSession to refresh tokens when a session cookie is present', async () => {
     mockSessionCookie();
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
+
+    const { middleware } = await import('@/middleware');
+    await middleware(mockRequest as never);
+
+    expect(mockGetSession).toHaveBeenCalled();
+  });
+
+  it('calls getSession when the session cookie is chunked (auth-token.0, .1, ...)', async () => {
+    mockChunkedSessionCookie();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
 

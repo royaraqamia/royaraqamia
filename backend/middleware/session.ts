@@ -25,9 +25,11 @@ function isSafeRedirect(path: string): boolean {
   }
 }
 
-// @supabase/ssr names its auth session cookie `sb-<ref>-auth-token`.
+// @supabase/ssr names its auth session cookie `sb-<ref>-auth-token`, splitting
+// oversized (base64url) values into `sb-<ref>-auth-token.0`, `.1`, etc.
+const SESSION_COOKIE_NAME_RE = /^sb-[\w-]+-auth-token(?:\.\d+)?$/;
 function hasAuthSession(request: NextRequest): boolean {
-  return request.cookies.getAll().some((c) => c.name.endsWith('-auth-token'));
+  return request.cookies.getAll().some((c) => SESSION_COOKIE_NAME_RE.test(c.name));
 }
 
 function isProtectedRoute(pathname: string): boolean {
