@@ -166,15 +166,9 @@ export const MetricCards = memo(function MetricCards() {
 
                 <div className="flex flex-col h-full relative z-10">
                   {/* Floating Icon Badge Container */}
-                  <motion.div
-                    animate={{ y: [0, -6, 0] }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: 'easeInOut',
-                      delay: index * 0.5,
-                    }}
-                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-8 sm:mb-10 lg:mb-12 transition-all duration-500 ease-out bg-white/3 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shadow-lg ${colors.iconGlow}`}
+                  <div
+                    className={`animate-metric-icon-bob w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-8 sm:mb-10 lg:mb-12 transition-all duration-500 ease-out bg-white/3 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shadow-lg ${colors.iconGlow}`}
+                    style={{ animationDelay: `${index * 0.5}s` }}
                   >
                     <div
                       className={`absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 ${colors.glowBg} blur-sm`}
@@ -184,7 +178,7 @@ export const MetricCards = memo(function MetricCards() {
                       className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-md relative z-10 transition-transform duration-500 group-hover/card:scale-105"
                       aria-hidden="true"
                     />
-                  </motion.div>
+                  </div>
 
                   {/* Data & Editorial Content */}
                   <div className="mt-auto text-start">

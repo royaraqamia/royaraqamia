@@ -50,25 +50,17 @@ export const Hero = memo(function Hero() {
 
           {/* Floating Particles - Ultra subtle background ambient details */}
           {particles.map((particle) => (
-            <m.div
+            <div
               key={particle.id}
-              className="absolute rounded-full bg-white/30 backdrop-blur-xs"
+              className="hero-particle absolute rounded-full bg-white/30 backdrop-blur-xs"
               style={{
                 width: particle.size,
                 height: particle.size,
                 left: `${particle.x}%`,
                 top: `${particle.y}%`,
                 opacity: 0.15,
-              }}
-              animate={{
-                y: [0, -50, 0],
-                opacity: [0.1, 0.35, 0.1],
-              }}
-              transition={{
-                duration: particle.duration,
-                delay: particle.delay,
-                repeat: Infinity,
-                ease: 'linear',
+                ['--particle-duration' as string]: `${particle.duration}s`,
+                ['--particle-delay' as string]: `${particle.delay}s`,
               }}
             />
           ))}
