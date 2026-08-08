@@ -77,7 +77,7 @@ export const Hero = memo(function Hero() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
           <m.div
             variants={containerVariants}
-            initial="hidden"
+            initial={false}
             animate="visible"
             className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center"
             transition={{ staggerChildren: 0.12, delayChildren: 0.15 }}
