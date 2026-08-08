@@ -45,25 +45,26 @@ export function HabitCard({
 
   return (
     <Card
-      className={`group relative flex flex-row items-center justify-between p-3.5 sm:p-4 gap-3 sm:gap-4 rounded-2xl border transition-all duration-300 ease-out card-lift ${
+      className={`group relative flex flex-row items-center justify-between p-4 sm:p-5 gap-4 sm:gap-6 rounded-3xl border bg-white dark:bg-[#09090b] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] ${
         isCompleted
-          ? 'border-primary/25 bg-primary/5 shadow-xs'
+          ? 'border-emerald-500/25 shadow-[0_8px_30px_-4px_rgba(16,185,129,0.12)] bg-emerald-500/2'
           : isSkipped
-            ? 'border-sky-300/40 bg-sky-500/5 shadow-xs'
-            : 'border-border/60 bg-card hover:border-border/90 hover:shadow-md hover:-translate-y-0.5'
+            ? 'border-sky-500/25 shadow-[0_8px_30px_-4px_rgba(14,165,233,0.12)] bg-sky-500/2'
+            : 'border-neutral-200/80 dark:border-neutral-800/80 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.03)] hover:shadow-[0_12px_40px_-4px_rgba(0,0,0,0.08)] hover:border-neutral-300 dark:hover:border-neutral-700 hover:-translate-y-0.5'
       }`}
     >
-      <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0 flex-1">
+      {/* Left Container: Status, Icon, and Details */}
+      <div className="flex items-center gap-4 sm:gap-5 min-w-0 flex-1">
         {/* Toggle Checkbox Button */}
         <motion.button
           onClick={() => onToggle(habit.id)}
           disabled={isToggling}
-          whileTap={reduce || isToggling ? undefined : { scale: 0.92 }}
-          transition={reduce ? undefined : { type: 'spring', stiffness: 400, damping: 10 }}
-          className={`relative w-10 h-10 sm:w-11 sm:h-11 rounded-full border-2 flex items-center justify-center shrink-0 transition-all duration-300 ease-out focus-ring touch-target btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
+          whileTap={reduce || isToggling ? undefined : { scale: 0.9 }}
+          transition={reduce ? undefined : { type: 'spring', stiffness: 500, damping: 25 }}
+          className={`relative flex items-center justify-center shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-[1.5px] transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#09090b] ${
             isCompleted
-              ? 'bg-primary border-primary text-primary-foreground shadow-sm shadow-primary/20 ring-2 ring-primary/20'
-              : 'border-border/80 bg-background hover:border-primary/60 hover:bg-primary/5'
+              ? 'bg-emerald-500 border-emerald-500 text-white shadow-[0_2px_16px_rgba(16,185,129,0.4)] ring-4 ring-emerald-500/20 focus-visible:ring-emerald-500'
+              : 'border-neutral-300 dark:border-neutral-700 bg-transparent hover:border-neutral-400 dark:hover:border-neutral-500 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 focus-visible:ring-neutral-400'
           } ${isToggling ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
           aria-label={`${isCompleted ? 'إلغاء تسجيل' : 'تسجيل'} عادة ${habit.name}`}
           aria-pressed={isCompleted}
@@ -71,61 +72,64 @@ export function HabitCard({
         >
           {isCompleted && (
             <motion.span
-              initial={reduce ? false : { scale: 0, rotate: -20 }}
+              initial={reduce ? false : { scale: 0, rotate: -25 }}
               animate={{ scale: 1, rotate: 0 }}
-              transition={reduce ? undefined : { type: 'spring', stiffness: 500, damping: 15 }}
+              transition={reduce ? undefined : { type: 'spring', stiffness: 500, damping: 20 }}
               className="flex items-center justify-center"
             >
-              <Check className="w-4.5 h-4.5 sm:w-5 sm:h-5 stroke-[2.5]" />
+              <Check className="w-5 h-5 sm:w-6 sm:h-6 stroke-3" />
             </motion.span>
           )}
         </motion.button>
 
-        {/* Habit Icon & Details */}
-        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
+        {/* Habit Icon & Metadata */}
+        <div className="flex items-center gap-3.5 sm:gap-4 min-w-0 flex-1">
           <div
-            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105 shadow-2xs ${colorClass}`}
+            className={`flex items-center justify-center shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-[18px] transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-110 shadow-[0_2px_12px_-4px_rgba(0,0,0,0.06)] ${colorClass}`}
           >
             {createElement(getIconComponent(habit.icon), {
-              className: 'w-4.5 h-4.5 sm:w-5 sm:h-5',
+              className: 'w-5 h-5 sm:w-6 sm:h-6 opacity-90',
             })}
           </div>
 
-          <div className="min-w-0 flex-1 space-y-1">
+          <div className="min-w-0 flex-1 flex flex-col justify-center space-y-1.5">
             <h4
-              className={`text-sm sm:text-base font-bold leading-snug tracking-tight truncate transition-colors duration-200 ${
+              className={`text-[15px] sm:text-[17px] font-semibold leading-tight tracking-[-0.01em] truncate transition-all duration-300 ${
                 isCompleted
-                  ? 'line-through text-muted-foreground/70'
+                  ? 'line-through decoration-neutral-300 dark:decoration-neutral-600 text-neutral-400 dark:text-neutral-500'
                   : isSkipped
-                    ? 'text-foreground/80'
-                    : 'text-foreground'
+                    ? 'text-neutral-500 dark:text-neutral-400'
+                    : 'text-neutral-900 dark:text-neutral-100'
               }`}
               title={habit.name}
             >
               {habit.name}
             </h4>
 
-            <div className="flex items-center gap-1.5 flex-wrap min-w-0">
+            {/* Tags & Metadata */}
+            <div className="flex items-center gap-2 flex-wrap min-w-0">
               {isSkipped ? (
-                <span className="text-[10px] sm:text-xs font-bold bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-300/40 flex items-center gap-1 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0">
-                  <Snowflake className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1.5 bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 whitespace-nowrap shrink-0 transition-colors">
+                  <Snowflake className="w-3.5 h-3.5" />
                   <span>مُتخطّى</span>
                 </span>
               ) : (
-                <span className="text-[10px] sm:text-xs font-semibold bg-muted/80 text-muted-foreground uppercase tracking-wider px-2 py-0.5 rounded-md border border-border/40 whitespace-nowrap">
+                <span className="text-[11px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 border border-neutral-200/80 dark:border-neutral-700/80 whitespace-nowrap transition-colors">
                   {habit.frequency === 'daily' ? 'يومي' : 'أسبوعي'}
                 </span>
               )}
 
-              <span className="text-[10px] sm:text-xs text-border/80 shrink-0 select-none">•</span>
+              <span className="text-[11px] text-neutral-300 dark:text-neutral-700 shrink-0 select-none">
+                •
+              </span>
 
               {stats.currentStreak > 0 ? (
-                <span className="text-[10px] sm:text-xs font-bold bg-primary/10 text-primary border border-primary/20 flex items-center gap-1 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0 shadow-2xs">
-                  <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-primary/20 text-primary" />
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1.5 bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20 whitespace-nowrap shrink-0 shadow-[0_1px_2px_rgba(249,115,22,0.1)] transition-colors">
+                  <Flame className="w-3.5 h-3.5 fill-orange-500/20" />
                   <span>{stats.currentStreak}</span>
                 </span>
               ) : (
-                <span className="text-[10px] sm:text-xs text-muted-foreground/80 font-medium truncate">
+                <span className="text-[11px] text-neutral-400 dark:text-neutral-500 font-medium truncate">
                   لا يوجد تسلسل
                 </span>
               )}
@@ -134,8 +138,8 @@ export function HabitCard({
         </div>
       </div>
 
-      {/* Skip (streak-freeze) & Edit Action Buttons */}
-      <div className="flex items-center gap-1 shrink-0">
+      {/* Right Container: Action Buttons */}
+      <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
         <Button
           variant="ghost"
           size="icon"
@@ -144,14 +148,14 @@ export function HabitCard({
           aria-label={`${isSkipped ? 'إلغاء تخطي' : 'تخطي'} عادة ${habit.name} لهذا اليوم`}
           aria-pressed={isSkipped}
           id={`skip-habit-${habit.id}`}
-          className={`shrink-0 rounded-xl transition-all duration-200 touch-target focus-ring btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
+          className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-[14px] transition-all duration-300 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#09090b] cursor-pointer ${
             isSkipped
-              ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-300/50'
-              : 'text-muted-foreground/70 hover:text-sky-500 hover:bg-sky-500/10 opacity-70 group-hover:opacity-100'
+              ? 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/20 focus-visible:ring-sky-500'
+              : 'text-neutral-400 hover:text-sky-500 hover:bg-sky-500/10 hover:border-sky-500/20 border border-transparent focus-visible:ring-sky-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
           } ${isSkipping ? 'opacity-50 cursor-wait' : ''}`}
           title="تخطي هذا اليوم دون كسر السلسلة"
         >
-          <Snowflake className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+          <Snowflake className="w-4.5 h-4.5" />
         </Button>
 
         <Button
@@ -161,14 +165,14 @@ export function HabitCard({
           aria-label={`ملاحظة عادة ${habit.name} لهذا اليوم`}
           aria-pressed={hasNote}
           id={`note-habit-${habit.id}`}
-          className={`shrink-0 rounded-xl transition-all duration-200 touch-target focus-ring btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer ${
+          className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-[14px] transition-all duration-300 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#09090b] cursor-pointer ${
             hasNote
-              ? 'bg-primary/10 text-primary border border-primary/25'
-              : 'text-muted-foreground/70 hover:text-primary hover:bg-primary/10 opacity-70 group-hover:opacity-100'
+              ? 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/25 focus-visible:ring-indigo-500'
+              : 'text-neutral-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-500/10 hover:border-indigo-500/20 border border-transparent focus-visible:ring-indigo-400 opacity-100 sm:opacity-0 sm:group-hover:opacity-100'
           }`}
           title={hasNote ? 'تعديل ملاحظة اليوم' : 'إضافة ملاحظة'}
         >
-          <NotebookPen className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+          <NotebookPen className="w-4.5 h-4.5" />
         </Button>
 
         <Button
@@ -177,9 +181,9 @@ export function HabitCard({
           onClick={() => onEdit(habit)}
           aria-label={`تعديل عادة ${habit.name}`}
           id={`edit-habit-${habit.id}`}
-          className="shrink-0 rounded-xl hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-all duration-200 touch-target focus-ring btn-press focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 opacity-80 group-hover:opacity-100 cursor-pointer"
+          className="shrink-0 flex items-center justify-center w-10 h-10 rounded-[14px] text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:border-neutral-200 dark:hover:border-neutral-700 border border-transparent transition-all duration-300 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#09090b] opacity-100 sm:opacity-0 sm:group-hover:opacity-100 cursor-pointer"
         >
-          <Edit3 className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
+          <Edit3 className="w-4.5 h-4.5" />
         </Button>
       </div>
     </Card>
