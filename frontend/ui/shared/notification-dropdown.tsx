@@ -14,6 +14,7 @@ import {
   Megaphone,
 } from '@phosphor-icons/react';
 import { useNotifications } from '@/frontend/state/NotificationContext';
+import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
 import { ScrollArea } from '@/frontend/ui/primitives/scroll-area';
 import { usePortalPopover } from './use-portal-popover';
@@ -28,6 +29,7 @@ const typeIcons: Record<string, React.ReactNode> = {
 };
 
 export function NotificationDropdown() {
+  const { user } = useSession();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
   const [isOpen, setIsOpen] = useState(false);
@@ -74,6 +76,8 @@ export function NotificationDropdown() {
       items[nextIndex]?.focus();
     }
   }
+
+  if (!user) return null;
 
   return (
     <div ref={ref} className="relative inline-block text-start">
