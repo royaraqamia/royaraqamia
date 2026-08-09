@@ -1,0 +1,256 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { toast } from 'sonner';
+import {
+  LoaderCircle,
+  CalendarClock,
+  Globe,
+  Link2,
+  AlertCircle,
+  Trash2,
+  Clock,
+} from 'lucide-react';
+import { useUpdateLink } from '@/frontend/state/linksnap/use-links';
+import { DatePicker } from '@/frontend/ui/primitives/date-picker';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/frontend/ui/primitives/dialog';
+import { Button } from '@/frontend/ui/primitives/button';
+import type { ShortenedLink } from '@/frontend/api/linksnap';
+
+interface LinkEditDialogProps {
+  open: boolean;
+  code: string;
+  currentUrl: string;
+  currentExpiresAt: string | null;
+  token: string;
+  onSaved: (link: ShortenedLink) => void;
+  onClose: () => void;
+}
+
+function splitExpiry(value: string | null): { date: string; time: string } {
+  if (!value) return { date: '', time: '' };
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return { date: '', time: '' };
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  return { date: `${y}-${m}-${day}`, time: `${hh}:${mm}` };
+}
+
+export function LinkEditDialog({
+  open,
+  code,
+  currentUrl,
+  currentExpiresAt,
+  token,
+  onSaved,
+  onClose,
+}: LinkEditDialogProps) {
+  const [editingUrlValue, setEditingUrlValue] = useState(currentUrl);
+  const [expiresDateValue, setExpiresDateValue] = useState('');
+  const [expiresTimeValue, setExpiresTimeValue] = useState('');
+  const hasExpiry = Boolean(expiresDateValue || expiresTimeValue);
+  const { updateLink, updateLoading, updateError } = useUpdateLink(token);
+
+  useEffect(() => {
+    if (open) {
+      const initial = splitExpiry(currentExpiresAt);
+      setEditingUrlValue(currentUrl);
+      setExpiresDateValue(initial.date);
+      setExpiresTimeValue(initial.time);
+    }
+  }, [open, currentUrl, currentExpiresAt]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const link = await updateLink(code, {
+        originalUrl: editingUrlValue,
+        expiresAt: expiresDateValue
+          ? new Date(`${expiresDateValue}T${expiresTimeValue || '23:59'}`).toISOString()
+          : null,
+      });
+      onSaved(link);
+      toast.success('تم تحديث الرابط بنجاح');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'خطأ في تحديث الرابط.';
+      toast.error(msg);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
+    >
+      <DialogContent
+        dir="rtl"
+        className="sm:max-w-lg w-[calc(100%-2rem)] mx-auto p-0 gap-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/60 dark:border-neutral-800 bg-background/95 dark:bg-neutral-900/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_24px_50px_-12px_rgba(0,0,0,0.7)] transition-all duration-300"
+      >
+        {/* Subtle Ambient Light Glow Accent */}
+        <div
+          className="absolute top-0 inset-x-0 h-1 bg-linear-to-r from-transparent via-primary/50 to-transparent"
+          aria-hidden="true"
+        />
+
+        {/* Dialog Header */}
+        <DialogHeader className="px-6 py-5 sm:px-7 sm:py-6 text-start border-b border-border/50 dark:border-neutral-800 bg-muted/30 dark:bg-neutral-900/50 space-y-2">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-xs shrink-0">
+              <Link2 className="w-5 h-5" aria-hidden="true" />
+            </div>
+            <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+              تعديل الرابط المُختصَر
+            </DialogTitle>
+          </div>
+          <DialogDescription className="flex items-center gap-2 pt-1 text-xs text-muted-foreground">
+            <span className="font-medium shrink-0">كود الرابط:</span>
+            <code className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-background dark:bg-neutral-800/90 border border-border/60 dark:border-neutral-700/60 font-mono font-semibold text-foreground tracking-wide max-w-50 sm:max-w-70 truncate">
+              <span className="text-primary font-bold">/</span>
+              <span className="truncate">{code}</span>
+            </code>
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Edit Form */}
+        <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-6 text-start">
+          {/* Destination URL Input Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="edit-url-input"
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between"
+            >
+              <span className="flex items-center gap-1.5">
+                <span>الرابط الوجهة</span>
+                <span className="text-destructive font-bold" aria-hidden="true">
+                  *
+                </span>
+              </span>
+            </label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 right-0 pr-3.5 flex items-center pointer-events-none text-muted-foreground group-focus-within:text-primary transition-colors">
+                <Globe className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <input
+                id="edit-url-input"
+                type="url"
+                required
+                value={editingUrlValue}
+                onChange={(e) => setEditingUrlValue(e.target.value)}
+                className="w-full h-11 pr-10 pl-4 rounded-xl border border-border/60 dark:border-neutral-800 bg-background dark:bg-neutral-950/60 text-sm font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary hover:border-border transition-all duration-200 shadow-xs"
+                placeholder="https://example.com"
+                aria-describedby={updateError ? 'edit-url-error' : undefined}
+                aria-invalid={updateError ? true : undefined}
+              />
+            </div>
+          </div>
+
+          {/* Expiry Settings */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="edit-expiry-date"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"
+              >
+                <CalendarClock className="w-4 h-4 text-primary" aria-hidden="true" />
+                <span>تاريخ الانتهاء</span>
+                <span className="text-[10px] font-normal tracking-normal text-muted-foreground/70 lowercase px-2 py-0.5 rounded-full bg-muted dark:bg-neutral-800 border border-border/40">
+                  (اختياري)
+                </span>
+              </label>
+              {hasExpiry && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setExpiresDateValue('');
+                    setExpiresTimeValue('');
+                  }}
+                  aria-label="إزالة تاريخ الانتهاء"
+                  title="إزالة تاريخ الانتهاء (رابط دائم)"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all duration-200 rounded-lg px-2 py-1 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
+                >
+                  <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>إزالة الانتهاء</span>
+                </button>
+              )}
+            </div>
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+              <DatePicker
+                value={expiresDateValue}
+                onChange={setExpiresDateValue}
+                placeholder="اختر تاريخ الانتهاء"
+                aria-label="تاريخ انتهاء صلاحية الرابط"
+                className="w-full h-11 px-3.5 bg-background dark:bg-neutral-950/60 border-border/60 dark:border-neutral-800 hover:border-border rounded-xl text-sm font-medium text-foreground focus:ring-2 focus:ring-primary/20 transition-all duration-200 shadow-xs"
+              />
+              <div className="relative shrink-0 w-full sm:w-36">
+                <input
+                  id="edit-expiry-time-input"
+                  type="time"
+                  value={expiresTimeValue}
+                  onChange={(e) => setExpiresTimeValue(e.target.value)}
+                  aria-label="وقت انتهاء الصلاحية"
+                  className="w-full h-11 px-3.5 bg-background dark:bg-neutral-950/60 border border-border/60 dark:border-neutral-800 hover:border-border rounded-xl text-sm font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 shadow-xs"
+                />
+              </div>
+            </div>
+
+            <p className="text-xs text-muted-foreground/80 leading-relaxed flex items-center gap-1.5 pt-0.5">
+              <Clock className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" aria-hidden="true" />
+              <span>عند انتهاء الصلاحية يتوقف الرابط عن العمل تلقائيًا.</span>
+            </p>
+          </div>
+
+          {/* Dynamic Error Feedback */}
+          {updateError && (
+            <div
+              id="edit-url-error"
+              role="alert"
+              aria-live="polite"
+              className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 dark:bg-destructive/15 border border-destructive/25 text-destructive dark:text-red-400 text-xs font-medium leading-normal animate-in fade-in duration-200"
+            >
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+              <span className="flex-1">{updateError}</span>
+            </div>
+          )}
+
+          {/* Footer Action Buttons */}
+          <div className="pt-4 sm:pt-5 flex flex-col-reverse sm:flex-row items-center justify-end gap-2.5 border-t border-border/50 dark:border-neutral-800">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              className="w-full sm:w-auto h-10 rounded-xl px-5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 border-border/60 transition-all duration-200 active:scale-[0.98] cursor-pointer"
+            >
+              إلغاء
+            </Button>
+            <Button
+              type="submit"
+              disabled={updateLoading}
+              className="w-full sm:w-auto h-10 rounded-xl px-6 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {updateLoading ? (
+                <>
+                  <LoaderCircle className="w-4 h-4 animate-spin opacity-90" aria-hidden="true" />
+                  <span>جاري الحفظ...</span>
+                </>
+              ) : (
+                <span>حفظ التغييرات</span>
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}

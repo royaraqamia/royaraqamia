@@ -9,7 +9,6 @@ import {
   XCircle,
   Eye,
   Globe,
-  X,
   FileText,
   Heading as HeadingIcon,
   Image as ImageIcon,
@@ -17,6 +16,10 @@ import {
   Tags as TagsIcon,
 } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
+import {
+  Dialog,
+  DialogContent,
+} from '@/frontend/ui/primitives/dialog';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
@@ -227,17 +230,20 @@ export function EditorSidePanel({
         ? 'bg-amber-500/10 border-amber-500/20'
         : 'bg-rose-500/10 border-rose-500/20';
 
-  if (!open) return null;
-
   return (
-    <aside
-      role="complementary"
-      aria-label="لوحة جانبيَّة للمُحرِّر"
-      className="flex w-full max-w-sm shrink-0 flex-col border-e border-border/60 bg-background/85 backdrop-blur-xl md:w-80 transition-all duration-300 shadow-2xl z-30"
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (!next) onClose();
+      }}
     >
-      {/* Header Bar */}
-      <div className="flex items-center justify-between gap-2 border-b border-border/50 px-3.5 py-2.5 bg-background/40 backdrop-blur-md">
-        <div className="flex items-center gap-1 rounded-xl bg-muted/60 p-1 border border-border/40 backdrop-blur-xs w-full max-w-57.5">
+      <DialogContent
+        dir="rtl"
+        className="sm:max-w-xl w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background/85 backdrop-blur-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]"
+      >
+        {/* Tab Header */}
+        <div className="sticky top-0 z-10 flex items-center rounded-t-[28px] border-b border-border/50 bg-background/85 px-6 sm:px-8 pt-6 pb-3 backdrop-blur-2xl">
+          <div className="flex flex-1 items-center gap-1 rounded-xl bg-muted/60 p-1 border border-border/40 ps-10 sm:ps-11">
           <Button
             type="button"
             variant="ghost"
@@ -280,21 +286,11 @@ export function EditorSidePanel({
             <TagsIcon className="size-3.5 me-1.5 shrink-0" />
             الوسوم
           </Button>
+          </div>
         </div>
 
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          onClick={onClose}
-          aria-label="إغلاق اللوحة الجانبيَّة"
-          className="text-muted-foreground hover:text-foreground hover:bg-muted/60 rounded-xl transition-all duration-200 shrink-0 border border-transparent hover:border-border/40 focus-visible:ring-2 focus-visible:ring-primary/20"
-        >
-          <X className="size-4" />
-        </Button>
-      </div>
-
-      {/* Main Scrollable Content Area */}
-      <div className="flex-1 space-y-5 overflow-y-auto p-4 custom-scrollbar">
+        {/* Main Content Area */}
+        <div className="space-y-5 px-6 sm:px-8 py-5">
         {tab === 'seo' ? (
           <>
             <section className="space-y-4">
@@ -575,7 +571,8 @@ export function EditorSidePanel({
             </p>
           </>
         )}
-      </div>
-    </aside>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

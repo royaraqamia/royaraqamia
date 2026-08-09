@@ -45,21 +45,21 @@ export function NotesDialog({
     >
       <DialogContent
         dir="rtl"
-        className="sm:max-w-lg w-[calc(100%-2rem)] mx-auto p-0 rounded-3xl overflow-hidden border border-border/60 bg-background/95 backdrop-blur-2xl shadow-2xl shadow-black/10 transition-all duration-300"
+        className="sm:max-w-xl w-[calc(100%-1.5rem)] mx-auto p-0 rounded-4xl border border-border/40 bg-background/85 backdrop-blur-3xl shadow-[0_24px_60px_-12px_rgba(0,0,0,0.15)] transform-gpu transition-all duration-300 ease-out"
       >
         {/* Header Section */}
-        <div className="relative border-b border-border/40 bg-muted/20 px-6 pt-6 pb-5">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-xs">
-              <BookOpenText className="h-5.5 w-5.5" aria-hidden="true" />
+        <div className="relative rounded-t-4xl border-b border-border/30 bg-linear-to-b from-muted/40 to-transparent px-6 sm:px-8 pt-8 pb-6">
+          <div className="flex items-start gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/5 text-primary ring-1 ring-inset ring-primary/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.1)]">
+              <BookOpenText className="h-6 w-6" aria-hidden="true" />
             </div>
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 pt-0.5">
               <DialogHeader className="p-0 space-y-0 text-right">
-                <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
                   ملاحظة اليوم
                 </DialogTitle>
               </DialogHeader>
-              <p className="text-xs text-muted-foreground mt-0.5 font-normal truncate">
+              <p className="text-sm text-muted-foreground/80 mt-1.5 font-medium leading-relaxed sm:truncate">
                 سجِّل انطباعاتك ومُفكِّرة إنجازك لهذا اليوم
               </p>
             </div>
@@ -72,78 +72,80 @@ export function NotesDialog({
             e.preventDefault();
             onSave(note);
           }}
-          className="p-6 space-y-5 text-right"
+          className="text-right flex flex-col"
         >
-          {/* Habit Context Card */}
-          <div className="group rounded-2xl border border-border/50 bg-linear-to-br from-muted/40 to-muted/10 p-4 transition-all duration-200 hover:border-border/80">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <span
-                  className="flex h-2 w-2 rounded-full bg-primary shrink-0 animate-pulse"
-                  aria-hidden="true"
+          <div className="p-6 sm:p-8 space-y-6">
+            {/* Habit Context Card */}
+            <div className="group rounded-2xl border border-border/40 bg-muted/20 p-4 sm:p-5 transition-all duration-300 hover:bg-muted/40 hover:border-border/60 hover:shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
+                  </span>
+                  <span className="text-sm font-semibold text-foreground/90 truncate wrap-break-word line-clamp-2 sm:line-clamp-1">
+                    {habitName}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto rounded-xl bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground border border-border/50 shadow-sm shrink-0 transition-colors group-hover:text-foreground/80 group-hover:border-border/80">
+                  <Calendar className="h-4 w-4 text-primary/80" aria-hidden="true" />
+                  <span>{dateLabel}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Textarea Input Group */}
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+                <label
+                  htmlFor="input-log-note"
+                  className="font-semibold text-foreground/90 flex items-center gap-2 select-none"
+                >
+                  <Sparkles className="h-4 w-4 text-primary/90" aria-hidden="true" />
+                  <span>كيف كانت تجربتك اليوم؟</span>
+                </label>
+
+                {/* Dynamic Character Counter Badge */}
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium transition-all duration-300 select-none shadow-sm ${
+                    isAtLimit
+                      ? 'bg-destructive/15 text-destructive border-destructive/30 font-bold scale-[1.02]'
+                      : isNearLimit
+                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 font-bold scale-[1.02]'
+                        : 'bg-background text-muted-foreground border-border/50'
+                  } border`}
+                  dir="ltr"
+                >
+                  <span className="min-w-6 text-right">{charCount}</span>
+                  <span className="opacity-40">/</span>
+                  <span>{maxLength}</span>
+                </div>
+              </div>
+
+              <div className="relative group">
+                <Textarea
+                  id="input-log-note"
+                  value={note}
+                  onChange={(e) => {
+                    if (e.target.value.length <= maxLength) setNote(e.target.value);
+                  }}
+                  placeholder="اكتب عن شعورك تجاه هذه العادة اليوم... تسجيل المشاعر يُقوِّي الالتزام بمرور الوقت."
+                  rows={5}
+                  maxLength={maxLength}
+                  autoFocus
+                  className="w-full min-h-35 rounded-2xl border-border/50 bg-background/50 p-4 sm:p-5 text-sm sm:text-base font-medium leading-relaxed text-foreground placeholder:text-muted-foreground/50 transition-all duration-300 ease-out resize-none shadow-sm hover:border-border/80 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 focus:shadow-md focus-visible:outline-none"
                 />
-                <span className="text-sm font-semibold text-foreground truncate break-all sm:break-normal">
-                  {habitName}
-                </span>
               </div>
-              <div className="flex items-center gap-1.5 self-start sm:self-auto rounded-lg bg-background/80 px-2.5 py-1 text-xs font-medium text-muted-foreground border border-border/40 shadow-2xs backdrop-blur-xs shrink-0">
-                <Calendar className="h-3.5 w-3.5 text-primary/70" aria-hidden="true" />
-                <span>{dateLabel}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Textarea Input Group */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-xs">
-              <label
-                htmlFor="input-log-note"
-                className="font-medium text-foreground/90 flex items-center gap-1.5 select-none"
-              >
-                <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-                <span>لماذا / كيف شعرت؟</span>
-              </label>
-
-              {/* Dynamic Character Counter Badge */}
-              <div
-                className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-mono font-medium transition-all duration-200 select-none ${
-                  isAtLimit
-                    ? 'bg-destructive/10 text-destructive border border-destructive/20 font-bold'
-                    : isNearLimit
-                      ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 font-semibold'
-                      : 'bg-muted text-muted-foreground/80 border border-border/40'
-                }`}
-                dir="ltr"
-              >
-                <span>{charCount}</span>
-                <span className="opacity-40">/</span>
-                <span>{maxLength}</span>
-              </div>
-            </div>
-
-            <div className="relative group">
-              <Textarea
-                id="input-log-note"
-                value={note}
-                onChange={(e) => {
-                  if (e.target.value.length <= 500) setNote(e.target.value);
-                }}
-                placeholder="اكتب عن تجربتك مع هذه العادة اليوم... تسجيل المشاعر يُقوِّي الالتزام."
-                rows={5}
-                maxLength={500}
-                autoFocus
-                className="w-full rounded-2xl border-border/60 bg-muted/20 p-3.5 text-sm font-medium leading-relaxed text-foreground placeholder:text-muted-foreground/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:outline-none transition-all duration-200 resize-none shadow-2xs"
-              />
             </div>
           </div>
 
           {/* Action Footer */}
-          <div className="pt-3 border-t border-border/30 flex items-center justify-end gap-2.5">
+          <div className="bg-muted/10 px-6 sm:px-8 py-5 border-t border-border/30 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 rounded-b-4xl">
             <Button
               type="button"
               variant="outline"
               onClick={onClose}
-              className="flex-1 sm:flex-none rounded-xl px-5 py-2.5 text-xs font-semibold border-border/60 hover:bg-muted/80 hover:text-foreground active:scale-[0.98] transition-all duration-200 h-10"
+              className="w-full sm:w-auto rounded-xl px-6 py-2.5 text-sm font-semibold border-border/50 bg-transparent hover:bg-muted/80 hover:text-foreground active:scale-[0.98] transition-all duration-200 h-11"
             >
               إلغاء
             </Button>
@@ -151,11 +153,11 @@ export function NotesDialog({
               type="submit"
               disabled={isSaving}
               id="btn-save-note"
-              className="flex-1 sm:flex-none rounded-xl px-6 py-2.5 text-xs font-semibold shadow-md shadow-primary/15 transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] disabled:opacity-60 disabled:scale-100 disabled:cursor-not-allowed h-10 flex items-center justify-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90"
+              className="w-full sm:w-auto rounded-xl px-8 py-2.5 text-sm font-semibold shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-primary/30 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:hover:translate-y-0 disabled:scale-100 disabled:cursor-not-allowed h-11 flex items-center justify-center gap-2.5 bg-primary text-primary-foreground hover:bg-primary/95"
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+                  <Loader2 className="w-4.5 h-4.5 animate-spin" aria-hidden="true" />
                   <span>جاري الحفظ...</span>
                 </>
               ) : (

@@ -12,12 +12,21 @@ import {
   Calendar,
   AlertTriangle,
   QrCode,
+  MoreHorizontal,
+  ExternalLink,
 } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
-import { LinkEditForm } from './link-edit-form';
+import { LinkEditDialog } from './link-edit-dialog';
 import { LinkAnalyticsDrawer } from './link-analytics-drawer';
 import { LinkQrModal } from './link-qr-modal';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/frontend/ui/primitives/dropdown-menu';
 import { cn } from '@/frontend/shared/cn';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
@@ -29,18 +38,21 @@ import type { ShortenedLink } from '@/frontend/api/linksnap';
 const STATUS_META: Record<LinkStatus, { label: string; className: string; dotClass: string }> = {
   active: {
     label: 'نشط',
-    className: 'text-success bg-success/10 border-success/25',
-    dotClass: 'bg-success',
+    className:
+      'text-emerald-700 bg-emerald-50/80 border-emerald-200/60 dark:text-emerald-400 dark:bg-emerald-950/40 dark:border-emerald-800/50',
+    dotClass: 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]',
   },
   expired: {
     label: 'منتهي الصلاحية',
-    className: 'text-muted-foreground bg-muted/50 border-border',
-    dotClass: 'bg-muted-foreground',
+    className:
+      'text-neutral-600 bg-neutral-100/80 border-neutral-200/60 dark:text-neutral-400 dark:bg-neutral-800/60 dark:border-neutral-700/50',
+    dotClass: 'bg-neutral-400 dark:bg-neutral-500',
   },
   blocked: {
     label: 'محظور',
-    className: 'text-destructive bg-destructive/10 border-destructive/25',
-    dotClass: 'bg-destructive',
+    className:
+      'text-rose-700 bg-rose-50/80 border-rose-200/60 dark:text-rose-400 dark:bg-rose-950/40 dark:border-rose-800/50',
+    dotClass: 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]',
   },
 };
 
@@ -123,48 +135,86 @@ export function LinkRowCard({
   };
 
   return (
-    <div className="bg-card border-border rounded-2xl border shadow-sm transition-all duration-200 hover:border-primary/30 card-lift">
-      <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        {onToggleSelect ? (
-          <button
-            type="button"
-            onClick={() => onToggleSelect(code)}
-            aria-pressed={isSelected}
-            aria-label={isSelected ? 'إلغاء تحديد الرابط' : 'تحديد الرابط'}
-            className={`shrink-0 w-5.5 h-5.5 rounded-md border transition-colors cursor-pointer focus-ring touch-target btn-press flex items-center justify-center ${
-              isSelected
-                ? 'bg-primary border-primary text-primary-foreground'
-                : 'border-border bg-muted/40 text-transparent hover:border-primary/40'
-            }`}
-          >
-            <Check aria-hidden="true" className="w-3.5 h-3.5" strokeWidth={3} />
-          </button>
-        ) : null}
+    <article
+      className={cn(
+        'group relative flex w-full flex-col rounded-2xl bg-white transition-all duration-300 ease-out dark:bg-neutral-950',
+        'border border-neutral-200/80 dark:border-neutral-800/80',
+        'shadow-xs hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-lg hover:shadow-neutral-900/5 dark:hover:border-neutral-700 dark:hover:shadow-black/40',
+        isSelected &&
+          'border-neutral-900 ring-2 ring-neutral-900/10 dark:border-neutral-100 dark:ring-neutral-100/10'
+      )}
+    >
+      <div className="flex flex-col gap-3.5 p-4 sm:p-5 md:flex-row md:items-center md:justify-between">
+        {/* Checkbox & Details Section */}
+        <div className="flex items-start gap-3.5 min-w-0 flex-1">
+          {onToggleSelect ? (
+            <button
+              type="button"
+              onClick={() => onToggleSelect(code)}
+              aria-pressed={isSelected}
+              aria-label={isSelected ? 'إلغاء تحديد الرابط' : 'تحديد الرابط'}
+              className={cn(
+                'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all duration-200 ease-out',
+                'active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
+                isSelected
+                  ? 'border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900'
+                  : 'border-neutral-300/90 bg-neutral-50/50 text-transparent hover:border-neutral-400 dark:border-neutral-700 dark:bg-neutral-900/40 dark:hover:border-neutral-500'
+              )}
+            >
+              <Check aria-hidden="true" className="h-3.5 w-3.5 stroke-3" />
+            </button>
+          ) : null}
 
-        {editingCode === code ? (
-          <LinkEditForm
-            code={code}
-            currentUrl={originalUrl}
-            currentExpiresAt={expiresAt}
-            token={token}
-            onSaved={(link) => {
-              onUpdated(link);
-              setEditingCode(null);
-            }}
-            onCancel={() => setEditingCode(null)}
-          />
-        ) : (
-          <div className="space-y-1.5 min-w-0 flex-1">
-            <div className="flex items-center gap-2.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            {/* Top Row: Short Slug Code + Status + Date Badges */}
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
-                className="text-sm font-mono font-bold text-primary hover:underline cursor-pointer shrink-0 bg-transparent border-none p-0 focus-ring touch-target btn-press rounded-full"
                 onClick={() => window.open(fullShortUrl, '_blank')}
+                className={cn(
+                  'group/code inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/80 bg-neutral-100/70 px-2.5 py-1 font-mono text-sm font-semibold tracking-tight text-neutral-900 transition-all duration-200',
+                  'hover:border-blue-500/40 hover:bg-blue-50/50 hover:text-blue-600 dark:border-neutral-800 dark:bg-neutral-900/80 dark:text-neutral-100 dark:hover:border-blue-500/40 dark:hover:bg-blue-950/30 dark:hover:text-blue-400',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950'
+                )}
+                title={`فتح ${fullShortUrl}`}
               >
-                /{code}
+                <span>/{code}</span>
+                <ExternalLink
+                  aria-hidden="true"
+                  className="h-3 w-3 opacity-40 transition-opacity duration-200 group-hover/code:opacity-100"
+                />
               </button>
-              <span className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full font-medium font-mono flex items-center gap-1 shrink-0">
-                <Calendar aria-hidden="true" className="w-3 h-3" />
+
+              {/* Status Badge */}
+              {(() => {
+                const meta = STATUS_META[status] ?? STATUS_META.active;
+                return (
+                  <span
+                    className={cn(
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium backdrop-blur-md transition-all duration-200',
+                      meta.className
+                    )}
+                    title={expiresAt ? `ينتهي في ${expiresAt}` : undefined}
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'h-1.5 w-1.5 rounded-full',
+                        meta.dotClass,
+                        status === 'active' && 'animate-pulse'
+                      )}
+                    />
+                    {meta.label}
+                  </span>
+                );
+              })()}
+
+              {/* Date Badge */}
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200/70 bg-neutral-50/80 px-2.5 py-0.5 text-xs font-medium text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
+                <Calendar
+                  aria-hidden="true"
+                  className="h-3 w-3 text-neutral-400 dark:text-neutral-500"
+                />
                 {new Intl.DateTimeFormat('ar-SA', {
                   month: 'short',
                   day: 'numeric',
@@ -173,102 +223,127 @@ export function LinkRowCard({
                   numberingSystem: 'latn',
                 }).format(new Date(createdAt))}
               </span>
-              {(() => {
-                const meta = STATUS_META[status] ?? STATUS_META.active;
-                return (
-                  <span
-                    className={`text-xs font-bold px-2 py-0.5 rounded-full border inline-flex items-center gap-1.5 shrink-0 ${meta.className}`}
-                    title={expiresAt ? `ينتهي في ${expiresAt}` : undefined}
-                  >
-                    <span
-                      aria-hidden="true"
-                      className={`w-1.5 h-1.5 rounded-full ${meta.dotClass} ${status === 'active' ? 'animate-pulse' : ''}`}
-                    />
-                    {meta.label}
-                  </span>
-                );
-              })()}
             </div>
-            <p className="text-xs text-muted-foreground truncate" title={originalUrl}>
+
+            {/* Target Destination URL */}
+            <p
+              className="truncate text-[13px] leading-relaxed text-neutral-500 transition-colors duration-200 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-300"
+              title={originalUrl}
+            >
               {originalUrl}
             </p>
           </div>
-        )}
+        </div>
 
-        <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
+        {/* Action Controls Toolbar */}
+        <div className="flex shrink-0 items-center justify-end gap-2 border-t border-neutral-100 pt-2 sm:border-t-0 sm:pt-0 dark:border-neutral-800/60">
           <button
             onClick={handleCopy}
+            type="button"
             aria-label="نسخ الرابط"
-            className="p-3.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground hover:text-primary rounded-full transition-colors cursor-pointer btn-press focus-ring touch-target"
             title="نسخ الرابط"
+            className={cn(
+              'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-all duration-200 ease-out',
+              'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
+              'dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
+              copiedCode === code &&
+                'border-emerald-500/50 bg-emerald-50 text-emerald-600 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-400'
+            )}
           >
             {copiedCode === code ? (
-              <Check aria-hidden="true" className="w-4 h-4 text-success" />
+              <Check
+                aria-hidden="true"
+                className="h-4 w-4 text-emerald-600 dark:text-emerald-400"
+              />
             ) : (
-              <Copy aria-hidden="true" className="w-4 h-4" />
+              <Copy aria-hidden="true" className="h-4 w-4" />
             )}
-          </button>
-
-          <button
-            onClick={() => setEditingCode(code)}
-            aria-label="تعديل الرابط الوجهة"
-            className="p-3.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground hover:text-primary rounded-full transition-colors cursor-pointer btn-press focus-ring touch-target"
-            title="تعديل الرابط الوجهة"
-          >
-            <Pencil aria-hidden="true" className="w-4 h-4" />
-          </button>
-
-          <button
-            onClick={() => setShowQr(true)}
-            aria-label="عرض رمز الاستجابة السريعة"
-            className="p-3.5 bg-muted/50 hover:bg-muted border border-border text-muted-foreground hover:text-primary rounded-full transition-colors cursor-pointer btn-press focus-ring touch-target"
-            title="رمز الاستجابة السريعة"
-          >
-            <QrCode aria-hidden="true" className="w-4 h-4" />
           </button>
 
           <button
             onClick={handleAnalyticsToggle}
+            type="button"
             aria-expanded={isExpanded}
             aria-controls={`analytics-panel-${code}`}
             className={cn(
-              'px-3 py-2.5 border rounded-full font-medium text-xs flex items-center gap-1.5 transition-colors cursor-pointer focus-ring touch-target btn-press',
+              'inline-flex h-9 items-center gap-2 rounded-xl border px-3.5 text-[13px] font-medium transition-all duration-200 ease-out',
+              'hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
               isExpanded
-                ? 'bg-primary/10 border-primary/30 text-primary'
-                : 'bg-muted/50 hover:bg-primary/5 hover:border-primary/30 border-border text-muted-foreground'
+                ? 'border-neutral-900 bg-neutral-900 text-white shadow-xs dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900'
+                : 'border-neutral-200/80 bg-white text-neutral-700 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
             )}
           >
-            <BarChart3 aria-hidden="true" className="w-3.5 h-3.5" />
-            <span>التَّحليلات</span>
+            <BarChart3 aria-hidden="true" className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">التَّحليلات</span>
             {isExpanded ? (
-              <ChevronUp aria-hidden="true" className="w-3 h-3 ms-0.5" />
+              <ChevronUp
+                aria-hidden="true"
+                className="ms-0.5 h-3.5 w-3.5 transition-transform duration-200"
+              />
             ) : (
-              <ChevronDown aria-hidden="true" className="w-3 h-3 ms-0.5" />
+              <ChevronDown
+                aria-hidden="true"
+                className="ms-0.5 h-3.5 w-3.5 transition-transform duration-200"
+              />
             )}
           </button>
 
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            aria-label="حذف الرابط"
-            className="p-3.5 bg-muted/50 hover:bg-destructive/10 hover:border-destructive/30 border border-border text-muted-foreground hover:text-destructive rounded-full transition-colors cursor-pointer btn-press focus-ring touch-target"
-            title="حذف الرابط"
-          >
-            <Trash2 aria-hidden="true" className="w-4 h-4" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                type="button"
+                aria-label={`إجراءات الرابط /${code}`}
+                title="مزيد من الإجراءات"
+                className={cn(
+                  'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-all duration-200 ease-out',
+                  'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
+                  'dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+                )}
+              >
+                <MoreHorizontal aria-hidden="true" className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48 font-medium">
+              <DropdownMenuItem onClick={() => setEditingCode(code)} className="cursor-pointer">
+                <Pencil className="me-2 h-4 w-4" />
+                <span>تعديل الرَّابط</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowQr(true)} className="cursor-pointer">
+                <QrCode className="me-2 h-4 w-4" />
+                <span>رمز الـ QR</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator className="my-1 border-neutral-100 dark:border-neutral-800" />
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setShowDeleteConfirm(true)}
+                className="cursor-pointer text-rose-600 focus:bg-rose-50 dark:text-rose-400 dark:focus:bg-rose-950/40"
+              >
+                <Trash2 className="me-2 h-4 w-4" />
+                <span>حذف الرَّابط</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 
+      {/* Delete Error Notification */}
       {deleteError && (
         <div
           role="alert"
           aria-live="polite"
-          className="mx-5 mb-4 p-2.5 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center gap-1.5"
+          className="mx-4 mb-4 flex items-center gap-2.5 rounded-xl border border-rose-200/80 bg-rose-50/70 p-3 text-xs font-medium text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-300"
         >
-          <AlertTriangle aria-hidden="true" className="w-3.5 h-3.5 shrink-0" />
+          <AlertTriangle
+            aria-hidden="true"
+            className="h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400"
+          />
           <span>{deleteError}</span>
         </div>
       )}
 
+      {/* Embedded Drawer & Dialog Components */}
       <div id={`analytics-panel-${code}`}>
         <LinkAnalyticsDrawer
           isExpanded={isExpanded}
@@ -297,6 +372,19 @@ export function LinkRowCard({
       />
 
       <LinkQrModal code={code} baseUrl={getBaseUrl()} open={showQr} onOpenChange={setShowQr} />
-    </div>
+
+      <LinkEditDialog
+        open={editingCode === code}
+        code={code}
+        currentUrl={originalUrl}
+        currentExpiresAt={expiresAt}
+        token={token}
+        onSaved={(link) => {
+          onUpdated(link);
+          setEditingCode(null);
+        }}
+        onClose={() => setEditingCode(null)}
+      />
+    </article>
   );
 }

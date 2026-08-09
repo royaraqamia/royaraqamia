@@ -58,71 +58,75 @@ export function EditHabitModal({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-md w-[calc(100%-2rem)] mx-auto p-0 rounded-3xl overflow-hidden border border-border/50 bg-background/95 backdrop-blur-xl shadow-2xl transition-all duration-300">
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border/40 text-right">
-          <DialogTitle className="text-lg sm:text-xl font-bold tracking-tight text-foreground">
+      <DialogContent className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background/85 backdrop-blur-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] transition-all duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
+        <DialogHeader className="sticky top-0 z-10 px-6 sm:px-8 pt-8 pb-4 text-start rounded-t-[28px] bg-background/85 backdrop-blur-2xl">
+          <DialogTitle className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground/90">
             تعديل خصائص العادة
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={onSubmit} className="p-6 space-y-6 text-right" dir="rtl">
+        <form onSubmit={onSubmit} className="px-6 sm:px-8 pb-8 space-y-7 text-start" dir="rtl">
           {formError && (
             <div
               id="edit-habit-error"
-              className="flex items-center gap-3 p-3.5 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive text-xs sm:text-sm font-medium animate-in fade-in slide-in-from-top-2 duration-200"
+              className="flex items-start gap-3 p-4 rounded-2xl bg-destructive/5 border border-destructive/10 text-destructive text-[13px] sm:text-sm font-medium animate-in fade-in zoom-in-95 duration-300"
               role="alert"
+              aria-live="polite"
             >
-              <AlertCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
-              <span className="flex-1">{formError}</span>
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5 opacity-80" aria-hidden="true" />
+              <span className="flex-1 leading-relaxed text-balance">{formError}</span>
             </div>
           )}
 
-          <div className="space-y-2">
+          {/* Habit Name Section */}
+          <section className="space-y-2.5">
             <div className="flex items-center justify-between">
               <label
                 htmlFor="input-edit-habit-name"
-                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90"
+                className="text-[13px] font-medium text-foreground/80"
               >
                 اسم العادة
               </label>
               <span
-                className={`text-xs font-mono font-medium transition-colors ${
-                  habitName.length >= 45 ? 'text-amber-500 font-bold' : 'text-muted-foreground/70'
+                className={`text-[11px] font-mono font-medium transition-colors duration-300 ${
+                  habitName.length >= 45
+                    ? 'text-amber-500 font-semibold'
+                    : 'text-muted-foreground/50'
                 }`}
                 dir="ltr"
+                aria-live="polite"
               >
                 {habitName.length} / 50
               </span>
             </div>
-            <div className="relative">
-              <Input
-                type="text"
-                value={habitName}
-                onChange={(e) => {
-                  if (e.target.value.length <= 50) onNameChange(e.target.value);
-                }}
-                required
-                maxLength={50}
-                id="input-edit-habit-name"
-                autoFocus
-                aria-describedby={formError ? 'edit-habit-error' : undefined}
-                className="w-full h-11 px-4 rounded-xl border-border/60 bg-muted/30 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-sm font-medium placeholder:text-muted-foreground/50"
-              />
-            </div>
-          </div>
+            <Input
+              type="text"
+              value={habitName}
+              onChange={(e) => {
+                if (e.target.value.length <= 50) onNameChange(e.target.value);
+              }}
+              required
+              maxLength={50}
+              id="input-edit-habit-name"
+              autoFocus
+              aria-describedby={formError ? 'edit-habit-error' : undefined}
+              className="w-full h-12 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all duration-300 text-[15px] font-medium placeholder:text-muted-foreground/40 shadow-sm"
+            />
+          </section>
 
-          <fieldset className="space-y-2 border-0 p-0 m-0">
-            <legend className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 mb-2">
+          {/* Tracking Frequency Section */}
+          <fieldset className="space-y-2.5 border-0 p-0 m-0">
+            <legend className="text-[13px] font-medium text-foreground/80 mb-2.5">
               وتيرة التَّتبُّع
             </legend>
-            <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-muted/40 rounded-2xl border border-border/40 backdrop-blur-sm">
+            <div className="flex p-1 bg-muted/30 rounded-xl border border-border/40 shadow-inner">
               <button
                 type="button"
                 onClick={() => onFrequencyChange('daily')}
-                className={`flex items-center justify-center py-2.5 px-4 text-xs font-semibold rounded-xl transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[0.98] ${
+                className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                   habitFrequency === 'daily'
-                    ? 'bg-background text-foreground shadow-sm border border-border/50 font-bold'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/40 border border-transparent'
+                    ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-semibold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 يوميَّة
@@ -130,10 +134,10 @@ export function EditHabitModal({
               <button
                 type="button"
                 onClick={() => onFrequencyChange('weekly')}
-                className={`flex items-center justify-center py-2.5 px-4 text-xs font-semibold rounded-xl transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[0.98] ${
+                className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                   habitFrequency === 'weekly'
-                    ? 'bg-background text-foreground shadow-sm border border-border/50 font-bold'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-background/40 border border-transparent'
+                    ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-semibold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
                 أسبوعيَّة
@@ -141,11 +145,12 @@ export function EditHabitModal({
             </div>
           </fieldset>
 
-          <fieldset className="space-y-2 border-0 p-0 m-0">
-            <legend className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 mb-2">
+          {/* Habit Icon Section */}
+          <fieldset className="space-y-2.5 border-0 p-0 m-0">
+            <legend className="text-[13px] font-medium text-foreground/80 mb-2.5">
               أيقونة العادة
             </legend>
-            <div className="grid grid-cols-4 sm:grid-cols-6 gap-2.5 max-h-52 overflow-y-auto p-2 rounded-2xl bg-muted/20 border border-border/30">
+            <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-45 overflow-y-auto overscroll-contain p-2 -mx-2 px-2">
               {HABIT_ICONS.map((item) => {
                 const IconComp = item.icon;
                 const isSelected = habitIcon === item.name;
@@ -154,16 +159,16 @@ export function EditHabitModal({
                     key={item.name}
                     type="button"
                     onClick={() => onIconChange(item.name)}
-                    aria-label={item.name}
+                    aria-label={`اختيار أيقونة ${item.name}`}
                     aria-pressed={isSelected}
-                    className={`group relative aspect-square rounded-xl flex items-center justify-center transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary active:scale-95 ${
+                    className={`group relative aspect-square rounded-2xl flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-95 ${
                       isSelected
-                        ? 'bg-primary text-primary-foreground shadow-md ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]'
-                        : 'bg-background/80 hover:bg-background border border-border/50 text-muted-foreground hover:text-foreground hover:border-border hover:scale-105 shadow-xs'
+                        ? 'bg-primary text-primary-foreground shadow-[0_4px_14px_0_rgba(var(--primary),0.3)] scale-[1.05]'
+                        : 'bg-muted/20 border border-transparent hover:border-border/60 hover:bg-muted/50 text-muted-foreground hover:text-foreground hover:shadow-sm'
                     }`}
                   >
                     <IconComp
-                      className="w-5 h-5 transition-transform duration-200 group-hover:scale-110"
+                      className="w-5.5 h-5.5 transition-transform duration-300 ease-out group-hover:scale-110"
                       aria-hidden="true"
                     />
                   </button>
@@ -172,18 +177,22 @@ export function EditHabitModal({
             </div>
           </fieldset>
 
-          <fieldset className="space-y-2 border-0 p-0 m-0">
-            <legend className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 mb-2 flex items-center gap-1.5">
-              <Target className="w-3.5 h-3.5" aria-hidden="true" />
-              هدف أسبوعي/شهري (اختياري)
+          {/* Optional Goal Section */}
+          <fieldset className="space-y-3 border-0 p-0 m-0">
+            <legend className="text-[13px] font-medium text-foreground/80 flex items-center gap-1.5 mb-1.5">
+              <Target className="w-4 h-4 text-muted-foreground/70" aria-hidden="true" />
+              <span>هدف الإنجاز</span>
+              <span className="text-[11px] text-muted-foreground/50 font-normal ms-1">
+                (اختياري)
+              </span>
             </legend>
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-1.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-2">
                 <label
                   htmlFor="input-edit-habit-target"
-                  className="text-[11px] font-medium text-muted-foreground/80"
+                  className="text-[11px] font-medium text-muted-foreground/70"
                 >
-                  عدد مرات الإنجاز
+                  عدد المرات
                 </label>
                 <Input
                   type="number"
@@ -193,21 +202,18 @@ export function EditHabitModal({
                   onChange={(e) => onTargetChange(e.target.value)}
                   placeholder="مثال: 5"
                   id="input-edit-habit-target"
-                  className="w-full h-10 px-4 rounded-xl border-border/60 bg-muted/30 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-sm font-medium placeholder:text-muted-foreground/50"
+                  className="w-full h-11 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all duration-300 text-[14px] font-medium placeholder:text-muted-foreground/40"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label
-                  htmlFor="input-edit-habit-target-period"
-                  className="text-xs font-medium text-muted-foreground/80"
-                >
-                  الفترة
+              <div className="space-y-2">
+                <label className="text-[11px] font-medium text-muted-foreground/70">
+                  الفترة الزمنية
                 </label>
-                <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-muted/40 rounded-2xl border border-border/40 backdrop-blur-sm">
+                <div className="flex p-1 bg-muted/30 rounded-xl border border-border/40 shadow-inner h-11">
                   {(
                     [
-                      ['week', 'أسبوعي'],
-                      ['month', 'شهري'],
+                      ['week', 'أسبوعياً'],
+                      ['month', 'شهرياً'],
                     ] as const
                   ).map(([value, label]) => {
                     const isSelected = habitTargetPeriod === value;
@@ -216,10 +222,10 @@ export function EditHabitModal({
                         key={value}
                         type="button"
                         onClick={() => onTargetPeriodChange(isSelected ? '' : value)}
-                        className={`flex items-center justify-center py-2 px-3 text-xs font-semibold rounded-xl transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[0.98] ${
+                        className={`flex-1 flex items-center justify-center text-[12px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                           isSelected
-                            ? 'bg-background text-foreground shadow-sm border border-border/50 font-bold'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-background/40 border border-transparent'
+                            ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-semibold'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                         }`}
                       >
                         {label}
@@ -229,15 +235,19 @@ export function EditHabitModal({
                 </div>
               </div>
             </div>
-            <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-              حدّد عدد مرات إنجاز العادة المطلوبة أسبوعياً أو شهرياً لمتابعة تقدّمك نحو الهدف
+            <p className="text-[11px] text-muted-foreground/50 leading-relaxed text-pretty">
+              متابعة التقدّم الإجمالي نحو تحقيق الهدف في الفترة المُحدّدة.
             </p>
           </fieldset>
 
-          <fieldset className="space-y-2 border-0 p-0 m-0">
-            <legend className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 mb-2 flex items-center gap-1.5">
-              <Bell className="w-3.5 h-3.5" aria-hidden="true" />
-              وقت التذكير اليومي (اختياري)
+          {/* Optional Reminder Section */}
+          <fieldset className="space-y-2.5 border-0 p-0 m-0">
+            <legend className="text-[13px] font-medium text-foreground/80 flex items-center gap-1.5 mb-1.5">
+              <Bell className="w-4 h-4 text-muted-foreground/70" aria-hidden="true" />
+              <span>وقت التذكير اليومي</span>
+              <span className="text-[11px] text-muted-foreground/50 font-normal ms-1">
+                (اختياري)
+              </span>
             </legend>
             <div className="relative">
               <Input
@@ -245,33 +255,34 @@ export function EditHabitModal({
                 value={habitReminderTime}
                 onChange={(e) => onReminderTimeChange(e.target.value)}
                 id="input-edit-habit-reminder-time"
-                className="w-full h-11 px-4 rounded-xl border-border/60 bg-muted/30 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-sm font-medium placeholder:text-muted-foreground/50 [color-scheme:light] dark:[color-scheme:dark]"
+                className="w-full h-12 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all duration-300 text-[14px] font-medium placeholder:text-muted-foreground/40 scheme-light dark:scheme-dark"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
-              إن لم تُحدد وقتاً، سيُرسل التذكير افتراضياً في الثامنة صباحاً
+            <p className="text-[11px] text-muted-foreground/50 leading-relaxed text-pretty">
+              إن لم تُحدد وقتاً، سيُرسل التذكير افتراضياً في الثامنة صباحاً.
             </p>
           </fieldset>
 
-          <div className="pt-4 border-t border-border/40 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">
+          {/* Footer Actions */}
+          <div className="pt-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-4">
             <Button
               type="button"
               onClick={() => habit && onArchive(habit.id)}
               disabled={!habit}
               variant="ghost"
-              className="group hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all duration-200 rounded-xl px-3.5 py-2.5 text-xs font-medium flex items-center justify-center gap-2 h-auto"
+              className="w-full sm:w-auto group hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all duration-300 rounded-xl px-5 py-5 sm:py-2.5 text-[14px] font-medium flex items-center justify-center gap-2"
               id="btn-archive-habit"
             >
               <Trash2 className="w-4 h-4 transition-transform group-hover:scale-110 text-muted-foreground group-hover:text-destructive" />
               <span>أرشفة العادة</span>
             </Button>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-col-reverse sm:flex-row items-center gap-3 w-full sm:w-auto">
               <Button
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="flex-1 sm:flex-none rounded-xl px-4 py-2.5 text-xs font-medium border-border/60 hover:bg-muted/80 transition-all duration-200 h-auto"
+                className="w-full sm:w-auto rounded-xl px-5 py-5 sm:py-2.5 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all duration-300"
               >
                 إلغاء
               </Button>
@@ -279,11 +290,11 @@ export function EditHabitModal({
                 type="submit"
                 disabled={isSubmitting}
                 id="btn-submit-edit-habit"
-                className="flex-1 sm:flex-none rounded-xl px-5 py-2.5 text-xs font-semibold shadow-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-70 h-auto flex items-center justify-center gap-2"
+                className="w-full sm:w-auto rounded-xl px-7 py-5 sm:py-2.5 text-[14px] font-semibold bg-primary text-primary-foreground hover:bg-primary/95 shadow-[0_4px_14px_0_rgba(var(--primary),0.2)] dark:shadow-[0_4px_14px_0_rgba(var(--primary),0.1)] transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5"
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" aria-hidden="true" />
+                    <Loader2 className="w-4 h-4 animate-spin opacity-80" aria-hidden="true" />
                     <span>جارٍ التَّطبيق...</span>
                   </>
                 ) : (
