@@ -6,7 +6,7 @@ import {
   createBlogpressAdminPostsService,
   createBlogpressPostsService,
 } from '@/backend/config/blogpress';
-import type { Post, PostCategory, PostTag, PostAuthor } from '@/shared/contracts/blogpress';
+import type { Post, PostAuthor } from '@/shared/contracts/blogpress';
 
 const BLOG_CACHE_SECONDS = 60;
 
@@ -25,25 +25,33 @@ export const loadPublishedPostSlugs = unstable_cache(
   { revalidate: BLOG_CACHE_SECONDS }
 );
 
-export async function loadPublishedCategories(): Promise<PostCategory[]> {
-  return pub().getPublishedCategories();
-}
+export const loadPublishedCategories = unstable_cache(
+  () => pub().getPublishedCategories(),
+  ['blog-categories'],
+  { revalidate: BLOG_CACHE_SECONDS }
+);
 
-export async function loadPublishedPostCategories(postId: string): Promise<PostCategory[]> {
-  return pub().getPublishedPostCategories(postId);
-}
+export const loadPublishedPostCategories = unstable_cache(
+  (postId: string) => pub().getPublishedPostCategories(postId),
+  ['blog-post-categories'],
+  { revalidate: BLOG_CACHE_SECONDS }
+);
 
-export async function loadPublishedPostTags(postId: string): Promise<PostTag[]> {
-  return pub().getPublishedPostTags(postId);
-}
+export const loadPublishedPostTags = unstable_cache(
+  (postId: string) => pub().getPublishedPostTags(postId),
+  ['blog-post-tags'],
+  { revalidate: BLOG_CACHE_SECONDS }
+);
 
 export async function loadIncrementPostViewCount(postId: string): Promise<void> {
   return pub().incrementPostViewCount(postId);
 }
 
-export async function loadPublishedPostBySlug(slug: string): Promise<Post | null> {
-  return pub().getPublishedPostBySlug(slug);
-}
+export const loadPublishedPostBySlug = unstable_cache(
+  (slug: string) => pub().getPublishedPostBySlug(slug),
+  ['blog-post-by-slug'],
+  { revalidate: BLOG_CACHE_SECONDS }
+);
 
 export const loadBlogPost = unstable_cache(
   async (
