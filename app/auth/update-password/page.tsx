@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { WarningCircle, CheckCircle } from '@phosphor-icons/react';
+import { CircleAlert, CircleCheck } from 'lucide-react';
 import { updatePassword } from '@/frontend/api/auth';
 import { Button } from '@/frontend/ui/primitives/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
@@ -114,9 +114,9 @@ export default function UpdatePasswordPage() {
                         transition={{ duration: 0.15 }}
                         className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60"
                       >
-                        <CheckCircle
+                        <CircleCheck
                           size={13}
-                          weight="fill"
+                          fill="currentColor"
                           className="shrink-0 text-emerald-500"
                         />
                         <span>متطابقة</span>
@@ -146,7 +146,7 @@ export default function UpdatePasswordPage() {
                       className="text-xs font-medium text-destructive flex items-center gap-1.5 pt-0.5"
                       role="alert"
                     >
-                      <WarningCircle size={14} className="shrink-0" aria-hidden="true" />
+                      <CircleAlert size={14} className="shrink-0" aria-hidden="true" />
                       <span>كلمة المرور غير متطابقة</span>
                     </motion.p>
                   )}
@@ -164,7 +164,7 @@ export default function UpdatePasswordPage() {
                   transition={{ duration: 0.2, ease: 'easeOut' }}
                   className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 backdrop-blur-md border border-destructive/25 text-destructive shadow-sm"
                 >
-                  <WarningCircle
+                  <CircleAlert
                     size={20}
                     className="shrink-0 mt-0.5 text-destructive"
                     aria-hidden="true"

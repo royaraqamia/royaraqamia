@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
-import { WarningCircle, User, EnvelopeSimple, LockKey } from '@phosphor-icons/react';
+import { CircleAlert, User, Mail, LockKeyhole } from 'lucide-react';
 import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
 import { signup, signInWithGoogle } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
@@ -85,7 +85,7 @@ export default function SignupPage() {
                 htmlFor="signup-email"
                 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground/90 select-none"
               >
-                <EnvelopeSimple
+                <Mail
                   size={15}
                   className="text-muted-foreground/80 shrink-0"
                   aria-hidden="true"
@@ -113,7 +113,7 @@ export default function SignupPage() {
                 htmlFor="signup-password"
                 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground/90 select-none"
               >
-                <LockKey
+                <LockKeyhole
                   size={15}
                   className="text-muted-foreground/80 shrink-0"
                   aria-hidden="true"
@@ -153,7 +153,7 @@ export default function SignupPage() {
                 transition={{ duration: 0.2, ease: 'easeOut' }}
                 className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs backdrop-blur-xs"
               >
-                <WarningCircle
+                <CircleAlert
                   size={20}
                   className="shrink-0 mt-0.5 text-destructive"
                   aria-hidden="true"

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { WarningCircle, ArrowLeft, Clock, CheckCircle } from '@phosphor-icons/react';
+import { CircleAlert, ArrowLeft, Clock, CircleCheckBig, CircleCheck } from 'lucide-react';
 import { OtpInput } from '@/frontend/ui/shared/otp-input';
 import { verifyOtp, resendOtp } from '@/frontend/api/auth';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -147,9 +147,9 @@ export default function VerifyOtpPage() {
               <div className="relative flex items-center justify-center">
                 <div className="absolute inset-0 rounded-2xl bg-emerald-500/20 blur-xl animate-pulse" />
                 <div className="relative size-16 rounded-2xl bg-linear-to-b from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_25px_rgba(16,185,129,0.2)]">
-                  <CheckCircle
+                  <CircleCheckBig
                     size={38}
-                    weight="fill"
+                    fill="currentColor"
                     className="text-emerald-500 dark:text-emerald-400"
                   />
                 </div>
@@ -215,7 +215,7 @@ export default function VerifyOtpPage() {
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                     className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-2xs"
                   >
-                    <WarningCircle size={18} className="shrink-0 mt-0.5 text-destructive" />
+                    <CircleAlert size={18} className="shrink-0 mt-0.5 text-destructive" />
                     <p role="alert" className="text-xs sm:text-sm font-medium leading-relaxed">
                       {state.message}
                     </p>
@@ -257,7 +257,7 @@ export default function VerifyOtpPage() {
                     animate={{ opacity: 1, y: 0 }}
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium"
                   >
-                    <CheckCircle size={14} className="shrink-0" />
+                    <CircleCheck size={14} className="shrink-0" />
                     <span>{resendMessage}</span>
                   </motion.div>
                 )}

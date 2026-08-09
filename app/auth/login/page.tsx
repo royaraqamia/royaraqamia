@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
-import { WarningCircle } from '@phosphor-icons/react';
+import { CircleAlert } from 'lucide-react';
 import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
 import { login, signInWithGoogle } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
@@ -103,7 +103,7 @@ export default function LoginPage() {
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs backdrop-blur-xs select-none"
           >
-            <WarningCircle size={18} className="shrink-0 mt-0.5 text-destructive" />
+            <CircleAlert size={18} className="shrink-0 mt-0.5 text-destructive" />
             <p
               id="login-error"
               role="alert"

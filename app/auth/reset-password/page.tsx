@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'motion/react';
-import { WarningCircle, CheckCircle, ArrowLeft } from '@phosphor-icons/react';
+import { CircleAlert, CircleCheck, ArrowLeft } from 'lucide-react';
 import { resetPassword } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -69,9 +69,9 @@ export default function ResetPasswordPage() {
               }`}
             >
               {isSuccessMessage(message) ? (
-                <CheckCircle size={20} className="shrink-0 mt-0.5 text-success" />
+                <CircleCheck size={20} className="shrink-0 mt-0.5 text-success" />
               ) : (
-                <WarningCircle size={20} className="shrink-0 mt-0.5 text-destructive" />
+                <CircleAlert size={20} className="shrink-0 mt-0.5 text-destructive" />
               )}
               <p
                 id="reset-message"
