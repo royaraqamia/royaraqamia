@@ -152,7 +152,7 @@
 | P0       | **Search transactions** (description/notes)                                        | Find the $20 “where did it go”                                      | ✅ `search` in query + repo ilike + debounced filter                                                                                      |
 | P1       | **Insights strip** — top category, avg/day, month-over-month delta                 | Answer “am I spending more?” in one glance                          | ✅ Done — `spend-insights.ts` (+`previousPeriodRange`/`calculateInsights`), `SpendtrackService.getInsights`, `InsightsStrip` on dashboard |
 | P1       | **CSV import/export**                                                              | Onboarding + backup + portability                                   | ✅ Done — `spendtrack-csv.ts` (build/parse), `getExportCsv`/`importExpensesCsv`, `/api/export` + `/api/import`, `CsvActions` on dashboard |
-| P1       | **Undo toast on delete**                                                           | Safety net for destructive actions                                  | 🔶 PARTIAL — delete toast exists (`use-expenses.ts`), no action/undo button; deletes are permanent                                        |
+| P1       | **Undo toast on delete**                                                           | Safety net for destructive actions                                  | ✅ Done — `useDeleteExpense` accepts the full expense and offers a «تراجع» action that re-creates it (`use-expenses.ts`, `expense-list.tsx`) |
 | P2       | **Split expense across categories**                                                | Real-world purchase reality                                         | ⬜ TODO — `expense-dialog.tsx` has single `category_id`; no `expense_splits` migration                                                    |
 | P2       | **Multi-currency** (base currency + per-expense currency)                          | Regional users                                                      | 🔶 PARTIAL — per-USER currency shipped (`user_settings` 20260807150000, `currency-selector.tsx`); no per-EXPENSE `expenses.currency`      |
 
@@ -184,7 +184,7 @@ Recommended sequence. Each phase ships green (`prettier`, `lint`, `tsc`, `vitest
 - **Phase 2 — HabitFlow core** ✅ complete: onboarding + empty state → skip/miss (streak-freeze) → per-habit notes → insights. _Progress: skip/miss ✅ `aec2b09`, notes ✅ `e850a48`, onboarding ✅ `952f0a0`, insights ✅ `1a000b6`._
 - **Phase 3 — BlogPress core** ✅ complete: auto-save + saving indicator → in-editor SEO panel + content stats → tags.
 - **Phase 4 — LinkSnap core** ✅ shipped: expiry + status chips → device/OS/browser analytics → date-range + CSV export → bulk actions.
-- **Phase 7 — Remaining P1 (current work)**: BlogPress bulk actions ✅ + scheduled calendar/board ✅ → SpendTrack insights strip ✅ + CSV ✅ + **undo** → HabitFlow targets + custom reminder time → LinkSnap share sheet per row + slug availability.
+- **Phase 7 — Remaining P1 (current work)**: BlogPress bulk actions ✅ + scheduled calendar/board ✅ → SpendTrack insights strip ✅ + CSV ✅ + undo ✅ → **HabitFlow targets + custom reminder time** → LinkSnap share sheet per row + slug availability.
 - **Phase 5 — Cross-cutting polish**: palette quick-actions, optimistic UI, undo toasts, onboarding consistency, a11y.
 - **Phase 6 — P2 backlog** per product (post export/duplicate, expense splits, per-expense currency, HabitFlow CSV/nudge, focus+reading-progress, password-protected links).
 
