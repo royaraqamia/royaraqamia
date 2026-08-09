@@ -1,5 +1,3 @@
-'use client';
-
 import { Hero } from '@/frontend/ui/habitflow-landing/Hero';
 import { FeaturesBento } from '@/frontend/ui/habitflow-landing/FeaturesBento';
 import { HowItWorks } from '@/frontend/ui/habitflow-landing/HowItWorks';

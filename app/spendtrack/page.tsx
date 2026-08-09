@@ -1,5 +1,3 @@
-'use client';
-
 import { Hero } from '@/frontend/ui/spendtrack-landing/Hero';
 import { FeaturesBento } from '@/frontend/ui/spendtrack-landing/FeaturesBento';
 import { HowItWorks } from '@/frontend/ui/spendtrack-landing/HowItWorks';

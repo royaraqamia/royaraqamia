@@ -1,5 +1,3 @@
-'use client';
-
 import { Hero } from '@/frontend/ui/blogpress-landing/Hero';
 import { FeaturesBento } from '@/frontend/ui/blogpress-landing/FeaturesBento';
 import { HowItWorks } from '@/frontend/ui/blogpress-landing/HowItWorks';

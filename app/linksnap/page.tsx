@@ -1,5 +1,3 @@
-'use client';
-
 import { Hero } from '@/frontend/ui/linksnap-landing/Hero';
 import { FeaturesBento } from '@/frontend/ui/linksnap-landing/FeaturesBento';
 import { HowItWorks } from '@/frontend/ui/linksnap-landing/HowItWorks';
