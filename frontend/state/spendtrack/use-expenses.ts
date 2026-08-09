@@ -49,20 +49,40 @@ export function useSaveExpense(expenseId?: string) {
   return { submit, pending, serverError };
 }
 
-export function useDeleteExpense(expenseId: string, description: string) {
+export function useDeleteExpense(expense: ExpenseWithCategory, description: string) {
   const router = useRouter();
-  const deleteWithId = deleteExpense.bind(null, expenseId);
+  const deleteWithId = deleteExpense.bind(null, expense.id);
   const [state, formAction, pending] = useActionState(deleteWithId, undefined);
 
   useEffect(() => {
     if (state?.success) {
+      const restore = () => {
+        void createExpense({
+          amount: String(expense.amount),
+          category_id: expense.category_id,
+          date: expense.date,
+          description: expense.description ?? undefined,
+        }).then((result) => {
+          if (result?.success) {
+            toast.success('تم التراجع عن الحذف', {
+              description: `تمت إعادة "${description || 'بدون وصف'}"`,
+              duration: 3000,
+            });
+            router.refresh();
+          }
+        });
+      };
       toast.success('تم حذف المصروف', {
         description: `تم حذف "${description || 'بدون وصف'}" بنجاح`,
-        duration: 4000,
+        duration: 6000,
+        action: {
+          label: 'تراجع',
+          onClick: restore,
+        },
       });
       router.refresh();
     }
-  }, [state, router, description]);
+  }, [state, router, description, expense]);
 
   return { formAction, pending, error: state?.error };
 }

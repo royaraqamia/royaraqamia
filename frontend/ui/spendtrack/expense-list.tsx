@@ -111,7 +111,7 @@ function ExpenseRow({
   index: number;
   currency?: string;
 }) {
-  const { formAction, pending, error } = useDeleteExpense(expense.id, expense.description || '');
+  const { formAction, pending, error } = useDeleteExpense(expense, expense.description || '');
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const formattedDate = new Intl.DateTimeFormat('ar-SA', {
     year: 'numeric',
