@@ -2,7 +2,7 @@
 
 import { memo } from 'react';
 import { m } from 'motion/react';
-import { ArrowLeft, Star } from '@phosphor-icons/react';
+import { ArrowLeft, Star } from 'lucide-react';
 import { HeroVisual } from './HeroVisual';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
@@ -147,8 +147,7 @@ export const Hero = memo(function Hero() {
                       <Star
                         key={i}
                         size={14}
-                        weight="fill"
-                        className="drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]"
+                        className="fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]"
                       />
                     ))}
                   </span>

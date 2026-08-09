@@ -1,6 +1,6 @@
 'use client';
 
-import { Trophy, Clock, Headphones, ShieldCheck, TrendUp, Users } from '@phosphor-icons/react';
+import { Trophy, Clock, Headphones, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useReducedMotion } from 'motion/react';
 
@@ -50,7 +50,6 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
             style={{ background: reason.glowColor }}
           />
           <Icon
-            weight="light"
             className="w-7 h-7 sm:w-8 sm:h-8 text-indigo-200 group-hover/why:text-white transition-colors duration-300 drop-shadow-md relative z-10"
           />
         </div>
@@ -88,7 +87,7 @@ export function WhyUs() {
       glowColor: 'rgba(99, 102, 241, 0.25)',
     },
     {
-      icon: TrendUp,
+      icon: TrendingUp,
       title: 'نتائج قابلة للقياس',
       description: 'نركِّز على تحقيق نتائج ملموسة وقابلة للقياس تساهم في نمو أعمالك وتطوير مهاراتك',
       glowColor: 'rgba(139, 92, 246, 0.25)',

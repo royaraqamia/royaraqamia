@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { m } from 'motion/react';
-import { Lightning, TrendUp, ChartBar, Users, Sparkle } from '@phosphor-icons/react';
+import { Zap, TrendingUp, ChartColumn, Users, Sparkle } from 'lucide-react';
 
 export function HeroVisual() {
   const [isHoveringDashboard, setIsHoveringDashboard] = useState(false);
@@ -43,9 +43,9 @@ export function HeroVisual() {
         <div className="absolute inset-0 rounded-2xl bg-violet-500 blur-xl opacity-50 animate-pulse" />
 
         <div className="relative w-full h-full rounded-2xl bg-linear-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-2xl border border-white/20 backdrop-blur-md transition-transform hover:scale-105 duration-300">
-          <Lightning
+          <Zap
             className="w-6 h-6 lg:w-8 lg:h-8 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
-            weight="fill"
+            fill="currentColor"
           />
         </div>
       </div>
@@ -114,7 +114,7 @@ export function HeroVisual() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
                     <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center shadow-xs">
-                      <TrendUp className="w-4 h-4 text-purple-400" weight="duotone" />
+                      <TrendingUp className="w-4 h-4 text-purple-400" />
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-neutral-200 tracking-tight">
@@ -229,7 +229,7 @@ export function HeroVisual() {
               {[
                 {
                   label: 'التَّحويل',
-                  icon: ChartBar,
+                  icon: ChartColumn,
                   color: 'text-purple-400',
                   bg: 'bg-purple-500/15',
                   border: 'border-purple-500/20',
@@ -247,7 +247,7 @@ export function HeroVisual() {
                 },
                 {
                   label: 'الاحتفاظ',
-                  icon: TrendUp,
+                  icon: TrendingUp,
                   color: 'text-indigo-400',
                   bg: 'bg-indigo-500/15',
                   border: 'border-indigo-500/20',
@@ -256,7 +256,7 @@ export function HeroVisual() {
                 },
                 {
                   label: 'السُّرعة',
-                  icon: Lightning,
+                  icon: Zap,
                   color: 'text-fuchsia-400',
                   bg: 'bg-fuchsia-500/15',
                   border: 'border-fuchsia-500/20',
