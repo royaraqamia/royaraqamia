@@ -150,6 +150,34 @@ export function createSpendtrackRepository(
       };
     },
 
+    async getAllExpenses(
+      userId: string,
+      start: string,
+      end: string,
+      catFilter: string[] | null
+    ): Promise<ExpenseWithCategory[]> {
+      let query = supabase
+        .from('expenses')
+        .select('*, categories(name, color_hex)')
+        .eq('user_id', userId)
+        .gte('date', start)
+        .lte('date', end)
+        .order('date', { ascending: true });
+
+      if (catFilter && catFilter.length > 0) {
+        query = query.in('category_id', catFilter);
+      }
+
+      const { data: rawExpenses } = await query;
+      return (rawExpenses ?? []).map((row: Record<string, unknown>) => {
+        const cats = row.categories as { name: string; color_hex: string } | null;
+        return {
+          ...row,
+          categories: cats ? { name: cats.name, colorHex: cats.color_hex } : undefined,
+        };
+      }) as ExpenseWithCategory[];
+    },
+
     async createExpense(input: {
       user_id: string;
       amount: number;
@@ -158,6 +186,20 @@ export function createSpendtrackRepository(
       description: string | null;
     }): Promise<void> {
       const { error } = await supabase.from('expenses').insert(input);
+      if (error) throw new Error(error.message);
+    },
+
+    async createExpensesMany(
+      inputs: {
+        user_id: string;
+        amount: number;
+        category_id: string;
+        date: string;
+        description: string | null;
+      }[]
+    ): Promise<void> {
+      if (inputs.length === 0) return;
+      const { error } = await supabase.from('expenses').insert(inputs);
       if (error) throw new Error(error.message);
     },
 

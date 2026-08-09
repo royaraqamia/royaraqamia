@@ -43,6 +43,54 @@ export async function getExpenses(query: URLSearchParams): Promise<HttpResult> {
   }
 }
 
+export async function exportExpenses(query: URLSearchParams): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+
+    const start = query.get('start') ?? '';
+    const end = query.get('end') ?? '';
+    const categories = (query.get('categories') ?? '').split(',').filter(Boolean);
+    const catFilter: string[] | null = categories.length > 0 ? categories : null;
+
+    const content = await createSpendtrackService(supabase).getExportCsv(
+      user.id,
+      start,
+      end,
+      catFilter
+    );
+
+    return jsonResult(200, { content });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل تصدير المصروفات',
+    });
+  }
+}
+
+export async function importExpenses(body: Record<string, unknown>): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { error: 'غير مصرح' });
+    }
+
+    const content = String(body.content ?? '');
+    if (!content.trim()) {
+      return jsonResult(400, { error: 'لا يوجد محتوى للاستيراد' });
+    }
+
+    const result = await createSpendtrackService(supabase).importExpensesCsv(user.id, content);
+    return jsonResult(200, result, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل استيراد المصروفات',
+    });
+  }
+}
+
 export async function createExpense(body: Record<string, unknown>): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();

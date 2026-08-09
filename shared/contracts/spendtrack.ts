@@ -78,3 +78,16 @@ export type SpendInsights = {
   prevPeriodTotal: number | null;
   deltaPct: number | null;
 };
+
+export type SpendImportRow = {
+  date: string;
+  amount: number;
+  category: string;
+  description: string;
+};
+
+export type SpendImportResult = {
+  imported: number;
+  skipped: number;
+  errors: { row: number; message: string }[];
+};

@@ -197,6 +197,38 @@ export async function getExpensesPage(options: {
   return { expenses: data.expenses ?? [] };
 }
 
+export async function exportExpensesCsv(options: {
+  start: string;
+  end: string;
+  categories: string[];
+}): Promise<string> {
+  const params = new URLSearchParams();
+  if (options.start) params.set('start', options.start);
+  if (options.end) params.set('end', options.end);
+  if (options.categories.length) params.set('categories', options.categories.join(','));
+
+  const data = await request<{ content: string }>(`/spendtrack/api/export?${params.toString()}`);
+  return data.content ?? '';
+}
+
+export async function importExpensesCsv(content: string): Promise<ImportResult> {
+  try {
+    const data = await request<{ imported: number; skipped: number; errors: ImportError[] }>(
+      '/spendtrack/api/import',
+      { method: 'POST', body: JSON.stringify({ content }) }
+    );
+    return { success: true, imported: data.imported, skipped: data.skipped, errors: data.errors };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : 'فشل استيراد المصروفات' };
+  }
+}
+
+type ImportError = { row: number; message: string };
+
+type ImportResult =
+  | { success: true; imported: number; skipped: number; errors: ImportError[] }
+  | { error: string };
+
 export async function getCurrency(): Promise<string | null> {
   try {
     const data = await request<{ currency: string }>('/spendtrack/api/settings/currency');

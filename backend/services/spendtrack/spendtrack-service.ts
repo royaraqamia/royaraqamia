@@ -5,6 +5,7 @@ import type {
   CategoryBudget,
   RecurringExpense,
   RecurringExpenseInput,
+  SpendImportResult,
   SpendInsights,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
@@ -13,6 +14,13 @@ import {
   calculateInsights,
   previousPeriodRange,
 } from '@/backend/services/spendtrack/spend-insights';
+import {
+  buildCsv,
+  colorFromName,
+  parseCsv,
+  stripCsvHeader,
+  type SpendExportRow,
+} from '@/backend/services/spendtrack/spendtrack-csv';
 
 export interface SpendtrackCategoryInput {
   name: string;
@@ -91,6 +99,93 @@ export class SpendtrackService {
       end,
       prevPeriodTotal: prevTotal,
     });
+  }
+
+  async getExportCsv(
+    userId: string,
+    start: string,
+    end: string,
+    catFilter: string[] | null
+  ): Promise<string> {
+    const expenses = await this.repository.getAllExpenses(userId, start, end, catFilter);
+    const rows: SpendExportRow[] = expenses.map((expense) => ({
+      date: expense.date,
+      amount: expense.amount,
+      category: expense.categories?.name ?? '',
+      description: expense.description,
+    }));
+    return buildCsv(rows);
+  }
+
+  async importExpensesCsv(userId: string, content: string): Promise<SpendImportResult> {
+    const rows = parseCsv(stripCsvHeader(content));
+    const categories = await this.repository.getUserCategories(userId);
+    const byName = new Map<string, string>();
+    for (const category of categories) {
+      byName.set(category.name.trim().toLowerCase(), category.id);
+    }
+
+    const errors: SpendImportResult['errors'] = [];
+    const validRows: {
+      amount: number;
+      category_id: string;
+      date: string;
+      description: string | null;
+    }[] = [];
+    const toCreateNames = new Set<string>();
+
+    rows.forEach((row, index) => {
+      const rowNumber = index + 1;
+      let error: string | null = null;
+      if (!row.date || !/^\d{4}-\d{2}-\d{2}$/.test(row.date)) error = 'تاريخ غير صالح';
+      else if (isNaN(row.amount) || row.amount <= 0) error = 'مبلغ غير صالح';
+      else if (!row.category.trim()) error = 'التصنيف مطلوب';
+      if (error) {
+        errors.push({ row: rowNumber, message: error });
+        return;
+      }
+      const name = row.category.trim();
+      let categoryId = byName.get(name.toLowerCase());
+      if (!categoryId) {
+        toCreateNames.add(name);
+        categoryId = `pending:${name.toLowerCase()}`;
+      }
+      validRows.push({
+        amount: row.amount,
+        category_id: categoryId,
+        date: row.date,
+        description: row.description && row.description.trim() ? row.description.trim() : null,
+      });
+    });
+
+    if (toCreateNames.size > 0) {
+      for (const name of toCreateNames) {
+        await this.repository.createCategory({
+          user_id: userId,
+          name,
+          colorHex: colorFromName(name),
+        });
+      }
+      const refreshed = await this.repository.getUserCategories(userId);
+      for (const category of refreshed) {
+        byName.set(category.name.trim().toLowerCase(), category.id);
+      }
+      for (const insert of validRows) {
+        if (insert.category_id.startsWith('pending:')) {
+          const resolved = byName.get(insert.category_id.slice('pending:'.length));
+          if (resolved) insert.category_id = resolved;
+        }
+      }
+    }
+
+    const rowsToInsert = validRows.filter((insert) => !insert.category_id.startsWith('pending:'));
+    const imported = rowsToInsert.length;
+    const skipped = rows.length - imported - errors.length;
+    await this.repository.createExpensesMany(
+      rowsToInsert.map((insert) => ({ user_id: userId, ...insert }))
+    );
+
+    return { imported, skipped, errors };
   }
 
   async getTransactions(query: SpendtrackTransactionsQuery): Promise<SpendtrackTransactionsResult> {

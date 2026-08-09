@@ -12,7 +12,9 @@ function makeRepo(overrides: Partial<SpendtrackRepository> = {}) {
     getCategoryBreakdown: vi.fn(),
     getDailyTotals: vi.fn(),
     getTransactions: vi.fn(),
+    getAllExpenses: vi.fn(),
     createExpense: vi.fn(),
+    createExpensesMany: vi.fn(),
     updateExpense: vi.fn(),
     deleteExpense: vi.fn(),
     getBudget: vi.fn(),
@@ -246,5 +248,81 @@ describe('SpendtrackService currency settings', () => {
 
     await expect(service.updateCurrency('u-1', 'XYZ')).rejects.toThrow('عملة غير مدعومة');
     expect(repository.setUserCurrency).not.toHaveBeenCalled();
+  });
+});
+
+describe('SpendtrackService CSV export/import', () => {
+  it('exports expenses as CSV with category names', async () => {
+    const { repository } = makeRepo();
+    (repository.getAllExpenses as ReturnType<typeof vi.fn>).mockResolvedValue([
+      {
+        id: 'e-1',
+        amount: 50.5,
+        date: '2026-08-01',
+        description: 'غداء',
+        categories: { name: 'طعام', colorHex: '#ff0000' },
+      },
+    ]);
+    const service = makeService(repository);
+
+    const csv = await service.getExportCsv('u-1', '2026-08-01', '2026-08-31', null);
+    expect(csv).toContain('date,amount,category,description');
+    expect(csv).toContain('2026-08-01,50.5,طعام,غداء');
+    expect(repository.getAllExpenses).toHaveBeenCalledWith('u-1', '2026-08-01', '2026-08-31', null);
+  });
+
+  it('imports valid rows, skipping malformed ones', async () => {
+    const { repository } = makeRepo();
+    (repository.getUserCategories as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'cat-1', name: 'طعام', colorHex: '#ff0000' },
+    ]);
+    (repository.createExpensesMany as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const service = makeService(repository);
+
+    const content =
+      'date,amount,category,description\n2026-08-01,50,طعام,غداء\nbad-date,10,طعام,x\n2026-08-02,-5,طعام,y';
+    const result = await service.importExpensesCsv('u-1', content);
+
+    expect(result.imported).toBe(1);
+    expect(result.skipped).toBe(0);
+    expect(result.errors).toHaveLength(2);
+    expect(repository.createExpensesMany).toHaveBeenCalledWith([
+      {
+        user_id: 'u-1',
+        amount: 50,
+        category_id: 'cat-1',
+        date: '2026-08-01',
+        description: 'غداء',
+      },
+    ]);
+  });
+
+  it('creates missing categories before importing their rows', async () => {
+    const { repository } = makeRepo();
+    (repository.getUserCategories as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([{ id: 'new-1', name: 'خدمات', colorHex: '#0ea5e9' }]);
+    (repository.createCategory as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (repository.createExpensesMany as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    const service = makeService(repository);
+
+    const result = await service.importExpensesCsv('u-1', '2026-08-03,12,خدمات,فاتورة');
+
+    expect(result.imported).toBe(1);
+    expect(result.errors).toHaveLength(0);
+    expect(repository.createCategory).toHaveBeenCalledWith({
+      user_id: 'u-1',
+      name: 'خدمات',
+      colorHex: expect.stringMatching(/^#[0-9a-f]{6}$/),
+    });
+    expect(repository.createExpensesMany).toHaveBeenCalledWith([
+      {
+        user_id: 'u-1',
+        amount: 12,
+        category_id: 'new-1',
+        date: '2026-08-03',
+        description: 'فاتورة',
+      },
+    ]);
   });
 });

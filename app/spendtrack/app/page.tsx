@@ -10,6 +10,7 @@ import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
 import { CategoryPieChart } from '@/frontend/ui/spendtrack/category-pie-chart';
 import { DailyBarChart } from '@/frontend/ui/spendtrack/daily-bar-chart';
 import { InsightsStrip } from '@/frontend/ui/spendtrack/insights-strip';
+import { CsvActions } from '@/frontend/ui/spendtrack/csv-actions';
 import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
 import { getAuthUser } from '@/backend/middleware/auth-guard';
 import {
@@ -276,6 +277,7 @@ export default async function DashboardPage(props: {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
         <h1 className="text-3xl font-display font-bold tracking-tight">إدارة المصروف</h1>
         <div className="flex items-center gap-3">
+          <CsvActions start={start} end={end} categories={filterCategories} />
           <CurrencySelector currency={currency} />
           <CreateExpenseButton userId={user.id} currency={currency} />
         </div>

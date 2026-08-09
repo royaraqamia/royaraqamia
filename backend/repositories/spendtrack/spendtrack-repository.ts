@@ -1,5 +1,6 @@
 import type {
   Category,
+  ExpenseWithCategory,
   RecurringExpense,
   RecurringExpenseInput,
   SpendtrackTransactionsQuery,
@@ -27,6 +28,12 @@ export interface SpendtrackRepository {
     catFilter: string[] | null
   ): Promise<{ date: string; total: number }[] | null>;
   getTransactions(query: SpendtrackTransactionsQuery): Promise<SpendtrackTransactionsResult>;
+  getAllExpenses(
+    userId: string,
+    start: string,
+    end: string,
+    catFilter: string[] | null
+  ): Promise<ExpenseWithCategory[]>;
   createExpense(input: {
     user_id: string;
     amount: number;
@@ -34,6 +41,15 @@ export interface SpendtrackRepository {
     date: string;
     description: string | null;
   }): Promise<void>;
+  createExpensesMany(
+    inputs: {
+      user_id: string;
+      amount: number;
+      category_id: string;
+      date: string;
+      description: string | null;
+    }[]
+  ): Promise<void>;
   updateExpense(
     expenseId: string,
     userId: string,
