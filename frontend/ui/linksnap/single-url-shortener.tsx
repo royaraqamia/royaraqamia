@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Link, Sparkles, Copy, Check, Share2, QrCode, ArrowLeft, RotateCcw } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
-import QRCode from 'qrcode';
-import confetti from 'canvas-confetti';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { hslToHex } from '@/frontend/shared/hsl-to-hex';
 import { toast } from 'sonner';
@@ -56,6 +54,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     const primary = style.getPropertyValue('--primary').trim();
     const accent = style.getPropertyValue('--accent').trim();
     const warning = style.getPropertyValue('--warning').trim();
+    const { default: confetti } = await import('canvas-confetti');
     confetti({
       particleCount: 60,
       spread: 70,
@@ -102,6 +101,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
         const style = getComputedStyle(document.documentElement);
         const dark = hslToHex(style.getPropertyValue('--foreground').trim());
         const light = hslToHex(style.getPropertyValue('--background').trim());
+        const { default: QRCode } = await import('qrcode');
         const dataUrl = await QRCode.toDataURL(shortenedUrl, {
           width: 180,
           margin: 1,

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import { cn } from '@/frontend/shared/cn';
 import { Loader2, ShieldCheck, QrCode } from 'lucide-react';
 
@@ -21,17 +20,27 @@ export function CertificateQRCodeClient({
   const [svg, setSvg] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const url = `${baseUrl}/verify/${encodeURIComponent(code)}`;
-    QRCode.toString(url, {
-      type: 'svg',
-      width: size,
-      margin: 2,
-      color: {
-        dark: '#ffffff',
-        light: '#00000000',
-      },
-      errorCorrectionLevel: 'M',
-    }).then(setSvg);
+    import('qrcode')
+      .then(({ default: QRCode }) =>
+        QRCode.toString(url, {
+          type: 'svg',
+          width: size,
+          margin: 2,
+          color: {
+            dark: '#ffffff',
+            light: '#00000000',
+          },
+          errorCorrectionLevel: 'M',
+        })
+      )
+      .then((value) => {
+        if (!cancelled) setSvg(value);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, [code, baseUrl, size]);
 
   if (!svg) {

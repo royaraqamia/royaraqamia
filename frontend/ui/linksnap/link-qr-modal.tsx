@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import QRCode from 'qrcode';
 import {
   Dialog,
   DialogContent,
@@ -38,13 +37,16 @@ export function LinkQrModal({ code, baseUrl, open, onOpenChange }: LinkQrModalPr
     const dark = hslToHex(style.getPropertyValue('--foreground').trim());
     const light = hslToHex(style.getPropertyValue('--background').trim());
 
-    QRCode.toString(shortUrl, {
-      type: 'svg',
-      width: 240,
-      margin: 1,
-      errorCorrectionLevel: 'M',
-      color: { dark: dark ?? '#000000', light: light ?? '#ffffff' },
-    })
+    import('qrcode')
+      .then(({ default: QRCode }) =>
+        QRCode.toString(shortUrl, {
+          type: 'svg',
+          width: 240,
+          margin: 1,
+          errorCorrectionLevel: 'M',
+          color: { dark: dark ?? '#000000', light: light ?? '#ffffff' },
+        })
+      )
       .then((value) => {
         if (!cancelled) setSvg(value);
       })
