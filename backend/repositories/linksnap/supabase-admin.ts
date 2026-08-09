@@ -5,6 +5,8 @@ import {
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 
+const ADMIN_LINKS_PAGE = 100;
+
 export class SupabaseAdminRepository implements AdminRepository {
   constructor(private readonly supabase: SupabaseClient<Database>) {}
 
@@ -52,7 +54,8 @@ export class SupabaseAdminRepository implements AdminRepository {
         analytics_events (count)
       `
       )
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(0, ADMIN_LINKS_PAGE - 1);
 
     if (linksErr) {
       throw new Error(`Failed to retrieve master links: ${linksErr.message}`);

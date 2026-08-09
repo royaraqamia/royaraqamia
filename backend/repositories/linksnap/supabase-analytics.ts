@@ -121,9 +121,11 @@ export class SupabaseAnalyticsRepository implements AnalyticsRepository {
       query = query.lte('clicked_at', range.to.toISOString());
     }
 
-    const { data: eventsData, error: eventsError } = await query.order('clicked_at', {
-      ascending: false,
-    });
+    const { data: eventsData, error: eventsError } = await query
+      .order('clicked_at', {
+        ascending: false,
+      })
+      .limit(MAX_EXPORT_ROWS);
 
     if (eventsError) {
       throw new Error(`Failed to retrieve analytics events: ${eventsError.message}`);
