@@ -61,6 +61,7 @@ function makeRepo(
     createTag: vi.fn(),
     deleteTag: vi.fn(),
     getPostTags: vi.fn(),
+    getPostTagsByPostIds: vi.fn(),
     setPostTags: vi.fn(),
     ...overrides,
   };

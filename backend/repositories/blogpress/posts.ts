@@ -59,6 +59,17 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     return tags;
   }
 
+  function buildTagMapByPost(
+    rows: Array<{ post_id: string; blog_tags: PostTag | null }>
+  ): Record<string, PostTag[]> {
+    const result: Record<string, PostTag[]> = {};
+    for (const row of rows) {
+      if (!row.blog_tags) continue;
+      (result[row.post_id] ??= []).push(row.blog_tags);
+    }
+    return result;
+  }
+
   return {
     async getPublishedPosts(
       page: number,
@@ -442,6 +453,15 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('blog_tags(id, name, slug)')
         .eq('post_id', postId);
       return mapTagRows(data ?? []);
+    },
+
+    async getPostTagsByPostIds(postIds: string[]): Promise<Record<string, PostTag[]>> {
+      if (postIds.length === 0) return {};
+      const { data } = await supabase
+        .from('post_tags')
+        .select('post_id, blog_tags(id, name, slug)')
+        .in('post_id', postIds);
+      return buildTagMapByPost(data ?? []);
     },
 
     async setPostTags(postId: string, _authorId: string, tagIds: string[]): Promise<void> {

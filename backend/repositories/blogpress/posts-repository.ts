@@ -54,5 +54,6 @@ export interface PostsRepository {
   createTag(authorId: string, name: string, slug: string): Promise<PostTag>;
   deleteTag(tagId: string, authorId: string): Promise<void>;
   getPostTags(postId: string): Promise<PostTag[]>;
+  getPostTagsByPostIds(postIds: string[]): Promise<Record<string, PostTag[]>>;
   setPostTags(postId: string, authorId: string, tagIds: string[]): Promise<void>;
 }

@@ -90,6 +90,5 @@ export async function loadManyPostTags(postIds: string[]): Promise<Record<string
   const cookieStore = await cookies();
   const supabase = await createServerSupabaseClient(cookieStore);
   const service = createBlogpressPostsService(supabase);
-  const results = await Promise.all(postIds.map((id) => service.getPostTags(id)));
-  return Object.fromEntries(postIds.map((id, i) => [id, results[i] ?? []]));
+  return service.getPostTagsByPostIds(postIds);
 }

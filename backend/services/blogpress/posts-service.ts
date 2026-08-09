@@ -179,6 +179,10 @@ export class BlogpressPostsService {
     return this.repository.getPostTags(postId);
   }
 
+  async getPostTagsByPostIds(postIds: string[]): Promise<Record<string, PostTag[]>> {
+    return this.repository.getPostTagsByPostIds(postIds);
+  }
+
   async setPostTags(postId: string, authorId: string, tagIds: string[]): Promise<void> {
     return this.repository.setPostTags(postId, authorId, tagIds);
   }
