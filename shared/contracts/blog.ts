@@ -41,3 +41,9 @@ export const BulkPostsActionSchema = z.object({
 });
 
 export type BulkPostsActionInput = z.infer<typeof BulkPostsActionSchema>;
+
+export const SchedulePostSchema = z.object({
+  publish_at: z.string().min(1, 'تاريخ الجدولة مطلوب'),
+});
+
+export type SchedulePostInput = z.infer<typeof SchedulePostSchema>;

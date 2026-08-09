@@ -48,6 +48,13 @@ export async function unpublishPost(postId: string): Promise<void> {
   });
 }
 
+export async function schedulePost(postId: string, publishAt: string): Promise<void> {
+  await request(`/api/blogpress/posts/${encodeURIComponent(postId)}/schedule`, {
+    method: 'PATCH',
+    body: JSON.stringify({ publish_at: publishAt }),
+  });
+}
+
 export async function deletePost(postId: string): Promise<void> {
   await request(`/api/blogpress/posts/${encodeURIComponent(postId)}`, { method: 'DELETE' });
 }

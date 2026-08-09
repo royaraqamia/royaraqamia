@@ -8,6 +8,7 @@ import {
   TagInputSchema,
   PostTagIdsSchema,
   BulkPostsActionSchema,
+  SchedulePostSchema,
 } from '@/shared/contracts/blog';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import type { RevalidationHint } from '@/backend/transport/http-result';
@@ -113,6 +114,32 @@ export async function unpublishPost(id: string): Promise<HttpResult> {
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل إلغاء النَّشر',
+    });
+  }
+}
+
+export async function schedulePost(id: string, body: Record<string, unknown>): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+
+    const validated = SchedulePostSchema.safeParse(body);
+    if (!validated.success) return jsonResult(400, { error: 'تاريخ الجدولة غير صالح' });
+
+    const { slug } = await createBlogpressPostsService(supabase).schedulePost(
+      id,
+      user.id,
+      validated.data.publish_at
+    );
+
+    return jsonResult(
+      200,
+      { success: true },
+      { revalidate: [...postRevalidation(slug), { path: '/blogpress/calendar' }] }
+    );
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل جدولة المقال',
     });
   }
 }

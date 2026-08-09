@@ -7,7 +7,8 @@ import {
 } from '@/backend/loaders/blogpress';
 import { PostList } from '../_components/post-list';
 import { CreatePostButton } from '../_components/create-post-button';
-import { FileText, Eye, CalendarClock, BarChart3 } from 'lucide-react';
+import { FileText, Eye, CalendarClock, BarChart3, CalendarRange } from 'lucide-react';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,7 +71,16 @@ export default async function DashboardPage({
         <div>
           <h1 className="text-3xl font-display font-bold tracking-tight">إدارة المقالات</h1>
         </div>
-        <CreatePostButton />
+        <div className="flex items-center gap-2">
+          <Link
+            href="/blogpress/app/calendar"
+            className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          >
+            <CalendarRange className="size-4" />
+            التقويم
+          </Link>
+          <CreatePostButton />
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">

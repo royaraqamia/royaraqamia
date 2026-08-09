@@ -100,6 +100,14 @@ export class BlogpressPostsService {
     return this.repository.unpublishPost(postId, authorId);
   }
 
+  async schedulePost(
+    postId: string,
+    authorId: string,
+    publishAt: string
+  ): Promise<{ slug: string }> {
+    return this.repository.schedulePost(postId, authorId, publishAt);
+  }
+
   async deletePost(postId: string, authorId: string): Promise<{ slug: string }> {
     return this.repository.deletePost(postId, authorId);
   }

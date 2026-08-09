@@ -290,6 +290,27 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return { slug: data.slug };
     },
 
+    async schedulePost(
+      postId: string,
+      authorId: string,
+      publishAt: string
+    ): Promise<{ slug: string }> {
+      const { data, error } = await supabase
+        .from('posts')
+        .update({
+          status: 'scheduled',
+          publish_at: publishAt,
+        })
+        .eq('id', postId)
+        .eq('author_id', authorId)
+        .select('slug')
+        .single();
+
+      if (error) throw new Error('فشل جدولة المقال');
+
+      return { slug: data.slug };
+    },
+
     async deletePost(postId: string, authorId: string): Promise<{ slug: string }> {
       const { data, error } = await supabase
         .from('posts')

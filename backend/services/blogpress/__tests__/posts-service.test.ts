@@ -45,6 +45,7 @@ function makeRepo(
     saveAndPublishPost: vi.fn(),
     publishPost: vi.fn(),
     unpublishPost: vi.fn(),
+    schedulePost: vi.fn(),
     deletePost: vi.fn(),
     setPostFeatured: vi.fn(),
     bulkActionPosts: vi.fn(),
@@ -240,6 +241,17 @@ describe('BlogpressPostsService (thin delegation)', () => {
     expect(repository.publishPost).toHaveBeenCalledWith('p-1', 'u-1', false);
     await expect(service.unpublishPost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
     await expect(service.deletePost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
+  });
+
+  it('delegates schedulePost with the target publish_at', async () => {
+    const { repository, service } = makeRepo();
+    (repository.schedulePost as ReturnType<typeof vi.fn>).mockResolvedValue({
+      slug: 'post-1',
+    });
+
+    await service.schedulePost('p-1', 'u-1', '2026-09-01T09:00:00.000Z');
+
+    expect(repository.schedulePost).toHaveBeenCalledWith('p-1', 'u-1', '2026-09-01T09:00:00.000Z');
   });
 
   it('fires the publish notifier after saveAndPublishPost', async () => {

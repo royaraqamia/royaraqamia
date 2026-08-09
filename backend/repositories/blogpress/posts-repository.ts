@@ -33,6 +33,7 @@ export interface PostsRepository {
   ): Promise<{ slug: string }>;
   publishPost(postId: string, authorId: string, blogVisible: boolean): Promise<{ slug: string }>;
   unpublishPost(postId: string, authorId: string): Promise<{ slug: string }>;
+  schedulePost(postId: string, authorId: string, publishAt: string): Promise<{ slug: string }>;
   deletePost(postId: string, authorId: string): Promise<{ slug: string }>;
   setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void>;
   bulkActionPosts(
