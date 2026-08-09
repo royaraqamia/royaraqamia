@@ -105,6 +105,116 @@ describe('HabitService', () => {
       });
     });
 
+    it('passes through a weekly/monthly target and reminder time', async () => {
+      const { repository, service } = makeRepo();
+      (repository.createHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
+
+      await service.createHabit({
+        name: 'قراءة',
+        target: 5,
+        targetPeriod: 'week',
+        reminderTime: '21:30',
+      });
+
+      expect(repository.createHabit).toHaveBeenCalledWith({
+        name: 'قراءة',
+        icon: 'Activity',
+        frequency: 'daily',
+        target: 5,
+        targetPeriod: 'week',
+        reminderTime: '21:30',
+      });
+    });
+
+    it('passes through target + period and a null reminder time', async () => {
+      const { repository, service } = makeRepo();
+      (repository.createHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
+
+      await service.createHabit({
+        name: 'قراءة',
+        target: 7,
+        targetPeriod: 'week',
+        reminderTime: null,
+      });
+
+      expect(repository.createHabit).toHaveBeenCalledWith({
+        name: 'قراءة',
+        icon: 'Activity',
+        frequency: 'daily',
+        target: 7,
+        targetPeriod: 'week',
+        reminderTime: null,
+      });
+    });
+
+    it('clears target + period together when target is null', async () => {
+      const { repository, service } = makeRepo();
+      (repository.createHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
+
+      await service.createHabit({ name: 'قراءة', target: null });
+
+      expect(repository.createHabit).toHaveBeenCalledWith({
+        name: 'قراءة',
+        icon: 'Activity',
+        frequency: 'daily',
+        target: null,
+        targetPeriod: null,
+      });
+    });
+
+    it('rejects a non-positive target', async () => {
+      const { repository, service } = makeRepo();
+      await expect(service.createHabit({ name: 'قراءة', target: 0 })).rejects.toThrow(
+        'الهدف يجب أن يكون رقماً صحيحاً أكبر من الصفر'
+      );
+      await expect(service.createHabit({ name: 'قراءة', target: -1 })).rejects.toThrow(
+        'الهدف يجب أن يكون رقماً صحيحاً أكبر من الصفر'
+      );
+      expect(repository.createHabit).not.toHaveBeenCalled();
+    });
+
+    it('rejects a fractional target', async () => {
+      const { repository, service } = makeRepo();
+      await expect(service.createHabit({ name: 'قراءة', target: 2.5 })).rejects.toThrow(
+        'الهدف يجب أن يكون رقماً صحيحاً أكبر من الصفر'
+      );
+      expect(repository.createHabit).not.toHaveBeenCalled();
+    });
+
+    it('rejects a target without a period and a period without a target', async () => {
+      const { repository, service } = makeRepo();
+      await expect(service.createHabit({ name: 'قراءة', target: 5 })).rejects.toThrow(
+        'يجب اختيار فترة الهدف'
+      );
+      await expect(service.createHabit({ name: 'قراءة', targetPeriod: 'month' })).rejects.toThrow(
+        'يجب تحديد قيمة الهدف'
+      );
+      expect(repository.createHabit).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid target period', async () => {
+      const { repository, service } = makeRepo();
+      await expect(
+        service.createHabit({
+          name: 'قراءة',
+          target: 5,
+          targetPeriod: 'year' as 'week',
+        })
+      ).rejects.toThrow('فترة الهدف غير صالحة');
+      expect(repository.createHabit).not.toHaveBeenCalled();
+    });
+
+    it('rejects a malformed reminder time', async () => {
+      const { repository, service } = makeRepo();
+      await expect(service.createHabit({ name: 'قراءة', reminderTime: '25:99' })).rejects.toThrow(
+        'وقت التذكير يجب أن يكون بصيغة HH:mm'
+      );
+      await expect(service.createHabit({ name: 'قراءة', reminderTime: '9pm' })).rejects.toThrow(
+        'وقت التذكير يجب أن يكون بصيغة HH:mm'
+      );
+      expect(repository.createHabit).not.toHaveBeenCalled();
+    });
+
     it('throws when the name is missing, null or whitespace', async () => {
       const { repository, service } = makeRepo();
       await expect(service.createHabit({ name: '' })).rejects.toThrow('اسم العادة مطلوب');
@@ -156,6 +266,35 @@ describe('HabitService', () => {
       await service.updateHabit('h-1', { name: 'قراءة' });
 
       expect(repository.updateHabit).toHaveBeenCalledWith('h-1', { name: 'قراءة' });
+    });
+
+    it('passes through target fields and reminder time on update', async () => {
+      const { repository, service } = makeRepo();
+      (repository.updateHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
+
+      await service.updateHabit('h-1', {
+        target: 4,
+        targetPeriod: 'month',
+        reminderTime: '06:45',
+      });
+
+      expect(repository.updateHabit).toHaveBeenCalledWith('h-1', {
+        target: 4,
+        targetPeriod: 'month',
+        reminderTime: '06:45',
+      });
+    });
+
+    it('clears target and period together when updating target to null', async () => {
+      const { repository, service } = makeRepo();
+      (repository.updateHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
+
+      await service.updateHabit('h-1', { target: null });
+
+      expect(repository.updateHabit).toHaveBeenCalledWith('h-1', {
+        target: null,
+        targetPeriod: null,
+      });
     });
   });
 

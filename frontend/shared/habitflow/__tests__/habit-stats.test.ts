@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   calculateHabitStats,
   calculateAggregateStats,
+  calculateTargetProgress,
   get30DayCalendarGrid,
 } from '@/frontend/shared/habitflow/habit-stats';
 import type { Habit, HabitLog } from '@/shared/contracts/habitflow';
@@ -228,5 +229,84 @@ describe('get30DayCalendarGrid', () => {
       expect(g.date).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(g.dayLabel.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('calculateTargetProgress', () => {
+  const TODAY = '2026-08-02'; // Sunday; ISO week runs 2026-07-27 (Mon) to 2026-08-02.
+
+  function targetedHabit(target: number, period: 'week' | 'month'): Habit {
+    return {
+      id: 'h-target',
+      name: 'هدف',
+      icon: 'Target',
+      frequency: 'daily',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      archived: false,
+      target,
+      targetPeriod: period,
+    };
+  }
+
+  it('returns null when the habit has no target', () => {
+    expect(calculateTargetProgress(habit('h-1'), [], TODAY)).toBeNull();
+  });
+
+  it('returns null when targetPeriod is missing or invalid', () => {
+    const noPeriod: Habit = { ...targetedHabit(5, 'week'), targetPeriod: null };
+    expect(calculateTargetProgress(noPeriod, [], TODAY)).toBeNull();
+  });
+
+  it('counts completions within the current ISO week', () => {
+    const logs = [
+      makeLog('h-target', '2026-07-27', true), // Monday (in week)
+      makeLog('h-target', '2026-08-02', true), // Sunday (in week)
+      makeLog('h-target', '2026-08-03', true), // Monday next week (out)
+    ];
+    const progress = calculateTargetProgress(targetedHabit(4, 'week'), logs, TODAY);
+    expect(progress).toEqual({
+      period: 'week',
+      completed: 2,
+      target: 4,
+      percent: 50,
+      periodStart: '2026-07-27',
+      periodEnd: '2026-08-02',
+    });
+  });
+
+  it('counts completions within the current calendar month', () => {
+    const logs = [
+      makeLog('h-target', '2026-08-01', true),
+      makeLog('h-target', '2026-09-01', true), // next month (out)
+      makeLog('h-target', '2026-07-31', true), // previous month (out)
+    ];
+    // Use a mid-month anchor so both the start and end of month are represented.
+    const progress = calculateTargetProgress(targetedHabit(3, 'month'), logs, '2026-08-15');
+    expect(progress).not.toBeNull();
+    expect(progress!.completed).toBe(1);
+    expect(progress!.percent).toBe(33);
+    expect(progress!.periodStart).toBe('2026-08-01');
+    expect(progress!.periodEnd).toBe('2026-08-31');
+  });
+
+  it('excludes skipped and missed logs from the target count', () => {
+    const logs = [
+      makeLog('h-target', '2026-07-27', true),
+      makeLog('h-target', '2026-07-28', false, 'skip'),
+      makeLog('h-target', '2026-07-29', false, 'miss'),
+    ];
+    const progress = calculateTargetProgress(targetedHabit(5, 'week'), logs, TODAY);
+    expect(progress!.completed).toBe(1);
+  });
+
+  it('caps percent at 100 when the target is exceeded', () => {
+    const logs = [
+      makeLog('h-target', '2026-07-27', true),
+      makeLog('h-target', '2026-07-28', true),
+      makeLog('h-target', '2026-07-29', true),
+    ];
+    const progress = calculateTargetProgress(targetedHabit(2, 'week'), logs, TODAY);
+    expect(progress!.completed).toBe(3);
+    expect(progress!.percent).toBe(100);
   });
 });

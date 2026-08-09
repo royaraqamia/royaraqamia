@@ -1,4 +1,10 @@
-import { Habit, HabitLog, HabitLogKind, HabitRepository } from '@/shared/contracts/habitflow';
+import {
+  Habit,
+  HabitLog,
+  HabitLogKind,
+  HabitRepository,
+  HabitTargetPeriod,
+} from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
 
 export class HabitService {
@@ -18,6 +24,7 @@ export class HabitService {
       name: data.name.trim(),
       icon: data.icon || 'Activity',
       frequency: data.frequency || 'daily',
+      ...this.normalizeGoalFields(data),
     });
   }
 
@@ -28,7 +35,54 @@ export class HabitService {
       ...(data.icon !== undefined && { icon: data.icon }),
       ...(data.frequency !== undefined && { frequency: data.frequency }),
       ...(data.archived !== undefined && { archived: data.archived }),
+      ...this.normalizeGoalFields(data),
     });
+  }
+
+  private normalizeGoalFields(data: Partial<Habit>) {
+    const result: Partial<Habit> = {};
+
+    if (data.target !== undefined) {
+      if (data.target === null) {
+        result.target = null;
+        result.targetPeriod = null;
+      } else {
+        const target = Number(data.target);
+        if (!Number.isInteger(target) || target < 1) {
+          throw new AppError('الهدف يجب أن يكون رقماً صحيحاً أكبر من الصفر', 400);
+        }
+        result.target = target;
+        if (data.targetPeriod !== undefined && data.targetPeriod !== null) {
+          this.assertTargetPeriod(data.targetPeriod);
+          result.targetPeriod = data.targetPeriod;
+        } else {
+          throw new AppError('يجب اختيار فترة الهدف (أسبوعية أو شهرية)', 400);
+        }
+      }
+    } else if (data.targetPeriod !== undefined && data.targetPeriod !== null) {
+      throw new AppError('يجب تحديد قيمة الهدف مع فترة الهدف', 400);
+    }
+
+    if (data.reminderTime !== undefined) {
+      result.reminderTime =
+        data.reminderTime === null ? null : this.normalizeReminderTime(data.reminderTime);
+    }
+
+    return result;
+  }
+
+  private assertTargetPeriod(period: HabitTargetPeriod): void {
+    if (period !== 'week' && period !== 'month') {
+      throw new AppError('فترة الهدف غير صالحة', 400);
+    }
+  }
+
+  private normalizeReminderTime(value: string): string {
+    const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(value);
+    if (!match) {
+      throw new AppError('وقت التذكير يجب أن يكون بصيغة HH:mm', 400);
+    }
+    return `${match[1]}:${match[2]}`;
   }
 
   async deleteHabit(id: string): Promise<boolean> {

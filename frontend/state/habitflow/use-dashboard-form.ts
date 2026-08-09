@@ -1,6 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'sonner';
-import { Habit } from '@/shared/contracts/habitflow';
+import { Habit, HabitTargetPeriod } from '@/shared/contracts/habitflow';
 import { ApiClient, ApiError } from '@/frontend/api/habitflow/habit-api';
 import { LocalStorageHabitRepository } from '@/frontend/api/habitflow/local-storage-repository';
 
@@ -13,12 +13,18 @@ export interface DashboardForm {
   habitName: string;
   habitIcon: string;
   habitFrequency: 'daily' | 'weekly';
+  habitTarget: string;
+  habitTargetPeriod: HabitTargetPeriod | '';
+  habitReminderTime: string;
   isSubmitting: boolean;
   formError: string;
   confirmArchiveHabitId: string | null;
   setHabitName: Dispatch<SetStateAction<string>>;
   setHabitIcon: Dispatch<SetStateAction<string>>;
   setHabitFrequency: Dispatch<SetStateAction<'daily' | 'weekly'>>;
+  setHabitTarget: Dispatch<SetStateAction<string>>;
+  setHabitTargetPeriod: Dispatch<SetStateAction<HabitTargetPeriod | ''>>;
+  setHabitReminderTime: Dispatch<SetStateAction<string>>;
   setIsAddModalOpen: Dispatch<SetStateAction<boolean>>;
   setFormError: Dispatch<SetStateAction<string>>;
   handleAddHabit: (e: React.FormEvent) => Promise<void>;
@@ -28,6 +34,12 @@ export interface DashboardForm {
   cancelArchive: () => void;
   openEditModal: (habit: Habit) => void;
   closeEditModal: () => void;
+}
+
+function parseTarget(value: string): number | null {
+  if (value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : null;
 }
 
 export function useDashboardForm(
@@ -41,6 +53,9 @@ export function useDashboardForm(
   const [habitName, setHabitName] = useState<string>('');
   const [habitIcon, setHabitIcon] = useState<string>('Activity');
   const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly'>('daily');
+  const [habitTarget, setHabitTarget] = useState<string>('');
+  const [habitTargetPeriod, setHabitTargetPeriod] = useState<HabitTargetPeriod | ''>('');
+  const [habitReminderTime, setHabitReminderTime] = useState<string>('');
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string>('');
@@ -54,13 +69,17 @@ export function useDashboardForm(
 
     if (user) {
       try {
-        const result = await ApiClient.createHabit(habitName, habitIcon, habitFrequency);
+        const result = await ApiClient.createHabit(
+          habitName,
+          habitIcon,
+          habitFrequency,
+          parseTarget(habitTarget),
+          habitTargetPeriod === '' ? null : habitTargetPeriod,
+          habitReminderTime === '' ? null : habitReminderTime
+        );
         setHabits((prev) => [...prev, result.habit]);
         setIsAddModalOpen(false);
-        setHabitName('');
-        setHabitIcon('Activity');
-        setHabitFrequency('daily');
-        setFormError('');
+        resetFields();
         toast.success('تم إنشاء العادة بنجاح');
       } catch (e) {
         if (e instanceof ApiError && e.status === 400) {
@@ -76,13 +95,13 @@ export function useDashboardForm(
           name: habitName.trim(),
           icon: habitIcon,
           frequency: habitFrequency,
+          target: parseTarget(habitTarget),
+          targetPeriod: habitTargetPeriod === '' ? null : habitTargetPeriod,
+          reminderTime: habitReminderTime === '' ? null : habitReminderTime,
         });
         setHabits((prev) => [...prev, habit]);
         setIsAddModalOpen(false);
-        setHabitName('');
-        setHabitIcon('Activity');
-        setHabitFrequency('daily');
-        setFormError('');
+        resetFields();
         toast.success('تم إنشاء العادة محلياً');
       } catch (e) {
         setFormError('حدث خطأ أثناء حفظ العادة محلياً.');
@@ -104,13 +123,15 @@ export function useDashboardForm(
           selectedHabit.id,
           habitName,
           habitIcon,
-          habitFrequency
+          habitFrequency,
+          parseTarget(habitTarget),
+          habitTargetPeriod === '' ? null : habitTargetPeriod,
+          habitReminderTime === '' ? null : habitReminderTime
         );
         setHabits((prev) => prev.map((h) => (h.id === selectedHabit.id ? result.habit : h)));
         setIsEditModalOpen(false);
         setSelectedHabit(null);
-        setHabitName('');
-        setFormError('');
+        resetFields();
         toast.success('تم تحديث العادة بنجاح');
       } catch (e) {
         if (e instanceof ApiError && e.status === 400) {
@@ -126,12 +147,14 @@ export function useDashboardForm(
           name: habitName.trim(),
           icon: habitIcon,
           frequency: habitFrequency,
+          target: parseTarget(habitTarget),
+          targetPeriod: habitTargetPeriod === '' ? null : habitTargetPeriod,
+          reminderTime: habitReminderTime === '' ? null : habitReminderTime,
         });
         setHabits((prev) => prev.map((h) => (h.id === selectedHabit.id ? updated : h)));
         setIsEditModalOpen(false);
         setSelectedHabit(null);
-        setHabitName('');
-        setFormError('');
+        resetFields();
         toast.success('تم تحديث العادة محلياً');
       } catch (e) {
         setFormError('حدث خطأ أثناء تحديث العادة محلياً.');
@@ -191,11 +214,24 @@ export function useDashboardForm(
     setConfirmArchiveHabitId(null);
   };
 
+  const resetFields = () => {
+    setHabitName('');
+    setHabitIcon('Activity');
+    setHabitFrequency('daily');
+    setHabitTarget('');
+    setHabitTargetPeriod('');
+    setHabitReminderTime('');
+    setFormError('');
+  };
+
   const openEditModal = (habit: Habit) => {
     setSelectedHabit(habit);
     setHabitName(habit.name);
     setHabitIcon(habit.icon);
     setHabitFrequency(habit.frequency);
+    setHabitTarget(habit.target != null ? String(habit.target) : '');
+    setHabitTargetPeriod(habit.targetPeriod ?? '');
+    setHabitReminderTime(habit.reminderTime ?? '');
     setIsEditModalOpen(true);
     setFormError('');
   };
@@ -203,10 +239,7 @@ export function useDashboardForm(
   const closeEditModal = () => {
     setIsEditModalOpen(false);
     setSelectedHabit(null);
-    setHabitName('');
-    setHabitIcon('Activity');
-    setHabitFrequency('daily');
-    setFormError('');
+    resetFields();
   };
 
   return {
@@ -216,12 +249,18 @@ export function useDashboardForm(
     habitName,
     habitIcon,
     habitFrequency,
+    habitTarget,
+    habitTargetPeriod,
+    habitReminderTime,
     isSubmitting,
     formError,
     confirmArchiveHabitId,
     setHabitName,
     setHabitIcon,
     setHabitFrequency,
+    setHabitTarget,
+    setHabitTargetPeriod,
+    setHabitReminderTime,
     setIsAddModalOpen,
     setFormError,
     handleAddHabit,

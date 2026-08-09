@@ -174,6 +174,10 @@ export class LocalStorageHabitRepository implements HabitRepository {
         frequency: h.frequency as Habit['frequency'],
         createdAt: h.createdAt || new Date().toISOString(),
         archived: h.archived || false,
+        target: h.target ?? null,
+        targetPeriod:
+          h.targetPeriod === 'week' || h.targetPeriod === 'month' ? h.targetPeriod : null,
+        reminderTime: h.reminderTime ?? null,
       }))
     );
     writeLogs(

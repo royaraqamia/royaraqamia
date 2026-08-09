@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Trash2, AlertCircle, Loader2 } from 'lucide-react';
-import { Habit } from '@/shared/contracts/habitflow';
+import { Trash2, AlertCircle, Loader2, Bell, Target } from 'lucide-react';
+import { Habit, HabitTargetPeriod } from '@/shared/contracts/habitflow';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
@@ -14,10 +14,16 @@ interface EditHabitModalProps {
   habitName: string;
   habitIcon: string;
   habitFrequency: 'daily' | 'weekly';
+  habitTarget: string;
+  habitTargetPeriod: HabitTargetPeriod | '';
+  habitReminderTime: string;
   onClose: () => void;
   onNameChange: (name: string) => void;
   onIconChange: (icon: string) => void;
   onFrequencyChange: (freq: 'daily' | 'weekly') => void;
+  onTargetChange: (value: string) => void;
+  onTargetPeriodChange: (period: HabitTargetPeriod | '') => void;
+  onReminderTimeChange: (value: string) => void;
   onSubmit: (e: React.FormEvent) => void;
   onArchive: (id: string) => void;
   formError?: string;
@@ -30,12 +36,18 @@ export function EditHabitModal({
   habitName,
   habitIcon,
   habitFrequency,
+  habitTarget,
+  habitTargetPeriod,
+  habitReminderTime,
   formError,
   isSubmitting,
   onClose,
   onNameChange,
   onIconChange,
   onFrequencyChange,
+  onTargetChange,
+  onTargetPeriodChange,
+  onReminderTimeChange,
   onSubmit,
   onArchive,
 }: EditHabitModalProps) {
@@ -158,6 +170,87 @@ export function EditHabitModal({
                 );
               })}
             </div>
+          </fieldset>
+
+          <fieldset className="space-y-2 border-0 p-0 m-0">
+            <legend className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 mb-2 flex items-center gap-1.5">
+              <Target className="w-3.5 h-3.5" aria-hidden="true" />
+              هدف أسبوعي/شهري (اختياري)
+            </legend>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="input-edit-habit-target"
+                  className="text-[11px] font-medium text-muted-foreground/80"
+                >
+                  عدد مرات الإنجاز
+                </label>
+                <Input
+                  type="number"
+                  min={1}
+                  max={100}
+                  value={habitTarget}
+                  onChange={(e) => onTargetChange(e.target.value)}
+                  placeholder="مثال: 5"
+                  id="input-edit-habit-target"
+                  className="w-full h-10 px-4 rounded-xl border-border/60 bg-muted/30 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-sm font-medium placeholder:text-muted-foreground/50"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label
+                  htmlFor="input-edit-habit-target-period"
+                  className="text-xs font-medium text-muted-foreground/80"
+                >
+                  الفترة
+                </label>
+                <div className="grid grid-cols-2 gap-1.5 p-1.5 bg-muted/40 rounded-2xl border border-border/40 backdrop-blur-sm">
+                  {(
+                    [
+                      ['week', 'أسبوعي'],
+                      ['month', 'شهري'],
+                    ] as const
+                  ).map(([value, label]) => {
+                    const isSelected = habitTargetPeriod === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => onTargetPeriodChange(isSelected ? '' : value)}
+                        className={`flex items-center justify-center py-2 px-3 text-xs font-semibold rounded-xl transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 active:scale-[0.98] ${
+                          isSelected
+                            ? 'bg-background text-foreground shadow-sm border border-border/50 font-bold'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-background/40 border border-transparent'
+                        }`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+            <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
+              حدّد عدد مرات إنجاز العادة المطلوبة أسبوعياً أو شهرياً لمتابعة تقدّمك نحو الهدف
+            </p>
+          </fieldset>
+
+          <fieldset className="space-y-2 border-0 p-0 m-0">
+            <legend className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 mb-2 flex items-center gap-1.5">
+              <Bell className="w-3.5 h-3.5" aria-hidden="true" />
+              وقت التذكير اليومي (اختياري)
+            </legend>
+            <div className="relative">
+              <Input
+                type="time"
+                value={habitReminderTime}
+                onChange={(e) => onReminderTimeChange(e.target.value)}
+                id="input-edit-habit-reminder-time"
+                className="w-full h-11 px-4 rounded-xl border-border/60 bg-muted/30 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/10 transition-all text-sm font-medium placeholder:text-muted-foreground/50 [color-scheme:light] dark:[color-scheme:dark]"
+              />
+            </div>
+            <p className="text-[11px] text-muted-foreground/60 leading-relaxed">
+              إن لم تُحدد وقتاً، سيُرسل التذكير افتراضياً في الثامنة صباحاً
+            </p>
           </fieldset>
 
           <div className="pt-4 border-t border-border/40 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3">

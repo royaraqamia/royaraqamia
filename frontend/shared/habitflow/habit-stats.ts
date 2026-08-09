@@ -181,3 +181,64 @@ export function get30DayCalendarGrid(
 
   return grid;
 }
+
+export interface TargetProgress {
+  period: 'week' | 'month';
+  completed: number;
+  target: number;
+  percent: number;
+  periodStart: string;
+  periodEnd: string;
+}
+
+function currentPeriodWindow(
+  period: 'week' | 'month',
+  todayStr: string
+): {
+  start: string;
+  end: string;
+} {
+  const today = new Date(`${todayStr}T00:00:00Z`);
+
+  if (period === 'week') {
+    const day = today.getUTCDay();
+    const diffToMonday = day === 0 ? 6 : day - 1;
+    const start = new Date(today);
+    start.setUTCDate(start.getUTCDate() - diffToMonday);
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 6);
+    return { start: start.toISOString().split('T')[0]!, end: end.toISOString().split('T')[0]! };
+  }
+
+  const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+  const end = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 0));
+  return { start: start.toISOString().split('T')[0]!, end: end.toISOString().split('T')[0]! };
+}
+
+export function calculateTargetProgress(
+  habit: Habit,
+  logs: HabitLog[],
+  todayStr: string
+): TargetProgress | null {
+  if (
+    habit.target == null ||
+    habit.target < 1 ||
+    (habit.targetPeriod !== 'week' && habit.targetPeriod !== 'month')
+  ) {
+    return null;
+  }
+
+  const window = currentPeriodWindow(habit.targetPeriod, todayStr);
+  const completed = logs.filter(
+    (l) => l.habitId === habit.id && l.completed && l.date >= window.start && l.date <= window.end
+  ).length;
+
+  return {
+    period: habit.targetPeriod,
+    completed,
+    target: habit.target,
+    percent: Math.min(100, Math.round((completed / habit.target) * 100)),
+    periodStart: window.start,
+    periodEnd: window.end,
+  };
+}

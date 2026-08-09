@@ -61,12 +61,18 @@ export function DashboardShell({
     habitName,
     habitIcon,
     habitFrequency,
+    habitTarget,
+    habitTargetPeriod,
+    habitReminderTime,
     fileInputRef,
     activeStats,
     calendarGrid,
     setHabitName,
     setHabitIcon,
     setHabitFrequency,
+    setHabitTarget,
+    setHabitTargetPeriod,
+    setHabitReminderTime,
     setIsAddModalOpen,
     setFormError,
     setActiveDate,
@@ -409,6 +415,9 @@ export function DashboardShell({
             habitName={habitName}
             habitIcon={habitIcon}
             habitFrequency={habitFrequency}
+            habitTarget={habitTarget}
+            habitTargetPeriod={habitTargetPeriod}
+            habitReminderTime={habitReminderTime}
             formError={formError}
             isSubmitting={isSubmitting}
             onClose={() => {
@@ -418,6 +427,9 @@ export function DashboardShell({
             onNameChange={setHabitName}
             onIconChange={setHabitIcon}
             onFrequencyChange={setHabitFrequency}
+            onTargetChange={setHabitTarget}
+            onTargetPeriodChange={setHabitTargetPeriod}
+            onReminderTimeChange={setHabitReminderTime}
             onSubmit={handleAddHabit}
           />
 
@@ -427,12 +439,18 @@ export function DashboardShell({
             habitName={habitName}
             habitIcon={habitIcon}
             habitFrequency={habitFrequency}
+            habitTarget={habitTarget}
+            habitTargetPeriod={habitTargetPeriod}
+            habitReminderTime={habitReminderTime}
             formError={formError}
             isSubmitting={isSubmitting}
             onClose={closeEditModal}
             onNameChange={setHabitName}
             onIconChange={setHabitIcon}
             onFrequencyChange={setHabitFrequency}
+            onTargetChange={setHabitTarget}
+            onTargetPeriodChange={setHabitTargetPeriod}
+            onReminderTimeChange={setHabitReminderTime}
             onSubmit={handleEditHabit}
             onArchive={handleArchiveHabit}
           />

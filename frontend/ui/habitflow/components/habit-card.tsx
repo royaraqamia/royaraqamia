@@ -1,8 +1,11 @@
 import { createElement } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { Check, Flame, Edit3, Snowflake, NotebookPen } from 'lucide-react';
+import { Check, Flame, Edit3, Snowflake, NotebookPen, Target } from 'lucide-react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
-import { calculateHabitStats } from '@/frontend/shared/habitflow/habit-stats';
+import {
+  calculateHabitStats,
+  calculateTargetProgress,
+} from '@/frontend/shared/habitflow/habit-stats';
 import { getIconComponent, getIconColorClass } from '@/frontend/shared/habitflow/habit-icons';
 import { Card } from '@/frontend/ui/primitives/card';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -41,6 +44,7 @@ export function HabitCard({
   const isToggling = togglingHabitId === habit.id;
   const isSkipping = skippingHabitId === habit.id;
   const stats = calculateHabitStats(habit.id, logs, activeDate);
+  const targetProgress = calculateTargetProgress(habit, logs, activeDate);
   const colorClass = getIconColorClass(habit.icon);
 
   return (
@@ -131,6 +135,23 @@ export function HabitCard({
               ) : (
                 <span className="text-[11px] text-neutral-400 dark:text-neutral-500 font-medium truncate">
                   لا يوجد تسلسل
+                </span>
+              )}
+
+              {targetProgress && (
+                <span
+                  className={`text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1.5 border whitespace-nowrap shrink-0 transition-colors ${
+                    targetProgress.percent >= 100
+                      ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                      : 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20'
+                  }`}
+                  title={`${targetProgress.period === 'week' ? 'الهدف الأسبوعي' : 'الهدف الشهري'}: ${targetProgress.completed} من ${targetProgress.target}`}
+                >
+                  <Target className="w-3.5 h-3.5" />
+                  <span>
+                    {targetProgress.completed} / {targetProgress.target}{' '}
+                    {targetProgress.period === 'week' ? 'أسبوعي' : 'شهري'}
+                  </span>
                 </span>
               )}
             </div>

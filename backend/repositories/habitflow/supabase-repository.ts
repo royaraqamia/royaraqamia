@@ -5,6 +5,7 @@ import {
   HabitLogKind,
   HabitRepository,
   HabitRestoreInput,
+  HabitTargetPeriod,
 } from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
 import { logger } from '@/backend/shared/logger';
@@ -17,6 +18,9 @@ interface HabitRow {
   created_at: string;
   archived: boolean;
   user_id?: string;
+  target?: number | null;
+  target_period?: string | null;
+  reminder_time?: string | null;
 }
 
 interface LogRow {
@@ -39,7 +43,14 @@ function toHabit(row: HabitRow): Habit {
     createdAt: row.created_at,
     archived: row.archived,
     user_id: row.user_id,
+    target: row.target ?? null,
+    targetPeriod: isTargetPeriod(row.target_period) ? row.target_period : null,
+    reminderTime: row.reminder_time ?? null,
   };
+}
+
+function isTargetPeriod(value: string | null | undefined): value is HabitTargetPeriod {
+  return value === 'week' || value === 'month';
 }
 
 function toLogKind(dbKind: string | null | undefined): HabitLogKind | undefined {
@@ -100,6 +111,9 @@ export class SupabaseHabitRepository implements HabitRepository {
         frequency: habit.frequency,
         archived: false,
         user_id: this.userId,
+        target: habit.target ?? null,
+        target_period: habit.targetPeriod ?? null,
+        reminder_time: habit.reminderTime ?? null,
       })
       .select()
       .single();
@@ -117,6 +131,9 @@ export class SupabaseHabitRepository implements HabitRepository {
     if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
     if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
     if (updates.archived !== undefined) dbUpdates.archived = updates.archived;
+    if (updates.target !== undefined) dbUpdates.target = updates.target;
+    if (updates.targetPeriod !== undefined) dbUpdates.target_period = updates.targetPeriod;
+    if (updates.reminderTime !== undefined) dbUpdates.reminder_time = updates.reminderTime;
 
     let query = this.client.from('habits').update(dbUpdates).eq('id', id);
 
@@ -185,6 +202,9 @@ export class SupabaseHabitRepository implements HabitRepository {
       archived: h.archived || false,
       created_at: h.createdAt || new Date().toISOString(),
       user_id: userId,
+      target: h.target ?? null,
+      target_period: isTargetPeriod(h.targetPeriod) ? h.targetPeriod : null,
+      reminder_time: h.reminderTime ?? null,
     }));
 
     const { error: insertHabitsError } = await this.client.from('habits').insert(dbHabits).select();

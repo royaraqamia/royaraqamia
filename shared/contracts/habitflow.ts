@@ -1,3 +1,5 @@
+export type HabitTargetPeriod = 'week' | 'month';
+
 export interface Habit {
   id: string;
   name: string;
@@ -6,6 +8,9 @@ export interface Habit {
   createdAt: string;
   archived: boolean;
   user_id?: string;
+  target?: number | null;
+  targetPeriod?: HabitTargetPeriod | null;
+  reminderTime?: string | null;
 }
 
 export type HabitLogKind = 'complete' | 'skip' | 'miss';
@@ -41,6 +46,9 @@ export interface HabitBackupHabit {
   frequency: string;
   archived?: boolean;
   createdAt?: string;
+  target?: number | null;
+  targetPeriod?: HabitTargetPeriod | null;
+  reminderTime?: string | null;
 }
 
 export interface HabitBackupLog {

@@ -30,10 +30,24 @@ export class ApiClient {
     }
   }
 
-  static async createHabit(habitName: string, habitIcon: string, habitFrequency: string) {
+  static async createHabit(
+    habitName: string,
+    habitIcon: string,
+    habitFrequency: string,
+    target?: number | null,
+    targetPeriod?: 'week' | 'month' | null,
+    reminderTime?: string | null
+  ) {
     return request<{ habit: Habit; mode: 'supabase' | 'local' }>('/habitflow/api/habits', {
       method: 'POST',
-      body: JSON.stringify({ name: habitName, icon: habitIcon, frequency: habitFrequency }),
+      body: JSON.stringify({
+        name: habitName,
+        icon: habitIcon,
+        frequency: habitFrequency,
+        target,
+        targetPeriod,
+        reminderTime,
+      }),
     });
   }
 
@@ -41,11 +55,22 @@ export class ApiClient {
     id: string,
     habitName: string,
     habitIcon: string,
-    habitFrequency: string
+    habitFrequency: string,
+    target?: number | null,
+    targetPeriod?: 'week' | 'month' | null,
+    reminderTime?: string | null
   ) {
     return request<{ habit: Habit; mode: 'supabase' | 'local' }>('/habitflow/api/habits', {
       method: 'PUT',
-      body: JSON.stringify({ id, name: habitName, icon: habitIcon, frequency: habitFrequency }),
+      body: JSON.stringify({
+        id,
+        name: habitName,
+        icon: habitIcon,
+        frequency: habitFrequency,
+        target,
+        targetPeriod,
+        reminderTime,
+      }),
     });
   }
 
