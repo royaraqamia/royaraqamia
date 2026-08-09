@@ -1,8 +1,8 @@
-# رؤية رقمية
+# royaraqamia
 
-> نبني مواقع وتطبيقات برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات.
+> We build websites and applications with an entrepreneurial vision that benefits people; we also provide students and new graduates with comprehensive professional training for building websites and applications.
 
-**رؤية رقمية** is a private, production-grade monorepo that powers the company's marketing site and a suite of first-party SaaS products — a public blog, an online blog editor (**BlogPress**), a habit tracker (**HabitFlow**), a URL shortener (**LinkSnap**), an expense tracker (**SpendTrack**), and a certificate-verification service — all unified under a single Next.js application, a shared clean-architecture backend, and one Supabase database.
+**royaraqamia** is a private, production-grade monorepo that powers the company's marketing site and a suite of first-party SaaS products — a public blog, an online blog editor (**BlogPress**), a habit tracker (**HabitFlow**), a URL shortener (**LinkSnap**), an expense tracker (**SpendTrack**), and a certificate-verification service — all unified under a single Next.js application, a shared clean-architecture backend, and one Supabase database.
 
 |                    |                                                                 |
 | ------------------ | --------------------------------------------------------------- |
@@ -11,7 +11,7 @@
 | **Database**       | Supabase (PostgreSQL 17, Auth, Storage, RLS)                    |
 | **Infrastructure** | Vercel · Upstash Redis · Resend · Sentry · Cloudflare Turnstile |
 | **Testing**        | Vitest (unit/integration) · Playwright (E2E)                    |
-| **Language**       | Bilingual UI — Arabic (primary, RTL)                            |
+| **Language**       | Arabic (primary, RTL)                                           |
 
 ---
 
@@ -155,7 +155,7 @@ royaraqamia/
 
 ### UI & Utilities
 
-Radix UI primitives + shadcn/ui components · Motion (Framer Motion successor) · Phosphor Icons · Lucide React · TipTap (BlogPress editor) · react-hook-form + Zod · Recharts (charts) · qrcode (certificate QR) · Sonner (toasts) · Vaul · embla-carousel.
+Radix UI primitives + shadcn/ui components · Motion (Framer Motion successor) · Lucide React · TipTap (BlogPress editor) · react-hook-form + Zod · Recharts (charts) · qrcode (certificate QR) · Sonner (toasts) · Vaul · embla-carousel.
 
 ---
 

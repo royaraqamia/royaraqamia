@@ -6,12 +6,7 @@ import {
   createBlogpressAdminPostsService,
   createBlogpressPostsService,
 } from '@/backend/config/blogpress';
-import type {
-  Post,
-  PostCategory,
-  PostTag,
-  PostAuthor,
-} from '@/shared/contracts/blogpress';
+import type { Post, PostCategory, PostTag, PostAuthor } from '@/shared/contracts/blogpress';
 
 const BLOG_CACHE_SECONDS = 60;
 
@@ -51,7 +46,9 @@ export async function loadPublishedPostBySlug(slug: string): Promise<Post | null
 }
 
 export const loadBlogPost = unstable_cache(
-  async (slug: string): Promise<{
+  async (
+    slug: string
+  ): Promise<{
     post: Post;
     author: PostAuthor | null;
     relatedPosts: Post[];

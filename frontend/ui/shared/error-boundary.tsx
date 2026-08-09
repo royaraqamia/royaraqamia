@@ -1,7 +1,7 @@
 'use client';
 
 import { Component, type ReactNode, type ErrorInfo } from 'react';
-import * as Sentry from '@sentry/nextjs';
+import { captureClientError } from '@/frontend/shared/sentry';
 import { Button } from '@/frontend/ui/primitives/button';
 import { IS_DEVELOPMENT, IS_PRODUCTION } from '@/frontend/shared/constants';
 import { logger } from '@/frontend/shared/logger';
@@ -28,7 +28,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     if (IS_PRODUCTION) {
-      Sentry.captureException(error, { extra: { componentStack: errorInfo.componentStack } });
+      void captureClientError(error, { componentStack: errorInfo.componentStack });
     } else {
       logger.error('[ErrorBoundary]', {
         error: error.message,
