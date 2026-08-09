@@ -7,6 +7,7 @@ import type {
   Category,
   CategoryBudget,
   RecurringExpense,
+  SpendInsights,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -76,4 +77,14 @@ export async function loadRecurringExpenses(userId: string): Promise<RecurringEx
 export async function loadUserCurrency(userId: string): Promise<string> {
   const service = await createService();
   return service.getCurrency(userId);
+}
+
+export async function loadInsights(
+  userId: string,
+  start: string,
+  end: string,
+  catFilter: string[] | null
+): Promise<SpendInsights> {
+  const service = await createService();
+  return service.getInsights(userId, start, end, catFilter);
 }

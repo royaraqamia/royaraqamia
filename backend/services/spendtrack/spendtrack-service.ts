@@ -5,9 +5,14 @@ import type {
   CategoryBudget,
   RecurringExpense,
   RecurringExpenseInput,
+  SpendInsights,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
+import {
+  calculateInsights,
+  previousPeriodRange,
+} from '@/backend/services/spendtrack/spend-insights';
 
 export interface SpendtrackCategoryInput {
   name: string;
@@ -62,6 +67,30 @@ export class SpendtrackService {
     catFilter: string[] | null
   ): Promise<{ date: string; total: number }[] | null> {
     return this.repository.getDailyTotals(userId, start, end, catFilter);
+  }
+
+  async getInsights(
+    userId: string,
+    start: string,
+    end: string,
+    catFilter: string[] | null
+  ): Promise<SpendInsights> {
+    const [total, breakdown, prevTotal] = await Promise.all([
+      this.repository.getTotalExpenses(userId, start, end, catFilter),
+      this.repository.getCategoryBreakdown(userId, start, end, catFilter),
+      (async () => {
+        const prev = previousPeriodRange(start, end);
+        return this.repository.getTotalExpenses(userId, prev.start, prev.end, catFilter);
+      })(),
+    ]);
+
+    return calculateInsights({
+      total: total ?? 0,
+      breakdown: breakdown ?? [],
+      start,
+      end,
+      prevPeriodTotal: prevTotal,
+    });
   }
 
   async getTransactions(query: SpendtrackTransactionsQuery): Promise<SpendtrackTransactionsResult> {

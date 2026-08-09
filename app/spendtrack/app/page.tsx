@@ -9,12 +9,14 @@ import { RecurringExpenses } from '@/frontend/ui/spendtrack/recurring-expenses';
 import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
 import { CategoryPieChart } from '@/frontend/ui/spendtrack/category-pie-chart';
 import { DailyBarChart } from '@/frontend/ui/spendtrack/daily-bar-chart';
+import { InsightsStrip } from '@/frontend/ui/spendtrack/insights-strip';
 import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
 import { getAuthUser } from '@/backend/middleware/auth-guard';
 import {
   loadCategoryBreakdown,
   loadCategoryBudgets,
   loadDailyTotals,
+  loadInsights,
   loadRecurringExpenses,
   loadTotalExpenses,
   loadTransactions,
@@ -177,6 +179,23 @@ async function DailyBarSection({
   return <DailyBarChart data={data ?? []} currency={currency} />;
 }
 
+async function InsightsSection({
+  userId,
+  start,
+  end,
+  catFilter,
+  currency,
+}: {
+  userId: string;
+  start: string;
+  end: string;
+  catFilter: string[] | null;
+  currency: string;
+}) {
+  const insights = await loadInsights(userId, start, end, catFilter);
+  return <InsightsStrip insights={insights} currency={currency} />;
+}
+
 async function TransactionsSection({
   userId,
   start,
@@ -276,6 +295,16 @@ export default async function DashboardPage(props: {
       </div>
 
       <CategoryBudgetsSection userId={user.id} />
+
+      <div className="animate-slide-up stagger-3">
+        <InsightsSection
+          userId={user.id}
+          start={start}
+          end={end}
+          catFilter={catFilter}
+          currency={currency}
+        />
+      </div>
 
       <RecurringExpensesSection userId={user.id} currency={currency} />
 

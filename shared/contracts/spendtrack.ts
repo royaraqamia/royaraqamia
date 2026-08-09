@@ -70,3 +70,11 @@ export type RecurringExpenseInput = {
   day_of_month: number;
   start_month: string;
 };
+
+export type SpendInsights = {
+  topCategory: { name: string; colorHex: string; total: number } | null;
+  topCategoryShare: number;
+  avgPerDay: number;
+  prevPeriodTotal: number | null;
+  deltaPct: number | null;
+};
