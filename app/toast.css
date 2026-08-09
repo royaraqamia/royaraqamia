@@ -1,0 +1,192 @@
+/* ============================================================
+   Toasts — «رؤية رقمية» Design Restyle (Sonner override)
+   Sonner injects its own stylesheet at runtime (after Next CSS),
+   so every override below raises specificity by scoping under
+   [data-sonner-theme='dark'] and re-uses the design tokens from
+   app/global.css (--card, --border, --success, --warning,
+   --info, --destructive, --radius-*, --shadow-elevated).
+   ============================================================ */
+
+/* ---- Theme palettes (drive sonner's internal vars) ---- */
+html [data-sonner-toaster][data-sonner-theme='dark'] {
+  --normal-bg: hsl(var(--card) / 0.8);
+  --normal-bg-hover: hsl(var(--card) / 0.92);
+  --normal-border: hsl(var(--border) / 0.6);
+  --normal-text: hsl(var(--foreground));
+
+  --success-bg: hsl(var(--success) / 0.12);
+  --success-border: hsl(var(--success) / 0.45);
+  --success-text: hsl(var(--success));
+
+  --info-bg: hsl(var(--info) / 0.12);
+  --info-border: hsl(var(--info) / 0.45);
+  --info-text: hsl(var(--info));
+
+  --warning-bg: hsl(var(--warning) / 0.12);
+  --warning-border: hsl(var(--warning) / 0.45);
+  --warning-text: hsl(var(--warning));
+
+  --error-bg: hsl(var(--destructive) / 0.12);
+  --error-border: hsl(var(--destructive) / 0.45);
+  --error-text: hsl(var(--destructive));
+
+  font-family: var(--font-sans);
+}
+
+/* Glass card shell */
+html [data-sonner-toaster][data-sonner-theme='dark'] [data-sonner-toast][data-styled='true'] {
+  background: hsl(var(--card) / 0.8);
+  backdrop-filter: blur(16px) saturate(150%);
+  border: 1px solid hsl(var(--border) / 0.6);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-elevated);
+  color: hsl(var(--foreground));
+  font-family: var(--font-sans);
+  padding: 14px 16px;
+  gap: 10px;
+}
+
+/* Accent strip per type (start = right in RTL) */
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='success'][data-styled='true'] {
+  border-inline-start: 3px solid hsl(var(--success));
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='info'][data-styled='true'] {
+  border-inline-start: 3px solid hsl(var(--info));
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='warning'][data-styled='true'] {
+  border-inline-start: 3px solid hsl(var(--warning));
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='error'][data-styled='true'] {
+  border-inline-start: 3px solid hsl(var(--destructive));
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='default'][data-styled='true'],
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='loading'][data-styled='true'] {
+  border-inline-start: 3px solid hsl(var(--primary));
+}
+
+/* Icon chip */
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-styled='true']
+  [data-icon] {
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-styled='true']
+  [data-icon]
+  svg {
+  width: 15px;
+  height: 15px;
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='success'][data-styled='true']
+  [data-icon] {
+  background: hsl(var(--success) / 0.14);
+  color: hsl(var(--success));
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='info'][data-styled='true']
+  [data-icon] {
+  background: hsl(var(--info) / 0.14);
+  color: hsl(var(--info));
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='warning'][data-styled='true']
+  [data-icon] {
+  background: hsl(var(--warning) / 0.14);
+  color: hsl(var(--warning));
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='error'][data-styled='true']
+  [data-icon] {
+  background: hsl(var(--destructive) / 0.14);
+  color: hsl(var(--destructive));
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='default'][data-styled='true']
+  [data-icon],
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='loading'][data-styled='true']
+  [data-icon] {
+  background: hsl(var(--primary) / 0.14);
+  color: hsl(var(--primary));
+}
+
+/* Loading spinner bars */
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-type='loading'][data-styled='true']
+  .sonner-loading-bar {
+  background: hsl(var(--primary));
+}
+
+/* Typography */
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-styled='true']
+  [data-title] {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
+  color: hsl(var(--foreground));
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-styled='true']
+  [data-description] {
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Close button (circular, mirrors confirm-dialog) */
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-styled='true']
+  [data-close-button] {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border) / 0.8);
+  color: hsl(var(--muted-foreground));
+  border-radius: 9999px;
+  transition:
+    background-color var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth);
+}
+html
+  [data-sonner-toaster][data-sonner-theme='dark']
+  [data-sonner-toast][data-styled='true']
+  [data-close-button]:hover {
+  background: hsl(var(--muted));
+  border-color: hsl(var(--border));
+  color: hsl(var(--foreground));
+}

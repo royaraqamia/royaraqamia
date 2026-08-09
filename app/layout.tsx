@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import './global.css';
 import './dark-theme-override.css';
-import { Toaster } from 'sonner';
+import './toast.css';
+import { RoyaToaster } from '@/frontend/ui/shared/toaster';
 import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { MotionProvider } from '../frontend/ui/MotionProvider';
 import { UIProvider } from '../frontend/state/UIContext';
@@ -132,7 +133,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <GoUpButton />
                     <WhatsAppFloat />
                   </PWAProvider>
-                  <Toaster position="top-center" richColors />
+                  <RoyaToaster />
                 </NotificationProvider>
               </UIProvider>
             </MotionProvider>
