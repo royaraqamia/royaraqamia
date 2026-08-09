@@ -31,6 +31,7 @@ function makeRepo(
 ) {
   const repository: PostsRepository = {
     getPublishedPosts: vi.fn(),
+    getPublishedPostSlugs: vi.fn(),
     getPublishedPostBySlug: vi.fn(),
     getPostAuthor: vi.fn(),
     getRelatedPosts: vi.fn(),

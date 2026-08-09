@@ -102,6 +102,15 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       };
     },
 
+    async getPublishedPostSlugs(): Promise<string[]> {
+      const { data } = await supabase
+        .from('posts')
+        .select('slug')
+        .or(PUBLISHED_POSTS_FILTER)
+        .eq('blog_visible', true);
+      return (data ?? []).map((row) => row.slug);
+    },
+
     async getPublishedPostBySlug(slug: string): Promise<Post | null> {
       const { data } = await supabase
         .from('posts')

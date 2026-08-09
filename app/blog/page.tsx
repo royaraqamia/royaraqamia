@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Suspense } from 'react';
 import { loadBlogIndex } from '@/backend/loaders/blog';
 import { Button } from '@/frontend/ui/primitives/button';
 import {
@@ -17,7 +18,7 @@ import {
 import { BlogSearch } from './_components/blog-search';
 import { estimateReadingTime, formatReadingTime } from '@/frontend/shared/reading-time';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: 'المدوَّنة',
@@ -59,7 +60,13 @@ export default async function BlogPage(props: {
           </p>
 
           <div className="w-full max-w-lg relative z-20">
-            <BlogSearch />
+            <Suspense
+              fallback={
+                <div className="h-11 w-full rounded-xl bg-background/60 border border-border/50" />
+              }
+            >
+              <BlogSearch />
+            </Suspense>
           </div>
         </div>
       </section>

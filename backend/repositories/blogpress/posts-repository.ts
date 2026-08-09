@@ -14,6 +14,7 @@ export interface PostsRepository {
     pageSize: number,
     categorySlug?: string
   ): Promise<PublishedPostsResult>;
+  getPublishedPostSlugs(): Promise<string[]>;
   getPublishedPostBySlug(slug: string): Promise<Post | null>;
   getPostAuthor(authorId: string): Promise<PostAuthor | null>;
   getRelatedPosts(slug: string): Promise<Post[]>;

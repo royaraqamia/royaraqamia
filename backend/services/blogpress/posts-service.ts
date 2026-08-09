@@ -33,6 +33,10 @@ export class BlogpressPostsService {
     return this.repository.getPublishedPostBySlug(slug);
   }
 
+  async getPublishedPostSlugs(): Promise<string[]> {
+    return this.repository.getPublishedPostSlugs();
+  }
+
   async getPostAuthor(authorId: string): Promise<PostAuthor | null> {
     return this.repository.getPostAuthor(authorId);
   }

@@ -15,11 +15,17 @@ import {
   loadPublishedPostBySlug,
   loadBlogPost,
   loadPublishedPostTags,
+  loadPublishedPostSlugs,
 } from '@/backend/loaders/blog';
 import { env } from '@/backend/config/env';
 import type { Metadata } from 'next';
 
 export const revalidate = 60;
+
+export async function generateStaticParams(): Promise<{ slug: string }[]> {
+  const slugs = await loadPublishedPostSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
 
 function extractHeadings(content: string): { level: number; text: string; id: string }[] {
   const headingRegex = /^(#{1,3})\s+(.+)$/gm;
