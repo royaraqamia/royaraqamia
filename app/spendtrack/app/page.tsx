@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
 import { DollarSign, PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
 import { CreateExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
@@ -7,8 +8,9 @@ import { BudgetCard } from '@/frontend/ui/spendtrack/budget-card';
 import { CategoryBudgets } from '@/frontend/ui/spendtrack/category-budgets';
 import { RecurringExpenses } from '@/frontend/ui/spendtrack/recurring-expenses';
 import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
-import { CategoryPieChart } from '@/frontend/ui/spendtrack/category-pie-chart';
-import { DailyBarChart } from '@/frontend/ui/spendtrack/daily-bar-chart';
+import { CategoryPieChartLazy } from '@/frontend/ui/spendtrack/charts-lazy';
+import { DailyBarChartLazy } from '@/frontend/ui/spendtrack/charts-lazy';
+import { ChartsSkeleton } from '@/frontend/ui/spendtrack/charts-skeleton';
 import { InsightsStrip } from '@/frontend/ui/spendtrack/insights-strip';
 import { CsvActions } from '@/frontend/ui/spendtrack/csv-actions';
 import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
@@ -160,7 +162,11 @@ async function CategoryPieSection({
   currency: string;
 }) {
   const data = await loadCategoryBreakdown(userId, start, end, catFilter);
-  return <CategoryPieChart data={data ?? []} currency={currency} />;
+  return (
+    <Suspense fallback={<ChartsSkeleton />}>
+      <CategoryPieChartLazy data={data ?? []} currency={currency} />
+    </Suspense>
+  );
 }
 
 async function DailyBarSection({
@@ -177,7 +183,11 @@ async function DailyBarSection({
   currency: string;
 }) {
   const data = await loadDailyTotals(userId, start, end, catFilter);
-  return <DailyBarChart data={data ?? []} currency={currency} />;
+  return (
+    <Suspense fallback={<ChartsSkeleton />}>
+      <DailyBarChartLazy data={data ?? []} currency={currency} />
+    </Suspense>
+  );
 }
 
 async function InsightsSection({
