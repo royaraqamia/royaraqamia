@@ -10,14 +10,7 @@ import {
   useSpring,
   useMotionTemplate,
 } from 'motion/react';
-import {
-  Trophy,
-  Sparkle,
-  ShieldCheck,
-  SealCheck,
-  ShareNetwork,
-  HandSwipeLeft,
-} from '@phosphor-icons/react';
+import { Trophy, Sparkle, ShieldCheck, BadgeCheck, Share2, MoveLeft } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 
 // --- Framer Motion Variants ---
@@ -159,7 +152,7 @@ export function Certificate() {
           {/* Trust Pill Badge */}
           <motion.div variants={itemVariants} className="mb-5">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-purple-500/10 border border-purple-500/20 text-purple-300 backdrop-blur-md shadow-inner shadow-purple-500/10">
-              <Sparkle className="w-4 h-4 text-purple-400 animate-pulse" weight="fill" />
+              <Sparkle className="w-4 h-4 text-purple-400 animate-pulse" fill="currentColor" />
               <span>إثبات الإنجاز والاعتماد المهني</span>
             </div>
           </motion.div>
@@ -173,7 +166,7 @@ export function Certificate() {
               <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out bg-linear-to-r from-transparent via-white/30 to-transparent w-full -skew-x-12 z-0 pointer-events-none" />
               <Trophy
                 className="w-10 h-10 sm:w-11 sm:h-11 text-white relative z-10 drop-shadow-md"
-                weight="duotone"
+                fill="currentColor"
               />
             </div>
           </motion.div>
@@ -223,9 +216,9 @@ export function Certificate() {
                 : 'bg-slate-900/80 text-slate-300 border-white/10 hover:border-purple-400/40'
             }`}
           >
-            <HandSwipeLeft
+            <MoveLeft
               className={`w-4 h-4 text-purple-400 ${!hasInteracted ? 'animate-bounce' : ''}`}
-              weight="duotone"
+              fill="currentColor"
             />
             <span>
               {hasInteracted
@@ -293,7 +286,7 @@ export function Certificate() {
           <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4 mt-4">
             <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/2 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors duration-300">
               <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
-                <SealCheck className="w-5 h-5 sm:w-6 sm:h-6" weight="duotone" />
+                <BadgeCheck className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-semibold text-white">
@@ -307,7 +300,7 @@ export function Certificate() {
 
             <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/2 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors duration-300">
               <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shrink-0">
-                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" weight="duotone" />
+                <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-semibold text-white">رمز تحقُّق إلكتروني</p>
@@ -319,7 +312,7 @@ export function Certificate() {
 
             <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/2 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors duration-300">
               <div className="p-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 shrink-0">
-                <ShareNetwork className="w-5 h-5 sm:w-6 sm:h-6" weight="duotone" />
+                <Share2 className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
               </div>
               <div>
                 <p className="text-xs sm:text-sm font-semibold text-white">جاهزة للمشاركة</p>

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { PlusCircle, CheckCircle, Fire } from '@phosphor-icons/react';
+import { CirclePlus, CircleCheckBig, Flame } from 'lucide-react';
 import { HowItWorksSection } from '@/frontend/ui/landing-shared/HowItWorksSection';
 
 const steps = [
@@ -10,19 +10,19 @@ const steps = [
     title: 'أضف عادة',
     description:
       'حدِّد العادات التي تُريد بناءها. الرُّوتين الصَّباحي، التَّمارين، القراءة — أيَّ شيء يهمُّك.',
-    icon: PlusCircle,
+    icon: CirclePlus,
   },
   {
     number: '02',
     title: 'تتبَّع يوميًّا',
     description: 'سجِّل حضورك يوميًّا وحدِّد تقدُّمك. متابعة بنعم/لا تستغرق ثوانٍ.',
-    icon: CheckCircle,
+    icon: CircleCheckBig,
   },
   {
     number: '03',
     title: 'ابنِ السَّلاسل',
     description: 'شاهد سلسلتك تنمو كلَّما حافظت على انتظامك. كلّ يوم يبني على الذي يليه.',
-    icon: Fire,
+    icon: Flame,
   },
 ];
 
@@ -113,7 +113,6 @@ export function HowItWorks() {
                 <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-primary/10 via-transparent to-primary/5" />
                 <StepIcon
                   size={36}
-                  weight="duotone"
                   className="text-primary relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
                 />
               </div>

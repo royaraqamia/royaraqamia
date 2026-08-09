@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ArrowLeft, FileText, Sparkle, CheckCircle, Code, Eye } from '@phosphor-icons/react';
+import { ArrowLeft, FileText, Sparkle, CheckCircle, Code, Eye } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
@@ -94,7 +94,6 @@ export function Hero() {
             <span>{user ? 'لوحة التَّحكُّم' : 'ابدأ الكتابة مجَّانًا'}</span>
             <ArrowLeft
               size={20}
-              weight="bold"
               className="transition-transform duration-300 ease-out group-hover:-translate-x-1.5"
             />
           </Button>

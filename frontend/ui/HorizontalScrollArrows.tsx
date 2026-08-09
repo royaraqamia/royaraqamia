@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CaretLeft, CaretRight } from '@phosphor-icons/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ScrollArrowsProps {
   onScroll: (direction: 'left' | 'right') => void;
@@ -41,7 +41,7 @@ export function HorizontalScrollArrows({
           aria-label={ariaLabelLeft}
           type="button"
         >
-          <CaretLeft className="w-6 h-6 text-white" />
+          <ChevronLeft className="w-6 h-6 text-white" />
         </button>
       )}
 
@@ -55,7 +55,7 @@ export function HorizontalScrollArrows({
           aria-label={ariaLabelRight}
           type="button"
         >
-          <CaretRight className="w-6 h-6 text-white" />
+          <ChevronRight className="w-6 h-6 text-white" />
         </button>
       )}
     </>

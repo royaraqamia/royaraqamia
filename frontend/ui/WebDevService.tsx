@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import { Button } from './primitives/button';
-import { Code, Rocket, ShieldCheck, DeviceMobile, Monitor, Globe } from '@phosphor-icons/react';
+import { Code, Rocket, ShieldCheck, Smartphone, Monitor, Globe } from 'lucide-react';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 import { SectionBackground } from './SectionBackground';
 
@@ -25,7 +25,7 @@ export function WebDevService() {
     { icon: Code, text: 'أفضل ممارسات البرمجة بكود نظيف وقابل للصِّيانة' },
     { icon: Rocket, text: 'نشر سريع مع أداء مُحسَّن' },
     { icon: ShieldCheck, text: 'تطوير آمن مع معايير أمان حديثة' },
-    { icon: DeviceMobile, text: 'تصميم متجاوب لجميع الأجهزة وأحجام الشَّاشات' },
+    { icon: Smartphone, text: 'تصميم متجاوب لجميع الأجهزة وأحجام الشَّاشات' },
   ];
 
   const features = [
@@ -124,7 +124,7 @@ export function WebDevService() {
                     <benefit.icon
                       className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                       aria-hidden="true"
-                      weight="duotone"
+                      fill="currentColor"
                     />
                   </div>
                   <div className="flex flex-1 flex-col justify-center min-w-0">
@@ -175,7 +175,7 @@ export function WebDevService() {
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
                     <Monitor
                       className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400"
-                      weight="duotone"
+                      fill="currentColor"
                       aria-hidden="true"
                     />
                   </div>
@@ -203,7 +203,7 @@ export function WebDevService() {
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-purple-500/10 border border-purple-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
                     <Globe
                       className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400"
-                      weight="duotone"
+                      fill="currentColor"
                       aria-hidden="true"
                     />
                   </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Receipt, ChartPieSlice, TrendUp } from '@phosphor-icons/react';
+import { Receipt, ChartPie, TrendingUp } from 'lucide-react';
 import { HowItWorksSection } from '@/frontend/ui/landing-shared/HowItWorksSection';
 
 const steps = [
@@ -16,14 +16,14 @@ const steps = [
     title: 'صوِّر الأنماط',
     description:
       'اعرف أين تذهب أموالك من خلال تحليل التَّصنيفات والرُّسوم البيانيَّة والاتِّجاهات اليوميَّة.',
-    icon: ChartPieSlice,
+    icon: ChartPie,
   },
   {
     number: '03',
     title: 'تحكَّم في ميزانيَّتك',
     description:
       'استخدم التَّحليلات والاتِّجاهات الشَّهريَّة لاتِّخاذ قرارات ماليَّة أذكى وتوفير المزيد.',
-    icon: TrendUp,
+    icon: TrendingUp,
   },
 ];
 

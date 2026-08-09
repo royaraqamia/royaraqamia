@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Link, Scissors, ChartBar } from '@phosphor-icons/react';
+import { Link, Scissors, ChartColumn } from 'lucide-react';
 import { HowItWorksSection } from '@/frontend/ui/landing-shared/HowItWorksSection';
 
 const steps = [
@@ -24,7 +24,7 @@ const steps = [
     title: 'تتبُّع الأداء',
     description:
       'راقب النَّقرات، حلِّل الاتِّجاهات، وافهم جمهورك من خلال تحليلات فوريَّة مُفصَّلَة.',
-    icon: ChartBar,
+    icon: ChartColumn,
   },
 ];
 

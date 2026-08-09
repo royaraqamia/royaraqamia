@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CaretDown, Question } from '@phosphor-icons/react';
+import { ChevronDown, CircleHelp } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 
@@ -70,7 +70,7 @@ export function FAQ() {
             <div className="text-center flex flex-col items-center mb-12 sm:mb-16">
               {/* Pill Context Badge */}
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs sm:text-sm font-medium tracking-wide mb-4 backdrop-blur-md shadow-xs">
-                <Question className="w-4 h-4 text-violet-400 shrink-0" />
+                <CircleHelp className="w-4 h-4 text-violet-400 shrink-0" />
                 <span>إجابات</span>
               </div>
 
@@ -150,7 +150,7 @@ export function FAQ() {
                           }
                         `}
                       >
-                        <CaretDown className="w-5 h-5 transition-transform duration-300" />
+                        <ChevronDown className="w-5 h-5 transition-transform duration-300" />
                       </div>
                     </button>
 

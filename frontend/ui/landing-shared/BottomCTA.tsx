@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ArrowLeft, Sparkle } from '@phosphor-icons/react';
+import { ArrowLeft, Sparkle } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { useLandingCta } from './useLandingCta';
 
@@ -84,12 +84,12 @@ export function BottomCTA({
     >
       {badgePillClassName ? (
         <div className={badgePillClassName}>
-          <Sparkle size={16} weight="fill" className={badgeSparkleClassName} />
+          <Sparkle size={16} fill="currentColor" className={badgeSparkleClassName} />
           <span>{badgeText}</span>
         </div>
       ) : (
         <>
-          <Sparkle size={16} weight="fill" className={badgeSparkleClassName} />
+          <Sparkle size={16} fill="currentColor" className={badgeSparkleClassName} />
           <span>{badgeText}</span>
         </>
       )}
@@ -123,7 +123,7 @@ export function BottomCTA({
           <span className={primaryButtonSpanClassName}>
             {user ? 'لوحة التَّحكُّم' : 'أنشِئ حسابك'}
           </span>
-          <ArrowLeft size={20} weight="bold" className={arrowClassName} />
+          <ArrowLeft size={20} className={arrowClassName} />
         </Button>
 
         <Button

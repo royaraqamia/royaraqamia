@@ -49,9 +49,7 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
             className="absolute inset-0 opacity-0 group-hover/why:opacity-20 transition-opacity duration-500 rounded-2xl blur-sm"
             style={{ background: reason.glowColor }}
           />
-          <Icon
-            className="w-7 h-7 sm:w-8 sm:h-8 text-indigo-200 group-hover/why:text-white transition-colors duration-300 drop-shadow-md relative z-10"
-          />
+          <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-indigo-200 group-hover/why:text-white transition-colors duration-300 drop-shadow-md relative z-10" />
         </div>
 
         {/* Numeric Badge Indicator */}

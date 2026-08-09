@@ -2,7 +2,7 @@
 
 import { memo, useEffect, useRef, useState } from 'react';
 import { motion, useInView, animate } from 'motion/react';
-import { Clock, Trophy, TrendUp } from '@phosphor-icons/react';
+import { Clock, Trophy, TrendingUp } from 'lucide-react';
 
 // --- Elite Feature: Animated Counter ---
 function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
@@ -72,7 +72,7 @@ export const MetricCards = memo(function MetricCards() {
       colorKey: 'indigo' as const,
     },
     {
-      icon: TrendUp,
+      icon: TrendingUp,
       numericValue: 100,
       suffix: '+',
       label: 'مشروع رقمي',
@@ -174,7 +174,7 @@ export const MetricCards = memo(function MetricCards() {
                       className={`absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 ${colors.glowBg} blur-sm`}
                     />
                     <Icon
-                      weight="duotone"
+                      fill="currentColor"
                       className="w-7 h-7 sm:w-8 sm:h-8 drop-shadow-md relative z-10 transition-transform duration-500 group-hover/card:scale-105"
                       aria-hidden="true"
                     />

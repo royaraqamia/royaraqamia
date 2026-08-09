@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ArrowLeft, Link } from '@phosphor-icons/react';
+import { ArrowLeft, Link } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
@@ -99,7 +99,6 @@ export function Hero() {
             <span>{user ? 'لوحة التَّحكُّم' : 'ابدأ مجَّانًا'}</span>
             <ArrowLeft
               size={20}
-              weight="bold"
               className="transition-transform duration-300 group-hover:-translate-x-1.5"
             />
           </Button>
@@ -208,7 +207,7 @@ export function Hero() {
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
-                  <Link size={18} weight="bold" />
+                  <Link size={18} />
                 </div>
                 <div>
                   <span className="text-xs text-muted-foreground block">إحصائيَّات النَّشاط</span>

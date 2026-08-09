@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Receipt, ChartPieSlice, TrendUp } from '@phosphor-icons/react';
+import { Receipt, ChartPie, TrendingUp } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
@@ -217,7 +217,7 @@ function MonthlyTrend() {
           الاتِّجاهات الشَّهريَّة
         </span>
         <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
-          <TrendUp size={12} className="shrink-0 text-emerald-500 sm:size-3.5" />
+          <TrendingUp size={12} className="shrink-0 text-emerald-500 sm:size-3.5" />
           <span className="whitespace-nowrap">-12% مقابل الشَّهر الماضي</span>
         </span>
       </div>
@@ -320,7 +320,7 @@ export function FeaturesBento() {
         {...bentoCardProps('rgba(129,140,248,1)')}
         title="تحليل التَّصنيفات"
         description="صوِّر المصروفات حسب التَّصنيف بأشرطة مُلوَّنَة ونسب مئويَّة في لمحة."
-        icon={ChartPieSlice}
+        icon={ChartPie}
         className="md:col-span-2 lg:col-span-2"
         delay={0.2}
       >
@@ -331,7 +331,7 @@ export function FeaturesBento() {
         {...bentoCardProps('rgba(167,139,250,1)')}
         title="الاتِّجاهات الشَّهريَّة"
         description="تتبَّع أنماط إنفاقك بمرور الوقت من خلال رسوم بيانيَّة شهريَّة ورؤى مقارنة."
-        icon={TrendUp}
+        icon={TrendingUp}
         className="md:col-span-2 lg:col-span-2"
         delay={0.3}
       >

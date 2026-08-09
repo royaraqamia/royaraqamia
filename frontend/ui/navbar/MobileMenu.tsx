@@ -3,7 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { X, CaretDown, type Icon } from '@phosphor-icons/react';
+import { X, ChevronDown, type LucideIcon } from 'lucide-react';
 import { useFocusTrap } from '../../shared/use-focus-trap';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
@@ -28,7 +28,7 @@ interface NavLink {
   isRoute?: boolean;
   hasDropdown?: boolean;
   dropdownKey?: string;
-  icon?: Icon;
+  icon?: LucideIcon;
   subItems?: SubItem[];
 }
 
@@ -149,7 +149,6 @@ export function MobileMenu({
             ? 'text-violet-600 dark:text-violet-400'
             : 'text-neutral-500 dark:text-neutral-400 group-hover:text-violet-600 dark:group-hover:text-violet-400'
         }`}
-        weight="duotone"
       />
     );
   };
@@ -246,8 +245,7 @@ export function MobileMenu({
             {renderNavIcon(link.icon, isActive)}
             <span className="truncate">{link.label}</span>
           </span>
-          <CaretDown
-            weight="bold"
+          <ChevronDown
             className={`w-4 h-4 shrink-0 text-neutral-400 dark:text-neutral-500 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               isExpanded ? 'rotate-180 text-violet-600 dark:text-violet-400' : ''
             }`}
@@ -395,7 +393,7 @@ export function MobileMenu({
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
                 "
               >
-                <X size={20} weight="bold" />
+                <X size={20} />
               </button>
             </header>
 

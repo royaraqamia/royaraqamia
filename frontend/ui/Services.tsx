@@ -1,13 +1,13 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ChatCircle, Code, Lightbulb } from '@phosphor-icons/react';
+import { MessageCircle, Code, Lightbulb } from 'lucide-react';
 import { ServiceCard } from './services/ServiceCard';
 import type { ColorKey } from './services/colorConfigs';
 
 // Interfaces remain identical for seamless drop-in
 interface ServiceItem {
-  icon: typeof ChatCircle;
+  icon: typeof MessageCircle;
   title: string;
   description: string;
   features: string[];
@@ -39,7 +39,7 @@ const services: ServiceItem[] = [
     categories: ['merchants'],
   },
   {
-    icon: ChatCircle,
+    icon: MessageCircle,
     title: 'تدريب',
     description:
       'المسار التَّدريبي العربي المتكامل الذي يُعلِّمك بناء مواقع وتطبيقات دون كتابة كود.',

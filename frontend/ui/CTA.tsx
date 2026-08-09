@@ -1,5 +1,5 @@
 import { ScrollAnimation } from './ScrollAnimations';
-import { ArrowLeft } from '@phosphor-icons/react/ssr';
+import { ArrowLeft } from 'lucide-react';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
 export function CTA() {

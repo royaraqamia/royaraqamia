@@ -11,8 +11,8 @@ import {
   CheckCircle,
   ShieldCheck,
   Star,
-  Lightning,
-} from '@phosphor-icons/react/ssr';
+  Zap,
+} from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
@@ -85,7 +85,7 @@ export function TrainingCourses() {
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center mb-12 lg:mb-16">
             <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-semibold mb-4 backdrop-blur-md">
-              <Lightning className="w-3.5 h-3.5 text-purple-500 animate-pulse" />
+              <Zap className="w-3.5 h-3.5 text-purple-500 animate-pulse" />
               <span>المسار التَّدريبي التَّطبيقي</span>
             </div>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { List, X, House, Package, ShieldCheck, BookOpenIcon } from '@phosphor-icons/react';
+import { List, X, House, Package, ShieldCheck, BookOpen } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
@@ -123,7 +123,7 @@ export function Navbar() {
     {
       href: '/blog',
       label: 'المدوَّنة',
-      icon: BookOpenIcon,
+      icon: BookOpen,
       isRoute: true,
       visible: true,
     },
@@ -203,13 +203,11 @@ export function Navbar() {
                   {isMobileMenuOpen ? (
                     <X
                       size={22}
-                      weight="bold"
                       className="rotate-0 scale-100 transition-all duration-200 ease-out"
                     />
                   ) : (
                     <List
                       size={22}
-                      weight="bold"
                       className="rotate-0 scale-100 transition-all duration-200 ease-out"
                     />
                   )}

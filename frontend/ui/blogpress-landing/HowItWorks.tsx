@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { FileText, Eye, Globe, Sparkle } from '@phosphor-icons/react';
+import { FileText, Eye, Globe, Sparkle } from 'lucide-react';
 import { HowItWorksSection } from '@/frontend/ui/landing-shared/HowItWorksSection';
 
 const steps = [
@@ -44,7 +44,7 @@ export function HowItWorks() {
         as: 'header',
         badge: (
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-6 shadow-xs backdrop-blur-md">
-            <Sparkle size={14} weight="fill" className="text-primary animate-pulse" />
+            <Sparkle size={14} fill="currentColor" className="text-primary animate-pulse" />
             <span>سير عمل بسيط</span>
           </div>
         ),
@@ -109,7 +109,6 @@ export function HowItWorks() {
                 <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <Icon
                   size={32}
-                  weight="duotone"
                   className="text-primary relative z-10 group-hover:rotate-3 transition-transform duration-300"
                 />
               </motion.div>

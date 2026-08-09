@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Link, ChartBar, MagnifyingGlass } from '@phosphor-icons/react';
+import { Link, ChartColumn, Search } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
@@ -194,7 +194,7 @@ export function FeaturesBento() {
         {...bentoCardProps('rgba(129,140,248,1)')}
         title="تتبُّع النَّقرات"
         description="اعرف بالضَّبط كم مرَّه تمَّ النَّقر على كل رابط بتتبُّع دقيق وفوري."
-        icon={ChartBar}
+        icon={ChartColumn}
         className="lg:col-span-2"
         delay={0.2}
       >
@@ -205,7 +205,7 @@ export function FeaturesBento() {
         {...bentoCardProps('rgba(167,139,250,1)')}
         title="تحليلات متقدِّمة"
         description="افهم جمهورك من خلال تحليلات مُفصَّلَة عن أداء الرَّوابط والمواقع الجغرافيَّة والاتِّجاهات."
-        icon={MagnifyingGlass}
+        icon={Search}
         className="lg:col-span-2"
         delay={0.3}
       >

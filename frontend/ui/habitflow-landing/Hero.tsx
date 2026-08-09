@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ArrowLeft, CheckCircle, Fire } from '@phosphor-icons/react';
+import { ArrowLeft, CircleCheckBig, Flame } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
@@ -108,7 +108,6 @@ export function Hero() {
             <span>{user ? 'لوحة التَّحكُّم' : 'ابدأ التَّتبُّع مجَّانًا'}</span>
             <ArrowLeft
               size={20}
-              weight="bold"
               className="transition-transform duration-300 group-hover:-translate-x-1.5"
             />
           </Button>
@@ -160,7 +159,7 @@ export function Hero() {
             <div className="flex items-center justify-between mb-5 bg-muted/30 p-3.5 rounded-xl border border-border/30">
               <span className="text-xs sm:text-sm font-semibold text-foreground">هذا الأسبوع</span>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs sm:text-sm font-bold shadow-xs">
-                <Fire size={18} weight="fill" className="text-orange-500 animate-pulse" />
+                <Flame size={18} fill="currentColor" className="text-orange-500 animate-pulse" />
                 <span>12</span>
               </div>
             </div>
@@ -211,7 +210,11 @@ export function Hero() {
                         }`}
                       >
                         {done ? (
-                          <CheckCircle size={16} weight="fill" className="drop-shadow-xs" />
+                          <CircleCheckBig
+                            size={16}
+                            fill="currentColor"
+                            className="drop-shadow-xs"
+                          />
                         ) : (
                           <span className="opacity-40">•</span>
                         )}
@@ -230,7 +233,7 @@ export function Hero() {
               className="mt-5 pt-4 border-t border-border/40 flex items-center justify-between text-xs sm:text-sm"
             >
               <div className="flex items-center gap-2 text-muted-foreground font-medium">
-                <CheckCircle size={16} className="text-primary" />
+                <CircleCheckBig size={16} className="text-primary" />
                 <span>أفضل سلسلة</span>
               </div>
               <span className="text-base font-bold bg-linear-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent font-mono">

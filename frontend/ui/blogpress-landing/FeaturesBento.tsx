@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { FileText, Note, MagnifyingGlass, Check, Warning, Sparkle } from '@phosphor-icons/react';
+import { FileText, StickyNote, Search, Check, TriangleAlert, Sparkle } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
@@ -163,7 +163,7 @@ function DraftsOverviewCard() {
 
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
-          <Note size={18} className="text-indigo-400" />
+          <StickyNote size={18} className="text-indigo-400" />
           <span className="text-sm font-semibold text-neutral-200">نظرة عامَّة</span>
         </div>
         <span className="text-[11px] font-medium text-neutral-400 px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800">
@@ -226,7 +226,7 @@ function SEOPreview() {
     <div className="rounded-2xl border border-neutral-800/90 bg-neutral-950/80 backdrop-blur-xl p-5 sm:p-6 shadow-2xl relative overflow-hidden group/seo">
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
-          <MagnifyingGlass size={18} className="text-indigo-400" />
+          <Search size={18} className="text-indigo-400" />
           <span className="text-sm font-semibold text-neutral-200">قائمة تحسين محرِّكات البحث</span>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 font-mono shadow-xs">
@@ -253,11 +253,7 @@ function SEOPreview() {
                     : 'bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
                 }`}
               >
-                {item.pass ? (
-                  <Check size={14} weight="bold" />
-                ) : (
-                  <Warning size={14} weight="bold" />
-                )}
+                {item.pass ? <Check size={14} /> : <TriangleAlert size={14} />}
               </div>
               <span className="text-xs sm:text-sm text-neutral-300 font-medium">{item.label}</span>
             </div>
@@ -342,7 +338,7 @@ export function FeaturesBento() {
         {...bentoCardProps('rgba(129,140,248,1)')}
         title="إدارة المسودَّات"
         description="نظِّم كتاباتك مع المسودَّات وسير عمل النَّشر والتَّحكُّم الكامل بالإصدارات."
-        icon={Note}
+        icon={StickyNote}
         className="lg:col-span-2"
         delay={0.2}
       >
@@ -353,7 +349,7 @@ export function FeaturesBento() {
         {...bentoCardProps('rgba(167,139,250,1)')}
         title="تحسين محرِّكات البحث"
         description="أدوات SEO مدمجة تساعد محتواك في تحقيق ترتيب متقدِّم والوصول لقرَّاء أكثر."
-        icon={MagnifyingGlass}
+        icon={Search}
         className="lg:col-span-2"
         delay={0.3}
       >

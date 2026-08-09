@@ -2,7 +2,7 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { CaretDown, type Icon } from '@phosphor-icons/react';
+import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { Button } from '../primitives/button';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { NotificationDropdown } from '../shared/notification-dropdown';
@@ -16,7 +16,7 @@ interface NavLink {
   isRoute?: boolean;
   hasDropdown?: boolean;
   dropdownKey?: string;
-  icon?: Icon;
+  icon?: LucideIcon;
   subItems?: NavLink[];
 }
 
@@ -212,12 +212,11 @@ export function DesktopNav({
                                 ? 'text-violet-600 dark:text-violet-400'
                                 : 'text-neutral-500 dark:text-neutral-400'
                             }`}
-                            weight="duotone"
                           />
                         );
                       })()}
                     <span>{link.label}</span>
-                    <CaretDown
+                    <ChevronDown
                       className={`w-3.5 h-3.5 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
                         isDropdownOpen
                           ? 'rotate-180 text-violet-600 dark:text-violet-400'
@@ -353,7 +352,6 @@ export function DesktopNav({
                               ? 'text-violet-600 dark:text-violet-400'
                               : 'text-neutral-500 dark:text-neutral-400'
                           }`}
-                          weight="duotone"
                         />
                       );
                     })()}
@@ -380,7 +378,6 @@ export function DesktopNav({
                             ? 'text-violet-600 dark:text-violet-400'
                             : 'text-neutral-500 dark:text-neutral-400'
                         }`}
-                        weight="duotone"
                       />
                     );
                   })()}

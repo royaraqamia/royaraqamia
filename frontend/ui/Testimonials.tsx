@@ -1,6 +1,6 @@
 'use client';
 
-import { UserCircle, CaretLeft } from '@phosphor-icons/react';
+import { CircleUser, ChevronLeft } from 'lucide-react';
 import { useState } from 'react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { useHorizontalScroll } from '../shared/use-horizontal-scroll';
@@ -114,7 +114,7 @@ export function Testimonials() {
                 {/* Read More Trigger */}
                 <div className="flex items-center gap-1.5 text-violet-400 group-hover:text-violet-300 text-xs sm:text-sm font-semibold mt-2 transition-all duration-300 md:opacity-0 md:group-hover:opacity-100">
                   <span>قراءة المزيد</span>
-                  <CaretLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
+                  <ChevronLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
                 </div>
               </div>
 
@@ -126,7 +126,7 @@ export function Testimonials() {
                     background: 'linear-gradient(135deg, #7766EE 0%, #A78BFA 100%)',
                   }}
                 >
-                  <UserCircle className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                  <CircleUser className="w-6 h-6 md:w-7 md:h-7 text-white" />
                 </div>
                 <div className="flex flex-col min-w-0">
                   <span className="font-semibold text-slate-100 text-sm sm:text-base truncate">
@@ -172,7 +172,7 @@ export function Testimonials() {
 
                   <div className="flex items-center gap-4 pt-5 border-t border-white/10">
                     <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 bg-linear-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-black/40 ring-2 ring-violet-400/30">
-                      <UserCircle className="w-7 h-7 text-white" />
+                      <CircleUser className="w-7 h-7 text-white" />
                     </div>
                     <div>
                       <h3 className="font-bold text-base sm:text-lg text-white">{review.name}</h3>

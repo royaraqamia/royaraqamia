@@ -1,4 +1,4 @@
-import { ShieldCheck, ArrowLeft, Copy } from '@phosphor-icons/react/ssr';
+import { ShieldCheck, ArrowLeft, Copy } from 'lucide-react';
 import { ScanLine, Lock, Database, QrCode, CheckCircle, FileText } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
 import Link from 'next/link';
@@ -43,7 +43,7 @@ export function VerifySection() {
                   <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
                   <ShieldCheck
                     className="w-9 h-9 sm:w-11 sm:h-11 text-white relative z-10 drop-shadow-md"
-                    weight="fill"
+                    fill="currentColor"
                   />
                 </div>
               </div>
@@ -215,7 +215,7 @@ export function VerifySection() {
                 <span>اتِّصال مُشفَّر SSL</span>
               </div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/3 border border-white/10 hover:border-white/20 transition-colors">
-                <ShieldCheck className="w-4 h-4 text-purple-400" weight="bold" />
+                <ShieldCheck className="w-4 h-4 text-purple-400" />
                 <span>نظام توثيق رقمي</span>
               </div>
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/3 border border-white/10 hover:border-white/20 transition-colors">

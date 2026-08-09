@@ -85,11 +85,7 @@ export default function SignupPage() {
                 htmlFor="signup-email"
                 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground/90 select-none"
               >
-                <Mail
-                  size={15}
-                  className="text-muted-foreground/80 shrink-0"
-                  aria-hidden="true"
-                />
+                <Mail size={15} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
                 <span>البريد الإلكتروني</span>
                 <span className="text-destructive font-bold select-none" aria-hidden="true">
                   *

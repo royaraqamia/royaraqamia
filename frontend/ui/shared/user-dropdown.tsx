@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/frontend/shared/cn';
-import { User, SignOut, Download } from '@phosphor-icons/react';
+import { User, LogOut, Download } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
 import { usePWAContext } from '../PWAProvider';
 import { ConfirmDialog } from './confirm-dialog';
@@ -123,7 +123,7 @@ export function UserDropdown() {
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/10 text-destructive group-hover:scale-105 transition-transform">
-                      <SignOut size={16} />
+                      <LogOut size={16} />
                     </div>
                     <span>تسجيل الخروج</span>
                   </div>

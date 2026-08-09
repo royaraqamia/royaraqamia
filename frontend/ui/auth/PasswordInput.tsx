@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeSlash } from '@phosphor-icons/react';
+import { Eye, EyeOff } from 'lucide-react';
 import { Input } from '@/frontend/ui/primitives/input';
 
 interface PasswordInputProps {
@@ -61,7 +61,7 @@ export function PasswordInput({
         aria-controls={id}
       >
         {showPassword ? (
-          <EyeSlash size={18} className="transition-transform duration-200 ease-out" />
+          <EyeOff size={18} className="transition-transform duration-200 ease-out" />
         ) : (
           <Eye size={18} className="transition-transform duration-200 ease-out" />
         )}

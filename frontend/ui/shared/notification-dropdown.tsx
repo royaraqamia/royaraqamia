@@ -6,13 +6,13 @@ import {
   X,
   Check,
   Bell,
-  Certificate,
-  NotePencil,
-  CheckCircle,
-  CurrencyDollar,
-  LinkSimple,
+  BadgeCheck,
+  SquarePen,
+  CircleCheck,
+  CircleDollarSign,
+  Link2,
   Megaphone,
-} from '@phosphor-icons/react';
+} from 'lucide-react';
 import { useNotifications } from '@/frontend/state/NotificationContext';
 import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
@@ -20,11 +20,11 @@ import { ScrollArea } from '@/frontend/ui/primitives/scroll-area';
 import { usePortalPopover } from './use-portal-popover';
 
 const typeIcons: Record<string, React.ReactNode> = {
-  certificate_issued: <Certificate size={18} />,
-  post_published: <NotePencil size={18} />,
-  habit_reminder: <CheckCircle size={18} />,
-  expense_alert: <CurrencyDollar size={18} />,
-  link_clicked: <LinkSimple size={18} />,
+  certificate_issued: <BadgeCheck size={18} />,
+  post_published: <SquarePen size={18} />,
+  habit_reminder: <CircleCheck size={18} />,
+  expense_alert: <CircleDollarSign size={18} />,
+  link_clicked: <Link2 size={18} />,
   system_announcement: <Megaphone size={18} />,
 };
 

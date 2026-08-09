@@ -2,7 +2,7 @@
 
 import { ElementType, MouseEvent } from 'react';
 import { motion, useMotionTemplate, useMotionValue } from 'motion/react';
-import { Check, ArrowRight } from '@phosphor-icons/react';
+import { Check, ArrowRight } from 'lucide-react';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
 // Types remain the same for perfect drop-in compatibility
@@ -112,7 +112,6 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
             style={{ background: colors.gradient }}
           />
           <Icon
-            weight="duotone"
             className="w-7 h-7 sm:w-8 sm:h-8 text-white relative z-10 transition-transform duration-500 group-hover/service:scale-110"
             aria-hidden="true"
           />
@@ -137,7 +136,6 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
               >
                 <div className="mt-0.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shrink-0 bg-white/5 border border-white/10 transition-all duration-300 group-hover/item:border-white/30 group-hover/item:scale-110 relative overflow-hidden">
                   <Check
-                    weight="bold"
                     className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neutral-400 transition-colors duration-300 group-hover/item:text-white"
                     aria-hidden="true"
                   />
@@ -152,7 +150,7 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
                           .trim() ?? '#fff',
                     }}
                   >
-                    <Check weight="bold" className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
+                    <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
                   </div>
                 </div>
                 <span className="text-xs sm:text-sm md:text-base text-neutral-300 font-medium leading-relaxed group-hover/item:text-white transition-colors duration-200">
@@ -182,12 +180,10 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
 
                 <div className="relative z-10 overflow-hidden w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
                   <ArrowRight
-                    weight="bold"
                     className="absolute w-4 h-4 sm:w-5 sm:h-5 opacity-70 group-hover/cta:opacity-100 transition-all duration-300 -translate-x-full group-hover/cta:translate-x-0 rtl:rotate-180 rtl:translate-x-full rtl:group-hover/cta:translate-x-0"
                     aria-hidden="true"
                   />
                   <ArrowRight
-                    weight="bold"
                     className="absolute w-4 h-4 sm:w-5 sm:h-5 opacity-70 group-hover/cta:opacity-0 transition-all duration-300 translate-x-0 group-hover/cta:translate-x-full rtl:rotate-180 rtl:translate-x-0 rtl:group-hover/cta:-translate-x-full"
                     aria-hidden="true"
                   />

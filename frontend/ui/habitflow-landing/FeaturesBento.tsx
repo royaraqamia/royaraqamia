@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { CalendarCheck, ChartLineUp, Fire, CheckCircle } from '@phosphor-icons/react';
+import { CalendarCheck, ChartLine, Flame, CircleCheckBig } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
@@ -75,7 +75,7 @@ function HabitTracker() {
                 }`}
               >
                 {habit.done ? (
-                  <CheckCircle size={18} weight="fill" className="text-violet-400" />
+                  <CircleCheckBig size={18} fill="currentColor" className="text-violet-400" />
                 ) : (
                   <span className="w-3.5 h-3.5 rounded-full border-2 border-slate-500 block" />
                 )}
@@ -89,7 +89,7 @@ function HabitTracker() {
               </span>
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 shrink-0">
-              <Fire size={14} weight="fill" className="text-amber-400" />
+              <Flame size={14} fill="currentColor" className="text-amber-400" />
               <span className="text-xs font-semibold tracking-wide">{habit.streak}d</span>
             </div>
           </motion.div>
@@ -108,7 +108,7 @@ function StreakCalendar() {
       <div className="flex items-center justify-between mb-5 px-1">
         <span className="text-sm font-semibold text-slate-200">السَّلاسل الشَّهريَّة</span>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-linear-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30">
-          <Fire size={18} weight="fill" className="text-amber-400 animate-pulse" />
+          <Flame size={18} fill="currentColor" className="text-amber-400 animate-pulse" />
           <span className="text-lg font-black bg-linear-to-r from-amber-300 via-orange-400 to-amber-500 bg-clip-text text-transparent">
             22
           </span>
@@ -146,7 +146,7 @@ function StreakCalendar() {
                     }`}
                   >
                     {isChecked ? (
-                      <CheckCircle size={14} weight="fill" className="text-violet-300" />
+                      <CircleCheckBig size={14} fill="currentColor" className="text-violet-300" />
                     ) : (
                       <span className="w-1.5 h-1.5 rounded-full bg-slate-700 block" />
                     )}
@@ -279,7 +279,7 @@ export function FeaturesBento() {
         {...bentoCardProps('rgba(129,140,248,1)')}
         title="تقويم السَّلاسل"
         description="تصوَّر انتظامك مع تقويم السَّلاسل الأسبوعيَّة والشَّهريَّة. شاهد تقدُّمك وهو ينمو."
-        icon={Fire}
+        icon={Flame}
         className="lg:col-span-2"
         delay={0.2}
       >
@@ -290,7 +290,7 @@ export function FeaturesBento() {
         {...bentoCardProps('rgba(167,139,250,1)')}
         title="تحليلات التَّقدُّم"
         description="تتبَّع معدَّلات الإنجاز ومُتوسِّط أطوال السَّلاسل، وشاهد كيف تتحسَّن عاداتك بمرور الوقت."
-        icon={ChartLineUp}
+        icon={ChartLine}
         className="lg:col-span-2"
         delay={0.3}
       >

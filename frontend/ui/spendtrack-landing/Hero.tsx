@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { ArrowLeft, Wallet } from '@phosphor-icons/react';
+import { ArrowLeft, Wallet } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
@@ -108,7 +108,6 @@ export function Hero() {
             <span>{user ? 'لوحة التَّحكُّم' : 'ابدأ التَّتبُّع مجَّانًا'}</span>
             <ArrowLeft
               size={20}
-              weight="bold"
               className="arrow-bounce transition-transform duration-300 group-hover:-translate-x-1"
             />
           </Button>
