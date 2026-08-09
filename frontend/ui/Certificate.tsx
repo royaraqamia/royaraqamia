@@ -271,8 +271,7 @@ export function Certificate() {
 
               {/* Certificate Image Component */}
               <LazyImage
-                src="/certificate.png"
-                webpSrc="/certificate.webp"
+                src="/certificate.webp"
                 alt="نموذج شهادة إتمام الدَّورة التَّدريبيَّة مُعتمَدَة من رؤية رقمية"
                 width={1200}
                 height={848}

@@ -35,8 +35,7 @@ export default function AppInfoPage() {
             <div className="flex items-center gap-4 mb-6">
               <div className="h-16 w-16 relative shrink-0">
                 <LazyImage
-                  src="/logo.png"
-                  webpSrc="/logo.webp"
+                  src="/logo.webp"
                   alt="رؤية رقمية"
                   width={64}
                   height={64}
