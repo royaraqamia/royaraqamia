@@ -423,5 +423,66 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       const { error } = await supabase.from('post_tags').insert(rows);
       if (error) throw new Error('فشل تحديث وسوم المقال');
     },
+
+    async bulkActionPosts(
+      postIds: string[],
+      authorId: string,
+      action: 'publish' | 'unpublish' | 'delete',
+      blogVisible?: boolean
+    ): Promise<{ affected: number; slugs: string[] }> {
+      if (action === 'delete') {
+        const { data: deleted, error } = await supabase
+          .from('posts')
+          .delete()
+          .in('id', postIds)
+          .eq('author_id', authorId)
+          .select('slug');
+        if (error) throw new Error('فشل حذف المقالات');
+        return { affected: deleted.length, slugs: deleted.map((row) => row.slug) };
+      }
+
+      const update = (
+        action === 'publish'
+          ? {
+              status: 'published' as const,
+              published_at: new Date().toISOString(),
+              blog_visible: blogVisible ?? false,
+            }
+          : { status: 'draft' as const, published_at: null }
+      ) satisfies Partial<Database['public']['Tables']['posts']['Row']> & {
+        published_at: string | null;
+      };
+
+      const { data: updated, error } = await supabase
+        .from('posts')
+        .update(update)
+        .in('id', postIds)
+        .eq('author_id', authorId)
+        .select('slug');
+
+      if (error) throw new Error('فشل تحديث حالة المقالات');
+
+      return { affected: updated.length, slugs: updated.map((row) => row.slug) };
+    },
+
+    async bulkSetPostCategories(
+      postIds: string[],
+      authorId: string,
+      categoryId: string
+    ): Promise<void> {
+      const { data: owned } = await supabase
+        .from('posts')
+        .select('id')
+        .in('id', postIds)
+        .eq('author_id', authorId);
+      const ownedIds = (owned ?? []).map((row) => row.id);
+      if (ownedIds.length === 0) return;
+
+      await supabase.from('post_categories').delete().in('post_id', ownedIds);
+
+      const rows = ownedIds.map((post_id) => ({ post_id, category_id: categoryId }));
+      const { error } = await supabase.from('post_categories').insert(rows);
+      if (error) throw new Error('فشل تحديث تصنيف المقالات');
+    },
   };
 }

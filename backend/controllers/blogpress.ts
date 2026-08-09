@@ -3,7 +3,12 @@ import {
   createBlogpressMediaService,
   createBlogpressPostsService,
 } from '@/backend/config/blogpress';
-import { PostSchema, TagInputSchema, PostTagIdsSchema } from '@/shared/contracts/blog';
+import {
+  PostSchema,
+  TagInputSchema,
+  PostTagIdsSchema,
+  BulkPostsActionSchema,
+} from '@/shared/contracts/blog';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import type { RevalidationHint } from '@/backend/transport/http-result';
 
@@ -123,6 +128,56 @@ export async function setPostFeatured(id: string, featured: boolean): Promise<Ht
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل تحديث تثبيت المقال',
+    });
+  }
+}
+
+export async function bulkPostsAction(body: Record<string, unknown>): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+
+    const validated = BulkPostsActionSchema.safeParse(body);
+    if (!validated.success) {
+      return jsonResult(400, { error: 'بيانات الإجراء غير صالحة' });
+    }
+
+    const { action, postIds, categoryId } = validated.data;
+    const service = createBlogpressPostsService(supabase);
+
+    if (action === 'setCategory') {
+      if (!categoryId) return jsonResult(400, { error: 'اختر تصنيفاً' });
+      await service.bulkSetPostCategories(postIds, user.id, categoryId);
+      return jsonResult(
+        200,
+        { success: true, affected: postIds.length },
+        { revalidate: [{ path: '/blogpress' }] }
+      );
+    }
+
+    const { affected, slugs } = await service.bulkActionPosts(
+      postIds,
+      user.id,
+      action,
+      user.email ?? ''
+    );
+
+    if (action === 'publish' || action === 'unpublish') {
+      return jsonResult(
+        200,
+        { success: true, affected },
+        { revalidate: slugs.flatMap((slug) => publishRevalidation(slug)) }
+      );
+    }
+
+    return jsonResult(
+      200,
+      { success: true, affected },
+      { revalidate: slugs.flatMap((slug) => postRevalidation(slug)) }
+    );
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل تنفيذ الإجراء على المقالات',
     });
   }
 }

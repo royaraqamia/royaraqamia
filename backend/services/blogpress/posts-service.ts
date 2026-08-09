@@ -104,6 +104,25 @@ export class BlogpressPostsService {
     return this.repository.deletePost(postId, authorId);
   }
 
+  async bulkActionPosts(
+    postIds: string[],
+    authorId: string,
+    action: 'publish' | 'unpublish' | 'delete',
+    authorEmail?: string
+  ): Promise<{ affected: number; slugs: string[] }> {
+    const blogVisible =
+      action === 'publish' ? isAdmin(authorEmail ?? '', this.adminEmails) : undefined;
+    return this.repository.bulkActionPosts(postIds, authorId, action, blogVisible);
+  }
+
+  async bulkSetPostCategories(
+    postIds: string[],
+    authorId: string,
+    categoryId: string
+  ): Promise<void> {
+    return this.repository.bulkSetPostCategories(postIds, authorId, categoryId);
+  }
+
   async setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void> {
     return this.repository.setPostFeatured(postId, authorId, featured);
   }

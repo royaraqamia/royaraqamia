@@ -47,6 +47,8 @@ function makeRepo(
     unpublishPost: vi.fn(),
     deletePost: vi.fn(),
     setPostFeatured: vi.fn(),
+    bulkActionPosts: vi.fn(),
+    bulkSetPostCategories: vi.fn(),
     listCategoriesByAuthor: vi.fn(),
     createCategory: vi.fn(),
     deleteCategory: vi.fn(),
@@ -284,6 +286,25 @@ describe('BlogpressPostsService (thin delegation)', () => {
     (repository.setPostFeatured as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
     await service.setPostFeatured('p-1', 'u-1', true);
     expect(repository.setPostFeatured).toHaveBeenCalledWith('p-1', 'u-1', true);
+  });
+
+  it('delegates bulk publish with blog_visible for admins', async () => {
+    const { repository, service } = makeRepo();
+    (repository.bulkActionPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
+      affected: 2,
+      slugs: ['post-1', 'post-2'],
+    });
+
+    await service.bulkActionPosts(['p-1', 'p-2'], 'u-1', 'publish', 'admin@example.com');
+
+    expect(repository.bulkActionPosts).toHaveBeenCalledWith(['p-1', 'p-2'], 'u-1', 'publish', true);
+  });
+
+  it('delegates bulk setCategory', async () => {
+    const { repository, service } = makeRepo();
+    (repository.bulkSetPostCategories as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    await service.bulkSetPostCategories(['p-1', 'p-2'], 'u-1', 'cat-1');
+    expect(repository.bulkSetPostCategories).toHaveBeenCalledWith(['p-1', 'p-2'], 'u-1', 'cat-1');
   });
 
   it('propagates repository errors', async () => {

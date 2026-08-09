@@ -35,6 +35,13 @@ export interface PostsRepository {
   unpublishPost(postId: string, authorId: string): Promise<{ slug: string }>;
   deletePost(postId: string, authorId: string): Promise<{ slug: string }>;
   setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void>;
+  bulkActionPosts(
+    postIds: string[],
+    authorId: string,
+    action: 'publish' | 'unpublish' | 'delete',
+    blogVisible?: boolean
+  ): Promise<{ affected: number; slugs: string[] }>;
+  bulkSetPostCategories(postIds: string[], authorId: string, categoryId: string): Promise<void>;
   listCategoriesByAuthor(authorId: string): Promise<PostCategory[]>;
   createCategory(authorId: string, name: string, slug: string): Promise<PostCategory>;
   deleteCategory(categoryId: string, authorId: string): Promise<void>;

@@ -20,6 +20,8 @@ import {
   Clock,
   Pin,
   PinOff,
+  Check,
+  FolderInput,
 } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
@@ -45,6 +47,7 @@ import {
   createPost,
   setPostFeatured,
 } from '@/frontend/api/blogpress';
+import { useBulkPosts } from '@/frontend/state/blogpress/use-bulk-posts';
 import type { Post, PostTag, PostCategory, PostStatus } from '@/shared/contracts/blogpress';
 import { cn } from '@/frontend/shared/cn';
 import {
@@ -53,6 +56,7 @@ import {
   formatReadingTime,
 } from '@/frontend/shared/reading-time';
 import { toast } from 'sonner';
+import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 interface PostListProps {
   posts: Post[];
@@ -75,6 +79,16 @@ export function PostList({ posts, categories, activeCategory, tagsByPost }: Post
   const [pending, startTransition] = useTransition();
   const searchRef = useRef<HTMLInputElement>(null);
 
+  const filteredPosts = useMemo(
+    () => filterPosts(posts, activeFilter, searchQuery),
+    [posts, activeFilter, searchQuery]
+  );
+
+  const bulk = useBulkPosts(filteredPosts.map((p) => p.id));
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [categoryId, setCategoryId] = useState('');
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -86,22 +100,6 @@ export function PostList({ posts, categories, activeCategory, tagsByPost }: Post
     return () => document.removeEventListener('keydown', handler);
   }, []);
 
-  const filteredPosts = useMemo(() => {
-    let filtered = activeFilter === 'all' ? posts : posts.filter((p) => p.status === activeFilter);
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      filtered = filtered.filter(
-        (p) =>
-          p.title.toLowerCase().includes(q) ||
-          p.slug.toLowerCase().includes(q) ||
-          (p.meta_desc ?? '').toLowerCase().includes(q)
-      );
-    }
-
-    return filtered;
-  }, [posts, activeFilter, searchQuery]);
-
   const countByStatus = useMemo(
     () => ({
       draft: posts.filter((p) => p.status === 'draft').length,
@@ -111,15 +109,30 @@ export function PostList({ posts, categories, activeCategory, tagsByPost }: Post
     [posts]
   );
 
+  const runBulkAction = async (action: 'publish' | 'unpublish' | 'delete' | 'setCategory') => {
+    const affected = await bulk.run(action, action === 'setCategory' ? categoryId : undefined);
+    if (affected === null) return;
+    bulk.clear();
+    setCategoryOpen(false);
+    setCategoryId('');
+    setShowDeleteConfirm(false);
+    toast.success(
+      action === 'setCategory'
+        ? 'تم تحديث التصنيف'
+        : `تم ${action === 'delete' ? 'حذف' : action === 'publish' ? 'نشر' : 'إلغاء نشر'} ${affected} مقال`
+    );
+    router.refresh();
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6">
       {categories.length > 0 && (
         <nav
           className="flex items-center gap-2 overflow-x-auto pb-1.5 pt-0.5 no-scrollbar -mx-1 px-1"
-          aria-label="تصفية حسب التَّصنيف"
+          aria-label="تصفية حسب التَّصنيف"
         >
           <CategoryChip
-            label="كلّ التَّصنيفات"
+            label="كلّ التَّصنيفات"
             slug={undefined}
             active={!activeCategory}
             onSelect={(nextSlug) =>
@@ -139,6 +152,35 @@ export function PostList({ posts, categories, activeCategory, tagsByPost }: Post
           ))}
         </nav>
       )}
+
+      {filteredPosts.length > 0 && (
+        <BulkActionBar
+          allSelected={bulk.allSelected}
+          total={filteredPosts.length}
+          selectedCount={bulk.selectedCount}
+          busy={bulk.busy}
+          onToggleAll={bulk.toggleAll}
+          onClear={bulk.clear}
+          onPublish={() => runBulkAction('publish')}
+          onUnpublish={() => runBulkAction('unpublish')}
+          onOpenDelete={() => setShowDeleteConfirm(true)}
+          categories={categories}
+          categoryOpen={categoryOpen}
+          categoryId={categoryId}
+          onCategoryOpen={() => setCategoryOpen((v) => !v)}
+          onCategoryChange={setCategoryId}
+          onApplyCategory={() => runBulkAction('setCategory')}
+        />
+      )}
+
+      {bulk.error ? (
+        <div
+          aria-live="polite"
+          className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-xl flex items-center gap-1.5"
+        >
+          <span>{bulk.error}</span>
+        </div>
+      ) : null}
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div
@@ -268,22 +310,76 @@ export function PostList({ posts, categories, activeCategory, tagsByPost }: Post
           </div>
         ) : (
           filteredPosts.map((post) => (
-            <PostRow key={post.id} post={post} tags={tagsByPost?.[post.id] ?? []} />
+            <PostRow
+              key={post.id}
+              post={post}
+              tags={tagsByPost?.[post.id] ?? []}
+              isSelected={bulk.selected.has(post.id)}
+              onToggleSelect={bulk.toggle}
+            />
           ))
         )}
       </div>
+
+      <ConfirmDialog
+        open={showDeleteConfirm}
+        title="حذف مقالات مختارة"
+        message={`هل أنت متأكد من حذف ${bulk.selectedCount} مقالات؟ لا يمكن التراجع عن هذا الإجراء.`}
+        confirmLabel="حذف"
+        cancelLabel="إلغاء"
+        icon={Trash2}
+        variant="danger"
+        onConfirm={() => runBulkAction('delete')}
+        onCancel={() => setShowDeleteConfirm(false)}
+      />
     </div>
   );
 }
 
-function PostRow({ post, tags }: { post: Post; tags: PostTag[] }) {
+function PostRow({
+  post,
+  tags,
+  isSelected,
+  onToggleSelect,
+}: {
+  post: Post;
+  tags: PostTag[];
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
+}) {
   const router = useRouter();
   const wordCount = estimateWordCount(post.content);
   const readingTime = estimateReadingTime(post.content);
 
   return (
-    <article className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-neutral-900/50 border border-neutral-200/70 dark:border-neutral-800/80 hover:border-neutral-300 dark:hover:border-neutral-700/80 hover:shadow-md dark:hover:shadow-neutral-950/50 transition-all duration-300 ease-out">
+    <article
+      className={cn(
+        'group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-neutral-900/50 border transition-all duration-300 ease-out',
+        isSelected
+          ? 'border-primary/50 ring-1 ring-primary/20 bg-primary/[0.03] dark:bg-primary/[0.04]'
+          : 'border-neutral-200/70 dark:border-neutral-800/80 hover:border-neutral-300 dark:hover:border-neutral-700/80 hover:shadow-md dark:hover:shadow-neutral-950/50'
+      )}
+    >
       <div className="flex items-start sm:items-center gap-3.5 min-w-0 flex-1">
+        <button
+          type="button"
+          onClick={() => onToggleSelect(post.id)}
+          aria-pressed={isSelected}
+          aria-label={isSelected ? 'إلغاء تحديد المقال' : 'تحديد المقال'}
+          className="shrink-0 size-5 rounded-md border flex items-center justify-center transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        >
+          <span
+            className={cn(
+              'size-5 rounded-md border flex items-center justify-center transition-colors',
+              isSelected
+                ? 'bg-primary border-primary text-primary-foreground'
+                : 'border-neutral-300 dark:border-neutral-600 hover:border-primary/50'
+            )}
+          >
+            {isSelected ? <Check className="size-3" strokeWidth={3} /> : null}
+          </span>
+        </button>
+
         <Link
           href={`/blogpress/editor/${post.id}`}
           className="shrink-0 relative group/thumb overflow-hidden rounded-xl ring-1 ring-neutral-200/80 dark:ring-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
@@ -549,6 +645,163 @@ interface CategoryChipProps {
   slug: string | undefined;
   active: boolean;
   onSelect: (slug: string | undefined) => void;
+}
+
+function filterPosts(posts: Post[], status: PostStatus | 'all', query: string): Post[] {
+  let filtered = status === 'all' ? posts : posts.filter((p) => p.status === status);
+
+  if (query.trim()) {
+    const q = query.trim().toLowerCase();
+    filtered = filtered.filter(
+      (p) =>
+        p.title.toLowerCase().includes(q) ||
+        p.slug.toLowerCase().includes(q) ||
+        (p.meta_desc ?? '').toLowerCase().includes(q)
+    );
+  }
+
+  return filtered;
+}
+
+interface BulkActionBarProps {
+  allSelected: boolean;
+  total: number;
+  selectedCount: number;
+  busy: boolean;
+  onToggleAll: () => void;
+  onClear: () => void;
+  onPublish: () => void;
+  onUnpublish: () => void;
+  onOpenDelete: () => void;
+  categories: PostCategory[];
+  categoryOpen: boolean;
+  categoryId: string;
+  onCategoryOpen: () => void;
+  onCategoryChange: (id: string) => void;
+  onApplyCategory: () => void;
+}
+
+function BulkActionBar({
+  allSelected,
+  total,
+  selectedCount,
+  busy,
+  onToggleAll,
+  onClear,
+  onPublish,
+  onUnpublish,
+  onOpenDelete,
+  categories,
+  categoryOpen,
+  categoryId,
+  onCategoryOpen,
+  onCategoryChange,
+  onApplyCategory,
+}: BulkActionBarProps) {
+  const hasSelection = selectedCount > 0;
+  return (
+    <div className="sticky top-3 z-20 bg-card/90 backdrop-blur border border-border rounded-2xl p-3 shadow-sm flex items-center gap-3 flex-wrap">
+      <button
+        type="button"
+        onClick={onToggleAll}
+        aria-pressed={allSelected}
+        className="inline-flex items-center gap-2 text-xs font-semibold text-foreground hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md p-1"
+      >
+        <span
+          className={cn(
+            'size-5 rounded-md border flex items-center justify-center transition-colors',
+            allSelected
+              ? 'bg-primary border-primary text-primary-foreground'
+              : 'border-neutral-400 dark:border-neutral-500'
+          )}
+        >
+          <Check className="size-3" strokeWidth={3} />
+        </span>
+        تحديد الكل
+      </button>
+
+      <span className="text-xs text-muted-foreground">
+        {hasSelection ? `${selectedCount} من ${total}` : `إجمالي ${total}`}
+      </span>
+
+      <div className="flex-1" />
+
+      <button
+        type="button"
+        onClick={onClear}
+        disabled={!hasSelection || busy}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        مسح
+      </button>
+
+      <button
+        type="button"
+        onClick={onPublish}
+        disabled={!hasSelection || busy}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <Eye className="size-3.5" />
+        نشر
+      </button>
+
+      <button
+        type="button"
+        onClick={onUnpublish}
+        disabled={!hasSelection || busy}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <EyeOff className="size-3.5" />
+        إلغاء النَّشر
+      </button>
+
+      <button
+        type="button"
+        onClick={onCategoryOpen}
+        disabled={!hasSelection || busy || categories.length === 0}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <FolderInput className="size-3.5" />
+        تصنيف
+      </button>
+
+      {categoryOpen ? (
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <select
+            value={categoryId}
+            onChange={(e) => onCategoryChange(e.target.value)}
+            aria-label="اختر التصنيف"
+            className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary h-8"
+          >
+            <option value="">اختر تصنيف...</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="button"
+            onClick={onApplyCategory}
+            disabled={!categoryId || busy}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {busy ? <Loader2 className="size-3.5 animate-spin" /> : 'تطبيق'}
+          </button>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={onOpenDelete}
+        disabled={!hasSelection || busy}
+        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        <Trash2 className="size-3.5" />
+        حذف
+      </button>
+    </div>
+  );
 }
 
 function CategoryChip({ label, slug, active, onSelect }: CategoryChipProps) {

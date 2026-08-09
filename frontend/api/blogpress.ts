@@ -59,6 +59,19 @@ export async function setPostFeatured(postId: string, featured: boolean): Promis
   });
 }
 
+export type BulkPostAction = 'publish' | 'unpublish' | 'delete' | 'setCategory';
+
+export async function bulkPostAction(
+  action: BulkPostAction,
+  postIds: string[],
+  categoryId?: string | null
+): Promise<{ success: boolean; affected: number }> {
+  return request<{ success: boolean; affected: number }>('/api/blogpress/posts/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ action, postIds, categoryId }),
+  });
+}
+
 export async function uploadImage(
   formData: FormData
 ): Promise<{ url: string } | { error: string }> {

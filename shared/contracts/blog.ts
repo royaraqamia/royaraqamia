@@ -33,3 +33,11 @@ export const PostTagIdsSchema = z.object({
 });
 
 export type PostTagIdsInput = z.infer<typeof PostTagIdsSchema>;
+
+export const BulkPostsActionSchema = z.object({
+  action: z.enum(['publish', 'unpublish', 'delete', 'setCategory']),
+  postIds: z.array(z.string().uuid('معرّف مقال غير صالح')).min(1, 'اختر مقالاً واحداً على الأقل'),
+  categoryId: z.string().uuid('معرّف تصنيف غير صالح').nullable().optional(),
+});
+
+export type BulkPostsActionInput = z.infer<typeof BulkPostsActionSchema>;
