@@ -68,12 +68,7 @@ export function ExpenseList({
   }
 
   return (
-    <div
-      className="w-full max-w-4xl mx-auto space-y-2.5"
-      role="list"
-      aria-label="قائمة المصروفات"
-      aria-live="polite"
-    >
+    <div className="w-full space-y-2.5" role="list" aria-label="قائمة المصروفات" aria-live="polite">
       {expenses.map((expense, index) => (
         <ExpenseRow
           key={expense.id}

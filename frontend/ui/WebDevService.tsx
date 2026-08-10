@@ -189,7 +189,7 @@ export function WebDevService() {
                     $100
                   </div>
                   <div className="text-[11px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-wider mt-0.5">
-                    اشتراك شهري
+                    اشتراك شهري لمدَّة 3-6 أشهر
                   </div>
                 </div>
               </div>
@@ -219,7 +219,7 @@ export function WebDevService() {
                     $200
                   </div>
                   <div className="text-[11px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-wider mt-0.5">
-                    اشتراك شهري
+                    اشتراك شهري لمدَّة 3-6 أشهر
                   </div>
                 </div>
               </div>

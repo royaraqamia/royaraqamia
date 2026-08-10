@@ -286,7 +286,7 @@ export default async function DashboardPage(props: {
     <div className="space-y-6 pb-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
         <h1 className="text-3xl font-display font-bold tracking-tight">إدارة المصروف</h1>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <CsvActions start={start} end={end} categories={filterCategories} />
           <CurrencySelector currency={currency} />
           <CreateExpenseButton userId={user.id} currency={currency} />
