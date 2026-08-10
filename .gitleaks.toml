@@ -6,9 +6,15 @@ title = "Gitleaks config for royaraqamia"
 useDefault = true
 
 [allowlist]
-  description = "Intentional secret-like fixtures and placeholder templates"
+  description = "Intentional secret-like fixtures, placeholder templates, and client-public values"
   paths = [
     # Unit test that asserts example.env and configs contain NO real secrets;
     # it deliberately embeds secret-shaped regex patterns.
     '''scripts/__tests__/security-config\.test\.ts''',
+  ]
+  regexes = [
+    # NEXT_PUBLIC_* values are client-public by design (AGENTS.md / SECURITY.md):
+    # they are inlined into the browser bundle and never treated as secrets.
+    # Covers publishable/anon keys declared in CI workflows and example.env.
+    '''NEXT_PUBLIC_[A-Z0-9_]+["']?\s*[:=]\s*[^"'\n]+["']?''',
   ]
