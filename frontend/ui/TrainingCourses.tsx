@@ -21,7 +21,7 @@ export function TrainingCourses() {
   const course = {
     title: 'بناء منتجات رقميَّة من الصِّفر',
     description:
-      'نظام عمل متكامل: استخدم LLM Code Agent لبناء مواقع إلكترونيَّة وتطبيقات. أنت هنا المدير والأدوات هي فريق العمل.',
+      'نظام عمل متكامل: استخدم LLM Coding Agents لبناء مواقع وتطبيقات. أنت هنا المدير والأدوات هي فريق العمل.',
     trainer: 'م. أيْهَم العَلي',
     duration: '18 ساعة',
     sessions: '12 جلسة',
@@ -43,7 +43,7 @@ export function TrainingCourses() {
     {
       icon: Trophy,
       label: 'أدوات المستقبل',
-      description: 'إتقان عملي لـ Vercel ،GitHub ،Devin، ... .',
+      description: 'إتقان عملي لـ Vercel ،GitHub ،OpenCode، ... .',
     },
   ];
 
