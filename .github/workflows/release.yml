@@ -37,6 +37,9 @@ jobs:
           fetch-tags: true
           token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
+      - name: Fetch Tags Explicitly
+        run: git fetch --tags --force
+
       - name: Setup Build Environment
         uses: ./.github/actions/setup-environment
         with:
