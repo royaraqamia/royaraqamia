@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.1] - 2026-08-12
 
 ### Changed
+
 - Update
 - supply SUPABASE_SERVICE_ROLE_KEY to build job
 - Update
@@ -312,6 +313,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update!
 
 ### Added
+
 - add fully automated release versioning pipeline
 - cache public blog pages at CDN edge for 60s
 - add weekly/monthly targets and custom reminder time
@@ -363,8 +365,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add otp_codes migration and lock down RLS
 
 ### Fixed
+
 - ensure tags are fetched before release version computation
-- allowlist client-public NEXT_PUBLIC_* values in gitleaks
+- allowlist client-public NEXT*PUBLIC*\* values in gitleaks
 - bump nanoid to 3.3.18 to clear high-severity advisory
 - align links_expiry migration filename with remote version
 - detect chunked supabase session cookies
