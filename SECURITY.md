@@ -17,12 +17,7 @@ It is a **private, confidential codebase**. All code, configuration, data, and d
 
 ## Security Policy & Version Support
 
-Only the versions listed below are actively maintained and receive security patches. Older releases are unsupported and must not be used in production.
-
-| Version | Supported          | Security Patches                                   |
-| ------- | ------------------ | -------------------------------------------------- |
-| 1.0.x   | :white_check_mark: | Active — critical & high severity fixes within 72h |
-| < 1.0   | :x:                | Unsupported — upgrade immediately                  |
+This application is deployed as a single production release. Security patches are backported to the current production release and shipped within the patch-policy window below.
 
 ### Patch Policy
 
