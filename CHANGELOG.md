@@ -7,6 +7,395 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-08-12
+
+### Changed
+- Update
+- supply SUPABASE_SERVICE_ROLE_KEY to build job
+- Update
+- Update
+- Update
+- Update
+- drop 6.9MB of fallback PNGs and shrink favicon to 8KB
+- cache post slug, tags, and categories for 60s
+- bound analytics and admin events to 10k rows / 100 links
+- defer recharts dashboard charts behind Suspense
+- lazy-load qrcode and canvas-confetti on interaction
+- Update
+- remove @phosphor-icons/react after Lucide migration
+- migrate remaining UI icons from Phosphor to Lucide
+- render product landing pages as server components
+- batch post tags into a single query to eliminate N+1
+- static-generation slugs and cache public blog queries for 60s
+- additive serving indexes for analytics, notifications, habit logs, and ILIKE search
+- mark spendtrack CSV and undo as done
+- migrate Hero/HeroVisual/WhyUs icons to Lucide
+- migrate auth pages icons from Phosphor to Lucide
+- mark done blogpress bulk/calendar and spendtrack insights
+- Update
+- move ambient motion loops to compositor-only CSS animations
+- paint hero LCP text without waiting for hydration
+- render static marketing sections as Server Components
+- lazy-load supabase client off static pages
+- disable client session replay runtime
+- unify loading to single page loader across all routes
+- cache immutable assets and add noise overlay source
+- remove unused OG Image png source
+- serve woff2 instead of uncompressed ttf and drop unused weights
+- skip supabase round-trip for anonymous public requests
+- remove dead numbered png assets and unused png field
+- Update
+- format analytics-repository
+- Update
+- Update
+- Update
+- bump @radix-ui/react-tooltip from 1.2.13 to 1.2.16
+- bump @radix-ui/react-hover-card from 1.1.15 to 1.1.23
+- Potential fix for code scanning alert no. 26: Insecure temporary file
+- Potential fix for code scanning alert no. 22: Insecure temporary file
+- add per-project agent contract for automatic skill execution
+- mock admin-auth-guard in route tests after announcement controller import
+- apply prettier formatting to pending-login store and notification test
+- drop unused React import to satisfy typecheck
+- remove orphaned theme-provider (zero importers, not mounted in any layout)
+- surface corrupted data-file reads instead of failing silently
+- tighten category casts to single DB-domain assertion
+- satisfy prettier on refactored files
+- move loader-visible repository result/query types into shared/contracts
+- rename nested ui/ui primitives folder to ui/primitives
+- split logger into per-side leaf utilities (backend/shared + frontend/shared)
+- move admin-validator leaf utility from root shared/ to backend/shared/
+- move leaf UI hooks from state/ to shared/ (no API dependency)
+- satisfy prettier
+- update README to reflect architectural changes
+- replace all console.error/console.warn with structured logger
+- remove I-prefix from 12 repository interfaces
+- wrap AUTH_PATHS array for readability
+- convert CertificateVerifier arrow function properties to regular methods
+- rename color_hex to colorHex in Spendtrack application types
+- convert LinksnapApiClient class with all-static methods to module of exported functions
+- convert AdminValidator class with static methods to plain exported function
+- deduplicate formatDateArabic into formatHijriDate and extract CERT_CODE_REGEX
+- remove dead exports and unused validation schemas
+- route session provider through api layer
+- delegate all request validation to services, thin the controller
+- move generic AppError out of habitflow-named module into shared errors
+- make controller thin by moving validation and local-data into service
+- apply prettier formatting to auth, admin repository and email client
+- extract server-side data loaders so pages stay pure presentation
+- centralize NODE_ENV checks in frontend env module
+- move middleware DB writes and route maps into repositories/config
+- move public users upsert out of gateway into a repository
+- inject email validity TTLs from config instead of hardcoding copy
+- move turnstile bypass decision from client to config
+- move habitflow window defaulting and typed validation into service
+- delegate rate-limit policies and reserved-code rule to config/service
+- compose supabase clients in config root, inject into repositories
+- move PendingLoginStore contract to shared leaf so transport no longer imports services
+- satisfy prettier
+- compose admin posts service in config instead of transport in blog page
+- move errorResult error mapping out of transport into middleware
+- extract shared HeroSection shell
+- remove dead http response helpers and controller transport leak
+- extract shared HowItWorksSection shell
+- extract route-handler logic into backend/controllers
+- extract shared FeaturesSection shell
+- dedupe FeaturesBento card theme via shared helper
+- move admin-visibility decision from controllers into service
+- lift rate-limit policies from controllers into config
+- move redirect code-filter and error classification into service
+- route VersionChecker through api layer instead of transport
+- inject db path into JsonFileHabitRepository instead of importing config
+- centralize all env reads in backend/config/env and frontend/shared/constants
+- move session provider to state layer, fix reverse ui dependency
+- generalize subscribeToPostgresChanges; route through notifications api layer
+- compose AuthGateway in config via createServerAuthService helper
+- move pending_login cookie handling into AuthService via PendingLoginStore
+- prettier formatting for spendtrack page and notifications repository
+- kebab-case hook file names (useFocusTrap, useHorizontalScroll)
+- move backup/restore orchestration out of route handlers into service
+- dedupe createClient(cookieStore) via loadSpendtrackService helper
+- map DB rows to contract types instead of double casts
+- route Google OAuth users upsert through AuthGateway client
+- centralize Turnstile site key config in constants
+- move analytics ownership check from repository to service
+- move verification workflow out of repository into AuthService
+- move data-path out of shared into config and resolve lazily
+- split editor-content god component into autosave/upload hooks and toolbar/settings components
+- split repository interface into reader/writer (ISP)
+- extract realtime channel wiring into transport layer
+- derive wire DTOs from shared contract types instead of duplicating fields
+- inject siteUrl into AuthService instead of reading env in the service
+- move supabase client construction from repository to composition root
+- reformat import lines to satisfy prettier
+- flatten habitflow feature island into shared layer folders
+- move reading-time utility out of root shared into frontend shared
+- move use-animated-counter hook out of shared into state
+- move certificate-verification into services/certificates capability
+- Update
+- Bump github/codeql-action from 3 to 4
+- Bump gitleaks/gitleaks-action from 2 to 3
+- Update
+- Potential fix for code scanning alert no. 19: Missing origin verification in `postMessage` handler
+- Potential fix for code scanning alert no. 13: Insecure temporary file
+- Potential fix for code scanning alert no. 18: Useless conditional
+- Potential fix for code scanning alert no. 16: Missing origin verification in `postMessage` handler
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Potential fix for code scanning alert no. 12: Incomplete multi-character sanitization
+- Update
+- Potential fix for code scanning alert no. 11: Incomplete multi-character sanitization
+- Update
+- Update
+- Update
+- Update
+- Bump eslint from 10.7.0 to 10.8.0
+- Bump @radix-ui/react-select from 2.2.6 to 2.3.7
+- Bump @radix-ui/react-dropdown-menu from 2.1.20 to 2.1.24
+- Bump react-hook-form from 7.81.0 to 7.83.0
+- Bump @radix-ui/react-alert-dialog from 1.1.15 to 1.1.23
+- Bump @radix-ui/react-toggle-group from 1.1.15 to 1.1.19
+- Bump @testing-library/jest-dom from 6.9.1 to 7.0.0
+- Bump lucide-react from 1.24.0 to 1.27.0
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Bump @radix-ui/react-scroll-area from 1.2.14 to 1.2.18
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Bump @supabase/supabase-js from 2.110.7 to 2.110.8
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Bump @types/node from 20.19.43 to 26.1.1
+- Bump @radix-ui/react-popover from 1.1.15 to 1.1.20
+- Bump typescript-eslint from 8.64.0 to 8.65.0
+- Bump @radix-ui/react-radio-group from 1.3.8 to 1.4.4
+- Bump @radix-ui/react-accordion from 1.2.12 to 1.2.17
+- Bump @radix-ui/react-switch from 1.3.3 to 1.3.4
+- Bump @radix-ui/react-menubar from 1.1.20 to 1.1.21
+- Bump @radix-ui/react-aspect-ratio from 1.1.8 to 1.1.12
+- Update
+- Update
+- Update
+- Update
+- Update
+- Potential fix for code scanning alert no. 5: Creating biased random numbers from a cryptographically secure source
+- Potential fix for code scanning alert no. 6: Creating biased random numbers from a cryptographically secure source
+- Potential fix for code scanning alert no. 8: Insecure randomness
+- Update
+- Bump @radix-ui/react-collapsible from 1.1.15 to 1.1.17
+- Bump @radix-ui/react-tooltip from 1.2.8 to 1.2.13
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Bump eslint from 9.39.5 to 10.7.0
+- Update
+- Bump @radix-ui/react-checkbox from 1.3.3 to 1.3.7
+- Bump @sentry/nextjs from 10.65.0 to 10.66.0
+- Bump @radix-ui/react-switch from 1.2.6 to 1.3.3
+- Bump @radix-ui/react-scroll-area from 1.2.10 to 1.2.14
+- Bump @radix-ui/react-label from 2.1.8 to 2.1.11
+- Bump sharp from 0.34.5 to 0.35.3
+- Bump @radix-ui/react-slider from 1.3.6 to 1.4.3
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update
+- Remove git clone instructions from README (private repo)
+- Fix 6 react-hooks lint errors (set-state-in-effect, purity)
+- Fix lint:fix script with cross-env too
+- Add cross-env for cross-platform env var in lint script
+- Set ESLINT_USE_FLAT_CONFIG=false for eslintrc compat in lint script
+- Fix types for recharts 3.x (TooltipContentProps, DefaultLegendContentProps, DataKey as key)
+- Downgrade eslint from 10.x to ^9.39.5 (compatible with eslint-plugin-react 7.x)
+- Revert typescript from 7.x to ~6.0.0 (compatible with @typescript-eslint <6.1.0)
+- Bump recharts from 2.15.4 to 3.9.2
+- Bump eslint from 8.57.1 to 10.7.0
+- Bump @radix-ui/react-slot from 1.2.4 to 1.3.0
+- Bump typescript from 5.9.3 to 7.0.2
+- Bump eslint-plugin-react-hooks from 4.6.2 to 7.1.1
+- Bump lucide-react from 0.562.0 to 1.24.0
+- Bump @types/node from 20.19.26 to 26.1.1
+- Bump react-icons from 4.12.0 to 5.7.0
+- Bump @radix-ui/react-separator from 1.1.8 to 1.1.11
+- Bump @radix-ui/react-dropdown-menu from 2.1.16 to 2.1.20
+- Bump actions/checkout from 4 to 7
+- Update
+- Update
+- Update
+- Update
+- Update
+- Update!
+- Update!
+- Update!
+- Update!
+- Update!
+- Update!
+- Update!
+- Update!
+- Update!
+- Migrate from React to Next.js
+- Updated the Portfolio component to use WebP images with PNG fallback
+- Update!
+- Update!
+- Update
+- Update sitemap.xml
+- Update sitemap.xml
+- Update content
+- Update esbuild version to ^0.28.0
+- Add esbuild as a devDependency to package.json
+- Fix vite.config.ts
+- Remove PWA
+- Update content
+- Create SECURITY.md
+- Create README.md
+- Install Vercel Web Analytics
+- Update!
+- Update!
+
+### Added
+- add fully automated release versioning pipeline
+- cache public blog pages at CDN edge for 60s
+- add weekly/monthly targets and custom reminder time
+- redesign toasts to match Roya Raqamia design system
+- add undo action to expense delete toast
+- add CSV export and import with auto category creation
+- add insights strip with top category, daily average, and period-over-period change
+- add scheduled posts calendar view with drag-to-reschedule
+- add bulk actions for posts (publish/unpublish/delete/setCategory)
+- enable package import optimization for icon bundles
+- add analytics date-range + CSV export and bulk link actions
+- add device/OS/browser analytics breakdown
+- add link expiry with active/expired/blocked status
+- add many-to-many tags for posts
+- thread per-user currency through dashboard and UI
+- add in-editor SEO and stats side panel
+- add content-stats util and live toolbar counters
+- persist and validate per-user currency
+- debounce auto-save and surface live saving state
+- add user_settings migration for per-user currency
+- add shared currency map and formatting util
+- add insights strip with best day/hour, recovery rate and streak celebration
+- add guided first-habit onboarding with template gallery
+- add per-log notes/journal for habits
+- add skip/miss streak-freeze for habit logs
+- add recurring expenses with monthly materialization
+- add per-category monthly budgets
+- enable searching transactions by description
+- use DatePicker in certificate form dates
+- use DatePicker in expense dialog
+- use DateRangePicker in transaction filters
+- add Arabic RTL Calendar and DatePicker primitives
+- add QR code modal to dashboard link rows
+- add pure helper for short link URL used by QR codes
+- scheduled daily habit_reminder notifications via pg_cron
+- admin system_announcement broadcast
+- monthly budget with expense_alert notifications
+- notify recipient when a certificate is issued
+- notify admins when a post is published
+- notify link owner on click with cooldown
+- add service-role notification service for production
+- wire password reset through Resend instead of Supabase built-in email
+- distraction-free mode, slash commands menu, and code language selector
+- dashboard category filter, scheduled tab, views, and pinning
+- scheduled status, category service/repo, and view counting
+- add categories, scheduled publishing, and view counts schema
+- add shared EmptyState component and migrate product empty states
+- unified AppShell with product switcher and command palette
+- add otp_codes migration and lock down RLS
+
+### Fixed
+- ensure tags are fetched before release version computation
+- allowlist client-public NEXT_PUBLIC_* values in gitleaks
+- bump nanoid to 3.3.18 to clear high-severity advisory
+- align links_expiry migration filename with remote version
+- detect chunked supabase session cookies
+- hide bell for unauthenticated visitors
+- drop invalid optimizePackageImports for next 16
+- serve webp via LazyImage with png error fallback
+- dedupe @radix-ui/react-dismissable-layer so popovers/selects stay clickable inside modal dialogs
+- layer select dropdown above modal z-index so in-dialog category picker opens
+- layer popover above modal z-index so in-dialog date picker opens
+- align migration filenames with remote schema_migrations versions
+- stop leaking internal error messages on logout failure
+- stop double-decrementing unread count on self mark-as-read
+- fail closed on rate-limiter errors for auth and notifications
+- only confirm the session account if its email matches the OTP target
+- make pending-login store stateless across serverless instances
+- paginate getUserByEmail beyond first 100 users
+- clear poll timer on unmount to avoid leak
+- resolve npm audit vulnerabilities (postcss + undici)
+- align local migration filenames with remote Supabase versions
+- resolve 19 TypeScript errors across linksnap and spendtrack
+- implement missing parseAdminEmails function
+- add challenges.cloudflare.com to CSP for Turnstile captcha
+- harden safe-redirect against double-encoded payloads
+- redirect to login on session expiry and show 'session expired' message
+- remove React cache() from getAuthUser — it only works in RSC renders
+- replace listUsers with targeted getUserByEmail and surface signIn errors
+- replace plaintext password cookie with server-side token store
+- rate-limit OTP verification and require pending record for resend
+- keep users on update-password page after password reset
+- stabilize OTP repository timestamp assertion
+
 ### Changed
 
 - Add release version system: `scripts/compute-version.mjs` bakes `releaseVersion`
