@@ -7,6 +7,7 @@ import { git, latestSemverTag, parseTag, formatTag } from './git-utils.mjs';
 export { parseTag, formatTag };
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const PACKAGE_LOCK = resolve(ROOT, 'package-lock.json');
 
 export function readLatestTag() {
   return latestSemverTag();
@@ -113,7 +114,23 @@ export function bumpPackageVersion(version) {
   );
   pkg.version = next;
   writeFileSync(pkgPath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
+  syncLockfileVersion(next);
   return next;
+}
+
+export function applyLockfileVersion(lock, version) {
+  lock.version = version;
+  if (lock.packages && lock.packages['']) {
+    lock.packages[''].version = version;
+  }
+  return lock;
+}
+
+export function syncLockfileVersion(version) {
+  const lock = JSON.parse(readFileSync(PACKAGE_LOCK, 'utf8'));
+  applyLockfileVersion(lock, version);
+  writeFileSync(PACKAGE_LOCK, `${JSON.stringify(lock, null, 2)}\n`, 'utf8');
+  return lock;
 }
 
 export function upsertChangelog(sectionText) {

@@ -10,6 +10,7 @@ import {
   stripType,
   groupCommits,
   changelogSection,
+  applyLockfileVersion,
 } from '../release-tools.mjs';
 
 describe('release-tools', () => {
@@ -131,6 +132,22 @@ describe('release-tools', () => {
       const section = changelogSection({ major: 1, minor: 5, patch: 0 }, '2026-08-12', []);
       expect(section).not.toContain('### Added');
       expect(section).toContain('## [1.5.0] - 2026-08-12');
+    });
+  });
+
+  describe('lockfile version sync', () => {
+    it('updates the root version of the lockfile', () => {
+      const lock = { version: '1.0.0', packages: { '': { version: '1.0.0' } } };
+      applyLockfileVersion(lock, '1.0.1');
+      expect(lock.version).toBe('1.0.1');
+      expect(lock.packages[''].version).toBe('1.0.1');
+    });
+
+    it('tolerates a lockfile without the root package entry', () => {
+      const lock = { version: '1.0.0', packages: {} };
+      applyLockfileVersion(lock, '2.0.0');
+      expect(lock.version).toBe('2.0.0');
+      expect(lock.packages['']).toBeUndefined();
     });
   });
 });

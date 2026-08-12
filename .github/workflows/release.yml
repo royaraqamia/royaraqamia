@@ -87,7 +87,7 @@ jobs:
         run: |
           git config user.name "royaraqamia bot"
           git config user.email "bot@royaraqamia.com"
-          git add package.json CHANGELOG.md backend/config/generated/app-version.ts
+          git add package.json package-lock.json CHANGELOG.md backend/config/generated/app-version.ts
           git commit -m "chore(release): v${{ steps.next.outputs.version }} [skip ci]"
           git tag -a "v${{ steps.next.outputs.version }}" -m "v${{ steps.next.outputs.version }}"
           git push origin main --tags
