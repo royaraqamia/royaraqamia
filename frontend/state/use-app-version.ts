@@ -1,30 +1,34 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getVersion } from '@/frontend/api/version';
+import { getVersion, type VersionInfo } from '@/frontend/api/version';
 
 const POLL_INTERVAL = 60_000;
 
 export interface AppVersionState {
   hasUpdate: boolean;
+  releaseVersion: string | null;
   checkVersion: () => Promise<void>;
 }
 
 export function useAppVersion(): AppVersionState {
-  const currentVersion = useRef<string | null>(null);
+  const currentVersion = useRef<VersionInfo['version'] | null>(null);
   const [hasUpdate, setHasUpdate] = useState(false);
+  const [releaseVersion, setReleaseVersion] = useState<string | null>(null);
 
   const checkVersion = useCallback(async () => {
     try {
-      const version = await getVersion();
+      const versionInfo = await getVersion();
 
       if (currentVersion.current === null) {
-        currentVersion.current = version;
+        currentVersion.current = versionInfo.version;
+        setReleaseVersion(versionInfo.releaseVersion);
         return;
       }
 
-      if (version !== currentVersion.current) {
+      if (versionInfo.version !== currentVersion.current) {
         setHasUpdate(true);
+        setReleaseVersion(versionInfo.releaseVersion);
       }
     } catch {
       // silent
@@ -42,5 +46,5 @@ export function useAppVersion(): AppVersionState {
     };
   }, [checkVersion]);
 
-  return { hasUpdate, checkVersion };
+  return { hasUpdate, releaseVersion, checkVersion };
 }

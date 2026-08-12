@@ -194,17 +194,31 @@ describe('DELETE /api/notifications/[id]', () => {
 });
 
 describe('GET /api/version', () => {
+  function expectVersionShape(body: Record<string, unknown>) {
+    expect(typeof body.releaseVersion).toBe('string');
+    expect(body.releaseVersion).toMatch(/^\d+\.\d+\.\d+/);
+    expect(typeof body.commit).toBe('string');
+    expect(typeof body.ref).toBe('string');
+    expect(typeof body.env).toBe('string');
+    expect(typeof body.releasedAt).toBe('string');
+    expect(Number.isNaN(Date.parse(String(body.releasedAt)))).toBe(false);
+  }
+
   it('returns the deployment id when present', async () => {
     vi.stubEnv('VERCEL_DEPLOYMENT_ID', 'dpl_123');
     const res = await versionGET({} as NextRequest);
-    expect(readBody(res)).toEqual({ version: 'dpl_123' });
+    const body = readBody<Record<string, string>>(res);
+    expect(body).toMatchObject({ version: 'dpl_123' });
+    expectVersionShape(body);
   });
 
   it('falls back to the git commit sha', async () => {
     vi.stubEnv('VERCEL_DEPLOYMENT_ID', '');
     vi.stubEnv('VERCEL_GIT_COMMIT_SHA', 'abc123def');
     const res = await versionGET({} as NextRequest);
-    expect(readBody(res)).toEqual({ version: 'abc123def' });
+    const body = readBody<Record<string, string>>(res);
+    expect(body).toMatchObject({ version: 'abc123def' });
+    expectVersionShape(body);
   });
 
   it('falls back to the build id', async () => {
@@ -212,7 +226,9 @@ describe('GET /api/version', () => {
     vi.stubEnv('VERCEL_GIT_COMMIT_SHA', '');
     vi.stubEnv('NEXT_BUILD_ID', 'build-1');
     const res = await versionGET({} as NextRequest);
-    expect(readBody(res)).toEqual({ version: 'build-1' });
+    const body = readBody<Record<string, string>>(res);
+    expect(body).toMatchObject({ version: 'build-1' });
+    expectVersionShape(body);
   });
 
   it('returns "unknown" when nothing is set', async () => {
@@ -220,7 +236,9 @@ describe('GET /api/version', () => {
     vi.stubEnv('VERCEL_GIT_COMMIT_SHA', '');
     vi.stubEnv('NEXT_BUILD_ID', '');
     const res = await versionGET({} as NextRequest);
-    expect(readBody(res)).toEqual({ version: 'unknown' });
+    const body = readBody<Record<string, string>>(res);
+    expect(body).toMatchObject({ version: 'unknown' });
+    expectVersionShape(body);
   });
 
   it('sets a no-store cache control header', async () => {

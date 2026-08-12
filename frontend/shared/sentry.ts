@@ -2,6 +2,7 @@
 
 import { logger } from '@/frontend/shared/logger';
 import { IS_PRODUCTION } from '@/frontend/shared/constants';
+import { appVersion } from '@/backend/config/generated/app-version';
 
 type SentryModule = typeof import('@sentry/nextjs');
 
@@ -13,6 +14,7 @@ function loadSentry(): Promise<SentryModule> {
       sentry.init({
         dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
         environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
+        release: appVersion.releaseVersion,
         integrations: [],
         tracesSampleRate: IS_PRODUCTION ? 0.1 : 0,
       });

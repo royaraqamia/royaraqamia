@@ -6,7 +6,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
-    include: ['**/*.test.{ts,tsx}'],
+    include: ['**/*.test.{ts,tsx,mjs}'],
     env: {
       NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904',
     },

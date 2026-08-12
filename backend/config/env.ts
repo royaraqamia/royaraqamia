@@ -1,3 +1,5 @@
+import { appVersion } from '@/backend/config/generated/app-version';
+
 const FALLBACK_SITE_URL = 'https://royaraqamia.com';
 
 function read(name: string): string | undefined {
@@ -57,6 +59,9 @@ export const env = {
       read('NEXT_BUILD_ID') ||
       'unknown'
     );
+  },
+  get releaseVersion(): string {
+    return appVersion.releaseVersion;
   },
   get adminEmails(): string[] {
     return (read('ADMIN_EMAILS') ?? '')

@@ -1,0 +1,98 @@
+name: 'Release'
+
+on:
+  workflow_run:
+    workflows: ['Code Quality']
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Rehearse the next release without committing/tagging/pushing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.conclusion == 'success')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+
+      - name: Idempotency Guard
+        id: guard
+        shell: bash
+        run: echo "skip=$(node scripts/release-tools.mjs --guard | sed -E 's/^skip=([A-Za-z]+).*/\1/')" >> "$GITHUB_OUTPUT"
+
+      - name: Skip release on existing release commit
+        if: steps.guard.outputs.skip == 'true'
+        run: echo "HEAD is already a tagged release commit — nothing to do"
+
+      - name: Build Verify
+        if: steps.guard.outputs.skip != 'true'
+        run: npm run build
+        env:
+          NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+          NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Compute Next Version
+        id: next
+        if: steps.guard.outputs.skip != 'true'
+        run: echo "version=$(node scripts/release-tools.mjs --next)" >> "$GITHUB_OUTPUT"
+
+      - name: Rehearse Next Release (dry-run)
+        if: steps.guard.outputs.skip != 'true' && inputs.dry_run == true
+        run: |
+          echo "next version: ${{ steps.next.outputs.version }}"
+          node scripts/release-tools.mjs --next --dry-run
+
+      - name: Bump package.json, Write CHANGELOG.md, Capture Release Notes
+        if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true
+        run: node scripts/release-tools.mjs --apply "v${{ steps.next.outputs.version }}" --notes-file "${{ runner.temp }}/release-notes.md"
+
+      - name: Regenerate committed version default
+        if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true
+        run: node scripts/compute-version.mjs
+
+      - name: Commit & Tag & Push
+        if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true
+        run: |
+          git config user.name "royaraqamia bot"
+          git config user.email "bot@royaraqamia.com"
+          git add package.json CHANGELOG.md backend/config/generated/app-version.ts
+          git commit -m "chore(release): v${{ steps.next.outputs.version }} [skip ci]"
+          git tag -a "v${{ steps.next.outputs.version }}" -m "v${{ steps.next.outputs.version }}"
+          git push origin main --tags
+
+      - name: Create GitHub Release
+        if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.next.outputs.version }}
+          body_path: ${{ runner.temp }}/release-notes.md
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}

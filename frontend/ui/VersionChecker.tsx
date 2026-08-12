@@ -8,7 +8,7 @@ import { useAppVersion } from '@/frontend/state/use-app-version';
 export function VersionChecker() {
   const [showUpdate, setShowUpdate] = useState(false);
   const { hasUpdate: hasPwaUpdate, registration, dismissUpdate } = usePWAContext();
-  const { hasUpdate: hasVersionUpdate } = useAppVersion();
+  const { hasUpdate: hasVersionUpdate, releaseVersion } = useAppVersion();
 
   useEffect(() => {
     if (hasPwaUpdate || hasVersionUpdate) {
@@ -29,5 +29,11 @@ export function VersionChecker() {
     dismissUpdate();
   }, [dismissUpdate]);
 
-  return showUpdate ? <UpdatePopup onReload={handleReload} onDismiss={handleDismiss} /> : null;
+  return showUpdate ? (
+    <UpdatePopup
+      releaseVersion={releaseVersion}
+      onReload={handleReload}
+      onDismiss={handleDismiss}
+    />
+  ) : null;
 }
