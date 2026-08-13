@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.3] - 2026-08-13
 
 ### Changed
+
 - apply prettier formatting
 - cache certificate-by-code lookups
 
 ### Fixed
+
 - harden certificate verification page (a11y, reduced motion, clipboard)
 - use timezone-safe certificate expiry check
 
