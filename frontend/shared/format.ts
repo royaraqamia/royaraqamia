@@ -2,6 +2,12 @@ export function formatDateArabic(dateStr: string): string {
   return formatHijriDate(dateStr);
 }
 
+export function isCertificateExpired(expirationDate: string | null): boolean {
+  if (!expirationDate) return false;
+  const todayUTC = new Date().toISOString().slice(0, 10);
+  return todayUTC > expirationDate;
+}
+
 export function formatHijriDate(
   date: Date | string | number,
   options: Intl.DateTimeFormatOptions = {}

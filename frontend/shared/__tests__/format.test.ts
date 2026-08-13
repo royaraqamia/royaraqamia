@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { formatDateArabic, formatHijriDate, calculateTimeAgo } from '@/frontend/shared/format';
+import {
+  formatDateArabic,
+  formatHijriDate,
+  calculateTimeAgo,
+  isCertificateExpired,
+} from '@/frontend/shared/format';
 
 describe('formatDateArabic', () => {
   it('formats a date string without throwing', () => {
@@ -38,6 +43,35 @@ describe('formatHijriDate', () => {
     });
     expect(typeof result).toBe('string');
     expect(result.length).toBeGreaterThan(0);
+  });
+});
+
+describe('isCertificateExpired', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-02T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns false when there is no expiration date', () => {
+    expect(isCertificateExpired(null)).toBe(false);
+  });
+
+  it('returns false while the expiration calendar date is still today', () => {
+    expect(isCertificateExpired('2026-08-02')).toBe(false);
+  });
+
+  it('returns true once the UTC date passes the expiration date', () => {
+    expect(isCertificateExpired('2026-08-01')).toBe(true);
+  });
+
+  it('does not drift from date-only parsing across timezones', () => {
+    vi.setSystemTime(new Date('2026-08-02T23:30:00Z'));
+    expect(isCertificateExpired('2026-08-01T00:00:00Z')).toBe(true);
+    expect(isCertificateExpired('2026-08-02T00:00:00Z')).toBe(false);
   });
 });
 

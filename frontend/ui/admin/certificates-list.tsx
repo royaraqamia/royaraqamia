@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { Certificate } from '@/shared/contracts/certificates';
+import { isCertificateExpired } from '@/frontend/shared/format';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { Badge } from '@/frontend/ui/primitives/badge';
@@ -61,7 +62,7 @@ function CertificateListItem({
   onConfirmDelete,
   isDeleteTarget,
 }: CertificatesListItemProps) {
-  const isExpired = cert.expiration_date && new Date(cert.expiration_date) < new Date();
+  const isExpired = isCertificateExpired(cert.expiration_date);
 
   return (
     <m.div

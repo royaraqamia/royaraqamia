@@ -3,7 +3,7 @@
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { Badge } from '@/frontend/ui/primitives/badge';
 import type { Certificate } from '@/shared/contracts/certificates';
-import { formatDateArabic } from '@/frontend/shared/format';
+import { formatDateArabic, isCertificateExpired } from '@/frontend/shared/format';
 import {
   ShieldCheck,
   CalendarDays,
@@ -28,8 +28,7 @@ export function CertificateResultCard({
   copied: boolean;
   onCopy: (val: string) => void;
 }) {
-  const isExpired =
-    certificate.expiration_date && new Date(certificate.expiration_date) < new Date();
+  const isExpired = isCertificateExpired(certificate.expiration_date);
 
   const details = [
     {

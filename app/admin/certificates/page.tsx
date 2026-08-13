@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getCertificates, deleteCertificate } from '@/frontend/api/certificates';
 import type { AdminCertificate } from '@/frontend/api/certificates';
+import { isCertificateExpired } from '@/frontend/shared/format';
 import { toast } from 'sonner';
 import {
   CertificatesFilterBar,
@@ -81,7 +82,7 @@ export default function CertificatesListPage() {
 
   const filtered = certificates.filter((cert) => {
     if (statusFilter === 'all') return true;
-    const expired = cert.expiration_date && new Date(cert.expiration_date) < new Date();
+    const expired = isCertificateExpired(cert.expiration_date);
     return statusFilter === 'expired' ? expired : !expired;
   });
 
