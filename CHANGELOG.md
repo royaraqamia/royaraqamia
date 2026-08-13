@@ -10,10 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.2] - 2026-08-12
 
 ### Changed
+
 - apply prettier formatting
 - simplify version support policy to current production release
 
 ### Fixed
+
 - keep package-lock.json in sync with package.json during releases
 
 ## [1.0.1] - 2026-08-12
