@@ -16,7 +16,6 @@ import {
   ArrowRight,
   Copy,
   Check,
-  Printer,
   ExternalLink,
   Search,
 } from 'lucide-react';
@@ -265,14 +264,10 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
     copyTimerRef.current = setTimeout(() => setCopied(false), 2000);
   }
 
-  function handlePrint() {
-    window.print();
-  }
-
   return (
     <div
       dir="rtl"
-      className="relative min-h-screen w-full overflow-x-hidden bg-neutral-50/50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 py-10 md:py-20 px-4 sm:px-6 lg:px-8 selection:bg-emerald-500/20 selection:text-emerald-500"
+      className="relative min-h-screen w-full overflow-x-hidden bg-neutral-50/50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 py-10 md:py-20 px-4 sm:px-6 lg:px-8 selection:bg-primary/20 selection:text-primary"
     >
       <style>{`
         @media print {
@@ -295,19 +290,19 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
       {/* Dynamic Background Ambient Glows */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden no-print">
         <m.div
-          className="absolute -top-40 right-10 h-112 w-md rounded-full bg-emerald-500/10 blur-[140px]"
+          className="absolute -top-40 right-10 h-112 w-md rounded-full bg-primary/10 blur-[140px]"
           animate={reduce ? false : { scale: [1, 1.15, 1], x: [0, 30, 0] }}
           transition={reduce ? undefined : { duration: 9, repeat: Infinity, ease: 'easeInOut' }}
         />
         <m.div
-          className="absolute -bottom-40 left-10 h-112 w-md rounded-full bg-teal-500/10 blur-[140px]"
+          className="absolute -bottom-40 left-10 h-112 w-md rounded-full bg-accent-indigo/10 blur-[140px]"
           animate={reduce ? false : { scale: [1, 1.2, 1], x: [0, -30, 0] }}
           transition={
             reduce ? undefined : { duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 1 }
           }
         />
         <m.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full bg-emerald-400/5 blur-[160px]"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full bg-primary/5 blur-[160px]"
           animate={reduce ? false : { opacity: [0.3, 0.6, 0.3] }}
           transition={reduce ? undefined : { duration: 6, repeat: Infinity, ease: 'easeInOut' }}
         />
@@ -317,22 +312,11 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
         <m.div variants={staggerVariants} initial={reduce ? false : 'hidden'} animate="visible">
           {/* Header Section */}
           <div className="mb-10 text-center flex flex-col items-center">
-            {/* Top Verified Badge */}
-            <m.div variants={fadeUp} className="mb-4">
-              <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 backdrop-blur-md">
-                <span className="relative flex h-2 w-2">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                </span>
-                وثيقة معتمدة ومسجَّلة
-              </span>
-            </m.div>
-
             {/* Glowing Icon Badge */}
             <m.div variants={fadeUp} className="mb-6 relative">
-              <div className="absolute inset-0 rounded-3xl bg-emerald-500/25 blur-xl transition-all duration-500" />
+              <div className="absolute inset-0 rounded-3xl bg-primary/25 blur-xl transition-all duration-500" />
               <m.div
-                className="relative flex size-20 md:size-24 items-center justify-center rounded-3xl bg-linear-to-br from-emerald-500 to-teal-700 shadow-xl shadow-emerald-500/25 ring-1 ring-white/20"
+                className="relative flex size-20 md:size-24 items-center justify-center rounded-3xl bg-linear-to-br from-primary to-accent-purple shadow-xl shadow-primary/25 ring-1 ring-white/20"
                 initial={reduce ? false : { scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={reduce ? undefined : { type: 'spring', stiffness: 220, damping: 18 }}
@@ -346,7 +330,7 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
               className="mb-3 text-3xl font-extrabold tracking-tight sm:text-4xl lg:text-5xl text-neutral-900 dark:text-neutral-50"
             >
               تمَّ التَّحقُّق{' '}
-              <span className="bg-linear-to-r from-emerald-600 via-teal-500 to-emerald-400 bg-clip-text text-transparent">
+              <span className="bg-linear-to-r from-primary via-accent-indigo to-accent-purple bg-clip-text text-transparent">
                 بنجاح
               </span>
             </m.h1>
@@ -355,7 +339,7 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
               variants={fadeUp}
               className="text-neutral-600 dark:text-neutral-400 text-base md:text-lg max-w-md leading-relaxed"
             >
-              هذه الشَّهادة أصيلة وموثَّقة رسميًا وتخضع لمعايير رؤية رقمية.
+              هذه الشَّهادة أصيلة ومُوثَّقَة رسميًّا وتخضع لمعايير رؤية رقمية.
             </m.p>
           </div>
 
@@ -365,24 +349,24 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
               <Card className="cert-print-card relative overflow-hidden rounded-3xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-neutral-900/80 shadow-2xl shadow-neutral-950/5 backdrop-blur-2xl transition-all duration-500">
                 {/* Visual Watermark */}
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.03] dark:opacity-[0.04]">
-                  <ShieldCheck className="size-96 text-emerald-600" />
+                  <ShieldCheck className="size-96 text-primary" />
                 </div>
 
                 {/* Aesthetic Corner Brackets */}
-                <div className="pointer-events-none absolute top-0 inset-s-0 size-12 md:size-16 border-t-2 border-s-2 border-emerald-500/30 rounded-ss-3xl" />
-                <div className="pointer-events-none absolute top-0 inset-e-0 size-12 md:size-16 border-t-2 border-e-2 border-emerald-500/30 rounded-se-3xl" />
-                <div className="pointer-events-none absolute bottom-0 inset-s-0 size-12 md:size-16 border-b-2 border-s-2 border-emerald-500/30 rounded-es-3xl" />
-                <div className="pointer-events-none absolute bottom-0 inset-e-0 size-12 md:size-16 border-b-2 border-e-2 border-emerald-500/30 rounded-ee-3xl" />
+                <div className="pointer-events-none absolute top-0 inset-s-0 size-12 md:size-16 border-t-2 border-s-2 border-primary/30 rounded-ss-3xl" />
+                <div className="pointer-events-none absolute top-0 inset-e-0 size-12 md:size-16 border-t-2 border-e-2 border-primary/30 rounded-se-3xl" />
+                <div className="pointer-events-none absolute bottom-0 inset-s-0 size-12 md:size-16 border-b-2 border-s-2 border-primary/30 rounded-es-3xl" />
+                <div className="pointer-events-none absolute bottom-0 inset-e-0 size-12 md:size-16 border-b-2 border-e-2 border-primary/30 rounded-ee-3xl" />
 
                 {/* Card Header Banner */}
-                <div className="bg-linear-to-l from-emerald-500/10 via-emerald-500/5 to-transparent flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200/60 dark:border-neutral-800/60 px-6 md:px-8 py-5">
+                <div className="bg-linear-to-l from-primary/10 via-primary/5 to-transparent flex flex-wrap items-center justify-between gap-4 border-b border-neutral-200/60 dark:border-neutral-800/60 px-6 md:px-8 py-5">
                   <div className="flex items-center gap-3.5">
-                    <div className="relative flex size-11 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-emerald-500 to-teal-600 text-white shadow-md shadow-emerald-500/20">
+                    <div className="relative flex size-11 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-primary to-accent-purple text-white shadow-md shadow-primary/20">
                       <ShieldCheck className="size-6 text-white" />
                     </div>
                     <div>
                       <h2 className="font-bold text-base md:text-lg text-neutral-900 dark:text-neutral-100">
-                        شهادة موثَّقة
+                        شهادة مُوثَّقَة
                       </h2>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
                         صادرة عن رؤية رقمية
@@ -396,15 +380,15 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
                   >
                     <span className="relative flex h-2 w-2">
                       {!isExpired && (
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
                       )}
                       <span
                         className={`relative inline-flex h-2 w-2 rounded-full ${
-                          isExpired ? 'bg-red-500' : 'bg-emerald-500'
+                          isExpired ? 'bg-red-500' : 'bg-primary'
                         }`}
                       />
                     </span>
-                    {isExpired ? 'منتهية الصَّلاحيَّة' : 'صالحة ومعتمدة'}
+                    {isExpired ? 'منتهية الصَّلاحيَّة' : 'صالحة ومُعتمَدَة'}
                   </Badge>
                 </div>
 
@@ -426,7 +410,7 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
                           }
                           className="group relative flex items-start gap-3.5 p-3.5 rounded-2xl bg-neutral-100/60 dark:bg-neutral-800/40 border border-neutral-200/50 dark:border-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-all duration-300"
                         >
-                          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 shadow-xs border border-neutral-200/60 dark:border-neutral-700/60 group-hover:bg-emerald-500 group-hover:text-white dark:group-hover:bg-emerald-500 dark:group-hover:text-white transition-all duration-300">
+                          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 shadow-xs border border-neutral-200/60 dark:border-neutral-700/60 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary dark:group-hover:text-primary-foreground transition-all duration-300">
                             {detail.icon}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -438,7 +422,7 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
                               title={detail.value}
                               className={`text-sm md:text-base font-bold truncate ${
                                 detail.isCode
-                                  ? 'font-mono text-emerald-600 dark:text-emerald-400 tracking-wider text-right'
+                                  ? 'font-mono text-primary tracking-wider text-right'
                                   : detail.isExp && isExpired
                                     ? 'text-red-600 dark:text-red-400'
                                     : 'text-neutral-900 dark:text-neutral-100'
@@ -465,17 +449,6 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
                           className="[&_svg]:w-36 [&_svg]:h-36 md:[&_svg]:w-40 md:[&_svg]:h-40"
                         />
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
-                          امسح الرَّمز التَّفاعلي للتَّحقُّق
-                        </p>
-                        <p
-                          dir="ltr"
-                          className="font-mono text-[11px] font-medium tracking-wider text-neutral-600 dark:text-neutral-400"
-                        >
-                          {certificate.certificate_code}
-                        </p>
-                      </div>
                     </m.div>
                   </div>
                 </CardContent>
@@ -491,7 +464,7 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
             transition={reduce ? undefined : { delay: 0.5, duration: 0.4 }}
           >
             <span className="sr-only" role="status" aria-live="polite">
-              {copied ? 'تمّ نسخ رابط التَّحقُّق' : ''}
+              {copied ? 'تمَّ نسخ رابط التَّحقُّق' : ''}
             </span>
             <Button
               asChild
@@ -512,21 +485,11 @@ function CertificateFound({ certificate }: { certificate: Certificate }) {
               onClick={copyLink}
             >
               {copied ? (
-                <Check className="size-4 text-emerald-500 animate-in zoom-in-50" />
+                <Check className="size-4 text-primary animate-in zoom-in-50" />
               ) : (
                 <Copy className="size-4" />
               )}
               {copied ? 'تمَّ النَّسخ' : 'نسخ رابط التَّحقُّق'}
-            </Button>
-
-            <Button
-              variant="outline"
-              size="lg"
-              className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
-              onClick={handlePrint}
-            >
-              <Printer className="size-4" />
-              طباعة
             </Button>
 
             <Button
