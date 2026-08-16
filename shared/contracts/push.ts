@@ -15,7 +15,7 @@ export const PushUnsubscribeSchema = z.object({
 });
 
 export const PushWebhookSchema = z.object({
-  user_ids: z.array(z.string().uuid()).min(1).max(1000),
+  user_ids: z.array(z.string().uuid()).min(1).max(10000),
 });
 
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;

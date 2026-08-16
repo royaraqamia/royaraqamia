@@ -220,7 +220,12 @@ self.addEventListener('notificationclick', (event) => {
       });
       for (const client of windowClients) {
         if (new URL(client.url).origin !== self.location.origin) continue;
-        await client.navigate(targetUrl.href);
+        try {
+          await client.navigate(targetUrl.href);
+        } catch {
+          // Uncontrolled client (loaded before the SW took control) can't be
+          // navigated; focus it and keep its current page instead.
+        }
         await client.focus();
         return;
       }

@@ -3,6 +3,7 @@ import { getAuthUser } from '@/backend/middleware/auth-guard';
 import { createPushSubscriptionsRepository } from '@/backend/repositories/push/supabase-repository';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { createPushNotifier, runAfter } from '@/backend/config/push';
+import { mapWithConcurrency } from '@/backend/services/push/push-service';
 import { env } from '@/backend/config/env';
 import {
   PushSubscriptionSchema,
@@ -126,14 +127,17 @@ export async function webhookPush(body: unknown, headers: Headers): Promise<Http
 
     const uniqueIds = Array.from(new Set(parsed.data.user_ids));
     const allowedIds: string[] = [];
-    for (const userId of uniqueIds) {
+    // Bounded concurrency: a reminder run can fan out to hundreds of users and
+    // each dedupe check is an Upstash round-trip; sequential awaits would
+    // stretch past the function duration limit at scale.
+    await mapWithConcurrency(uniqueIds, 10, async (userId) => {
       const allowed = await checkRateLimit(
         `push:habit:${userId}:${utcDateKey()}`,
         1,
         WEBHOOK_RATE_WINDOW_MS
       );
       if (allowed) allowedIds.push(userId);
-    }
+    });
 
     if (allowedIds.length > 0) {
       runAfter(() => {

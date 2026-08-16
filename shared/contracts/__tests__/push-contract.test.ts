@@ -85,6 +85,14 @@ describe('PushWebhookSchema', () => {
     expect(PushWebhookSchema.safeParse({ user_ids: [] }).success).toBe(false);
   });
 
+  it('accepts a large batch (habit reminder fan-out)', () => {
+    const large = Array.from(
+      { length: 2000 },
+      (_, i) => `00000000-0000-4000-8000-${String(i).padStart(12, '0')}`
+    );
+    expect(PushWebhookSchema.safeParse({ user_ids: large }).success).toBe(true);
+  });
+
   it('rejects non-uuid values', () => {
     expect(PushWebhookSchema.safeParse({ user_ids: ['not-a-uuid'] }).success).toBe(false);
     expect(PushWebhookSchema.safeParse({ user_ids: [userIds[0]!, 'garbage'] }).success).toBe(false);

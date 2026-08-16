@@ -29,6 +29,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
 
   const registration = await navigator.serviceWorker.ready;
   let subscription = await registration.pushManager.getSubscription();
+  let created = false;
 
   if (!subscription) {
     const permission = await Notification.requestPermission();
@@ -37,6 +38,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
     });
+    created = true;
   }
 
   try {
@@ -46,7 +48,9 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
     });
     return 'subscribed';
   } catch {
-    await subscription.unsubscribe();
+    // Only revoke a subscription we just created; a pre-existing one may
+    // still be valid server-side and will be pruned on 404/410 if not.
+    if (created) await subscription.unsubscribe();
     return 'denied';
   }
 }

@@ -53,7 +53,7 @@ function isEndpointAllowed(endpoint: string, allowlist: string[]): boolean {
   });
 }
 
-async function mapWithConcurrency<T>(
+export async function mapWithConcurrency<T>(
   items: T[],
   limit: number,
   fn: (item: T) => Promise<void>
