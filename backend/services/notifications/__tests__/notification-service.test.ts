@@ -102,7 +102,33 @@ describe('NotificationService', () => {
       );
     });
 
-    it('returns 0 (no-op) when findAllUserIds is not provided', async () => {
+    it('uses precomputed ids when provided and skips the findAllUserIds lookup', async () => {
+      const repository: NotificationRepository = {
+        findByUserId: vi.fn(),
+        findUnreadCount: vi.fn(),
+        create: vi.fn(),
+        broadcast: vi.fn(async (_input, userIds) => userIds.length),
+        markAsRead: vi.fn(),
+        markAllAsRead: vi.fn(),
+        delete: vi.fn(),
+      };
+      const findAllUserIds = vi.fn(async () => ['u-1']);
+      const service = new NotificationService(repository, {
+        checkRateLimit: vi.fn(async () => true) as NotificationServiceDeps['checkRateLimit'],
+        findAllUserIds,
+      });
+
+      await expect(
+        service.broadcast({ type: 'system_announcement', title: 'إعلان' }, ['u-9', 'u-10'])
+      ).resolves.toBe(2);
+      expect(findAllUserIds).not.toHaveBeenCalled();
+      expect(repository.broadcast).toHaveBeenCalledWith(
+        { type: 'system_announcement', title: 'إعلان' },
+        ['u-9', 'u-10']
+      );
+    });
+
+    it('returns 0 (no-op) when findAllUserIds is not provided and no ids are given', async () => {
       const { repository, service } = makeDeps();
       (repository.broadcast as ReturnType<typeof vi.fn>).mockResolvedValue(0);
 
@@ -110,6 +136,52 @@ describe('NotificationService', () => {
         service.broadcast({ type: 'system_announcement', title: 'إعلان' })
       ).resolves.toBe(0);
       expect(repository.broadcast).not.toHaveBeenCalled();
+    });
+
+    it('returns 0 (no-op) when the id list is empty', async () => {
+      const repository: NotificationRepository = {
+        findByUserId: vi.fn(),
+        findUnreadCount: vi.fn(),
+        create: vi.fn(),
+        broadcast: vi.fn(),
+        markAsRead: vi.fn(),
+        markAllAsRead: vi.fn(),
+        delete: vi.fn(),
+      };
+      const service = new NotificationService(repository, {
+        checkRateLimit: vi.fn(async () => true) as NotificationServiceDeps['checkRateLimit'],
+      });
+
+      await expect(
+        service.broadcast({ type: 'system_announcement', title: 'إعلان' }, [])
+      ).resolves.toBe(0);
+      expect(repository.broadcast).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getAllUserIds', () => {
+    it('returns all user ids via findAllUserIds', async () => {
+      const repository: NotificationRepository = {
+        findByUserId: vi.fn(),
+        findUnreadCount: vi.fn(),
+        create: vi.fn(),
+        broadcast: vi.fn(),
+        markAsRead: vi.fn(),
+        markAllAsRead: vi.fn(),
+        delete: vi.fn(),
+      };
+      const findAllUserIds = vi.fn(async () => ['u-1', 'u-2']);
+      const service = new NotificationService(repository, {
+        checkRateLimit: vi.fn(async () => true) as NotificationServiceDeps['checkRateLimit'],
+        findAllUserIds,
+      });
+
+      await expect(service.getAllUserIds()).resolves.toEqual(['u-1', 'u-2']);
+    });
+
+    it('returns an empty array when findAllUserIds is not provided', async () => {
+      const { service } = makeDeps();
+      await expect(service.getAllUserIds()).resolves.toEqual([]);
     });
   });
 

@@ -35,10 +35,15 @@ export class NotificationService {
     return this.repo.create(input);
   }
 
-  async broadcast(input: NotificationBroadcastInput): Promise<number> {
-    if (!this.findAllUserIds) return 0;
-    const userIds = await this.findAllUserIds();
-    return this.repo.broadcast(input, userIds);
+  async getAllUserIds(): Promise<string[]> {
+    if (!this.findAllUserIds) return [];
+    return this.findAllUserIds();
+  }
+
+  async broadcast(input: NotificationBroadcastInput, userIds?: string[]): Promise<number> {
+    const targets = userIds ?? (await this.getAllUserIds());
+    if (targets.length === 0) return 0;
+    return this.repo.broadcast(input, targets);
   }
 
   async markAsRead(id: string, userId: string): Promise<void> {

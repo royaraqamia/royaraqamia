@@ -4,11 +4,16 @@ import {
   NotificationService,
   type NotificationServiceDeps,
 } from '@/backend/services/notifications/notification-service';
-import type { NotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
+import type {
+  NotificationRepository,
+  NotificationBroadcastInput,
+} from '@/backend/repositories/notifications/notifications-repository';
 import { createSupabaseNotificationRepository } from '@/backend/repositories/notifications/supabase-repository';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { getAdminSupabase } from '@/backend/config/supabase';
+import { createPushNotifier, runAfter } from '@/backend/config/push';
 import { logger } from '@/backend/shared/logger';
+import { toPushUrl } from '@/shared/contracts/push';
 import type { NotificationCreateInput } from '@/shared/contracts/notifications';
 
 export function createNotificationService(
@@ -54,13 +59,56 @@ export type NotificationProducer = (input: NotificationCreateInput) => Promise<v
 
 export function createAdminNotificationProducer(): NotificationProducer {
   const service = createAdminNotificationService();
+  const pushNotifier = createPushNotifier();
   return async (input) => {
     try {
-      await service.create(input);
+      const created = await service.create(input);
+      runAfter(() =>
+        pushNotifier.sendToUser(input.user_id, {
+          title: input.title,
+          body: input.body,
+          url: toPushUrl(input.type, input.metadata),
+          type: input.type,
+          notificationId: created?.id,
+        })
+      );
     } catch (error) {
       logger.error(`Failed to create ${input.type} notification for user [${input.user_id}]`, {
         error: String(error),
       });
+    }
+  };
+}
+
+export type AdminBroadcaster = (input: NotificationBroadcastInput) => Promise<number>;
+
+/**
+ * Fail-safe admin announcement broadcaster: writes one notification row per
+ * user via the service role, then fans out OS-level Web Push in the
+ * background. Never throws to callers.
+ */
+export function createAdminBroadcaster(): AdminBroadcaster {
+  const service = createAdminNotificationService();
+  const pushNotifier = createPushNotifier();
+  return async (input) => {
+    try {
+      const userIds = await service.getAllUserIds();
+      if (userIds.length === 0) return 0;
+      const sent = await service.broadcast(input, userIds);
+      runAfter(() =>
+        pushNotifier.sendToUsers(userIds, {
+          title: input.title,
+          body: input.body,
+          url: toPushUrl(input.type, input.metadata),
+          type: input.type,
+        })
+      );
+      return sent;
+    } catch (error) {
+      logger.error(`Failed to broadcast ${input.type} notification`, {
+        error: String(error),
+      });
+      return 0;
     }
   };
 }

@@ -1,7 +1,7 @@
 import { getAuthUser } from '@/backend/middleware/auth-guard';
 import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
 import {
-  createAdminNotificationService,
+  createAdminBroadcaster,
   createSupabaseNotificationService,
 } from '@/backend/config/notifications';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
@@ -82,7 +82,7 @@ export async function broadcastAnnouncement(body: {
       return jsonResult(400, { success: false, error: 'العنوان مطلوب' });
     }
 
-    const sent = await createAdminNotificationService().broadcast({
+    const sent = await createAdminBroadcaster()({
       type: 'system_announcement',
       title,
       body: content || undefined,
