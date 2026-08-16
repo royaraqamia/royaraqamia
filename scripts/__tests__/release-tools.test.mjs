@@ -12,6 +12,7 @@ import {
   groupCommits,
   changelogSection,
   applyLockfileVersion,
+  gradeWindows,
 } from '../release-tools.mjs';
 
 describe('release-tools', () => {
@@ -122,6 +123,54 @@ describe('release-tools', () => {
         minor: 1,
         patch: 0,
       });
+    });
+  });
+
+  describe('gradeWindows (replay audit core)', () => {
+    const tags = [
+      { tag: 'v1.0.0', version: { major: 1, minor: 0, patch: 0 } },
+      { tag: 'v1.0.1', version: { major: 1, minor: 0, patch: 1 } },
+      { tag: 'v1.0.2', version: { major: 1, minor: 0, patch: 2 } },
+    ];
+    const noMessages = () => [];
+
+    it('grades each window and accumulates the version', () => {
+      const readMessages = (from, to) =>
+        from === 'v1.0.0' && to === 'v1.0.1'
+          ? ['feat: add push notifications', 'style: prettier']
+          : from === 'v1.0.1' && to === 'v1.0.2'
+            ? ['fix: typo', 'chore: tidy']
+            : [];
+      const { windows, final } = gradeWindows(tags, readMessages);
+      expect(windows).toHaveLength(2);
+      expect(windows[0].version).toEqual({ major: 1, minor: 1, patch: 0 });
+      expect(windows[1].version).toEqual({ major: 1, minor: 1, patch: 1 });
+      expect(final).toEqual({ major: 1, minor: 1, patch: 1 });
+    });
+
+    it('skips an empty trailing window after the last tag', () => {
+      const { windows, final } = gradeWindows(tags, noMessages);
+      expect(windows).toHaveLength(2);
+      expect(final).toEqual({ major: 1, minor: 0, patch: 2 });
+    });
+
+    it('grades from 0.0.0 when no tags exist', () => {
+      const readMessages = () => ['feat: init'];
+      const { windows, final } = gradeWindows([], readMessages);
+      expect(windows).toHaveLength(1);
+      expect(windows[0].from).toBeNull();
+      expect(final).toEqual({ major: 0, minor: 1, patch: 0 });
+    });
+
+    it('bumps major when a window contains a breaking change', () => {
+      const readMessages = (from, to) =>
+        from === 'v1.0.0' && to === 'v1.0.1'
+          ? ['fix!: remove legacy api']
+          : from === 'v1.0.1' && to === 'v1.0.2'
+            ? ['chore: tidy']
+            : [];
+      const { final } = gradeWindows(tags, readMessages);
+      expect(final).toEqual({ major: 2, minor: 0, patch: 1 });
     });
   });
 

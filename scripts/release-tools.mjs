@@ -128,6 +128,66 @@ export function readCommittedMessages(fromRef, toRef = 'HEAD') {
     .filter((line) => line.length > 0);
 }
 
+function sortTagsAscending(rawTags) {
+  return (rawTags ?? '')
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .map((tag) => ({ tag, version: parseTag(tag) }))
+    .filter((entry) => entry.version !== null)
+    .sort((a, b) => {
+      if (a.version.major !== b.version.major) return a.version.major - b.version.major;
+      if (a.version.minor !== b.version.minor) return a.version.minor - b.version.minor;
+      return a.version.patch - b.version.patch;
+    });
+}
+
+/**
+ * Pure window-grading core for the replay audit. Walks the given sorted
+ * semver tags (ascending) plus any trailing un-released commits and applies the
+ * current bump rules to each window. `readMessages(from, to)` must return the
+ * commit subjects in that range (excluding release commits).
+ */
+export function gradeWindows(tags, readMessages) {
+  const windows = [];
+  if (tags.length === 0) {
+    const messages = readMessages(null, 'HEAD');
+    const version = nextVersionFromMessages(null, messages);
+    windows.push({ from: null, to: 'HEAD', messages, version });
+    return { windows, final: version };
+  }
+  let current = tags[0].version;
+  for (let i = 1; i < tags.length; i++) {
+    const messages = readMessages(tags[i - 1].tag, tags[i].tag);
+    const version = nextVersionFromMessages(formatTag(current), messages);
+    windows.push({ from: tags[i - 1].tag, to: tags[i].tag, messages, version });
+    current = version;
+  }
+  const tailMessages = readMessages(tags[tags.length - 1].tag, 'HEAD');
+  if (tailMessages.length > 0) {
+    const version = nextVersionFromMessages(formatTag(current), tailMessages);
+    windows.push({ from: tags[tags.length - 1].tag, to: 'HEAD', messages: tailMessages, version });
+    current = version;
+  }
+  return { windows, final: current };
+}
+
+/**
+ * Re-grades every release window between consecutive semver tags (plus the
+ * open window after the last tag) using the current "grade across all commits
+ * since last tag" rules, returning the true accumulated version. Read-only —
+ * never mutates the repo.
+ */
+export function replayVersions() {
+  const tags = sortTagsAscending(git(['tag', '--merged', 'HEAD'], null));
+  const readMessages = (from, to) =>
+    (from
+      ? readCommittedMessages(from, to)
+      : readCommittedMessages(git(['rev-list', '--max-parents=0', 'HEAD'], 'HEAD'), to)
+    ).filter((m) => !isReleaseCommit(m));
+  return gradeWindows(tags, readMessages);
+}
+
 export function bumpPackageVersion(version) {
   const pkgPath = resolve(ROOT, 'package.json');
   const pkg = JSON.parse(readFileSync(pkgPath, 'utf8'));
@@ -197,6 +257,18 @@ function main() {
     return;
   }
 
+  if (has('--replay')) {
+    const { windows, final } = replayVersions();
+    for (const w of windows) {
+      const fromLabel = w.from ?? '(root)';
+      process.stdout.write(
+        `${fromLabel}..${w.to}: ${w.messages.length} commits -> ${formatTag(w.version)}\n`
+      );
+    }
+    process.stdout.write(`final=${formatTag(final)}\n`);
+    return;
+  }
+
   if (has('--next')) {
     const lastTag = readLatestTag();
     const from = lastTag ?? git(['rev-list', '--max-parents=0', 'HEAD'], 'HEAD');
@@ -231,7 +303,7 @@ function main() {
   }
 
   process.stdout.write(
-    'usage: node scripts/release-tools.mjs (--guard | --next [--dry-run] | --apply <version> [--notes-file <path>])\n'
+    'usage: node scripts/release-tools.mjs (--guard | --next [--dry-run] | --replay | --apply <version> [--notes-file <path>])\n'
   );
 }
 

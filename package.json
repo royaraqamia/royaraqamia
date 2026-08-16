@@ -23,6 +23,7 @@
     "test:e2e": "npx playwright test",
     "icons": "node scripts/generate-icons.mjs",
     "version:next": "node scripts/release-tools.mjs --next --dry-run",
+    "version:replay": "node scripts/release-tools.mjs --replay",
     "check:env-docs": "node scripts/check-env-docs.mjs"
   },
   "dependencies": {
