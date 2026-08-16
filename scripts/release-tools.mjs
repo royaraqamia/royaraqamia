@@ -34,6 +34,28 @@ export function nextVersion(currentVersion, message) {
   return { major: current.major, minor: current.minor, patch: current.patch + 1 };
 }
 
+function isHigherBump(a, b) {
+  if (a.major !== b.major) return a.major > b.major;
+  if (a.minor !== b.minor) return a.minor > b.minor;
+  return a.patch > b.patch;
+}
+
+/**
+ * Aggregates the bump over every commit since the last tag and returns the
+ * highest bump level found (breaking > feature > patch). Grading from a single
+ * tip commit would let a trailing cosmetic commit (e.g. `style:`) downgrade a
+ * feature release to a patch.
+ */
+export function nextVersionFromMessages(currentVersion, messages) {
+  const current = parseTag(currentVersion) ?? { major: 0, minor: 0, patch: 0 };
+  let best = null;
+  for (const message of messages) {
+    const next = nextVersion(currentVersion, message);
+    if (!best || isHigherBump(next, best)) best = next;
+  }
+  return best ?? { major: current.major, minor: current.minor, patch: current.patch + 1 };
+}
+
 export function isReleaseCommit(message) {
   return /^chore\(release\):/i.test(message || '');
 }
@@ -177,12 +199,11 @@ function main() {
 
   if (has('--next')) {
     const lastTag = readLatestTag();
-    const headMessage = git(['log', '-1', '--format=%s'], '').trim();
-    const next = nextVersion(lastTag, headMessage);
+    const from = lastTag ?? git(['rev-list', '--max-parents=0', 'HEAD'], 'HEAD');
+    const messages = from ? readCommittedMessages(from) : [];
+    const next = nextVersionFromMessages(lastTag, messages);
     process.stdout.write(`${formatTag(next)}\n`);
     if (dryRun) {
-      const from = lastTag ?? git(['rev-list', '--max-parents=0', 'HEAD'], 'HEAD');
-      const messages = from ? readCommittedMessages(from) : [];
       process.stdout.write(changelogSection(next, new Date().toISOString().slice(0, 10), messages));
     }
     return;

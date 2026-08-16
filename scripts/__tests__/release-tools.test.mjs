@@ -3,6 +3,7 @@ import {
   parseTag,
   formatTag,
   nextVersion,
+  nextVersionFromMessages,
   isBreakingCommit,
   isFeatCommit,
   isReleaseCommit,
@@ -72,6 +73,55 @@ describe('release-tools', () => {
     it('does not treat a breaking-feat commit as a normal feat', () => {
       expect(isFeatCommit('feat!: breaking')).toBe(false);
       expect(isBreakingCommit('feat!: breaking')).toBe(true);
+    });
+  });
+
+  describe('nextVersionFromMessages', () => {
+    it('bumps minor when any commit in the range is a feat, even if the tip is cosmetic', () => {
+      const messages = [
+        'feat(push): add native push notifications',
+        'fix(push): harden webhook fan-out',
+        'style: apply prettier formatting',
+      ];
+      expect(nextVersionFromMessages('1.4.1', messages)).toEqual({
+        major: 1,
+        minor: 5,
+        patch: 0,
+      });
+    });
+
+    it('bumps major when any commit in the range is breaking', () => {
+      const messages = ['feat(push): add feature', 'fix!: remove legacy api', 'chore: tidy'];
+      expect(nextVersionFromMessages('1.4.1', messages)).toEqual({
+        major: 2,
+        minor: 0,
+        patch: 0,
+      });
+    });
+
+    it('bumps patch when no commit is a feat or breaking change', () => {
+      const messages = [
+        'style: apply prettier formatting',
+        'fix: typo on landing',
+        'chore: update',
+      ];
+      expect(nextVersionFromMessages('1.4.1', messages)).toEqual({
+        major: 1,
+        minor: 4,
+        patch: 2,
+      });
+    });
+
+    it('bumps patch on an empty range (nothing new to release)', () => {
+      expect(nextVersionFromMessages('1.4.1', [])).toEqual({ major: 1, minor: 4, patch: 2 });
+    });
+
+    it('starts from 0.1.0 when no tag exists and a feat is present', () => {
+      expect(nextVersionFromMessages(null, ['feat: init', 'style: tidy'])).toEqual({
+        major: 0,
+        minor: 1,
+        patch: 0,
+      });
     });
   });
 
