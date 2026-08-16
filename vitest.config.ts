@@ -9,6 +9,7 @@ export default defineConfig({
     include: ['**/*.test.{ts,tsx,mjs}'],
     env: {
       NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904',
+      NEXT_PUBLIC_VAPID_PUBLIC_KEY: 'test-public-key',
     },
   },
   resolve: {

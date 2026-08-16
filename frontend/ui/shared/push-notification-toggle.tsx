@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { BellRing, BellOff, Ban } from 'lucide-react';
 import {
+  isPushDisabledByUser,
   isPushSupported,
   registerPushSubscriptionChangeHandler,
   subscribeToPush,
@@ -39,6 +40,7 @@ export function PushNotificationToggle() {
   useEffect(() => {
     if (!isPushSupported()) return;
     if (Notification.permission !== 'granted') return;
+    if (isPushDisabledByUser()) return;
     void (async () => {
       const registration = await navigator.serviceWorker.ready;
       const existing = await registration.pushManager.getSubscription();
@@ -79,7 +81,7 @@ export function PushNotificationToggle() {
     return (
       <div className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] text-muted-foreground/60">
         <Ban size={14} className="shrink-0" />
-        <span>الإشعارات غير مدعومة في هذا المتصفح</span>
+        <span>الإشعارات غير مدعومة في هذا المتصفِّح</span>
       </div>
     );
   }
@@ -88,7 +90,7 @@ export function PushNotificationToggle() {
     return (
       <div className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] text-muted-foreground/70">
         <Ban size={14} className="shrink-0" />
-        <span>الإشعارات محظورة في المتصفح — فعّلها من إعدادات الموقع</span>
+        <span>الإشعارات محظورة في المتصفِّح — فعِّلها من إعدادات الموقع</span>
       </div>
     );
   }
@@ -113,9 +115,7 @@ export function PushNotificationToggle() {
       ) : (
         <BellOff size={15} className="shrink-0" />
       )}
-      <span>
-        {busy ? '...' : isEnabled ? 'إيقاف إشعارات سطح المكتب' : 'تفعيل إشعارات سطح المكتب'}
-      </span>
+      <span>{busy ? '...' : isEnabled ? 'إيقاف إشعارات الجهاز' : 'تفعيل إشعارات الجهاز'}</span>
     </button>
   );
 }

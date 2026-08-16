@@ -1,6 +1,27 @@
 import { request } from '@/frontend/transport/http';
 import { VAPID_PUBLIC_KEY } from '@/frontend/shared/constants';
 
+const PUSH_DISABLED_KEY = 'royaraqamia.push.disabled';
+
+export function isPushDisabledByUser(): boolean {
+  if (typeof window === 'undefined' || !('localStorage' in window)) return false;
+  try {
+    return window.localStorage.getItem(PUSH_DISABLED_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+export function setPushDisabledByUser(disabled: boolean): void {
+  if (typeof window === 'undefined' || !('localStorage' in window)) return;
+  try {
+    if (disabled) window.localStorage.setItem(PUSH_DISABLED_KEY, '1');
+    else window.localStorage.removeItem(PUSH_DISABLED_KEY);
+  } catch {
+    return;
+  }
+}
+
 export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
@@ -46,6 +67,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
       method: 'POST',
       body: JSON.stringify(subscription.toJSON()),
     });
+    setPushDisabledByUser(false);
     return 'subscribed';
   } catch {
     // Only revoke a subscription we just created; a pre-existing one may
@@ -57,6 +79,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
 
 export async function unsubscribeFromPush(): Promise<void> {
   if (!isPushSupported()) return;
+  setPushDisabledByUser(true);
   const registration = await navigator.serviceWorker.ready;
   const subscription = await registration.pushManager.getSubscription();
   if (!subscription) return;
