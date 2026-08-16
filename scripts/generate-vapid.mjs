@@ -1,4 +1,6 @@
-import { generateVAPIDKeys } from 'web-push';
+import webpush from 'web-push';
+
+const { generateVAPIDKeys } = webpush;
 
 const keys = generateVAPIDKeys();
 
