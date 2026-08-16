@@ -18,6 +18,7 @@ import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
 import { ScrollArea } from '@/frontend/ui/primitives/scroll-area';
 import { usePortalPopover } from './use-portal-popover';
+import { PushNotificationToggle } from './push-notification-toggle';
 
 const typeIcons: Record<string, React.ReactNode> = {
   certificate_issued: <BadgeCheck size={18} />,
@@ -250,6 +251,11 @@ export function NotificationDropdown() {
                 </ul>
               )}
             </ScrollArea>
+
+            {/* Footer: OS-level push toggle */}
+            <div className="border-t border-border/60">
+              <PushNotificationToggle />
+            </div>
           </div>,
           document.body
         )}

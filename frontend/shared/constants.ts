@@ -12,6 +12,8 @@ export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
 
 export const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? '';
 
+export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? '';
+
 export const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? '';
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://royaraqamia.com';
