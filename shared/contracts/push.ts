@@ -10,6 +10,10 @@ export const PushSubscriptionSchema = z.object({
   }),
 });
 
+export const PushUnsubscribeSchema = z.object({
+  endpoint: z.url(),
+});
+
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
 
 export interface PushPayload {
