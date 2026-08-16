@@ -9,3 +9,6 @@ coverage/
 public/
 *.min.js
 package-lock.json
+CHANGELOG.md
+package.json
+backend/config/generated/app-version.ts
