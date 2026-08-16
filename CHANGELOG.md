@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-08-16
+
+### Changed
+- ignore CHANGELOG, package.json, and generated app-version in prettier
+
+### Fixed
+- keep push disabled when toggled off
+- grade next version across all commits since last tag
+
 ## [1.0.6] - 2026-08-16
 
 ### Changed
