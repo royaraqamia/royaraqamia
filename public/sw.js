@@ -180,3 +180,51 @@ self.addEventListener('message', (event) => {
     }
   })());
 });
+
+self.addEventListener('push', (event) => {
+  let payload = {};
+  try {
+    const data = event.data ? event.data.json() : {};
+    if (data && typeof data === 'object') payload = data;
+  } catch {
+    payload = {};
+  }
+
+  const title = typeof payload.title === 'string' ? payload.title : 'رؤية رقمية';
+  const notificationId = typeof payload.notificationId === 'string' ? payload.notificationId : undefined;
+
+  const options = {
+    body: typeof payload.body === 'string' && payload.body.length > 0 ? payload.body : undefined,
+    icon: '/icons/icon-192x192.png',
+    badge: '/icons/icon-192x192.png',
+    data: {
+      url: typeof payload.url === 'string' ? payload.url : '/',
+      type: typeof payload.type === 'string' ? payload.type : undefined,
+      notificationId,
+    },
+  };
+  if (notificationId) options.tag = notificationId;
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data?.url || '/', self.location.origin);
+
+  event.waitUntil(
+    (async () => {
+      const windowClients = await self.clients.matchAll({
+        type: 'window',
+        includeUncontrolled: true,
+      });
+      for (const client of windowClients) {
+        if (new URL(client.url).origin !== self.location.origin) continue;
+        await client.navigate(targetUrl.href);
+        await client.focus();
+        return;
+      }
+      await self.clients.openWindow(targetUrl.href);
+    })()
+  );
+});
