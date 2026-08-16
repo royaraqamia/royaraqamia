@@ -1,4 +1,4 @@
-type NotificationType =
+export type NotificationType =
   | 'certificate_issued'
   | 'post_published'
   | 'habit_reminder'
