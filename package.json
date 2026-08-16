@@ -62,7 +62,7 @@
     "@tiptap/extension-placeholder": "^3.29.0",
     "@tiptap/extension-text-align": "^3.29.0",
     "@tiptap/pm": "^3.29.0",
-    "@tiptap/react": "^3.29.0",
+    "@tiptap/react": "^3.29.2",
     "@tiptap/starter-kit": "^3.29.0",
     "@types/turndown": "^5.0.6",
     "@upstash/ratelimit": "^2.0.8",
