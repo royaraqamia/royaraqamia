@@ -121,7 +121,7 @@
     "@testing-library/jest-dom": "^7.0.0",
     "@testing-library/react": "^16.3.2",
     "@types/canvas-confetti": "^1.9.0",
-    "@types/node": "^26.1.1",
+    "@types/node": "^26.1.2",
     "@types/qrcode": "^1.5.6",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
