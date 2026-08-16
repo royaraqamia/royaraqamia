@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-08-16
+
+### Changed
+
+- Correct release versioning retroactively: v1.0.1-v1.0.6 were graded from the
+  single tip commit before each tag (pre-fix `release-tools.mjs --next`), which
+  released the 49-feature window under v1.0.1 and the 11-feature push window
+  under v1.0.6 as patch bumps. Replaying the corrected "grade across all
+  commits since last tag" logic over the actual release windows yields 1.1.0,
+  1.1.1, 1.1.2, 1.1.3, 1.1.4, 1.2.0, and 1.2.1. This release realigns the
+  committed version to that estimated value; historical tags stay untouched.
+- add `npm run version:replay` — read-only audit that re-grades every release
+  window from git history and prints the true accumulated version.
+
 ## [1.0.7] - 2026-08-16
 
 ### Changed
