@@ -85,7 +85,8 @@ export const env = {
     return read('PUSH_WEBHOOK_TOKEN');
   },
   get pushEndpointAllowlist(): string[] {
-    return (read('PUSH_ENDPOINT_ALLOWLIST') ?? DEFAULT_PUSH_ENDPOINT_ALLOWLIST)
+    const raw = read('PUSH_ENDPOINT_ALLOWLIST')?.trim();
+    return (raw && raw.length > 0 ? raw : DEFAULT_PUSH_ENDPOINT_ALLOWLIST)
       .split(',')
       .map((e) => e.trim())
       .filter((e) => e.length > 0);
