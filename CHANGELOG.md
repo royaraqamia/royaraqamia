@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-08-16
+
+### Changed
+- apply prettier formatting
+- apply prettier formatting
+- bump @radix-ui/react-context-menu from 2.3.3 to 2.3.7
+- bump typescript-eslint from 8.65.0 to 8.66.0
+- bump @radix-ui/react-menubar from 1.1.21 to 1.1.24
+- bump @radix-ui/react-checkbox from 1.3.7 to 1.3.11
+- bump @tiptap/react from 3.29.0 to 3.29.2
+- bump react-hook-form from 7.83.0 to 7.84.0
+- bump prettier from 3.6.2 to 3.9.6
+- bump @tiptap/extension-image from 3.29.0 to 3.29.2
+- bump @supabase/ssr from 0.12.3 to 0.12.4
+- bump @types/node from 26.1.1 to 26.1.2
+
 ## [1.0.4] - 2026-08-13
 
 ### Changed
