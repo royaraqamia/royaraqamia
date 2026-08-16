@@ -7,6 +7,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-08-16
+
+### Changed
+- apply prettier formatting
+- add web-push for OS-level push notifications
+
+### Added
+- add habit reminder push webhook endpoint with per-user daily dedupe
+- dispatch habit reminders to the app webhook via pg_net
+- add browser subscription client and notification dropdown toggle
+- handle push events and notification clicks in the service worker
+- add subscribe/unsubscribe API with CSRF guard and rate limit
+- wire push dispatch into notification producers and admin broadcaster
+- add PushService with VAPID dispatch, allowlist, and endpoint pruning
+- add push subscriptions repository with chunked dispatch reads
+- add shared push subscription contract and URL mapping
+- add push_subscriptions table, RLS policies, and generated types
+- add VAPID env config and key generator script
+
+### Fixed
+- treat blank PUSH_ENDPOINT_ALLOWLIST as unset
+- harden webhook fan-out, click handling, and subscribe rollback
+- revoke authenticated execute on habit reminder push webhook
+- align push migration filenames with applied remote versions
+- load web-push via default import in generate-vapid script
+
 ## [1.0.5] - 2026-08-16
 
 ### Changed
