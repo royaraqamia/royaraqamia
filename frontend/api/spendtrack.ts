@@ -226,8 +226,7 @@ export async function importExpensesCsv(content: string): Promise<ImportResult> 
 type ImportError = { row: number; message: string };
 
 type ImportResult =
-  | { success: true; imported: number; skipped: number; errors: ImportError[] }
-  | { error: string };
+  { success: true; imported: number; skipped: number; errors: ImportError[] } | { error: string };
 
 export async function getCurrency(): Promise<string | null> {
   try {

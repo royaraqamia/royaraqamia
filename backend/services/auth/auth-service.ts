@@ -22,14 +22,12 @@ export type LoginResult =
   | { needsOtp: true; email: string; redirectUrl: string };
 
 export type VerifyOtpResult =
-  | { ok: true; redirectUrl: string; consumedPendingLogin: boolean }
-  | { ok: false; message: string };
+  { ok: true; redirectUrl: string; consumedPendingLogin: boolean } | { ok: false; message: string };
 
 export type SimpleResult = { ok: true; message?: string } | { ok: false; message: string };
 
 export type UpdatePasswordResult =
-  | { ok: true; redirectUrl: string }
-  | { ok: false; message: string };
+  { ok: true; redirectUrl: string } | { ok: false; message: string };
 
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
 
