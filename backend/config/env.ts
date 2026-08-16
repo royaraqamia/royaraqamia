@@ -2,6 +2,9 @@ import { appVersion } from '@/backend/config/generated/app-version';
 
 const FALLBACK_SITE_URL = 'https://royaraqamia.com';
 
+const DEFAULT_PUSH_ENDPOINT_ALLOWLIST =
+  'fcm.googleapis.com, updates.push.services.mozilla.com, .notify.windows.com, web.push.apple.com';
+
 function read(name: string): string | undefined {
   return process.env[name];
 }
@@ -67,6 +70,24 @@ export const env = {
     return (read('ADMIN_EMAILS') ?? '')
       .split(',')
       .map((e) => e.trim().toLowerCase())
+      .filter((e) => e.length > 0);
+  },
+  get vapidPublicKey(): string | undefined {
+    return read('NEXT_PUBLIC_VAPID_PUBLIC_KEY');
+  },
+  get vapidPrivateKey(): string | undefined {
+    return read('VAPID_PRIVATE_KEY');
+  },
+  get vapidSubject(): string | undefined {
+    return read('VAPID_SUBJECT');
+  },
+  get pushWebhookToken(): string | undefined {
+    return read('PUSH_WEBHOOK_TOKEN');
+  },
+  get pushEndpointAllowlist(): string[] {
+    return (read('PUSH_ENDPOINT_ALLOWLIST') ?? DEFAULT_PUSH_ENDPOINT_ALLOWLIST)
+      .split(',')
+      .map((e) => e.trim())
       .filter((e) => e.length > 0);
   },
 };

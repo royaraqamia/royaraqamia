@@ -218,17 +218,18 @@ Open [http://localhost:3000](http://localhost:3000) (RTL Arabic site by default)
 
 ### Common scripts
 
-| Command                     | Description                                               |
-| --------------------------- | --------------------------------------------------------- |
-| `npm run dev`               | Start the Next.js dev server with HMR                     |
-| `npm run build`             | Generate icons → `tsc --noEmit` → production `next build` |
-| `npm start`                 | Run the production server (after `build`)                 |
-| `npm run lint` / `lint:fix` | ESLint on the whole repo / auto-fix                       |
-| `npm run format`            | Prettier write across the repo                            |
-| `npm test`                  | Run all unit/integration tests once (Vitest)              |
-| `npm run test:watch`        | Run tests in watch mode                                   |
-| `npm run test:e2e`          | Run Playwright end-to-end tests                           |
-| `npm run icons`             | Regenerate icon assets                                    |
+| Command                           | Description                                               |
+| --------------------------------- | --------------------------------------------------------- |
+| `npm run dev`                     | Start the Next.js dev server with HMR                     |
+| `npm run build`                   | Generate icons → `tsc --noEmit` → production `next build` |
+| `npm start`                       | Run the production server (after `build`)                 |
+| `npm run lint` / `lint:fix`       | ESLint on the whole repo / auto-fix                       |
+| `npm run format`                  | Prettier write across the repo                            |
+| `npm test`                        | Run all unit/integration tests once (Vitest)              |
+| `npm run test:watch`              | Run tests in watch mode                                   |
+| `npm run test:e2e`                | Run Playwright end-to-end tests                           |
+| `npm run icons`                   | Regenerate icon assets                                    |
+| `node scripts/generate-vapid.mjs` | Generate a Web Push VAPID key pair                        |
 
 ---
 
@@ -259,6 +260,13 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `TURNSTILE_SECRET_KEY`                 | **Secret.** Cloudflare Turnstile secret (server verify)                | `0x4AAAA...`                                   | ✅                       |
 | `E2E_TEST_EMAIL`                       | Email of the Playwright test account                                   | `e2e+ci@example.com`                           | for `test:e2e`           |
 | `E2E_TEST_PASSWORD`                    | **Secret.** Password of the Playwright test account                    | `change-me`                                    | for `test:e2e`           |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Public Web Push VAPID key (safe for the browser)                       | `BElN...`                                      | Web Push only            |
+| `PUSH_ENDPOINT_ALLOWLIST`              | Comma-separated push-service hosts allowed for dispatch                | `fcm.googleapis.com,...`                       | Web Push only            |
+| `PUSH_WEBHOOK_TOKEN`                   | **Secret.** Bearer token for the habit-reminder push webhook           | `change-me`                                    | Web Push only            |
+| `VAPID_PRIVATE_KEY`                    | **Secret.** Server-only Web Push VAPID private key                     | `f7Qz...`                                      | Web Push only            |
+| `VAPID_SUBJECT`                        | Web Push contact (must be `mailto:` or `https:` URL)                   | `mailto:admin@royaraqamia.com`                 | Web Push only            |
+
+> **Web Push (VAPID):** OS-level push notifications (browser subscription → server dispatch via `web-push`) activate once the five keys above are set. Generate a key pair with `node scripts/generate-vapid.mjs`; put the public key in `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and keep `VAPID_PRIVATE_KEY` + `PUSH_WEBHOOK_TOKEN` server-only. `PUSH_ENDPOINT_ALLOWLIST` defaults to the known push-service hosts and is fail-closed. Without these keys the push pipeline is a graceful no-op — in-app notifications keep working.
 
 > **Naming convention:** `NEXT_PUBLIC_*` variables are inlined into the client bundle and are therefore **not** secrets. Everything else must only be read server-side. The Supabase **service-role key** bypasses RLS — never expose it to the browser.
 
