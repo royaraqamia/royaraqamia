@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [1.0.5] - 2026-08-16
 
 ### Changed
+
 - apply prettier formatting
 - apply prettier formatting
 - bump @radix-ui/react-context-menu from 2.3.3 to 2.3.7

@@ -3,7 +3,11 @@ import { execFileSync } from 'child_process';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-const scriptPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'generate-vapid.mjs');
+const scriptPath = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '..',
+  'generate-vapid.mjs'
+);
 
 function runScript() {
   return execFileSync(process.execPath, [scriptPath], { encoding: 'utf8' });
