@@ -4,6 +4,11 @@ const mockGetAuthUser = vi.fn();
 const mockCheckRateLimit = vi.fn();
 const mockUpsert = vi.fn();
 const mockRemoveByEndpoint = vi.fn();
+const mockSendToUsers = vi.fn();
+const mockEnv: { baseUrl: string; pushWebhookToken?: string } = {
+  baseUrl: 'https://royaraqamia.com',
+  pushWebhookToken: 'webhook-secret',
+};
 
 vi.mock('@/backend/middleware/auth-guard', () => ({
   getAuthUser: () => mockGetAuthUser(),
@@ -21,7 +26,12 @@ vi.mock('@/backend/repositories/push/supabase-repository', () => ({
 }));
 
 vi.mock('@/backend/config/env', () => ({
-  env: { baseUrl: 'https://royaraqamia.com' },
+  env: mockEnv,
+}));
+
+vi.mock('@/backend/config/push', () => ({
+  createPushNotifier: () => ({ sendToUsers: mockSendToUsers }),
+  runAfter: (fn: () => void) => void fn(),
 }));
 
 const validBody = {
@@ -182,6 +192,116 @@ describe('push controller', () => {
 
       expect(result.status).toBe(200);
       expect(mockRemoveByEndpoint).toHaveBeenCalledWith('u-1', validBody.endpoint);
+    });
+  });
+
+  describe('webhookPush', () => {
+    const uuid = '9f0d8b3e-6b2a-4d4c-9f1e-2c3d4e5f6a7b';
+    const uuid2 = 'b1c2d3e4-f5a6-4b7c-8d9e-0f1a2b3c4d5e';
+
+    function bearerHeaders(token = mockEnv.pushWebhookToken): Headers {
+      return new Headers({ authorization: `Bearer ${token}` });
+    }
+
+    beforeEach(() => {
+      mockSendToUsers.mockResolvedValue(undefined);
+      mockCheckRateLimit.mockResolvedValue(true);
+    });
+
+    it('returns 401 when the bearer token is missing', async () => {
+      const { webhookPush } = await importControllers();
+
+      const result = await webhookPush({ user_ids: [uuid] }, new Headers());
+
+      expect(result.status).toBe(401);
+      expect(mockSendToUsers).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 for a wrong token', async () => {
+      const { webhookPush } = await importControllers();
+
+      const result = await webhookPush({ user_ids: [uuid] }, bearerHeaders('wrong-secret'));
+
+      expect(result.status).toBe(401);
+      expect(mockSendToUsers).not.toHaveBeenCalled();
+    });
+
+    it('returns 401 when the token is not Bearer-formatted', async () => {
+      const { webhookPush } = await importControllers();
+
+      const result = await webhookPush(
+        { user_ids: [uuid] },
+        new Headers({ authorization: mockEnv.pushWebhookToken ?? '' })
+      );
+
+      expect(result.status).toBe(401);
+    });
+
+    it('returns 401 when the server token is unconfigured', async () => {
+      mockEnv.pushWebhookToken = undefined;
+      const { webhookPush } = await importControllers();
+
+      const result = await webhookPush({ user_ids: [uuid] }, bearerHeaders('anything'));
+
+      expect(result.status).toBe(401);
+      mockEnv.pushWebhookToken = 'webhook-secret';
+    });
+
+    it('returns 400 for an invalid body', async () => {
+      const { webhookPush } = await importControllers();
+
+      const result = await webhookPush({ user_ids: ['not-a-uuid'] }, bearerHeaders());
+
+      expect(result.status).toBe(400);
+      expect(mockSendToUsers).not.toHaveBeenCalled();
+    });
+
+    it('returns 202 and dedupes repeated user ids before dispatching', async () => {
+      const { webhookPush } = await importControllers();
+
+      const result = await webhookPush({ user_ids: [uuid, uuid, uuid2] }, bearerHeaders());
+
+      expect(result.status).toBe(202);
+      expect(mockCheckRateLimit).toHaveBeenCalledTimes(2);
+      expect(mockSendToUsers).toHaveBeenCalledWith(
+        [uuid, uuid2],
+        expect.objectContaining({
+          title: 'تذكير بعادتك اليومية',
+          type: 'habit_reminder',
+          url: '/habitflow',
+        })
+      );
+    });
+
+    it('skips users already notified today', async () => {
+      mockCheckRateLimit.mockImplementation((key: string) => !key.includes(uuid));
+      const { webhookPush } = await importControllers();
+
+      const result = await webhookPush({ user_ids: [uuid, uuid2] }, bearerHeaders());
+
+      expect(result.status).toBe(202);
+      expect(mockSendToUsers).toHaveBeenCalledWith([uuid2], expect.anything());
+    });
+
+    it('returns 202 with zero notifications when all users were already notified', async () => {
+      mockCheckRateLimit.mockResolvedValue(false);
+      const { webhookPush } = await importControllers();
+
+      const result = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
+
+      expect(result).toEqual(
+        expect.objectContaining({ status: 202, body: { success: true, notified: 0 } })
+      );
+      expect(mockSendToUsers).not.toHaveBeenCalled();
+    });
+
+    it('returns 500 when the rate limiter fails', async () => {
+      mockCheckRateLimit.mockRejectedValue(new Error('redis down'));
+      const { webhookPush } = await importControllers();
+
+      const result = await webhookPush({ user_ids: [uuid] }, bearerHeaders());
+
+      expect(result.status).toBe(500);
     });
   });
 });

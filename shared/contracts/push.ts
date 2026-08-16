@@ -14,7 +14,12 @@ export const PushUnsubscribeSchema = z.object({
   endpoint: z.url(),
 });
 
+export const PushWebhookSchema = z.object({
+  user_ids: z.array(z.string().uuid()).min(1).max(1000),
+});
+
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
+export type PushWebhookInput = z.infer<typeof PushWebhookSchema>;
 
 export interface PushPayload {
   title: string;
