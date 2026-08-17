@@ -8,12 +8,13 @@ export interface AnnouncementResult {
 
 export async function broadcastAnnouncement(
   title: string,
-  body: string
+  body: string,
+  userIds?: string[]
 ): Promise<AnnouncementResult> {
   try {
     return await request<AnnouncementResult>('/api/admin/announcements', {
       method: 'POST',
-      body: JSON.stringify({ title, body }),
+      body: JSON.stringify({ title, body, userIds }),
     });
   } catch (error) {
     return {

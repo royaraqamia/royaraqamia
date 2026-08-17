@@ -7,7 +7,7 @@ import { Megaphone } from 'lucide-react';
 
 export const metadata: Metadata = {
   title: 'إرسال إعلان',
-  description: 'إرسال إشعار عام لجميع المستخدمين في رؤية رقمية.',
+  description: 'إرسال إشعار لمستخدمين محددين أو لجميع المستخدمين في رؤية رقمية.',
 };
 
 export default async function AdminAnnouncementsLayout({
@@ -34,9 +34,9 @@ export default async function AdminAnnouncementsLayout({
               <Megaphone className="text-primary size-6" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">إرسال إعلان عام</h1>
+              <h1 className="text-2xl font-bold">إرسال إعلان</h1>
               <p className="text-muted-foreground text-sm">
-                يُرسل إشعارًا لجميع المستخدمين المسجلين
+                يُرسل إشعارًا لمستخدمين محددين أو لجميع المستخدمين المسجلين
               </p>
             </div>
           </div>

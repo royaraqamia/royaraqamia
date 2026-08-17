@@ -7,8 +7,17 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
 import { DatePicker } from '@/frontend/ui/primitives/date-picker';
+import { UserSelect } from '@/frontend/ui/admin/user-select';
 import { toast } from 'sonner';
-import { ArrowRight, CalendarDays, User, GraduationCap, Trophy, Hash } from 'lucide-react';
+import {
+  ArrowRight,
+  BellRing,
+  CalendarDays,
+  User,
+  GraduationCap,
+  Trophy,
+  Hash,
+} from 'lucide-react';
 
 interface CertificateFormProps {
   mode: 'create' | 'edit';
@@ -20,6 +29,7 @@ interface CertificateFormProps {
     issue_date: string;
     expiration_date: string | null;
     grade_or_status: string | null;
+    recipient_user_ids?: string[];
   };
   onSubmit: (data: {
     student_name: string;
@@ -27,6 +37,7 @@ interface CertificateFormProps {
     issue_date: string;
     expiration_date?: string;
     grade_or_status?: string;
+    recipient_user_ids?: string[];
   }) => Promise<{ success: boolean; error?: string; fieldErrors?: Record<string, string> }>;
 }
 
@@ -42,6 +53,9 @@ export function CertificateForm({ mode, initialData, onSubmit }: CertificateForm
     expiration_date: initialData?.expiration_date ?? '',
     grade_or_status: initialData?.grade_or_status ?? '',
   });
+  const [recipientUserIds, setRecipientUserIds] = useState<string[]>(
+    initialData?.recipient_user_ids ?? []
+  );
 
   function updateField(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -64,6 +78,7 @@ export function CertificateForm({ mode, initialData, onSubmit }: CertificateForm
         issue_date: form.issue_date,
         expiration_date: form.expiration_date || undefined,
         grade_or_status: form.grade_or_status || undefined,
+        recipient_user_ids: recipientUserIds,
       });
 
       if (result.success) {
@@ -196,6 +211,29 @@ export function CertificateForm({ mode, initialData, onSubmit }: CertificateForm
                 error={errors.expiration_date}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Recipients */}
+        <Card className="glass-card">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <BellRing className="text-primary size-4" />
+              إشعار المستلمين
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <UserSelect
+              id="recipient_user_ids"
+              value={recipientUserIds}
+              onChange={setRecipientUserIds}
+              label="المستلمون (اختياري)"
+              placeholder="اختر المستخدمين الذين سيتلقون إشعارًا بالشهادة"
+            />
+            {errors.recipient_user_ids && <p className="form-error">{errors.recipient_user_ids}</p>}
+            <p className="form-help-text">
+              اختر مستخدمين ليصلهم إشعار عند إصدار الشهادة. اتركه فارغًا إذا لم ترد إرسال إشعار.
+            </p>
           </CardContent>
         </Card>
 

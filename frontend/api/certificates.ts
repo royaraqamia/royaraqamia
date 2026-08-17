@@ -41,6 +41,7 @@ export async function createCertificate(
     issue_date: string;
     expiration_date?: string;
     grade_or_status?: string;
+    recipient_user_ids?: string[];
   },
   customCode?: string
 ): Promise<AdminActionResult> {
@@ -62,6 +63,7 @@ export async function updateCertificate(
     issue_date: string;
     expiration_date?: string;
     grade_or_status?: string;
+    recipient_user_ids?: string[];
   }
 ): Promise<AdminActionResult> {
   try {

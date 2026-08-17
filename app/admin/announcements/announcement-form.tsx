@@ -7,11 +7,13 @@ import { Input } from '@/frontend/ui/primitives/input';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
+import { UserSelect } from '@/frontend/ui/admin/user-select';
 import { Loader2, Send } from 'lucide-react';
 
 export function AnnouncementForm() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
+  const [recipientUserIds, setRecipientUserIds] = useState<string[]>([]);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -23,11 +25,12 @@ export function AnnouncementForm() {
     }
     setSending(true);
     setResult(null);
-    const res = await broadcastAnnouncement(title.trim(), body.trim());
+    const res = await broadcastAnnouncement(title.trim(), body.trim(), recipientUserIds);
     setSending(false);
     if (res.success) {
       setTitle('');
       setBody('');
+      setRecipientUserIds([]);
       setResult({ ok: true, message: `تم إرسال الإعلان إلى ${res.sent ?? 0} مستخدم.` });
     } else {
       setResult({ ok: false, message: res.error ?? 'فشل إرسال الإعلان' });
@@ -67,6 +70,14 @@ export function AnnouncementForm() {
               className="bg-muted border-border rounded-xl focus-ring"
             />
           </div>
+          <UserSelect
+            id="recipient_user_ids"
+            value={recipientUserIds}
+            onChange={setRecipientUserIds}
+            label="المستلمون (اختياري)"
+            placeholder="اختر مستخدمين محددين للإعلان"
+          />
+          <p className="form-help-text -mt-2">اتركه فارغًا للإرسال لجميع المستخدمين.</p>
 
           {result && (
             <p

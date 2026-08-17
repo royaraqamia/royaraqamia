@@ -49,6 +49,7 @@ export default function EditCertificatePage({ params }: { params: Promise<{ id: 
         issue_date: cert.issue_date,
         expiration_date: cert.expiration_date,
         grade_or_status: cert.grade_or_status,
+        recipient_user_ids: cert.recipient_user_ids,
       }}
       onSubmit={async (data) => {
         return await updateCertificate(id, data);
