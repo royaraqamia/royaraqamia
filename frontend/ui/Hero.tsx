@@ -1,27 +1,24 @@
-'use client';
-
-import { memo } from 'react';
-import { m } from 'motion/react';
 import { ArrowLeft, Star } from 'lucide-react';
+import { MotionReveal } from './MotionReveal';
 import { HeroVisual } from './HeroVisual';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
-export const Hero = memo(function Hero() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-    },
-  };
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+  },
+};
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-    },
-  };
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+  },
+};
 
+export function Hero() {
   // Floating particles data - deterministic positions to avoid hydration mismatch
   const particles = Array.from({ length: 12 }, (_, i) => ({
     id: i,
@@ -67,7 +64,7 @@ export const Hero = memo(function Hero() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-          <m.div
+          <MotionReveal
             variants={containerVariants}
             initial={false}
             animate="visible"
@@ -77,7 +74,10 @@ export const Hero = memo(function Hero() {
             {/* Left/Right side - Primary Copy & CTA (RTL Support) */}
             <div className="text-center lg:text-right space-y-3 order-1">
               {/* Pill Badge */}
-              <m.div variants={itemVariants} className="flex justify-center lg:justify-start">
+              <MotionReveal
+                variants={itemVariants}
+                className="flex justify-center lg:justify-start"
+              >
                 <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/4 hover:bg-white/8 backdrop-blur-xl text-white border border-white/10 hover:border-white/20 transition-all duration-300 shadow-sm group">
                   <span className="relative flex h-2 w-2">
                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
@@ -91,33 +91,35 @@ export const Hero = memo(function Hero() {
                     1448 هـ
                   </span>
                 </div>
-              </m.div>
+              </MotionReveal>
 
               {/* Main Headline */}
-              <m.div variants={itemVariants} className="space-y-2 -mt-2">
+              <MotionReveal variants={itemVariants} className="space-y-2 -mt-2">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight font-arabic leading-[1.45] sm:leading-[1.45]">
                   <span className="block bg-linear-to-r from-white via-slate-100 to-purple-200 bg-clip-text text-transparent pb-1.5">
                     شريكك الاستراتيجي
                   </span>
                   <span className="block bg-linear-to-r from-purple-400 via-violet-300 to-indigo-300 bg-clip-text text-transparent whitespace-normal lg:whitespace-nowrap pb-2">
-                    للتَّحوُّل الرَّقمي
+                    للتَّحوُّل الرَّقمي
                   </span>
                 </h1>
-              </m.div>
+              </MotionReveal>
 
               {/* Description */}
-              <m.p
+              <MotionReveal
+                as="p"
                 variants={itemVariants}
                 className="text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal -mt-2 pt-1"
               >
                 نبني مواقع وتطبيقات برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛
                 <br />
-                كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع
-                والتَّطبيقات.
-              </m.p>
+                كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع
+                والتَّطبيقات.
+              </MotionReveal>
 
               {/* Social Proof Strip - Trust Signals */}
-              <m.a
+              <MotionReveal
+                as="a"
                 variants={itemVariants}
                 href="#testimonials"
                 className="inline-flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition-transform active:scale-[0.99]"
@@ -155,10 +157,10 @@ export const Hero = memo(function Hero() {
                     <span className="font-bold text-white">4.9</span>/5
                   </span>
                 </div>
-              </m.a>
+              </MotionReveal>
 
               {/* CTA Buttons */}
-              <m.div
+              <MotionReveal
                 variants={itemVariants}
                 className="flex flex-col sm:flex-row gap-3.5 justify-center lg:justify-start pt-3 items-center w-full sm:w-auto"
               >
@@ -185,19 +187,19 @@ export const Hero = memo(function Hero() {
                   <span className="relative z-10">نبذة عن أعمالنا</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-white transition-colors" />
                 </a>
-              </m.div>
+              </MotionReveal>
             </div>
 
             {/* Right side - Visual Element */}
-            <m.div
+            <MotionReveal
               variants={itemVariants}
               className="relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0"
             >
               <HeroVisual />
-            </m.div>
-          </m.div>
+            </MotionReveal>
+          </MotionReveal>
         </div>
       </section>
     </>
   );
-});
+}

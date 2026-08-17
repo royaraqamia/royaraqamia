@@ -2,8 +2,18 @@
 
 import { ElementType, MouseEvent } from 'react';
 import { motion, useMotionTemplate, useMotionValue } from 'motion/react';
-import { Check, ArrowRight } from 'lucide-react';
+import { Check, ArrowRight, Code, Lightbulb, MessageCircle } from 'lucide-react';
 import { colorConfigs, type ColorKey } from './colorConfigs';
+
+// Lucide components cannot cross the RSC boundary, so the server sends a
+// serializable key and the icon is resolved here in the client bundle.
+const serviceIcons = {
+  code: Code,
+  chat: MessageCircle,
+  bulb: Lightbulb,
+} as const;
+export type ServiceIconKey = keyof typeof serviceIcons;
+const iconMap: Record<ServiceIconKey, ElementType> = serviceIcons;
 
 // Types remain the same for perfect drop-in compatibility
 interface ServicePricing {
@@ -23,7 +33,7 @@ interface ServicePricing {
 }
 
 interface Service {
-  icon: ElementType;
+  icon: ServiceIconKey;
   title: string;
   description: string;
   features: string[];
@@ -52,7 +62,7 @@ const cardVariant = {
 } as const;
 
 export function ServiceCard({ service, index }: { service: Service; index: number }) {
-  const Icon = service.icon;
+  const Icon = iconMap[service.icon]!;
   const colors = colorConfigs[service.colorKey];
 
   // Elite Detail: Mouse Tracking Spotlight

@@ -1,10 +1,8 @@
-'use client';
-
-import { motion } from 'motion/react';
 import { Button } from './primitives/button';
 import { Code, Rocket, ShieldCheck, Smartphone, Monitor, Globe } from 'lucide-react';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 import { SectionBackground } from './SectionBackground';
+import { MotionReveal } from './MotionReveal';
 
 // --- Framer Motion Variants ---
 const staggerContainer = {
@@ -73,7 +71,7 @@ export function WebDevService() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
-        <motion.div
+        <MotionReveal
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: '-100px' }}
@@ -100,12 +98,12 @@ export function WebDevService() {
           <p className="text-base sm:text-lg lg:text-xl text-foreground/80 leading-relaxed font-medium max-w-2xl mx-auto">
             خدمات هندسيَّة وإداريَّة متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق.
           </p>
-        </motion.div>
+        </MotionReveal>
 
         {/* Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Column: Benefits & Features (Spans 7 cols) */}
-          <motion.div
+          <MotionReveal
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: '-50px' }}
@@ -115,7 +113,7 @@ export function WebDevService() {
             {/* Benefits List */}
             <div className="flex flex-col gap-3.5">
               {benefits.map((benefit, idx) => (
-                <motion.div
+                <MotionReveal
                   key={idx}
                   variants={fadeUpVariant}
                   className="group relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/3 dark:bg-white/2 border border-white/10 dark:border-white/10 hover:border-purple-500/40 hover:bg-purple-500/4 transition-all duration-300 ease-out backdrop-blur-md shadow-xs hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5"
@@ -132,14 +130,14 @@ export function WebDevService() {
                       {benefit.text}
                     </span>
                   </div>
-                </motion.div>
+                </MotionReveal>
               ))}
             </div>
 
             {/* Features Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               {features.map((feature, idx) => (
-                <motion.div
+                <MotionReveal
                   key={idx}
                   variants={fadeUpVariant}
                   className="relative p-5 rounded-2xl bg-purple-950/10 border border-purple-500/15 hover:border-purple-500/40 transition-all duration-300 group overflow-hidden hover:shadow-md hover:shadow-purple-500/10 hover:-translate-y-0.5 flex flex-col justify-between"
@@ -154,13 +152,13 @@ export function WebDevService() {
                       {feature.description}
                     </p>
                   </div>
-                </motion.div>
+                </MotionReveal>
               ))}
             </div>
-          </motion.div>
+          </MotionReveal>
 
           {/* Right Column: Pricing & CTA (Spans 5 cols) */}
-          <motion.div
+          <MotionReveal
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: '-50px' }}
@@ -226,7 +224,7 @@ export function WebDevService() {
             </article>
 
             {/* CTA Button Link */}
-            <motion.div variants={fadeUpVariant} className="pt-2">
+            <MotionReveal variants={fadeUpVariant} className="pt-2">
               <a
                 href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('السَّلام عليكم، أنا مهتم بخدمة بناء المواقع والتَّطبيقات.')}`}
                 target="_blank"
@@ -241,8 +239,8 @@ export function WebDevService() {
                   </span>
                 </Button>
               </a>
-            </motion.div>
-          </motion.div>
+            </MotionReveal>
+          </MotionReveal>
         </div>
       </div>
     </section>

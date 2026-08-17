@@ -1,8 +1,5 @@
-'use client';
-
 import { Trophy, Clock, Headphones, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
-import { useReducedMotion } from 'motion/react';
 
 interface Reason {
   icon: React.ElementType;
@@ -18,7 +15,6 @@ interface ReasonCardProps {
 
 function ReasonCard({ reason, index }: ReasonCardProps) {
   const Icon = reason.icon;
-  const prefersReducedMotion = useReducedMotion();
 
   return (
     <article
@@ -41,9 +37,7 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
       {/* Glass Icon Header & Badge */}
       <div className="flex items-center justify-between mb-8 sm:mb-10">
         <div
-          className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center bg-white/4 border border-white/10 shadow-inner group-hover/why:border-indigo-500/30 group-hover/why:bg-indigo-500/10 transition-all duration-500 ${
-            prefersReducedMotion ? '' : 'group-hover/why:scale-110 group-hover/why:-rotate-3'
-          }`}
+          className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center bg-white/4 border border-white/10 shadow-inner group-hover/why:border-indigo-500/30 group-hover/why:bg-indigo-500/10 transition-all duration-500 group-hover/why:scale-110 group-hover/why:-rotate-3 motion-reduce:group-hover/why:scale-100 motion-reduce:group-hover/why:rotate-0`}
         >
           <div
             className="absolute inset-0 opacity-0 group-hover/why:opacity-20 transition-opacity duration-500 rounded-2xl blur-sm"
@@ -75,8 +69,6 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
 }
 
 export function WhyUs() {
-  const prefersReducedMotion = useReducedMotion();
-
   const reasons: Reason[] = [
     {
       icon: Trophy,
@@ -163,7 +155,7 @@ export function WhyUs() {
         {/* Responsive Grid Layout */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 items-stretch">
           {reasons.map((reason, index) => {
-            const delay = prefersReducedMotion ? 0 : index * 0.1;
+            const delay = index * 0.1;
             return (
               <ScrollAnimation key={index} animation="slide-up" delay={delay} duration={0.8}>
                 <ReasonCard reason={reason} index={index} />

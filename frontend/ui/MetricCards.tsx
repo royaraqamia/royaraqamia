@@ -1,120 +1,94 @@
-'use client';
-
-import { memo, useEffect, useRef, useState } from 'react';
-import { motion, useInView, animate } from 'motion/react';
 import { Clock, Trophy, TrendingUp } from 'lucide-react';
+import { MotionReveal } from './MotionReveal';
+import { AnimatedCounter } from './AnimatedCounter';
 
-// --- Elite Feature: Animated Counter ---
-function AnimatedCounter({ value, suffix }: { value: number; suffix: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: '-50px' });
-  const [displayValue, setDisplayValue] = useState(0);
+// --- Elite Feature: Animated Counter (client island) ---
 
-  useEffect(() => {
-    if (!inView) return;
-    const controls = animate(0, value, {
-      duration: 2.5,
-      ease: [0.16, 1, 0.3, 1],
-      onUpdate: (latest) => {
-        setDisplayValue(Math.round(latest));
-      },
-    });
-    return controls.stop;
-  }, [inView, value]);
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.2 },
+  },
+};
 
-  return (
-    <span ref={ref} className="tabular-nums">
-      {displayValue}
-      {suffix}
-    </span>
-  );
-}
+const itemVariants = {
+  hidden: { opacity: 0, y: 50, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 60,
+      damping: 20,
+    },
+  },
+} as const;
 
-export const MetricCards = memo(function MetricCards() {
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.2 },
-    },
-  };
+// Separated numeric value and suffix for the animation logic
+const metrics = [
+  {
+    icon: Trophy,
+    numericValue: 7,
+    suffix: '+',
+    label: 'سنوات من الخبرة',
+    description: 'في السُّوق الرَّقمي بخبرة متراكمة',
+    colorKey: 'purple' as const,
+  },
+  {
+    icon: Clock,
+    numericValue: 400,
+    suffix: '+',
+    label: 'ساعة إجماليَّة',
+    description: 'في التَّدريب وتقديم الاستشارات',
+    colorKey: 'indigo' as const,
+  },
+  {
+    icon: TrendingUp,
+    numericValue: 100,
+    suffix: '+',
+    label: 'مشروع رقمي',
+    description: 'تمَّ إنجازها بين مواقع وتطبيقات',
+    colorKey: 'violet' as const,
+  },
+];
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 50, scale: 0.95 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 60,
-        damping: 20,
-      },
-    },
-  } as const;
+// Upgraded color configs with text gradients and ambient shadows
+const colorConfigs = {
+  purple: {
+    bgHover: 'group-hover/card:bg-purple-500/[0.04]',
+    borderHover: 'group-hover/card:border-purple-500/40',
+    iconGlow:
+      'text-purple-400 group-hover/card:text-purple-300 group-hover/card:bg-purple-500/20 group-hover/card:border-purple-500/40',
+    textGradient: 'from-purple-300 via-purple-400 to-indigo-400',
+    dividerGradient: 'from-purple-500 via-purple-400/80 to-transparent',
+    shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(168,85,247,0.25)]',
+    glowBg: 'bg-purple-500/20',
+  },
+  indigo: {
+    bgHover: 'group-hover/card:bg-indigo-500/[0.04]',
+    borderHover: 'group-hover/card:border-indigo-500/40',
+    iconGlow:
+      'text-indigo-400 group-hover/card:text-indigo-300 group-hover/card:bg-indigo-500/20 group-hover/card:border-indigo-500/40',
+    textGradient: 'from-indigo-300 via-indigo-400 to-sky-400',
+    dividerGradient: 'from-indigo-500 via-indigo-400/80 to-transparent',
+    shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(99,102,241,0.25)]',
+    glowBg: 'bg-indigo-500/20',
+  },
+  violet: {
+    bgHover: 'group-hover/card:bg-violet-500/[0.04]',
+    borderHover: 'group-hover/card:border-violet-500/40',
+    iconGlow:
+      'text-violet-400 group-hover/card:text-violet-300 group-hover/card:bg-violet-500/20 group-hover/card:border-violet-500/40',
+    textGradient: 'from-violet-300 via-violet-400 to-fuchsia-400',
+    dividerGradient: 'from-violet-500 via-violet-400/80 to-transparent',
+    shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(139,92,246,0.25)]',
+    glowBg: 'bg-violet-500/20',
+  },
+};
 
-  // Separated numeric value and suffix for the animation logic
-  const metrics = [
-    {
-      icon: Trophy,
-      numericValue: 7,
-      suffix: '+',
-      label: 'سنوات من الخبرة',
-      description: 'في السُّوق الرَّقمي بخبرة متراكمة',
-      colorKey: 'purple' as const,
-    },
-    {
-      icon: Clock,
-      numericValue: 400,
-      suffix: '+',
-      label: 'ساعة إجماليَّة',
-      description: 'في التَّدريب وتقديم الاستشارات',
-      colorKey: 'indigo' as const,
-    },
-    {
-      icon: TrendingUp,
-      numericValue: 100,
-      suffix: '+',
-      label: 'مشروع رقمي',
-      description: 'تمَّ إنجازها بين مواقع وتطبيقات',
-      colorKey: 'violet' as const,
-    },
-  ];
-
-  // Upgraded color configs with text gradients and ambient shadows
-  const colorConfigs = {
-    purple: {
-      bgHover: 'group-hover/card:bg-purple-500/[0.04]',
-      borderHover: 'group-hover/card:border-purple-500/40',
-      iconGlow:
-        'text-purple-400 group-hover/card:text-purple-300 group-hover/card:bg-purple-500/20 group-hover/card:border-purple-500/40',
-      textGradient: 'from-purple-300 via-purple-400 to-indigo-400',
-      dividerGradient: 'from-purple-500 via-purple-400/80 to-transparent',
-      shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(168,85,247,0.25)]',
-      glowBg: 'bg-purple-500/20',
-    },
-    indigo: {
-      bgHover: 'group-hover/card:bg-indigo-500/[0.04]',
-      borderHover: 'group-hover/card:border-indigo-500/40',
-      iconGlow:
-        'text-indigo-400 group-hover/card:text-indigo-300 group-hover/card:bg-indigo-500/20 group-hover/card:border-indigo-500/40',
-      textGradient: 'from-indigo-300 via-indigo-400 to-sky-400',
-      dividerGradient: 'from-indigo-500 via-indigo-400/80 to-transparent',
-      shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(99,102,241,0.25)]',
-      glowBg: 'bg-indigo-500/20',
-    },
-    violet: {
-      bgHover: 'group-hover/card:bg-violet-500/[0.04]',
-      borderHover: 'group-hover/card:border-violet-500/40',
-      iconGlow:
-        'text-violet-400 group-hover/card:text-violet-300 group-hover/card:bg-violet-500/20 group-hover/card:border-violet-500/40',
-      textGradient: 'from-violet-300 via-violet-400 to-fuchsia-400',
-      dividerGradient: 'from-violet-500 via-violet-400/80 to-transparent',
-      shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(139,92,246,0.25)]',
-      glowBg: 'bg-violet-500/20',
-    },
-  };
-
+export function MetricCards() {
   return (
     <section
       aria-label="Key Performance Indicators"
@@ -137,7 +111,7 @@ export const MetricCards = memo(function MetricCards() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <motion.div
+        <MotionReveal
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -149,8 +123,9 @@ export const MetricCards = memo(function MetricCards() {
             const colors = colorConfigs[metric.colorKey];
 
             return (
-              <motion.article
+              <MotionReveal
                 key={index}
+                as="article"
                 variants={itemVariants}
                 className={`group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-all duration-500 ease-out overflow-hidden bg-neutral-900/40 border border-white/10 backdrop-blur-xl z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
               >
@@ -215,11 +190,11 @@ export const MetricCards = memo(function MetricCards() {
                     </p>
                   </div>
                 </div>
-              </motion.article>
+              </MotionReveal>
             );
           })}
-        </motion.div>
+        </MotionReveal>
       </div>
     </section>
   );
-});
+}

@@ -1,6 +1,6 @@
 'use client';
 
-import { m, useInView } from 'motion/react';
+import { m, useInView, useReducedMotion } from 'motion/react';
 import { useRef } from 'react';
 
 interface ScrollAnimationProps {
@@ -20,6 +20,7 @@ export function ScrollAnimation({
 }: ScrollAnimationProps) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
+  const prefersReducedMotion = useReducedMotion();
 
   const variants = {
     'fade-in': {
@@ -51,14 +52,18 @@ export function ScrollAnimation({
   return (
     <m.div
       ref={ref}
-      initial="hidden"
-      animate={isInView ? 'visible' : 'hidden'}
+      initial={prefersReducedMotion ? false : 'hidden'}
+      animate={prefersReducedMotion ? 'visible' : isInView ? 'visible' : 'hidden'}
       variants={variants[animation]}
-      transition={{
-        duration,
-        delay,
-        ease: [0.25, 0.4, 0.25, 1],
-      }}
+      transition={
+        prefersReducedMotion
+          ? { duration: 0 }
+          : {
+              duration,
+              delay,
+              ease: [0.25, 0.4, 0.25, 1],
+            }
+      }
       className={className}
     >
       {children}

@@ -1,13 +1,10 @@
-'use client';
-
-import { motion } from 'motion/react';
-import { MessageCircle, Code, Lightbulb } from 'lucide-react';
-import { ServiceCard } from './services/ServiceCard';
+import { MotionReveal } from './MotionReveal';
+import { ServiceCard, type ServiceIconKey } from './services/ServiceCard';
 import type { ColorKey } from './services/colorConfigs';
 
 // Interfaces remain identical for seamless drop-in
 interface ServiceItem {
-  icon: typeof MessageCircle;
+  icon: ServiceIconKey;
   title: string;
   description: string;
   features: string[];
@@ -23,7 +20,7 @@ interface ServiceItem {
 
 const services: ServiceItem[] = [
   {
-    icon: Code,
+    icon: 'code',
     title: 'بناء',
     description: 'خدمات هندسيَّة وإداريَّة متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق.',
     features: [
@@ -39,14 +36,14 @@ const services: ServiceItem[] = [
     categories: ['merchants'],
   },
   {
-    icon: MessageCircle,
+    icon: 'chat',
     title: 'تدريب',
     description:
-      'المسار التَّدريبي العربي المتكامل الذي يُعلِّمك بناء مواقع وتطبيقات دون كتابة كود.',
+      'المسار التَّدريبي العربي المتكامل الذي يُعلِّمك بناء مواقع وتطبيقات دون كتابة كود.',
     features: [
-      'يُدرِّبك خبير متخصِّص في المجال',
+      'يُدرِّبك خبير متخصِّص في المجال',
       'لا تحتاج لكتابة أي سطر كود',
-      'التَّدريب أونلاين مع مجموعة',
+      'التَّدريب أونلاين مع مجموعة',
     ],
     pricing: { cta: 'قراءة المزيد' },
     colorKey: 'teal',
@@ -56,13 +53,13 @@ const services: ServiceItem[] = [
     categories: ['students'],
   },
   {
-    icon: Lightbulb,
+    icon: 'bulb',
     title: 'استشارات',
-    description: 'نختصر عليك سنوات من البحث ونمنحك الخلاصة التِّقنيَّة والعمليَّة بصدق وأمانة.',
+    description: 'نختصر عليك سنوات من البحث ونمنحك الخلاصة التِّقنيَّة والعمليَّة بصدق وأمانة.',
     features: [
-      'استشارة متخصِّصة بالمواقع والتَّطبيقات',
-      'نُجنِّبك خسائر الوقت والمال',
-      'الاستشارة فرديَّة أونلاين صوتيَّة',
+      'استشارة متخصِّصة بالمواقع والتَّطبيقات',
+      'نُجنِّبك خسائر الوقت والمال',
+      'الاستشارة فرديَّة أونلاين صوتيَّة',
     ],
     pricing: { cta: 'قراءة المزيد' },
     colorKey: 'violet',
@@ -123,7 +120,7 @@ export function Services() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
         {/* Section Header */}
-        <motion.div
+        <MotionReveal
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: '-100px' }}
@@ -152,10 +149,10 @@ export function Services() {
           <p className="text-base sm:text-lg lg:text-xl text-slate-400 leading-relaxed font-normal max-w-2xl">
             بُنية تحتيَّة شاملة للأفراد وأصحاب الأعمال تحت سقف واحد.
           </p>
-        </motion.div>
+        </MotionReveal>
 
         {/* Dynamic Grid Layout */}
-        <motion.div
+        <MotionReveal
           initial="hidden"
           whileInView="show"
           viewport={{ once: true, margin: '-50px' }}
@@ -163,15 +160,15 @@ export function Services() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-8 [&>*:last-child]:md:col-span-2 [&>*:last-child]:lg:col-span-1 [&>*:last-child]:md:max-w-md [&>*:last-child]:md:mx-auto [&>*:last-child]:lg:max-w-none"
         >
           {services.map((service, index) => (
-            <motion.div
+            <MotionReveal
               key={index}
               variants={cardItemVariant}
               className="h-full flex flex-col transition-transform duration-300 ease-out hover:scale-[1.01]"
             >
               <ServiceCard service={service} index={index} />
-            </motion.div>
+            </MotionReveal>
           ))}
-        </motion.div>
+        </MotionReveal>
       </div>
 
       {/* Bottom Ambient Divider Line */}
