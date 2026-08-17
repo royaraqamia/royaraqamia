@@ -21,7 +21,6 @@ import {
   deleteNotification,
   subscribeToNotificationChanges,
 } from '@/frontend/api/notifications';
-import { toast } from 'sonner';
 
 interface NotificationContextType {
   notifications: NotificationWithMeta[];
@@ -86,13 +85,14 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     if (!user) return;
 
     return subscribeToNotificationChanges(user.id, {
-      onInsert: (payload) => {
+      onInsert: async (payload) => {
         const newNotif = payload.new as Notification;
         setNotifications((prev) => {
           if (prev.some((n) => n.id === newNotif.id)) return prev;
           return [{ ...newNotif, timeAgo: calculateTimeAgo(newNotif.created_at) }, ...prev];
         });
         setUnreadCount((prev) => prev + 1);
+        const { toast } = await import('sonner');
         toast(newNotif.title, {
           description: newNotif.body ?? undefined,
         });

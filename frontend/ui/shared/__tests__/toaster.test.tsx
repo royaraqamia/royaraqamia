@@ -9,8 +9,19 @@ describe('RoyaToaster', () => {
     toast.dismiss();
   });
 
-  it('renders a dark, rtl, top-center toaster with styled toasts', async () => {
+  it('does not mount until first interaction', () => {
     render(<RoyaToaster />);
+    expect(screen.queryByRole('list')).not.toBeInTheDocument();
+  });
+
+  it('lazy-mounts a dark, rtl, top-center toaster after first interaction and shows toasts', async () => {
+    render(<RoyaToaster />);
+
+    act(() => {
+      window.dispatchEvent(new Event('pointerdown'));
+    });
+
+    await screen.findByRole('region', { name: /Notifications/ });
 
     act(() => {
       toast.success('تمت العملية بنجاح', { description: 'تم حفظ البيانات' });
