@@ -7,14 +7,14 @@ import { useAppVersion } from '@/frontend/state/use-app-version';
 
 export function VersionChecker() {
   const [showUpdate, setShowUpdate] = useState(false);
-  const { hasUpdate: hasPwaUpdate, registration, dismissUpdate } = usePWAContext();
-  const { hasUpdate: hasVersionUpdate, releaseVersion } = useAppVersion();
+  const { registration } = usePWAContext();
+  const { hasUpdate: hasVersionUpdate, releaseVersion, dismissVersion } = useAppVersion();
 
   useEffect(() => {
-    if (hasPwaUpdate || hasVersionUpdate) {
+    if (hasVersionUpdate) {
       setShowUpdate(true);
     }
-  }, [hasPwaUpdate, hasVersionUpdate]);
+  }, [hasVersionUpdate]);
 
   const handleReload = useCallback(() => {
     if (registration?.waiting) {
@@ -26,8 +26,8 @@ export function VersionChecker() {
 
   const handleDismiss = useCallback(() => {
     setShowUpdate(false);
-    dismissUpdate();
-  }, [dismissUpdate]);
+    dismissVersion();
+  }, [dismissVersion]);
 
   return showUpdate ? (
     <UpdatePopup

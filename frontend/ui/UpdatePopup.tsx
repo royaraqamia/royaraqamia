@@ -116,7 +116,7 @@ export function UpdatePopup({ onReload, onDismiss, releaseVersion }: UpdatePopup
               <h2 className="mb-1.5 font-arabic text-xl font-bold text-foreground">تحديث متاح</h2>
               {displayVersion && (
                 <p className="mb-1.5 font-arabic text-base font-semibold text-primary">
-                  النسخة الجديدة {displayVersion}
+                  النُّسخة الجديدة {displayVersion}
                 </p>
               )}
               <p className="text-sm leading-relaxed text-muted-foreground">
