@@ -1,22 +1,10 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import Image from 'next/image';
 import { Suspense } from 'react';
 import { loadBlogIndex } from '@/backend/loaders/blog';
-import { Button } from '@/frontend/ui/primitives/button';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  FileText,
-  ArrowLeft,
-  Search,
-  Sparkles,
-  X,
-  Calendar,
-} from 'lucide-react';
 import { BlogSearch } from './_components/blog-search';
-import { formatReadingTime } from '@/frontend/shared/reading-time';
+import { BlogIndexResults } from './_components/blog-index-results';
+import { BlogResults } from './_components/blog-results';
+import { BLOG_PAGE_SIZE } from './_components/constants';
 
 export const revalidate = 60;
 
@@ -25,16 +13,8 @@ export const metadata: Metadata = {
   description: 'أفكار، دروس، وقصص في العالم الرَّقمي',
 };
 
-const PAGE_SIZE = 9;
-
-export default async function BlogPage(props: {
-  searchParams: Promise<{ page?: string; q?: string }>;
-}) {
-  const { page: pageParam, q } = await props.searchParams;
-  const page = Math.max(1, Number(pageParam) || 1);
-  const query = q?.trim() || '';
-
-  const { posts, totalPages } = await loadBlogIndex(page, query, PAGE_SIZE);
+export default async function BlogPage() {
+  const { posts, totalPages } = await loadBlogIndex(1, '', BLOG_PAGE_SIZE);
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 selection:text-white pb-24">
@@ -73,240 +53,32 @@ export default async function BlogPage(props: {
 
       {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 relative z-10">
-        {/* Active Search Filter Banner */}
-        {query && (
-          <div className="flex flex-wrap items-center justify-between gap-4 p-4 mb-10 rounded-2xl bg-muted/20 border border-border backdrop-blur-md text-sm text-muted-foreground shadow-sm">
-            <div className="flex items-center gap-2.5">
-              <Search className="size-4 text-primary shrink-0" />
-              <span>نتائج البحث عن:</span>
-              <span className="px-3 py-1 rounded-lg bg-primary/15 border border-primary/30 text-primary font-semibold text-xs">
-                &ldquo;{query}&rdquo;
-              </span>
-            </div>
-            <Link
-              href="/blog"
-              className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors duration-200 border-b border-border hover:border-foreground pb-0.5"
+        <Suspense
+          fallback={
+            <div
+              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr"
+              aria-hidden="true"
             >
-              <X className="size-3.5" />
-              إلغاء التَّصفية
-            </Link>
-          </div>
-        )}
-
-        {posts.length === 0 ? (
-          /* Empty State Section */
-          <div className="relative overflow-hidden rounded-3xl border border-border bg-muted/20 backdrop-blur-xl py-24 px-6 flex flex-col items-center justify-center text-center my-8 shadow-2xl">
-            <div className="size-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mb-6 shadow-inner text-muted-foreground">
-              <FileText className="size-8 stroke-[1.5]" />
-            </div>
-            <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">
-              {query ? 'لا توجد نتائج للبحث' : 'لا توجد مقالات بعد'}
-            </h2>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-md mb-8 leading-relaxed">
-              {query
-                ? 'لم نعثر على مقالات تُطابق بحثك. جرِّب كلمات بحث مختلفة.'
-                : 'لا توجد مقالات منشورة حاليًّا. عد لاحقًا لقراءة أحدث المحتوى والمقالات.'}
-            </p>
-            {query && (
-              <Link href="/blog">
-                <Button
-                  variant="outline"
-                  className="rounded-full bg-muted/50 border-border text-foreground hover:bg-muted/70 hover:border-border transition-all duration-300 px-6"
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="rounded-3xl border border-border bg-muted/20 overflow-hidden animate-pulse"
                 >
-                  عرض جميع المقالات
-                </Button>
-              </Link>
-            )}
-          </div>
-        ) : (
-          <>
-            {/* Post Cards Grid */}
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
-              {posts.map((post, index) => (
-                <article
-                  key={post.id}
-                  className="group/blog relative flex flex-col justify-between rounded-3xl border border-border bg-muted/20 overflow-hidden transition-all duration-500 ease-out hover:border-border hover:bg-muted/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-background/60 opacity-0 animate-fade-in-up focus-within:ring-2 focus-within:ring-primary/50"
-                  style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'forwards' }}
-                >
-                  {/* Card Header & Media */}
-                  <div className="relative aspect-16/10 w-full overflow-hidden bg-muted/80">
-                    <Link
-                      href={`/blog/${post.slug}`}
-                      className="block h-full w-full focus:outline-none"
-                      tabIndex={-1}
-                    >
-                      {post.cover_image ? (
-                        <Image
-                          src={post.cover_image}
-                          alt={post.title}
-                          fill
-                          priority={index < 2}
-                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                          className="object-cover transition-transform duration-700 ease-out group-hover/blog:scale-105"
-                        />
-                      ) : (
-                        /* Visual Fallback for missing thumbnails */
-                        <div className="absolute inset-0 bg-linear-to-br from-muted via-muted/80 to-background flex flex-col items-center justify-center p-6 text-center">
-                          <div className="size-14 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mb-2">
-                            <Sparkles className="size-6 text-foreground/30" />
-                          </div>
-                          <span className="text-4xl font-extrabold text-foreground/10 uppercase tracking-widest select-none">
-                            {post.title[0]}
-                          </span>
-                        </div>
-                      )}
-
-                      {/* Dynamic Ambient Gradient Overlay */}
-                      <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent opacity-60 group-hover/blog:opacity-40 transition-opacity duration-500" />
-                    </Link>
-
-                    {/* Reading Time Badge */}
-                    <div className="absolute top-4 inset-s-4 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/70 border border-border text-xs text-muted-foreground font-medium backdrop-blur-md shadow-lg pointer-events-none">
-                      <Clock className="size-3.5 text-primary" />
-                      <span>{formatReadingTime(post.reading_time_minutes)}</span>
-                    </div>
+                  <div className="aspect-16/10 w-full bg-muted/60" />
+                  <div className="p-6 sm:p-7 space-y-3">
+                    <div className="h-5 w-3/4 rounded-full bg-muted/70" />
+                    <div className="h-3.5 w-full rounded-full bg-muted/50" />
+                    <div className="h-3.5 w-2/3 rounded-full bg-muted/50" />
                   </div>
-
-                  {/* Card Body & Content */}
-                  <div className="flex-1 flex flex-col justify-between p-6 sm:p-7 relative">
-                    <div>
-                      <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground group-hover/blog:text-foreground transition-colors duration-300 leading-snug line-clamp-2">
-                        <Link
-                          href={`/blog/${post.slug}`}
-                          className="focus:outline-none before:absolute before:inset-0"
-                        >
-                          {post.title}
-                        </Link>
-                      </h2>
-
-                      {post.meta_desc && (
-                        <p className="mt-3 text-sm text-muted-foreground line-clamp-2 leading-relaxed font-normal">
-                          {post.meta_desc}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Card Footer Meta */}
-                    <div className="mt-6 pt-5 border-t border-border flex items-center justify-between text-xs relative z-20">
-                      {post.published_at ? (
-                        <time
-                          dateTime={post.published_at}
-                          className="text-muted-foreground font-medium flex items-center gap-1.5"
-                        >
-                          <Calendar className="size-3.5 text-muted-foreground" />
-                          {new Intl.DateTimeFormat('ar-SA', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                            calendar: 'islamic-umalqura',
-                            numberingSystem: 'latn',
-                          }).format(new Date(post.published_at))}
-                        </time>
-                      ) : (
-                        <span />
-                      )}
-
-                      <span className="inline-flex items-center gap-1.5 text-primary text-xs font-semibold group-hover/blog:text-primary/90 transition-colors">
-                        اقرأ المزيد
-                        <ArrowLeft
-                          className="size-3.5 transition-transform duration-300 group-hover/blog:-translate-x-1.5 rtl:group-hover/blog:translate-x-1.5"
-                          strokeWidth={2.5}
-                        />
-                      </span>
-                    </div>
-                  </div>
-                </article>
+                </div>
               ))}
             </div>
-
-            {/* Accessible Interactive Pagination Navigation */}
-            {totalPages > 1 && (
-              <nav
-                aria-label="تنقُّل بين الصَّفحات"
-                className="flex flex-wrap items-center justify-center gap-2 mt-16 sm:mt-20"
-              >
-                {page > 1 && (
-                  <Link
-                    href={`/blog?page=${page - 1}${query ? `&q=${query}` : ''}`}
-                    aria-label="الصَّفحة السَّابقة"
-                  >
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="size-10 rounded-full border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:border-border transition-all duration-200"
-                    >
-                      <ChevronRight className="size-4 rtl:rotate-180" />
-                    </Button>
-                  </Link>
-                )}
-
-                {(() => {
-                  const pages: (number | 'ellipsis')[] = [];
-                  if (totalPages <= 5) {
-                    for (let i = 1; i <= totalPages; i++) pages.push(i);
-                  } else {
-                    pages.push(1);
-                    if (page > 3) pages.push('ellipsis');
-                    for (
-                      let i = Math.max(2, page - 1);
-                      i <= Math.min(totalPages - 1, page + 1);
-                      i++
-                    ) {
-                      pages.push(i);
-                    }
-                    if (page < totalPages - 2) pages.push('ellipsis');
-                    pages.push(totalPages);
-                  }
-
-                  return pages.map((p, i) =>
-                    p === 'ellipsis' ? (
-                      <span
-                        key={`e${i}`}
-                        className="px-2 text-muted-foreground text-sm tracking-widest select-none"
-                      >
-                        ...
-                      </span>
-                    ) : (
-                      <Link
-                        key={p}
-                        href={`/blog?page=${p}${query ? `&q=${query}` : ''}`}
-                        aria-label={`الصَّفحة ${p}`}
-                        aria-current={p === page ? 'page' : undefined}
-                      >
-                        <Button
-                          variant={p === page ? 'default' : 'outline'}
-                          size="icon"
-                          className={`size-10 rounded-full transition-all duration-300 text-sm font-semibold ${
-                            p === page
-                              ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105 border-transparent'
-                              : 'border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:border-border'
-                          }`}
-                        >
-                          {p}
-                        </Button>
-                      </Link>
-                    )
-                  );
-                })()}
-
-                {page < totalPages && (
-                  <Link
-                    href={`/blog?page=${page + 1}${query ? `&q=${query}` : ''}`}
-                    aria-label="الصَّفحة التَّالية"
-                  >
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="size-10 rounded-full border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:border-border transition-all duration-200"
-                    >
-                      <ChevronLeft className="size-4 rtl:rotate-180" />
-                    </Button>
-                  </Link>
-                )}
-              </nav>
-            )}
-          </>
-        )}
+          }
+        >
+          <BlogIndexResults>
+            <BlogResults posts={posts} totalPages={totalPages} page={1} query="" />
+          </BlogIndexResults>
+        </Suspense>
       </main>
     </div>
   );
