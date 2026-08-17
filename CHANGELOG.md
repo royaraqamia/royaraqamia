@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-08-17
+
+### Changed
+- add rounded-full to logo in navbar and footer
+- optimize public page images with next/image and AVIF
+
+### Fixed
+- use square brand logo for PWA icons and circular favicon
+
 ## [1.4.2] - 2026-08-17
 
 ### Changed
