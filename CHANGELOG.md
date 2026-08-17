@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-08-17
+
+### Changed
+- remove superseded admin-user-targeting plan
+- stream dashboard sections and dedupe loaders
+- dedupe per-request supabase client construction
+- fold post tags into cached post payload
+- add blog feed and admin dashboard serving indexes
+
+### Added
+- add NextSupa perf architect subagent
+
+### Fixed
+- notify newly attached recipients when editing a certificate
+
 ## [1.3.0] - 2026-08-17
 
 ### Changed
