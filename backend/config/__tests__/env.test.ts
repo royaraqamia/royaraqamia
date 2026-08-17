@@ -4,6 +4,7 @@ import { env } from '@/backend/config/env';
 const KEY = 'PUSH_ENDPOINT_ALLOWLIST';
 
 const DEFAULT_ALLOWLIST = [
+  '.google.com',
   'fcm.googleapis.com',
   'updates.push.services.mozilla.com',
   '.notify.windows.com',
