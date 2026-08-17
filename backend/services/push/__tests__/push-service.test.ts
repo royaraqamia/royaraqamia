@@ -204,6 +204,24 @@ describe('PushService', () => {
       );
     });
 
+    it('allows modern Chrome FCM endpoints on google.com instance hosts', async () => {
+      const { repository, adapter, service } = makeService({
+        allowlist: ['.google.com'],
+      });
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([
+        makeRecord({ endpoint: 'https://jmt17.google.com/fcm/send/xyz' }),
+      ]);
+
+      await service.sendToUser('u-1', payload);
+
+      expect(adapter.sendNotification).toHaveBeenCalledTimes(1);
+      expect(adapter.sendNotification).toHaveBeenCalledWith(
+        expect.objectContaining({ endpoint: 'https://jmt17.google.com/fcm/send/xyz' }),
+        expect.any(String),
+        expect.any(Object)
+      );
+    });
+
     it('fans out with bounded concurrency across many subscriptions', async () => {
       const { repository, adapter, service } = makeService({ maxConcurrency: 3 });
       const records = Array.from({ length: 25 }, (_, i) =>

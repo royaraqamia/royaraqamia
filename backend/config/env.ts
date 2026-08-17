@@ -3,7 +3,7 @@ import { appVersion } from '@/backend/config/generated/app-version';
 const FALLBACK_SITE_URL = 'https://royaraqamia.com';
 
 const DEFAULT_PUSH_ENDPOINT_ALLOWLIST =
-  'fcm.googleapis.com, updates.push.services.mozilla.com, .notify.windows.com, web.push.apple.com';
+  '.google.com, fcm.googleapis.com, updates.push.services.mozilla.com, .notify.windows.com, web.push.apple.com';
 
 function read(name: string): string | undefined {
   return process.env[name];
