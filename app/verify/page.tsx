@@ -3,7 +3,7 @@
 import { useState, type FormEvent, useRef, useEffect } from 'react';
 import { verifyCertificate } from '@/frontend/api/certificates';
 import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
-import { m, AnimatePresence } from 'motion/react';
+import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { containerVariants, resultVariants } from '@/frontend/ui/verify/verify-variants';
 import { VerifyHero } from '@/frontend/ui/verify/verify-hero';
 import { VerifySearchCard } from '@/frontend/ui/verify/verify-search-card';
@@ -14,6 +14,10 @@ import { CertificateResultCard } from '@/frontend/ui/verify/certificate-result-c
 import type { PublicCertificate } from '@/shared/contracts/certificates';
 
 export default function VerifyPage() {
+  // The ambient glows below loop forever (repeat: Infinity). Stop them for
+  // users who prefer reduced motion — they also avoid pointless main-thread
+  // work on low-end devices with that OS setting enabled.
+  const reduce = useReducedMotion() === true;
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
@@ -64,13 +68,15 @@ export default function VerifyPage() {
         <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)] bg-size-[24px_24px] opacity-30" />
         <m.div
           className="absolute -top-32 right-1/4 h-125 w-125 rounded-full bg-linear-to-br from-indigo-500/15 via-purple-500/10 to-transparent blur-3xl"
-          animate={{ scale: [1, 1.15, 1], x: [0, 25, 0], y: [0, -15, 0] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+          animate={reduce ? false : { scale: [1, 1.15, 1], x: [0, 25, 0], y: [0, -15, 0] }}
+          transition={reduce ? undefined : { duration: 10, repeat: Infinity, ease: 'easeInOut' }}
         />
         <m.div
           className="absolute -bottom-32 left-1/4 h-112.5 w-112.5 rounded-full bg-linear-to-tr from-violet-500/15 via-fuchsia-500/10 to-transparent blur-3xl"
-          animate={{ scale: [1, 1.2, 1], x: [0, -25, 0], y: [0, 25, 0] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+          animate={reduce ? false : { scale: [1, 1.2, 1], x: [0, -25, 0], y: [0, 25, 0] }}
+          transition={
+            reduce ? undefined : { duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }
+          }
         />
       </div>
 
