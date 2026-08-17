@@ -55,6 +55,7 @@ describe('Certificate code format validation', () => {
 function makeDeps(overrides: Partial<CertificateVerifierDeps> = {}) {
   const repository: CertificatesReader = {
     getByCode: vi.fn(),
+    getCodes: vi.fn(),
     list: vi.fn(),
     getById: vi.fn(),
   };

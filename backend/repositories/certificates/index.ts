@@ -22,6 +22,18 @@ export function createCertificatesRepository(
       return data as Certificate;
     },
 
+    async getCodes(): Promise<string[]> {
+      const { data, error } = await supabase
+        .from('certificates')
+        .select('certificate_code')
+        .order('certificate_code', { ascending: true });
+
+      if (error) return [];
+      return (data ?? [])
+        .map((row) => row.certificate_code)
+        .filter((code): code is string => typeof code === 'string' && code.length > 0);
+    },
+
     async list(
       page: number,
       pageSize: number,

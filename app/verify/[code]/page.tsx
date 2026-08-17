@@ -1,7 +1,23 @@
 import type { Metadata } from 'next';
-import { loadCertificateByCode } from '@/backend/loaders/certificates';
+import { loadCertificateByCode, loadCertificateCodes } from '@/backend/loaders/certificates';
 import { formatDateArabic } from '@/frontend/shared/format';
 import { VerifyClient } from './verify-client';
+
+// Certificate pages are the most-shared public links (printed on physical
+// certificates / QR codes). The loader is already unstable_cache'd for 60s;
+// this adds full-route ISR so the rendered HTML itself is served from the
+// CDN/route cache for 60s instead of executing the RSC function per request.
+// Unknown codes fall through to dynamic rendering and 404, rate-limited by
+// the verify API on the client path.
+export const revalidate = 60;
+
+// Pre-render every issued certificate at build time (the set is small and
+// slowly-changing), so shared links are served fully static from the CDN.
+// New certificates are covered by `dynamicParams` (default true) + ISR.
+export async function generateStaticParams(): Promise<{ code: string }[]> {
+  const codes = await loadCertificateCodes();
+  return codes.map((code) => ({ code }));
+}
 
 interface PageProps {
   params: Promise<{ code: string }>;

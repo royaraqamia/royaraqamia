@@ -18,3 +18,17 @@ export const loadCertificateByCode = unstable_cache(
   ['certificate-by-code'],
   { revalidate: CERTIFICATE_CACHE_SECONDS }
 );
+
+/** All certificate codes, used by `generateStaticParams` to pre-render the
+ * shared /verify/[code] pages at build time. Narrow projection (codes only). */
+export const loadCertificateCodes = unstable_cache(
+  async (): Promise<string[]> => {
+    try {
+      return await createDefaultCertificateVerifier().getCodes();
+    } catch {
+      return [];
+    }
+  },
+  ['certificate-codes'],
+  { revalidate: CERTIFICATE_CACHE_SECONDS }
+);

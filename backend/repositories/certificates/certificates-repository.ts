@@ -23,6 +23,7 @@ export interface CertificateUpdateInput {
 
 export interface CertificatesReader {
   getByCode(code: string): Promise<Certificate | null>;
+  getCodes(): Promise<string[]>;
   list(
     page: number,
     pageSize: number,

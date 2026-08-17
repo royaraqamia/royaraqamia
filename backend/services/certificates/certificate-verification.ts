@@ -40,6 +40,10 @@ export class CertificateVerifier {
     return this.deps.repository.getByCode(code.trim().toUpperCase());
   }
 
+  async getCodes(): Promise<string[]> {
+    return this.deps.repository.getCodes();
+  }
+
   async verifyCertificateByCode(code: string, ip: string): Promise<VerifyResult> {
     try {
       const sanitized = code.trim().toUpperCase();

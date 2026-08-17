@@ -28,6 +28,7 @@ const sampleCertificate = {
 function makeRepo(overrides: Partial<CertificatesRepository> = {}) {
   const repository: CertificatesRepository = {
     getByCode: vi.fn(),
+    getCodes: vi.fn(),
     list: vi.fn(),
     getById: vi.fn(),
     create: vi.fn(),
@@ -43,6 +44,7 @@ function makeRepoWithNotifier(
 ) {
   const repository: CertificatesRepository = {
     getByCode: vi.fn(),
+    getCodes: vi.fn(),
     list: vi.fn(),
     getById: vi.fn(),
     create: vi.fn(),
