@@ -108,7 +108,7 @@ export function DesktopNav({
             width={48}
             height={48}
             priority
-            className={`transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 ${
+            className={`rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 ${
               isScrolled ? 'h-8 w-8 lg:h-9 lg:w-9 logo-glow' : 'h-10 w-10 lg:h-11 lg:w-11'
             }`}
             style={{

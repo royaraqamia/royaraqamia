@@ -366,7 +366,7 @@ export function MobileMenu({
                     width={40}
                     height={40}
                     loading="eager"
-                    className="h-10 w-10 logo-glow transition-transform duration-300 ease-out group-hover:scale-105"
+                    className="h-10 w-10 rounded-full logo-glow transition-transform duration-300 ease-out group-hover:scale-105"
                   />
                 )}
                 <span className="text-xl font-bold font-heading tracking-tight text-neutral-900 dark:text-white transition-colors duration-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">

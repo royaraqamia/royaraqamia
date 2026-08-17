@@ -130,7 +130,7 @@ export function Footer() {
                 width={48}
                 height={48}
                 priority
-                className="h-12 w-12 object-contain rounded-lg transition-transform duration-500 group-hover:scale-110"
+                className="h-12 w-12 object-contain rounded-full transition-transform duration-500 group-hover:scale-110"
               />
 
               <span className="logo-text font-heading font-bold text-3xl sm:text-3xl text-primary tracking-tight transition-all duration-300 group-hover:opacity-90">
