@@ -4,6 +4,7 @@ import {
   createAdminBroadcaster,
   createSupabaseNotificationService,
 } from '@/backend/config/notifications';
+import { AnnouncementSendSchema } from '@/shared/contracts/notifications';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
 export async function listNotifications(): Promise<HttpResult> {
@@ -65,6 +66,7 @@ export async function getUnreadNotificationCount(): Promise<HttpResult> {
 export async function broadcastAnnouncement(body: {
   title?: unknown;
   body?: unknown;
+  userIds?: unknown;
 }): Promise<HttpResult> {
   try {
     await requireAdminAuth();
@@ -76,17 +78,23 @@ export async function broadcastAnnouncement(body: {
   }
 
   try {
-    const title = String(body.title ?? '').trim();
-    const content = String(body.body ?? '').trim();
-    if (!title) {
-      return jsonResult(400, { success: false, error: 'العنوان مطلوب' });
+    const validated = AnnouncementSendSchema.safeParse(body);
+    if (!validated.success) {
+      return jsonResult(400, {
+        success: false,
+        error: validated.error.issues[0]?.message ?? 'بيانات غير صالحة',
+      });
     }
 
-    const sent = await createAdminBroadcaster()({
-      type: 'system_announcement',
-      title,
-      body: content || undefined,
-    });
+    const { title, body: content, userIds } = validated.data;
+    const sent = await createAdminBroadcaster()(
+      {
+        type: 'system_announcement',
+        title,
+        body: content || undefined,
+      },
+      userIds
+    );
 
     return jsonResult(200, { success: true, sent });
   } catch {

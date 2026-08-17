@@ -12,6 +12,7 @@ import { createSupabaseNotificationRepository } from '@/backend/repositories/not
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createPushNotifier, runAfter } from '@/backend/config/push';
+import { createAdminUsersService } from '@/backend/config/users';
 import { logger } from '@/backend/shared/logger';
 import { toPushUrl } from '@/shared/contracts/push';
 import type { NotificationCreateInput } from '@/shared/contracts/notifications';
@@ -80,23 +81,34 @@ export function createAdminNotificationProducer(): NotificationProducer {
   };
 }
 
-export type AdminBroadcaster = (input: NotificationBroadcastInput) => Promise<number>;
+export type AdminBroadcaster = (
+  input: NotificationBroadcastInput,
+  userIds?: string[]
+) => Promise<number>;
 
 /**
  * Fail-safe admin announcement broadcaster: writes one notification row per
  * user via the service role, then fans out OS-level Web Push in the
- * background. Never throws to callers.
+ * background. Never throws to callers. When `userIds` is provided the batch
+ * is filtered to existing users first (a stale/deleted id can never kill the
+ * whole insert); when omitted it fans out to every user.
  */
 export function createAdminBroadcaster(): AdminBroadcaster {
   const service = createAdminNotificationService();
   const pushNotifier = createPushNotifier();
-  return async (input) => {
+  const usersService = createAdminUsersService();
+  return async (input, userIds) => {
     try {
-      const userIds = await service.getAllUserIds();
-      if (userIds.length === 0) return 0;
-      const sent = await service.broadcast(input, userIds);
+      let targets: string[];
+      if (userIds && userIds.length > 0) {
+        targets = await usersService.findExistingUserIds([...new Set(userIds)]);
+      } else {
+        targets = await service.getAllUserIds();
+      }
+      if (targets.length === 0) return 0;
+      const sent = await service.broadcast(input, targets);
       runAfter(() =>
-        pushNotifier.sendToUsers(userIds, {
+        pushNotifier.sendToUsers(targets, {
           title: input.title,
           body: input.body,
           url: toPushUrl(input.type, input.metadata),
