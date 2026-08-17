@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type {
   Post,
+  PostSummary,
   PostCategory,
   PostTag,
   PostAuthor,
@@ -9,9 +10,14 @@ import type {
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
+import { estimateReadingTime } from '@/shared/reading-time';
 
 const PUBLISHED_POSTS_FILTER =
   'or(status.eq.published,and(status.eq.scheduled,publish_at.lte.now))';
+
+/** Light card projection used by the public feed and related posts — no `content`. */
+const POST_SUMMARY_COLUMNS =
+  'id, author_id, title, slug, status, cover_image, meta_title, meta_desc, published_at, publish_at, view_count, featured, blog_visible, reading_time_minutes, created_at, updated_at';
 
 type Client = SupabaseClient<Database>;
 
@@ -91,7 +97,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
       let queryBuilder = supabase
         .from('posts')
-        .select('*', { count: 'exact' })
+        .select(POST_SUMMARY_COLUMNS, { count: 'exact' })
         .or(PUBLISHED_POSTS_FILTER)
         .eq('blog_visible', true);
 
@@ -108,7 +114,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .range(from, to);
 
       return {
-        posts: (posts as Post[]) ?? [],
+        posts: (posts as PostSummary[]) ?? [],
         totalPages: Math.ceil((count ?? 0) / pageSize),
       };
     },
@@ -142,16 +148,16 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return data ?? null;
     },
 
-    async getRelatedPosts(slug: string): Promise<Post[]> {
+    async getRelatedPosts(slug: string): Promise<PostSummary[]> {
       const { data } = await supabase
         .from('posts')
-        .select('id, title, slug, cover_image, published_at, content')
+        .select(POST_SUMMARY_COLUMNS)
         .or(PUBLISHED_POSTS_FILTER)
         .eq('blog_visible', true)
         .neq('slug', slug)
         .order('published_at', { ascending: false, nullsFirst: true })
         .limit(3);
-      return (data as Post[]) ?? [];
+      return (data as PostSummary[]) ?? [];
     },
 
     async getPublishedCategories(): Promise<PostCategory[]> {
@@ -238,7 +244,12 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async updatePost(postId: string, authorId: string, data: PostInput): Promise<void> {
       const { error } = await supabase
         .from('posts')
-        .update(data)
+        .update({
+          ...data,
+          ...(data.content !== undefined
+            ? { reading_time_minutes: estimateReadingTime(data.content) }
+            : {}),
+        })
         .eq('id', postId)
         .eq('author_id', authorId);
 
@@ -260,6 +271,9 @@ export function createPostsRepository(supabase: Client): PostsRepository {
           status: 'published',
           published_at: new Date().toISOString(),
           blog_visible: blogVisible,
+          ...(data.content !== undefined
+            ? { reading_time_minutes: estimateReadingTime(data.content) }
+            : {}),
         })
         .eq('id', postId)
         .eq('author_id', authorId)

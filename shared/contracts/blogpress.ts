@@ -15,9 +15,13 @@ export interface Post {
   view_count: number;
   featured: boolean;
   blog_visible: boolean;
+  reading_time_minutes: number;
   created_at: string;
   updated_at: string;
 }
+
+/** Feed-card projection: same shape as `Post` minus the heavy `content` column. */
+export type PostSummary = Omit<Post, 'content'>;
 
 export interface PostCategory {
   id: string;
@@ -38,6 +42,6 @@ export interface PostAuthor {
 }
 
 export interface PublishedPostsResult {
-  posts: Post[];
+  posts: PostSummary[];
   totalPages: number;
 }

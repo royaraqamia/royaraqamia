@@ -16,7 +16,7 @@ import {
   Calendar,
 } from 'lucide-react';
 import { BlogSearch } from './_components/blog-search';
-import { estimateReadingTime, formatReadingTime } from '@/frontend/shared/reading-time';
+import { formatReadingTime } from '@/frontend/shared/reading-time';
 
 export const revalidate = 60;
 
@@ -163,7 +163,7 @@ export default async function BlogPage(props: {
                     {/* Reading Time Badge */}
                     <div className="absolute top-4 inset-s-4 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/70 border border-border text-xs text-muted-foreground font-medium backdrop-blur-md shadow-lg pointer-events-none">
                       <Clock className="size-3.5 text-primary" />
-                      <span>{formatReadingTime(estimateReadingTime(post.content))}</span>
+                      <span>{formatReadingTime(post.reading_time_minutes)}</span>
                     </div>
                   </div>
 

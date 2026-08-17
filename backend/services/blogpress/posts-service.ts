@@ -1,6 +1,7 @@
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import type {
   Post,
+  PostSummary,
   PostCategory,
   PostTag,
   PostAuthor,
@@ -41,7 +42,7 @@ export class BlogpressPostsService {
     return this.repository.getPostAuthor(authorId);
   }
 
-  async getRelatedPosts(slug: string): Promise<Post[]> {
+  async getRelatedPosts(slug: string): Promise<PostSummary[]> {
     return this.repository.getRelatedPosts(slug);
   }
 

@@ -481,6 +481,7 @@ export type Database = {
           meta_title: string | null;
           published_at: string | null;
           publish_at: string | null;
+          reading_time_minutes: number;
           slug: string;
           status: Database['public']['Enums']['post_status'];
           title: string;
@@ -499,6 +500,7 @@ export type Database = {
           meta_title?: string | null;
           published_at?: string | null;
           publish_at?: string | null;
+          reading_time_minutes?: number;
           slug: string;
           status?: Database['public']['Enums']['post_status'];
           title: string;
@@ -517,6 +519,7 @@ export type Database = {
           meta_title?: string | null;
           published_at?: string | null;
           publish_at?: string | null;
+          reading_time_minutes?: number;
           slug?: string;
           status?: Database['public']['Enums']['post_status'];
           title?: string;

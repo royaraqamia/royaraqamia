@@ -6,7 +6,8 @@ import {
   createBlogpressAdminPostsService,
   createBlogpressPostsService,
 } from '@/backend/config/blogpress';
-import type { Post, PostAuthor, PostTag } from '@/shared/contracts/blogpress';
+import type { Post, PostSummary, PostAuthor, PostTag } from '@/shared/contracts/blogpress';
+import { BLOG_TAGS } from '@/backend/shared/blog-cache-tags';
 
 const BLOG_CACHE_SECONDS = 60;
 
@@ -16,25 +17,25 @@ export const loadBlogIndex = unstable_cache(
   (page: number, query: string, pageSize: number, categorySlug?: string) =>
     pub().getPublishedPosts(page, query, pageSize, categorySlug),
   ['blog-index'],
-  { revalidate: BLOG_CACHE_SECONDS }
+  { revalidate: BLOG_CACHE_SECONDS, tags: [BLOG_TAGS.index] }
 );
 
 export const loadPublishedPostSlugs = unstable_cache(
   () => pub().getPublishedPostSlugs(),
   ['blog-slugs'],
-  { revalidate: BLOG_CACHE_SECONDS }
+  { revalidate: BLOG_CACHE_SECONDS, tags: [BLOG_TAGS.slugs] }
 );
 
 export const loadPublishedCategories = unstable_cache(
   () => pub().getPublishedCategories(),
   ['blog-categories'],
-  { revalidate: BLOG_CACHE_SECONDS }
+  { revalidate: BLOG_CACHE_SECONDS, tags: [BLOG_TAGS.categories] }
 );
 
 export const loadPublishedPostCategories = unstable_cache(
   (postId: string) => pub().getPublishedPostCategories(postId),
   ['blog-post-categories'],
-  { revalidate: BLOG_CACHE_SECONDS }
+  { revalidate: BLOG_CACHE_SECONDS, tags: [BLOG_TAGS.postCategories] }
 );
 
 export async function loadIncrementPostViewCount(postId: string): Promise<void> {
@@ -44,7 +45,7 @@ export async function loadIncrementPostViewCount(postId: string): Promise<void> 
 export const loadPublishedPostBySlug = unstable_cache(
   (slug: string) => pub().getPublishedPostBySlug(slug),
   ['blog-post-by-slug'],
-  { revalidate: BLOG_CACHE_SECONDS }
+  { revalidate: BLOG_CACHE_SECONDS, tags: [BLOG_TAGS.postBySlug] }
 );
 
 export const loadBlogPost = unstable_cache(
@@ -53,7 +54,7 @@ export const loadBlogPost = unstable_cache(
   ): Promise<{
     post: Post;
     author: PostAuthor | null;
-    relatedPosts: Post[];
+    relatedPosts: PostSummary[];
     postTags: PostTag[];
   } | null> => {
     const supabase = getPublicSupabase();
@@ -71,5 +72,5 @@ export const loadBlogPost = unstable_cache(
     return { post, author, relatedPosts, postTags };
   },
   ['blog-post'],
-  { revalidate: BLOG_CACHE_SECONDS }
+  { revalidate: BLOG_CACHE_SECONDS, tags: [BLOG_TAGS.post] }
 );

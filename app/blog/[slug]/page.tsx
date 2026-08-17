@@ -402,7 +402,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                         </h3>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4 pt-3 border-t border-border/40">
                           <Clock className="size-3.5 text-primary/60" />
-                          <span>{formatReadingTimeLong(estimateReadingTime(rp.content))}</span>
+                          <span>{formatReadingTimeLong(rp.reading_time_minutes)}</span>
                         </div>
                       </div>
                     </Link>
