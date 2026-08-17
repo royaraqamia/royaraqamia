@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-08-17
+
+### Changed
+- refine issued-certificate notification copy
+- honor prefers-reduced-motion on landing glows
+- skip auth user fetch on public pages
+- pre-render verify pages at build with ISR
+- update push endpoint allowlist expectation for google.com hosts
+- align recipient_user_ids migration version with remote
+
+### Fixed
+- allow modern Chrome FCM endpoints on google.com hosts
+
 ## [1.4.0] - 2026-08-17
 
 ### Changed
