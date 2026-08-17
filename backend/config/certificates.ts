@@ -46,35 +46,31 @@ export function createCertificatesService(supabase: SupabaseClient<Database>): C
 }
 
 /**
- * Fire-and-forget: when a certificate is issued with a recipient email that
- * matches an existing account, notify that user with the certificate details.
- * Unmatched emails are silently ignored.
+ * Fire-and-forget: when a certificate is issued with selected recipients,
+ * notify each user (in-app `certificate_issued` row + web push). Each
+ * per-user producer keeps its own 100/hr rate limit and fail-safety, so a
+ * stale id fails that one notification only, never the batch.
  */
 export function createCertificateIssuedNotifier(): CertificateIssuedNotifier {
   const notify = createAdminNotificationProducer();
-  return ({ recipientEmail, certificate }) => {
+  return ({ recipientUserIds, certificate }) => {
     void (async () => {
       try {
-        const { data } = await getAdminSupabase()
-          .from('users')
-          .select('id')
-          .ilike('email', recipientEmail)
-          .limit(1)
-          .maybeSingle();
-        if (!data) return;
-        await notify({
-          user_id: data.id,
-          type: 'certificate_issued',
-          title: 'تم إصدار شهادة لك',
-          body: `شهادة "${certificate.course_name}" باسم ${certificate.student_name} صادرة عن مركز رؤية رقمية.`,
-          metadata: {
-            certificateId: certificate.id,
-            certificateCode: certificate.certificate_code,
-            courseName: certificate.course_name,
-          },
-        });
+        for (const userId of recipientUserIds) {
+          await notify({
+            user_id: userId,
+            type: 'certificate_issued',
+            title: 'تم إصدار شهادة لك',
+            body: `شهادة "${certificate.course_name}" باسم ${certificate.student_name} صادرة عن مركز رؤية رقمية.`,
+            metadata: {
+              certificateId: certificate.id,
+              certificateCode: certificate.certificate_code,
+              courseName: certificate.course_name,
+            },
+          });
+        }
       } catch (err) {
-        logger.error('Failed to notify certificate recipient', { error: String(err) });
+        logger.error('Failed to notify certificate recipients', { error: String(err) });
       }
     })();
   };

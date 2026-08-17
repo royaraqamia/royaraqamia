@@ -39,7 +39,7 @@ function makeRepo(overrides: Partial<CertificatesRepository> = {}) {
 }
 
 function makeRepoWithNotifier(
-  onCertificateIssued: (info: { recipientEmail: string; certificate: Certificate }) => void
+  onCertificateIssued: (info: { recipientUserIds: string[]; certificate: Certificate }) => void
 ) {
   const repository: CertificatesRepository = {
     getByCode: vi.fn(),
@@ -231,6 +231,7 @@ describe('CertificatesService', () => {
         expiration_date: null,
         grade_or_status: null,
         recipient_email: null,
+        recipient_user_ids: [],
       });
     });
 
@@ -243,30 +244,23 @@ describe('CertificatesService', () => {
   });
 
   describe('certificate_issued notifier', () => {
-    it('fires the notifier with the recipient email after a successful create', async () => {
+    const userId = '9f0d8b3e-6b2a-4d4c-9f1e-2c3d4e5f6a7b';
+
+    it('fires the notifier with the recipient user ids after a successful create', async () => {
       const onCertificateIssued = vi.fn();
       const { repository, service } = makeRepoWithNotifier(onCertificateIssued);
-      (repository.create as ReturnType<typeof vi.fn>).mockResolvedValue({
-        ...sampleCertificate,
-        recipient_email: 'student@example.com',
-      });
+      (repository.create as ReturnType<typeof vi.fn>).mockResolvedValue(sampleCertificate);
 
-      const result = await service.create({
-        ...validInput,
-        recipient_email: 'student@example.com',
-      });
+      const result = await service.create({ ...validInput, recipient_user_ids: [userId] });
 
       expect(result).toBeDefined();
       expect(onCertificateIssued).toHaveBeenCalledWith({
-        recipientEmail: 'student@example.com',
-        certificate: {
-          ...sampleCertificate,
-          recipient_email: 'student@example.com',
-        },
+        recipientUserIds: [userId],
+        certificate: sampleCertificate,
       });
     });
 
-    it('does not fire the notifier when no recipient email is provided', async () => {
+    it('does not fire the notifier when no recipient ids are provided', async () => {
       const onCertificateIssued = vi.fn();
       const { repository, service } = makeRepoWithNotifier(onCertificateIssued);
       (repository.create as ReturnType<typeof vi.fn>).mockResolvedValue(sampleCertificate);
@@ -276,12 +270,22 @@ describe('CertificatesService', () => {
       expect(onCertificateIssued).not.toHaveBeenCalled();
     });
 
-    it('rejects an invalid recipient email', async () => {
+    it('does not fire the notifier when the ids array is empty', async () => {
+      const onCertificateIssued = vi.fn();
+      const { repository, service } = makeRepoWithNotifier(onCertificateIssued);
+      (repository.create as ReturnType<typeof vi.fn>).mockResolvedValue(sampleCertificate);
+
+      await service.create({ ...validInput, recipient_user_ids: [] });
+
+      expect(onCertificateIssued).not.toHaveBeenCalled();
+    });
+
+    it('rejects an invalid recipient user id', async () => {
       const { service } = makeRepo();
       await expect(
-        service.create({ ...validInput, recipient_email: 'not-an-email' })
+        service.create({ ...validInput, recipient_user_ids: ['not-a-uuid'] })
       ).rejects.toMatchObject({
-        fieldErrors: { recipient_email: 'البريد الإلكتروني غير صالح' },
+        fieldErrors: { recipient_user_ids: 'معرّف مستخدم غير صالح' },
       });
     });
   });

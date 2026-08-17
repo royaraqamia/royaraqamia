@@ -64,6 +64,7 @@ export function createCertificatesRepository(
           expiration_date: input.expiration_date,
           grade_or_status: input.grade_or_status,
           recipient_email: input.recipient_email ?? null,
+          recipient_user_ids: input.recipient_user_ids,
         })
         .select()
         .single();
@@ -83,6 +84,7 @@ export function createCertificatesRepository(
           expiration_date: input.expiration_date,
           grade_or_status: input.grade_or_status,
           recipient_email: input.recipient_email ?? null,
+          recipient_user_ids: input.recipient_user_ids,
         })
         .eq('id', id)
         .select()

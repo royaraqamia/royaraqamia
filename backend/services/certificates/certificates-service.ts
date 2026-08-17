@@ -2,6 +2,7 @@ import { randomInt } from 'crypto';
 import { z } from 'zod';
 import type { CertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
 import { CERT_CODE_REGEX, type Certificate } from '@/shared/contracts/certificates';
+import { UserIdsSchema } from '@/shared/contracts/users';
 
 export class CertificateValidationError extends Error {
   readonly fieldErrors: Record<string, string>;
@@ -41,6 +42,7 @@ const certificateSchema = z
       .string()
       .optional()
       .refine((e) => !e || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e), 'البريد الإلكتروني غير صالح'),
+    recipient_user_ids: UserIdsSchema.optional(),
   })
   .refine(
     (data) => {
@@ -66,6 +68,7 @@ function parseCertificate(data: {
   expiration_date?: string;
   grade_or_status?: string;
   recipient_email?: string;
+  recipient_user_ids?: string[];
 }) {
   const parsed = certificateSchema.safeParse(data);
   if (!parsed.success) {
@@ -78,6 +81,7 @@ function parseCertificate(data: {
     expiration_date: parsed.data.expiration_date || null,
     grade_or_status: parsed.data.grade_or_status || null,
     recipient_email: parsed.data.recipient_email?.trim() || null,
+    recipient_user_ids: parsed.data.recipient_user_ids ?? [],
   };
 }
 
@@ -94,7 +98,7 @@ function generateCode(): string {
 }
 
 export interface CertificateIssuedNotifier {
-  (info: { recipientEmail: string; certificate: Certificate }): void;
+  (info: { recipientUserIds: string[]; certificate: Certificate }): void;
 }
 
 export class CertificatesService {
@@ -123,6 +127,7 @@ export class CertificatesService {
       expiration_date?: string;
       grade_or_status?: string;
       recipient_email?: string;
+      recipient_user_ids?: string[];
     },
     customCode?: string
   ): Promise<Certificate> {
@@ -146,9 +151,9 @@ export class CertificatesService {
       throw error;
     }
 
-    if (parsed.recipient_email) {
+    if (parsed.recipient_user_ids.length > 0) {
       this.onCertificateIssued?.({
-        recipientEmail: parsed.recipient_email,
+        recipientUserIds: parsed.recipient_user_ids,
         certificate,
       });
     }
@@ -165,6 +170,7 @@ export class CertificatesService {
       expiration_date?: string;
       grade_or_status?: string;
       recipient_email?: string;
+      recipient_user_ids?: string[];
     }
   ): Promise<Certificate> {
     const parsed = parseCertificate(input);
