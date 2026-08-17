@@ -12,6 +12,7 @@ import {
 } from '@/shared/contracts/blog';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import type { RevalidationHint } from '@/backend/transport/http-result';
+import { BLOG_MUTATION_TAGS } from '@/backend/shared/blog-cache-tags';
 
 function postRevalidation(slug: string): RevalidationHint[] {
   return [{ path: '/blogpress' }, { path: `/blog/${slug}` }, { path: '/blog' }];
@@ -60,6 +61,7 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
       { message: 'تمَّ حفظ المقال' },
       {
         revalidate: [...postRevalidation(validated.data.slug), { path: `/blogpress/editor/${id}` }],
+        tags: BLOG_MUTATION_TAGS,
       }
     );
   } catch (error) {
@@ -76,7 +78,11 @@ export async function deletePost(id: string): Promise<HttpResult> {
 
     const { slug } = await createBlogpressPostsService(supabase).deletePost(id, user.id);
 
-    return jsonResult(200, { success: true }, { revalidate: postRevalidation(slug) });
+    return jsonResult(
+      200,
+      { success: true },
+      { revalidate: postRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+    );
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل حذف المقال',
@@ -95,7 +101,11 @@ export async function publishPost(id: string): Promise<HttpResult> {
       user.email ?? ''
     );
 
-    return jsonResult(200, { success: true }, { revalidate: publishRevalidation(slug) });
+    return jsonResult(
+      200,
+      { success: true },
+      { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+    );
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل نشر المقال',
@@ -110,7 +120,11 @@ export async function unpublishPost(id: string): Promise<HttpResult> {
 
     const { slug } = await createBlogpressPostsService(supabase).unpublishPost(id, user.id);
 
-    return jsonResult(200, { success: true }, { revalidate: publishRevalidation(slug) });
+    return jsonResult(
+      200,
+      { success: true },
+      { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+    );
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل إلغاء النَّشر',
@@ -135,7 +149,10 @@ export async function schedulePost(id: string, body: Record<string, unknown>): P
     return jsonResult(
       200,
       { success: true },
-      { revalidate: [...postRevalidation(slug), { path: '/blogpress/calendar' }] }
+      {
+        revalidate: [...postRevalidation(slug), { path: '/blogpress/calendar' }],
+        tags: BLOG_MUTATION_TAGS,
+      }
     );
   } catch (error) {
     return jsonResult(500, {
@@ -178,7 +195,7 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
       return jsonResult(
         200,
         { success: true, affected: postIds.length },
-        { revalidate: [{ path: '/blogpress' }] }
+        { revalidate: [{ path: '/blogpress' }], tags: BLOG_MUTATION_TAGS }
       );
     }
 
@@ -193,14 +210,14 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
       return jsonResult(
         200,
         { success: true, affected },
-        { revalidate: slugs.flatMap((slug) => publishRevalidation(slug)) }
+        { revalidate: slugs.flatMap((slug) => publishRevalidation(slug)), tags: BLOG_MUTATION_TAGS }
       );
     }
 
     return jsonResult(
       200,
       { success: true, affected },
-      { revalidate: slugs.flatMap((slug) => postRevalidation(slug)) }
+      { revalidate: slugs.flatMap((slug) => postRevalidation(slug)), tags: BLOG_MUTATION_TAGS }
     );
   } catch (error) {
     return jsonResult(500, {
@@ -230,7 +247,11 @@ export async function saveAndPublishPost(
       user.email ?? ''
     );
 
-    return jsonResult(200, { success: true, slug }, { revalidate: publishRevalidation(slug) });
+    return jsonResult(
+      200,
+      { success: true, slug },
+      { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+    );
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل نشر المقال',
@@ -324,7 +345,7 @@ export async function setBlogPostTags(
     return jsonResult(
       200,
       { success: true },
-      { revalidate: [{ path: `/blogpress/editor/${id}` }] }
+      { revalidate: [{ path: `/blogpress/editor/${id}` }], tags: BLOG_MUTATION_TAGS }
     );
   } catch (error) {
     return jsonResult(500, {

@@ -10,6 +10,7 @@ export interface HttpJsonResult {
   body: unknown;
   headers?: Record<string, string>;
   revalidate?: RevalidationHint[];
+  tags?: string[];
 }
 
 export interface HttpRedirectResult {
@@ -22,9 +23,19 @@ export type HttpResult = HttpJsonResult | HttpRedirectResult;
 export function jsonResult(
   status: number,
   body: unknown,
-  options: { headers?: Record<string, string>; revalidate?: RevalidationHint[] } = {}
+  options: {
+    headers?: Record<string, string>;
+    revalidate?: RevalidationHint[];
+    tags?: string[];
+  } = {}
 ): HttpJsonResult {
-  return { status, body, headers: options.headers, revalidate: options.revalidate };
+  return {
+    status,
+    body,
+    headers: options.headers,
+    revalidate: options.revalidate,
+    tags: options.tags,
+  };
 }
 
 export function toNextResponse(result: HttpResult): NextResponse {
