@@ -60,8 +60,8 @@ export function createCertificateIssuedNotifier(): CertificateIssuedNotifier {
           await notify({
             user_id: userId,
             type: 'certificate_issued',
-            title: 'تم إصدار شهادة لك',
-            body: `شهادة "${certificate.course_name}" باسم ${certificate.student_name} صادرة عن مركز رؤية رقمية.`,
+            title: 'تمَّ إصدار شهادة لك',
+            body: `شهادة "${certificate.course_name}" باسم ${certificate.student_name} صادرة عن رؤية رقمية.`,
             metadata: {
               certificateId: certificate.id,
               certificateCode: certificate.certificate_code,
