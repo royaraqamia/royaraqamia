@@ -43,6 +43,38 @@ export function isPushSupported(): boolean {
   );
 }
 
+/**
+ * True when the browser's existing push subscription was created against the
+ * same application server key we deploy today. A key rotation (VAPID
+ * regeneration) silently orphans every existing subscription: the server's
+ * signature no longer verifies against the key the browser subscribed with,
+ * so deliveries are rejected even though the subscription "looks" valid.
+ * Used by the client auto-heal to re-subscribe without user action.
+ */
+export function applicationServerKeyMatches(
+  subscription: PushSubscription,
+  base64Key: string
+): boolean {
+  if (!base64Key || base64Key.length === 0) return false;
+  let current: ArrayBuffer | null;
+  try {
+    // `applicationServerKey` is not in TS's PushEncryptionKeyName union even
+    // though every engine exposes it via getKey(); cast through a wider name.
+    const getKey = subscription.getKey as ((name: string) => ArrayBuffer | null) | undefined;
+    current = getKey?.('applicationServerKey') ?? null;
+  } catch {
+    return false;
+  }
+  if (!current) return false;
+  const expected = urlBase64ToUint8Array(base64Key);
+  if (current.byteLength !== expected.byteLength) return false;
+  const bytes = new Uint8Array(current);
+  for (let i = 0; i < bytes.length; i++) {
+    if (bytes[i] !== expected[i]) return false;
+  }
+  return true;
+}
+
 export type PushSubscribeResult = 'subscribed' | 'denied' | 'unsupported';
 
 export async function subscribeToPush(): Promise<PushSubscribeResult> {

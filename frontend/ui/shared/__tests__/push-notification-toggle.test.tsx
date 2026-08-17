@@ -6,6 +6,7 @@ const { mocks } = vi.hoisted(() => ({
   mocks: {
     isPushSupported: vi.fn(),
     isPushDisabledByUser: vi.fn(),
+    applicationServerKeyMatches: vi.fn(),
     subscribeToPush: vi.fn(),
     unsubscribeFromPush: vi.fn(),
     registerPushSubscriptionChangeHandler: vi.fn(),
@@ -15,7 +16,10 @@ const { mocks } = vi.hoisted(() => ({
 vi.mock('@/frontend/api/push', () => mocks);
 
 function installGlobals({ existing = false } = {}) {
-  const subscription = { endpoint: 'https://push.example.com/sub-id' };
+  const subscription = {
+    endpoint: 'https://push.example.com/sub-id',
+    unsubscribe: vi.fn(async () => true),
+  };
   const registration = {
     pushManager: {
       getSubscription: vi.fn(async () => (existing ? subscription : null)),
@@ -32,12 +36,14 @@ function installGlobals({ existing = false } = {}) {
     value: { ready: Promise.resolve(registration) },
     configurable: true,
   });
-  return registration;
+  return { registration, subscription };
 }
 
 beforeEach(() => {
+  vi.clearAllMocks();
   mocks.isPushSupported.mockReturnValue(true);
   mocks.isPushDisabledByUser.mockReturnValue(false);
+  mocks.applicationServerKeyMatches.mockReturnValue(true);
   mocks.registerPushSubscriptionChangeHandler.mockResolvedValue(() => {});
   mocks.subscribeToPush.mockResolvedValue('subscribed');
   mocks.unsubscribeFromPush.mockResolvedValue(undefined);
@@ -58,6 +64,28 @@ describe('PushNotificationToggle auto-heal', () => {
 
   it('auto-heals a dropped subscription when the user has not disabled push', async () => {
     render(<PushNotificationToggle />);
+    await waitFor(() => {
+      expect(mocks.subscribeToPush).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it('keeps a subscription whose application server key still matches', async () => {
+    const { subscription } = installGlobals({ existing: true });
+    render(<PushNotificationToggle />);
+    await waitFor(() => {
+      expect(mocks.applicationServerKeyMatches).toHaveBeenCalled();
+    });
+    expect(mocks.subscribeToPush).not.toHaveBeenCalled();
+    expect(subscription.unsubscribe).not.toHaveBeenCalled();
+  });
+
+  it('re-subscribes automatically after a VAPID key rotation', async () => {
+    const { subscription } = installGlobals({ existing: true });
+    mocks.applicationServerKeyMatches.mockReturnValue(false);
+    render(<PushNotificationToggle />);
+    await waitFor(() => {
+      expect(subscription.unsubscribe).toHaveBeenCalledTimes(1);
+    });
     await waitFor(() => {
       expect(mocks.subscribeToPush).toHaveBeenCalledTimes(1);
     });

@@ -8,6 +8,7 @@ vi.mock('@/frontend/transport/http', () => ({
 }));
 
 import {
+  applicationServerKeyMatches,
   isPushDisabledByUser,
   setPushDisabledByUser,
   subscribeToPush,
@@ -99,5 +100,43 @@ describe('push disabled preference', () => {
     const result = await subscribeToPush();
     expect(result).toBe('denied');
     expect(isPushDisabledByUser()).toBe(false);
+  });
+});
+
+describe('applicationServerKeyMatches', () => {
+  // 65 raw bytes: 0x04 prefix + 64-byte P-256 public point.
+  const VALID_KEY = new Uint8Array(65).fill(7);
+  const OTHER_KEY = new Uint8Array(65).fill(9);
+  const KEY_BASE64 = Buffer.from(VALID_KEY).toString('base64url');
+
+  function subWithKey(key: Uint8Array | null) {
+    return {
+      getKey: vi.fn(() => key),
+    } as unknown as PushSubscription;
+  }
+
+  it('returns true when the raw key bytes match the base64 key', () => {
+    expect(applicationServerKeyMatches(subWithKey(VALID_KEY), KEY_BASE64)).toBe(true);
+  });
+
+  it('returns false when the keys differ', () => {
+    expect(applicationServerKeyMatches(subWithKey(OTHER_KEY), KEY_BASE64)).toBe(false);
+  });
+
+  it('returns false when getKey returns null', () => {
+    expect(applicationServerKeyMatches(subWithKey(null), KEY_BASE64)).toBe(false);
+  });
+
+  it('returns false when the base64 key is empty', () => {
+    expect(applicationServerKeyMatches(subWithKey(VALID_KEY), '')).toBe(false);
+  });
+
+  it('returns false when getKey is missing', () => {
+    expect(applicationServerKeyMatches({} as PushSubscription, KEY_BASE64)).toBe(false);
+  });
+
+  it('returns false on differing lengths', () => {
+    const short = new Uint8Array(5);
+    expect(applicationServerKeyMatches(subWithKey(short), KEY_BASE64)).toBe(false);
   });
 });

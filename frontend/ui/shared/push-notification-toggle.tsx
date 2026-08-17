@@ -3,12 +3,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { BellRing, BellOff, Ban } from 'lucide-react';
 import {
+  applicationServerKeyMatches,
   isPushDisabledByUser,
   isPushSupported,
   registerPushSubscriptionChangeHandler,
   subscribeToPush,
   unsubscribeFromPush,
 } from '@/frontend/api/push';
+import { VAPID_PUBLIC_KEY } from '@/frontend/shared/constants';
 import { cn } from '@/frontend/shared/cn';
 
 type PushToggleState =
@@ -36,7 +38,9 @@ export function PushNotificationToggle() {
     void refreshState();
   }, [refreshState]);
 
-  // Auto-heal: permission already granted but no subscription yet.
+  // Auto-heal: permission already granted but no subscription yet, or the
+  // existing subscription was bound to a rotated application server key
+  // (VAPID regeneration). Re-subscribe automatically in both cases.
   useEffect(() => {
     if (!isPushSupported()) return;
     if (Notification.permission !== 'granted') return;
@@ -44,7 +48,10 @@ export function PushNotificationToggle() {
     void (async () => {
       const registration = await navigator.serviceWorker.ready;
       const existing = await registration.pushManager.getSubscription();
-      if (existing) return;
+      if (existing) {
+        if (applicationServerKeyMatches(existing, VAPID_PUBLIC_KEY)) return;
+        await existing.unsubscribe();
+      }
       const result = await subscribeToPush();
       setState(result === 'subscribed' ? { kind: 'enabled' } : { kind: 'disabled' });
     })();
