@@ -66,6 +66,8 @@ export function AnnouncementForm() {
               value={body}
               onChange={(e) => setBody(e.target.value)}
               rows={4}
+              maxLength={1000}
+              showCount
               placeholder="اكتب تفاصيل الإعلان..."
               className="bg-muted border-border rounded-xl focus-ring"
             />
