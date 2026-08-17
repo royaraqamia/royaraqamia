@@ -2618,3 +2618,255 @@
     0 8px 10px -6px oklch(0 0 0 / 0.3),
     0 0 0 1px oklch(1 0 0 / 0.06);
 }
+
+/* ============================================================
+   Landing page CSS animations
+   Replaces framer-motion on public landing sections so they can
+   render as Server Components. All effects are compositor-only
+   (opacity / transform / width / height). Delays are driven by
+   the `--ld` custom property. Scroll reveal is handled by the
+   tiny client `Reveal` island toggling `.is-visible`; the
+   animation itself stays pure CSS.
+   ============================================================ */
+
+@keyframes landing-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-fade-up-sm {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes landing-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes landing-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes landing-slide-left {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes landing-slide-right {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes landing-float {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  50% {
+    translate: 0 var(--landing-float-y, -12px);
+  }
+}
+
+@keyframes landing-grow-w {
+  from {
+    width: 0;
+  }
+  to {
+    width: var(--landing-target, 100%);
+  }
+}
+
+@keyframes landing-grow-h {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--landing-target, 100%);
+  }
+}
+
+/* --- Mount entrance (above-the-fold Hero) --- */
+.landing-enter-up {
+  animation: landing-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--ld, 0s);
+}
+
+.landing-enter-up-sm {
+  animation: landing-fade-up-sm 0.6s ease-out both;
+  animation-delay: var(--ld, 0s);
+}
+
+.landing-enter-fade {
+  animation: landing-fade-in 0.6s ease-out both;
+  animation-delay: var(--ld, 0s);
+}
+
+.landing-enter-scale {
+  animation: landing-scale-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--ld, 0s);
+}
+
+.landing-enter-left {
+  animation: landing-slide-left 0.5s ease-out both;
+  animation-delay: var(--ld, 0s);
+}
+
+.landing-enter-right {
+  animation: landing-slide-right 0.5s ease-out both;
+  animation-delay: var(--ld, 0s);
+}
+
+/* --- Infinite loops (floating mockups / badges) --- */
+.landing-float {
+  animation: landing-float var(--landing-float-dur, 7s) ease-in-out infinite;
+  animation-delay: var(--ld, 0s);
+}
+
+/* --- Reveal on scroll (Reveal island toggles .is-visible; CSS animations) --- */
+.landing-reveal {
+  opacity: 0;
+  transform: var(--landing-reveal-from, translateY(24px));
+  will-change: opacity, transform;
+}
+
+.landing-reveal-up-sm {
+  --landing-reveal-from: translateY(14px);
+}
+
+.landing-reveal-fade {
+  --landing-reveal-from: none;
+}
+
+.landing-reveal-scale {
+  --landing-reveal-from: scale(0.94);
+}
+
+.landing-reveal-left {
+  --landing-reveal-from: translateX(20px);
+}
+
+.landing-reveal-right {
+  --landing-reveal-from: translateX(-20px);
+}
+
+@keyframes landing-reveal-in {
+  from {
+    opacity: 0;
+    transform: var(--landing-reveal-from, translateY(24px));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.landing-reveal.is-visible {
+  animation: landing-reveal-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--ld, 0s);
+}
+
+/* Children that stagger in once the parent group becomes visible */
+.landing-reveal-item {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+@keyframes landing-item-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.landing-reveal.is-visible .landing-reveal-item {
+  animation: landing-item-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--ld, 0s);
+}
+
+/* Growing bars / meters inside a revealed group */
+.landing-grow-w {
+  width: 0;
+}
+
+.landing-reveal.is-visible .landing-grow-w {
+  animation: landing-grow-w 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--ld, 0s);
+}
+
+.landing-grow-h {
+  height: 0;
+}
+
+.landing-reveal.is-visible .landing-grow-h {
+  animation: landing-grow-h 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--ld, 0s);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-enter-up,
+  .landing-enter-up-sm,
+  .landing-enter-fade,
+  .landing-enter-scale,
+  .landing-enter-left,
+  .landing-enter-right,
+  .landing-float,
+  .landing-reveal,
+  .landing-reveal-up-sm,
+  .landing-reveal-fade,
+  .landing-reveal-scale,
+  .landing-reveal-left,
+  .landing-reveal-right,
+  .landing-reveal-item {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .landing-grow-w {
+    width: var(--landing-target, 100%) !important;
+  }
+
+  .landing-grow-h {
+    height: var(--landing-target, 100%) !important;
+  }
+}

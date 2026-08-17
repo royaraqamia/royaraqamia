@@ -1,5 +1,3 @@
-'use client';
-
 import { SectionHeading } from './SectionHeading';
 
 interface FeaturesSectionProps {

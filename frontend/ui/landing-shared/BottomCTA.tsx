@@ -1,12 +1,7 @@
-'use client';
-
-import { motion } from 'motion/react';
-import { ArrowLeft, Sparkle } from 'lucide-react';
-import { Button } from '@/frontend/ui/primitives/button';
-import { useLandingCta } from './useLandingCta';
-
-const ease: [number, number, number, number] = [0.16, 1, 0.3, 1];
-const spring: [number, number, number, number] = [0.34, 1.56, 0.64, 1];
+import { Sparkle } from 'lucide-react';
+import { cn } from '@/frontend/shared/cn';
+import { Reveal } from './Reveal';
+import { LandingCta } from './LandingCta';
 
 interface BottomCTAProps {
   appPath: string;
@@ -50,10 +45,8 @@ export function BottomCTA({
   decor,
   containerClassName,
   card,
-  contentMotion,
   contentClassName,
   contentDecor,
-  badgeScale = 0.9,
   badgeMotionClassName,
   badgePillClassName,
   badgeText,
@@ -66,21 +59,15 @@ export function BottomCTA({
   subtitle,
   subtitleClassName,
   actionsClassName,
-  actionsMotion,
   primaryButtonClassName,
   primaryButtonSpanClassName,
   arrowClassName,
   secondaryButtonClassName,
 }: BottomCTAProps) {
-  const { user, handleCTA, scrollToHowItWorks } = useLandingCta(appPath, loginRedirect);
-
   const badge = (
-    <motion.div
-      initial={{ scale: badgeScale, opacity: 0 }}
-      whileInView={{ scale: 1, opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ delay: 0.15, duration: 0.5, ease: spring }}
-      className={badgeMotionClassName}
+    <div
+      className={cn('landing-reveal-item', badgeMotionClassName)}
+      style={{ ['--ld' as string]: '0.15s' } as React.CSSProperties}
     >
       {badgePillClassName ? (
         <div className={badgePillClassName}>
@@ -93,7 +80,7 @@ export function BottomCTA({
           <span>{badgeText}</span>
         </>
       )}
-    </motion.div>
+    </div>
   );
 
   const content = (
@@ -108,33 +95,23 @@ export function BottomCTA({
 
       <p className={subtitleClassName}>{subtitle}</p>
 
-      <motion.div
-        initial={{ opacity: 0, y: actionsMotion.initialY }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={
-          actionsMotion.useEase
-            ? { delay: 0.3, duration: actionsMotion.duration, ease }
-            : { delay: 0.3, duration: actionsMotion.duration }
-        }
-        className={actionsClassName}
+      <div
+        className={cn('landing-reveal-item', actionsClassName)}
+        style={{ ['--ld' as string]: '0.3s' } as React.CSSProperties}
       >
-        <Button size="xl" onClick={handleCTA} className={primaryButtonClassName}>
-          <span className={primaryButtonSpanClassName}>
-            {user ? 'لوحة التَّحكُّم' : 'أنشِئ حسابك'}
-          </span>
-          <ArrowLeft size={20} className={arrowClassName} />
-        </Button>
-
-        <Button
-          size="xl"
-          variant="outline"
-          onClick={scrollToHowItWorks}
-          className={secondaryButtonClassName}
-        >
-          كيف يعمل
-        </Button>
-      </motion.div>
+        <LandingCta
+          appPath={appPath}
+          loginRedirect={loginRedirect}
+          scrollTarget="how-it-works"
+          primaryClassName={primaryButtonClassName}
+          primarySpanClassName={primaryButtonSpanClassName}
+          loggedOutLabel="أنشِئ حسابك"
+          loggedInLabel="لوحة التَّحكُّم"
+          arrowClassName={arrowClassName}
+          secondaryClassName={secondaryButtonClassName}
+          secondaryLabel="كيف يعمل"
+        />
+      </div>
     </>
   );
 
@@ -150,26 +127,10 @@ export function BottomCTA({
         {card ? (
           <div className={card.className}>
             {card.innerDecor}
-            <motion.div
-              initial={{ opacity: 0, y: contentMotion.initialY }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: contentMotion.viewportMargin }}
-              transition={{ duration: contentMotion.duration, ease }}
-              className={contentClassName}
-            >
-              {content}
-            </motion.div>
+            <Reveal className={contentClassName}>{content}</Reveal>
           </div>
         ) : (
-          <motion.div
-            initial={{ opacity: 0, y: contentMotion.initialY }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: contentMotion.viewportMargin }}
-            transition={{ duration: contentMotion.duration, ease }}
-            className={contentClassName}
-          >
-            {content}
-          </motion.div>
+          <Reveal className={contentClassName}>{content}</Reveal>
         )}
       </div>
     </section>

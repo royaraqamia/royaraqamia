@@ -3,10 +3,10 @@
 import { useRef, useState, useCallback } from 'react';
 
 export function useMouseSpotlight() {
-  const cardRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLElement>(null);
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLElement>) => {
     if (!cardRef.current) return;
     const rect = cardRef.current.getBoundingClientRect();
     setMousePos({

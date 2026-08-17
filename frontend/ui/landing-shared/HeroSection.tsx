@@ -1,5 +1,3 @@
-'use client';
-
 interface HeroSectionProps {
   sectionClassName: string;
   sectionAriaLabel?: string;
