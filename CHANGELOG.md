@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-17
+
+### Changed
+- add plan for admin user targeting in certificates and notifications
+- align announcement body length with server cap
+
+### Added
+- add multi-select user picker to certificate and announcement forms
+- persist and notify targeted recipients by user id
+- support targeted admin announcement recipients
+- add searchable admin users API
+- add admin user selection schemas and recipient_user_ids
+- add recipient_user_ids column and regenerate types
+
+### Fixed
+- strip internal recipient fields from public verify endpoints
+
 ## [1.2.1] - 2026-08-16
 
 ### Changed
