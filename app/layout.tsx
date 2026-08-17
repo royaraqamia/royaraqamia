@@ -10,10 +10,8 @@ import { NotificationProvider } from '../frontend/state/NotificationContext';
 import { SessionProvider } from '../frontend/state/session-provider';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
-import { VersionChecker } from '../frontend/ui/VersionChecker';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
-import { GoUpButton } from '../frontend/ui/GoUpButton';
-import { WhatsAppFloat } from '../frontend/ui/WhatsAppFloat';
+import { FloatingActions } from '../frontend/ui/FloatingActions';
 import { SITE_NAME } from '@/frontend/shared/metadata';
 import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
@@ -127,11 +125,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   <SpeedInsights />
                   <Analytics />
                   <PWAProvider>
-                    <VersionChecker />
                     <RouteChangeFocus />
                     {children}
-                    <GoUpButton />
-                    <WhatsAppFloat />
+                    <FloatingActions />
                   </PWAProvider>
                   <RoyaToaster />
                 </NotificationProvider>
