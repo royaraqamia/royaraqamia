@@ -276,7 +276,6 @@ export function Certificate() {
                 width={1200}
                 height={848}
                 className="w-full h-auto relative z-0 object-cover transform transition-transform duration-700"
-                priority={true}
               />
             </motion.div>
           </div>

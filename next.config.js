@@ -36,6 +36,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
+    formats: ['image/avif', 'image/webp'],
     remotePatterns: [
       { protocol: 'https', hostname: 'royaraqamia.com' },
       { protocol: 'https', hostname: '*.royaraqamia.com' },

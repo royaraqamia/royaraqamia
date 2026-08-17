@@ -44,7 +44,6 @@ export function PortfolioCard({
           src={imagePath.webp}
           alt={`${project.title} - رؤية رقمية`}
           fill
-          unoptimized
           loading={displayIdx < 3 ? 'eager' : 'lazy'}
           sizes="(max-width: 640px) 85vw, (max-width: 768px) 380px, (max-width: 1024px) 440px, 480px"
           className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:duration-0 group-hover/card-inner:scale-105"
