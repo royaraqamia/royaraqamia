@@ -1,3 +1,6 @@
+import { z } from 'zod';
+import { UserIdsSchema } from '@/shared/contracts/users';
+
 export type NotificationType =
   | 'certificate_issued'
   | 'post_published'
@@ -29,3 +32,11 @@ export interface NotificationCreateInput {
 export interface NotificationWithMeta extends Notification {
   timeAgo: string;
 }
+
+export const AnnouncementSendSchema = z.object({
+  title: z.string().trim().min(1, 'العنوان مطلوب').max(120, 'العنوان طويل جداً'),
+  body: z.string().trim().max(1000, 'نص الإعلان طويل جداً').optional(),
+  userIds: UserIdsSchema.optional(),
+});
+
+export type AnnouncementSendInput = z.infer<typeof AnnouncementSendSchema>;
