@@ -15,9 +15,29 @@ export interface Certificate {
   created_at: string;
 }
 
+/**
+ * Public-facing certificate shape for the anonymous verify endpoints
+ * (`/api/certificates/verify` and `/verify/[code]`). Strips internal recipient
+ * info (user ids + recipient email) so it is never exposed to visitors.
+ */
+export type PublicCertificate = Omit<Certificate, 'recipient_email' | 'recipient_user_ids'>;
+
+export function toPublicCertificate(certificate: Certificate): PublicCertificate {
+  return {
+    id: certificate.id,
+    certificate_code: certificate.certificate_code,
+    student_name: certificate.student_name,
+    course_name: certificate.course_name,
+    issue_date: certificate.issue_date,
+    expiration_date: certificate.expiration_date,
+    grade_or_status: certificate.grade_or_status,
+    created_at: certificate.created_at,
+  };
+}
+
 export interface VerifyResult {
   success: boolean;
-  certificate?: Certificate;
+  certificate?: PublicCertificate;
   error?: string;
   rateLimited?: boolean;
 }

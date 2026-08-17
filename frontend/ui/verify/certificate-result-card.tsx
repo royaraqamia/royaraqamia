@@ -2,7 +2,7 @@
 
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { Badge } from '@/frontend/ui/primitives/badge';
-import type { Certificate } from '@/shared/contracts/certificates';
+import type { PublicCertificate } from '@/shared/contracts/certificates';
 import { formatDateArabic, isCertificateExpired } from '@/frontend/shared/format';
 import {
   ShieldCheck,
@@ -24,7 +24,7 @@ export function CertificateResultCard({
   copied,
   onCopy,
 }: {
-  certificate: Certificate;
+  certificate: PublicCertificate;
   copied: boolean;
   onCopy: (val: string) => void;
 }) {

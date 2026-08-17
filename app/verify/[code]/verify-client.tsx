@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
-import type { Certificate } from '@/shared/contracts/certificates';
+import type { PublicCertificate } from '@/shared/contracts/certificates';
 import { formatDateArabic, isCertificateExpired } from '@/frontend/shared/format';
 import { CertificateQRCodeClient } from '@/frontend/ui/certificate-qr-code-client';
 
@@ -50,7 +50,7 @@ export function VerifyClient({
   certificate,
 }: {
   code: string;
-  certificate: Certificate | null;
+  certificate: PublicCertificate | null;
 }) {
   if (!certificate) {
     return <NotFoundState code={code} />;
@@ -183,7 +183,7 @@ function NotFoundState({ code }: { code: string }) {
   );
 }
 
-function CertificateFound({ certificate }: { certificate: Certificate }) {
+function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
   const reduce = useReducedMotion() === true;
   const isExpired = isCertificateExpired(certificate.expiration_date);
   const [copied, setCopied] = useState(false);

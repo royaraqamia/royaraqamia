@@ -1,5 +1,9 @@
 import type { CertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
-import type { Certificate, VerifyResult } from '@/shared/contracts/certificates';
+import {
+  toPublicCertificate,
+  type Certificate,
+  type VerifyResult,
+} from '@/shared/contracts/certificates';
 import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
 import { logger } from '@/backend/shared/logger';
 
@@ -97,7 +101,7 @@ export class CertificateVerifier {
         extra: { code: sanitized, student: certificate.student_name, ip },
       });
 
-      return { success: true, certificate };
+      return { success: true, certificate: toPublicCertificate(certificate) };
     } catch (e) {
       logger.error('Unexpected error in verifyCertificateByCode', { error: String(e), code, ip });
       this.deps.captureException(e, {

@@ -11,14 +11,14 @@ import { VerifyLoadingState } from '@/frontend/ui/verify/verify-loading-state';
 import { VerifyErrorState } from '@/frontend/ui/verify/verify-error-state';
 import { VerifyTrustFooter } from '@/frontend/ui/verify/verify-trust-footer';
 import { CertificateResultCard } from '@/frontend/ui/verify/certificate-result-card';
-import type { Certificate } from '@/shared/contracts/certificates';
+import type { PublicCertificate } from '@/shared/contracts/certificates';
 
 export default function VerifyPage() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     success: boolean;
-    certificate?: Certificate;
+    certificate?: PublicCertificate;
     error?: string;
     rateLimited?: boolean;
   } | null>(null);

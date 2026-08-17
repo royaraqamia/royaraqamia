@@ -4,7 +4,7 @@ import {
   CERT_CODE_REGEX,
   type CertificateVerifierDeps,
 } from '@/backend/services/certificates/certificate-verification';
-import type { Certificate } from '@/shared/contracts/certificates';
+import type { Certificate, PublicCertificate } from '@/shared/contracts/certificates';
 import type { CertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
 
 // ============================================================
@@ -156,6 +156,23 @@ describe('Certificate verification service', () => {
     const result = await verifier.verifyCertificateByCode('COMP-2026-A1B2C3D4', '1.2.3.4');
 
     expect(result).toEqual({ success: true, certificate: sampleCertificate });
+  });
+
+  it('strips internal recipient fields from the public response', async () => {
+    const { verifier, repository } = makeDeps();
+    const fullCertificate = {
+      ...sampleCertificate,
+      recipient_email: 'student@example.com',
+      recipient_user_ids: ['9f0d8b3e-6b2a-4d4c-9f1e-2c3d4e5f6a7b'],
+    } as unknown as Certificate;
+    (repository.getByCode as ReturnType<typeof vi.fn>).mockResolvedValue(fullCertificate);
+
+    const result = await verifier.verifyCertificateByCode('COMP-2026-A1B2C3D4', '1.2.3.4');
+
+    expect(result.success).toBe(true);
+    const publicCert = (result as { certificate: PublicCertificate }).certificate;
+    expect(publicCert).not.toHaveProperty('recipient_email');
+    expect(publicCert).not.toHaveProperty('recipient_user_ids');
   });
 
   it('reports unexpected errors and returns a generic message', async () => {
