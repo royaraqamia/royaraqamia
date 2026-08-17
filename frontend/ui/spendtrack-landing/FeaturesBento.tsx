@@ -1,10 +1,6 @@
-'use client';
-
-import { motion } from 'motion/react';
-import { Receipt, ChartPie, TrendingUp } from 'lucide-react';
+﻿import { Receipt, ChartPie, TrendingUp } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
-import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
 
 const bentoCardTheme = {
   as: 'article' as const,
@@ -39,28 +35,47 @@ const bentoCardTheme = {
 function bentoCardProps(rgba: string) {
   return {
     ...bentoCardTheme,
-    backgroundStyle: (x: number, y: number) => ({
-      backgroundImage: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha(rgba, 0.15)}, transparent 70%)`,
+    spotlight: {
+      rgba,
+      backgroundAlpha: 0.15,
+      hoverAlpha: 0.08,
+      hoverRadius: 700,
+      useBackgroundImage: true,
       backgroundColor: 'hsl(var(--card))',
-    }),
-    hoverStyle: (x: number, y: number) => ({
-      background: `radial-gradient(700px circle at ${x}% ${y}%, ${formatGradientAlpha(rgba, 0.08)}, transparent 65%)`,
-    }),
+    },
   };
 }
 
 const expenseEntries = [
   {
-    cat: 'طعام ومشروبات',
+    cat: 'Ø·Ø¹Ø§Ù… ÙˆÙ…Ø´Ø±ÙˆØ¨Ø§Øª',
     amount: 520,
     color: 'bg-violet-500',
     ringColor: 'ring-violet-500/30',
     pct: 35,
   },
-  { cat: 'مواصلات', amount: 280, color: 'bg-indigo-500', ringColor: 'ring-indigo-500/30', pct: 19 },
-  { cat: 'ترفيه', amount: 150, color: 'bg-emerald-500', ringColor: 'ring-emerald-500/30', pct: 10 },
-  { cat: 'فواتير', amount: 340, color: 'bg-amber-500', ringColor: 'ring-amber-500/30', pct: 23 },
-  { cat: 'أخرى', amount: 190, color: 'bg-zinc-400', ringColor: 'ring-zinc-400/30', pct: 13 },
+  {
+    cat: 'Ù…ÙˆØ§ØµÙ„Ø§Øª',
+    amount: 280,
+    color: 'bg-indigo-500',
+    ringColor: 'ring-indigo-500/30',
+    pct: 19,
+  },
+  {
+    cat: 'ØªØ±ÙÙŠÙ‡',
+    amount: 150,
+    color: 'bg-emerald-500',
+    ringColor: 'ring-emerald-500/30',
+    pct: 10,
+  },
+  {
+    cat: 'ÙÙˆØ§ØªÙŠØ±',
+    amount: 340,
+    color: 'bg-amber-500',
+    ringColor: 'ring-amber-500/30',
+    pct: 23,
+  },
+  { cat: 'Ø£Ø®Ø±Ù‰', amount: 190, color: 'bg-zinc-400', ringColor: 'ring-zinc-400/30', pct: 13 },
 ];
 
 function ExpenseLogger() {
@@ -73,42 +88,39 @@ function ExpenseLogger() {
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
           </span>
           <span className="text-xs font-semibold tracking-wide text-foreground sm:text-sm">
-            مصروفات اليوم
+            Ù…ØµØ±ÙˆÙØ§Øª Ø§Ù„ÙŠÙˆÙ…
           </span>
         </div>
         <span className="inline-flex items-center rounded-full border border-border/30 bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-          5 مدخلات
+          5 Ù…Ø¯Ø®Ù„Ø§Øª
         </span>
       </div>
 
       <div className="space-y-2.5">
         {[
           {
-            desc: 'قهوة',
+            desc: 'Ù‚Ù‡ÙˆØ©',
             amount: '$4.50',
-            cat: 'طعام',
+            cat: 'Ø·Ø¹Ø§Ù…',
             badgeColor: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
           },
           {
-            desc: 'مشوار أوبر',
+            desc: 'Ù…Ø´ÙˆØ§Ø± Ø£ÙˆØ¨Ø±',
             amount: '$12.00',
-            cat: 'مواصلات',
+            cat: 'Ù…ÙˆØ§ØµÙ„Ø§Øª',
             badgeColor: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
           },
           {
-            desc: 'غداء',
+            desc: 'ØºØ¯Ø§Ø¡',
             amount: '$18.50',
-            cat: 'طعام',
+            cat: 'Ø·Ø¹Ø§Ù…',
             badgeColor: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
           },
         ].map((item, i) => (
-          <motion.div
+          <div
             key={item.desc + i}
-            initial={{ opacity: 0, x: -12 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 + i * 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="group/item flex items-center justify-between rounded-xl border border-border/30 bg-card/40 px-3.5 py-2.5 transition-all duration-300 hover:scale-[1.01] hover:border-primary/30 hover:bg-card/80 hover:shadow-md"
+            className="landing-reveal-item group/item flex items-center justify-between rounded-xl border border-border/30 bg-card/40 px-3.5 py-2.5 transition-all duration-300 hover:scale-[1.01] hover:border-primary/30 hover:bg-card/80 hover:shadow-md"
+            style={{ ['--ld' as string]: `${0.2 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">
               <div className="h-2 w-2 rounded-full bg-primary ring-2 ring-primary/20 transition-transform duration-300 group-hover/item:scale-125" />
@@ -126,12 +138,14 @@ function ExpenseLogger() {
                 {item.amount}
               </span>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       <div className="flex items-center justify-between border-t border-border/40 pt-3">
-        <span className="text-xs font-medium text-muted-foreground sm:text-sm">المجموع اليوم</span>
+        <span className="text-xs font-medium text-muted-foreground sm:text-sm">
+          Ø§Ù„Ù…Ø¬Ù…ÙˆØ¹ Ø§Ù„ÙŠÙˆÙ…
+        </span>
         <div className="flex items-baseline gap-1">
           <span className="bg-linear-to-r from-primary via-violet-500 to-indigo-500 bg-clip-text text-lg font-extrabold tracking-tight text-transparent sm:text-xl">
             $35.00
@@ -147,21 +161,18 @@ function CategoryChart() {
     <div className="space-y-4 rounded-2xl border border-border/40 bg-background/50 p-4 shadow-inner backdrop-blur-md sm:p-5">
       <div className="flex items-center justify-between border-b border-border/30 pb-2">
         <span className="text-xs font-semibold text-foreground sm:text-sm">
-          المصروفات حسب التَّصنيف
+          Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª Ø­Ø³Ø¨ Ø§Ù„ØªÙ‘ÙŽØµÙ†ÙŠÙ
         </span>
         <span className="rounded-full border border-border/20 bg-muted/40 px-2 py-0.5 text-xs font-medium text-muted-foreground/80">
-          هذا الشَّهر
+          Ù‡Ø°Ø§ Ø§Ù„Ø´Ù‘ÙŽÙ‡Ø±
         </span>
       </div>
       <div className="space-y-3.5">
         {expenseEntries.map((entry, i) => (
-          <motion.div
+          <div
             key={entry.cat}
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 + i * 0.08, duration: 0.4 }}
-            className="group/bar"
+            className="landing-reveal-item group/bar"
+            style={{ ['--ld' as string]: `${0.2 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="mb-1.5 flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -182,15 +193,17 @@ function CategoryChart() {
               </div>
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full border border-border/10 bg-muted/50 p-0.5">
-              <motion.div
-                initial={{ width: 0 }}
-                whileInView={{ width: `${entry.pct}%` }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3 + i * 0.08, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                className={`h-full rounded-full ${entry.color} shadow-xs transition-all duration-300 group-hover/bar:brightness-110`}
+              <div
+                className={`landing-grow-w h-full rounded-full ${entry.color} shadow-xs transition-all duration-300 group-hover/bar:brightness-110`}
+                style={
+                  {
+                    ['--ld' as string]: `${0.3 + i * 0.08}s`,
+                    ['--landing-target' as string]: `${entry.pct}%`,
+                  } as React.CSSProperties
+                }
               />
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>
@@ -198,12 +211,12 @@ function CategoryChart() {
 }
 
 const months = [
-  'مُحرَّم',
-  'صَفَر',
-  'ربيع الأوَّل',
-  'ربيع الثَّاني',
-  'جمادى الأولى',
-  'جمادى الآخرة',
+  'Ù…ÙØ­Ø±Ù‘ÙŽÙ…',
+  'ØµÙŽÙÙŽØ±',
+  'Ø±Ø¨ÙŠØ¹ Ø§Ù„Ø£ÙˆÙ‘ÙŽÙ„',
+  'Ø±Ø¨ÙŠØ¹ Ø§Ù„Ø«Ù‘ÙŽØ§Ù†ÙŠ',
+  'Ø¬Ù…Ø§Ø¯Ù‰ Ø§Ù„Ø£ÙˆÙ„Ù‰',
+  'Ø¬Ù…Ø§Ø¯Ù‰ Ø§Ù„Ø¢Ø®Ø±Ø©',
 ];
 const monthlyData = [2100, 1850, 2400, 1980, 2250, 1750];
 
@@ -214,11 +227,11 @@ function MonthlyTrend() {
     <div className="space-y-4 rounded-2xl border border-border/40 bg-background/50 p-4 shadow-inner backdrop-blur-md sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-1 border-b border-border/30 pb-2">
         <span className="text-xs font-semibold text-foreground sm:text-sm">
-          الاتِّجاهات الشَّهريَّة
+          Ø§Ù„Ø§ØªÙ‘ÙØ¬Ø§Ù‡Ø§Øª Ø§Ù„Ø´Ù‘ÙŽÙ‡Ø±ÙŠÙ‘ÙŽØ©
         </span>
         <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
           <TrendingUp size={12} className="shrink-0 text-emerald-500 sm:size-3.5" />
-          <span className="whitespace-nowrap">-12% مقابل الشَّهر الماضي</span>
+          <span className="whitespace-nowrap">-12% Ù…Ù‚Ø§Ø¨Ù„ Ø§Ù„Ø´Ù‘ÙŽÙ‡Ø± Ø§Ù„Ù…Ø§Ø¶ÙŠ</span>
         </span>
       </div>
       <div className="overflow-x-auto px-1 pb-1 pt-4">
@@ -227,13 +240,10 @@ function MonthlyTrend() {
             const heightPercent = (val / maxVal) * 100;
             const isHighest = val === maxVal;
             return (
-              <motion.div
+              <div
                 key={months[i]}
-                initial={{ opacity: 0, y: 10 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2 + i * 0.06, duration: 0.5 }}
-                className="group/col flex h-full flex-1 flex-col items-center justify-end"
+                className="landing-reveal-item group/col flex h-full flex-1 flex-col items-center justify-end"
+                style={{ ['--ld' as string]: `${0.2 + i * 0.06}s` } as React.CSSProperties}
               >
                 {/* Tooltip on hover */}
                 <div className="mb-1.5 rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary opacity-0 transition-opacity duration-200 group-hover/col:opacity-100">
@@ -241,22 +251,24 @@ function MonthlyTrend() {
                 </div>
 
                 <div className="flex h-full w-full items-end rounded-t-lg bg-muted/40 p-0.5">
-                  <motion.div
-                    initial={{ height: 0 }}
-                    whileInView={{ height: `${heightPercent}%` }}
-                    viewport={{ once: true }}
-                    transition={{ delay: 0.3 + i * 0.06, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                    className={`w-full rounded-t-md transition-all duration-300 group-hover/col:brightness-125 ${
+                  <div
+                    className={`landing-grow-h w-full rounded-t-md transition-all duration-300 group-hover/col:brightness-125 ${
                       isHighest
                         ? 'bg-linear-to-t from-primary via-violet-500 to-indigo-400 shadow-md shadow-primary/20'
                         : 'bg-linear-to-t from-primary/40 to-primary/80'
                     }`}
+                    style={
+                      {
+                        ['--ld' as string]: `${0.3 + i * 0.06}s`,
+                        ['--landing-target' as string]: `${heightPercent}%`,
+                      } as React.CSSProperties
+                    }
                   />
                 </div>
                 <span className="mt-2 whitespace-nowrap text-[10px] font-medium text-muted-foreground transition-colors duration-200 group-hover/col:text-foreground sm:text-[11px]">
                   {months[i]}
                 </span>
-              </motion.div>
+              </div>
             );
           })}
         </div>
@@ -290,26 +302,27 @@ export function FeaturesBento() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
             </span>
-            ميِّزات قويَّة
+            Ù…ÙŠÙ‘ÙØ²Ø§Øª Ù‚ÙˆÙŠÙ‘ÙŽØ©
           </div>
         ),
         wrapperClassName: 'mx-auto mb-14 max-w-3xl text-center sm:mb-20',
         titleClassName:
           'mb-6 text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl',
-        titlePrefix: 'كل ما تحتاجه لتتبُّع ',
-        titleHighlight: 'المصروفات',
+        titlePrefix: 'ÙƒÙ„ Ù…Ø§ ØªØ­ØªØ§Ø¬Ù‡ Ù„ØªØªØ¨ÙÙ‘Ø¹ ',
+        titleHighlight: 'Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª',
         titleHighlightClassName:
           'bg-linear-to-r from-primary via-violet-500 to-indigo-500 bg-clip-text text-transparent',
-        subtitle: 'سجِّل المصروفات، وصوِّر الأنماط، وتحكَّم في أموالك بأدوات بديهيَّه.',
+        subtitle:
+          'Ø³Ø¬ÙÙ‘Ù„ Ø§Ù„Ù…ØµØ±ÙˆÙØ§ØªØŒ ÙˆØµÙˆÙÙ‘Ø± Ø§Ù„Ø£Ù†Ù…Ø§Ø·ØŒ ÙˆØªØ­ÙƒÙŽÙ‘Ù… ÙÙŠ Ø£Ù…ÙˆØ§Ù„Ùƒ Ø¨Ø£Ø¯ÙˆØ§Øª Ø¨Ø¯ÙŠÙ‡ÙŠÙŽÙ‘Ù‡.',
         subtitleClassName: 'text-base leading-relaxed text-muted-foreground sm:text-lg',
       }}
       gridClassName="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4"
     >
       <BentoCard
         {...bentoCardProps('rgba(139,92,246,1)')}
-        title="تسجيل المصروفات"
-        description="سجِّل المصروفات بسرعة مع التَّصنيفات والوصف. لا تفقد أبدًا أين تذهب أموالك."
-        icon={Receipt}
+        title="ØªØ³Ø¬ÙŠÙ„ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª"
+        description="Ø³Ø¬ÙÙ‘Ù„ Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª Ø¨Ø³Ø±Ø¹Ø© Ù…Ø¹ Ø§Ù„ØªÙŽÙ‘ØµÙ†ÙŠÙØ§Øª ÙˆØ§Ù„ÙˆØµÙ. Ù„Ø§ ØªÙÙ‚Ø¯ Ø£Ø¨Ø¯Ù‹Ø§ Ø£ÙŠÙ† ØªØ°Ù‡Ø¨ Ø£Ù…ÙˆØ§Ù„Ùƒ."
+        icon={<Receipt />}
         className="md:col-span-2 lg:col-span-2 lg:row-span-2"
         delay={0.1}
       >
@@ -318,9 +331,9 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(129,140,248,1)')}
-        title="تحليل التَّصنيفات"
-        description="صوِّر المصروفات حسب التَّصنيف بأشرطة مُلوَّنَة ونسب مئويَّة في لمحة."
-        icon={ChartPie}
+        title="ØªØ­Ù„ÙŠÙ„ Ø§Ù„ØªÙŽÙ‘ØµÙ†ÙŠÙØ§Øª"
+        description="ØµÙˆÙÙ‘Ø± Ø§Ù„Ù…ØµØ±ÙˆÙØ§Øª Ø­Ø³Ø¨ Ø§Ù„ØªÙŽÙ‘ØµÙ†ÙŠÙ Ø¨Ø£Ø´Ø±Ø·Ø© Ù…ÙÙ„ÙˆÙŽÙ‘Ù†ÙŽØ© ÙˆÙ†Ø³Ø¨ Ù…Ø¦ÙˆÙŠÙŽÙ‘Ø© ÙÙŠ Ù„Ù…Ø­Ø©."
+        icon={<ChartPie />}
         className="md:col-span-2 lg:col-span-2"
         delay={0.2}
       >
@@ -329,9 +342,9 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(167,139,250,1)')}
-        title="الاتِّجاهات الشَّهريَّة"
-        description="تتبَّع أنماط إنفاقك بمرور الوقت من خلال رسوم بيانيَّة شهريَّة ورؤى مقارنة."
-        icon={TrendingUp}
+        title="Ø§Ù„Ø§ØªÙÙ‘Ø¬Ø§Ù‡Ø§Øª Ø§Ù„Ø´ÙŽÙ‘Ù‡Ø±ÙŠÙŽÙ‘Ø©"
+        description="ØªØªØ¨ÙŽÙ‘Ø¹ Ø£Ù†Ù…Ø§Ø· Ø¥Ù†ÙØ§Ù‚Ùƒ Ø¨Ù…Ø±ÙˆØ± Ø§Ù„ÙˆÙ‚Øª Ù…Ù† Ø®Ù„Ø§Ù„ Ø±Ø³ÙˆÙ… Ø¨ÙŠØ§Ù†ÙŠÙŽÙ‘Ø© Ø´Ù‡Ø±ÙŠÙŽÙ‘Ø© ÙˆØ±Ø¤Ù‰ Ù…Ù‚Ø§Ø±Ù†Ø©."
+        icon={<TrendingUp />}
         className="md:col-span-2 lg:col-span-2"
         delay={0.3}
       >

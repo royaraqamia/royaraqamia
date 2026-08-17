@@ -1,8 +1,6 @@
-'use client';
-
-import { motion } from 'motion/react';
 import { Receipt, ChartPie, TrendingUp } from 'lucide-react';
 import { HowItWorksSection } from '@/frontend/ui/landing-shared/HowItWorksSection';
+import { Reveal } from '@/frontend/ui/landing-shared/Reveal';
 
 const steps = [
   {
@@ -87,12 +85,10 @@ export function HowItWorks() {
       {steps.map((step, i) => {
         const StepIcon = step.icon;
         return (
-          <motion.li
+          <Reveal
             key={step.number}
-            initial={{ opacity: 0, y: 32 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ delay: i * 0.15, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            as="li"
+            delay={i * 0.15}
             tabIndex={0}
             className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/60 hover:bg-card/95 border border-border/60 hover:border-primary/40 backdrop-blur-xl shadow-lg hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 ease-out hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
@@ -108,16 +104,9 @@ export function HowItWorks() {
             </span>
 
             {/* Icon Container with Glow Effect */}
-            <motion.div
-              initial={{ scale: 0.8 }}
-              whileInView={{ scale: 1 }}
-              viewport={{ once: true }}
-              transition={{
-                delay: i * 0.15 + 0.1,
-                duration: 0.5,
-                ease: [0.34, 1.56, 0.64, 1],
-              }}
-              className="relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 group-hover:border-primary/50 flex items-center justify-center mb-8 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 transition-all duration-500"
+            <div
+              className="landing-reveal-item relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 group-hover:border-primary/50 flex items-center justify-center mb-8 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 transition-all duration-500"
+              style={{ ['--ld' as string]: `${i * 0.15 + 0.1}s` } as React.CSSProperties}
             >
               <div className="absolute inset-0 rounded-2xl bg-primary/10 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <StepIcon
@@ -125,7 +114,7 @@ export function HowItWorks() {
                 className="text-primary relative z-10 transition-transform duration-500 group-hover:scale-110"
                 aria-hidden="true"
               />
-            </motion.div>
+            </div>
 
             {/* Step Badge */}
             <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold tracking-wider mb-4 border border-primary/15 font-mono">
@@ -141,7 +130,7 @@ export function HowItWorks() {
             <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-sm sm:max-w-xs font-normal">
               {step.description}
             </p>
-          </motion.li>
+          </Reveal>
         );
       })}
     </HowItWorksSection>

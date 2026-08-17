@@ -1,10 +1,6 @@
-'use client';
-
-import { motion } from 'motion/react';
-import { CalendarCheck, ChartLine, Flame, CircleCheckBig } from 'lucide-react';
+﻿import { CalendarCheck, ChartLine, Flame, CircleCheckBig } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
-import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
 
 const bentoCardTheme = {
   cardClassName:
@@ -25,46 +21,41 @@ const bentoCardTheme = {
 function bentoCardProps(rgba: string) {
   return {
     ...bentoCardTheme,
-    backgroundStyle: (x: number, y: number) => ({
-      background: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha(rgba, 0.12)}, transparent 70%)`,
-      backgroundColor: 'hsl(var(--card, 240 10% 3.9%))',
-    }),
-    hoverStyle: (x: number, y: number) => ({
-      background: `radial-gradient(800px circle at ${x}% ${y}%, ${formatGradientAlpha(rgba, 0.08)}, transparent 65%)`,
-    }),
+    spotlight: {
+      rgba,
+      backgroundAlpha: 0.12,
+      hoverAlpha: 0.08,
+    },
   };
 }
 
 const habits = [
-  { name: 'تأمُّل', streak: 7, done: true },
-  { name: 'تمارين', streak: 3, done: false },
-  { name: 'قراءة', streak: 14, done: true },
-  { name: 'شرب الماء', streak: 21, done: true },
+  { name: 'ØªØ£Ù…ÙÙ‘Ù„', streak: 7, done: true },
+  { name: 'ØªÙ…Ø§Ø±ÙŠÙ†', streak: 3, done: false },
+  { name: 'Ù‚Ø±Ø§Ø¡Ø©', streak: 14, done: true },
+  { name: 'Ø´Ø±Ø¨ Ø§Ù„Ù…Ø§Ø¡', streak: 21, done: true },
 ];
 
 function HabitTracker() {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/50 dark:bg-zinc-900/50 p-4 sm:p-5 space-y-3 backdrop-blur-xl shadow-lg">
       <div className="flex items-center justify-between mb-3 px-1">
-        <span className="text-sm font-semibold text-slate-200">عادات اليوم</span>
+        <span className="text-sm font-semibold text-slate-200">Ø¹Ø§Ø¯Ø§Øª Ø§Ù„ÙŠÙˆÙ…</span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          3/4 تمّ
+          3/4 ØªÙ…Ù‘
         </span>
       </div>
       <div className="space-y-2.5">
         {habits.map((habit, i) => (
-          <motion.div
+          <div
             key={habit.name}
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 + i * 0.08, duration: 0.4 }}
-            className={`group/item rounded-xl p-3 sm:p-3.5 flex items-center justify-between border backdrop-blur-md transition-all duration-300 hover:scale-[1.01] ${
+            className={`landing-reveal-item group/item rounded-xl p-3 sm:p-3.5 flex items-center justify-between border backdrop-blur-md transition-all duration-300 hover:scale-[1.01] ${
               habit.done
                 ? 'bg-violet-500/10 border-violet-500/30 border-s-4 border-s-violet-500 shadow-xs shadow-violet-500/10'
                 : 'bg-white/2 border-white/10 border-s-4 border-s-slate-600 hover:border-slate-500'
             }`}
+            style={{ ['--ld' as string]: `${0.2 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="flex items-center gap-3 min-w-0">
               <div
@@ -92,21 +83,23 @@ function HabitTracker() {
               <Flame size={14} fill="currentColor" className="text-amber-400" />
               <span className="text-xs font-semibold tracking-wide">{habit.streak}d</span>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>
   );
 }
 
-const weekLabels = ['الأسبوع ', 'الأسبوع ', 'الأسبوع ', 'الأسبوع '];
+const weekLabels = ['Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ ', 'Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ ', 'Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ ', 'Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ '];
 const streakData = [5, 7, 4, 6];
 
 function StreakCalendar() {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/50 dark:bg-zinc-900/50 p-4 sm:p-5 backdrop-blur-xl shadow-lg">
       <div className="flex items-center justify-between mb-5 px-1">
-        <span className="text-sm font-semibold text-slate-200">السَّلاسل الشَّهريَّة</span>
+        <span className="text-sm font-semibold text-slate-200">
+          Ø§Ù„Ø³Ù‘ÙŽÙ„Ø§Ø³Ù„ Ø§Ù„Ø´Ù‘ÙŽÙ‡Ø±ÙŠÙ‘ÙŽØ©
+        </span>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-linear-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30">
           <Flame size={18} fill="currentColor" className="text-amber-400 animate-pulse" />
           <span className="text-lg font-black bg-linear-to-r from-amber-300 via-orange-400 to-amber-500 bg-clip-text text-transparent">
@@ -116,13 +109,10 @@ function StreakCalendar() {
       </div>
       <div className="space-y-4">
         {weekLabels.map((week, i) => (
-          <motion.div
+          <div
             key={`${week}-${i}`}
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 + i * 0.1, duration: 0.4 }}
-            className="space-y-1.5"
+            className="landing-reveal-item space-y-1.5"
+            style={{ ['--ld' as string]: `${0.2 + i * 0.1}s` } as React.CSSProperties}
           >
             <div className="flex items-center justify-between px-1 text-xs">
               <span className="text-slate-400 font-medium">
@@ -130,7 +120,7 @@ function StreakCalendar() {
                 {i + 1}
               </span>
               <span className="font-semibold text-slate-300">
-                {streakData[i]}/{7} أيَّام
+                {streakData[i]}/{7} Ø£ÙŠÙ‘ÙŽØ§Ù…
               </span>
             </div>
             <div className="flex gap-1.5 sm:gap-2">
@@ -154,7 +144,7 @@ function StreakCalendar() {
                 );
               })}
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>
@@ -162,30 +152,29 @@ function StreakCalendar() {
 }
 
 const progressStats = [
-  { label: 'مُعدَّل الإنجاز', value: '78%', change: '+12%' },
-  { label: 'مُتوسِّط طول السِّلسلة', value: '6.4d', change: '+2.1d' },
-  { label: 'العادات الـمُتتبَّعة', value: '12', change: '+3' },
+  { label: 'Ù…ÙØ¹Ø¯Ù‘ÙŽÙ„ Ø§Ù„Ø¥Ù†Ø¬Ø§Ø²', value: '78%', change: '+12%' },
+  { label: 'Ù…ÙØªÙˆØ³Ù‘ÙØ· Ø·ÙˆÙ„ Ø§Ù„Ø³Ù‘ÙÙ„Ø³Ù„Ø©', value: '6.4d', change: '+2.1d' },
+  { label: 'Ø§Ù„Ø¹Ø§Ø¯Ø§Øª Ø§Ù„Ù€Ù…ÙØªØªØ¨ÙŽÙ‘Ø¹Ø©', value: '12', change: '+3' },
 ];
 
 function ProgressAnalytics() {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/50 dark:bg-zinc-900/50 p-4 sm:p-5 space-y-5 backdrop-blur-xl shadow-lg">
       <div className="flex items-center justify-between px-1">
-        <span className="text-sm font-semibold text-slate-200">نظرة عامَّة على التَّقدُّم</span>
+        <span className="text-sm font-semibold text-slate-200">
+          Ù†Ø¸Ø±Ø© Ø¹Ø§Ù…Ù‘ÙŽØ© Ø¹Ù„Ù‰ Ø§Ù„ØªÙ‘ÙŽÙ‚Ø¯ÙÙ‘Ù…
+        </span>
         <span className="text-xs text-violet-400 font-medium bg-violet-500/10 border border-violet-500/20 px-2.5 py-0.5 rounded-full">
-          مُحدَّث الآن
+          Ù…ÙØ­Ø¯ÙŽÙ‘Ø« Ø§Ù„Ø¢Ù†
         </span>
       </div>
 
       <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
         {progressStats.map((stat, i) => (
-          <motion.div
+          <div
             key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
-            className="rounded-xl border border-white/10 bg-white/3 p-3 text-center transition-all duration-300 hover:border-violet-500/30 hover:bg-white/6"
+            className="landing-reveal-item rounded-xl border border-white/10 bg-white/3 p-3 text-center transition-all duration-300 hover:border-violet-500/30 hover:bg-white/6"
+            style={{ ['--ld' as string]: `${0.3 + i * 0.1}s` } as React.CSSProperties}
           >
             <span className="text-base sm:text-xl font-bold bg-linear-to-r from-violet-300 via-purple-200 to-indigo-300 bg-clip-text text-transparent block">
               {stat.value}
@@ -196,32 +185,34 @@ function ProgressAnalytics() {
             <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20">
               {stat.change}
             </span>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       <div className="pt-3 border-t border-white/10 space-y-2">
         <div className="flex items-center justify-between text-xs text-slate-400">
-          <span>المُستهدَف</span>
-          <span className="text-violet-300 font-semibold">78% إنجاز</span>
+          <span>Ø§Ù„Ù…ÙØ³ØªÙ‡Ø¯ÙŽÙ</span>
+          <span className="text-violet-300 font-semibold">78% Ø¥Ù†Ø¬Ø§Ø²</span>
         </div>
         <div
           role="progressbar"
           aria-valuenow={78}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="مُعدَّل الإنجاز"
+          aria-label="Ù…ÙØ¹Ø¯Ù‘ÙŽÙ„ Ø§Ù„Ø¥Ù†Ø¬Ø§Ø²"
           className="h-2.5 rounded-full bg-slate-800 overflow-hidden p-0.5 border border-white/5 relative"
         >
-          <motion.div
-            initial={{ width: 0 }}
-            whileInView={{ width: '78%' }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.6, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="h-full rounded-full bg-linear-to-r from-violet-500 via-purple-500 to-indigo-500 shadow-xs shadow-violet-500/50 relative"
+          <div
+            className="landing-grow-w h-full rounded-full bg-linear-to-r from-violet-500 via-purple-500 to-indigo-500 shadow-xs shadow-violet-500/50 relative"
+            style={
+              {
+                ['--ld' as string]: '0.6s',
+                ['--landing-target' as string]: '78%',
+              } as React.CSSProperties
+            }
           >
             <div className="absolute top-0 right-0 h-full w-2 bg-white/50 blur-[2px] rounded-full" />
-          </motion.div>
+          </div>
         </div>
         <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium pt-0.5">
           <span>0%</span>
@@ -247,18 +238,18 @@ export function FeaturesBento() {
         badge: (
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs shadow-violet-500/10 backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
-            ميِّزات قويَّة
+            Ù…ÙŠÙ‘ÙØ²Ø§Øª Ù‚ÙˆÙŠÙ‘ÙŽØ©
           </span>
         ),
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-14 sm:mb-20',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight',
-        titlePrefix: 'كل ما تحتاجه ل',
-        titleHighlight: 'بناء العادات',
+        titlePrefix: 'ÙƒÙ„ Ù…Ø§ ØªØ­ØªØ§Ø¬Ù‡ Ù„',
+        titleHighlight: 'Ø¨Ù†Ø§Ø¡ Ø§Ù„Ø¹Ø§Ø¯Ø§Øª',
         titleHighlightClassName:
           'bg-linear-to-r from-violet-400 via-purple-300 to-indigo-400 bg-clip-text text-transparent',
         subtitle:
-          'تتبَّع، وتصوَّر، وحافظ على روتينك اليومي بأدوات مُصمَّمَة لتغيير السُّلوك الدَّائم.',
+          'ØªØªØ¨ÙŽÙ‘Ø¹ØŒ ÙˆØªØµÙˆÙŽÙ‘Ø±ØŒ ÙˆØ­Ø§ÙØ¸ Ø¹Ù„Ù‰ Ø±ÙˆØªÙŠÙ†Ùƒ Ø§Ù„ÙŠÙˆÙ…ÙŠ Ø¨Ø£Ø¯ÙˆØ§Øª Ù…ÙØµÙ…ÙŽÙ‘Ù…ÙŽØ© Ù„ØªØºÙŠÙŠØ± Ø§Ù„Ø³ÙÙ‘Ù„ÙˆÙƒ Ø§Ù„Ø¯ÙŽÙ‘Ø§Ø¦Ù….',
         subtitleClassName: 'text-base sm:text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto',
         useEase: false,
       }}
@@ -266,9 +257,9 @@ export function FeaturesBento() {
     >
       <BentoCard
         {...bentoCardProps('rgba(139,92,246,1)')}
-        title="تتبُّع يومي"
-        description="سجِّل عاداتك يوميًّا بنقرة واحدة. متابعات بسيطة تبني الزَّخم مع الوقت."
-        icon={CalendarCheck}
+        title="ØªØªØ¨ÙÙ‘Ø¹ ÙŠÙˆÙ…ÙŠ"
+        description="Ø³Ø¬ÙÙ‘Ù„ Ø¹Ø§Ø¯Ø§ØªÙƒ ÙŠÙˆÙ…ÙŠÙ‘Ù‹Ø§ Ø¨Ù†Ù‚Ø±Ø© ÙˆØ§Ø­Ø¯Ø©. Ù…ØªØ§Ø¨Ø¹Ø§Øª Ø¨Ø³ÙŠØ·Ø© ØªØ¨Ù†ÙŠ Ø§Ù„Ø²ÙŽÙ‘Ø®Ù… Ù…Ø¹ Ø§Ù„ÙˆÙ‚Øª."
+        icon={<CalendarCheck />}
         className="lg:col-span-2 lg:row-span-2"
         delay={0.1}
       >
@@ -277,9 +268,9 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(129,140,248,1)')}
-        title="تقويم السَّلاسل"
-        description="تصوَّر انتظامك مع تقويم السَّلاسل الأسبوعيَّة والشَّهريَّة. شاهد تقدُّمك وهو ينمو."
-        icon={Flame}
+        title="ØªÙ‚ÙˆÙŠÙ… Ø§Ù„Ø³ÙŽÙ‘Ù„Ø§Ø³Ù„"
+        description="ØªØµÙˆÙŽÙ‘Ø± Ø§Ù†ØªØ¸Ø§Ù…Ùƒ Ù…Ø¹ ØªÙ‚ÙˆÙŠÙ… Ø§Ù„Ø³ÙŽÙ‘Ù„Ø§Ø³Ù„ Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ÙŠÙŽÙ‘Ø© ÙˆØ§Ù„Ø´ÙŽÙ‘Ù‡Ø±ÙŠÙŽÙ‘Ø©. Ø´Ø§Ù‡Ø¯ ØªÙ‚Ø¯ÙÙ‘Ù…Ùƒ ÙˆÙ‡Ùˆ ÙŠÙ†Ù…Ùˆ."
+        icon={<Flame />}
         className="lg:col-span-2"
         delay={0.2}
       >
@@ -288,9 +279,9 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(167,139,250,1)')}
-        title="تحليلات التَّقدُّم"
-        description="تتبَّع معدَّلات الإنجاز ومُتوسِّط أطوال السَّلاسل، وشاهد كيف تتحسَّن عاداتك بمرور الوقت."
-        icon={ChartLine}
+        title="ØªØ­Ù„ÙŠÙ„Ø§Øª Ø§Ù„ØªÙŽÙ‘Ù‚Ø¯ÙÙ‘Ù…"
+        description="ØªØªØ¨ÙŽÙ‘Ø¹ Ù…Ø¹Ø¯ÙŽÙ‘Ù„Ø§Øª Ø§Ù„Ø¥Ù†Ø¬Ø§Ø² ÙˆÙ…ÙØªÙˆØ³ÙÙ‘Ø· Ø£Ø·ÙˆØ§Ù„ Ø§Ù„Ø³ÙŽÙ‘Ù„Ø§Ø³Ù„ØŒ ÙˆØ´Ø§Ù‡Ø¯ ÙƒÙŠÙ ØªØªØ­Ø³ÙŽÙ‘Ù† Ø¹Ø§Ø¯Ø§ØªÙƒ Ø¨Ù…Ø±ÙˆØ± Ø§Ù„ÙˆÙ‚Øª."
+        icon={<ChartLine />}
         className="lg:col-span-2"
         delay={0.3}
       >

@@ -1,8 +1,6 @@
-'use client';
-
-import { motion } from 'motion/react';
 import { FileText, Eye, Globe, Sparkle } from 'lucide-react';
 import { HowItWorksSection } from '@/frontend/ui/landing-shared/HowItWorksSection';
+import { Reveal } from '@/frontend/ui/landing-shared/Reveal';
 
 const steps = [
   {
@@ -76,18 +74,7 @@ export function HowItWorks() {
       {steps.map((step, i) => {
         const Icon = step.icon;
         return (
-          <motion.li
-            key={step.number}
-            initial={{ opacity: 0, y: 32 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{
-              delay: i * 0.15,
-              duration: 0.6,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="relative group"
-          >
+          <Reveal key={step.number} as="li" delay={i * 0.15} className="relative group">
             <div className="h-full flex flex-col items-center text-center p-6 sm:p-8 rounded-3xl bg-card/60 dark:bg-card/30 backdrop-blur-xl border border-border/60 hover:border-primary/40 shadow-xs hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 ease-out hover:-translate-y-1.5">
               {/* Floating Step Number Pill */}
               <div className="absolute top-5 right-6 text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-muted/80 text-muted-foreground border border-border/40 group-hover:border-primary/30 group-hover:text-primary transition-colors duration-300">
@@ -95,23 +82,16 @@ export function HowItWorks() {
               </div>
 
               {/* Step Icon Container */}
-              <motion.div
-                initial={{ scale: 0.85, opacity: 0 }}
-                whileInView={{ scale: 1, opacity: 1 }}
-                viewport={{ once: true }}
-                transition={{
-                  delay: i * 0.15 + 0.15,
-                  duration: 0.4,
-                  ease: [0.34, 1.56, 0.64, 1],
-                }}
-                className="relative z-10 w-20 h-20 rounded-2xl bg-linear-to-b from-primary/15 via-primary/10 to-transparent border border-primary/20 flex items-center justify-center mb-6 shadow-md shadow-primary/5 group-hover:scale-105 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all duration-300"
+              <div
+                className="landing-reveal-item relative z-10 w-20 h-20 rounded-2xl bg-linear-to-b from-primary/15 via-primary/10 to-transparent border border-primary/20 flex items-center justify-center mb-6 shadow-md shadow-primary/5 group-hover:scale-105 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all duration-300"
+                style={{ ['--ld' as string]: `${i * 0.15 + 0.15}s` } as React.CSSProperties}
               >
                 <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <Icon
                   size={32}
                   className="text-primary relative z-10 group-hover:rotate-3 transition-transform duration-300"
                 />
-              </motion.div>
+              </div>
 
               {/* Step Title & Description */}
               <h3 className="text-xl sm:text-2xl font-bold tracking-tight mb-3 text-foreground group-hover:text-primary transition-colors duration-300">
@@ -127,7 +107,7 @@ export function HowItWorks() {
                 <div className="w-8 h-1 rounded-full bg-primary/20 group-hover:w-16 group-hover:bg-primary transition-all duration-300" />
               </div>
             </div>
-          </motion.li>
+          </Reveal>
         );
       })}
     </HowItWorksSection>

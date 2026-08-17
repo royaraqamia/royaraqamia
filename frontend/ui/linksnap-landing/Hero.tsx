@@ -1,11 +1,7 @@
-'use client';
-
-import { motion } from 'motion/react';
-import { ArrowLeft, Link } from 'lucide-react';
-import { Button } from '@/frontend/ui/primitives/button';
+import { Link } from 'lucide-react';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
-import { useLandingCta } from '@/frontend/ui/landing-shared/useLandingCta';
+import { LandingCta } from '@/frontend/ui/landing-shared/LandingCta';
 
 const floatingIcons = [
   { Icon: Link, delay: 0, x: '-12%', y: '-8%', size: 28 },
@@ -15,8 +11,6 @@ const floatingIcons = [
 ];
 
 export function Hero() {
-  const { user, handleCTA } = useLandingCta('/linksnap/app', '/linksnap');
-
   return (
     <HeroSection
       sectionClassName="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0"
@@ -36,32 +30,23 @@ export function Hero() {
       gridClassName="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center"
     >
       {/* Main Hero Copy Container */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start"
-      >
+      <div className="landing-enter-up lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* Announcement Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 dark:bg-primary/15 border border-primary/25 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 backdrop-blur-md shadow-sm transition-all duration-300 hover:bg-primary/20 hover:border-primary/40 cursor-default"
+        <div
+          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 dark:bg-primary/15 border border-primary/25 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 backdrop-blur-md shadow-sm transition-all duration-300 hover:bg-primary/20 hover:border-primary/40 cursor-default"
+          style={{ ['--ld' as string]: '0.2s' } as React.CSSProperties}
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
           </span>
           <span>اختصار الرَّوابط</span>
-        </motion.div>
+        </div>
 
         {/* Typography Stack */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6"
+        <h1
+          className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6"
+          style={{ ['--ld' as string]: '0.3s' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="bg-linear-to-r from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent inline-block pb-1">
@@ -72,69 +57,55 @@ export function Hero() {
               تتبَّع.
             </span>
           </div>
-        </motion.h1>
+        </h1>
 
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mb-8 sm:mb-10 font-normal"
+        <h2
+          className="landing-enter-up-sm text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mb-8 sm:mb-10 font-normal"
+          style={{ ['--ld' as string]: '0.5s' } as React.CSSProperties}
         >
           حوِّل روابطك الطَّويلة إلى روابط قصيرة قويَّة قابلة للتَّتبُّع. راقب كل نقرة واحصل على رؤى
           تفصيليَّة حول جمهورك وأدائك.
-        </motion.h2>
+        </h2>
 
         {/* Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+        <div
+          className="landing-enter-up-sm flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+          style={{ ['--ld' as string]: '0.7s' } as React.CSSProperties}
         >
-          <Button
-            size="xl"
-            onClick={handleCTA}
-            className="group relative w-full sm:w-auto min-w-45 h-13 px-8 text-base font-semibold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          >
-            <span>{user ? 'لوحة التَّحكُّم' : 'ابدأ مجَّانًا'}</span>
-            <ArrowLeft
-              size={20}
-              className="transition-transform duration-300 group-hover:-translate-x-1.5"
-            />
-          </Button>
-          <Button
-            size="xl"
-            variant="outline"
-            onClick={() => {
-              document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="w-full sm:w-auto min-w-40 h-13 px-8 text-base font-medium rounded-full border-border/80 hover:bg-accent/50 hover:border-border hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            اعرف المزيد
-          </Button>
-        </motion.div>
-      </motion.div>
+          <LandingCta
+            appPath="/linksnap/app"
+            loginRedirect="/linksnap"
+            scrollTarget="features"
+            primaryClassName="group relative w-full sm:w-auto min-w-45 h-13 px-8 text-base font-semibold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            loggedOutLabel="ابدأ مجَّانًا"
+            loggedInLabel="لوحة التَّحكُّم"
+            arrowClassName="transition-transform duration-300 group-hover:-translate-x-1.5"
+            secondaryClassName="w-full sm:w-auto min-w-40 h-13 px-8 text-base font-medium rounded-full border-border/80 hover:bg-accent/50 hover:border-border hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            secondaryLabel="اعرف المزيد"
+          />
+        </div>
+      </div>
 
       {/* Dynamic 3D Interactive Card Showcase */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.92, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ delay: 0.4, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="lg:col-span-6 xl:col-span-5 relative"
+      <div
+        className="landing-enter-scale lg:col-span-6 xl:col-span-5 relative"
+        style={{ ['--ld' as string]: '0.4s' } as React.CSSProperties}
       >
         <div className="relative" style={{ perspective: '1200px' }}>
           {/* Background Glow Ring */}
           <div className="absolute -inset-1.5 bg-linear-to-r from-primary/30 to-purple-600/30 rounded-3xl blur-2xl opacity-50 group-hover:opacity-100 transition duration-1000 pointer-events-none" />
 
           {/* Main Glass Card */}
-          <motion.div
-            animate={{ y: [0, -12, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative backdrop-blur-2xl bg-card/80 dark:bg-neutral-900/80 border border-border/80 rounded-2xl p-6 xl:p-8 shadow-2xl shadow-primary/10 transform-gpu transition-all duration-500 hover:border-primary/30"
-            style={{
-              transform: 'rotateY(-6deg) rotateX(4deg)',
-              transformStyle: 'preserve-3d',
-            }}
+          <div
+            className="landing-float relative backdrop-blur-2xl bg-card/80 dark:bg-neutral-900/80 border border-border/80 rounded-2xl p-6 xl:p-8 shadow-2xl shadow-primary/10 transform-gpu transition-all duration-500 hover:border-primary/30"
+            style={
+              {
+                transform: 'rotateY(-6deg) rotateX(4deg)',
+                transformStyle: 'preserve-3d',
+                ['--landing-float-dur' as string]: '7s',
+                ['--landing-float-y' as string]: '-12px',
+              } as React.CSSProperties
+            }
           >
             {/* Mock Window Topbar */}
             <div className="flex items-center justify-between pb-6 mb-6 border-b border-border/60">
@@ -171,12 +142,10 @@ export function Hero() {
                   growth: '+38%',
                 },
               ].map((item, i) => (
-                <motion.div
+                <div
                   key={i}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.8 + i * 0.15, duration: 0.5 }}
-                  className="group/item relative backdrop-blur-md bg-muted/40 hover:bg-muted/80 border border-border/40 hover:border-primary/30 rounded-xl p-3.5 transition-all duration-300 shadow-sm"
+                  className="landing-enter-left group/item relative backdrop-blur-md bg-muted/40 hover:bg-muted/80 border border-border/40 hover:border-primary/30 rounded-xl p-3.5 transition-all duration-300 shadow-sm"
+                  style={{ ['--ld' as string]: `${0.8 + i * 0.15}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between gap-3 mb-1.5">
                     <span className="text-xs font-mono text-muted-foreground truncate max-w-45">
@@ -194,16 +163,14 @@ export function Hero() {
                       {item.clicks} نقرة
                     </span>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
 
             {/* Mock Card Analytics Footer */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.4, duration: 0.5 }}
-              className="mt-6 pt-5 border-t border-border/60 flex items-center justify-between"
+            <div
+              className="landing-enter-fade mt-6 pt-5 border-t border-border/60 flex items-center justify-between"
+              style={{ ['--ld' as string]: '1.4s' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
@@ -219,30 +186,31 @@ export function Hero() {
                   12
                 </span>
               </div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
 
           {/* Depth-of-Field Floating Orbiting Icons */}
           {floatingIcons.map(({ Icon, delay, x, y, size }, i) => (
-            <motion.div
+            <div
               key={i}
-              className="absolute -z-10 pointer-events-none"
-              style={{ left: x, top: y }}
-              animate={{ y: [0, -12 + i * 4, 0] }}
-              transition={{
-                duration: 4 + i,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay,
-              }}
+              className="landing-float absolute -z-10 pointer-events-none"
+              style={
+                {
+                  left: x,
+                  top: y,
+                  ['--landing-float-dur' as string]: `${4 + i}s`,
+                  ['--landing-float-y' as string]: `${-12 + i * 4}px`,
+                  ['--ld' as string]: `${delay}s`,
+                } as React.CSSProperties
+              }
             >
               <div className="backdrop-blur-xl bg-card/70 border border-border/60 rounded-2xl p-3.5 shadow-xl shadow-black/5">
                 <Icon size={size} className="text-primary/70" />
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </HeroSection>
   );
 }

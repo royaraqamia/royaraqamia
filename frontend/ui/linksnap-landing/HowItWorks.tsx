@@ -1,8 +1,6 @@
-'use client';
-
-import { motion } from 'motion/react';
 import { Link, Scissors, ChartColumn } from 'lucide-react';
 import { HowItWorksSection } from '@/frontend/ui/landing-shared/HowItWorksSection';
+import { Reveal } from '@/frontend/ui/landing-shared/Reveal';
 
 const steps = [
   {
@@ -74,39 +72,26 @@ export function HowItWorks() {
       {steps.map((step, i) => {
         const IconComponent = step.icon;
         return (
-          <motion.li
+          <Reveal
             key={step.number}
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{
-              delay: i * 0.15,
-              duration: 0.6,
-              ease: [0.16, 1, 0.3, 1],
-            }}
+            as="li"
+            delay={i * 0.15}
             className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/60 dark:bg-card/40 border border-border/60 hover:border-primary/40 backdrop-blur-xl shadow-xs hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 ease-out hover:-translate-y-2"
           >
             {/* Subtle inner hover glow gradient */}
             <div className="absolute inset-0 rounded-3xl bg-linear-to-b from-primary/4 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-            {/* Icon Box with Spring Micro-Interactions */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{
-                delay: i * 0.15 + 0.2,
-                duration: 0.5,
-                ease: [0.34, 1.56, 0.64, 1],
-              }}
-              className="relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-background border border-border/80 shadow-md group-hover:shadow-lg group-hover:border-primary/50 flex items-center justify-center mb-8 transition-all duration-300"
+            {/* Icon Box with Micro-Interactions */}
+            <div
+              className="landing-reveal-item relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-background border border-border/80 shadow-md group-hover:shadow-lg group-hover:border-primary/50 flex items-center justify-center mb-8 transition-all duration-300"
+              style={{ ['--ld' as string]: `${i * 0.15 + 0.2}s` } as React.CSSProperties}
             >
               <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent group-hover:from-primary/20 transition-all duration-300" />
               <IconComponent
                 size={36}
                 className="text-primary relative z-10 group-hover:scale-110 transition-transform duration-300 ease-out"
               />
-            </motion.div>
+            </div>
 
             {/* Step Number Badge */}
             <span className="text-xs sm:text-sm font-mono font-bold tracking-widest text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
@@ -122,7 +107,7 @@ export function HowItWorks() {
             <p className="text-muted-foreground text-sm sm:text-base leading-relaxed max-w-sm font-normal">
               {step.description}
             </p>
-          </motion.li>
+          </Reveal>
         );
       })}
     </HowItWorksSection>

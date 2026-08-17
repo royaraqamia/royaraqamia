@@ -1,11 +1,7 @@
-'use client';
-
-import { motion } from 'motion/react';
-import { ArrowLeft, CircleCheckBig, Flame } from 'lucide-react';
-import { Button } from '@/frontend/ui/primitives/button';
+import { CircleCheckBig, Flame } from 'lucide-react';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
-import { useLandingCta } from '@/frontend/ui/landing-shared/useLandingCta';
+import { LandingCta } from '@/frontend/ui/landing-shared/LandingCta';
 
 const weekDays = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 const habitData = [
@@ -19,8 +15,6 @@ const habitData = [
 ];
 
 export function Hero() {
-  const { user, handleCTA } = useLandingCta('/habitflow/app', '/habitflow');
-
   return (
     <HeroSection
       sectionClassName="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0 selection:bg-primary/20 selection:text-primary"
@@ -44,32 +38,23 @@ export function Hero() {
       gridClassName="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center"
     >
       {/* Main Hero Typography & Action Controls */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start"
-      >
+      <div className="landing-enter-up lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* Pulsing Status Pill */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.6 }}
-          className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/25 backdrop-blur-md text-primary text-xs sm:text-sm font-semibold tracking-wide shadow-xs hover:bg-primary/15 transition-all duration-300 cursor-default mb-8"
+        <div
+          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/25 backdrop-blur-md text-primary text-xs sm:text-sm font-semibold tracking-wide shadow-xs hover:bg-primary/15 transition-all duration-300 cursor-default mb-8"
+          style={{ ['--ld' as string]: '0.15s' } as React.CSSProperties}
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
           </span>
           <span>تتبُّع العادات</span>
-        </motion.div>
+        </div>
 
         {/* High-Contrast Gradient Typography */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
+        <h1
+          className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
+          style={{ ['--ld' as string]: '0.25s' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="bg-linear-to-l from-primary via-indigo-500 to-purple-600 bg-clip-text text-transparent inline-block drop-shadow-xs">
@@ -80,65 +65,53 @@ export function Hero() {
               ازدَهِر.
             </span>
           </div>
-        </motion.h1>
+        </h1>
 
         {/* Subtitle Description */}
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8 sm:mb-10 font-normal text-balance"
+        <h2
+          className="landing-enter-up-sm text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8 sm:mb-10 font-normal text-balance"
+          style={{ ['--ld' as string]: '0.4s' } as React.CSSProperties}
         >
           ابنِ العادات اليوميَّة وحافظ عليها مع تتبُّع السَّلاسل والتَّقويمات البصريَّة والتَّحفيز
           الذي يدفعك للاستمرار.
-        </motion.h2>
+        </h2>
 
         {/* Micro-Interactive Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+        <div
+          className="landing-enter-up-sm flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+          style={{ ['--ld' as string]: '0.55s' } as React.CSSProperties}
         >
-          <Button
-            size="xl"
-            onClick={handleCTA}
-            className="group relative h-13 px-8 text-base font-semibold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"
-          >
-            <span>{user ? 'لوحة التَّحكُّم' : 'ابدأ التَّتبُّع مجَّانًا'}</span>
-            <ArrowLeft
-              size={20}
-              className="transition-transform duration-300 group-hover:-translate-x-1.5"
-            />
-          </Button>
-          <Button
-            size="xl"
-            variant="outline"
-            onClick={() => {
-              document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="h-13 px-8 text-base font-medium rounded-full border-border/80 bg-background/60 backdrop-blur-md hover:bg-muted/80 hover:border-border hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out w-full sm:w-auto cursor-pointer"
-          >
-            اعرف المزيد
-          </Button>
-        </motion.div>
-      </motion.div>
+          <LandingCta
+            appPath="/habitflow/app"
+            loginRedirect="/habitflow"
+            scrollTarget="features"
+            primaryClassName="group relative h-13 px-8 text-base font-semibold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"
+            loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"
+            loggedInLabel="لوحة التَّحكُّم"
+            arrowClassName="transition-transform duration-300 group-hover:-translate-x-1.5"
+            secondaryClassName="h-13 px-8 text-base font-medium rounded-full border-border/80 bg-background/60 backdrop-blur-md hover:bg-muted/80 hover:border-border hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out w-full sm:w-auto cursor-pointer"
+            secondaryLabel="اعرف المزيد"
+          />
+        </div>
+      </div>
 
       {/* Interactive Dynamic App Preview Card */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-        className="lg:col-span-6 xl:col-span-5 w-full"
+      <div
+        className="landing-enter-scale lg:col-span-6 xl:col-span-5 w-full"
+        style={{ ['--ld' as string]: '0.35s' } as React.CSSProperties}
       >
         <div className="relative w-full max-w-md sm:max-w-lg mx-auto lg:max-w-none group">
           {/* Backlight Card Halo Glow */}
           <div className="absolute -inset-1 rounded-3xl bg-linear-to-r from-primary/30 via-indigo-500/20 to-purple-500/30 opacity-60 blur-xl group-hover:opacity-100 transition duration-1000" />
 
-          <motion.div
-            animate={{ y: [0, -10, 0] }}
-            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/85 backdrop-blur-2xl border border-border/60 shadow-2xl shadow-primary/5 ring-1 ring-white/10 dark:ring-white/5 overflow-hidden"
+          <div
+            className="landing-float relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/85 backdrop-blur-2xl border border-border/60 shadow-2xl shadow-primary/5 ring-1 ring-white/10 dark:ring-white/5 overflow-hidden"
+            style={
+              {
+                ['--landing-float-dur' as string]: '6s',
+                ['--landing-float-y' as string]: '-10px',
+              } as React.CSSProperties
+            }
           >
             {/* Top Refraction Highlight Line */}
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-foreground/15 to-transparent" />
@@ -182,12 +155,10 @@ export function Hero() {
             {/* Habit Tracking Rows */}
             <div className="space-y-3">
               {habitData.map((habit, i) => (
-                <motion.div
+                <div
                   key={habit.name}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.6 + i * 0.12, duration: 0.5 }}
-                  className="group/row rounded-xl p-3 bg-muted/20 hover:bg-muted/40 border border-border/40 hover:border-border/80 transition-all duration-300"
+                  className="landing-enter-left group/row rounded-xl p-3 bg-muted/20 hover:bg-muted/40 border border-border/40 hover:border-border/80 transition-all duration-300"
+                  style={{ ['--ld' as string]: `${0.6 + i * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between mb-2.5">
                     <span className="text-xs sm:text-sm font-semibold text-foreground group-hover/row:text-primary transition-colors">
@@ -221,16 +192,14 @@ export function Hero() {
                       </div>
                     ))}
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
 
             {/* Best Streak Metrics Footer */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.1, duration: 0.5 }}
-              className="mt-5 pt-4 border-t border-border/40 flex items-center justify-between text-xs sm:text-sm"
+            <div
+              className="landing-enter-fade mt-5 pt-4 border-t border-border/40 flex items-center justify-between text-xs sm:text-sm"
+              style={{ ['--ld' as string]: '1.1s' } as React.CSSProperties}
             >
               <div className="flex items-center gap-2 text-muted-foreground font-medium">
                 <CircleCheckBig size={16} className="text-primary" />
@@ -239,10 +208,10 @@ export function Hero() {
               <span className="text-base font-bold bg-linear-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent font-mono">
                 21 days
               </span>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
-      </motion.div>
+      </div>
     </HeroSection>
   );
 }

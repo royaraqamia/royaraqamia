@@ -1,8 +1,6 @@
-'use client';
-
-import { motion } from 'motion/react';
 import { CirclePlus, CircleCheckBig, Flame } from 'lucide-react';
 import { HowItWorksSection } from '@/frontend/ui/landing-shared/HowItWorksSection';
+import { Reveal } from '@/frontend/ui/landing-shared/Reveal';
 
 const steps = [
   {
@@ -72,12 +70,10 @@ export function HowItWorks() {
       {steps.map((step, i) => {
         const StepIcon = step.icon;
         return (
-          <motion.li
+          <Reveal
             key={step.number}
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-80px' }}
-            transition={{ delay: i * 0.18, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            as="li"
+            delay={i * 0.18}
             className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/80 dark:bg-neutral-900/70 backdrop-blur-2xl border border-border/80 dark:border-neutral-800/80 shadow-xl shadow-black/2 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 outline-none"
           >
             {/* Subtle Background Hover Light Glow */}
@@ -95,16 +91,9 @@ export function HowItWorks() {
             </span>
 
             {/* Icon Badge Container with Micro-Interactions */}
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
-              viewport={{ once: true }}
-              transition={{
-                delay: i * 0.18 + 0.15,
-                duration: 0.5,
-                ease: [0.34, 1.56, 0.64, 1],
-              }}
-              className="relative z-10 mb-8"
+            <div
+              className="landing-reveal-item relative z-10 mb-8"
+              style={{ ['--ld' as string]: `${i * 0.18 + 0.15}s` } as React.CSSProperties}
             >
               {/* Outer Glowing Aura on Hover */}
               <div className="absolute -inset-2 rounded-2xl bg-linear-to-r from-primary/30 to-primary/10 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -116,7 +105,7 @@ export function HowItWorks() {
                   className="text-primary relative z-10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
                 />
               </div>
-            </motion.div>
+            </div>
 
             {/* Step Title & Metadata */}
             <div className="relative z-10 flex flex-col items-center">
@@ -130,7 +119,7 @@ export function HowItWorks() {
                 {step.description}
               </p>
             </div>
-          </motion.li>
+          </Reveal>
         );
       })}
     </HowItWorksSection>

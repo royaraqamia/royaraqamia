@@ -1,5 +1,3 @@
-'use client';
-
 import { BottomCTA as SharedBottomCTA } from '@/frontend/ui/landing-shared/BottomCTA';
 
 export function BottomCTA() {

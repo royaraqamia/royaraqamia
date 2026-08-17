@@ -1,15 +1,9 @@
-'use client';
-
-import { motion } from 'motion/react';
-import { ArrowLeft, FileText, Sparkle, CheckCircle, Code, Eye } from 'lucide-react';
-import { Button } from '@/frontend/ui/primitives/button';
+import { FileText, Sparkle, CheckCircle, Code, Eye } from 'lucide-react';
 import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
-import { useLandingCta } from '@/frontend/ui/landing-shared/useLandingCta';
+import { LandingCta } from '@/frontend/ui/landing-shared/LandingCta';
 
 export function Hero() {
-  const { user, handleCTA } = useLandingCta('/blogpress/app', '/blogpress');
-
   return (
     <HeroSection
       sectionAriaLabel="Hero"
@@ -30,32 +24,23 @@ export function Hero() {
       gridClassName="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center"
     >
       {/* Main Content Column */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-        className="lg:col-span-6 xl:col-span-6 text-center lg:text-right flex flex-col items-center lg:items-start"
-      >
+      <div className="landing-enter-up lg:col-span-6 xl:col-span-6 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* Live Pill Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15, duration: 0.6 }}
-          className="group inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/10 hover:bg-primary/15 border border-primary/20 hover:border-primary/30 text-primary text-xs sm:text-sm font-medium mb-8 transition-all duration-300 backdrop-blur-md cursor-default shadow-xs"
+        <div
+          className="landing-enter-up-sm group inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/10 hover:bg-primary/15 border border-primary/20 hover:border-primary/30 text-primary text-xs sm:text-sm font-medium mb-8 transition-all duration-300 backdrop-blur-md cursor-default shadow-xs"
+          style={{ ['--ld' as string]: '0.15s' } as React.CSSProperties}
         >
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
           </span>
           <span className="tracking-wide">منصَّة التَّدوين</span>
-        </motion.div>
+        </div>
 
         {/* High-Impact Typography Headline */}
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-          className="text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
+        <h1
+          className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
+          style={{ ['--ld' as string]: '0.25s' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
             <span className="bg-linear-to-l from-primary via-primary/90 to-foreground bg-clip-text text-transparent inline-block">
@@ -66,66 +51,54 @@ export function Hero() {
               تمّ.
             </span>
           </div>
-        </motion.h1>
+        </h1>
 
         {/* Supporting Subtitle */}
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mb-10 font-normal"
+        <h2
+          className="landing-enter-up-sm text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mb-10 font-normal"
+          style={{ ['--ld' as string]: '0.4s' } as React.CSSProperties}
         >
           محرِّر Markdown متكامل مع إدارة المسودَّات وتحسين محرِّكات البحث ونشر احترافي — كل ما
           تحتاجه في مكان واحد.
-        </motion.h2>
+        </h2>
 
         {/* Tactile Action Buttons */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.55, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-          className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+        <div
+          className="landing-enter-up-sm flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+          style={{ ['--ld' as string]: '0.55s' } as React.CSSProperties}
         >
-          <Button
-            size="xl"
-            onClick={handleCTA}
-            className="group relative w-full sm:w-auto text-base font-semibold px-8 py-6 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          >
-            <span>{user ? 'لوحة التَّحكُّم' : 'ابدأ الكتابة مجَّانًا'}</span>
-            <ArrowLeft
-              size={20}
-              className="transition-transform duration-300 ease-out group-hover:-translate-x-1.5"
-            />
-          </Button>
-          <Button
-            size="xl"
-            variant="outline"
-            onClick={() => {
-              document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="w-full sm:w-auto text-base font-medium px-8 py-6 rounded-full border-border/80 bg-background/50 hover:bg-accent/80 hover:border-border backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-          >
-            اعرف المزيد
-          </Button>
-        </motion.div>
-      </motion.div>
+          <LandingCta
+            appPath="/blogpress/app"
+            loginRedirect="/blogpress"
+            scrollTarget="features"
+            primaryClassName="group relative w-full sm:w-auto text-base font-semibold px-8 py-6 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            loggedOutLabel="ابدأ الكتابة مجَّانًا"
+            loggedInLabel="لوحة التَّحكُّم"
+            arrowClassName="transition-transform duration-300 ease-out group-hover:-translate-x-1.5"
+            secondaryClassName="w-full sm:w-auto text-base font-medium px-8 py-6 rounded-full border-border/80 bg-background/50 hover:bg-accent/80 hover:border-border backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            secondaryLabel="اعرف المزيد"
+          />
+        </div>
+      </div>
 
       {/* Interactive Dynamic Editor Preview Mockup */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.94, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ delay: 0.35, duration: 1, ease: [0.16, 1, 0.3, 1] }}
-        className="lg:col-span-6 xl:col-span-6 relative"
+      <div
+        className="landing-enter-scale lg:col-span-6 xl:col-span-6 relative"
+        style={{ ['--ld' as string]: '0.35s' } as React.CSSProperties}
       >
         <div className="relative perspective-3d">
           {/* Diffused Outer Aura */}
           <div className="absolute -inset-1 rounded-3xl bg-linear-to-r from-primary/30 via-indigo-500/20 to-primary/30 blur-2xl opacity-50 hover:opacity-100 transition duration-1000" />
 
-          <motion.div
-            animate={{ y: [0, -12, 0] }}
-            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-            className="relative rounded-2xl border border-white/20 dark:border-white/10 bg-background/80 dark:bg-neutral-900/80 backdrop-blur-xl p-6 shadow-2xl shadow-primary/10 transform-gpu"
-            style={{ transform: 'rotateY(-6deg) rotateX(3deg)' }}
+          <div
+            className="landing-float relative rounded-2xl border border-white/20 dark:border-white/10 bg-background/80 dark:bg-neutral-900/80 backdrop-blur-xl p-6 shadow-2xl shadow-primary/10 transform-gpu"
+            style={
+              {
+                transform: 'rotateY(-6deg) rotateX(3deg)',
+                ['--landing-float-dur' as string]: '7s',
+                ['--landing-float-y' as string]: '-12px',
+              } as React.CSSProperties
+            }
           >
             {/* Window Control Bar */}
             <div className="flex items-center justify-between border-b border-border/40 pb-4 mb-5">
@@ -197,11 +170,9 @@ export function Hero() {
                 </div>
 
                 {/* Dynamic SEO Badge Meter */}
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 1.2, duration: 0.5 }}
-                  className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-3.5 flex items-center justify-between backdrop-blur-sm shadow-xs"
+                <div
+                  className="landing-enter-up-sm rounded-xl border border-emerald-500/20 bg-emerald-500/5 dark:bg-emerald-500/10 p-3.5 flex items-center justify-between backdrop-blur-sm shadow-xs"
+                  style={{ ['--ld' as string]: '1.2s' } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-2">
                     <span className="relative flex h-2 w-2">
@@ -215,10 +186,10 @@ export function Hero() {
                   <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
                     92/100
                   </span>
-                </motion.div>
+                </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Floating Ambient Badge Elements */}
           {[
@@ -228,30 +199,28 @@ export function Hero() {
           ].map((item, i) => {
             const Icon = item.icon;
             return (
-              <motion.div
+              <div
                 key={i}
-                className="absolute -z-10"
-                style={{
-                  left: i === 0 ? '-8%' : i === 1 ? '82%' : '42%',
-                  top: i === 0 ? '-8%' : i === 1 ? '12%' : '94%',
-                }}
-                animate={{ y: [0, -10 + i * 4, 0] }}
-                transition={{
-                  duration: 4 + i,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                  delay: item.delay,
-                }}
+                className="landing-float absolute -z-10"
+                style={
+                  {
+                    left: i === 0 ? '-8%' : i === 1 ? '82%' : '42%',
+                    top: i === 0 ? '-8%' : i === 1 ? '12%' : '94%',
+                    ['--landing-float-dur' as string]: `${4 + i}s`,
+                    ['--landing-float-y' as string]: `${-10 + i * 4}px`,
+                    ['--ld' as string]: `${item.delay}s`,
+                  } as React.CSSProperties
+                }
               >
                 <div className="flex items-center gap-2 rounded-xl border border-white/20 dark:border-white/10 bg-background/90 dark:bg-neutral-900/90 backdrop-blur-md px-3.5 py-2 shadow-xl text-xs font-medium text-foreground">
                   <Icon size={18} className="text-primary" />
                   <span className="whitespace-nowrap">{item.label}</span>
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
-      </motion.div>
+      </div>
     </HeroSection>
   );
 }

@@ -1,10 +1,6 @@
-'use client';
-
-import { motion } from 'motion/react';
-import { FileText, StickyNote, Search, Check, TriangleAlert, Sparkle } from 'lucide-react';
+﻿import { FileText, StickyNote, Search, Check, TriangleAlert, Sparkle } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
-import { formatGradientAlpha } from '@/frontend/ui/landing-shared/formatGradientAlpha';
 
 const bentoCardTheme = {
   cardClassName:
@@ -29,29 +25,30 @@ const bentoCardTheme = {
 function bentoCardProps(rgba: string) {
   return {
     ...bentoCardTheme,
-    backgroundStyle: (x: number, y: number) => ({
-      background: `radial-gradient(600px circle at ${x}% ${y}%, ${formatGradientAlpha(rgba, 0.15)}, transparent 60%)`,
+    spotlight: {
+      rgba,
+      backgroundAlpha: 0.15,
+      hoverAlpha: 0.08,
+      backgroundFade: 60,
+      hoverFade: 60,
       backgroundColor: 'hsl(var(--card, 240 10% 4%))',
-    }),
-    hoverStyle: (x: number, y: number) => ({
-      background: `radial-gradient(800px circle at ${x}% ${y}%, ${formatGradientAlpha(rgba, 0.08)}, transparent 60%)`,
-    }),
+    },
   };
 }
 
 function EditorPreview() {
   const mdLines = [
-    '# مرحبًا بالعالم',
+    '# Ù…Ø±Ø­Ø¨Ù‹Ø§ Ø¨Ø§Ù„Ø¹Ø§Ù„Ù…',
     '',
-    'مرحبًا بك في **رؤية رقمية** — محرِّر',
-    'Markdown حديث يجعل الكتابة',
-    'متعة. ركِّز على كلماتك، لا',
-    'على الأدوات.',
+    'Ù…Ø±Ø­Ø¨Ù‹Ø§ Ø¨Ùƒ ÙÙŠ **Ø±Ø¤ÙŠØ© Ø±Ù‚Ù…ÙŠØ©** â€” Ù…Ø­Ø±Ù‘ÙØ±',
+    'Markdown Ø­Ø¯ÙŠØ« ÙŠØ¬Ø¹Ù„ Ø§Ù„ÙƒØªØ§Ø¨Ø©',
+    'Ù…ØªØ¹Ø©. Ø±ÙƒÙÙ‘Ø² Ø¹Ù„Ù‰ ÙƒÙ„Ù…Ø§ØªÙƒØŒ Ù„Ø§',
+    'Ø¹Ù„Ù‰ Ø§Ù„Ø£Ø¯ÙˆØ§Øª.',
     '',
-    '## لماذا رؤية رقمية؟',
-    '- معاينة فائقة السُّرعة',
-    '- إدارة المسودَّات',
-    '- محسَّن لمحرِّكات البحث',
+    '## Ù„Ù…Ø§Ø°Ø§ Ø±Ø¤ÙŠØ© Ø±Ù‚Ù…ÙŠØ©ØŸ',
+    '- Ù…Ø¹Ø§ÙŠÙ†Ø© ÙØ§Ø¦Ù‚Ø© Ø§Ù„Ø³Ù‘ÙØ±Ø¹Ø©',
+    '- Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ÙˆØ¯Ù‘ÙŽØ§Øª',
+    '- Ù…Ø­Ø³ÙŽÙ‘Ù† Ù„Ù…Ø­Ø±Ù‘ÙÙƒØ§Øª Ø§Ù„Ø¨Ø­Ø«',
   ];
 
   return (
@@ -78,20 +75,17 @@ function EditorPreview() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
           </span>
-          <span>جاري التَّحرير</span>
+          <span>Ø¬Ø§Ø±ÙŠ Ø§Ù„ØªÙ‘ÙŽØ­Ø±ÙŠØ±</span>
         </div>
       </div>
 
       {/* Code Editor Body */}
       <div className="font-mono text-xs leading-relaxed space-y-1.5 dir-rtl">
         {mdLines.map((line, i) => (
-          <motion.div
+          <div
             key={i}
-            initial={{ opacity: 0, x: -5 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.2 + i * 0.04, duration: 0.3 }}
-            className="flex items-start gap-3 group/line hover:bg-neutral-900/60 rounded px-1.5 py-0.5 transition-colors"
+            className="landing-reveal-item flex items-start gap-3 group/line hover:bg-neutral-900/60 rounded px-1.5 py-0.5 transition-colors"
+            style={{ ['--ld' as string]: `${0.2 + i * 0.04}s` } as React.CSSProperties}
           >
             <span className="select-none text-neutral-600 font-mono text-[11px] w-5 text-left shrink-0 opacity-60">
               {i + 1}
@@ -117,7 +111,7 @@ function EditorPreview() {
                   {line.split('**BlogPress**')[0]}
                   <span className="px-1.5 py-0.5 mx-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30 text-[11px] shadow-xs inline-flex items-center gap-1">
                     <Sparkle size={10} className="text-indigo-400 animate-pulse" />
-                    رؤية رقمية
+                    Ø±Ø¤ÙŠØ© Ø±Ù‚Ù…ÙŠØ©
                   </span>
                   {line.split('**BlogPress**')[1]}
                 </span>
@@ -127,7 +121,7 @@ function EditorPreview() {
                 <span className="text-neutral-400">{line}</span>
               )}
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
     </div>
@@ -136,19 +130,19 @@ function EditorPreview() {
 
 const draftStats = [
   {
-    label: 'منشور',
+    label: 'Ù…Ù†Ø´ÙˆØ±',
     value: '24',
     color: 'text-indigo-400',
     bgGradient: 'from-indigo-500 to-indigo-400',
   },
   {
-    label: 'مسودَّات',
+    label: 'Ù…Ø³ÙˆØ¯Ù‘ÙŽØ§Øª',
     value: '7',
     color: 'text-purple-400',
     bgGradient: 'from-purple-500 to-purple-400',
   },
   {
-    label: 'مجدول',
+    label: 'Ù…Ø¬Ø¯ÙˆÙ„',
     value: '3',
     color: 'text-violet-400',
     bgGradient: 'from-violet-500 to-violet-400',
@@ -164,22 +158,19 @@ function DraftsOverviewCard() {
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
           <StickyNote size={18} className="text-indigo-400" />
-          <span className="text-sm font-semibold text-neutral-200">نظرة عامَّة</span>
+          <span className="text-sm font-semibold text-neutral-200">Ù†Ø¸Ø±Ø© Ø¹Ø§Ù…Ù‘ÙŽØ©</span>
         </div>
         <span className="text-[11px] font-medium text-neutral-400 px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800">
-          آخر 30 يومًا
+          Ø¢Ø®Ø± 30 ÙŠÙˆÙ…Ù‹Ø§
         </span>
       </div>
 
       <div className="space-y-4">
         {draftStats.map((stat, i) => (
-          <motion.div
+          <div
             key={stat.label}
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 + i * 0.1, duration: 0.5 }}
-            className="p-2.5 rounded-xl hover:bg-neutral-900/60 transition-colors border border-transparent hover:border-neutral-800/60"
+            className="landing-reveal-item p-2.5 rounded-xl hover:bg-neutral-900/60 transition-colors border border-transparent hover:border-neutral-800/60"
+            style={{ ['--ld' as string]: `${0.3 + i * 0.1}s` } as React.CSSProperties}
           >
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs sm:text-sm font-medium text-neutral-400">{stat.label}</span>
@@ -188,22 +179,24 @@ function DraftsOverviewCard() {
               </span>
             </div>
             <div className="h-2 rounded-full bg-neutral-900 border border-neutral-800 overflow-hidden p-px">
-              <motion.div
-                initial={{ width: 0 }}
-                whileInView={{ width: `${parseInt(stat.value) * 3}%` }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4 + i * 0.1, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                className={`h-full rounded-full bg-linear-to-r ${stat.bgGradient} shadow-[0_0_10px_rgba(99,102,241,0.5)]`}
+              <div
+                className={`landing-grow-w h-full rounded-full bg-linear-to-r ${stat.bgGradient} shadow-[0_0_10px_rgba(99,102,241,0.5)]`}
+                style={
+                  {
+                    ['--ld' as string]: `${0.4 + i * 0.1}s`,
+                    ['--landing-target' as string]: `${parseInt(stat.value) * 3}%`,
+                  } as React.CSSProperties
+                }
               />
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       <div className="mt-5 pt-4 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
         <span className="flex items-center gap-1.5 font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-          إجمالي المنشورات
+          Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ù†Ø´ÙˆØ±Ø§Øª
         </span>
         <span className="text-indigo-300 font-bold font-mono text-sm bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
           34
@@ -214,11 +207,11 @@ function DraftsOverviewCard() {
 }
 
 const seoChecks = [
-  { label: 'الوسم العنواني', pass: true },
-  { label: 'الوصف التَّعريفي', pass: true },
-  { label: 'هيكل العناوين', pass: true },
-  { label: 'النَّص البديل للصُّور', pass: false },
-  { label: 'سهولة القراءة', pass: true },
+  { label: 'Ø§Ù„ÙˆØ³Ù… Ø§Ù„Ø¹Ù†ÙˆØ§Ù†ÙŠ', pass: true },
+  { label: 'Ø§Ù„ÙˆØµÙ Ø§Ù„ØªÙ‘ÙŽØ¹Ø±ÙŠÙÙŠ', pass: true },
+  { label: 'Ù‡ÙŠÙƒÙ„ Ø§Ù„Ø¹Ù†Ø§ÙˆÙŠÙ†', pass: true },
+  { label: 'Ø§Ù„Ù†Ù‘ÙŽØµ Ø§Ù„Ø¨Ø¯ÙŠÙ„ Ù„Ù„ØµÙ‘ÙÙˆØ±', pass: false },
+  { label: 'Ø³Ù‡ÙˆÙ„Ø© Ø§Ù„Ù‚Ø±Ø§Ø¡Ø©', pass: true },
 ];
 
 function SEOPreview() {
@@ -227,7 +220,9 @@ function SEOPreview() {
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
           <Search size={18} className="text-indigo-400" />
-          <span className="text-sm font-semibold text-neutral-200">قائمة تحسين محرِّكات البحث</span>
+          <span className="text-sm font-semibold text-neutral-200">
+            Ù‚Ø§Ø¦Ù…Ø© ØªØ­Ø³ÙŠÙ† Ù…Ø­Ø±Ù‘ÙÙƒØ§Øª Ø§Ù„Ø¨Ø­Ø«
+          </span>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 font-mono shadow-xs">
           <Sparkle size={12} className="text-emerald-400" />
@@ -237,13 +232,10 @@ function SEOPreview() {
 
       <div className="space-y-2.5">
         {seoChecks.map((item, i) => (
-          <motion.div
+          <div
             key={item.label}
-            initial={{ opacity: 0, x: -10 }}
-            whileInView={{ opacity: 1, x: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.3 + i * 0.08, duration: 0.4 }}
-            className="flex items-center justify-between p-2 rounded-xl hover:bg-neutral-900/60 transition-colors border border-transparent hover:border-neutral-800/50"
+            className="landing-reveal-item flex items-center justify-between p-2 rounded-xl hover:bg-neutral-900/60 transition-colors border border-transparent hover:border-neutral-800/50"
+            style={{ ['--ld' as string]: `${0.3 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">
               <div
@@ -265,24 +257,26 @@ function SEOPreview() {
                   : 'text-amber-400/80 bg-amber-500/5'
               }`}
             >
-              {item.pass ? 'مكتمل' : 'تحسين'}
+              {item.pass ? 'Ù…ÙƒØªÙ…Ù„' : 'ØªØ­Ø³ÙŠÙ†'}
             </span>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       <div className="mt-5 pt-4 border-t border-neutral-800/80">
         <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
-          <span>مستوى الجودة</span>
-          <span className="text-emerald-400 font-semibold">ممتاز</span>
+          <span>Ù…Ø³ØªÙˆÙ‰ Ø§Ù„Ø¬ÙˆØ¯Ø©</span>
+          <span className="text-emerald-400 font-semibold">Ù…Ù…ØªØ§Ø²</span>
         </div>
         <div className="h-2 rounded-full bg-neutral-900 border border-neutral-800 overflow-hidden p-px">
-          <motion.div
-            initial={{ width: 0 }}
-            whileInView={{ width: '80%' }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.8, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="h-full rounded-full bg-linear-to-r from-emerald-500 via-teal-400 to-indigo-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+          <div
+            className="landing-grow-w h-full rounded-full bg-linear-to-r from-emerald-500 via-teal-400 to-indigo-500 shadow-[0_0_12px_rgba(16,185,129,0.4)]"
+            style={
+              {
+                ['--ld' as string]: '0.8s',
+                ['--landing-target' as string]: '80%',
+              } as React.CSSProperties
+            }
           />
         </div>
       </div>
@@ -305,18 +299,18 @@ export function FeaturesBento() {
         badge: (
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs sm:text-sm font-medium mb-6 backdrop-blur-md shadow-xs">
             <Sparkle size={14} className="text-indigo-400 animate-pulse" />
-            <span>ميِّزات قويَّة</span>
+            <span>Ù…ÙŠÙ‘ÙØ²Ø§Øª Ù‚ÙˆÙŠÙŽÙ‘Ø©</span>
           </div>
         ),
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-20',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight text-white',
-        titlePrefix: 'كل ما تحتاجه لـ ',
-        titleHighlight: 'كتابة أفضل',
+        titlePrefix: 'ÙƒÙ„ Ù…Ø§ ØªØ­ØªØ§Ø¬Ù‡ Ù„Ù€ ',
+        titleHighlight: 'ÙƒØªØ§Ø¨Ø© Ø£ÙØ¶Ù„',
         titleHighlightClassName:
           'bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent',
         subtitle:
-          'من التَّحرير بالـ Markdown إلى تحسين محرِّكات البحث، نمنحك الأدوات اللازمة لإنشاء محتوى مميَّز.',
+          'Ù…Ù† Ø§Ù„ØªÙŽÙ‘Ø­Ø±ÙŠØ± Ø¨Ø§Ù„Ù€ Markdown Ø¥Ù„Ù‰ ØªØ­Ø³ÙŠÙ† Ù…Ø­Ø±ÙÙ‘ÙƒØ§Øª Ø§Ù„Ø¨Ø­Ø«ØŒ Ù†Ù…Ù†Ø­Ùƒ Ø§Ù„Ø£Ø¯ÙˆØ§Øª Ø§Ù„Ù„Ø§Ø²Ù…Ø© Ù„Ø¥Ù†Ø´Ø§Ø¡ Ù…Ø­ØªÙˆÙ‰ Ù…Ù…ÙŠÙŽÙ‘Ø².',
         subtitleClassName:
           'text-base sm:text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed font-normal',
         useEase: false,
@@ -325,9 +319,9 @@ export function FeaturesBento() {
     >
       <BentoCard
         {...bentoCardProps('rgba(139,92,246,1)')}
-        title="محرِّر Markdown"
-        description="اكتب بلغة الـ Markdown مع معاينة فوريَّة. لا تشتيت، فقط تحرير سريع ونظيف."
-        icon={FileText}
+        title="Ù…Ø­Ø±ÙÙ‘Ø± Markdown"
+        description="Ø§ÙƒØªØ¨ Ø¨Ù„ØºØ© Ø§Ù„Ù€ Markdown Ù…Ø¹ Ù…Ø¹Ø§ÙŠÙ†Ø© ÙÙˆØ±ÙŠÙŽÙ‘Ø©. Ù„Ø§ ØªØ´ØªÙŠØªØŒ ÙÙ‚Ø· ØªØ­Ø±ÙŠØ± Ø³Ø±ÙŠØ¹ ÙˆÙ†Ø¸ÙŠÙ."
+        icon={<FileText />}
         className="lg:col-span-2 lg:row-span-2"
         delay={0.1}
       >
@@ -336,9 +330,9 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(129,140,248,1)')}
-        title="إدارة المسودَّات"
-        description="نظِّم كتاباتك مع المسودَّات وسير عمل النَّشر والتَّحكُّم الكامل بالإصدارات."
-        icon={StickyNote}
+        title="Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ÙˆØ¯ÙŽÙ‘Ø§Øª"
+        description="Ù†Ø¸ÙÙ‘Ù… ÙƒØªØ§Ø¨Ø§ØªÙƒ Ù…Ø¹ Ø§Ù„Ù…Ø³ÙˆØ¯ÙŽÙ‘Ø§Øª ÙˆØ³ÙŠØ± Ø¹Ù…Ù„ Ø§Ù„Ù†ÙŽÙ‘Ø´Ø± ÙˆØ§Ù„ØªÙŽÙ‘Ø­ÙƒÙÙ‘Ù… Ø§Ù„ÙƒØ§Ù…Ù„ Ø¨Ø§Ù„Ø¥ØµØ¯Ø§Ø±Ø§Øª."
+        icon={<StickyNote />}
         className="lg:col-span-2"
         delay={0.2}
       >
@@ -347,9 +341,9 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(167,139,250,1)')}
-        title="تحسين محرِّكات البحث"
-        description="أدوات SEO مدمجة تساعد محتواك في تحقيق ترتيب متقدِّم والوصول لقرَّاء أكثر."
-        icon={Search}
+        title="ØªØ­Ø³ÙŠÙ† Ù…Ø­Ø±ÙÙ‘ÙƒØ§Øª Ø§Ù„Ø¨Ø­Ø«"
+        description="Ø£Ø¯ÙˆØ§Øª SEO Ù…Ø¯Ù…Ø¬Ø© ØªØ³Ø§Ø¹Ø¯ Ù…Ø­ØªÙˆØ§Ùƒ ÙÙŠ ØªØ­Ù‚ÙŠÙ‚ ØªØ±ØªÙŠØ¨ Ù…ØªÙ‚Ø¯ÙÙ‘Ù… ÙˆØ§Ù„ÙˆØµÙˆÙ„ Ù„Ù‚Ø±ÙŽÙ‘Ø§Ø¡ Ø£ÙƒØ«Ø±."
+        icon={<Search />}
         className="lg:col-span-2"
         delay={0.3}
       >
