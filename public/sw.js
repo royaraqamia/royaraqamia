@@ -9,6 +9,8 @@ const PRECACHE_URLS = [
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png',
+  '/icons/notification-icon-192x192.png',
+  '/icons/badge-icon-96x96.png',
 ];
 
 self.addEventListener('install', (event) => {
@@ -195,8 +197,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: typeof payload.body === 'string' && payload.body.length > 0 ? payload.body : undefined,
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-192x192.png',
+    icon: '/icons/notification-icon-192x192.png',
+    badge: '/icons/badge-icon-96x96.png',
     data: {
       url: typeof payload.url === 'string' ? payload.url : '/',
       type: typeof payload.type === 'string' ? payload.type : undefined,
