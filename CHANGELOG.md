@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.4] - 2026-08-17
+
+### Changed
+- remove dead motion-only classes from global.css
+- make /blog statically prerendered with client-side search island
+- lazy-mount RoyaToaster and defer sonner to a separate chunk
+- replace framer-motion reveal islands with IO + CSS animations
+- convert product landing pages to RSC + client islands
+- add reveal/CTA islands and CSS-driven landing animations
+- lazy-load user and notification dropdowns
+- on-demand tag revalidation for public cache
+- trim feed payload with stored reading time
+- allow edge caching on public pages and add client staleTimes
+
+### Fixed
+- show update popup only on release version with 30-min reminder
+- circle-crop app icons and add proper maskable/badge assets
+
 ## [1.4.3] - 2026-08-17
 
 ### Changed
