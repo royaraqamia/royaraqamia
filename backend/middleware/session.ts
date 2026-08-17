@@ -104,30 +104,43 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Refresh session if needed (uses refresh_token cookie)
+  // Refresh session if needed (uses refresh_token cookie). This is a local
+  // cookie-parse unless the access token is near expiry, so it stays cheap.
   await supabase.auth.getSession();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
+  const needsAuthDecision =
+    Object.keys(AUTH_ROUTES).includes(pathname) || isProtectedRoute(pathname);
 
-  // Redirect logged-in users away from auth pages
-  for (const [path, redirect] of Object.entries(AUTH_ROUTES)) {
-    if (request.nextUrl.pathname === path && user) {
-      return applyCookies(NextResponse.redirect(new URL(redirect, request.url)));
-    }
-  }
+  // getUser() always hits the Supabase Auth endpoint (a network round-trip),
+  // but its result is only ever consulted on auth pages (redirect logged-in
+  // users away) and on protected routes (block anonymous users). Skipping it
+  // on public pages removes one guaranteed round-trip from every public page
+  // load for signed-in users; the browser-side SessionProvider refreshes the
+  // session there. The cookie-refresh side effect of getSession() above is
+  // preserved for all routes.
+  if (needsAuthDecision) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  // Protect authenticated routes
-  for (const [path, redirect] of Object.entries(PROTECTED_ROUTES)) {
-    if (request.nextUrl.pathname.startsWith(path) && !user) {
-      const url = request.nextUrl.clone();
-      url.pathname = redirect;
-      const returnPath = request.nextUrl.pathname;
-      if (isSafeRedirect(returnPath)) {
-        url.searchParams.set('redirect', returnPath);
+    // Redirect logged-in users away from auth pages
+    for (const [path, redirect] of Object.entries(AUTH_ROUTES)) {
+      if (pathname === path && user) {
+        return applyCookies(NextResponse.redirect(new URL(redirect, request.url)));
       }
-      return applyCookies(NextResponse.redirect(url));
+    }
+
+    // Protect authenticated routes
+    for (const [path, redirect] of Object.entries(PROTECTED_ROUTES)) {
+      if (pathname.startsWith(path) && !user) {
+        const url = request.nextUrl.clone();
+        url.pathname = redirect;
+        if (isSafeRedirect(pathname)) {
+          url.searchParams.set('redirect', pathname);
+        }
+        return applyCookies(NextResponse.redirect(url));
+      }
     }
   }
 
