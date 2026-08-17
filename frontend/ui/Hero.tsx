@@ -3,21 +3,6 @@ import { MotionReveal } from './MotionReveal';
 import { HeroVisual } from './HeroVisual';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-  },
-};
-
 export function Hero() {
   // Floating particles data - deterministic positions to avoid hydration mismatch
   const particles = Array.from({ length: 12 }, (_, i) => ({
@@ -65,18 +50,15 @@ export function Hero() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
           <MotionReveal
-            variants={containerVariants}
-            initial={false}
-            animate="visible"
+            from="none"
             className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center"
-            transition={{ staggerChildren: 0.12, delayChildren: 0.15 }}
           >
             {/* Left/Right side - Primary Copy & CTA (RTL Support) */}
             <div className="text-center lg:text-right space-y-3 order-1">
               {/* Pill Badge */}
-              <MotionReveal
-                variants={itemVariants}
-                className="flex justify-center lg:justify-start"
+              <div
+                className="landing-reveal-item flex justify-center lg:justify-start"
+                style={{ ['--ld' as string]: '0.15s' } as React.CSSProperties}
               >
                 <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/4 hover:bg-white/8 backdrop-blur-xl text-white border border-white/10 hover:border-white/20 transition-all duration-300 shadow-sm group">
                   <span className="relative flex h-2 w-2">
@@ -91,10 +73,13 @@ export function Hero() {
                     1448 هـ
                   </span>
                 </div>
-              </MotionReveal>
+              </div>
 
               {/* Main Headline */}
-              <MotionReveal variants={itemVariants} className="space-y-2 -mt-2">
+              <div
+                className="landing-reveal-item space-y-2 -mt-2"
+                style={{ ['--ld' as string]: '0.27s' } as React.CSSProperties}
+              >
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight font-arabic leading-[1.45] sm:leading-[1.45]">
                   <span className="block bg-linear-to-r from-white via-slate-100 to-purple-200 bg-clip-text text-transparent pb-1.5">
                     شريكك الاستراتيجي
@@ -103,27 +88,25 @@ export function Hero() {
                     للتَّحوُّل الرَّقمي
                   </span>
                 </h1>
-              </MotionReveal>
+              </div>
 
               {/* Description */}
-              <MotionReveal
-                as="p"
-                variants={itemVariants}
-                className="text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal -mt-2 pt-1"
+              <p
+                className="landing-reveal-item text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal -mt-2 pt-1"
+                style={{ ['--ld' as string]: '0.39s' } as React.CSSProperties}
               >
                 نبني مواقع وتطبيقات برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛
                 <br />
                 كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع
                 والتَّطبيقات.
-              </MotionReveal>
+              </p>
 
               {/* Social Proof Strip - Trust Signals */}
-              <MotionReveal
-                as="a"
-                variants={itemVariants}
+              <a
                 href="#testimonials"
-                className="inline-flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition-transform active:scale-[0.99]"
+                className="landing-reveal-item inline-flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition-transform active:scale-[0.99]"
                 aria-label="انتقل إلى آراء العملاء"
+                style={{ ['--ld' as string]: '0.51s' } as React.CSSProperties}
               >
                 <div className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-white/3 hover:bg-white/8 border border-white/10 hover:border-white/20 backdrop-blur-md transition-all duration-300 shadow-xs">
                   <div className="flex">
@@ -157,12 +140,12 @@ export function Hero() {
                     <span className="font-bold text-white">4.9</span>/5
                   </span>
                 </div>
-              </MotionReveal>
+              </a>
 
               {/* CTA Buttons */}
-              <MotionReveal
-                variants={itemVariants}
-                className="flex flex-col sm:flex-row gap-3.5 justify-center lg:justify-start pt-3 items-center w-full sm:w-auto"
+              <div
+                className="landing-reveal-item flex flex-col sm:flex-row gap-3.5 justify-center lg:justify-start pt-3 items-center w-full sm:w-auto"
+                style={{ ['--ld' as string]: '0.63s' } as React.CSSProperties}
               >
                 <a
                   href={getWhatsAppUrl()}
@@ -187,16 +170,16 @@ export function Hero() {
                   <span className="relative z-10">نبذة عن أعمالنا</span>
                   <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-white transition-colors" />
                 </a>
-              </MotionReveal>
+              </div>
             </div>
 
             {/* Right side - Visual Element */}
-            <MotionReveal
-              variants={itemVariants}
-              className="relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0"
+            <div
+              className="landing-reveal-item relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0"
+              style={{ ['--ld' as string]: '0.75s' } as React.CSSProperties}
             >
               <HeroVisual />
-            </MotionReveal>
+            </div>
           </MotionReveal>
         </div>
       </section>

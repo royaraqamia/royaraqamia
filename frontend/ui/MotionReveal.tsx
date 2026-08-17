@@ -1,65 +1,72 @@
 'use client';
 
-import { m, type MotionProps } from 'motion/react';
-import type { ComponentType, ReactNode } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
+import { cn } from '@/frontend/shared/cn';
 
 /**
- * Minimal client motion island.
+ * Minimal client reveal island (no framer-motion).
  *
  * Server Components render the surrounding static markup and pass it as
- * `children`; only this thin wrapper stays in the client bundle. All motion
- * behaviour (variants, easing, viewport trigger, stagger orchestration) is
- * forwarded verbatim, so sections converted to Server Components animate
- * exactly as before.
+ * `children`; only this thin wrapper stays in the client bundle. An
+ * IntersectionObserver toggles `.is-visible` and the CSS animations in
+ * `app/global.css` (`.landing-reveal` / `.landing-reveal-item`) handle the
+ * rest.
  */
-const motionTags = ['div', 'p', 'a', 'article'] as const;
-export type MotionTag = (typeof motionTags)[number];
-
-type MotionRevealProps = MotionProps & {
-  as?: MotionTag;
+type MotionRevealProps = {
   children: ReactNode;
   className?: string;
-  href?: string;
-  target?: string;
-  rel?: string;
-  id?: string;
-  'aria-label'?: string;
+  /** seconds to wait before animating (default 0) */
+  delay?: number;
+  /** animation duration in seconds (default 0.6) */
+  duration?: number;
+  /** initial transform, e.g. 'translateY(50px) scale(0.95)' (default 'translateY(24px)') */
+  from?: string;
 };
 
-type RevealComponentProps = {
-  children: ReactNode;
-  className?: string;
-  href?: string;
-  target?: string;
-  rel?: string;
-  id?: string;
-  'aria-label'?: string;
-} & MotionProps;
-
 export function MotionReveal({
-  as = 'div',
   children,
   className,
-  href,
-  target,
-  rel,
-  id,
-  'aria-label': ariaLabel,
-  ...motionProps
+  delay = 0,
+  duration = 0.6,
+  from,
 }: MotionRevealProps) {
-  const Component = (m[as] ?? m.div) as ComponentType<RevealComponentProps>;
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsVisible(true);
+      return;
+    }
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -100px 0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <Component
-      className={className}
-      href={href}
-      target={target}
-      rel={rel}
-      id={id}
-      aria-label={ariaLabel}
-      {...motionProps}
+    <div
+      ref={ref}
+      className={cn('landing-reveal', isVisible && 'is-visible', className)}
+      style={
+        {
+          ['--landing-reveal-from' as string]: from,
+          ['--ld' as string]: `${delay}s`,
+          ['--landing-reveal-dur' as string]: `${duration}s`,
+        } as React.CSSProperties
+      }
     >
       {children}
-    </Component>
+    </div>
   );
 }

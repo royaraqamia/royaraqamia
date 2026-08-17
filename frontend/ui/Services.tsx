@@ -70,31 +70,7 @@ const services: ServiceItem[] = [
   },
 ];
 
-// --- Framer Motion Variants ---
-const headerVariant = {
-  hidden: { opacity: 0, y: -30 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 70, damping: 20 } },
-} as const;
-
-const gridContainerVariant = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.15,
-    },
-  },
-} as const;
-
-const cardItemVariant = {
-  hidden: { opacity: 0, y: 28 },
-  show: {
-    opacity: 1,
-    y: 0,
-    transition: { type: 'spring', stiffness: 75, damping: 20 },
-  },
-} as const;
+// --- Scroll reveal (IO island + CSS animations) ---
 
 export function Services() {
   return (
@@ -121,10 +97,7 @@ export function Services() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
         {/* Section Header */}
         <MotionReveal
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-100px' }}
-          variants={headerVariant}
+          from="translateY(-30px)"
           className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24 flex flex-col items-center"
         >
           {/* High-End Glass Pill Badge */}
@@ -153,20 +126,17 @@ export function Services() {
 
         {/* Dynamic Grid Layout */}
         <MotionReveal
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-50px' }}
-          variants={gridContainerVariant}
+          from="none"
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 lg:gap-8 [&>*:last-child]:md:col-span-2 [&>*:last-child]:lg:col-span-1 [&>*:last-child]:md:max-w-md [&>*:last-child]:md:mx-auto [&>*:last-child]:lg:max-w-none"
         >
           {services.map((service, index) => (
-            <MotionReveal
+            <div
               key={index}
-              variants={cardItemVariant}
-              className="h-full flex flex-col transition-transform duration-300 ease-out hover:scale-[1.01]"
+              className="landing-reveal-item h-full flex flex-col transition-transform duration-300 ease-out hover:scale-[1.01]"
+              style={{ ['--ld' as string]: `${0.15 + index * 0.12}s` } as React.CSSProperties}
             >
               <ServiceCard service={service} index={index} />
-            </MotionReveal>
+            </div>
           ))}
         </MotionReveal>
       </div>

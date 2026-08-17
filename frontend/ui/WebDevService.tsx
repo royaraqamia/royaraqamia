@@ -4,19 +4,7 @@ import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 import { SectionBackground } from './SectionBackground';
 import { MotionReveal } from './MotionReveal';
 
-// --- Framer Motion Variants ---
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: { staggerChildren: 0.12, delayChildren: 0.08 },
-  },
-};
-
-const fadeUpVariant = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 90, damping: 22 } },
-} as const;
+// --- Scroll reveal (IO island + CSS animations) ---
 
 export function WebDevService() {
   const benefits = [
@@ -72,10 +60,7 @@ export function WebDevService() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <MotionReveal
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true, margin: '-100px' }}
-          variants={fadeUpVariant}
+          from="translateY(24px)"
           className="text-center max-w-3xl mx-auto mb-14 sm:mb-20"
         >
           {/* Status Badge */}
@@ -103,20 +88,14 @@ export function WebDevService() {
         {/* Grid Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
           {/* Left Column: Benefits & Features (Spans 7 cols) */}
-          <MotionReveal
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-50px' }}
-            variants={staggerContainer}
-            className="lg:col-span-7 space-y-8"
-          >
+          <MotionReveal from="none" className="lg:col-span-7 space-y-8">
             {/* Benefits List */}
             <div className="flex flex-col gap-3.5">
               {benefits.map((benefit, idx) => (
-                <MotionReveal
+                <div
                   key={idx}
-                  variants={fadeUpVariant}
-                  className="group relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/3 dark:bg-white/2 border border-white/10 dark:border-white/10 hover:border-purple-500/40 hover:bg-purple-500/4 transition-all duration-300 ease-out backdrop-blur-md shadow-xs hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5"
+                  className="landing-reveal-item group relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/3 dark:bg-white/2 border border-white/10 dark:border-white/10 hover:border-purple-500/40 hover:bg-purple-500/4 transition-all duration-300 ease-out backdrop-blur-md shadow-xs hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5"
+                  style={{ ['--ld' as string]: `${0.08 + idx * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-linear-to-br from-purple-600 to-violet-700 flex items-center justify-center shrink-0 shadow-md shadow-purple-600/20 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300">
                     <benefit.icon
@@ -130,17 +109,17 @@ export function WebDevService() {
                       {benefit.text}
                     </span>
                   </div>
-                </MotionReveal>
+                </div>
               ))}
             </div>
 
             {/* Features Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
               {features.map((feature, idx) => (
-                <MotionReveal
+                <div
                   key={idx}
-                  variants={fadeUpVariant}
-                  className="relative p-5 rounded-2xl bg-purple-950/10 border border-purple-500/15 hover:border-purple-500/40 transition-all duration-300 group overflow-hidden hover:shadow-md hover:shadow-purple-500/10 hover:-translate-y-0.5 flex flex-col justify-between"
+                  className="landing-reveal-item relative p-5 rounded-2xl bg-purple-950/10 border border-purple-500/15 hover:border-purple-500/40 transition-all duration-300 group overflow-hidden hover:shadow-md hover:shadow-purple-500/10 hover:-translate-y-0.5 flex flex-col justify-between"
+                  style={{ ['--ld' as string]: `${0.56 + idx * 0.12}s` } as React.CSSProperties}
                 >
                   {/* Subtle hover glow effect */}
                   <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
@@ -152,21 +131,18 @@ export function WebDevService() {
                       {feature.description}
                     </p>
                   </div>
-                </MotionReveal>
+                </div>
               ))}
             </div>
           </MotionReveal>
 
           {/* Right Column: Pricing & CTA (Spans 5 cols) */}
-          <MotionReveal
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-50px' }}
-            variants={staggerContainer}
-            className="lg:col-span-5 space-y-5 lg:sticky lg:top-28"
-          >
+          <MotionReveal from="none" className="lg:col-span-5 space-y-5 lg:sticky lg:top-28">
             {/* Pricing Card 1 */}
-            <article className="group relative p-6 sm:p-7 rounded-3xl bg-background/80 backdrop-blur-md border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden">
+            <article
+              className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/80 backdrop-blur-md border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden"
+              style={{ ['--ld' as string]: '0.08s' } as React.CSSProperties}
+            >
               <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 rounded-full blur-3xl -z-10 group-hover:bg-purple-600/20 transition-colors duration-500 pointer-events-none" />
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
@@ -194,7 +170,10 @@ export function WebDevService() {
             </article>
 
             {/* Pricing Card 2 */}
-            <article className="group relative p-6 sm:p-7 rounded-3xl bg-background/80 backdrop-blur-md border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden">
+            <article
+              className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/80 backdrop-blur-md border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden"
+              style={{ ['--ld' as string]: '0.2s' } as React.CSSProperties}
+            >
               <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/10 rounded-full blur-3xl -z-10 group-hover:bg-purple-600/20 transition-colors duration-500 pointer-events-none" />
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
@@ -224,7 +203,10 @@ export function WebDevService() {
             </article>
 
             {/* CTA Button Link */}
-            <MotionReveal variants={fadeUpVariant} className="pt-2">
+            <div
+              className="landing-reveal-item pt-2"
+              style={{ ['--ld' as string]: '0.32s' } as React.CSSProperties}
+            >
               <a
                 href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('السَّلام عليكم، أنا مهتم بخدمة بناء المواقع والتَّطبيقات.')}`}
                 target="_blank"
@@ -239,7 +221,7 @@ export function WebDevService() {
                   </span>
                 </Button>
               </a>
-            </MotionReveal>
+            </div>
           </MotionReveal>
         </div>
       </div>

@@ -4,28 +4,6 @@ import { AnimatedCounter } from './AnimatedCounter';
 
 // --- Elite Feature: Animated Counter (client island) ---
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.2 },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 50, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 60,
-      damping: 20,
-    },
-  },
-} as const;
-
 // Separated numeric value and suffix for the animation logic
 const metrics = [
   {
@@ -112,10 +90,7 @@ export function MetricCards() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <MotionReveal
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-100px' }}
+          from="none"
           className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-8 xl:gap-10"
         >
           {metrics.map((metric, index) => {
@@ -123,11 +98,15 @@ export function MetricCards() {
             const colors = colorConfigs[metric.colorKey];
 
             return (
-              <MotionReveal
+              <article
                 key={index}
-                as="article"
-                variants={itemVariants}
-                className={`group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-all duration-500 ease-out overflow-hidden bg-neutral-900/40 border border-white/10 backdrop-blur-xl z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
+                className={`landing-reveal-item group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-all duration-500 ease-out overflow-hidden bg-neutral-900/40 border border-white/10 backdrop-blur-xl z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
+                style={
+                  {
+                    ['--ld' as string]: `${index * 0.2}s`,
+                    ['--landing-reveal-from' as string]: 'translateY(50px) scale(0.95)',
+                  } as React.CSSProperties
+                }
               >
                 {/* Premium Ambient Background Tint on Hover */}
                 <div
@@ -190,7 +169,7 @@ export function MetricCards() {
                     </p>
                   </div>
                 </div>
-              </MotionReveal>
+              </article>
             );
           })}
         </MotionReveal>

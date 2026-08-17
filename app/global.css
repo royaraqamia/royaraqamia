@@ -2797,20 +2797,20 @@
 }
 
 .landing-reveal.is-visible {
-  animation: landing-reveal-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: landing-reveal-in var(--landing-reveal-dur, 0.6s) cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: var(--ld, 0s);
 }
 
 /* Children that stagger in once the parent group becomes visible */
 .landing-reveal-item {
   opacity: 0;
-  transform: translateY(16px);
+  transform: var(--landing-reveal-from, translateY(16px));
 }
 
 @keyframes landing-item-in {
   from {
     opacity: 0;
-    transform: translateY(16px);
+    transform: var(--landing-reveal-from, translateY(16px));
   }
   to {
     opacity: 1;

@@ -1,7 +1,7 @@
 'use client';
 
-import { m, useInView, useReducedMotion } from 'motion/react';
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { cn } from '@/frontend/shared/cn';
 
 interface ScrollAnimationProps {
   children: React.ReactNode;
@@ -11,6 +11,15 @@ interface ScrollAnimationProps {
   duration?: number;
 }
 
+const STARTS: Record<NonNullable<ScrollAnimationProps['animation']>, string> = {
+  'fade-in': 'none',
+  'slide-up': 'translateY(50px)',
+  'slide-down': 'translateY(-50px)',
+  'slide-right': 'translateX(-50px)',
+  'slide-left': 'translateX(50px)',
+  scale: 'scale(0.8)',
+};
+
 export function ScrollAnimation({
   children,
   className = '',
@@ -18,55 +27,42 @@ export function ScrollAnimation({
   delay = 0,
   duration = 0.6,
 }: ScrollAnimationProps) {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: '-100px' });
-  const prefersReducedMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
 
-  const variants = {
-    'fade-in': {
-      hidden: { opacity: 0 },
-      visible: { opacity: 1 },
-    },
-    'slide-up': {
-      hidden: { opacity: 0, y: 50 },
-      visible: { opacity: 1, y: 0 },
-    },
-    'slide-down': {
-      hidden: { opacity: 0, y: -50 },
-      visible: { opacity: 1, y: 0 },
-    },
-    'slide-right': {
-      hidden: { opacity: 0, x: -50 },
-      visible: { opacity: 1, x: 0 },
-    },
-    'slide-left': {
-      hidden: { opacity: 0, x: 50 },
-      visible: { opacity: 1, x: 0 },
-    },
-    scale: {
-      hidden: { opacity: 0, scale: 0.8 },
-      visible: { opacity: 1, scale: 1 },
-    },
-  };
+  useEffect(() => {
+    if (typeof IntersectionObserver === 'undefined') {
+      setIsVisible(true);
+      return;
+    }
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setIsVisible(true);
+          observer.disconnect();
+        }
+      },
+      { threshold: 0.15, rootMargin: '0px 0px -100px 0px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <m.div
+    <div
       ref={ref}
-      initial={prefersReducedMotion ? false : 'hidden'}
-      animate={prefersReducedMotion ? 'visible' : isInView ? 'visible' : 'hidden'}
-      variants={variants[animation]}
-      transition={
-        prefersReducedMotion
-          ? { duration: 0 }
-          : {
-              duration,
-              delay,
-              ease: [0.25, 0.4, 0.25, 1],
-            }
+      className={cn('landing-reveal', isVisible && 'is-visible', className)}
+      style={
+        {
+          ['--landing-reveal-from' as string]: STARTS[animation],
+          ['--ld' as string]: `${delay}s`,
+          ['--landing-reveal-dur' as string]: `${duration}s`,
+        } as React.CSSProperties
       }
-      className={className}
     >
       {children}
-    </m.div>
+    </div>
   );
 }
