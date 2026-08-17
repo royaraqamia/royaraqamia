@@ -84,16 +84,15 @@ export function createSpendtrackRepository(
     ): Promise<SpendtrackTransactionsResult> {
       const { userId, start, end, filterCategories, sort, pageSize, offset, search } = query;
 
-      const { data: categories } = (await supabase
+      // The categories lookup, the exact-count query, and the page query are
+      // independent of each other — issue them concurrently so the dashboard
+      // pays one network round-trip instead of three (all use the same
+      // user/date/search predicates; the list adds category/sort/paging).
+      const categoriesPromise = supabase
         .from('categories')
         .select('*')
         .or(`user_id.eq.${userId},is_default.eq.true`)
-        .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
-
-      const safeCategories = (categories ?? []).map(({ color_hex, ...row }) => ({
-        ...row,
-        colorHex: color_hex,
-      })) as Category[];
+        .order('name');
 
       let countQuery = supabase
         .from('expenses')
@@ -105,8 +104,6 @@ export function createSpendtrackRepository(
       if (search && search.trim().length > 0) {
         countQuery = countQuery.ilike('description', `%${search.trim()}%`);
       }
-
-      const { count: totalCount } = await countQuery;
 
       let queryBuilder = supabase
         .from('expenses')
@@ -134,7 +131,18 @@ export function createSpendtrackRepository(
         queryBuilder = queryBuilder.limit(pageSize);
       }
 
-      const { data: rawExpenses } = await queryBuilder;
+      const [{ data: categories }, { count: totalCount }, { data: rawExpenses }] =
+        await Promise.all([categoriesPromise, countQuery, queryBuilder]);
+
+      const safeCategories = (
+        (categories ?? []) as Array<{
+          color_hex: string;
+          [key: string]: unknown;
+        }>
+      ).map(({ color_hex, ...row }) => ({
+        ...row,
+        colorHex: color_hex,
+      })) as Category[];
       const expenses = (rawExpenses ?? []).map((row: Record<string, unknown>) => {
         const cats = row.categories as { name: string; color_hex: string } | null;
         return {

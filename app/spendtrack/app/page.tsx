@@ -40,6 +40,41 @@ export const metadata: Metadata = {
 
 const PAGE_SIZE = 20;
 
+// --- Streaming skeletons ---------------------------------------------------
+// The dashboard fans out to ~10 independent Supabase queries. Without a
+// Suspense boundary around each section, sibling async Server Components
+// render depth-first and the DB round-trips serialize into one long
+// waterfall (each block waits for the previous query). Suspense lets React
+// start every section's fetch concurrently and stream each card in as its
+// data resolves. The skeletons keep the layout height-stable (no CLS).
+function StatCardSkeleton() {
+  return (
+    <Card className="group/card card-lift" aria-hidden="true">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <div className="h-4 w-24 animate-pulse rounded bg-muted/60" />
+        <div className="size-8 animate-pulse rounded-lg bg-muted/50" />
+      </CardHeader>
+      <CardContent>
+        <div className="h-8 w-32 animate-pulse rounded bg-muted/60" />
+        <div className="mt-2 h-3 w-40 animate-pulse rounded bg-muted/40" />
+      </CardContent>
+    </Card>
+  );
+}
+
+function SectionSkeleton({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={`w-full animate-pulse rounded-2xl border border-border/60 bg-muted/30 ${className ?? ''}`}
+    />
+  );
+}
+
+function ButtonSkeleton() {
+  return <div aria-hidden="true" className="h-10 w-32 animate-pulse rounded-xl bg-muted/50" />;
+}
+
 function getDateRange(range: string, from?: string, to?: string) {
   const now = new Date();
   switch (range) {
@@ -289,36 +324,48 @@ export default async function DashboardPage(props: {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <CsvActions start={start} end={end} categories={filterCategories} />
           <CurrencySelector currency={currency} />
-          <CreateExpenseButton userId={user.id} currency={currency} />
+          <Suspense fallback={<ButtonSkeleton />}>
+            <CreateExpenseButton userId={user.id} currency={currency} />
+          </Suspense>
         </div>
       </div>
 
       <div className="animate-slide-up stagger-2">
         <div className="grid gap-4 md:grid-cols-2">
-          <TotalCard
+          <Suspense fallback={<StatCardSkeleton />}>
+            <TotalCard
+              userId={user.id}
+              start={start}
+              end={end}
+              catFilter={catFilter}
+              currency={currency}
+            />
+          </Suspense>
+          <Suspense fallback={<StatCardSkeleton />}>
+            <BudgetSection userId={user.id} currency={currency} />
+          </Suspense>
+        </div>
+      </div>
+
+      <Suspense fallback={<SectionSkeleton className="h-40" />}>
+        <CategoryBudgetsSection userId={user.id} />
+      </Suspense>
+
+      <div className="animate-slide-up stagger-3">
+        <Suspense fallback={<SectionSkeleton className="h-28" />}>
+          <InsightsSection
             userId={user.id}
             start={start}
             end={end}
             catFilter={catFilter}
             currency={currency}
           />
-          <BudgetSection userId={user.id} currency={currency} />
-        </div>
+        </Suspense>
       </div>
 
-      <CategoryBudgetsSection userId={user.id} />
-
-      <div className="animate-slide-up stagger-3">
-        <InsightsSection
-          userId={user.id}
-          start={start}
-          end={end}
-          catFilter={catFilter}
-          currency={currency}
-        />
-      </div>
-
-      <RecurringExpensesSection userId={user.id} currency={currency} />
+      <Suspense fallback={<SectionSkeleton className="h-40" />}>
+        <RecurringExpensesSection userId={user.id} currency={currency} />
+      </Suspense>
 
       <div className="grid gap-4 lg:grid-cols-2 animate-slide-up stagger-3">
         <Card
@@ -332,13 +379,15 @@ export default async function DashboardPage(props: {
             </div>
           </CardHeader>
           <CardContent>
-            <CategoryPieSection
-              userId={user.id}
-              start={start}
-              end={end}
-              catFilter={catFilter}
-              currency={currency}
-            />
+            <Suspense fallback={<ChartsSkeleton />}>
+              <CategoryPieSection
+                userId={user.id}
+                start={start}
+                end={end}
+                catFilter={catFilter}
+                currency={currency}
+              />
+            </Suspense>
           </CardContent>
         </Card>
         <Card
@@ -352,13 +401,15 @@ export default async function DashboardPage(props: {
             </div>
           </CardHeader>
           <CardContent>
-            <DailyBarSection
-              userId={user.id}
-              start={start}
-              end={end}
-              catFilter={catFilter}
-              currency={currency}
-            />
+            <Suspense fallback={<ChartsSkeleton />}>
+              <DailyBarSection
+                userId={user.id}
+                start={start}
+                end={end}
+                catFilter={catFilter}
+                currency={currency}
+              />
+            </Suspense>
           </CardContent>
         </Card>
       </div>
@@ -372,15 +423,17 @@ export default async function DashboardPage(props: {
             </div>
           </CardHeader>
           <CardContent>
-            <TransactionsSection
-              userId={user.id}
-              start={start}
-              end={end}
-              filterCategories={filterCategories}
-              sort={sort}
-              search={search}
-              currency={currency}
-            />
+            <Suspense fallback={<SectionSkeleton className="h-72" />}>
+              <TransactionsSection
+                userId={user.id}
+                start={start}
+                end={end}
+                filterCategories={filterCategories}
+                sort={sort}
+                search={search}
+                currency={currency}
+              />
+            </Suspense>
           </CardContent>
         </Card>
       </div>
