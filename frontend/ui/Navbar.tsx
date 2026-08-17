@@ -1,14 +1,23 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { List, X, House, Package, ShieldCheck, BookOpen } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
 import { MobileMenu } from './navbar/MobileMenu';
-import { NotificationDropdown } from './shared/notification-dropdown';
-import { UserDropdown } from './shared/user-dropdown';
 import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
+
+const NotificationDropdown = dynamic(
+  () => import('./shared/notification-dropdown').then((m) => m.NotificationDropdown),
+  { ssr: false, loading: () => null }
+);
+
+const UserDropdown = dynamic(() => import('./shared/user-dropdown').then((m) => m.UserDropdown), {
+  ssr: false,
+  loading: () => null,
+});
 
 export function Navbar() {
   const { isMobileMenuOpen, setIsMobileMenuOpen, isReviewSheetOpen } = useUI();
