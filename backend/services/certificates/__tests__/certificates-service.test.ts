@@ -220,10 +220,12 @@ describe('CertificatesService', () => {
   describe('update', () => {
     it('delegates a valid update to the repository', async () => {
       const { repository, service } = makeRepo();
+      (repository.getById as ReturnType<typeof vi.fn>).mockResolvedValue(sampleCertificate);
       (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue(sampleCertificate);
 
       await service.update('1', validInput);
 
+      expect(repository.getById).toHaveBeenCalledWith('1');
       expect(repository.update).toHaveBeenCalledWith('1', {
         student_name: 'أحمد محمد',
         course_name: 'برمجة الويب',
@@ -286,6 +288,87 @@ describe('CertificatesService', () => {
         service.create({ ...validInput, recipient_user_ids: ['not-a-uuid'] })
       ).rejects.toMatchObject({
         fieldErrors: { recipient_user_ids: 'معرّف مستخدم غير صالح' },
+      });
+    });
+  });
+
+  describe('update notifier', () => {
+    const userIdA = '9f0d8b3e-6b2a-4d4c-9f1e-2c3d4e5f6a7b';
+    const userIdB = '1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d';
+
+    it('notifies only newly added recipient ids on update', async () => {
+      const onCertificateIssued = vi.fn();
+      const { repository, service } = makeRepoWithNotifier(onCertificateIssued);
+      (repository.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ...sampleCertificate,
+        recipient_user_ids: [userIdA],
+      });
+      (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ...sampleCertificate,
+        recipient_user_ids: [userIdA, userIdB],
+      });
+
+      await service.update('1', { ...validInput, recipient_user_ids: [userIdA, userIdB] });
+
+      expect(onCertificateIssued).toHaveBeenCalledTimes(1);
+      expect(onCertificateIssued).toHaveBeenCalledWith({
+        recipientUserIds: [userIdB],
+        certificate: { ...sampleCertificate, recipient_user_ids: [userIdA, userIdB] },
+      });
+    });
+
+    it('does not notify when recipient ids are unchanged', async () => {
+      const onCertificateIssued = vi.fn();
+      const { repository, service } = makeRepoWithNotifier(onCertificateIssued);
+      (repository.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ...sampleCertificate,
+        recipient_user_ids: [userIdA],
+      });
+      (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ...sampleCertificate,
+        recipient_user_ids: [userIdA],
+      });
+
+      await service.update('1', { ...validInput, recipient_user_ids: [userIdA] });
+
+      expect(onCertificateIssued).not.toHaveBeenCalled();
+    });
+
+    it('does not notify when recipients are removed', async () => {
+      const onCertificateIssued = vi.fn();
+      const { repository, service } = makeRepoWithNotifier(onCertificateIssued);
+      (repository.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ...sampleCertificate,
+        recipient_user_ids: [userIdA],
+      });
+      (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ...sampleCertificate,
+        recipient_user_ids: [],
+      });
+
+      await service.update('1', { ...validInput, recipient_user_ids: [] });
+
+      expect(onCertificateIssued).not.toHaveBeenCalled();
+    });
+
+    it('notifies when recipients are added to a certificate that had none', async () => {
+      const onCertificateIssued = vi.fn();
+      const { repository, service } = makeRepoWithNotifier(onCertificateIssued);
+      (repository.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ...sampleCertificate,
+        recipient_user_ids: [],
+      });
+      (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+        ...sampleCertificate,
+        recipient_user_ids: [userIdA],
+      });
+
+      await service.update('1', { ...validInput, recipient_user_ids: [userIdA] });
+
+      expect(onCertificateIssued).toHaveBeenCalledTimes(1);
+      expect(onCertificateIssued).toHaveBeenCalledWith({
+        recipientUserIds: [userIdA],
+        certificate: { ...sampleCertificate, recipient_user_ids: [userIdA] },
       });
     });
   });

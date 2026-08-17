@@ -174,7 +174,22 @@ export class CertificatesService {
     }
   ): Promise<Certificate> {
     const parsed = parseCertificate(input);
-    return this.repository.update(id, parsed);
+
+    const existing = await this.repository.getById(id);
+    const updated = await this.repository.update(id, parsed);
+
+    if (existing) {
+      const existingIds = new Set(existing.recipient_user_ids ?? []);
+      const newlyAddedIds = parsed.recipient_user_ids.filter((userId) => !existingIds.has(userId));
+      if (newlyAddedIds.length > 0) {
+        this.onCertificateIssued?.({
+          recipientUserIds: newlyAddedIds,
+          certificate: updated,
+        });
+      }
+    }
+
+    return updated;
   }
 
   async delete(id: string): Promise<void> {
