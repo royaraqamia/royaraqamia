@@ -14,7 +14,6 @@ import { estimateReadingTime, formatReadingTimeLong } from '@/frontend/shared/re
 import {
   loadPublishedPostBySlug,
   loadBlogPost,
-  loadPublishedPostTags,
   loadPublishedPostSlugs,
 } from '@/backend/loaders/blog';
 import { env } from '@/backend/config/env';
@@ -92,13 +91,12 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   if (!loaded) notFound();
 
-  const { post: p, author, relatedPosts } = loaded;
+  const { post: p, author, relatedPosts, postTags } = loaded;
 
   const readingTime = estimateReadingTime(p.content);
   const headings = extractHeadings(p.content ?? '');
   const postUrl = `${env.siteUrl}/blog/${slug}`;
   const hasHeadings = headings.length > 0;
-  const postTags = await loadPublishedPostTags(p.id);
 
   const markdownComponents = {
     h2: (props: React.ComponentPropsWithoutRef<'h2'>) => {

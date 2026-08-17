@@ -6,7 +6,7 @@ import {
   createBlogpressAdminPostsService,
   createBlogpressPostsService,
 } from '@/backend/config/blogpress';
-import type { Post, PostAuthor } from '@/shared/contracts/blogpress';
+import type { Post, PostAuthor, PostTag } from '@/shared/contracts/blogpress';
 
 const BLOG_CACHE_SECONDS = 60;
 
@@ -37,12 +37,6 @@ export const loadPublishedPostCategories = unstable_cache(
   { revalidate: BLOG_CACHE_SECONDS }
 );
 
-export const loadPublishedPostTags = unstable_cache(
-  (postId: string) => pub().getPublishedPostTags(postId),
-  ['blog-post-tags'],
-  { revalidate: BLOG_CACHE_SECONDS }
-);
-
 export async function loadIncrementPostViewCount(postId: string): Promise<void> {
   return pub().incrementPostViewCount(postId);
 }
@@ -60,6 +54,7 @@ export const loadBlogPost = unstable_cache(
     post: Post;
     author: PostAuthor | null;
     relatedPosts: Post[];
+    postTags: PostTag[];
   } | null> => {
     const supabase = getPublicSupabase();
     const postsService = createBlogpressPostsService(supabase);
@@ -67,12 +62,13 @@ export const loadBlogPost = unstable_cache(
     const post = await postsService.getPublishedPostBySlug(slug);
     if (!post) return null;
 
-    const [author, relatedPosts] = await Promise.all([
+    const [author, relatedPosts, postTags] = await Promise.all([
       createBlogpressAdminPostsService().getPostAuthor(post.author_id),
       postsService.getRelatedPosts(slug),
+      postsService.getPublishedPostTags(post.id),
     ]);
 
-    return { post, author, relatedPosts };
+    return { post, author, relatedPosts, postTags };
   },
   ['blog-post'],
   { revalidate: BLOG_CACHE_SECONDS }
