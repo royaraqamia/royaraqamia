@@ -32,6 +32,10 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ['motion'],
+  staleTimes: {
+    dynamic: 30,
+    static: 300,
+  },
   typescript: {
     ignoreBuildErrors: true,
   },
