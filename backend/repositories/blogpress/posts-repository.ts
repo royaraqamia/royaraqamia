@@ -5,6 +5,7 @@ import type {
   PostTag,
   PostAuthor,
   PublishedPostsResult,
+  RestorePostSnapshot,
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 
@@ -37,6 +38,7 @@ export interface PostsRepository {
   unpublishPost(postId: string, authorId: string): Promise<{ slug: string }>;
   schedulePost(postId: string, authorId: string, publishAt: string): Promise<{ slug: string }>;
   deletePost(postId: string, authorId: string): Promise<{ slug: string }>;
+  restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }>;
   setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void>;
   bulkActionPosts(
     postIds: string[],

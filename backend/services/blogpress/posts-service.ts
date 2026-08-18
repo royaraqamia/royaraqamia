@@ -6,6 +6,7 @@ import type {
   PostTag,
   PostAuthor,
   PublishedPostsResult,
+  RestorePostSnapshot,
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 import { isAdmin } from '@/backend/shared/admin-validator';
@@ -115,6 +116,20 @@ export class BlogpressPostsService {
 
   async deletePost(postId: string, authorId: string): Promise<{ slug: string }> {
     return this.repository.deletePost(postId, authorId);
+  }
+
+  async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
+    if (!snapshot.title || !snapshot.title.trim()) {
+      throw new Error('عنوان المقال مطلوب');
+    }
+    if (!snapshot.slug || !snapshot.slug.trim()) {
+      throw new Error('المعرّف (slug) مطلوب');
+    }
+    const { id } = await this.repository.restorePost(authorId, snapshot);
+    if (snapshot.tagIds && snapshot.tagIds.length > 0) {
+      await this.repository.setPostTags(id, authorId, snapshot.tagIds);
+    }
+    return { id };
   }
 
   async duplicatePost(postId: string, authorId: string): Promise<{ id: string }> {

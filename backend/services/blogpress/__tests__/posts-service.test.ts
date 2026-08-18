@@ -48,6 +48,7 @@ function makeRepo(
     unpublishPost: vi.fn(),
     schedulePost: vi.fn(),
     deletePost: vi.fn(),
+    restorePost: vi.fn(),
     setPostFeatured: vi.fn(),
     bulkActionPosts: vi.fn(),
     bulkSetPostCategories: vi.fn(),
@@ -243,6 +244,99 @@ describe('BlogpressPostsService (thin delegation)', () => {
     expect(repository.publishPost).toHaveBeenCalledWith('p-1', 'u-1', false);
     await expect(service.unpublishPost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
     await expect(service.deletePost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
+  });
+
+  it('restores a post and re-attaches its tags', async () => {
+    const { repository, service } = makeRepo();
+    (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-2' });
+    (repository.setPostTags as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const snapshot = {
+      title: 'مقال',
+      slug: 'post-1',
+      content: 'المحتوى',
+      status: 'published' as const,
+      cover_image: null,
+      meta_title: null,
+      meta_desc: null,
+      published_at: '2026-08-01T00:00:00.000Z',
+      publish_at: null,
+      view_count: 3,
+      featured: false,
+      blog_visible: true,
+      reading_time_minutes: 2,
+      tagIds: ['t-1', 't-2'],
+    };
+
+    await expect(service.restorePost('u-1', snapshot)).resolves.toEqual({ id: 'p-2' });
+    expect(repository.restorePost).toHaveBeenCalledWith('u-1', snapshot);
+    expect(repository.setPostTags).toHaveBeenCalledWith('p-2', 'u-1', ['t-1', 't-2']);
+  });
+
+  it('skips tag re-attachment when the snapshot has no tags', async () => {
+    const { repository, service } = makeRepo();
+    (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-2' });
+
+    const snapshot = {
+      title: 'مقال',
+      slug: 'post-1',
+      content: null,
+      status: 'draft' as const,
+      cover_image: null,
+      meta_title: null,
+      meta_desc: null,
+      published_at: null,
+      publish_at: null,
+      view_count: 0,
+      featured: false,
+      blog_visible: true,
+      reading_time_minutes: 0,
+    };
+
+    await service.restorePost('u-1', snapshot);
+
+    expect(repository.restorePost).toHaveBeenCalledWith('u-1', snapshot);
+    expect(repository.setPostTags).not.toHaveBeenCalled();
+  });
+
+  it('rejects restoring a post without a title or slug', async () => {
+    const { repository, service } = makeRepo();
+
+    await expect(
+      service.restorePost('u-1', {
+        title: '  ',
+        slug: 'post-1',
+        content: null,
+        status: 'draft',
+        cover_image: null,
+        meta_title: null,
+        meta_desc: null,
+        published_at: null,
+        publish_at: null,
+        view_count: 0,
+        featured: false,
+        blog_visible: true,
+        reading_time_minutes: 0,
+      })
+    ).rejects.toThrow('عنوان المقال مطلوب');
+    await expect(
+      service.restorePost('u-1', {
+        title: 'مقال',
+        slug: ' ',
+        content: null,
+        status: 'draft',
+        cover_image: null,
+        meta_title: null,
+        meta_desc: null,
+        published_at: null,
+        publish_at: null,
+        view_count: 0,
+        featured: false,
+        blog_visible: true,
+        reading_time_minutes: 0,
+      })
+    ).rejects.toThrow('المعرّف (slug) مطلوب');
+    expect(repository.restorePost).not.toHaveBeenCalled();
   });
 
   it('delegates schedulePost with the target publish_at', async () => {

@@ -1,5 +1,5 @@
 import { request } from '@/frontend/transport/http';
-import type { PostTag } from '@/shared/contracts/blogpress';
+import type { Post, PostTag } from '@/shared/contracts/blogpress';
 
 export interface PostFields {
   title: string;
@@ -8,6 +8,15 @@ export interface PostFields {
   cover_image: string;
   meta_title: string;
   meta_desc: string;
+}
+
+export async function restorePost(
+  snapshot: Omit<Post, 'id' | 'author_id' | 'created_at' | 'updated_at'> & { tagIds?: string[] }
+): Promise<{ id: string }> {
+  return request<{ success: boolean; id: string }>('/api/blogpress/posts/restore', {
+    method: 'POST',
+    body: JSON.stringify(snapshot),
+  });
 }
 
 export async function createPost(): Promise<{ id: string }> {

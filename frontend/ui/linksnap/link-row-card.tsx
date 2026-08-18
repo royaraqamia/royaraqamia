@@ -31,6 +31,7 @@ import {
 } from '@/frontend/ui/primitives/dropdown-menu';
 import { cn } from '@/frontend/shared/cn';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
+import { shorten } from '@/frontend/api/linksnap';
 import { toast } from 'sonner';
 import { useDeleteLink } from '@/frontend/state/linksnap/use-links';
 import { useLinkAnalytics } from '@/frontend/state/linksnap/use-analytics';
@@ -68,6 +69,7 @@ interface LinkRowCardProps {
   token: string;
   onDeleted: (code: string) => void;
   onUpdated: (prevCode: string, link: ShortenedLink) => void;
+  onRestored?: () => void;
   isSelected?: boolean;
   onToggleSelect?: (code: string) => void;
 }
@@ -82,6 +84,7 @@ export function LinkRowCard({
   token,
   onDeleted,
   onUpdated,
+  onRestored,
   isSelected = false,
   onToggleSelect,
 }: LinkRowCardProps) {
@@ -137,7 +140,20 @@ export function LinkRowCard({
     try {
       await deleteLink(code);
       onDeleted(code);
-      toast.success('تم حذف الرابط بنجاح');
+      toast('تم حذف الرابط', {
+        action: {
+          label: 'تراجع',
+          onClick: async () => {
+            try {
+              await shorten(originalUrl, code, token);
+              onRestored?.();
+              toast.success('تم استرجاع الرابط');
+            } catch {
+              toast.error('فشل استرجاع الرابط');
+            }
+          },
+        },
+      });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'خطأ في حذف الرَّابط.';
       toast.error(msg);

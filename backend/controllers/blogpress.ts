@@ -12,6 +12,7 @@ import {
 } from '@/shared/contracts/blog';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import type { RevalidationHint } from '@/backend/transport/http-result';
+import type { RestorePostSnapshot } from '@/shared/contracts/blogpress';
 import { BLOG_MUTATION_TAGS } from '@/backend/shared/blog-cache-tags';
 
 function postRevalidation(slug: string): RevalidationHint[] {
@@ -101,6 +102,32 @@ export async function duplicatePost(id: string): Promise<HttpResult> {
   } catch (error) {
     return jsonResult(500, {
       error: error instanceof Error ? error.message : 'فشل نسخ المقال',
+    });
+  }
+}
+
+export async function restorePost(body: Record<string, unknown>): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+
+    const { id } = await createBlogpressPostsService(supabase).restorePost(
+      user.id,
+      body as unknown as RestorePostSnapshot
+    );
+
+    const slug = String(body.slug ?? '');
+    return jsonResult(
+      200,
+      { success: true, id },
+      {
+        revalidate: slug ? postRevalidation(slug) : undefined,
+        tags: BLOG_MUTATION_TAGS,
+      }
+    );
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل استرجاع المقال',
     });
   }
 }

@@ -57,7 +57,7 @@ export function useDashboard(seed: DashboardSeed) {
     cancelArchive,
     openEditModal,
     closeEditModal,
-  } = useDashboardForm(user, setHabits);
+  } = useDashboardForm(user, setHabits, habits);
 
   const { togglingHabitId, skippingHabitId, handleToggleLog, handleSkipHabit, handleSaveNote } =
     useDashboardToggle(user, logs, setLogs, activeDate);

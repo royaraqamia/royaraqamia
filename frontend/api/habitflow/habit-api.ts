@@ -81,6 +81,17 @@ export class ApiClient {
     return data.success;
   }
 
+  static async unarchiveHabit(id: string) {
+    const data = await request<{ habit: Habit; mode: 'supabase' | 'local' }>(
+      '/habitflow/api/habits',
+      {
+        method: 'PUT',
+        body: JSON.stringify({ id, archived: false }),
+      }
+    );
+    return data.habit;
+  }
+
   static async fetchLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[]; count: number }> {
     try {
       return await request('/habitflow/api/local-data');

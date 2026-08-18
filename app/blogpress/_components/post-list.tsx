@@ -50,6 +50,7 @@ import {
   createPost,
   setPostFeatured,
   duplicatePost,
+  restorePost,
 } from '@/frontend/api/blogpress';
 import { downloadPostAsFile } from '@/frontend/shared/blogpress/export-post';
 import { useBulkPosts } from '@/frontend/state/blogpress/use-bulk-posts';
@@ -668,6 +669,34 @@ function PostRow({
                       onClick={async () => {
                         try {
                           await deletePost(post.id);
+                          toast('تم حذف المقال', {
+                            action: {
+                              label: 'تراجع',
+                              onClick: async () => {
+                                try {
+                                  await restorePost({
+                                    title: post.title || '',
+                                    slug: post.slug,
+                                    content: post.content,
+                                    status: post.status,
+                                    cover_image: post.cover_image,
+                                    meta_title: post.meta_title,
+                                    meta_desc: post.meta_desc,
+                                    published_at: post.published_at,
+                                    publish_at: post.publish_at,
+                                    view_count: post.view_count ?? 0,
+                                    featured: post.featured,
+                                    blog_visible: post.blog_visible,
+                                    reading_time_minutes: post.reading_time_minutes ?? 0,
+                                    tagIds: tags.map((t) => t.id),
+                                  });
+                                  router.refresh();
+                                } catch {
+                                  toast.error('فشل استرجاع المقال');
+                                }
+                              },
+                            },
+                          });
                           router.refresh();
                         } catch {
                           toast.error('فشل حذف المقال');

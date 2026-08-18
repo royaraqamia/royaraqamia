@@ -7,6 +7,7 @@ import type {
   PostTag,
   PostAuthor,
   PublishedPostsResult,
+  RestorePostSnapshot,
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/blog';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
@@ -357,6 +358,33 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       if (error) throw new Error('فشل حذف المقال');
 
       return { slug: data.slug };
+    },
+
+    async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
+      const { data, error } = await supabase
+        .from('posts')
+        .insert({
+          author_id: authorId,
+          title: snapshot.title,
+          slug: snapshot.slug,
+          content: snapshot.content,
+          status: snapshot.status,
+          cover_image: snapshot.cover_image,
+          meta_title: snapshot.meta_title,
+          meta_desc: snapshot.meta_desc,
+          published_at: snapshot.published_at,
+          publish_at: snapshot.publish_at,
+          view_count: snapshot.view_count,
+          featured: snapshot.featured,
+          blog_visible: snapshot.blog_visible,
+          reading_time_minutes: snapshot.reading_time_minutes,
+        })
+        .select('id')
+        .single();
+
+      if (error) throw new Error('فشل استرجاع المقال');
+
+      return { id: data.id };
     },
 
     async setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void> {

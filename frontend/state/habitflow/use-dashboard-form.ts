@@ -44,7 +44,8 @@ function parseTarget(value: string): number | null {
 
 export function useDashboardForm(
   user: unknown,
-  setHabits: Dispatch<SetStateAction<Habit[]>>
+  setHabits: Dispatch<SetStateAction<Habit[]>>,
+  habits: Habit[]
 ): DashboardForm {
   const [isAddModalOpen, setIsAddModalOpen] = useState<boolean>(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
@@ -173,6 +174,34 @@ export function useDashboardForm(
     if (!confirmArchiveHabitId) return;
     setFormError('');
 
+    const archivedHabit = habits.find((h) => h.id === confirmArchiveHabitId);
+
+    const showUndoToast = (title: string) => {
+      toast(title, {
+        action: {
+          label: 'تراجع',
+          onClick: async () => {
+            const id = confirmArchiveHabitId;
+            if (!id || !archivedHabit) return;
+            try {
+              if (user) {
+                await ApiClient.unarchiveHabit(id);
+              } else {
+                await localRepo.updateHabit(id, { archived: false });
+              }
+              setHabits((prev) =>
+                prev.some((h) => h.id === id)
+                  ? prev
+                  : [...prev, { ...archivedHabit, archived: false }]
+              );
+            } catch {
+              toast.error('فشل استرجاع العادة');
+            }
+          },
+        },
+      });
+    };
+
     if (user) {
       try {
         const success = await ApiClient.archiveHabit(confirmArchiveHabitId);
@@ -186,7 +215,7 @@ export function useDashboardForm(
         setSelectedHabit(null);
         setFormError('');
         setConfirmArchiveHabitId(null);
-        toast.success('تم أرشفة العادة بنجاح');
+        showUndoToast('تم أرشفة العادة');
       } catch (e) {
         setFormError('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.');
         setConfirmArchiveHabitId(null);
@@ -200,7 +229,7 @@ export function useDashboardForm(
         setSelectedHabit(null);
         setFormError('');
         setConfirmArchiveHabitId(null);
-        toast.success('تم أرشفة العادة محلياً');
+        showUndoToast('تم أرشفة العادة محلياً');
       } catch (e) {
         setFormError('حدث خطأ أثناء أرشفة العادة محلياً.');
         setConfirmArchiveHabitId(null);

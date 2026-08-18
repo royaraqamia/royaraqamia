@@ -13,6 +13,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { LinkRowCard } from './link-row-card';
+import { shorten } from '@/frontend/api/linksnap';
 import { DashboardEmptyState } from './dashboard-empty-state';
 import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
@@ -66,9 +67,25 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
 
   const deleteSelected = async () => {
     setShowDeleteConfirm(false);
+    const deletedLinks = links.filter((l) => bulk.selectedCodes.includes(l.code));
     const result = await bulk.runDelete();
     if (result) {
-      toast.success(`تم حذف ${result.deleted} رابط`);
+      toast('تم حذف الروابط المحددة', {
+        action: {
+          label: 'تراجع',
+          onClick: async () => {
+            try {
+              for (const link of deletedLinks) {
+                await shorten(link.originalUrl, link.code, token);
+              }
+              await fetchLinks();
+              toast.success('تم استرجاع الروابط');
+            } catch {
+              toast.error('فشل استرجاع الروابط');
+            }
+          },
+        },
+      });
       await fetchLinks();
     }
   };
@@ -170,6 +187,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
                 token={token}
                 onDeleted={handleDelete}
                 onUpdated={(prevCode, link) => applyLinkUpdate(prevCode, link)}
+                onRestored={fetchLinks}
                 isSelected={bulk.selected.has(link.code)}
                 onToggleSelect={bulk.toggle}
               />
