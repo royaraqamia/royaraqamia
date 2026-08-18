@@ -241,10 +241,10 @@ export function EditorSidePanel({
     >
       <DialogContent
         dir="rtl"
-        className="sm:max-w-xl w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/50 bg-background/95 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.18)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] overflow-hidden flex flex-col max-h-[88vh]"
+        className="sm:max-w-xl w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/50 bg-background/95 backdrop-blur-2xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.18)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)]"
       >
         {/* Modal Header & Navigation Bar */}
-        <div className="sticky top-0 z-20 flex flex-col border-b border-border/40 bg-background/90 px-6 sm:px-8 pt-6 pb-4 backdrop-blur-xl shrink-0">
+        <div className="sticky top-0 z-20 flex flex-col border-b border-border/40 bg-background/90 px-6 sm:px-8 pt-6 pb-4 backdrop-blur-xl">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h2 className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">
@@ -303,7 +303,7 @@ export function EditorSidePanel({
         </div>
 
         {/* Scrollable Main Content Area */}
-        <div className="flex-1 overflow-y-auto space-y-6 px-6 sm:px-8 py-6 custom-scrollbar">
+        <div className="space-y-6 px-6 sm:px-8 py-6">
           {tab === 'seo' ? (
             <>
               <section className="space-y-4">

@@ -130,7 +130,7 @@ export function LinkEditDialog({
     >
       <DialogContent
         dir="rtl"
-        className="sm:max-w-lg w-[calc(100%-2rem)] mx-auto p-0 gap-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/60 dark:border-neutral-800 bg-background/95 dark:bg-neutral-900/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_24px_50px_-12px_rgba(0,0,0,0.7)] transition-all duration-300"
+        className="sm:max-w-lg w-[calc(100%-2rem)] mx-auto p-0 gap-0 overflow-y-auto rounded-2xl sm:rounded-3xl border border-border/60 dark:border-neutral-800 bg-background/95 dark:bg-neutral-900/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_24px_50px_-12px_rgba(0,0,0,0.7)] transition-all duration-300"
       >
         {/* Subtle Ambient Light Glow Accent */}
         <div
