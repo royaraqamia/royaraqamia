@@ -27,8 +27,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ create?: string }>;
+}) {
   const { habits, logs, mode, user } = await loadHabitflowDashboard();
+  const { create } = await searchParams;
 
   return (
     <DashboardShell
@@ -36,6 +41,7 @@ export default async function HomePage() {
       initialLogs={logs}
       initialMode={mode}
       initialUser={user}
+      autoOpenCreate={create === '1'}
     />
   );
 }

@@ -7,6 +7,7 @@ import {
 } from '@/backend/loaders/blogpress';
 import { PostList } from '../_components/post-list';
 import { CreatePostButton } from '../_components/create-post-button';
+import { AutoCreatePost } from '../_components/auto-create-post';
 import { FileText, Eye, CalendarClock, BarChart3, CalendarRange } from 'lucide-react';
 import Link from 'next/link';
 
@@ -18,6 +19,7 @@ export const metadata: Metadata = {
 
 interface DashboardSearchParams {
   category?: string;
+  create?: string;
 }
 
 export default async function DashboardPage({
@@ -25,7 +27,7 @@ export default async function DashboardPage({
 }: {
   searchParams: Promise<DashboardSearchParams>;
 }) {
-  const { category } = await searchParams;
+  const { category, create } = await searchParams;
   const session = await verifySession();
   const [postList, categories] = await Promise.all([
     loadBlogpressDashboard(session.userId, category),
@@ -67,6 +69,7 @@ export default async function DashboardPage({
 
   return (
     <div>
+      {create === '1' && <AutoCreatePost />}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
         <div>
           <h1 className="text-3xl font-display font-bold tracking-tight">إدارة المقالات</h1>

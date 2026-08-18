@@ -2,7 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { BookOpen, CornerDownLeft, House, ScanLine, Search } from 'lucide-react';
+import {
+  BookOpen,
+  CornerDownLeft,
+  FilePlus2,
+  House,
+  Link2,
+  ListPlus,
+  Receipt,
+  ScanLine,
+  Search,
+} from 'lucide-react';
 import {
   CommandDialog,
   CommandEmpty,
@@ -17,20 +27,51 @@ import { APP_PRODUCTS } from './constants';
 interface PaletteItem {
   id: string;
   label: string;
-  group: 'apps' | 'general';
+  group: 'apps' | 'quick' | 'general';
   href: string;
   icon: typeof House;
 }
 
 const GENERAL_ITEMS: PaletteItem[] = [
-  { id: 'home', label: 'الرَّئيسيَّة', group: 'general', href: '/', icon: House },
-  { id: 'blog', label: 'المدوَّنة', group: 'general', href: '/blog', icon: BookOpen },
+  { id: 'home', label: 'الرَّئيسيَّة', group: 'general', href: '/', icon: House },
+  { id: 'blog', label: 'المدوَّنة', group: 'general', href: '/blog', icon: BookOpen },
   {
     id: 'verify',
-    label: 'التَّحقُّق من الشَّهادة',
+    label: 'التَّحقُّق من الشَّهادة',
     group: 'general',
     href: '/verify',
     icon: ScanLine,
+  },
+];
+
+const QUICK_ACTIONS: PaletteItem[] = [
+  {
+    id: 'quick-blogpress',
+    label: 'إنشاء مقالة',
+    group: 'quick',
+    href: '/blogpress/app?create=1',
+    icon: FilePlus2,
+  },
+  {
+    id: 'quick-habitflow',
+    label: 'إضافة عادة',
+    group: 'quick',
+    href: '/habitflow/app?create=1',
+    icon: ListPlus,
+  },
+  {
+    id: 'quick-spendtrack',
+    label: 'تسجيل مصروف',
+    group: 'quick',
+    href: '/spendtrack/app?create=1',
+    icon: Receipt,
+  },
+  {
+    id: 'quick-linksnap',
+    label: 'اختصار رابط',
+    group: 'quick',
+    href: '/linksnap/app?create=1',
+    icon: Link2,
   },
 ];
 
@@ -129,6 +170,36 @@ export function CommandPalette() {
                     <kbd className="hidden sm:inline-block font-mono text-[10px] text-muted-foreground/50">
                       فتح
                     </kbd>
+                    <CornerDownLeft className="size-3.5 shrink-0" />
+                  </span>
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+
+          <CommandSeparator className="my-1.5 h-px bg-border/40" />
+
+          {/* Quick Actions Section */}
+          <CommandGroup
+            heading="إجراءات سريعة"
+            className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
+          >
+            {QUICK_ACTIONS.map((item) => {
+              const Icon = item.icon;
+              return (
+                <CommandItem
+                  key={item.id}
+                  value={`quick-${item.label}`}
+                  onSelect={() => run(item.href)}
+                  className="group relative flex min-h-11 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2 text-sm outline-none transition-all duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
+                >
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-all duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+                    <Icon className="size-4 text-foreground/80 group-data-[selected=true]:text-primary transition-colors" />
+                  </span>
+                  <span className="flex-1 truncate text-sm font-medium tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
+                    {item.label}
+                  </span>
+                  <span className="flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-[selected=true]:opacity-100 text-muted-foreground/60 group-data-[selected=true]:text-primary">
                     <CornerDownLeft className="size-3.5 shrink-0" />
                   </span>
                 </CommandItem>

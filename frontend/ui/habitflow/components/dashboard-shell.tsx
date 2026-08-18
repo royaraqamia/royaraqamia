@@ -39,6 +39,7 @@ interface DashboardShellProps {
   initialLogs: HabitLog[];
   initialMode: 'supabase' | 'local';
   initialUser: unknown;
+  autoOpenCreate?: boolean;
 }
 
 export function DashboardShell({
@@ -46,6 +47,7 @@ export function DashboardShell({
   initialLogs,
   initialMode,
   initialUser,
+  autoOpenCreate = false,
 }: DashboardShellProps) {
   const { user: sessionUser } = useSession();
 
@@ -105,6 +107,11 @@ export function DashboardShell({
     mode: initialMode,
     user: initialUser,
   });
+
+  useEffect(() => {
+    if (autoOpenCreate) setIsAddModalOpen(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpenCreate]);
 
   const shouldReduce = useReducedMotion();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);

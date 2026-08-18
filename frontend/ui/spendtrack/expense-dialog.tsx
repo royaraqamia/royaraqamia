@@ -71,11 +71,13 @@ type ExpenseFormValues = z.input<typeof expenseSchema>;
 export function CreateExpenseDialog({
   categories,
   currency,
+  autoOpen = false,
 }: {
   categories: Category[];
   currency?: string;
+  autoOpen?: boolean;
 }) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(autoOpen);
   const { submit, pending, serverError } = useSaveExpense();
 
   const {

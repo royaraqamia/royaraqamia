@@ -143,9 +143,17 @@ async function TotalCard({
   );
 }
 
-async function CreateExpenseButton({ userId, currency }: { userId: string; currency: string }) {
+async function CreateExpenseButton({
+  userId,
+  currency,
+  autoOpen,
+}: {
+  userId: string;
+  currency: string;
+  autoOpen?: boolean;
+}) {
   const categories = await loadUserCategories(userId);
-  return <CreateExpenseDialog categories={categories} currency={currency} />;
+  return <CreateExpenseDialog categories={categories} currency={currency} autoOpen={autoOpen} />;
 }
 
 async function BudgetSection({ userId, currency }: { userId: string; currency: string }) {
@@ -300,6 +308,7 @@ export default async function DashboardPage(props: {
     from?: string;
     to?: string;
     search?: string;
+    create?: string;
   }>;
 }) {
   const searchParams = await props.searchParams;
@@ -325,7 +334,11 @@ export default async function DashboardPage(props: {
           <CsvActions start={start} end={end} categories={filterCategories} />
           <CurrencySelector currency={currency} />
           <Suspense fallback={<ButtonSkeleton />}>
-            <CreateExpenseButton userId={user.id} currency={currency} />
+            <CreateExpenseButton
+              userId={user.id}
+              currency={currency}
+              autoOpen={searchParams.create === '1'}
+            />
           </Suspense>
         </div>
       </div>
