@@ -1,4 +1,3 @@
-import './globals.css';
 import { Navbar } from '@/frontend/ui/Navbar';
 import { Footer } from '@/frontend/ui/Footer';
 import { SkipToContent } from '@/frontend/ui/SkipToContent';

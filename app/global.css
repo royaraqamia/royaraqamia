@@ -3,26 +3,6 @@
 @plugin "@tailwindcss/typography";
 @import 'tw-animate-css';
 
-/* R2: product clusters carved out of the global scan.
-   Each product compiles its own utilities in app/<product>/globals.css.
-   Keep this list and those entries in sync (see scripts/check-css-scope.mjs). */
-@source not '../app/blogpress/**';
-@source not '../app/spendtrack/**';
-@source not '../app/habitflow/**';
-@source not '../app/linksnap/**';
-@source not '../app/admin/**';
-@source not '../frontend/ui/blogpress/**';
-@source not '../frontend/ui/blogpress-landing/**';
-@source not '../frontend/ui/spendtrack/**';
-@source not '../frontend/ui/spendtrack-landing/**';
-@source not '../frontend/ui/habitflow/**';
-@source not '../frontend/ui/habitflow-landing/**';
-@source not '../frontend/ui/linksnap/**';
-@source not '../frontend/ui/linksnap-landing/**';
-@source not '../frontend/ui/admin/**';
-@source not '../frontend/api/admin/**';
-@source not '../frontend/api/habitflow/**';
-
 @keyframes float {
   0%,
   100% {
