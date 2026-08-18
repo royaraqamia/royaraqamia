@@ -129,7 +129,6 @@ export function Footer() {
                 alt=""
                 width={48}
                 height={48}
-                priority
                 className="h-12 w-12 object-contain rounded-full transition-transform duration-500 group-hover:scale-110"
               />
 

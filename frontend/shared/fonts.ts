@@ -25,11 +25,6 @@ export const ibmPlexSansArabic = localFont({
 export const arefRuqaa = localFont({
   src: [
     {
-      path: '../../public/fonts/Aref Ruqaa/ArefRuqaa-Regular.woff2',
-      weight: '400',
-      style: 'normal',
-    },
-    {
       path: '../../public/fonts/Aref Ruqaa/ArefRuqaa-Bold.woff2',
       weight: '700',
       style: 'normal',
