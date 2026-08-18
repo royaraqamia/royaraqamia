@@ -1122,6 +1122,12 @@
   }
 }
 
+.testimonials-scroll-track {
+  padding-inline: max(20px, calc((100vw - 1320px) / 2 + 64px));
+  scroll-padding-inline: 48px;
+  gap: 24px;
+}
+
 .scroll-snap-item {
   scroll-snap-align: start;
   flex-shrink: 0;

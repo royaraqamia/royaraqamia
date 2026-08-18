@@ -19,7 +19,10 @@ export function Testimonials() {
               <span>آراء النَّاس</span>
             </div>
 
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-tight">
+            <h2
+              id="testimonials-heading"
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-tight"
+            >
               ماذا{' '}
               <span className="bg-linear-to-r from-violet-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
                 قالوا عنَّا

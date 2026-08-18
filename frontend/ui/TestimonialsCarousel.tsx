@@ -1,32 +1,121 @@
 'use client';
 
-import { CircleUser, ChevronLeft } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { Quote, Star, CheckCircle2, ChevronLeft, UserRound } from 'lucide-react';
 import { useHorizontalScroll } from '../shared/use-horizontal-scroll';
 import { useUI } from '../state/UIContext';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
 import { testimonials } from '../../data/testimonials';
-import { Sheet, SheetContent } from './primitives/sheet';
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from './primitives/sheet';
 
-export function TestimonialsCarousel() {
+// Deterministic pastel/vibrant gradient generator based on user name
+const AVATAR_GRADIENTS = [
+  'from-violet-600 via-indigo-600 to-purple-500',
+  'from-fuchsia-600 via-purple-600 to-pink-500',
+  'from-cyan-600 via-blue-600 to-indigo-500',
+  'from-emerald-600 via-teal-600 to-cyan-500',
+  'from-amber-600 via-orange-600 to-rose-500',
+  'from-rose-600 via-pink-600 to-purple-500',
+];
+
+function getInitials(name: string): string {
+  if (!name) return 'ع';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return (parts[0] ?? '').slice(0, 2);
+  const first = parts[0];
+  const last = parts[parts.length - 1];
+  return `${first?.[0] ?? ''}${last?.[0] ?? ''}`;
+}
+
+function getGradientByName(name: string): string {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const index = Math.abs(hash) % AVATAR_GRADIENTS.length;
+  return AVATAR_GRADIENTS[index] ?? 'from-violet-600 via-indigo-600 to-purple-500';
+}
+
+// Micro-Component: Star Rating Display
+function StarRating({ rating = 5 }: { rating?: number }) {
+  return (
+    <div
+      className="flex items-center gap-0.5 text-amber-400"
+      aria-label={`تقييم ${rating} من 5 نجوم`}
+    >
+      {[...Array(5)].map((_, i) => (
+        <Star
+          key={i}
+          className={`w-3.5 h-3.5 ${
+            i < rating
+              ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.35)]'
+              : 'fill-slate-800 text-slate-700'
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+// Micro-Component: Verified Customer Badge
+function VerifiedBadge({ label = 'عميل مُوثَّق' }: { label?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shadow-xs">
+      <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+      <span>{label}</span>
+    </span>
+  );
+}
+
+interface TestimonialsCarouselProps {
+  headingId?: string;
+}
+
+export function TestimonialsCarousel({
+  headingId = 'testimonials-heading',
+}: TestimonialsCarouselProps) {
   const { setIsReviewSheetOpen } = useUI();
+
   const {
     scrollContainerRef: scrollRef,
     canScrollLeft,
     canScrollRight,
     scroll,
-  } = useHorizontalScroll(412);
-  const [selectedReview, setSelectedReview] = useState<number | null>(null);
+  } = useHorizontalScroll(420);
 
-  const closeReviewSheet = () => {
-    setSelectedReview(null);
+  const [selectedReviewIndex, setSelectedReviewIndex] = useState<number | null>(null);
+  const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
+
+  const openReviewSheet = useCallback(
+    (index: number) => {
+      setSelectedReviewIndex(index);
+      setIsReviewSheetOpen(true);
+    },
+    [setIsReviewSheetOpen]
+  );
+
+  const closeReviewSheet = useCallback(() => {
+    setSelectedReviewIndex(null);
     setIsReviewSheetOpen(false);
-  };
+  }, [setIsReviewSheetOpen]);
+
+  const activeReview = useMemo(() => {
+    if (selectedReviewIndex === null) return null;
+    const review = testimonials[selectedReviewIndex];
+    if (!review) return null;
+    return review;
+  }, [selectedReviewIndex]);
 
   return (
-    <>
-      {/* Testimonials Horizontal Scroll - Full Width with Edge Navigation */}
-      <div className="relative w-full group/scroll">
+    <section
+      aria-labelledby={headingId}
+      className="relative w-full py-8 md:py-14 overflow-hidden select-none"
+    >
+      {/* Background Ambience & Lighting Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 md:w-250 h-87.5 bg-linear-to-r from-violet-600/10 via-indigo-500/10 to-fuchsia-600/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+
+      {/* Main Carousel Wrapper with Edge Navigation Controls */}
+      <div className="relative w-full group/carousel">
         <HorizontalScrollArrows
           onScroll={scroll}
           canScrollLeft={canScrollLeft}
@@ -35,126 +124,207 @@ export function TestimonialsCarousel() {
           ariaLabelRight="السَّابق"
         />
 
+        {/* Scrollable Track */}
         <div
           ref={scrollRef}
-          className="horizontal-scroll pt-2 sm:pt-4 pb-12 flex overflow-x-auto scrollbar-none snap-x snap-mandatory scroll-smooth"
-          style={{
-            paddingLeft: 'max(24px, calc((100vw - 1280px) / 2 + 80px))',
-            paddingRight: 'max(24px, calc((100vw - 1280px) / 2 + 80px))',
-            scrollPaddingInline: '80px',
-            gap: '20px',
-          }}
           role="region"
-          aria-label="آراء النَّاس"
+          aria-label="آراء وتجارب العملاء"
+          tabIndex={0}
+          className="horizontal-scroll testimonials-scroll-track pt-4 pb-10 flex items-stretch overflow-x-auto scrollbar-none snap-x snap-mandatory scroll-smooth focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"
         >
-          {testimonials.map((testimonial, index) => (
-            <div
-              key={index}
-              tabIndex={0}
-              role="button"
-              aria-haspopup="dialog"
-              aria-expanded={selectedReview === index}
-              aria-label={`رأي ${testimonial.name}`}
-              className="scroll-snap-item group relative w-70 sm:w-90 md:w-103 shrink-0 bg-slate-900/60 backdrop-blur-xl border border-white/10 hover:border-violet-500/40 rounded-2xl p-6 sm:p-7 flex flex-col justify-between transition-all duration-300 ease-out hover:shadow-2xl hover:shadow-violet-500/10 hover:-translate-y-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 cursor-pointer overflow-hidden select-none"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                  e.preventDefault();
-                  setSelectedReview(index);
-                }
-              }}
-            >
-              {/* Card Ambient Glow Effect */}
-              <div className="absolute inset-0 bg-linear-to-br from-violet-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+          {testimonials.map((testimonial, index) => {
+            const isHovered = hoveredCardIndex === index;
+            const gradientClass = getGradientByName(testimonial.name);
+            const initials = getInitials(testimonial.name);
 
-              {/* Content */}
-              <div
-                className="relative z-10 flex flex-col flex-1 justify-between gap-4 cursor-pointer"
-                onClick={() => setSelectedReview(index)}
-                role="presentation"
+            return (
+              <article
+                key={index}
+                tabIndex={0}
+                role="button"
+                aria-haspopup="dialog"
+                aria-expanded={selectedReviewIndex === index}
+                aria-controls="testimonials-review-sheet"
+                aria-label={`مراجعة من ${testimonial.name}`}
+                onClick={() => openReviewSheet(index)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    openReviewSheet(index);
+                  }
+                }}
+                onMouseEnter={() => setHoveredCardIndex(index)}
+                onMouseLeave={() => setHoveredCardIndex(null)}
+                className={`
+                  group/card relative shrink-0 
+                  w-[82vw] sm:w-95 md:w-105 
+                  snap-start rounded-3xl p-6 sm:p-7 md:p-8 
+                  flex flex-col justify-between 
+                  bg-slate-900/60 hover:bg-slate-900/80 
+                  backdrop-blur-2xl 
+                  border border-white/10 hover:border-violet-500/40 
+                  ring-1 ring-white/5 
+                  transition-all duration-400 ease-out 
+                  hover:-translate-y-1.5 hover:shadow-[0_20px_40px_-15px_rgba(124,58,237,0.25)] 
+                  focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950
+                  cursor-pointer overflow-hidden
+                `}
               >
-                <div>
-                  <span className="text-violet-400/40 text-3xl font-serif leading-none select-none block mb-1">
-                    &ldquo;
-                  </span>
-                  <p className="text-slate-200 text-sm sm:text-base leading-relaxed line-clamp-3 whitespace-normal wrap-break-word group-hover:text-white transition-colors duration-300">
+                {/* Dynamic Card Internal Glows */}
+                <div
+                  className={`
+                    absolute -top-24 -right-24 w-48 h-48 rounded-full 
+                    bg-linear-to-br from-violet-500/15 via-purple-500/10 to-transparent 
+                    blur-2xl pointer-events-none transition-opacity duration-500
+                    ${isHovered ? 'opacity-100' : 'opacity-40'}
+                  `}
+                />
+                <div className="absolute inset-0 bg-linear-to-b from-white/4 to-transparent pointer-events-none" />
+
+                {/* Top Section: Rating & Quote Glyph */}
+                <div className="relative z-10 flex items-center justify-between gap-2 mb-4">
+                  <div className="flex items-center gap-2">
+                    <StarRating />
+                    <span className="text-xs font-semibold text-slate-400">5.0</span>
+                  </div>
+
+                  <div className="w-8 h-8 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 group-hover/card:scale-110 group-hover/card:bg-violet-500/20 transition-transform duration-300">
+                    <Quote className="w-4 h-4 rotate-180" />
+                  </div>
+                </div>
+
+                {/* Body Content */}
+                <div className="relative z-10 flex-1 flex flex-col justify-between my-1">
+                  <p className="text-slate-200 text-sm sm:text-base leading-relaxed line-clamp-4 font-normal tracking-wide group-hover/card:text-white transition-colors duration-300">
                     {testimonial.content}
                   </p>
+
+                  {/* Read More Inline Link / Action */}
+                  <div className="inline-flex items-center gap-1.5 text-violet-400 group-hover/card:text-violet-300 text-xs sm:text-sm font-medium mt-4 transition-colors">
+                    <span>قراءة المراجعة بالكامل</span>
+                    <ChevronLeft className="w-4 h-4 transition-transform duration-300 group-hover/card:-translate-x-1" />
+                  </div>
                 </div>
 
-                {/* Read More Trigger */}
-                <div className="flex items-center gap-1.5 text-violet-400 group-hover:text-violet-300 text-xs sm:text-sm font-semibold mt-2 transition-all duration-300 md:opacity-0 md:group-hover:opacity-100">
-                  <span>قراءة المزيد</span>
-                  <ChevronLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-1" />
-                </div>
-              </div>
+                {/* Author Footer */}
+                <div className="relative z-10 mt-6 pt-5 border-t border-white/8 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    {/* User Avatar */}
+                    <div
+                      className={`
+                        w-11 h-11 sm:w-12 sm:h-12 rounded-full 
+                        bg-linear-to-tr ${gradientClass}
+                        flex items-center justify-center 
+                        text-white font-bold text-sm sm:text-base 
+                        shadow-lg ring-2 ring-white/15 shrink-0
+                      `}
+                    >
+                      {initials || <UserRound className="w-5 h-5" />}
+                    </div>
 
-              {/* Author Footer */}
-              <div className="flex items-center gap-3.5 relative z-10 mt-6 pt-5 border-t border-white/10">
-                <div
-                  className="w-11 h-11 md:w-12 md:h-12 rounded-full flex items-center justify-center shrink-0 shadow-lg overflow-hidden ring-2 ring-violet-400/20"
-                  style={{
-                    background: 'linear-gradient(135deg, #7766EE 0%, #A78BFA 100%)',
-                  }}
-                >
-                  <CircleUser className="w-6 h-6 md:w-7 md:h-7 text-white" />
+                    {/* User Name & Metadata */}
+                    <div className="flex flex-col min-w-0">
+                      <span className="font-semibold text-slate-100 text-sm sm:text-base truncate group-hover/card:text-violet-200 transition-colors">
+                        {testimonial.name}
+                      </span>
+                      <span className="text-xs text-slate-400 truncate">{testimonial.role}</span>
+                    </div>
+                  </div>
+
+                  {/* Verified Badge */}
+                  <div className="shrink-0 hidden sm:block">
+                    <VerifiedBadge />
+                  </div>
                 </div>
-                <div className="flex flex-col min-w-0">
-                  <span className="font-semibold text-slate-100 text-sm sm:text-base truncate">
-                    {testimonial.name}
-                  </span>
-                  <span className="text-xs text-slate-400">مُوثَّق</span>
-                </div>
-              </div>
-            </div>
-          ))}
+              </article>
+            );
+          })}
         </div>
       </div>
 
-      {/* Bottom Sheet (mobile) / Dialog (desktop) */}
+      {/* Expanded Modal View (Mobile Sheet + Desktop Glass Dialog) */}
       <Sheet
-        open={selectedReview !== null}
+        open={selectedReviewIndex !== null}
         onOpenChange={(open) => {
           if (!open) closeReviewSheet();
         }}
       >
         <SheetContent
+          id="testimonials-review-sheet"
           side="bottom"
-          className="gap-0 p-0 max-h-[85vh] left-4 right-4 bottom-4 rounded-3xl border-0 bg-linear-to-br from-slate-950 via-slate-900 to-indigo-950 text-slate-200 shadow-2xl shadow-black/80 md:left-1/2 md:right-auto md:-translate-x-1/2 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:max-w-lg md:rounded-3xl md:border md:border-white/15"
+          className="gap-0 p-0 max-h-[90vh] left-3 right-3 bottom-3 sm:left-6 sm:right-6 sm:bottom-6 rounded-3xl border border-white/15 bg-slate-950/90 backdrop-blur-3xl text-slate-100 shadow-[0_25px_70px_rgba(0,0,0,0.85)] md:left-1/2 md:right-auto md:-translate-x-1/2 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:w-full md:max-w-xl md:rounded-3xl overflow-hidden focus:outline-none"
         >
-          {/* Mobile Drag Indicator */}
-          <div className="absolute top-2.5 left-1/2 -translate-x-1/2 w-10 h-1 bg-white/20 rounded-full md:hidden z-1" />
+          {/* Subtle Modal Ambient Accent */}
+          <div className="absolute top-0 right-0 left-0 h-1.5 bg-linear-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
+          <div className="absolute -top-20 -right-20 w-52 h-52 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
 
-          {/* Content */}
-          <div className="custom-review-scrollbar p-6 sm:p-8 overflow-y-auto flex-1 text-slate-200 flex flex-col justify-between max-h-[calc(85vh-1px)]">
-            {(() => {
-              const review = selectedReview !== null ? testimonials[selectedReview] : null;
-              if (!review) return null;
-              return (
-                <>
-                  <div className="mb-6">
-                    <span className="text-violet-400/40 text-4xl font-serif leading-none select-none block mb-2">
-                      &ldquo;
-                    </span>
-                    <p className="text-base sm:text-lg leading-relaxed whitespace-pre-wrap text-slate-100 font-normal">
-                      {review.content}
-                    </p>
+          {/* Mobile Handle Indicator */}
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full md:hidden" />
+
+          {activeReview && (
+            <>
+              <SheetTitle className="sr-only">مراجعة من {activeReview.name}</SheetTitle>
+              <SheetDescription className="sr-only">
+                المراجعة الكاملة من {activeReview.name}
+              </SheetDescription>
+
+              <div className="relative p-6 sm:p-8 flex flex-col justify-between max-h-[calc(90vh-1rem)] overflow-y-auto">
+                {/* Header inside Modal */}
+                <div className="flex items-center justify-between gap-4 pb-5 border-b border-white/10 mt-2 sm:mt-0">
+                  <div className="flex items-center gap-2.5">
+                    <StarRating />
+                    <span className="text-sm font-semibold text-slate-300">(5.0)</span>
+                  </div>
+                  <VerifiedBadge label="مراجعة موثّقة" />
+                </div>
+
+                {/* Expanded Quote Content */}
+                <div className="my-6 relative">
+                  <Quote className="w-10 h-10 text-violet-500/20 rotate-180 mb-2" />
+                  <p className="text-base sm:text-lg text-slate-100 leading-relaxed font-normal whitespace-pre-line select-text">
+                    {activeReview.content}
+                  </p>
+                </div>
+
+                {/* Detailed Author Profile Footer */}
+                <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10 bg-white/2 -mx-6 -mb-6 p-6 sm:-mx-8 sm:-mb-8 sm:p-8 rounded-b-3xl">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div
+                      className={`
+                        w-12 h-12 sm:w-13 sm:h-13 rounded-full 
+                        bg-linear-to-tr ${getGradientByName(activeReview.name)}
+                        flex items-center justify-center 
+                        text-white font-bold text-base sm:text-lg 
+                        shadow-xl ring-2 ring-white/20 shrink-0
+                      `}
+                    >
+                      {getInitials(activeReview.name) || <UserRound className="w-5 h-5" />}
+                    </div>
+
+                    <div className="flex flex-col min-w-0">
+                      <h3 className="font-bold text-base sm:text-lg text-white truncate">
+                        {activeReview.name}
+                      </h3>
+                      <p className="text-xs sm:text-sm text-violet-300/80 font-medium truncate">
+                        {activeReview.role}
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-4 pt-5 border-t border-white/10">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center shrink-0 bg-linear-to-br from-[#7766EE] to-[#A78BFA] shadow-lg shadow-black/40 ring-2 ring-violet-400/30">
-                      <CircleUser className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-base sm:text-lg text-white">{review.name}</h3>
-                      <p className="text-xs text-violet-300/80 font-medium">مُوثَّق</p>
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
+                  <button
+                    type="button"
+                    onClick={closeReviewSheet}
+                    aria-label="إغلاق"
+                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/15 active:scale-95 text-slate-200 hover:text-white border border-white/10 transition-all cursor-pointer"
+                  >
+                    إغلاق
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </SheetContent>
       </Sheet>
-    </>
+    </section>
   );
 }
