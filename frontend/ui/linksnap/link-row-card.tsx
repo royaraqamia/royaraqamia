@@ -14,6 +14,7 @@ import {
   QrCode,
   MoreHorizontal,
   ExternalLink,
+  Share2,
 } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { LinkEditDialog } from './link-edit-dialog';
@@ -64,7 +65,7 @@ interface LinkRowCardProps {
   status: LinkStatus;
   token: string;
   onDeleted: (code: string) => void;
-  onUpdated: (link: ShortenedLink) => void;
+  onUpdated: (prevCode: string, link: ShortenedLink) => void;
   isSelected?: boolean;
   onToggleSelect?: (code: string) => void;
 }
@@ -109,6 +110,21 @@ export function LinkRowCard({
     } catch (err) {
       logger.error('Copy failed', { error: String(err) });
       toast.error('فشل نسخ الرابط');
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'رابط مُختصَر من LinkSnap', url: fullShortUrl });
+        toast.success('تمت المشاركة!');
+      } else {
+        await handleCopy();
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      logger.error('Share failed', { error: String(err) });
+      toast.error('تعذر فتح لوحة المشاركة');
     }
   };
 
@@ -262,6 +278,21 @@ export function LinkRowCard({
           </button>
 
           <button
+            onClick={handleShare}
+            type="button"
+            aria-label="مشاركة الرابط"
+            title="مشاركة الرابط"
+            className={cn(
+              'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-all duration-200 ease-out',
+              'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
+              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
+              'dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
+            )}
+          >
+            <Share2 aria-hidden="true" className="h-4 w-4" />
+          </button>
+
+          <button
             onClick={handleAnalyticsToggle}
             type="button"
             aria-expanded={isExpanded}
@@ -380,7 +411,7 @@ export function LinkRowCard({
         currentExpiresAt={expiresAt}
         token={token}
         onSaved={(link) => {
-          onUpdated(link);
+          onUpdated(code, link);
           setEditingCode(null);
         }}
         onClose={() => setEditingCode(null)}
