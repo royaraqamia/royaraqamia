@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { CircleAlert, CircleCheck } from 'lucide-react';
@@ -10,7 +10,7 @@ import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { PasswordStrength } from '@/frontend/ui/auth/PasswordStrength';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 
-export default function UpdatePasswordPage() {
+function UpdatePasswordForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
   const email = searchParams.get('email') ?? '';
@@ -189,5 +189,13 @@ export default function UpdatePasswordPage() {
         </AuthCard>
       </div>
     </main>
+  );
+}
+
+export default function UpdatePasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <UpdatePasswordForm />
+    </Suspense>
   );
 }

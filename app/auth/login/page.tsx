@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
@@ -14,7 +14,7 @@ import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { Turnstile } from '@/frontend/ui/auth/Turnstile';
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
   const sessionExpired = searchParams.get('session_expired') === '1';
@@ -182,5 +182,13 @@ export default function LoginPage() {
         </Link>
       </p>
     </AuthCard>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
   );
 }

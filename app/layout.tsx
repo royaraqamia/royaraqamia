@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { Suspense } from 'react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import './global.css';

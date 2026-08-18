@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
@@ -15,7 +15,7 @@ import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { Turnstile } from '@/frontend/ui/auth/Turnstile';
 
-export default function SignupPage() {
+function SignupForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
   const [message, setMessage] = useState<string | null>(null);
@@ -230,5 +230,13 @@ export default function SignupPage() {
         </p>
       </AuthCard>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupForm />
+    </Suspense>
   );
 }
