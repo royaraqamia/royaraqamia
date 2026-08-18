@@ -1,6 +1,6 @@
 import { ArrowLeft, Star } from 'lucide-react';
 import { MotionReveal } from './MotionReveal';
-import { HeroVisual } from './HeroVisual';
+import { LazySection } from './shared/LazySection';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
 export function Hero() {
@@ -178,7 +178,7 @@ export function Hero() {
               className="landing-reveal-item relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0"
               style={{ ['--ld' as string]: '0.75s' } as React.CSSProperties}
             >
-              <HeroVisual />
+              <LazySection id="hero-visual" />
             </div>
           </MotionReveal>
         </div>

@@ -1,16 +1,7 @@
 import { Hero } from './Hero';
 import { MetricCards } from './MetricCards';
 import { Services } from './Services';
-import { CTA } from './CTA';
-import { Testimonials } from './Testimonials';
-import { TrainingCourses } from './TrainingCourses';
-import { Certificate } from './Certificate';
-import { ConsultationCards } from './ConsultationCards';
-import { WebDevService } from './WebDevService';
-import { Portfolio } from './Portfolio';
-import { VerifySection } from './VerifySection';
-import { WhyUs } from './WhyUs';
-import { FAQ } from './FAQ';
+import { LazySection } from './shared/LazySection';
 
 export function HomePageContent() {
   return (
@@ -19,26 +10,26 @@ export function HomePageContent() {
       <MetricCards />
       <Services />
 
-      <Portfolio />
+      <LazySection id="portfolio" />
 
-      <Testimonials />
+      <LazySection id="testimonials" />
 
-      <WebDevService />
+      <LazySection id="web-dev-service" />
 
       <section id="training">
-        <TrainingCourses />
-        <Certificate />
+        <LazySection id="training-courses" />
+        <LazySection id="certificate" />
       </section>
 
-      <VerifySection />
+      <LazySection id="verify" />
 
       <section id="consultations">
-        <ConsultationCards />
+        <LazySection id="consultations-cards" />
       </section>
 
-      <WhyUs />
-      <FAQ />
-      <CTA />
+      <LazySection id="why-us" />
+      <LazySection id="faq" />
+      <LazySection id="cta" />
     </main>
   );
 }
