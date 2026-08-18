@@ -1,0 +1,15 @@
+@import 'tailwindcss' source(none);
+@import '../theme.css';
+@plugin "@tailwindcss/typography";
+@import 'tw-animate-css';
+
+/* R2: route-scoped Tailwind entry for habitflow.
+   source(none) disables auto-detection; only habitflow sources are scanned.
+   Shared/marketing utilities come from app/global.css (which scans the rest
+   and excludes these dirs via @source not). Keep both lists in sync.
+   NOTE: this file must stay UTF-8 WITHOUT BOM — Turbopack's CSS parser
+   misparses the @layer output when the file starts with a BOM. */
+@source '../../app/habitflow/**';
+@source '../../frontend/ui/habitflow/**';
+@source '../../frontend/ui/habitflow-landing/**';
+@source '../../frontend/api/habitflow/**';

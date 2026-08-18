@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import '../globals.css';
 import { redirect } from 'next/navigation';
 import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
 import { Navbar } from '@/frontend/ui/Navbar';
