@@ -49,6 +49,14 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.googleusercontent.com' },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: '/unlock/:code',
+        destination: '/linksnap/unlock/:code',
+      },
+    ];
+  },
   async headers() {
     return [
       {
