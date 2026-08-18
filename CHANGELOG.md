@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-08-18
+
+### Changed
+- harden calendar grid for production
+- drop route-scoped CSS, restore single Tailwind compilation
+
+### Added
+- extract calendar formatting helpers with unit tests
+
+### Fixed
+- harden testimonials carousel a11y and strict typing
+- harden link edit dialog a11y and submit guards
+- responsive link edit dialog with internal scroll
+- consistent scrollable dialog content across products
+- restore perf_indexes_and_search migration filename to match remote
+
 ## [1.5.0] - 2026-08-18
 
 ### Changed
