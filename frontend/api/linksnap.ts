@@ -16,8 +16,15 @@ export interface ShortenedLink {
 }
 
 export interface LinkUpdateBody {
+  newCode?: string;
   originalUrl?: string;
   expiresAt?: string | null;
+}
+
+export interface CodeAvailability {
+  code: string;
+  available: boolean;
+  error?: string;
 }
 
 export interface AdminSystemLink {
@@ -100,6 +107,17 @@ export async function deleteLink(code: string, token: string): Promise<void> {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
+}
+
+export async function checkCodeAvailability(
+  code: string,
+  token: string
+): Promise<CodeAvailability> {
+  const data = await request<{ availability: CodeAvailability }>(
+    `/linksnap/api/availability?code=${encodeURIComponent(code)}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return data.availability;
 }
 
 export async function updateLink(

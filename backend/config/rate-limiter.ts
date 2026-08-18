@@ -62,3 +62,12 @@ export function bulkShortenRateLimitPolicy(userId: string): RateLimitPolicy {
       'تم تجاوز حد الطلب: طلبات الاختصار بالجملة محدودة بـ 10 دفعات كل 10 دقائق لحماية سلامة قاعدة البيانات.',
   };
 }
+
+export function slugAvailabilityRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `slug-availability:${ip}`,
+    limit: 60,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حد الطلب: التحقق من توفر الرموز محدود بـ 60 استعلامًا في الدقيقة.',
+  };
+}

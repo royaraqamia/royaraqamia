@@ -8,6 +8,7 @@ import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { hslToHex } from '@/frontend/shared/hsl-to-hex';
 import { toast } from 'sonner';
 import { useShortenLink } from '@/frontend/state/linksnap/use-shorten';
+import { useSlugAvailability } from '@/frontend/state/linksnap/use-slug-availability';
 
 interface SingleUrlShortenerProps {
   token: string | null;
@@ -32,6 +33,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
+  const { status: slugStatus, error: slugError } = useSlugAvailability(customCode, token);
 
   const handleShorten = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -196,6 +198,39 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               <p className="text-xs text-muted-foreground font-medium">
                 3-16 حرفاً (أحرف، أرقام، - و _)
               </p>
+              {slugStatus !== 'idle' && (
+                <div
+                  role="status"
+                  aria-live="polite"
+                  className={`flex items-center gap-1.5 text-xs font-semibold ${
+                    slugStatus === 'checking'
+                      ? 'text-muted-foreground'
+                      : slugStatus === 'available'
+                        ? 'text-success'
+                        : 'text-destructive'
+                  }`}
+                >
+                  {slugStatus === 'checking' ? (
+                    <>
+                      <span
+                        className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin"
+                        aria-hidden="true"
+                      />
+                      <span>جاري التحقق من التوفر...</span>
+                    </>
+                  ) : slugStatus === 'available' ? (
+                    <>
+                      <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>هذا الرمز متاح!</span>
+                    </>
+                  ) : (
+                    <>
+                      <span aria-hidden="true">✕</span>
+                      <span>{slugError}</span>
+                    </>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
 

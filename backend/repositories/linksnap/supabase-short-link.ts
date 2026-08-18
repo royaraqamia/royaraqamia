@@ -94,9 +94,12 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
 
   async update(
     code: string,
-    updates: Partial<Pick<ShortLink, 'originalUrl' | 'isBlocked' | 'expiresAt'>>
+    updates: Partial<Pick<ShortLink, 'code' | 'originalUrl' | 'isBlocked' | 'expiresAt'>>
   ): Promise<ShortLink> {
     const dbUpdates: Partial<ShortLinkDbRow> = {};
+    if (updates.code !== undefined) {
+      dbUpdates.code = updates.code;
+    }
     if (updates.originalUrl !== undefined) {
       dbUpdates.original_url = updates.originalUrl;
     }
@@ -119,6 +122,10 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     if (error) {
       throw new Error(`Failed to update short link: ${error.message}`);
     }
+
+    // analytics_events.link_code references short_links.code with ON UPDATE
+    // CASCADE (see migration), so changing the slug re-points click history
+    // automatically.
 
     return this.toDomain(data as ShortLinkDbRow);
   }

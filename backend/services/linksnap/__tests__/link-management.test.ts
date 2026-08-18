@@ -122,6 +122,72 @@ describe('UpdateLinkService', () => {
     ).rejects.toThrow('Invalid URL format. Please include http:// or https://');
     expect(repository.update).not.toHaveBeenCalled();
   });
+
+  it('changes the code when a valid new slug is given', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...linkFixture,
+      code: 'new-slug',
+    });
+
+    const result = await service.execute('abc123', 'u-1', { code: 'new-slug' });
+
+    expect(result.code).toBe('new-slug');
+    expect(repository.exists).toHaveBeenCalledWith('new-slug');
+    expect(repository.update).toHaveBeenCalledWith('abc123', { code: 'new-slug' });
+  });
+
+  it('skips the code update when the new slug equals the current code', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+
+    await service.execute('abc123', 'u-1', { code: 'abc123' });
+
+    expect(repository.exists).not.toHaveBeenCalled();
+    expect(repository.update).toHaveBeenCalledWith('abc123', {});
+  });
+
+  it('rejects a new slug that is already taken', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+
+    await expect(service.execute('abc123', 'u-1', { code: 'taken1' })).rejects.toThrow(
+      'This custom short code is already taken. Please try another one.'
+    );
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects a reserved new slug', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+
+    await expect(service.execute('abc123', 'u-1', { code: 'api' })).rejects.toThrow(
+      'This custom short code is reserved. Please try another one.'
+    );
+    expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects a too-short or too-long new slug', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+
+    await expect(service.execute('abc123', 'u-1', { code: 'ab' })).rejects.toThrow(
+      'Custom short code must be at least 3 characters long.'
+    );
+    await expect(service.execute('abc123', 'u-1', { code: 'a'.repeat(17) })).rejects.toThrow(
+      'Custom short code must be under 16 characters.'
+    );
+    expect(repository.update).not.toHaveBeenCalled();
+  });
 });
 
 describe('DeleteLinkService', () => {

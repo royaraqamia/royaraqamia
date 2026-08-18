@@ -10,8 +10,12 @@ import {
   AlertCircle,
   Trash2,
   Clock,
+  Check,
+  Pencil,
 } from 'lucide-react';
 import { useUpdateLink } from '@/frontend/state/linksnap/use-links';
+import { useSlugAvailability } from '@/frontend/state/linksnap/use-slug-availability';
+import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { DatePicker } from '@/frontend/ui/primitives/date-picker';
 import {
   Dialog,
@@ -55,24 +59,32 @@ export function LinkEditDialog({
   onClose,
 }: LinkEditDialogProps) {
   const [editingUrlValue, setEditingUrlValue] = useState(currentUrl);
+  const [editingCodeValue, setEditingCodeValue] = useState(code);
   const [expiresDateValue, setExpiresDateValue] = useState('');
   const [expiresTimeValue, setExpiresTimeValue] = useState('');
   const hasExpiry = Boolean(expiresDateValue || expiresTimeValue);
   const { updateLink, updateLoading, updateError } = useUpdateLink(token);
+  const { status: slugStatus, error: slugError } = useSlugAvailability(
+    editingCodeValue,
+    token,
+    code
+  );
 
   useEffect(() => {
     if (open) {
       const initial = splitExpiry(currentExpiresAt);
       setEditingUrlValue(currentUrl);
+      setEditingCodeValue(code);
       setExpiresDateValue(initial.date);
       setExpiresTimeValue(initial.time);
     }
-  }, [open, currentUrl, currentExpiresAt]);
+  }, [open, currentUrl, currentExpiresAt, code]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const link = await updateLink(code, {
+        newCode: editingCodeValue !== code ? editingCodeValue : undefined,
         originalUrl: editingUrlValue,
         expiresAt: expiresDateValue
           ? new Date(`${expiresDateValue}T${expiresTimeValue || '23:59'}`).toISOString()
@@ -124,6 +136,70 @@ export function LinkEditDialog({
 
         {/* Edit Form */}
         <form onSubmit={handleSubmit} className="p-6 sm:p-7 space-y-6 text-start">
+          {/* Short Slug Input Field */}
+          <div className="space-y-2">
+            <label
+              htmlFor="edit-code-input"
+              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center justify-between"
+            >
+              <span className="flex items-center gap-1.5">
+                <Pencil className="w-4 h-4 text-primary" aria-hidden="true" />
+                <span>الرمز المُختصَر</span>
+              </span>
+            </label>
+            <div
+              className="flex items-center w-full overflow-hidden bg-muted/50 dark:bg-neutral-950/60 border border-border/60 dark:border-neutral-800 rounded-xl focus-within:ring-2 focus-within:ring-primary/20 transition-all"
+              dir="ltr"
+            >
+              <span className="shrink-0 pr-3 text-sm text-muted-foreground font-semibold select-none whitespace-nowrap py-2.5 leading-snug">
+                {getBaseUrl()}/
+              </span>
+              <input
+                id="edit-code-input"
+                type="text"
+                dir="ltr"
+                value={editingCodeValue}
+                onChange={(e) =>
+                  setEditingCodeValue(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 16))
+                }
+                maxLength={16}
+                className="flex-1 min-w-0 bg-transparent px-3 py-2.5 text-sm font-mono font-semibold focus:outline-none focus-visible:ring-0 text-foreground placeholder:text-muted-foreground/40"
+                aria-describedby="edit-code-hint"
+                aria-invalid={slugStatus === 'taken' ? true : undefined}
+              />
+            </div>
+            <div
+              id="edit-code-hint"
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-1.5 text-xs font-medium"
+            >
+              {slugStatus === 'checking' ? (
+                <span className="text-muted-foreground flex items-center gap-1.5">
+                  <span
+                    className="h-3 w-3 rounded-full border-2 border-current border-t-transparent animate-spin"
+                    aria-hidden="true"
+                  />
+                  جاري التحقق من التوفر...
+                </span>
+              ) : slugStatus === 'available' ? (
+                <span className="text-success flex items-center gap-1.5">
+                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                  {editingCodeValue === code
+                    ? 'هذا هو رمزك الحالي.'
+                    : 'هذا الرمز متاح — سيتغير عنوان الرابط إلى هذا الرمز.'}
+                </span>
+              ) : slugStatus === 'taken' ? (
+                <span className="text-destructive flex items-center gap-1.5">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                  {slugError}
+                </span>
+              ) : (
+                <span className="text-muted-foreground/70">3-16 حرفاً (أحرف، أرقام، - و _)</span>
+              )}
+            </div>
+          </div>
+
           {/* Destination URL Input Field */}
           <div className="space-y-2">
             <label
@@ -236,7 +312,7 @@ export function LinkEditDialog({
             </Button>
             <Button
               type="submit"
-              disabled={updateLoading}
+              disabled={updateLoading || slugStatus === 'taken' || slugStatus === 'checking'}
               className="w-full sm:w-auto h-10 rounded-xl px-6 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer"
             >
               {updateLoading ? (

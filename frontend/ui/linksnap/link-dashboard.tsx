@@ -168,7 +168,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
                 status={link.status}
                 token={token}
                 onDeleted={handleDelete}
-                onUpdated={applyLinkUpdate}
+                onUpdated={(prevCode, link) => applyLinkUpdate(prevCode, link)}
                 isSelected={bulk.selected.has(link.code)}
                 onToggleSelect={bulk.toggle}
               />

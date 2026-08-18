@@ -6,6 +6,7 @@ import { logger } from '@/backend/shared/logger';
 import {
   createBulkLinkActionService,
   createBulkShortenService,
+  createCheckCodeAvailabilityService,
   createDeleteLinkService,
   createGetSystemStatsService,
   createGetUrlAnalyticsService,
@@ -15,7 +16,11 @@ import {
   createUpdateLinkService,
   createRedirectUrlService,
 } from '@/backend/config/linksnap';
-import { bulkShortenRateLimitPolicy, shortenRateLimitPolicy } from '@/backend/config/rate-limiter';
+import {
+  bulkShortenRateLimitPolicy,
+  shortenRateLimitPolicy,
+  slugAvailabilityRateLimitPolicy,
+} from '@/backend/config/rate-limiter';
 import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
 import { getLinkStatus } from '@/backend/services/linksnap/link-status';
 import type { AnalyticsDateRange } from '@/backend/repositories/linksnap/analytics-repository';
@@ -92,7 +97,7 @@ export async function listLinks(authorization: string | null): Promise<HttpResul
 
 export async function updateLink(
   authorization: string | null,
-  body: { code?: unknown; originalUrl?: unknown; expiresAt?: unknown }
+  body: { code?: unknown; newCode?: unknown; originalUrl?: unknown; expiresAt?: unknown }
 ): Promise<HttpResult> {
   try {
     const user = await getAuthenticatedUser(authorization);
@@ -101,6 +106,7 @@ export async function updateLink(
     }
 
     const updatedLink = await createUpdateLinkService().execute(body.code as string, user.id, {
+      code: body.newCode as string | undefined,
       originalUrl: body.originalUrl as string | undefined,
       expiresAt: parseExpiresAt(body.expiresAt),
     });
@@ -126,6 +132,32 @@ export async function deleteLink(
     return jsonResult(200, { success: true, message: 'تم حذف الرابط بنجاح.' });
   } catch (err: unknown) {
     return errorResponse(err, 'Error in delete link API route:');
+  }
+}
+
+export async function checkCodeAvailability(
+  authorization: string | null,
+  ip: string,
+  code: string | null
+): Promise<HttpResult> {
+  try {
+    const user = await getAuthenticatedUser(authorization);
+    if (!user) {
+      return jsonResult(401, UNAUTHORIZED_BODY);
+    }
+
+    const rateLimitResult = await checkRateLimitApi(slugAvailabilityRateLimitPolicy(ip));
+    if (rateLimitResult) return rateLimitResult;
+
+    if (!code) {
+      return jsonResult(200, { success: true, availability: { code: '', available: false } });
+    }
+
+    const availability = await createCheckCodeAvailabilityService().execute(code);
+
+    return jsonResult(200, { success: true, availability });
+  } catch (err: unknown) {
+    return errorResponse(err, 'Error in slug availability API route:');
   }
 }
 

@@ -42,8 +42,8 @@ export function useLinks(token: string, refreshTrigger: number) {
     setLinks((prev) => prev.map((l) => (l.code === code ? { ...l, originalUrl: newUrl } : l)));
   }, []);
 
-  const applyLinkUpdate = useCallback((link: ShortenedLink) => {
-    setLinks((prev) => prev.map((l) => (l.code === link.code ? { ...l, ...link } : l)));
+  const applyLinkUpdate = useCallback((prevCode: string, link: ShortenedLink) => {
+    setLinks((prev) => prev.map((l) => (l.code === prevCode ? { ...l, ...link } : l)));
   }, []);
 
   return { links, loading, error, fetchLinks, handleDelete, handleUpdate, applyLinkUpdate };
