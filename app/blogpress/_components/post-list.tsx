@@ -22,6 +22,9 @@ import {
   PinOff,
   Check,
   FolderInput,
+  CopyPlus,
+  FileDown,
+  FileCode2,
 } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
@@ -46,7 +49,9 @@ import {
   publishPost,
   createPost,
   setPostFeatured,
+  duplicatePost,
 } from '@/frontend/api/blogpress';
+import { downloadPostAsFile } from '@/frontend/shared/blogpress/export-post';
 import { useBulkPosts } from '@/frontend/state/blogpress/use-bulk-posts';
 import type { Post, PostTag, PostCategory, PostStatus } from '@/shared/contracts/blogpress';
 import { cn } from '@/frontend/shared/cn';
@@ -582,6 +587,49 @@ function PostRow({
                 <Pin className="size-4 text-neutral-500 me-2" />
               )}
               <span>{post.featured ? 'إلغاء التَّثبيت' : 'تثبيت'}</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                try {
+                  await duplicatePost(post.id);
+                  toast.success('تم إنشاء نسخة من المقال');
+                  router.refresh();
+                } catch {
+                  toast.error('فشل نسخ المقال');
+                }
+              }}
+              className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
+            >
+              <CopyPlus className="size-4 text-neutral-500 me-2" />
+              <span>نسخ المقال</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                try {
+                  await downloadPostAsFile(post.title, post.content ?? '', 'markdown');
+                  toast.success('تم تصدير المقال بصيغة Markdown');
+                } catch {
+                  toast.error('فشل تصدير المقال');
+                }
+              }}
+              className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
+            >
+              <FileDown className="size-4 text-neutral-500 me-2" />
+              <span>تصدير Markdown</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={async () => {
+                try {
+                  await downloadPostAsFile(post.title, post.content ?? '', 'html');
+                  toast.success('تم تصدير المقال بصيغة HTML');
+                } catch {
+                  toast.error('فشل تصدير المقال');
+                }
+              }}
+              className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
+            >
+              <FileCode2 className="size-4 text-neutral-500 me-2" />
+              <span>تصدير HTML</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="my-1 border-neutral-100 dark:border-neutral-800" />
             <Dialog>

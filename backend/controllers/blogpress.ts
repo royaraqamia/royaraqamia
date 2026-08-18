@@ -90,6 +90,21 @@ export async function deletePost(id: string): Promise<HttpResult> {
   }
 }
 
+export async function duplicatePost(id: string): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+
+    const { id: newId } = await createBlogpressPostsService(supabase).duplicatePost(id, user.id);
+
+    return jsonResult(200, { success: true, id: newId });
+  } catch (error) {
+    return jsonResult(500, {
+      error: error instanceof Error ? error.message : 'فشل نسخ المقال',
+    });
+  }
+}
+
 export async function publishPost(id: string): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();

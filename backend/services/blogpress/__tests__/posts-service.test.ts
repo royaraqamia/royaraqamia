@@ -327,3 +327,54 @@ describe('BlogpressPostsService (thin delegation)', () => {
     await expect(service.deletePost('p-1', 'u-1')).rejects.toThrow('db down');
   });
 });
+
+describe('BlogpressPostsService.duplicatePost', () => {
+  it('clones fields, tags and categories into a fresh draft', async () => {
+    const { repository, service } = makeRepo();
+    (repository.getPostForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...postFixture,
+      title: 'مقال مميز',
+      content: '# محتوى',
+      cover_image: 'https://img/cover.png',
+      meta_title: 'عنوان SEO',
+      meta_desc: 'وصف',
+    });
+    (repository.createPost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-copy' });
+    (repository.updatePost as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (repository.getPostTags as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'tag-1', name: 'تقنية', slug: 'tech' },
+    ]);
+    (repository.setPostTags as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    (repository.getPostCategories as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { id: 'cat-1', name: 'أخبار', slug: 'news' },
+    ]);
+    (repository.setPostCategories as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+
+    const result = await service.duplicatePost('p-1', 'u-1');
+
+    expect(result).toEqual({ id: 'p-copy' });
+    expect(repository.createPost).toHaveBeenCalledWith('u-1');
+    expect(repository.updatePost).toHaveBeenCalledWith(
+      'p-copy',
+      'u-1',
+      expect.objectContaining({
+        title: 'نسخة من مقال مميز',
+        content: '# محتوى',
+        cover_image: 'https://img/cover.png',
+        meta_title: 'عنوان SEO',
+        meta_desc: 'وصف',
+        slug: expect.stringMatching(/^post-1-copy-[a-z0-9]{4}$/),
+      })
+    );
+    expect(repository.setPostTags).toHaveBeenCalledWith('p-copy', 'u-1', ['tag-1']);
+    expect(repository.setPostCategories).toHaveBeenCalledWith('p-copy', 'u-1', ['cat-1']);
+  });
+
+  it('throws when the source post does not exist or is not owned', async () => {
+    const { repository, service } = makeRepo();
+    (repository.getPostForUser as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    await expect(service.duplicatePost('p-1', 'u-2')).rejects.toThrow('المقال غير موجود');
+    expect(repository.createPost).not.toHaveBeenCalled();
+  });
+});

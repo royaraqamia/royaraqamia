@@ -32,6 +32,8 @@ import { usePostUpload } from '@/frontend/state/blogpress/use-post-upload';
 import { EditorToolbar } from '@/frontend/ui/blogpress/editor-toolbar';
 import { PostSettingsDialog } from '@/frontend/ui/blogpress/post-settings-dialog';
 import { EditorSidePanel } from '@/frontend/ui/blogpress/editor-side-panel';
+import { PostActionsMenu } from '@/frontend/ui/blogpress/post-actions-menu';
+import { EditorReadingProgress } from '@/frontend/ui/blogpress/editor-reading-progress';
 
 interface EditorContentProps {
   post: Post;
@@ -42,6 +44,7 @@ interface EditorContentProps {
 export function EditorContent({ post, availableTags, initialPostTags }: EditorContentProps) {
   const router = useRouter();
   const editorRef = useRef<TiptapEditorRef>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   const {
     title,
     setTitle,
@@ -290,6 +293,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
 
   return (
     <div className="flex h-dvh flex-col">
+      <EditorReadingProgress scrollContainerRef={editorContainerRef} />
       <div className="flex items-center justify-between border-b border-border/50 px-4 py-2.5 bg-background/80 backdrop-blur-sm">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Button
@@ -381,6 +385,12 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
           >
             <Focus className="size-4" />
           </Button>
+          <PostActionsMenu
+            postId={post.id}
+            title={title}
+            getMarkdown={() => editorRef.current?.getMarkdown() ?? content}
+            onDuplicated={(newId) => router.push(`/blogpress/editor/${newId}`)}
+          />
         </div>
       </div>
 
@@ -407,6 +417,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
             className={`flex-1 mx-auto bg-background rounded-2xl shadow-xs border border-border/30 overflow-hidden my-4 md:my-6 ${
               distractionFree ? 'max-w-4xl' : 'max-w-3xl'
             }`}
+            ref={editorContainerRef}
           >
             <TiptapEditor
               ref={editorRef}

@@ -59,6 +59,12 @@ export async function deletePost(postId: string): Promise<void> {
   await request(`/api/blogpress/posts/${encodeURIComponent(postId)}`, { method: 'DELETE' });
 }
 
+export async function duplicatePost(postId: string): Promise<{ id: string }> {
+  return request<{ id: string }>(`/api/blogpress/posts/${encodeURIComponent(postId)}/duplicate`, {
+    method: 'POST',
+  });
+}
+
 export async function setPostFeatured(postId: string, featured: boolean): Promise<void> {
   await request(`/api/blogpress/posts/${encodeURIComponent(postId)}/featured`, {
     method: 'POST',

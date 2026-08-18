@@ -117,6 +117,47 @@ export class BlogpressPostsService {
     return this.repository.deletePost(postId, authorId);
   }
 
+  async duplicatePost(postId: string, authorId: string): Promise<{ id: string }> {
+    const source = await this.repository.getPostForUser(postId, authorId);
+    if (!source) {
+      throw new Error('المقال غير موجود');
+    }
+
+    const { id } = await this.repository.createPost(authorId);
+
+    const baseSlug = source.slug.replace(/-(copy|نسخة)-\d{4}$/i, '') || `post-${id.slice(0, 8)}`;
+    const suffix = crypto.randomUUID().slice(0, 4);
+
+    await this.repository.updatePost(id, authorId, {
+      title: source.title ? `نسخة من ${source.title}` : '',
+      slug: `${baseSlug}-copy-${suffix}`,
+      content: source.content ?? '',
+      cover_image: source.cover_image ?? '',
+      meta_title: source.meta_title ?? '',
+      meta_desc: source.meta_desc ?? '',
+    });
+
+    const tags = await this.repository.getPostTags(postId);
+    if (tags.length > 0) {
+      await this.repository.setPostTags(
+        id,
+        authorId,
+        tags.map((tag) => tag.id)
+      );
+    }
+
+    const categories = await this.repository.getPostCategories(postId);
+    if (categories.length > 0) {
+      await this.repository.setPostCategories(
+        id,
+        authorId,
+        categories.map((c) => c.id)
+      );
+    }
+
+    return { id };
+  }
+
   async bulkActionPosts(
     postIds: string[],
     authorId: string,
