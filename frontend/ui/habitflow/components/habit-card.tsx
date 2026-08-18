@@ -25,7 +25,6 @@ interface HabitCardProps {
   onNote: (habitId: string) => void;
   onEdit: (habit: Habit) => void;
   togglingHabitId?: string | null;
-  skippingHabitId?: string | null;
 }
 
 export function HabitCard({
@@ -37,7 +36,6 @@ export function HabitCard({
   onNote,
   onEdit,
   togglingHabitId,
-  skippingHabitId,
 }: HabitCardProps) {
   const reduce = useReducedMotion();
   const isCompleted = logs.some(
@@ -48,7 +46,6 @@ export function HabitCard({
   );
   const hasNote = logs.some((l) => l.habitId === habit.id && l.date === activeDate && !!l.note);
   const isToggling = togglingHabitId === habit.id;
-  const isSkipping = skippingHabitId === habit.id;
   const stats = calculateHabitStats(habit.id, logs, activeDate);
   const targetProgress = calculateTargetProgress(habit, logs, activeDate);
   const colorClass = getIconColorClass(habit.icon);
@@ -68,16 +65,16 @@ export function HabitCard({
         {/* Toggle Button */}
         <motion.button
           onClick={() => onToggle(habit.id)}
-          disabled={isToggling}
-          whileTap={reduce || isToggling ? undefined : { scale: 0.92 }}
+          whileTap={reduce ? undefined : { scale: 0.92 }}
           transition={reduce ? undefined : { type: 'spring', stiffness: 500, damping: 25 }}
-          className={`relative flex items-center justify-center shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-[1.5px] outline-none transition-all duration-300 ease-out focus-visible:ring-4 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 ${
+          className={`relative flex items-center justify-center shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-[1.5px] outline-none transition-all duration-300 ease-out focus-visible:ring-4 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 cursor-pointer ${
             isCompleted
               ? 'bg-emerald-500 border-emerald-500 text-white shadow-[0_2px_16px_rgba(16,185,129,0.35)] ring-emerald-500/20 focus-visible:ring-emerald-500'
               : 'border-zinc-300 dark:border-zinc-700 bg-transparent hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900 focus-visible:ring-zinc-400'
-          } ${isToggling ? 'opacity-50 cursor-wait' : 'cursor-pointer'}`}
+          }`}
           aria-label={`${isCompleted ? 'إلغاء تسجيل' : 'تسجيل'} عادة ${habit.name}`}
           aria-pressed={isCompleted}
+          aria-busy={isToggling}
           id={`check-habit-${habit.id}`}
         >
           {isCompleted && (
@@ -201,7 +198,7 @@ export function HabitCard({
           >
             <DropdownMenuItem
               onClick={() => onSkip(habit.id)}
-              disabled={isSkipping || isCompleted}
+              disabled={isCompleted}
               aria-pressed={isSkipped}
               className={`rounded-lg transition-colors cursor-pointer ${
                 isSkipped

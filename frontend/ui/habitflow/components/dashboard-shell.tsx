@@ -100,7 +100,6 @@ export function DashboardShell({
     syncUser,
     todayDate,
     togglingHabitId,
-    skippingHabitId,
   } = useDashboard({
     habits: initialHabits,
     logs: initialLogs,
@@ -336,7 +335,6 @@ export function DashboardShell({
                       onNote={setNoteHabitId}
                       onEdit={openEditModal}
                       togglingHabitId={togglingHabitId}
-                      skippingHabitId={skippingHabitId}
                     />
                   ))}
                 </div>

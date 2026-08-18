@@ -44,6 +44,7 @@ export function useDashboardToggle(
   const handleToggleLog = async (habitId: string) => {
     if (togglingHabitId === habitId) return;
     setTogglingHabitId(habitId);
+    const previousLogs = logs;
     try {
       const isCompleted = logs.some(
         (l) => l.habitId === habitId && l.date === activeDate && l.completed
@@ -58,29 +59,23 @@ export function useDashboardToggle(
       });
       setLogs(updatedLogs);
 
-      if (user) {
-        try {
+      try {
+        if (user) {
           const result = await ApiClient.toggleLog(habitId, activeDate, nextCompleted);
           setLogs((prev) =>
             prev.map((l) => (l.habitId === habitId && l.date === activeDate ? result.log : l))
           );
           if (nextCompleted) toast.success('تم تسجيل العادة');
-        } catch {
+        } else {
+          const log = await localRepo.toggleLog(habitId, activeDate, nextCompleted);
           setLogs((prev) =>
-            prev.map((l) =>
-              l.habitId === habitId && l.date === activeDate
-                ? { ...l, completed: !nextCompleted }
-                : l
-            )
+            prev.map((l) => (l.habitId === habitId && l.date === activeDate ? log : l))
           );
-          toast.error('حدث خطأ أثناء تسجيل العادة. يرجى المحاولة مرة أخرى.');
+          if (nextCompleted) toast.success('تم تسجيل العادة');
         }
-      } else {
-        const log = await localRepo.toggleLog(habitId, activeDate, nextCompleted);
-        setLogs((prev) =>
-          prev.map((l) => (l.habitId === habitId && l.date === activeDate ? log : l))
-        );
-        if (nextCompleted) toast.success('تم تسجيل العادة');
+      } catch {
+        setLogs(previousLogs);
+        toast.error('حدث خطأ أثناء تسجيل العادة. يرجى المحاولة مرة أخرى.');
       }
     } finally {
       setTogglingHabitId(null);
@@ -90,6 +85,7 @@ export function useDashboardToggle(
   const handleSkipHabit = async (habitId: string) => {
     if (skippingHabitId === habitId) return;
     setSkippingHabitId(habitId);
+    const previousLogs = logs;
     try {
       const currentLog = logs.find((l) => l.habitId === habitId && l.date === activeDate);
       const isSkipped = currentLog?.kind === 'skip';
@@ -103,8 +99,8 @@ export function useDashboardToggle(
       });
       setLogs(updatedLogs);
 
-      if (user) {
-        try {
+      try {
+        if (user) {
           const result = await ApiClient.setLogKind(
             habitId,
             activeDate,
@@ -114,27 +110,16 @@ export function useDashboardToggle(
             prev.map((l) => (l.habitId === habitId && l.date === activeDate ? result.log : l))
           );
           if (nextKind === 'skip') toast.success('تم تخطي اليوم — سلسلتك محفوظة');
-        } catch {
+        } else {
+          const log = await localRepo.setLogKind(habitId, activeDate, nextKind as 'skip' | 'none');
           setLogs((prev) =>
-            prev.map((l) =>
-              l.habitId === habitId && l.date === activeDate
-                ? {
-                    ...l,
-                    kind: isSkipped ? 'skip' : undefined,
-                    completed: false,
-                    completedAt: null,
-                  }
-                : l
-            )
+            prev.map((l) => (l.habitId === habitId && l.date === activeDate ? log : l))
           );
-          toast.error('حدث خطأ أثناء تخطي اليوم. يرجى المحاولة مرة أخرى.');
+          if (nextKind === 'skip') toast.success('تم تخطي اليوم — سلسلتك محفوظة');
         }
-      } else {
-        const log = await localRepo.setLogKind(habitId, activeDate, nextKind as 'skip' | 'none');
-        setLogs((prev) =>
-          prev.map((l) => (l.habitId === habitId && l.date === activeDate ? log : l))
-        );
-        if (nextKind === 'skip') toast.success('تم تخطي اليوم — سلسلتك محفوظة');
+      } catch {
+        setLogs(previousLogs);
+        toast.error('حدث خطأ أثناء تخطي اليوم. يرجى المحاولة مرة أخرى.');
       }
     } finally {
       setSkippingHabitId(null);
