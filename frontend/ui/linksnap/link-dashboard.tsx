@@ -166,6 +166,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
                 createdAt={link.createdAt}
                 expiresAt={link.expiresAt}
                 status={link.status}
+                passwordProtected={link.passwordProtected}
                 token={token}
                 onDeleted={handleDelete}
                 onUpdated={(prevCode, link) => applyLinkUpdate(prevCode, link)}

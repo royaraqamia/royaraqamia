@@ -15,11 +15,15 @@ export function useShortenLink(token: string | null) {
   const [error, setError] = useState<string | null>(null);
 
   const shortenAction = useCallback(
-    async (originalUrl: string, customCode: string): Promise<ShortenedLink | null> => {
+    async (
+      originalUrl: string,
+      customCode: string,
+      password?: string
+    ): Promise<ShortenedLink | null> => {
       setLoading(true);
       setError(null);
       try {
-        return await shorten(originalUrl, customCode, token);
+        return await shorten(originalUrl, customCode, token, password);
       } catch (err: unknown) {
         setError(err instanceof Error ? err.message : 'حدث خطأ أثناء اختصار الرَّابط.');
         return null;

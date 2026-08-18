@@ -644,6 +644,7 @@ export type Database = {
           expires_at: string | null;
           is_blocked: boolean;
           original_url: string;
+          password_hash: string | null;
           updated_at: string;
           user_id: string | null;
         };
@@ -653,6 +654,7 @@ export type Database = {
           expires_at?: string | null;
           is_blocked?: boolean;
           original_url: string;
+          password_hash?: string | null;
           updated_at?: string;
           user_id?: string | null;
         };
@@ -662,6 +664,7 @@ export type Database = {
           expires_at?: string | null;
           is_blocked?: boolean;
           original_url?: string;
+          password_hash?: string | null;
           updated_at?: string;
           user_id?: string | null;
         };

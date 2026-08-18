@@ -4,13 +4,19 @@ import { ShortLink } from '@/shared/contracts/linksnap';
 import { logger } from '@/backend/shared/logger';
 
 export function isReservedShortCode(code: string): boolean {
-  return code.startsWith('_') || code.includes('.') || code === 'api' || code === 'favicon.ico';
+  return (
+    code.startsWith('_') ||
+    code.includes('.') ||
+    code === 'api' ||
+    code === 'favicon.ico' ||
+    code === 'unlock'
+  );
 }
 
 export class ShortLinkRedirectError extends Error {
   constructor(
     message: string,
-    public readonly kind: 'not-found' | 'blocked' | 'reserved' | 'expired'
+    public readonly kind: 'not-found' | 'blocked' | 'reserved' | 'expired' | 'password-protected'
   ) {
     super(message);
     this.name = 'ShortLinkRedirectError';
@@ -55,6 +61,13 @@ export class RedirectUrlService {
 
     if (link.expiresAt && link.expiresAt.getTime() < Date.now()) {
       throw new ShortLinkRedirectError('This short link has expired.', 'expired');
+    }
+
+    if (link.passwordHash) {
+      throw new ShortLinkRedirectError(
+        'This short link is password protected.',
+        'password-protected'
+      );
     }
 
     // Fire-and-forget logging click analytics to keep redirect under 100ms

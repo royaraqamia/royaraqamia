@@ -13,6 +13,7 @@ import {
   createListLinksService,
   createModerateLinkService,
   createShortenUrlService,
+  createUnlockLinkService,
   createUpdateLinkService,
   createRedirectUrlService,
 } from '@/backend/config/linksnap';
@@ -20,6 +21,7 @@ import {
   bulkShortenRateLimitPolicy,
   shortenRateLimitPolicy,
   slugAvailabilityRateLimitPolicy,
+  unlockRateLimitPolicy,
 } from '@/backend/config/rate-limiter';
 import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
 import { getLinkStatus } from '@/backend/services/linksnap/link-status';
@@ -61,6 +63,7 @@ function linkView(l: {
   createdAt: Date;
   isBlocked: boolean;
   expiresAt: Date | null;
+  passwordHash?: string | null;
 }) {
   return {
     code: l.code,
@@ -68,6 +71,7 @@ function linkView(l: {
     createdAt: l.createdAt.toISOString(),
     isBlocked: l.isBlocked,
     expiresAt: l.expiresAt ? l.expiresAt.toISOString() : null,
+    passwordProtected: Boolean(l.passwordHash),
     status: getLinkStatus(l.isBlocked, l.expiresAt),
   };
 }
@@ -97,7 +101,13 @@ export async function listLinks(authorization: string | null): Promise<HttpResul
 
 export async function updateLink(
   authorization: string | null,
-  body: { code?: unknown; newCode?: unknown; originalUrl?: unknown; expiresAt?: unknown }
+  body: {
+    code?: unknown;
+    newCode?: unknown;
+    originalUrl?: unknown;
+    expiresAt?: unknown;
+    password?: unknown;
+  }
 ): Promise<HttpResult> {
   try {
     const user = await getAuthenticatedUser(authorization);
@@ -109,6 +119,12 @@ export async function updateLink(
       code: body.newCode as string | undefined,
       originalUrl: body.originalUrl as string | undefined,
       expiresAt: parseExpiresAt(body.expiresAt),
+      password:
+        typeof body.password === 'string' && body.password.length > 0
+          ? body.password
+          : body.password === null
+            ? null
+            : undefined,
     });
 
     return jsonResult(200, { success: true, link: linkView(updatedLink) });
@@ -164,7 +180,7 @@ export async function checkCodeAvailability(
 export async function shortenUrl(
   authorization: string | null,
   ip: string,
-  body: { originalUrl?: unknown; customCode?: unknown; expiresAt?: unknown }
+  body: { originalUrl?: unknown; customCode?: unknown; expiresAt?: unknown; password?: unknown }
 ): Promise<HttpResult> {
   try {
     const { originalUrl, customCode } = body;
@@ -179,7 +195,8 @@ export async function shortenUrl(
       originalUrl as string,
       userId,
       customCode as string | undefined,
-      parseExpiresAt(body.expiresAt)
+      parseExpiresAt(body.expiresAt),
+      typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined
     );
 
     return jsonResult(200, {
@@ -379,7 +396,34 @@ export async function redirectShortCode(
         : 'not-found';
     return {
       status: 302,
-      redirect: `${baseUrl}/linksnap?error=${errorCode}&code=${code}`,
+      redirect:
+        err instanceof ShortLinkRedirectError && err.kind === 'password-protected'
+          ? `${baseUrl}/unlock/${code}`
+          : `${baseUrl}/linksnap?error=${errorCode}&code=${code}`,
     };
+  }
+}
+
+export async function unlockLinkPassword(
+  ip: string,
+  body: { code?: unknown; password?: unknown }
+): Promise<HttpResult> {
+  try {
+    const rateLimitResult = await checkRateLimitApi(unlockRateLimitPolicy(ip));
+    if (rateLimitResult) return rateLimitResult;
+
+    if (typeof body.code !== 'string' || typeof body.password !== 'string') {
+      throw new AppError('رمز الرابط وكلمة المرور مطلوبان.', 400);
+    }
+
+    const originalUrl = await createUnlockLinkService().execute(body.code, body.password, {
+      referrer: null,
+      userAgent: null,
+      ipCountry: null,
+    });
+
+    return jsonResult(200, { success: true, originalUrl });
+  } catch (err: unknown) {
+    return errorResponse(err, 'Error in unlock link API route:');
   }
 }

@@ -15,6 +15,7 @@ import {
   MoreHorizontal,
   ExternalLink,
   Share2,
+  Lock,
 } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { LinkEditDialog } from './link-edit-dialog';
@@ -63,6 +64,7 @@ interface LinkRowCardProps {
   createdAt: string;
   expiresAt: string | null;
   status: LinkStatus;
+  passwordProtected?: boolean;
   token: string;
   onDeleted: (code: string) => void;
   onUpdated: (prevCode: string, link: ShortenedLink) => void;
@@ -76,6 +78,7 @@ export function LinkRowCard({
   createdAt,
   expiresAt,
   status,
+  passwordProtected = false,
   token,
   onDeleted,
   onUpdated,
@@ -224,6 +227,17 @@ export function LinkRowCard({
                   </span>
                 );
               })()}
+
+              {/* Password Protected Badge */}
+              {passwordProtected && (
+                <span
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-50/80 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-400"
+                  title="هذا الرابط محمي بكلمة مرور"
+                >
+                  <Lock aria-hidden="true" className="h-3 w-3" />
+                  محمي
+                </span>
+              )}
 
               {/* Date Badge */}
               <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-neutral-200/70 bg-neutral-50/80 px-2.5 py-0.5 text-xs font-medium text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/60 dark:text-neutral-400">
@@ -409,6 +423,7 @@ export function LinkRowCard({
         code={code}
         currentUrl={originalUrl}
         currentExpiresAt={expiresAt}
+        currentPasswordProtected={passwordProtected}
         token={token}
         onSaved={(link) => {
           onUpdated(code, link);

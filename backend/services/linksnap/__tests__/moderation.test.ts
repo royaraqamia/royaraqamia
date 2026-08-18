@@ -17,6 +17,7 @@ const linkFixture: ShortLink = {
   updatedAt: now,
   isBlocked: false,
   expiresAt: null,
+  passwordHash: null,
 };
 
 function makeLinkRepo(overrides: Partial<ShortLinkRepository> = {}) {

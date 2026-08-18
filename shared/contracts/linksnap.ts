@@ -8,6 +8,7 @@ export interface ShortLink {
   updatedAt: Date;
   isBlocked: boolean;
   expiresAt: Date | null;
+  passwordHash: string | null;
 }
 
 export interface AnalyticsEvent {

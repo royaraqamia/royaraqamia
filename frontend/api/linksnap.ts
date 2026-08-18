@@ -13,12 +13,15 @@ export interface ShortenedLink {
   isBlocked: boolean;
   expiresAt: string | null;
   status: LinkStatus;
+  passwordProtected?: boolean;
 }
 
 export interface LinkUpdateBody {
   newCode?: string;
   originalUrl?: string;
   expiresAt?: string | null;
+  /** String sets a new password, null clears it, undefined leaves it unchanged. */
+  password?: string | null;
 }
 
 export interface CodeAvailability {
@@ -80,14 +83,26 @@ export async function listLinks(token: string): Promise<ShortenedLink[]> {
 export async function shorten(
   originalUrl: string,
   customCode: string | undefined,
-  token: string | null
+  token: string | null,
+  password?: string
 ): Promise<ShortenedLink> {
   const data = await request<{ link: ShortenedLink }>('/linksnap/api/shorten', {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: JSON.stringify({ originalUrl, customCode: customCode || undefined }),
+    body: JSON.stringify({
+      originalUrl,
+      customCode: customCode || undefined,
+      password: password || undefined,
+    }),
   });
   return data.link;
+}
+
+export async function unlockLink(code: string, password: string): Promise<{ originalUrl: string }> {
+  return request<{ originalUrl: string }>('/linksnap/api/unlock', {
+    method: 'POST',
+    body: JSON.stringify({ code, password }),
+  });
 }
 
 export async function shortenBulk(

@@ -2,7 +2,18 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { Link, Sparkles, Copy, Check, Share2, QrCode, ArrowLeft, RotateCcw } from 'lucide-react';
+import {
+  Link,
+  Sparkles,
+  Copy,
+  Check,
+  Share2,
+  QrCode,
+  ArrowLeft,
+  RotateCcw,
+  Lock,
+  LockOpen,
+} from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { hslToHex } from '@/frontend/shared/hsl-to-hex';
@@ -29,6 +40,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
   const { shorten, loading, error, setError } = useShortenLink(token);
   const [originalUrl, setOriginalUrl] = useState('');
   const [customCode, setCustomCode] = useState('');
+  const [password, setPassword] = useState('');
   const [shortenedUrl, setShortenedUrl] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
@@ -46,7 +58,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
       return;
     }
 
-    const link = await shorten(originalUrl, customCode);
+    const link = await shorten(originalUrl, customCode, password || undefined);
     if (!link) return;
 
     const generatedCode = link.code;
@@ -121,6 +133,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
   const resetForm = () => {
     setOriginalUrl('');
     setCustomCode('');
+    setPassword('');
     setShortenedUrl(null);
     setError(null);
     setShowQr(false);
@@ -231,6 +244,33 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   )}
                 </div>
               )}
+
+              <div className="pt-2">
+                <label
+                  htmlFor="link-password"
+                  className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1"
+                >
+                  كلمة مرور (اختياري)
+                </label>
+                <div className="relative">
+                  <Lock
+                    aria-hidden="true"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary"
+                  />
+                  <input
+                    id="link-password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="يُطلب من الزائر قبل فتح الرابط"
+                    autoComplete="new-password"
+                    className="w-full pr-11 pl-4 py-3 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
+                  />
+                </div>
+                <p className="text-xs text-muted-foreground font-medium mt-1">
+                  يُحفظ مشفّراً ولا يمكن استرجاعه لاحقاً.
+                </p>
+              </div>
             </motion.div>
           )}
 
@@ -297,8 +337,14 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               رابطك المُختصَر جاهز!
             </h3>
             <p className="text-xs text-muted-foreground max-w-sm truncate">
-              يُعيد التَّوجيه إلى: <span className="text-primary">{originalUrl}</span>
+              يُعيد التَّوجيه إلى: <span className="text-primary">{originalUrl}</span>
             </p>
+            {password && (
+              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
+                <LockOpen aria-hidden="true" className="w-3.5 h-3.5" />
+                محمي بكلمة مرور
+              </p>
+            )}
           </div>
 
           <div className="flex items-center gap-2 p-3 bg-muted/50 border border-border rounded-full select-all">

@@ -15,6 +15,7 @@ const linkFixture: ShortLink = {
   updatedAt: now,
   isBlocked: false,
   expiresAt: null,
+  passwordHash: null,
 };
 
 function makeRepo(overrides: Partial<ShortLinkRepository> = {}) {
@@ -187,6 +188,53 @@ describe('UpdateLinkService', () => {
       'Custom short code must be under 16 characters.'
     );
     expect(repository.update).not.toHaveBeenCalled();
+  });
+
+  it('sets a password hash when a password is provided', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...linkFixture,
+      passwordHash: 'scrypt:abc:def',
+    });
+
+    await service.execute('abc123', 'u-1', { password: 's3cret' });
+
+    const updateCall = (repository.update as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      { passwordHash: string },
+    ];
+    expect(updateCall[1].passwordHash).toMatch(/^scrypt:[a-f0-9]+:[a-f0-9]+$/);
+  });
+
+  it('clears the password when null is provided', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...linkFixture,
+      passwordHash: null,
+    });
+
+    await service.execute('abc123', 'u-1', { password: null });
+
+    expect(repository.update).toHaveBeenCalledWith('abc123', { passwordHash: null });
+  });
+
+  it('leaves the password unchanged when undefined is provided', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+
+    await service.execute('abc123', 'u-1', { originalUrl: 'https://new.com' });
+
+    const updateCall = (repository.update as ReturnType<typeof vi.fn>).mock.calls[0] as [
+      string,
+      Record<string, unknown>,
+    ];
+    expect(Object.prototype.hasOwnProperty.call(updateCall[1], 'passwordHash')).toBe(false);
   });
 });
 

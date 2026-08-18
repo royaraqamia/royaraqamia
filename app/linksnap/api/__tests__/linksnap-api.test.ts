@@ -24,6 +24,7 @@ const mockModerate = { execute: vi.fn() };
 const mockStats = { execute: vi.fn() };
 const mockRedirect = { execute: vi.fn() };
 const mockBulkAction = { execute: vi.fn() };
+const mockUnlock = { execute: vi.fn() };
 
 vi.mock('next/server', () => ({
   NextResponse: class MockNextResponse {
@@ -73,6 +74,7 @@ vi.mock('@/backend/config/linksnap', () => ({
   createGetSystemStatsService: () => mockStats,
   createRedirectUrlService: () => mockRedirect,
   createBulkLinkActionService: () => mockBulkAction,
+  createUnlockLinkService: () => mockUnlock,
 }));
 
 import { POST as shortenPOST } from '@/app/linksnap/api/shorten/route';
@@ -87,6 +89,7 @@ import { POST as bulkActionPOST } from '@/app/linksnap/api/links/bulk/route';
 import { POST as moderatePOST } from '@/app/linksnap/api/admin/moderate/route';
 import { GET as statsGET } from '@/app/linksnap/api/admin/stats/route';
 import { GET as redirectGET } from '@/app/[code]/route';
+import { POST as unlockPOST } from '@/app/linksnap/api/unlock/route';
 
 function makeReq(body?: unknown, headers: Record<string, string> = {}) {
   const json = vi.fn().mockResolvedValue(body);
@@ -107,6 +110,7 @@ const shortLink = {
   updatedAt: now,
   isBlocked: false,
   expiresAt: null,
+  passwordHash: null,
 };
 
 beforeEach(() => {
@@ -256,6 +260,7 @@ describe('GET /linksnap/api/links', () => {
           createdAt: now.toISOString(),
           isBlocked: false,
           expiresAt: null,
+          passwordProtected: false,
           status: 'active',
         },
       ],
@@ -541,5 +546,57 @@ describe('GET /[code] redirect route', () => {
       expect(res.status).toBe(404);
       expect(mockRedirect.execute).toHaveBeenCalledWith(code, expect.any(Object));
     }
+  });
+
+  it('redirects to the unlock page when the link is password protected', async () => {
+    process.env.APP_URL = 'http://localhost:3000';
+    mockRedirect.execute.mockRejectedValue(
+      new ShortLinkRedirectError('This short link is password protected.', 'password-protected')
+    );
+    const res = await redirectGET(makeReq(undefined, {}), {
+      params: Promise.resolve({ code: 'abc123' }),
+    });
+
+    expect(res.status).toBe(302);
+    expect(res.url).toBe('http://localhost:3000/unlock/abc123');
+  });
+});
+
+describe('POST /linksnap/api/unlock', () => {
+  it('returns the original URL on a correct password', async () => {
+    mockUnlock.execute.mockResolvedValue('https://example.com');
+
+    const res = await unlockPOST(makeReq({ code: 'abc123', password: 's3cret' }));
+
+    expect(res.status).toBe(200);
+    expect(readBody(res)).toEqual({ success: true, originalUrl: 'https://example.com' });
+    expect(mockCheckRateLimitApi).toHaveBeenCalledWith(
+      expect.objectContaining({ key: 'link-unlock:127.0.0.1' })
+    );
+  });
+
+  it('returns 429 when rate limited', async () => {
+    mockCheckRateLimitApi.mockResolvedValue({ data: { success: false }, status: 429 });
+
+    const res = await unlockPOST(makeReq({ code: 'abc123', password: 'x' }));
+
+    expect(res.status).toBe(429);
+    expect(mockUnlock.execute).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when code or password are missing', async () => {
+    const res = await unlockPOST(makeReq({ code: 'abc123' }));
+
+    expect(res.status).toBe(400);
+    expect(mockUnlock.execute).not.toHaveBeenCalled();
+  });
+
+  it('returns 401 when the password is wrong', async () => {
+    mockUnlock.execute.mockRejectedValue(new AppError('كلمة المرور غير صحيحة.', 401));
+
+    const res = await unlockPOST(makeReq({ code: 'abc123', password: 'wrong' }));
+
+    expect(res.status).toBe(401);
+    expect(readBody(res)).toEqual({ success: false, error: 'كلمة المرور غير صحيحة.' });
   });
 });

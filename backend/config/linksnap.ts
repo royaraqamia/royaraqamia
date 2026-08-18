@@ -11,6 +11,7 @@ import { BulkLinkActionService } from '@/backend/services/linksnap/bulk-link-act
 import { ModerateLinkService } from '@/backend/services/linksnap/moderate-link';
 import { GetUrlAnalyticsService } from '@/backend/services/linksnap/get-url-analytics';
 import { GetSystemStatsService } from '@/backend/services/linksnap/get-system-stats';
+import { UnlockLinkService } from '@/backend/services/linksnap/unlock-link';
 import {
   RedirectUrlService,
   type LinkClickedNotifier,
@@ -78,6 +79,14 @@ export function createGetSystemStatsService(): GetSystemStatsService {
 
 export function createRedirectUrlService(): RedirectUrlService {
   return new RedirectUrlService(
+    createShortLinkRepository(),
+    createAnalyticsRepository(),
+    createLinkClickedNotifier()
+  );
+}
+
+export function createUnlockLinkService(): UnlockLinkService {
+  return new UnlockLinkService(
     createShortLinkRepository(),
     createAnalyticsRepository(),
     createLinkClickedNotifier()

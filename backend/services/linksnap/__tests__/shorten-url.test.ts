@@ -134,4 +134,27 @@ describe('ShortenUrlService.execute', () => {
 
     await expect(service.execute('https://example.com', null)).rejects.toThrow('db down');
   });
+
+  it('hashes the password when a password is provided', async () => {
+    const { repository, service } = makeRepo();
+    (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repository.create as ReturnType<typeof vi.fn>).mockImplementation(async (link) => link);
+
+    const result = await service.execute('https://example.com', null, undefined, null, 's3cret');
+
+    expect(result.passwordHash).toMatch(/^scrypt:[a-f0-9]+:[a-f0-9]+$/);
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ passwordHash: expect.stringMatching(/^scrypt:/) })
+    );
+  });
+
+  it('leaves passwordHash null when no password is provided', async () => {
+    const { repository, service } = makeRepo();
+    (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(false);
+    (repository.create as ReturnType<typeof vi.fn>).mockImplementation(async (link) => link);
+
+    const result = await service.execute('https://example.com', null);
+
+    expect(result.passwordHash).toBeNull();
+  });
 });

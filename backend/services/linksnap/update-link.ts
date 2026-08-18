@@ -4,11 +4,14 @@ import { SecurityValidator } from '@/backend/services/linksnap/security-validato
 import { CodeGenerator } from '@/backend/services/linksnap/code-generator';
 import { isReservedShortCode } from '@/backend/services/linksnap/redirect-url';
 import { AppError } from '@/backend/shared/errors';
+import { hashPassword } from '@/backend/shared/password-hash';
 
 interface UpdateLinkInput {
   code?: string;
   originalUrl?: string;
   expiresAt?: Date | null;
+  /** String sets a new password, null clears it, undefined leaves it unchanged. */
+  password?: string | null;
 }
 
 export class UpdateLinkService {
@@ -25,7 +28,8 @@ export class UpdateLinkService {
     if (
       input.code === undefined &&
       input.originalUrl === undefined &&
-      input.expiresAt === undefined
+      input.expiresAt === undefined &&
+      input.password === undefined
     ) {
       throw new AppError('لا توجد تغييرات لتطبيقها على الرابط.', 400);
     }
@@ -39,12 +43,16 @@ export class UpdateLinkService {
       throw new Error('Unauthorized: You do not own this short link.');
     }
 
-    const updates: Partial<Pick<ShortLink, 'code' | 'originalUrl' | 'expiresAt'>> = {};
+    const updates: Partial<Pick<ShortLink, 'code' | 'originalUrl' | 'expiresAt' | 'passwordHash'>> =
+      {};
     if (input.originalUrl !== undefined) {
       updates.originalUrl = SecurityValidator.validateUrl(input.originalUrl);
     }
     if (input.expiresAt !== undefined) {
       updates.expiresAt = input.expiresAt;
+    }
+    if (input.password !== undefined) {
+      updates.passwordHash = input.password ? hashPassword(input.password) : null;
     }
     if (input.code !== undefined && input.code !== link.code) {
       updates.code = await this.validateNewCode(input.code);

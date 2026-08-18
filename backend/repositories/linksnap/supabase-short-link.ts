@@ -12,6 +12,7 @@ interface ShortLinkDbRow {
   updated_at: string;
   is_blocked: boolean;
   expires_at: string | null;
+  password_hash: string | null;
 }
 
 export class SupabaseShortLinkRepository implements ShortLinkRepository {
@@ -29,6 +30,7 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       updatedAt: new Date(row.updated_at),
       isBlocked: row.is_blocked,
       expiresAt: row.expires_at ? new Date(row.expires_at) : null,
+      passwordHash: row.password_hash,
     };
   }
 
@@ -41,6 +43,7 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       updated_at: domain.updatedAt.toISOString(),
       is_blocked: domain.isBlocked,
       expires_at: domain.expiresAt ? domain.expiresAt.toISOString() : null,
+      password_hash: domain.passwordHash,
     };
   }
 
@@ -94,7 +97,9 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
 
   async update(
     code: string,
-    updates: Partial<Pick<ShortLink, 'code' | 'originalUrl' | 'isBlocked' | 'expiresAt'>>
+    updates: Partial<
+      Pick<ShortLink, 'code' | 'originalUrl' | 'isBlocked' | 'expiresAt' | 'passwordHash'>
+    >
   ): Promise<ShortLink> {
     const dbUpdates: Partial<ShortLinkDbRow> = {};
     if (updates.code !== undefined) {
@@ -108,6 +113,9 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     }
     if (updates.expiresAt !== undefined) {
       dbUpdates.expires_at = updates.expiresAt ? updates.expiresAt.toISOString() : null;
+    }
+    if (updates.passwordHash !== undefined) {
+      dbUpdates.password_hash = updates.passwordHash;
     }
     dbUpdates.updated_at = new Date().toISOString();
 

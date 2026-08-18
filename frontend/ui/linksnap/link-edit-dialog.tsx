@@ -12,7 +12,9 @@ import {
   Clock,
   Check,
   Pencil,
+  Lock,
 } from 'lucide-react';
+import { cn } from '@/frontend/shared/cn';
 import { useUpdateLink } from '@/frontend/state/linksnap/use-links';
 import { useSlugAvailability } from '@/frontend/state/linksnap/use-slug-availability';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
@@ -32,6 +34,7 @@ interface LinkEditDialogProps {
   code: string;
   currentUrl: string;
   currentExpiresAt: string | null;
+  currentPasswordProtected: boolean;
   token: string;
   onSaved: (link: ShortenedLink) => void;
   onClose: () => void;
@@ -54,6 +57,7 @@ export function LinkEditDialog({
   code,
   currentUrl,
   currentExpiresAt,
+  currentPasswordProtected,
   token,
   onSaved,
   onClose,
@@ -62,6 +66,9 @@ export function LinkEditDialog({
   const [editingCodeValue, setEditingCodeValue] = useState(code);
   const [expiresDateValue, setExpiresDateValue] = useState('');
   const [expiresTimeValue, setExpiresTimeValue] = useState('');
+  const [passwordEnabled, setPasswordEnabled] = useState(currentPasswordProtected);
+  const [passwordValue, setPasswordValue] = useState('');
+  const [passwordError, setPasswordError] = useState<string | null>(null);
   const hasExpiry = Boolean(expiresDateValue || expiresTimeValue);
   const { updateLink, updateLoading, updateError } = useUpdateLink(token);
   const { status: slugStatus, error: slugError } = useSlugAvailability(
@@ -77,11 +84,26 @@ export function LinkEditDialog({
       setEditingCodeValue(code);
       setExpiresDateValue(initial.date);
       setExpiresTimeValue(initial.time);
+      setPasswordEnabled(currentPasswordProtected);
+      setPasswordValue('');
+      setPasswordError(null);
     }
-  }, [open, currentUrl, currentExpiresAt, code]);
+  }, [open, currentUrl, currentExpiresAt, currentPasswordProtected, code]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setPasswordError(null);
+
+    let password: string | null | undefined;
+    if (!passwordEnabled) {
+      password = currentPasswordProtected ? null : undefined;
+    } else if (passwordValue.trim()) {
+      password = passwordValue;
+    } else if (!currentPasswordProtected) {
+      setPasswordError('أدخل كلمة مرور لتفعيل الحماية أو ألغِ تفعيلها.');
+      return;
+    }
+
     try {
       const link = await updateLink(code, {
         newCode: editingCodeValue !== code ? editingCodeValue : undefined,
@@ -89,6 +111,7 @@ export function LinkEditDialog({
         expiresAt: expiresDateValue
           ? new Date(`${expiresDateValue}T${expiresTimeValue || '23:59'}`).toISOString()
           : null,
+        password,
       });
       onSaved(link);
       toast.success('تم تحديث الرابط بنجاح');
@@ -285,6 +308,91 @@ export function LinkEditDialog({
               <Clock className="w-3.5 h-3.5 text-muted-foreground/60 shrink-0" aria-hidden="true" />
               <span>عند انتهاء الصلاحية يتوقف الرابط عن العمل تلقائيًا.</span>
             </p>
+          </div>
+
+          {/* Password Protection */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <label
+                htmlFor="edit-password-toggle"
+                className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2 cursor-pointer"
+              >
+                <Lock className="w-4 h-4 text-primary" aria-hidden="true" />
+                <span>حماية بكلمة مرور</span>
+                <span className="text-[10px] font-normal tracking-normal text-muted-foreground/70 lowercase px-2 py-0.5 rounded-full bg-muted dark:bg-neutral-800 border border-border/40">
+                  (اختياري)
+                </span>
+              </label>
+              <button
+                id="edit-password-toggle"
+                type="button"
+                role="switch"
+                aria-checked={passwordEnabled}
+                onClick={() => {
+                  setPasswordEnabled((prev) => !prev);
+                  setPasswordError(null);
+                }}
+                className={cn(
+                  'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30',
+                  passwordEnabled
+                    ? 'bg-primary border-primary/60'
+                    : 'bg-muted border-border/60 dark:bg-neutral-800'
+                )}
+              >
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    'inline-block h-4 w-4 transform rounded-full bg-white shadow-sm transition-transform duration-200',
+                    passwordEnabled ? 'translate-x-[calc(100%+2px)]' : 'translate-x-0.5'
+                  )}
+                />
+              </button>
+            </div>
+
+            {passwordEnabled && (
+              <div className="relative">
+                <Lock
+                  aria-hidden="true"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground"
+                />
+                <input
+                  id="edit-password-input"
+                  type="password"
+                  value={passwordValue}
+                  onChange={(e) => {
+                    setPasswordValue(e.target.value);
+                    setPasswordError(null);
+                  }}
+                  placeholder={
+                    currentPasswordProtected
+                      ? 'اتركه فارغاً للإبقاء على كلمة المرور الحالية'
+                      : 'كلمة مرور تُطلب من الزائر قبل فتح الرابط'
+                  }
+                  autoComplete="new-password"
+                  aria-invalid={passwordError ? true : undefined}
+                  aria-describedby={passwordError ? 'edit-password-error' : 'edit-password-hint'}
+                  className="w-full h-11 pr-10 pl-4 rounded-xl border border-border/60 dark:border-neutral-800 bg-background dark:bg-neutral-950/60 text-sm font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 shadow-xs"
+                />
+                <p
+                  id="edit-password-hint"
+                  className="text-[11px] text-muted-foreground/70 mt-1.5 leading-relaxed"
+                >
+                  تُحفظ كلمة المرور مشفّرةً ولا يمكن استرجاعها؛ لمنع الحماية اترك الحقل فارغاً وأطفئ
+                  المفتاح.
+                </p>
+              </div>
+            )}
+
+            {passwordError && (
+              <p
+                id="edit-password-error"
+                role="alert"
+                className="text-xs font-medium text-destructive flex items-center gap-1.5"
+              >
+                <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                {passwordError}
+              </p>
+            )}
           </div>
 
           {/* Dynamic Error Feedback */}

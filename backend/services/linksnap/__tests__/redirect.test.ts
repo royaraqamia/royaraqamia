@@ -19,6 +19,7 @@ const linkFixture: ShortLink = {
   updatedAt: now,
   isBlocked: false,
   expiresAt: null,
+  passwordHash: null,
 };
 
 const summaryFixture: LinkAnalyticsSummary = {
@@ -55,6 +56,7 @@ describe('isReservedShortCode', () => {
     expect(isReservedShortCode('has.dot')).toBe(true);
     expect(isReservedShortCode('api')).toBe(true);
     expect(isReservedShortCode('favicon.ico')).toBe(true);
+    expect(isReservedShortCode('unlock')).toBe(true);
   });
 
   it('allows normal short codes', () => {
@@ -128,7 +130,28 @@ describe('RedirectUrlService.execute', () => {
     await expect(
       service.execute('page.json', { referrer: null, userAgent: null, ipCountry: null })
     ).rejects.toThrow('Short link not found.');
+    await expect(
+      service.execute('unlock', { referrer: null, userAgent: null, ipCountry: null })
+    ).rejects.toThrow(ShortLinkRedirectError);
     expect(shortLinkRepository.findByCode).not.toHaveBeenCalled();
+    expect(analyticsRepository.recordClick).not.toHaveBeenCalled();
+  });
+
+  it('throws password-protected when the link has a password hash', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...linkFixture,
+      passwordHash: 'scrypt:abc:def',
+    });
+
+    const service = new RedirectUrlService(shortLinkRepository, analyticsRepository);
+
+    await expect(
+      service.execute('abc123', { referrer: null, userAgent: null, ipCountry: null })
+    ).rejects.toThrow(ShortLinkRedirectError);
+    await expect(
+      service.execute('abc123', { referrer: null, userAgent: null, ipCountry: null })
+    ).rejects.toMatchObject({ kind: 'password-protected' });
     expect(analyticsRepository.recordClick).not.toHaveBeenCalled();
   });
 

@@ -3,6 +3,7 @@ import { ShortLink } from '@/shared/contracts/linksnap';
 import { SecurityValidator } from '@/backend/services/linksnap/security-validator';
 import { CodeGenerator } from '@/backend/services/linksnap/code-generator';
 import { AppError } from '@/backend/shared/errors';
+import { hashPassword } from '@/backend/shared/password-hash';
 
 const MAX_CODE_ATTEMPTS = 5;
 
@@ -13,7 +14,8 @@ export class ShortenUrlService {
     originalUrl: string,
     userId: string | null,
     customCode?: string,
-    expiresAt?: Date | null
+    expiresAt?: Date | null,
+    password?: string
   ): Promise<ShortLink> {
     const sanitizedUrl = SecurityValidator.validateUrl(originalUrl);
 
@@ -58,6 +60,7 @@ export class ShortenUrlService {
       updatedAt: now,
       isBlocked: false,
       expiresAt: expiresAt ?? null,
+      passwordHash: password ? hashPassword(password) : null,
     };
 
     return await this.shortLinkRepository.create(shortLink);

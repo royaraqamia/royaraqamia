@@ -71,3 +71,12 @@ export function slugAvailabilityRateLimitPolicy(ip: string): RateLimitPolicy {
     message: 'تم تجاوز حد الطلب: التحقق من توفر الرموز محدود بـ 60 استعلامًا في الدقيقة.',
   };
 }
+
+export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `link-unlock:${ip}`,
+    limit: 15,
+    windowMs: 10 * 60 * 1000,
+    message: 'تم تجاوز حد الطلب: محاولات فتح الروابط محدودة بـ 15 محاولة كل 10 دقائق.',
+  };
+}
