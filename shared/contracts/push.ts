@@ -33,6 +33,7 @@ export const PUSH_URL_BY_TYPE: Record<NotificationType, string> = {
   certificate_issued: '/verify',
   post_published: '/blogpress',
   habit_reminder: '/habitflow',
+  recovery_nudge: '/habitflow',
   expense_alert: '/spendtrack',
   link_clicked: '/linksnap',
   system_announcement: '/',

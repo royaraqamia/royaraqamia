@@ -5,6 +5,7 @@ export type NotificationType =
   | 'certificate_issued'
   | 'post_published'
   | 'habit_reminder'
+  | 'recovery_nudge'
   | 'expense_alert'
   | 'link_clicked'
   | 'system_announcement';

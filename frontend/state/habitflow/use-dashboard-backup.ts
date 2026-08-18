@@ -6,6 +6,7 @@ export interface DashboardBackup {
   fileInputRef: React.RefObject<HTMLInputElement | null>;
   showImportConfirm: boolean;
   handleDownloadBackup: () => Promise<void>;
+  handleDownloadCsv: () => Promise<void>;
   handleImportBackupFile: (file: File) => void;
   confirmImport: () => Promise<void>;
   cancelImport: () => void;
@@ -32,6 +33,26 @@ export function useDashboardBackup(refreshData: () => Promise<void>): DashboardB
     } catch (e) {
       logger.error('Failed to download backup', { error: String(e) });
       toast.error('فشل تحميل النسخة الاحتياطية');
+    }
+  };
+
+  const handleDownloadCsv = async () => {
+    try {
+      const { ApiClient } = await import('@/frontend/api/habitflow/habit-api');
+      const content = await ApiClient.exportCsv();
+      const blob = new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `habitflow_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success('تم تصدير العادات والسجلات بنجاح');
+    } catch (e) {
+      logger.error('Failed to export CSV', { error: String(e) });
+      toast.error('فشل تصدير CSV');
     }
   };
 
@@ -75,6 +96,7 @@ export function useDashboardBackup(refreshData: () => Promise<void>): DashboardB
     fileInputRef,
     showImportConfirm,
     handleDownloadBackup,
+    handleDownloadCsv,
     handleImportBackupFile,
     confirmImport,
     cancelImport,

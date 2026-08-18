@@ -4,7 +4,7 @@ import React from 'react';
 import { useReducedMotion } from 'motion/react';
 import { HabitLog } from '@/shared/contracts/habitflow';
 import { Card } from '@/frontend/ui/primitives/card';
-import { CalendarDays, Sparkles, CheckCircle2 } from 'lucide-react';
+import { CalendarDays, Sparkles, CheckCircle2, Snowflake } from 'lucide-react';
 
 interface CalendarGridProps {
   calendarGrid: { date: string; dayLabel: string; isToday: boolean }[];
@@ -14,7 +14,18 @@ interface CalendarGridProps {
   activeDate: string;
 }
 
-function getCellStyle(completedCount: number, totalCount: number): React.CSSProperties {
+function getCellStyle(
+  completedCount: number,
+  totalCount: number,
+  skipCount = 0
+): React.CSSProperties {
+  if (skipCount > 0 && completedCount === 0) {
+    return {
+      background: 'color-mix(in srgb, hsl(var(--info)) 14%, transparent)',
+      borderColor: 'color-mix(in srgb, hsl(var(--info)) 45%, transparent)',
+    };
+  }
+
   if (totalCount === 0 || completedCount === 0) return {};
 
   const pct = completedCount / totalCount;
@@ -118,7 +129,10 @@ export function CalendarGrid({
                 const completedCount = logs.filter(
                   (l) => l.date === gridItem.date && l.completed
                 ).length;
-                const cellStyle = getCellStyle(completedCount, habitsCount);
+                const skipCount = logs.filter(
+                  (l) => l.date === gridItem.date && l.kind === 'skip'
+                ).length;
+                const cellStyle = getCellStyle(completedCount, habitsCount, skipCount);
                 const dayNum = gridItem.date.includes('-')
                   ? parseInt(gridItem.date.split('-').pop() || '0', 10) ||
                     new Date(gridItem.date).getDate()
@@ -158,7 +172,9 @@ export function CalendarGrid({
                       }
                     }}
                     style={cellStyle}
-                    aria-label={`${completedCount} من أصل ${habitsCount} عادات مكتملة في ${gridItem.date}${isToday ? ' (اليوم)' : ''}`}
+                    aria-label={`${completedCount} من أصل ${habitsCount} عادات مكتملة في ${gridItem.date}${
+                      skipCount > 0 ? `، ${skipCount} عادة مجمّدة` : ''
+                    }${isToday ? ' (اليوم)' : ''}`}
                     aria-current={isToday ? 'date' : undefined}
                     aria-pressed={isSelected}
                     className={`
@@ -188,8 +204,8 @@ export function CalendarGrid({
                     </span>
 
                     {/* Bottom band: Completed Habits Pill Badge */}
-                    <div className="h-4 sm:h-5 flex items-center justify-center w-full">
-                      {completedCount > 0 ? (
+                    <div className="h-4 sm:h-5 flex items-center justify-center gap-1 w-full">
+                      {completedCount > 0 && (
                         <span className="inline-flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] font-extrabold leading-none px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-full bg-background/85 text-foreground border border-border/60 backdrop-blur-md shadow-2xs transition-transform duration-300 group-hover:scale-105">
                           <CheckCircle2
                             className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary shrink-0"
@@ -197,7 +213,17 @@ export function CalendarGrid({
                           />
                           <span>{completedCount}</span>
                         </span>
-                      ) : (
+                      )}
+                      {skipCount > 0 && (
+                        <span className="inline-flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[10px] font-extrabold leading-none px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-full bg-background/85 text-info border border-info/40 backdrop-blur-md shadow-2xs transition-transform duration-300 group-hover:scale-105">
+                          <Snowflake
+                            className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-info shrink-0"
+                            aria-hidden="true"
+                          />
+                          <span>{skipCount}</span>
+                        </span>
+                      )}
+                      {completedCount === 0 && skipCount === 0 && (
                         <span className="text-[10px] opacity-0 group-hover:opacity-40 transition-opacity font-medium">
                           0
                         </span>

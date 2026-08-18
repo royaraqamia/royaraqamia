@@ -128,6 +128,11 @@ export class ApiClient {
     );
   }
 
+  static async exportCsv() {
+    const data = await request<{ content: string }>('/habitflow/api/export');
+    return data.content ?? '';
+  }
+
   static async importBackup(parsedData: unknown): Promise<boolean> {
     await request('/habitflow/api/backup', {
       method: 'POST',

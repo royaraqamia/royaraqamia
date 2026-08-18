@@ -109,6 +109,7 @@ describe('toPushUrl', () => {
     expect(PUSH_URL_BY_TYPE.certificate_issued).toBe('/verify');
     expect(PUSH_URL_BY_TYPE.post_published).toBe('/blogpress');
     expect(PUSH_URL_BY_TYPE.habit_reminder).toBe('/habitflow');
+    expect(PUSH_URL_BY_TYPE.recovery_nudge).toBe('/habitflow');
     expect(PUSH_URL_BY_TYPE.expense_alert).toBe('/spendtrack');
     expect(PUSH_URL_BY_TYPE.link_clicked).toBe('/linksnap');
     expect(PUSH_URL_BY_TYPE.system_announcement).toBe('/');

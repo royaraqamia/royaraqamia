@@ -129,6 +129,17 @@ export async function exportBackup(): Promise<HttpResult> {
   }
 }
 
+export async function exportHabitsCsv(): Promise<HttpResult> {
+  try {
+    const { user, client } = await getOptionalUser();
+    const { service } = createHabitBackupService(user?.id, client ?? undefined);
+    const content = await service.exportCsv();
+    return jsonResult(200, { content });
+  } catch (error) {
+    return errorResult(error);
+  }
+}
+
 export async function restoreBackup(body: HabitRestoreInput): Promise<HttpResult> {
   try {
     const { user, client } = await getOptionalUser();
