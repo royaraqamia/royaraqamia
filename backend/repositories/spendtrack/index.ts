@@ -13,6 +13,27 @@ import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spe
 export function createSpendtrackRepository(
   supabase: SupabaseClient<Database>
 ): SpendtrackRepository {
+  async function attachSplits(rows: Array<Record<string, unknown>>): Promise<void> {
+    const ids = rows.map((r) => r.id as string).filter(Boolean);
+    if (ids.length === 0) return;
+
+    const { data: splits } = await supabase
+      .from('expense_splits')
+      .select('id, expense_id, category_id, amount')
+      .in('expense_id', ids);
+
+    const byExpense = new Map<string, Record<string, unknown>[]>();
+    for (const s of splits ?? []) {
+      const arr = byExpense.get(s.expense_id) ?? [];
+      arr.push(s);
+      byExpense.set(s.expense_id, arr);
+    }
+
+    for (const row of rows) {
+      row.splits = byExpense.get(row.id as string) ?? [];
+    }
+  }
+
   return {
     async getUserCategories(userId: string): Promise<Category[]> {
       const { data } = (await supabase
@@ -151,6 +172,8 @@ export function createSpendtrackRepository(
         };
       }) as ExpenseWithCategory[];
 
+      await attachSplits(expenses as unknown as Array<Record<string, unknown>>);
+
       return {
         expenses: expenses,
         categories: safeCategories,
@@ -177,13 +200,16 @@ export function createSpendtrackRepository(
       }
 
       const { data: rawExpenses } = await query;
-      return (rawExpenses ?? []).map((row: Record<string, unknown>) => {
+      const expenses = (rawExpenses ?? []).map((row: Record<string, unknown>) => {
         const cats = row.categories as { name: string; color_hex: string } | null;
         return {
           ...row,
           categories: cats ? { name: cats.name, colorHex: cats.color_hex } : undefined,
         };
       }) as ExpenseWithCategory[];
+
+      await attachSplits(expenses as unknown as Array<Record<string, unknown>>);
+      return expenses;
     },
 
     async createExpense(input: {
@@ -192,9 +218,20 @@ export function createSpendtrackRepository(
       category_id: string;
       date: string;
       description: string | null;
-    }): Promise<void> {
-      const { error } = await supabase.from('expenses').insert(input);
+      currency?: string | null;
+      splits?: { category_id: string; amount: number }[];
+    }): Promise<string> {
+      const { splits, ...expense } = input;
+      const { data, error } = await supabase.from('expenses').insert(expense).select('id').single();
       if (error) throw new Error(error.message);
+      const expenseId = data?.id;
+      if (splits && splits.length > 0 && expenseId) {
+        const { error: splitError } = await supabase
+          .from('expense_splits')
+          .insert(splits.map((s) => ({ expense_id: expenseId, ...s })));
+        if (splitError) throw new Error(splitError.message);
+      }
+      return expenseId;
     },
 
     async createExpensesMany(
@@ -219,15 +256,33 @@ export function createSpendtrackRepository(
         category_id: string;
         date: string;
         description: string | null;
+        currency?: string | null;
+        splits?: { category_id: string; amount: number }[] | null;
       }
     ): Promise<void> {
+      const { splits, ...expense } = input;
       const { error } = await supabase
         .from('expenses')
-        .update({ ...input, updated_at: new Date().toISOString() })
+        .update({ ...expense, updated_at: new Date().toISOString() })
         .eq('id', expenseId)
         .eq('user_id', userId);
 
       if (error) throw new Error(error.message);
+
+      if (splits !== undefined) {
+        const { error: delError } = await supabase
+          .from('expense_splits')
+          .delete()
+          .eq('expense_id', expenseId);
+        if (delError) throw new Error(delError.message);
+
+        if (splits && splits.length > 0) {
+          const { error: insError } = await supabase
+            .from('expense_splits')
+            .insert(splits.map((s) => ({ expense_id: expenseId, ...s })));
+          if (insError) throw new Error(insError.message);
+        }
+      }
     },
 
     async deleteExpense(expenseId: string, userId: string): Promise<void> {

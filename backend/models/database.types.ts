@@ -215,6 +215,7 @@ export type Database = {
           amount: number;
           category_id: string;
           created_at: string;
+          currency: string | null;
           date: string;
           description: string | null;
           id: string;
@@ -225,6 +226,7 @@ export type Database = {
           amount: number;
           category_id: string;
           created_at?: string;
+          currency?: string | null;
           date: string;
           description?: string | null;
           id?: string;
@@ -235,6 +237,7 @@ export type Database = {
           amount?: number;
           category_id?: string;
           created_at?: string;
+          currency?: string | null;
           date?: string;
           description?: string | null;
           id?: string;
@@ -247,6 +250,45 @@ export type Database = {
             columns: ['category_id'];
             isOneToOne: false;
             referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      expense_splits: {
+        Row: {
+          amount: number;
+          category_id: string;
+          created_at: string;
+          expense_id: string;
+          id: string;
+        };
+        Insert: {
+          amount: number;
+          category_id: string;
+          created_at?: string;
+          expense_id: string;
+          id?: string;
+        };
+        Update: {
+          amount?: number;
+          category_id?: string;
+          created_at?: string;
+          expense_id?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expense_splits_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expense_splits_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: false;
+            referencedRelation: 'expenses';
             referencedColumns: ['id'];
           },
         ];

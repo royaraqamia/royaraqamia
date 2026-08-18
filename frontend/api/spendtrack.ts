@@ -8,6 +8,8 @@ type ExpenseInput = {
   category_id: string;
   date: string;
   description?: string;
+  currency?: string;
+  splits?: { category_id: string; amount: number }[];
 };
 
 type ExpensePayload = {
@@ -15,6 +17,8 @@ type ExpensePayload = {
   category_id: string;
   date: string;
   description: string | null;
+  currency?: string | null;
+  splits?: { category_id: string; amount: number }[];
 };
 
 function toPayload(input: ExpenseInput): ExpensePayload {
@@ -23,6 +27,8 @@ function toPayload(input: ExpenseInput): ExpensePayload {
     category_id: input.category_id,
     date: input.date,
     description: input.description?.trim()?.slice(0, 200) || null,
+    currency: input.currency ?? null,
+    splits: input.splits && input.splits.length > 0 ? input.splits : undefined,
   };
 }
 

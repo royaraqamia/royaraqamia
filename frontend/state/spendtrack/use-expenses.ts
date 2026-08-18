@@ -16,6 +16,8 @@ type SaveOptions = {
   category_id: string;
   date: string;
   description?: string;
+  currency?: string;
+  splits?: { category_id: string; amount: number }[];
 };
 
 export function useSaveExpense(expenseId?: string) {
@@ -62,6 +64,8 @@ export function useDeleteExpense(expense: ExpenseWithCategory, description: stri
           category_id: expense.category_id,
           date: expense.date,
           description: expense.description ?? undefined,
+          currency: expense.currency ?? undefined,
+          splits: expense.splits?.map((s) => ({ category_id: s.category_id, amount: s.amount })),
         }).then((result) => {
           if (result?.success) {
             toast.success('تم التراجع عن الحذف', {

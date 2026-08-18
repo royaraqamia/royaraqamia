@@ -49,6 +49,31 @@ export function createExpenseAlertNotifier(): (info: ExpenseAlertInfo) => void {
           keys: string[];
         }[] = [];
 
+        const { data: monthExpenses } = await admin
+          .from('expenses')
+          .select('id, amount, category_id')
+          .eq('user_id', userId)
+          .gte('date', `${month}-01`)
+          .lte('date', `${month}-${daysInMonth(month)}`);
+
+        const expenseIds = (monthExpenses ?? []).map((e) => e.id).filter(Boolean);
+        const { data: splits } =
+          expenseIds.length > 0
+            ? await admin
+                .from('expense_splits')
+                .select('expense_id, category_id, amount')
+                .in('expense_id', expenseIds)
+            : { data: null };
+
+        const splitsByExpense = new Map<string, { category_id: string; amount: number }[]>();
+        for (const split of splits ?? []) {
+          const arr = splitsByExpense.get(split.expense_id) ?? [];
+          arr.push(split);
+          splitsByExpense.set(split.expense_id, arr);
+        }
+
+        const overallTotal = (monthExpenses ?? []).reduce((sum, e) => sum + Number(e.amount), 0);
+
         const { data: overallRow } = await admin
           .from('budgets')
           .select('amount')
@@ -58,13 +83,6 @@ export function createExpenseAlertNotifier(): (info: ExpenseAlertInfo) => void {
           .maybeSingle();
         if (overallRow) {
           const overallBudget = Number(overallRow.amount);
-          const { data: overallRows } = await admin
-            .from('expenses')
-            .select('amount')
-            .eq('user_id', userId)
-            .gte('date', `${month}-01`)
-            .lte('date', `${month}-${daysInMonth(month)}`);
-          const overallTotal = (overallRows ?? []).reduce((s, r) => s + Number(r.amount), 0);
           if (overallTotal > overallBudget) {
             alerts.push({
               title: 'تجاوزت ميزانيتك الشهرية',
@@ -87,14 +105,18 @@ export function createExpenseAlertNotifier(): (info: ExpenseAlertInfo) => void {
           .maybeSingle();
         if (categoryBudget) {
           const budget = Number(categoryBudget.amount);
-          const { data: catRows } = await admin
-            .from('expenses')
-            .select('amount')
-            .eq('user_id', userId)
-            .eq('category_id', categoryId)
-            .gte('date', `${month}-01`)
-            .lte('date', `${month}-${daysInMonth(month)}`);
-          const catTotal = (catRows ?? []).reduce((s, r) => s + Number(r.amount), 0);
+          const catTotal = (monthExpenses ?? []).reduce((sum, e) => {
+            const expenseSplits = splitsByExpense.get(e.id) ?? [];
+            if (expenseSplits.length > 0) {
+              return (
+                sum +
+                expenseSplits
+                  .filter((s) => s.category_id === categoryId)
+                  .reduce((s, s2) => s + Number(s2.amount), 0)
+              );
+            }
+            return sum + (e.category_id === categoryId ? Number(e.amount) : 0);
+          }, 0);
           if (catTotal > budget) {
             alerts.push({
               title: 'تجاوزت ميزانية التصنيف',

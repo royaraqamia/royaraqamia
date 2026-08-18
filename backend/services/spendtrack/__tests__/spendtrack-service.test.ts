@@ -326,3 +326,139 @@ describe('SpendtrackService CSV export/import', () => {
     ]);
   });
 });
+
+describe('SpendtrackService split expense validation', () => {
+  const ownCategories = [
+    { id: 'c-1', user_id: 'u-1', name: 'أكل', colorHex: '#10b981', created_at: '' },
+    { id: 'c-2', user_id: 'u-1', name: 'وقود', colorHex: '#0ea5e9', created_at: '' },
+  ];
+
+  function makeSplitRepo() {
+    const { repository } = makeRepo();
+    (repository.getUserCategories as ReturnType<typeof vi.fn>).mockResolvedValue(ownCategories);
+    (repository.createExpense as ReturnType<typeof vi.fn>).mockResolvedValue('exp-1');
+    (repository.updateExpense as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+    return { repository };
+  }
+
+  it('passes splits and currency through createExpense', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await service.createExpense('u-1', {
+      ...expenseInput,
+      currency: 'SAR',
+      splits: [
+        { category_id: 'c-1', amount: 30 },
+        { category_id: 'c-2', amount: 20 },
+      ],
+    });
+
+    expect(repository.createExpense).toHaveBeenCalledWith({
+      user_id: 'u-1',
+      ...expenseInput,
+      currency: 'SAR',
+      splits: [
+        { category_id: 'c-1', amount: 30 },
+        { category_id: 'c-2', amount: 20 },
+      ],
+    });
+  });
+
+  it('rejects splits that do not sum to the total', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await expect(
+      service.createExpense('u-1', {
+        ...expenseInput,
+        splits: [
+          { category_id: 'c-1', amount: 10 },
+          { category_id: 'c-2', amount: 10 },
+        ],
+      })
+    ).rejects.toThrow('مجموع التقسيمات يجب أن يساوي المبلغ الإجمالي');
+    expect(repository.createExpense).not.toHaveBeenCalled();
+  });
+
+  it('rejects duplicate categories in splits', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await expect(
+      service.createExpense('u-1', {
+        ...expenseInput,
+        splits: [
+          { category_id: 'c-1', amount: 25 },
+          { category_id: 'c-1', amount: 25 },
+        ],
+      })
+    ).rejects.toThrow('لا يمكن تكرار التصنيف في التقسيم');
+  });
+
+  it('rejects non-positive split amounts', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await expect(
+      service.createExpense('u-1', {
+        ...expenseInput,
+        splits: [{ category_id: 'c-1', amount: 0 }],
+      })
+    ).rejects.toThrow('مبلغ التقسيم غير صالح');
+  });
+
+  it('rejects splits referencing categories the user does not own', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await expect(
+      service.createExpense('u-1', {
+        ...expenseInput,
+        splits: [{ category_id: 'someone-elses', amount: 50 }],
+      })
+    ).rejects.toThrow('تصنيف غير مسموح في التقسيم');
+  });
+
+  it('validates splits and currency on update too', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await service.updateExpense('exp-1', 'u-1', {
+      ...expenseInput,
+      currency: 'EGP',
+      splits: [{ category_id: 'c-1', amount: 50 }],
+    });
+
+    expect(repository.updateExpense).toHaveBeenCalledWith('exp-1', 'u-1', {
+      ...expenseInput,
+      currency: 'EGP',
+      splits: [{ category_id: 'c-1', amount: 50 }],
+    });
+
+    await expect(
+      service.updateExpense('exp-1', 'u-1', { ...expenseInput, currency: 'XYZ' })
+    ).rejects.toThrow('عملة غير مدعومة');
+    expect(repository.updateExpense).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects an unsupported per-expense currency on create', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await expect(
+      service.createExpense('u-1', { ...expenseInput, currency: 'XYZ' })
+    ).rejects.toThrow('عملة غير مدعومة');
+    expect(repository.createExpense).not.toHaveBeenCalled();
+  });
+
+  it('allows currency-less expenses without touching category ownership checks', async () => {
+    const { repository } = makeSplitRepo();
+    const service = makeService(repository);
+
+    await service.createExpense('u-1', expenseInput);
+
+    expect(repository.getUserCategories).not.toHaveBeenCalled();
+    expect(repository.createExpense).toHaveBeenCalledWith({ user_id: 'u-1', ...expenseInput });
+  });
+});

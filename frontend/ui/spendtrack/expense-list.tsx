@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/frontend/ui/primitives/dialog';
-import { Trash2, Loader2, Receipt, AlertCircle } from 'lucide-react';
+import { Trash2, Loader2, Receipt, AlertCircle, PieChart } from 'lucide-react';
 import { CreateExpenseDialog, EditExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { useDeleteExpense, useExpensePagination } from '@/frontend/state/spendtrack/use-expenses';
@@ -115,7 +115,11 @@ function ExpenseRow({
     calendar: 'islamic-umalqura',
     numberingSystem: 'latn',
   }).format(parseISO(expense.date));
-  const rowLabel = `${expense.description || 'بدون وصف'}، ${formatMoney(expense.amount, currency)}، ${formattedDate}`;
+  const effectiveCurrency = expense.currency ?? currency;
+  const rowLabel = `${expense.description || 'بدون وصف'}، ${formatMoney(
+    expense.amount,
+    effectiveCurrency
+  )}، ${formattedDate}`;
 
   return (
     <div
@@ -156,13 +160,40 @@ function ExpenseRow({
             {expense.categories?.name && <span className="text-muted-foreground/40">&middot;</span>}
             <time className="shrink-0 text-muted-foreground/70">{formattedDate}</time>
           </div>
+
+          {expense.splits && expense.splits.length > 0 && (
+            <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+              <PieChart className="size-3 shrink-0 text-info" aria-hidden="true" />
+              {expense.splits.map((split) => {
+                const splitCategory = categories.find((cat) => cat.id === split.category_id);
+                return (
+                  <span
+                    key={split.id}
+                    className="inline-flex items-center gap-1 text-[11px] font-medium px-1.5 py-0.5 rounded-full bg-muted/70 text-muted-foreground"
+                  >
+                    <span
+                      className="size-1.5 rounded-full shrink-0"
+                      style={{
+                        backgroundColor: splitCategory?.colorHex ?? 'hsl(var(--muted-foreground))',
+                      }}
+                      aria-hidden="true"
+                    />
+                    <span className="truncate max-w-24">{splitCategory?.name ?? '—'}</span>
+                    <span className="tabular-nums font-bold">
+                      {formatMoney(split.amount, effectiveCurrency)}
+                    </span>
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Amount & Actions */}
       <div className="flex items-center gap-2.5 sm:gap-3.5 shrink-0">
         <span className="font-bold text-sm sm:text-base tabular-nums tracking-tight text-foreground">
-          {formatMoney(expense.amount, currency)}
+          {formatMoney(expense.amount, effectiveCurrency)}
         </span>
 
         <div className="flex items-center gap-1">

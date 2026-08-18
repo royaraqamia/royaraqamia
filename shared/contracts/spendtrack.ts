@@ -6,6 +6,18 @@ export type Category = {
   created_at: string;
 };
 
+export type ExpenseSplit = {
+  id: string;
+  expense_id: string;
+  category_id: string;
+  amount: number;
+};
+
+export type ExpenseSplitInput = {
+  category_id: string;
+  amount: number;
+};
+
 export type Expense = {
   id: string;
   user_id: string;
@@ -15,6 +27,8 @@ export type Expense = {
   date: string;
   created_at: string;
   updated_at: string;
+  currency?: string | null;
+  splits?: ExpenseSplit[];
   categories?: Pick<Category, 'name' | 'colorHex'>;
 };
 

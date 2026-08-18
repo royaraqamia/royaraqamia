@@ -40,7 +40,9 @@ export interface SpendtrackRepository {
     category_id: string;
     date: string;
     description: string | null;
-  }): Promise<void>;
+    currency?: string | null;
+    splits?: { category_id: string; amount: number }[];
+  }): Promise<string>;
   createExpensesMany(
     inputs: {
       user_id: string;
@@ -58,6 +60,8 @@ export interface SpendtrackRepository {
       category_id: string;
       date: string;
       description: string | null;
+      currency?: string | null;
+      splits?: { category_id: string; amount: number }[] | null;
     }
   ): Promise<void>;
   deleteExpense(expenseId: string, userId: string): Promise<void>;

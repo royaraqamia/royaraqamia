@@ -98,7 +98,7 @@ export async function createExpense(body: Record<string, unknown>): Promise<Http
       return jsonResult(401, { error: 'غير مصرح' });
     }
 
-    const { amount, category_id, date, description } = body;
+    const { amount, category_id, date, description, currency, splits } = body;
 
     try {
       await createSpendtrackService(supabase).createExpense(user.id, {
@@ -106,6 +106,8 @@ export async function createExpense(body: Record<string, unknown>): Promise<Http
         category_id: category_id as SpendtrackExpenseInput['category_id'],
         date: date as SpendtrackExpenseInput['date'],
         description: (description ?? null) as SpendtrackExpenseInput['description'],
+        currency: (currency ?? null) as SpendtrackExpenseInput['currency'],
+        splits: splits as SpendtrackExpenseInput['splits'],
       });
     } catch (error) {
       return jsonResult(400, {
@@ -131,7 +133,7 @@ export async function updateExpense(
       return jsonResult(401, { error: 'غير مصرح' });
     }
 
-    const { amount, category_id, date, description } = body;
+    const { amount, category_id, date, description, currency, splits } = body;
 
     try {
       await createSpendtrackService(supabase).updateExpense(id, user.id, {
@@ -139,6 +141,8 @@ export async function updateExpense(
         category_id: category_id as SpendtrackExpenseInput['category_id'],
         date: date as SpendtrackExpenseInput['date'],
         description: (description ?? null) as SpendtrackExpenseInput['description'],
+        currency: (currency ?? null) as SpendtrackExpenseInput['currency'],
+        splits: (splits ?? null) as SpendtrackExpenseInput['splits'],
       });
     } catch (error) {
       return jsonResult(400, {

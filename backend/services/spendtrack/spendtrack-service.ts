@@ -32,6 +32,8 @@ export interface SpendtrackExpenseInput {
   category_id: string;
   date: string;
   description: string | null;
+  currency?: string | null;
+  splits?: { category_id: string; amount: number }[];
 }
 
 export interface ExpenseAlertInfo {
@@ -192,7 +194,7 @@ export class SpendtrackService {
     return this.repository.getTransactions(query);
   }
 
-  async createExpense(userId: string, input: SpendtrackExpenseInput): Promise<void> {
+  private async validateExpenseInput(input: SpendtrackExpenseInput, userId: string): Promise<void> {
     if (isNaN(input.amount) || input.amount <= 0) {
       throw new Error('مبلغ غير صالح');
     }
@@ -202,6 +204,36 @@ export class SpendtrackService {
     if (!input.date) {
       throw new Error('التاريخ مطلوب');
     }
+
+    const currency = input.currency ?? null;
+    if (currency !== null && !isSupportedCurrency(currency)) {
+      throw new Error('عملة غير مدعومة');
+    }
+
+    const splits = input.splits ?? [];
+    if (splits.length > 0) {
+      const seen = new Set<string>();
+      let sum = 0;
+      for (const split of splits) {
+        if (!split.category_id) throw new Error('التصنيف مطلوب في التقسيم');
+        if (isNaN(split.amount) || split.amount <= 0) throw new Error('مبلغ التقسيم غير صالح');
+        if (seen.has(split.category_id)) throw new Error('لا يمكن تكرار التصنيف في التقسيم');
+        seen.add(split.category_id);
+        sum += split.amount;
+      }
+      if (Math.abs(sum - input.amount) > 0.01) {
+        throw new Error('مجموع التقسيمات يجب أن يساوي المبلغ الإجمالي');
+      }
+      const allowed = await this.repository.getUserCategories(userId);
+      const allowedIds = new Set(allowed.map((category) => category.id));
+      for (const split of splits) {
+        if (!allowedIds.has(split.category_id)) throw new Error('تصنيف غير مسموح في التقسيم');
+      }
+    }
+  }
+
+  async createExpense(userId: string, input: SpendtrackExpenseInput): Promise<void> {
+    await this.validateExpenseInput(input, userId);
 
     await this.repository.createExpense({ user_id: userId, ...input });
 
@@ -272,9 +304,7 @@ export class SpendtrackService {
     userId: string,
     input: SpendtrackExpenseInput
   ): Promise<void> {
-    if (isNaN(input.amount) || input.amount <= 0) {
-      throw new Error('مبلغ غير صالح');
-    }
+    await this.validateExpenseInput(input, userId);
 
     await this.repository.updateExpense(expenseId, userId, input);
   }
