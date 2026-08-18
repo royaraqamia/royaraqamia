@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-08-18
+
+### Changed
+- align local migration timestamps with remote
+- update cross-cutting feature statuses (Phase 5/6 complete)
+- defer preload of decorative Aref Ruqaa logo font
+- add route-scoped CSS guardrail script
+- extract shared Tailwind @theme into app/theme.css
+- lazy-load below-the-fold sections to shrink initial JS
+- remove root loading boundary for direct HTML paint
+- serve /_next/image responses stale-while-revalidate
+- inline design-tokens.css to drop a render-blocking request
+- trim font preloads and lazy-load portfolio images
+
+### Added
+- add new testimonial and update existing one - Add new testimonial from شهد الحسن (متدربة - دورة UI/UX) - Update existing testimonial from نصرات الحلاق with minor formatting adjustment
+- save on Cmd/Ctrl+S in the editor
+- announce active page in mobile nav links
+- optimistic toggle with snapshot rollback
+- route-scope Tailwind CSS per product with scoped entries
+- add undo toasts for destructive actions
+- add Cmd+K quick-create actions across products
+- add category splits and per-expense currency
+- add CSV export and streak-frozen recovery nudges
+- add password-protected short links with unlock flow
+- add post export (markdown/html), duplicate, and editor reading progress
+- add live slug availability check and re-slugging
+- add per-row share sheet with copy fallback
+
+### Fixed
+- attach scoped CSS to unlock flow via route move and rewrite
+- restore corrupted Arabic text in product FeaturesBento sections
+
 ## [1.4.4] - 2026-08-17
 
 ### Changed
