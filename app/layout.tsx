@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import './global.css';
 import './dark-theme-override.css';
 import './toast.css';
@@ -15,6 +17,17 @@ import { FloatingActions } from '../frontend/ui/FloatingActions';
 import { SITE_NAME } from '@/frontend/shared/metadata';
 import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
+
+const designTokensCss = (() => {
+  try {
+    return readFileSync(
+      join(process.cwd(), 'public', 'design-system', 'lib', 'design-tokens.css'),
+      'utf8'
+    );
+  } catch {
+    return null;
+  }
+})();
 
 export const metadata: Metadata = {
   title: {
@@ -109,7 +122,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ar" dir="rtl" className={`${ibmPlexSansArabic.variable} ${arefRuqaa.variable}`}>
       <head>
-        <link rel="stylesheet" href="/design-system/lib/design-tokens.css" />
+        {designTokensCss ? (
+          <style dangerouslySetInnerHTML={{ __html: designTokensCss }} />
+        ) : (
+          <link rel="stylesheet" href="/design-system/lib/design-tokens.css" />
+        )}
         <link rel="manifest" href="/manifest.json" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
