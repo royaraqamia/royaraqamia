@@ -184,6 +184,7 @@ export function MobileMenu({
             href={link.href}
             className={`${baseClasses} ${stateClasses}`}
             onClick={handleMainLinkClick}
+            aria-current={isActive ? 'page' : undefined}
           >
             {content}
             <span
@@ -201,6 +202,7 @@ export function MobileMenu({
             href={link.href}
             className={`${baseClasses} ${stateClasses}`}
             onClick={handleMainLinkClick}
+            aria-current={isActive ? 'page' : undefined}
           >
             {content}
             <span
@@ -267,6 +269,7 @@ export function MobileMenu({
                     <Link
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
+                      aria-current={isLinkActive(sub.href) ? 'page' : undefined}
                       className="
                         group/sub relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl
                         text-sm font-medium text-neutral-600 dark:text-neutral-400
@@ -285,6 +288,7 @@ export function MobileMenu({
                     <a
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
+                      aria-current={isLinkActive(sub.href) ? 'page' : undefined}
                       className="
                         group/sub relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl
                         text-sm font-medium text-neutral-600 dark:text-neutral-400
