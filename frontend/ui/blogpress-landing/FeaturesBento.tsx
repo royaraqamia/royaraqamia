@@ -1,4 +1,4 @@
-﻿import { FileText, StickyNote, Search, Check, TriangleAlert, Sparkle } from 'lucide-react';
+import { FileText, StickyNote, Search, Check, TriangleAlert, Sparkle } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 
@@ -38,17 +38,17 @@ function bentoCardProps(rgba: string) {
 
 function EditorPreview() {
   const mdLines = [
-    '# Ù…Ø±Ø­Ø¨Ù‹Ø§ Ø¨Ø§Ù„Ø¹Ø§Ù„Ù…',
+    '# مرحبًا بالعالم',
     '',
-    'Ù…Ø±Ø­Ø¨Ù‹Ø§ Ø¨Ùƒ ÙÙŠ **Ø±Ø¤ÙŠØ© Ø±Ù‚Ù…ÙŠØ©** â€” Ù…Ø­Ø±Ù‘ÙØ±',
-    'Markdown Ø­Ø¯ÙŠØ« ÙŠØ¬Ø¹Ù„ Ø§Ù„ÙƒØªØ§Ø¨Ø©',
-    'Ù…ØªØ¹Ø©. Ø±ÙƒÙÙ‘Ø² Ø¹Ù„Ù‰ ÙƒÙ„Ù…Ø§ØªÙƒØŒ Ù„Ø§',
-    'Ø¹Ù„Ù‰ Ø§Ù„Ø£Ø¯ÙˆØ§Øª.',
+    'مرحبًا بك في **رؤية رقمية** — محرِّر',
+    'Markdown حديث يجعل الكتابة',
+    'متعة. ركِّز على كلماتك، لا',
+    'على الأدوات.',
     '',
-    '## Ù„Ù…Ø§Ø°Ø§ Ø±Ø¤ÙŠØ© Ø±Ù‚Ù…ÙŠØ©ØŸ',
-    '- Ù…Ø¹Ø§ÙŠÙ†Ø© ÙØ§Ø¦Ù‚Ø© Ø§Ù„Ø³Ù‘ÙØ±Ø¹Ø©',
-    '- Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ÙˆØ¯Ù‘ÙŽØ§Øª',
-    '- Ù…Ø­Ø³ÙŽÙ‘Ù† Ù„Ù…Ø­Ø±Ù‘ÙÙƒØ§Øª Ø§Ù„Ø¨Ø­Ø«',
+    '## لماذا رؤية رقمية؟',
+    '- معاينة فائقة السُّرعة',
+    '- إدارة المسودَّات',
+    '- محسَّن لمحرِّكات البحث',
   ];
 
   return (
@@ -75,7 +75,7 @@ function EditorPreview() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
           </span>
-          <span>Ø¬Ø§Ø±ÙŠ Ø§Ù„ØªÙ‘ÙŽØ­Ø±ÙŠØ±</span>
+          <span>جاري التَّحرير</span>
         </div>
       </div>
 
@@ -111,7 +111,7 @@ function EditorPreview() {
                   {line.split('**BlogPress**')[0]}
                   <span className="px-1.5 py-0.5 mx-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30 text-[11px] shadow-xs inline-flex items-center gap-1">
                     <Sparkle size={10} className="text-indigo-400 animate-pulse" />
-                    Ø±Ø¤ÙŠØ© Ø±Ù‚Ù…ÙŠØ©
+                    رؤية رقمية
                   </span>
                   {line.split('**BlogPress**')[1]}
                 </span>
@@ -130,19 +130,19 @@ function EditorPreview() {
 
 const draftStats = [
   {
-    label: 'Ù…Ù†Ø´ÙˆØ±',
+    label: 'منشور',
     value: '24',
     color: 'text-indigo-400',
     bgGradient: 'from-indigo-500 to-indigo-400',
   },
   {
-    label: 'Ù…Ø³ÙˆØ¯Ù‘ÙŽØ§Øª',
+    label: 'مسودَّات',
     value: '7',
     color: 'text-purple-400',
     bgGradient: 'from-purple-500 to-purple-400',
   },
   {
-    label: 'Ù…Ø¬Ø¯ÙˆÙ„',
+    label: 'مجدول',
     value: '3',
     color: 'text-violet-400',
     bgGradient: 'from-violet-500 to-violet-400',
@@ -158,10 +158,10 @@ function DraftsOverviewCard() {
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
           <StickyNote size={18} className="text-indigo-400" />
-          <span className="text-sm font-semibold text-neutral-200">Ù†Ø¸Ø±Ø© Ø¹Ø§Ù…Ù‘ÙŽØ©</span>
+          <span className="text-sm font-semibold text-neutral-200">نظرة عامَّة</span>
         </div>
         <span className="text-[11px] font-medium text-neutral-400 px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800">
-          Ø¢Ø®Ø± 30 ÙŠÙˆÙ…Ù‹Ø§
+          آخر 30 يومًا
         </span>
       </div>
 
@@ -196,7 +196,7 @@ function DraftsOverviewCard() {
       <div className="mt-5 pt-4 border-t border-neutral-800/80 flex items-center justify-between text-xs text-neutral-400">
         <span className="flex items-center gap-1.5 font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
-          Ø¥Ø¬Ù…Ø§Ù„ÙŠ Ø§Ù„Ù…Ù†Ø´ÙˆØ±Ø§Øª
+          إجمالي المنشورات
         </span>
         <span className="text-indigo-300 font-bold font-mono text-sm bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
           34
@@ -207,11 +207,11 @@ function DraftsOverviewCard() {
 }
 
 const seoChecks = [
-  { label: 'Ø§Ù„ÙˆØ³Ù… Ø§Ù„Ø¹Ù†ÙˆØ§Ù†ÙŠ', pass: true },
-  { label: 'Ø§Ù„ÙˆØµÙ Ø§Ù„ØªÙ‘ÙŽØ¹Ø±ÙŠÙÙŠ', pass: true },
-  { label: 'Ù‡ÙŠÙƒÙ„ Ø§Ù„Ø¹Ù†Ø§ÙˆÙŠÙ†', pass: true },
-  { label: 'Ø§Ù„Ù†Ù‘ÙŽØµ Ø§Ù„Ø¨Ø¯ÙŠÙ„ Ù„Ù„ØµÙ‘ÙÙˆØ±', pass: false },
-  { label: 'Ø³Ù‡ÙˆÙ„Ø© Ø§Ù„Ù‚Ø±Ø§Ø¡Ø©', pass: true },
+  { label: 'الوسم العنواني', pass: true },
+  { label: 'الوصف التَّعريفي', pass: true },
+  { label: 'هيكل العناوين', pass: true },
+  { label: 'النَّص البديل للصُّور', pass: false },
+  { label: 'سهولة القراءة', pass: true },
 ];
 
 function SEOPreview() {
@@ -220,9 +220,7 @@ function SEOPreview() {
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
           <Search size={18} className="text-indigo-400" />
-          <span className="text-sm font-semibold text-neutral-200">
-            Ù‚Ø§Ø¦Ù…Ø© ØªØ­Ø³ÙŠÙ† Ù…Ø­Ø±Ù‘ÙÙƒØ§Øª Ø§Ù„Ø¨Ø­Ø«
-          </span>
+          <span className="text-sm font-semibold text-neutral-200">قائمة تحسين محرِّكات البحث</span>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 font-mono shadow-xs">
           <Sparkle size={12} className="text-emerald-400" />
@@ -257,7 +255,7 @@ function SEOPreview() {
                   : 'text-amber-400/80 bg-amber-500/5'
               }`}
             >
-              {item.pass ? 'Ù…ÙƒØªÙ…Ù„' : 'ØªØ­Ø³ÙŠÙ†'}
+              {item.pass ? 'مكتمل' : 'تحسين'}
             </span>
           </div>
         ))}
@@ -265,8 +263,8 @@ function SEOPreview() {
 
       <div className="mt-5 pt-4 border-t border-neutral-800/80">
         <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
-          <span>Ù…Ø³ØªÙˆÙ‰ Ø§Ù„Ø¬ÙˆØ¯Ø©</span>
-          <span className="text-emerald-400 font-semibold">Ù…Ù…ØªØ§Ø²</span>
+          <span>مستوى الجودة</span>
+          <span className="text-emerald-400 font-semibold">ممتاز</span>
         </div>
         <div className="h-2 rounded-full bg-neutral-900 border border-neutral-800 overflow-hidden p-px">
           <div
@@ -299,18 +297,18 @@ export function FeaturesBento() {
         badge: (
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs sm:text-sm font-medium mb-6 backdrop-blur-md shadow-xs">
             <Sparkle size={14} className="text-indigo-400 animate-pulse" />
-            <span>Ù…ÙŠÙ‘ÙØ²Ø§Øª Ù‚ÙˆÙŠÙŽÙ‘Ø©</span>
+            <span>ميِّزات قويَّة</span>
           </div>
         ),
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-20',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight text-white',
-        titlePrefix: 'ÙƒÙ„ Ù…Ø§ ØªØ­ØªØ§Ø¬Ù‡ Ù„Ù€ ',
-        titleHighlight: 'ÙƒØªØ§Ø¨Ø© Ø£ÙØ¶Ù„',
+        titlePrefix: 'كل ما تحتاجه لـ ',
+        titleHighlight: 'كتابة أفضل',
         titleHighlightClassName:
           'bg-linear-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent',
         subtitle:
-          'Ù…Ù† Ø§Ù„ØªÙŽÙ‘Ø­Ø±ÙŠØ± Ø¨Ø§Ù„Ù€ Markdown Ø¥Ù„Ù‰ ØªØ­Ø³ÙŠÙ† Ù…Ø­Ø±ÙÙ‘ÙƒØ§Øª Ø§Ù„Ø¨Ø­Ø«ØŒ Ù†Ù…Ù†Ø­Ùƒ Ø§Ù„Ø£Ø¯ÙˆØ§Øª Ø§Ù„Ù„Ø§Ø²Ù…Ø© Ù„Ø¥Ù†Ø´Ø§Ø¡ Ù…Ø­ØªÙˆÙ‰ Ù…Ù…ÙŠÙŽÙ‘Ø².',
+          'من التَّحرير بالـ Markdown إلى تحسين محرِّكات البحث، نمنحك الأدوات اللازمة لإنشاء محتوى مميَّز.',
         subtitleClassName:
           'text-base sm:text-lg text-neutral-400 max-w-2xl mx-auto leading-relaxed font-normal',
         useEase: false,
@@ -319,8 +317,8 @@ export function FeaturesBento() {
     >
       <BentoCard
         {...bentoCardProps('rgba(139,92,246,1)')}
-        title="Ù…Ø­Ø±ÙÙ‘Ø± Markdown"
-        description="Ø§ÙƒØªØ¨ Ø¨Ù„ØºØ© Ø§Ù„Ù€ Markdown Ù…Ø¹ Ù…Ø¹Ø§ÙŠÙ†Ø© ÙÙˆØ±ÙŠÙŽÙ‘Ø©. Ù„Ø§ ØªØ´ØªÙŠØªØŒ ÙÙ‚Ø· ØªØ­Ø±ÙŠØ± Ø³Ø±ÙŠØ¹ ÙˆÙ†Ø¸ÙŠÙ."
+        title="محرِّر Markdown"
+        description="اكتب بلغة الـ Markdown مع معاينة فوريَّة. لا تشتيت، فقط تحرير سريع ونظيف."
         icon={<FileText />}
         className="lg:col-span-2 lg:row-span-2"
         delay={0.1}
@@ -330,8 +328,8 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(129,140,248,1)')}
-        title="Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ù…Ø³ÙˆØ¯ÙŽÙ‘Ø§Øª"
-        description="Ù†Ø¸ÙÙ‘Ù… ÙƒØªØ§Ø¨Ø§ØªÙƒ Ù…Ø¹ Ø§Ù„Ù…Ø³ÙˆØ¯ÙŽÙ‘Ø§Øª ÙˆØ³ÙŠØ± Ø¹Ù…Ù„ Ø§Ù„Ù†ÙŽÙ‘Ø´Ø± ÙˆØ§Ù„ØªÙŽÙ‘Ø­ÙƒÙÙ‘Ù… Ø§Ù„ÙƒØ§Ù…Ù„ Ø¨Ø§Ù„Ø¥ØµØ¯Ø§Ø±Ø§Øª."
+        title="إدارة المسودَّات"
+        description="نظِّم كتاباتك مع المسودَّات وسير عمل النَّشر والتَّحكُّم الكامل بالإصدارات."
         icon={<StickyNote />}
         className="lg:col-span-2"
         delay={0.2}
@@ -341,8 +339,8 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(167,139,250,1)')}
-        title="ØªØ­Ø³ÙŠÙ† Ù…Ø­Ø±ÙÙ‘ÙƒØ§Øª Ø§Ù„Ø¨Ø­Ø«"
-        description="Ø£Ø¯ÙˆØ§Øª SEO Ù…Ø¯Ù…Ø¬Ø© ØªØ³Ø§Ø¹Ø¯ Ù…Ø­ØªÙˆØ§Ùƒ ÙÙŠ ØªØ­Ù‚ÙŠÙ‚ ØªØ±ØªÙŠØ¨ Ù…ØªÙ‚Ø¯ÙÙ‘Ù… ÙˆØ§Ù„ÙˆØµÙˆÙ„ Ù„Ù‚Ø±ÙŽÙ‘Ø§Ø¡ Ø£ÙƒØ«Ø±."
+        title="تحسين محرِّكات البحث"
+        description="أدوات SEO مدمجة تساعد محتواك في تحقيق ترتيب متقدِّم والوصول لقرَّاء أكثر."
         icon={<Search />}
         className="lg:col-span-2"
         delay={0.3}

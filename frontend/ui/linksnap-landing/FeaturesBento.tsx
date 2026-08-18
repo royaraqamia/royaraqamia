@@ -1,4 +1,4 @@
-﻿import { Link, ChartColumn, Search } from 'lucide-react';
+import { Link, ChartColumn, Search } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 
@@ -42,7 +42,7 @@ function MiniChart() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span className="text-sm font-semibold text-slate-300">Ø£Ø¯Ø§Ø¡ Ø§Ù„Ù†Ù‘ÙŽÙ‚Ø±Ø§Øª</span>
+          <span className="text-sm font-semibold text-slate-300">أداء النَّقرات</span>
         </div>
         <span className="text-2xl font-extrabold bg-linear-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent tracking-tight">
           +156%
@@ -72,30 +72,28 @@ function MiniChart() {
       </div>
 
       <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs font-medium text-slate-400">
-        <span>Ù…ÙØ­Ø±Ù‘ÙŽÙ…</span>
-        <span>Ø¬Ù…Ø§Ø¯Ù‰ Ø§Ù„Ø¢Ø®Ø±Ø©</span>
-        <span>Ø°Ùˆ Ø§Ù„Ø­Ø¬Ù‘ÙŽØ©</span>
+        <span>مُحرَّم</span>
+        <span>جمادى الآخرة</span>
+        <span>ذو الحجَّة</span>
       </div>
     </div>
   );
 }
 
 const analyticsMetrics = [
-  { label: 'Ù…ÙØ¹Ø¯Ù‘ÙŽÙ„ Ø§Ù„Ù†Ù‘ÙŽÙ‚Ø±', value: '4.8%', color: 'text-indigo-400' },
-  { label: 'Ø§Ù„Ø²ÙˆÙ‘ÙŽØ§Ø± Ø§Ù„ÙØ±ÙŠØ¯ÙˆÙ†', value: '3.2k', color: 'text-violet-400' },
-  { label: 'Ø§Ù„Ø¯Ù‘ÙÙˆÙ„ Ø§Ù„Ù…Ø³ØªÙ‡Ø¯ÙØ©', value: '24', color: 'text-fuchsia-400' },
+  { label: 'مُعدَّل النَّقر', value: '4.8%', color: 'text-indigo-400' },
+  { label: 'الزوَّار الفريدون', value: '3.2k', color: 'text-violet-400' },
+  { label: 'الدُّول المستهدفة', value: '24', color: 'text-fuchsia-400' },
 ];
 
 function AnalyticsPreview() {
   return (
     <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 shadow-inner backdrop-blur-md space-y-3.5">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-semibold text-slate-300">
-          Ù†Ø¸Ø±Ø© Ø¹Ø§Ù…Ù‘ÙŽØ© ÙÙˆØ±ÙŠÙ‘ÙŽØ©
-        </span>
+        <span className="text-sm font-semibold text-slate-300">نظرة عامَّة فوريَّة</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          Ù…Ø¨Ø§Ø´Ø±
+          مباشر
         </span>
       </div>
 
@@ -115,9 +113,9 @@ function AnalyticsPreview() {
       ))}
 
       <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-        <span>Ø¢Ø®Ø± 24 Ø³Ø§Ø¹Ø©</span>
+        <span>آخر 24 ساعة</span>
         <span className="inline-flex items-center gap-1 font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-          +12.5% â†‘
+          +12.5% ↑
         </span>
       </div>
     </div>
@@ -138,18 +136,17 @@ export function FeaturesBento() {
       heading={{
         badge: (
           <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs backdrop-blur-md">
-            âœ¨ Ù…ÙŠÙ‘ÙØ²Ø§Øª Ù‚ÙˆÙŠÙ‘ÙŽØ©
+            ✨ ميِّزات قويَّة
           </span>
         ),
         wrapperClassName: 'text-center mb-16 sm:mb-20',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-slate-100',
-        titlePrefix: 'ÙƒÙ„ Ù…Ø§ ØªØ­ØªØ§Ø¬Ù‡ ',
-        titleHighlight: 'Ù„Ø¥Ø¯Ø§Ø±Ø© Ø§Ù„Ø±Ù‘ÙŽÙˆØ§Ø¨Ø·',
+        titlePrefix: 'كل ما تحتاجه ',
+        titleHighlight: 'لإدارة الرَّوابط',
         titleHighlightClassName:
           'bg-linear-to-r from-violet-400 via-indigo-300 to-fuchsia-400 bg-clip-text text-transparent drop-shadow-xs',
-        subtitle:
-          'Ø§Ø®ØªØµÙØ±ØŒ Ù†Ø¸ÙÙ‘Ù…ØŒ ÙˆØ­Ù„ÙÙ‘Ù„ Ø±ÙˆØ§Ø¨Ø·Ùƒ Ø¨Ø£Ø¯ÙˆØ§Øª Ù‚ÙˆÙŠÙŽÙ‘Ø© Ù…ÙØµÙ…ÙŽÙ‘Ù…ÙŽØ© Ù„Ù„Ù…Ø¨Ø¯Ø¹ÙŠÙ† ÙˆØ§Ù„Ù…Ø³ÙˆÙÙ‘Ù‚ÙŠÙ†.',
+        subtitle: 'اختصِر، نظِّم، وحلِّل روابطك بأدوات قويَّة مُصمَّمَة للمبدعين والمسوِّقين.',
         subtitleClassName:
           'text-base sm:text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed font-normal',
         useEase: false,
@@ -158,8 +155,8 @@ export function FeaturesBento() {
     >
       <BentoCard
         {...bentoCardProps('rgba(139,92,246,1)')}
-        title="Ø§Ø®ØªØµØ§Ø± ÙÙˆØ±ÙŠ"
-        description="Ø§Ù„ØµÙ‚ Ø£ÙŠ Ø±Ø§Ø¨Ø· Ø·ÙˆÙŠÙ„ ÙˆØ§Ø­ØµÙ„ Ø¹Ù„Ù‰ Ø±Ø§Ø¨Ø· Ù‚ØµÙŠØ± Ù†Ø¸ÙŠÙ Ù‚Ø§Ø¨Ù„ Ù„Ù„Ù…Ø´Ø§Ø±ÙƒØ© Ø¨Ø§Ù„Ù…ÙŠÙ„ÙŠ Ø«Ø§Ù†ÙŠØ©."
+        title="اختصار فوري"
+        description="الصق أي رابط طويل واحصل على رابط قصير نظيف قابل للمشاركة بالميلي ثانية."
         icon={<Link />}
         className="lg:col-span-2 lg:row-span-2"
         delay={0.1}
@@ -181,7 +178,7 @@ export function FeaturesBento() {
               royaraqamia.com/abc123
             </span>
             <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-slate-900 border border-slate-800 px-2.5 py-0.5 text-[10px] text-slate-400 font-medium sm:px-3 sm:py-1 sm:text-xs">
-              Ù…Ù†Ø° 2 Ø«Ø§Ù†ÙŠØ©
+              منذ 2 ثانية
             </span>
           </div>
         </div>
@@ -189,8 +186,8 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(129,140,248,1)')}
-        title="ØªØªØ¨ÙÙ‘Ø¹ Ø§Ù„Ù†ÙŽÙ‘Ù‚Ø±Ø§Øª"
-        description="Ø§Ø¹Ø±Ù Ø¨Ø§Ù„Ø¶ÙŽÙ‘Ø¨Ø· ÙƒÙ… Ù…Ø±ÙŽÙ‘Ù‡ ØªÙ…ÙŽÙ‘ Ø§Ù„Ù†ÙŽÙ‘Ù‚Ø± Ø¹Ù„Ù‰ ÙƒÙ„ Ø±Ø§Ø¨Ø· Ø¨ØªØªØ¨ÙÙ‘Ø¹ Ø¯Ù‚ÙŠÙ‚ ÙˆÙÙˆØ±ÙŠ."
+        title="تتبُّع النَّقرات"
+        description="اعرف بالضَّبط كم مرَّه تمَّ النَّقر على كل رابط بتتبُّع دقيق وفوري."
         icon={<ChartColumn />}
         className="lg:col-span-2"
         delay={0.2}
@@ -200,8 +197,8 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(167,139,250,1)')}
-        title="ØªØ­Ù„ÙŠÙ„Ø§Øª Ù…ØªÙ‚Ø¯ÙÙ‘Ù…Ø©"
-        description="Ø§ÙÙ‡Ù… Ø¬Ù…Ù‡ÙˆØ±Ùƒ Ù…Ù† Ø®Ù„Ø§Ù„ ØªØ­Ù„ÙŠÙ„Ø§Øª Ù…ÙÙØµÙŽÙ‘Ù„ÙŽØ© Ø¹Ù† Ø£Ø¯Ø§Ø¡ Ø§Ù„Ø±ÙŽÙ‘ÙˆØ§Ø¨Ø· ÙˆØ§Ù„Ù…ÙˆØ§Ù‚Ø¹ Ø§Ù„Ø¬ØºØ±Ø§ÙÙŠÙŽÙ‘Ø© ÙˆØ§Ù„Ø§ØªÙÙ‘Ø¬Ø§Ù‡Ø§Øª."
+        title="تحليلات متقدِّمة"
+        description="افهم جمهورك من خلال تحليلات مُفصَّلَة عن أداء الرَّوابط والمواقع الجغرافيَّة والاتِّجاهات."
         icon={<Search />}
         className="lg:col-span-2"
         delay={0.3}

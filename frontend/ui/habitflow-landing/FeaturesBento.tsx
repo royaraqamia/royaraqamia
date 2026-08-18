@@ -1,4 +1,4 @@
-﻿import { CalendarCheck, ChartLine, Flame, CircleCheckBig } from 'lucide-react';
+import { CalendarCheck, ChartLine, Flame, CircleCheckBig } from 'lucide-react';
 import { BentoCard } from '@/frontend/ui/landing-shared/BentoCard';
 import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 
@@ -30,20 +30,20 @@ function bentoCardProps(rgba: string) {
 }
 
 const habits = [
-  { name: 'ØªØ£Ù…ÙÙ‘Ù„', streak: 7, done: true },
-  { name: 'ØªÙ…Ø§Ø±ÙŠÙ†', streak: 3, done: false },
-  { name: 'Ù‚Ø±Ø§Ø¡Ø©', streak: 14, done: true },
-  { name: 'Ø´Ø±Ø¨ Ø§Ù„Ù…Ø§Ø¡', streak: 21, done: true },
+  { name: 'تأمُّل', streak: 7, done: true },
+  { name: 'تمارين', streak: 3, done: false },
+  { name: 'قراءة', streak: 14, done: true },
+  { name: 'شرب الماء', streak: 21, done: true },
 ];
 
 function HabitTracker() {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/50 dark:bg-zinc-900/50 p-4 sm:p-5 space-y-3 backdrop-blur-xl shadow-lg">
       <div className="flex items-center justify-between mb-3 px-1">
-        <span className="text-sm font-semibold text-slate-200">Ø¹Ø§Ø¯Ø§Øª Ø§Ù„ÙŠÙˆÙ…</span>
+        <span className="text-sm font-semibold text-slate-200">عادات اليوم</span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          3/4 ØªÙ…Ù‘
+          3/4 تمّ
         </span>
       </div>
       <div className="space-y-2.5">
@@ -90,16 +90,14 @@ function HabitTracker() {
   );
 }
 
-const weekLabels = ['Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ ', 'Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ ', 'Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ ', 'Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ '];
+const weekLabels = ['الأسبوع ', 'الأسبوع ', 'الأسبوع ', 'الأسبوع '];
 const streakData = [5, 7, 4, 6];
 
 function StreakCalendar() {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/50 dark:bg-zinc-900/50 p-4 sm:p-5 backdrop-blur-xl shadow-lg">
       <div className="flex items-center justify-between mb-5 px-1">
-        <span className="text-sm font-semibold text-slate-200">
-          Ø§Ù„Ø³Ù‘ÙŽÙ„Ø§Ø³Ù„ Ø§Ù„Ø´Ù‘ÙŽÙ‡Ø±ÙŠÙ‘ÙŽØ©
-        </span>
+        <span className="text-sm font-semibold text-slate-200">السَّلاسل الشَّهريَّة</span>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-linear-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30">
           <Flame size={18} fill="currentColor" className="text-amber-400 animate-pulse" />
           <span className="text-lg font-black bg-linear-to-r from-amber-300 via-orange-400 to-amber-500 bg-clip-text text-transparent">
@@ -120,7 +118,7 @@ function StreakCalendar() {
                 {i + 1}
               </span>
               <span className="font-semibold text-slate-300">
-                {streakData[i]}/{7} Ø£ÙŠÙ‘ÙŽØ§Ù…
+                {streakData[i]}/{7} أيَّام
               </span>
             </div>
             <div className="flex gap-1.5 sm:gap-2">
@@ -152,20 +150,18 @@ function StreakCalendar() {
 }
 
 const progressStats = [
-  { label: 'Ù…ÙØ¹Ø¯Ù‘ÙŽÙ„ Ø§Ù„Ø¥Ù†Ø¬Ø§Ø²', value: '78%', change: '+12%' },
-  { label: 'Ù…ÙØªÙˆØ³Ù‘ÙØ· Ø·ÙˆÙ„ Ø§Ù„Ø³Ù‘ÙÙ„Ø³Ù„Ø©', value: '6.4d', change: '+2.1d' },
-  { label: 'Ø§Ù„Ø¹Ø§Ø¯Ø§Øª Ø§Ù„Ù€Ù…ÙØªØªØ¨ÙŽÙ‘Ø¹Ø©', value: '12', change: '+3' },
+  { label: 'مُعدَّل الإنجاز', value: '78%', change: '+12%' },
+  { label: 'مُتوسِّط طول السِّلسلة', value: '6.4d', change: '+2.1d' },
+  { label: 'العادات الـمُتتبَّعة', value: '12', change: '+3' },
 ];
 
 function ProgressAnalytics() {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/50 dark:bg-zinc-900/50 p-4 sm:p-5 space-y-5 backdrop-blur-xl shadow-lg">
       <div className="flex items-center justify-between px-1">
-        <span className="text-sm font-semibold text-slate-200">
-          Ù†Ø¸Ø±Ø© Ø¹Ø§Ù…Ù‘ÙŽØ© Ø¹Ù„Ù‰ Ø§Ù„ØªÙ‘ÙŽÙ‚Ø¯ÙÙ‘Ù…
-        </span>
+        <span className="text-sm font-semibold text-slate-200">نظرة عامَّة على التَّقدُّم</span>
         <span className="text-xs text-violet-400 font-medium bg-violet-500/10 border border-violet-500/20 px-2.5 py-0.5 rounded-full">
-          Ù…ÙØ­Ø¯ÙŽÙ‘Ø« Ø§Ù„Ø¢Ù†
+          مُحدَّث الآن
         </span>
       </div>
 
@@ -191,15 +187,15 @@ function ProgressAnalytics() {
 
       <div className="pt-3 border-t border-white/10 space-y-2">
         <div className="flex items-center justify-between text-xs text-slate-400">
-          <span>Ø§Ù„Ù…ÙØ³ØªÙ‡Ø¯ÙŽÙ</span>
-          <span className="text-violet-300 font-semibold">78% Ø¥Ù†Ø¬Ø§Ø²</span>
+          <span>المُستهدَف</span>
+          <span className="text-violet-300 font-semibold">78% إنجاز</span>
         </div>
         <div
           role="progressbar"
           aria-valuenow={78}
           aria-valuemin={0}
           aria-valuemax={100}
-          aria-label="Ù…ÙØ¹Ø¯Ù‘ÙŽÙ„ Ø§Ù„Ø¥Ù†Ø¬Ø§Ø²"
+          aria-label="مُعدَّل الإنجاز"
           className="h-2.5 rounded-full bg-slate-800 overflow-hidden p-0.5 border border-white/5 relative"
         >
           <div
@@ -238,18 +234,18 @@ export function FeaturesBento() {
         badge: (
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs shadow-violet-500/10 backdrop-blur-md">
             <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
-            Ù…ÙŠÙ‘ÙØ²Ø§Øª Ù‚ÙˆÙŠÙ‘ÙŽØ©
+            ميِّزات قويَّة
           </span>
         ),
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-14 sm:mb-20',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight',
-        titlePrefix: 'ÙƒÙ„ Ù…Ø§ ØªØ­ØªØ§Ø¬Ù‡ Ù„',
-        titleHighlight: 'Ø¨Ù†Ø§Ø¡ Ø§Ù„Ø¹Ø§Ø¯Ø§Øª',
+        titlePrefix: 'كل ما تحتاجه ل',
+        titleHighlight: 'بناء العادات',
         titleHighlightClassName:
           'bg-linear-to-r from-violet-400 via-purple-300 to-indigo-400 bg-clip-text text-transparent',
         subtitle:
-          'ØªØªØ¨ÙŽÙ‘Ø¹ØŒ ÙˆØªØµÙˆÙŽÙ‘Ø±ØŒ ÙˆØ­Ø§ÙØ¸ Ø¹Ù„Ù‰ Ø±ÙˆØªÙŠÙ†Ùƒ Ø§Ù„ÙŠÙˆÙ…ÙŠ Ø¨Ø£Ø¯ÙˆØ§Øª Ù…ÙØµÙ…ÙŽÙ‘Ù…ÙŽØ© Ù„ØªØºÙŠÙŠØ± Ø§Ù„Ø³ÙÙ‘Ù„ÙˆÙƒ Ø§Ù„Ø¯ÙŽÙ‘Ø§Ø¦Ù….',
+          'تتبَّع، وتصوَّر، وحافظ على روتينك اليومي بأدوات مُصمَّمَة لتغيير السُّلوك الدَّائم.',
         subtitleClassName: 'text-base sm:text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto',
         useEase: false,
       }}
@@ -257,8 +253,8 @@ export function FeaturesBento() {
     >
       <BentoCard
         {...bentoCardProps('rgba(139,92,246,1)')}
-        title="ØªØªØ¨ÙÙ‘Ø¹ ÙŠÙˆÙ…ÙŠ"
-        description="Ø³Ø¬ÙÙ‘Ù„ Ø¹Ø§Ø¯Ø§ØªÙƒ ÙŠÙˆÙ…ÙŠÙ‘Ù‹Ø§ Ø¨Ù†Ù‚Ø±Ø© ÙˆØ§Ø­Ø¯Ø©. Ù…ØªØ§Ø¨Ø¹Ø§Øª Ø¨Ø³ÙŠØ·Ø© ØªØ¨Ù†ÙŠ Ø§Ù„Ø²ÙŽÙ‘Ø®Ù… Ù…Ø¹ Ø§Ù„ÙˆÙ‚Øª."
+        title="تتبُّع يومي"
+        description="سجِّل عاداتك يوميًّا بنقرة واحدة. متابعات بسيطة تبني الزَّخم مع الوقت."
         icon={<CalendarCheck />}
         className="lg:col-span-2 lg:row-span-2"
         delay={0.1}
@@ -268,8 +264,8 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(129,140,248,1)')}
-        title="ØªÙ‚ÙˆÙŠÙ… Ø§Ù„Ø³ÙŽÙ‘Ù„Ø§Ø³Ù„"
-        description="ØªØµÙˆÙŽÙ‘Ø± Ø§Ù†ØªØ¸Ø§Ù…Ùƒ Ù…Ø¹ ØªÙ‚ÙˆÙŠÙ… Ø§Ù„Ø³ÙŽÙ‘Ù„Ø§Ø³Ù„ Ø§Ù„Ø£Ø³Ø¨ÙˆØ¹ÙŠÙŽÙ‘Ø© ÙˆØ§Ù„Ø´ÙŽÙ‘Ù‡Ø±ÙŠÙŽÙ‘Ø©. Ø´Ø§Ù‡Ø¯ ØªÙ‚Ø¯ÙÙ‘Ù…Ùƒ ÙˆÙ‡Ùˆ ÙŠÙ†Ù…Ùˆ."
+        title="تقويم السَّلاسل"
+        description="تصوَّر انتظامك مع تقويم السَّلاسل الأسبوعيَّة والشَّهريَّة. شاهد تقدُّمك وهو ينمو."
         icon={<Flame />}
         className="lg:col-span-2"
         delay={0.2}
@@ -279,8 +275,8 @@ export function FeaturesBento() {
 
       <BentoCard
         {...bentoCardProps('rgba(167,139,250,1)')}
-        title="ØªØ­Ù„ÙŠÙ„Ø§Øª Ø§Ù„ØªÙŽÙ‘Ù‚Ø¯ÙÙ‘Ù…"
-        description="ØªØªØ¨ÙŽÙ‘Ø¹ Ù…Ø¹Ø¯ÙŽÙ‘Ù„Ø§Øª Ø§Ù„Ø¥Ù†Ø¬Ø§Ø² ÙˆÙ…ÙØªÙˆØ³ÙÙ‘Ø· Ø£Ø·ÙˆØ§Ù„ Ø§Ù„Ø³ÙŽÙ‘Ù„Ø§Ø³Ù„ØŒ ÙˆØ´Ø§Ù‡Ø¯ ÙƒÙŠÙ ØªØªØ­Ø³ÙŽÙ‘Ù† Ø¹Ø§Ø¯Ø§ØªÙƒ Ø¨Ù…Ø±ÙˆØ± Ø§Ù„ÙˆÙ‚Øª."
+        title="تحليلات التَّقدُّم"
+        description="تتبَّع معدَّلات الإنجاز ومُتوسِّط أطوال السَّلاسل، وشاهد كيف تتحسَّن عاداتك بمرور الوقت."
         icon={<ChartLine />}
         className="lg:col-span-2"
         delay={0.3}
