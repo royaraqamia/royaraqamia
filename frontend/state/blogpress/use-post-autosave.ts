@@ -119,6 +119,18 @@ export function usePostAutosave(post: Post) {
     };
   }, [saveAllFields]);
 
+  // ⌘/Ctrl+S forces an immediate save of pending changes.
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        saveAllFields();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [saveAllFields]);
+
   return {
     title,
     setTitle,
