@@ -249,7 +249,7 @@ export function LinkEditDialog({
         expiresAt,
         password,
       });
-      toast.success('تم حفظ التعديلات بنجاح 🎉');
+      toast.success('تم حفظ التعديلات بنجاح');
       onSaved(updated);
       onClose();
     } catch (err: unknown) {
@@ -262,7 +262,14 @@ export function LinkEditDialog({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault();
-      if (!updateLoading && slugStatus !== 'taken' && slugStatus !== 'checking') {
+      if (
+        !updateLoading &&
+        slugStatus !== 'taken' &&
+        slugStatus !== 'checking' &&
+        editingUrlValue.trim() &&
+        !slugTooShort &&
+        hasChanges
+      ) {
         handleSubmit();
       }
     }
@@ -272,6 +279,8 @@ export function LinkEditDialog({
     if (!enableExpiry || !expiresDateValue) return null;
     return formatRemainingTime(expiresDateValue, expiresTimeValue);
   }, [enableExpiry, expiresDateValue, expiresTimeValue]);
+
+  const slugTooShort = editingCodeValue.trim().length < 3;
 
   return (
     <Dialog
@@ -330,7 +339,7 @@ export function LinkEditDialog({
         {/* Scrollable Form Body */}
         <form
           onSubmit={handleSubmit}
-          className="p-5 sm:p-7 space-y-5 overflow-y-auto custom-scrollbar flex-1 text-start"
+          className="p-5 sm:p-7 space-y-5 overflow-y-auto custom-scrollbar flex-1 min-h-0 text-start"
         >
           {/* Live Link Preview Card */}
           <div className="p-3.5 rounded-2xl bg-muted/40 dark:bg-neutral-900/60 border border-border/70 dark:border-neutral-800/80 space-y-2.5 transition-all">
@@ -544,6 +553,7 @@ export function LinkEditDialog({
                   type="button"
                   role="switch"
                   aria-checked={enableExpiry}
+                  aria-label="تفعيل أو تعطيل انتهاء صلاحية الرابط"
                   onClick={() => {
                     const nextState = !enableExpiry;
                     setEnableExpiry(nextState);
@@ -669,6 +679,7 @@ export function LinkEditDialog({
                   type="button"
                   role="switch"
                   aria-checked={passwordEnabled}
+                  aria-label="تفعيل أو تعطيل الحماية بكلمة مرور"
                   onClick={() => {
                     setPasswordEnabled((prev) => !prev);
                     setPasswordError(null);
@@ -728,6 +739,7 @@ export function LinkEditDialog({
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
                       title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                      aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -784,6 +796,7 @@ export function LinkEditDialog({
                   updateLoading ||
                   slugStatus === 'taken' ||
                   slugStatus === 'checking' ||
+                  slugTooShort ||
                   !hasChanges
                 }
                 className="flex-1 sm:flex-initial h-10 rounded-xl px-6 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer"
