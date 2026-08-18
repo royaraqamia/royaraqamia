@@ -65,6 +65,10 @@ function isImage(url) {
   return /\.(png|webp|jpg|jpeg|gif|svg|ico)$/i.test(url.pathname);
 }
 
+function isNextImage(url) {
+  return url.pathname.startsWith('/_next/image');
+}
+
 function isApiCall(url) {
   return url.pathname.startsWith('/api/');
 }
@@ -141,6 +145,11 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isImage(url)) {
+    event.respondWith(staleWhileRevalidate(request));
+    return;
+  }
+
+  if (isNextImage(url)) {
     event.respondWith(staleWhileRevalidate(request));
     return;
   }
