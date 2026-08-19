@@ -128,3 +128,23 @@ export const PUBLIC_TOOL_SCOPES: McpScope[] = [
 export function isPublicToolScope(scope: McpScope): boolean {
   return PUBLIC_TOOL_SCOPES.includes(scope);
 }
+
+/**
+ * Parse a space-delimited `scope` query/form value into known scopes.
+ * Unknown scopes are silently dropped.
+ */
+export function parseScopes(raw: string | null | undefined): McpScope[] {
+  if (!raw || typeof raw !== 'string') return [];
+  return raw.split(/\s+/).filter((s): s is McpScope => ALL_SCOPES.includes(s as McpScope));
+}
+
+/**
+ * Compute the effective scope set to grant at consent time.
+ * Admin scope is only granted to users whose email is in ADMIN_EMAILS, and
+ * only when the client explicitly requested it.
+ */
+export function effectiveScopes(email: string | null, requested: McpScope[]): McpScope[] {
+  const known = requested.filter((s) => ALL_SCOPES.includes(s));
+  const isAdminUser = email !== null && shouldGrantAdminScope(email);
+  return known.filter((s) => s !== 'admin' || isAdminUser);
+}

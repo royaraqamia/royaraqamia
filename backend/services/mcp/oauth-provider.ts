@@ -73,6 +73,9 @@ export interface VerifiedAccessToken {
 }
 
 export interface McpOAuthProvider {
+  /** Load a registered OAuth client by its public client_id. */
+  getClient(clientId: string): Promise<McpOAuthClientRecord | null>;
+
   /** Register a first-party or dynamic OAuth client (RFC 7591 subset). */
   registerClient(input: {
     clientId: string;
@@ -131,6 +134,10 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
   const repo = deps.repo ?? createMcpOAuthRepository();
 
   return {
+    async getClient(clientId) {
+      return repo.getClient(clientId);
+    },
+
     async registerClient(input) {
       const requested = input.scopes ?? [];
       const scopes = requested.filter((s): s is McpScope => ALL_SCOPES.includes(s));

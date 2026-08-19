@@ -8,6 +8,9 @@ import {
   TIER_SCOPES,
   hasAnyScope,
   isPublicToolScope,
+  parseScopes,
+  effectiveScopes,
+  type McpScope,
 } from '../scope';
 
 const ADMIN_EMAILS = ['admin@example.com', 'admin2@example.com'];
@@ -120,5 +123,59 @@ describe('isPublicToolScope', () => {
     expect(isPublicToolScope('certificates.read')).toBe(true);
     expect(isPublicToolScope('blog.write')).toBe(false);
     expect(isPublicToolScope('admin')).toBe(false);
+  });
+});
+
+describe('parseScopes', () => {
+  it('parses a space-delimited scope string to known scopes', () => {
+    expect(parseScopes('blog.read linksnap.write admin')).toEqual([
+      'blog.read',
+      'linksnap.write',
+      'admin',
+    ]);
+  });
+
+  it('drops unknown scopes', () => {
+    expect(parseScopes('blog.read bogus.scope admin')).toEqual(['blog.read', 'admin']);
+  });
+
+  it('handles empty / null / undefined input', () => {
+    expect(parseScopes('')).toEqual([]);
+    expect(parseScopes(null)).toEqual([]);
+    expect(parseScopes(undefined)).toEqual([]);
+  });
+});
+
+describe('effectiveScopes', () => {
+  it('keeps known requested scopes for a non-admin', () => {
+    expect(effectiveScopes('user@example.com', ['blog.read', 'linksnap.write'])).toEqual([
+      'blog.read',
+      'linksnap.write',
+    ]);
+  });
+
+  it('drops unknown scopes', () => {
+    expect(effectiveScopes('user@example.com', ['blog.read', 'bogus.scope' as McpScope])).toEqual([
+      'blog.read',
+    ]);
+  });
+
+  it('grants admin scope to an admin email when explicitly requested', () => {
+    expect(effectiveScopes('admin@example.com', ['blog.read', 'admin'])).toEqual([
+      'blog.read',
+      'admin',
+    ]);
+  });
+
+  it('does not auto-grant admin scope when the client did not request it', () => {
+    expect(effectiveScopes('admin@example.com', ['blog.read'])).toEqual(['blog.read']);
+  });
+
+  it('does not grant admin scope to a non-admin even if requested', () => {
+    expect(effectiveScopes('user@example.com', ['blog.read', 'admin'])).toEqual(['blog.read']);
+  });
+
+  it('returns an empty array for a non-admin requesting only admin', () => {
+    expect(effectiveScopes('user@example.com', ['admin'])).toEqual([]);
   });
 });
