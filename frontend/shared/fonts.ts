@@ -32,5 +32,4 @@ export const arefRuqaa = localFont({
   ],
   variable: '--font-heading',
   display: 'swap',
-  preload: false,
 });
