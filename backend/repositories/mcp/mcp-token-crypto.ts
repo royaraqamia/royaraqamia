@@ -1,4 +1,10 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  randomBytes,
+  timingSafeEqual,
+} from 'node:crypto';
 import { env } from '@/backend/config/env';
 
 /**
@@ -36,7 +42,10 @@ export function decryptSecret(payload: string): string {
   }
   const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(ivPart, 'base64url'));
   decipher.setAuthTag(Buffer.from(tagPart, 'base64url'));
-  return Buffer.concat([decipher.update(Buffer.from(dataPart, 'base64url')), decipher.final()]).toString('utf8');
+  return Buffer.concat([
+    decipher.update(Buffer.from(dataPart, 'base64url')),
+    decipher.final(),
+  ]).toString('utf8');
 }
 
 export function constantTimeEqual(a: string, b: string): boolean {

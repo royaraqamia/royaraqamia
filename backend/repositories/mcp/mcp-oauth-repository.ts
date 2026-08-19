@@ -96,9 +96,7 @@ export interface McpOAuthRepository {
   deleteExpired(now: Date): Promise<void>;
 }
 
-export function createMcpOAuthRepository(
-  supabase = getAdminSupabase()
-): McpOAuthRepository {
+export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAuthRepository {
   return {
     async getClient(clientId) {
       const { data } = await (supabase as any)
@@ -128,19 +126,17 @@ export function createMcpOAuthRepository(
     },
 
     async saveAuthCode(input) {
-      const { error } = await (supabase as any)
-        .from(AUTH_CODES_TABLE)
-        .insert({
-          code_hash: input.codeHash,
-          client_id: input.clientId,
-          user_id: input.userId,
-          code_challenge: input.codeChallenge,
-          challenge_method: input.challengeMethod,
-          redirect_uri: input.redirectUri,
-          scope: input.scope,
-          session_enc: input.sessionEnc,
-          expires_at: input.expiresAt.toISOString(),
-        });
+      const { error } = await (supabase as any).from(AUTH_CODES_TABLE).insert({
+        code_hash: input.codeHash,
+        client_id: input.clientId,
+        user_id: input.userId,
+        code_challenge: input.codeChallenge,
+        challenge_method: input.challengeMethod,
+        redirect_uri: input.redirectUri,
+        scope: input.scope,
+        session_enc: input.sessionEnc,
+        expires_at: input.expiresAt.toISOString(),
+      });
       if (error) throw error;
     },
 
@@ -163,18 +159,16 @@ export function createMcpOAuthRepository(
     },
 
     async createToken(input) {
-      const { error } = await (supabase as any)
-        .from(TOKENS_TABLE)
-        .insert({
-          token_hash: input.tokenHash,
-          kind: input.kind,
-          client_id: input.clientId,
-          user_id: input.userId,
-          scope: input.scope,
-          session_enc: input.sessionEnc,
-          refresh_token_hash: input.refreshTokenHash,
-          expires_at: input.expiresAt.toISOString(),
-        });
+      const { error } = await (supabase as any).from(TOKENS_TABLE).insert({
+        token_hash: input.tokenHash,
+        kind: input.kind,
+        client_id: input.clientId,
+        user_id: input.userId,
+        scope: input.scope,
+        session_enc: input.sessionEnc,
+        refresh_token_hash: input.refreshTokenHash,
+        expires_at: input.expiresAt.toISOString(),
+      });
       if (error) throw error;
     },
 

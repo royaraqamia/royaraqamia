@@ -66,6 +66,9 @@ export const env = {
   get releaseVersion(): string {
     return appVersion.releaseVersion;
   },
+  get mcpTokenEncryptionKey(): string | undefined {
+    return read('MCP_TOKEN_ENCRYPTION_KEY');
+  },
   get adminEmails(): string[] {
     return (read('ADMIN_EMAILS') ?? '')
       .split(',')
