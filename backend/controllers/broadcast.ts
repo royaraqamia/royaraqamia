@@ -35,9 +35,7 @@ export async function broadcastMessage(body: {
 
   if (withEmail) {
     const policy = adminEmailBroadcastRateLimitPolicy(admin.user.email ?? 'unknown');
-    if (
-      !(await checkRateLimit(policy.key, policy.limit, policy.windowMs, { failClosed: true }))
-    ) {
+    if (!(await checkRateLimit(policy.key, policy.limit, policy.windowMs, { failClosed: true }))) {
       return jsonResult(429, { success: false, error: policy.message });
     }
   }

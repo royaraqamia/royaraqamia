@@ -1,4 +1,7 @@
-import type { AdminUsersRepository, RecipientEmail } from '@/backend/repositories/users/admin-users-repository';
+import type {
+  AdminUsersRepository,
+  RecipientEmail,
+} from '@/backend/repositories/users/admin-users-repository';
 import type { AdminUser } from '@/shared/contracts/users';
 
 export class AdminUsersService {

@@ -125,7 +125,9 @@ describe('broadcastMessage', () => {
     });
 
     expect(result.status).toBe(200);
-    await expect(readBody<{ success: boolean; sent: number; emailsSent: number }>(result)).resolves.toEqual({
+    await expect(
+      readBody<{ success: boolean; sent: number; emailsSent: number }>(result)
+    ).resolves.toEqual({
       success: true,
       sent: 0,
       emailsSent: 3,
@@ -148,21 +150,25 @@ describe('broadcastMessage', () => {
     });
 
     expect(result.status).toBe(200);
-    await expect(readBody<{ success: boolean; sent: number; emailsSent: number }>(result)).resolves.toEqual({
+    await expect(
+      readBody<{ success: boolean; sent: number; emailsSent: number }>(result)
+    ).resolves.toEqual({
       success: true,
       sent: 2,
       emailsSent: 2,
     });
-    expect(mockEmailBroadcaster).toHaveBeenCalledWith({ subject: 'رسالة', body: 'محتوى' }, undefined);
+    expect(mockEmailBroadcaster).toHaveBeenCalledWith(
+      { subject: 'رسالة', body: 'محتوى' },
+      undefined
+    );
   });
 
   it('passes userIds through to the email broadcaster', async () => {
     await broadcastMessage({ title: 'رسالة', userIds: [userId], channels: { email: true } });
 
-    expect(mockEmailBroadcaster).toHaveBeenCalledWith(
-      { subject: 'رسالة', body: undefined },
-      [userId]
-    );
+    expect(mockEmailBroadcaster).toHaveBeenCalledWith({ subject: 'رسالة', body: undefined }, [
+      userId,
+    ]);
   });
 
   it('returns 429 when the email rate limit is exceeded', async () => {

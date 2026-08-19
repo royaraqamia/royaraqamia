@@ -106,7 +106,9 @@ export class ResendEmailClient implements EmailClient {
 
   private broadcastEmailHtml(subject: string, body?: string): string {
     const title = escapeHtml(subject);
-    const content = body ? `<p style="color: #e4e4e7; font-size: 15px; line-height: 1.8; margin: 0; white-space: pre-wrap;">${escapeHtml(body)}</p>` : '';
+    const content = body
+      ? `<p style="color: #e4e4e7; font-size: 15px; line-height: 1.8; margin: 0; white-space: pre-wrap;">${escapeHtml(body)}</p>`
+      : '';
     return `
       <div dir="rtl" style="${baseStyle}">
         <div style="text-align: center; margin-bottom: 32px;">
