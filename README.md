@@ -254,6 +254,7 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `SENTRY_PROJECT`                       | Sentry project slug (build plugin)                                     | `your-project-slug`                            | ✅ (for CI build)        |
 | `SENTRY_AUTH_TOKEN`                    | **Secret.** Sentry auth token (build plugin, sourcemap upload)         | `sntrys_...`                                   | ✅ (for CI build)        |
 | `ADMIN_EMAILS`                         | Comma-separated emails granted admin access                            | `admin@royaraqamia.com,ops@royaraqamia.com`    | ✅                       |
+| `MCP_TOKEN_ENCRYPTION_KEY`             | **Secret.** 32-byte key (hex) encrypting MCP OAuth refresh tokens      | `a1b2...` (64 hex chars)                      | for `/mcp` OAuth only   |
 | `UPSTASH_REDIS_REST_URL`               | Upstash Redis REST endpoint (rate limiting)                            | `https://<db>.upstash.io`                      | ✅                       |
 | `UPSTASH_REDIS_REST_TOKEN`             | **Secret.** Upstash Redis REST token                                   | `AVNS_...`                                     | ✅                       |
 | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | Cloudflare Turnstile site key (client)                                 | `0x4AAAA...`                                   | ✅                       |

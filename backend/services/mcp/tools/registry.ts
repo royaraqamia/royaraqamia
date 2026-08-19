@@ -6,7 +6,7 @@ import { registerBlogTools, registerBlogWriteTools } from './blogpress';
 import { registerLinkSnapTools, registerLinkSnapWriteTools } from './linksnap';
 import { registerSpendTrackTools, registerSpendTrackWriteTools } from './spendtrack';
 import { registerHabitFlowTools, registerHabitFlowWriteTools } from './habitflow';
-import { registerCertificateTools } from './certificates';
+import { registerCertificateTools, registerCertificateWriteTools } from './certificates';
 import { registerProfileTools, registerProfileWriteTools } from './profile';
 
 /**
@@ -33,6 +33,7 @@ export function createMcpServer(ctx: McpUserContext): McpServer {
   registerHabitFlowTools(server, ctx);
   registerHabitFlowWriteTools(server, ctx);
   registerCertificateTools(server, ctx);
+  registerCertificateWriteTools(server, ctx);
   registerProfileTools(server, ctx);
   registerProfileWriteTools(server, ctx);
 

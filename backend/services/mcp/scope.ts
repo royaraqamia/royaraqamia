@@ -140,11 +140,12 @@ export function parseScopes(raw: string | null | undefined): McpScope[] {
 
 /**
  * Compute the effective scope set to grant at consent time.
- * Admin scope is only granted to users whose email is in ADMIN_EMAILS, and
- * only when the client explicitly requested it.
+ * Admin-level scopes (`admin`, `certificates.write`) are only granted to
+ * users whose email is in ADMIN_EMAILS, and only when the client explicitly
+ * requested them.
  */
 export function effectiveScopes(email: string | null, requested: McpScope[]): McpScope[] {
   const known = requested.filter((s) => ALL_SCOPES.includes(s));
   const isAdminUser = email !== null && shouldGrantAdminScope(email);
-  return known.filter((s) => s !== 'admin' || isAdminUser);
+  return known.filter((s) => (s !== 'admin' && s !== 'certificates.write') || isAdminUser);
 }

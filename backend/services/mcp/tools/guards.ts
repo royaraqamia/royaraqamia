@@ -39,3 +39,10 @@ export function requireUserId(ctx: McpUserContext, label: string): string {
   }
   return ctx.userId;
 }
+
+/** Throw MissingScopeError unless the context is an admin user. */
+export function requireAdmin(ctx: McpUserContext): void {
+  if (!ctx.isAdmin) {
+    throw new MissingScopeError(['admin']);
+  }
+}
