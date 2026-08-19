@@ -2,12 +2,24 @@
 
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { Button } from '../primitives/button';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
-import { NotificationDropdown } from '../shared/notification-dropdown';
-import { UserDropdown } from '../shared/user-dropdown';
 import NextImage from 'next/image';
+
+// Splitted off the initial desktop chunk — same pattern as Navbar/FloatingActions:
+// Supabase notifications, web-push, PWA context, portals and dialogs load on demand,
+// keeping the critical-path bundle lean (fewer long tasks / lower TBT).
+const NotificationDropdown = dynamic(
+  () => import('../shared/notification-dropdown').then((m) => m.NotificationDropdown),
+  { ssr: false, loading: () => null }
+);
+
+const UserDropdown = dynamic(() => import('../shared/user-dropdown').then((m) => m.UserDropdown), {
+  ssr: false,
+  loading: () => null,
+});
 
 interface NavLink {
   visible?: boolean;
