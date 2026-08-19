@@ -34,6 +34,7 @@ export function createAuthService(
     emailClient: {
       sendOtpEmail,
       sendPasswordResetEmail,
+      sendBroadcastEmails: async () => 0,
     },
     rateLimiter: {
       checkRateLimit: (key, limit, windowMs) =>

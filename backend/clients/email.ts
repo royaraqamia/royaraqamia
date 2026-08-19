@@ -2,14 +2,23 @@ import { Resend } from 'resend';
 
 const baseStyle = `font-family: 'IBM Plex Sans Arabic', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a; color: #f5f5f5;`;
 
+const EMAIL_BATCH_SIZE = 100;
+
 export interface EmailSender {
   fromName: string;
   fromEmail: string;
 }
 
+export interface BroadcastEmailRecipient {
+  email: string;
+  subject: string;
+  body?: string;
+}
+
 export interface EmailClient {
   sendOtpEmail(email: string, otp: string): Promise<void>;
   sendPasswordResetEmail(email: string, resetUrl: string): Promise<void>;
+  sendBroadcastEmails(recipients: BroadcastEmailRecipient[]): Promise<number>;
 }
 
 export interface EmailValidity {
@@ -23,6 +32,23 @@ function formatMinutes(minutes: number): string {
 
 function formatHours(hours: number): string {
   return hours === 1 ? 'ساعة' : `${hours} ساعات`;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
 }
 
 export class ResendEmailClient implements EmailClient {
@@ -76,6 +102,40 @@ export class ResendEmailClient implements EmailClient {
           </div>
         `,
     });
+  }
+
+  private broadcastEmailHtml(subject: string, body?: string): string {
+    const title = escapeHtml(subject);
+    const content = body ? `<p style="color: #e4e4e7; font-size: 15px; line-height: 1.8; margin: 0; white-space: pre-wrap;">${escapeHtml(body)}</p>` : '';
+    return `
+      <div dir="rtl" style="${baseStyle}">
+        <div style="text-align: center; margin-bottom: 32px;">
+          <h1 style="color: #c4b5fd; font-size: 24px; margin: 0;">رؤية رقمية</h1>
+        </div>
+        <div style="background: rgba(255,255,255,0.05); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1);">
+          <h2 style="color: #f5f5f5; font-size: 18px; margin: 0 0 16px;">${title}</h2>
+          ${content}
+        </div>
+        <p style="color: #71717a; font-size: 12px; margin: 24px 0 0; text-align: center;">رؤية رقمية — منصّة السِّياق الرّقمي</p>
+      </div>
+    `;
+  }
+
+  async sendBroadcastEmails(recipients: BroadcastEmailRecipient[]): Promise<number> {
+    if (recipients.length === 0) return 0;
+    let sent = 0;
+    for (const batch of chunk(recipients, EMAIL_BATCH_SIZE)) {
+      await this.resend.batch.send(
+        batch.map((recipient) => ({
+          from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
+          to: recipient.email,
+          subject: `[رؤية رقمية] ${recipient.subject}`,
+          html: this.broadcastEmailHtml(recipient.subject, recipient.body),
+        }))
+      );
+      sent += batch.length;
+    }
+    return sent;
   }
 }
 

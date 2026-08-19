@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockSend = vi.fn();
+const mockBatchSend = vi.fn();
 
 vi.mock('resend', () => ({
   Resend: vi.fn().mockImplementation(function () {
-    return { emails: { send: (...args: unknown[]) => mockSend(...args) } };
+    return {
+      emails: { send: (...args: unknown[]) => mockSend(...args) },
+      batch: { send: (...args: unknown[]) => mockBatchSend(...args) },
+    };
   }),
 }));
 
@@ -91,5 +95,70 @@ describe('ResendEmailClient', () => {
     const client = createEmailClient(makeResend(), makeSender(), makeValidity());
     await client.sendOtpEmail('a@b.com', '000000');
     expect(mockSend).toHaveBeenCalledTimes(1);
+  });
+
+  it('sendBroadcastEmails sends every recipient in one batch', async () => {
+    mockBatchSend.mockResolvedValue({ data: [{ id: 'b1' }, { id: 'b2' }] });
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
+
+    const sent = await client.sendBroadcastEmails([
+      { email: 'a@example.com', subject: 'تحديث جديد', body: 'مرحباً' },
+      { email: 'b@example.com', subject: 'تحديث جديد', body: 'مرحباً' },
+    ]);
+
+    expect(sent).toBe(2);
+    expect(mockBatchSend).toHaveBeenCalledTimes(1);
+    const [payload] = mockBatchSend.mock.calls[0] as [Record<string, unknown>[]];
+    expect(payload).toHaveLength(2);
+    expect(payload[0]).toMatchObject({
+      from: 'رؤية رقمية <no-reply@royaraqamia.com>',
+      to: 'a@example.com',
+      subject: '[رؤية رقمية] تحديث جديد',
+    });
+    const first = payload[0] as Record<string, unknown>;
+    expect(first.html).toContain('dir="rtl"');
+    expect(first.html).toContain('مرحباً');
+    expect(first.html).toContain('تحديث جديد');
+  });
+
+  it('sendBroadcastEmails chunks recipients into batches of 100', async () => {
+    mockBatchSend.mockResolvedValue({ data: [] });
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
+    const recipients = Array.from({ length: 250 }, (_, i) => ({
+      email: `u${i}@example.com`,
+      subject: 'تحديث',
+    }));
+
+    const sent = await client.sendBroadcastEmails(recipients);
+
+    expect(sent).toBe(250);
+    expect(mockBatchSend).toHaveBeenCalledTimes(3);
+    const sizes = mockBatchSend.mock.calls.map(
+      ([payload]) => (payload as Record<string, unknown>[]).length
+    );
+    expect(sizes).toEqual([100, 100, 50]);
+  });
+
+  it('sendBroadcastEmails returns 0 for an empty list without calling Resend', async () => {
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
+
+    const sent = await client.sendBroadcastEmails([]);
+
+    expect(sent).toBe(0);
+    expect(mockBatchSend).not.toHaveBeenCalled();
+  });
+
+  it('sendBroadcastEmails escapes HTML in subject and body', async () => {
+    mockBatchSend.mockResolvedValue({ data: [{ id: 'b1' }] });
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
+
+    await client.sendBroadcastEmails([
+      { email: 'a@example.com', subject: '<b>خبر</b>', body: '<script>alert(1)</script>' },
+    ]);
+
+    const [payload] = mockBatchSend.mock.calls[0] as [Record<string, unknown>[]];
+    const first = payload[0] as Record<string, unknown>;
+    expect(String(first.html)).toContain('&lt;b&gt;');
+    expect(String(first.html)).not.toContain('<script>');
   });
 });

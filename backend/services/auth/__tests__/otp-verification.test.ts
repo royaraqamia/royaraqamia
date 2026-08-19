@@ -69,6 +69,7 @@ function createService(
   const emailClient = {
     sendOtpEmail: vi.fn().mockResolvedValue(undefined),
     sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
+    sendBroadcastEmails: vi.fn().mockResolvedValue(0),
   };
   const service = new AuthService(gateway, {
     otpRepository,
