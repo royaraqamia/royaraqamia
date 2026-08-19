@@ -8,6 +8,8 @@ export const EMAIL_VALIDITY = {
   PASSWORD_RESET_HOURS: 1,
 } as const;
 
+const DEFAULT_FROM_NAME = 'رؤية رقمية';
+
 let defaultEmailClient: EmailClient | null = null;
 
 export function getDefaultEmailClient(): EmailClient {
@@ -15,7 +17,7 @@ export function getDefaultEmailClient(): EmailClient {
     defaultEmailClient = createEmailClient(
       new Resend(env.resendApiKey ?? ''),
       {
-        fromName: env.resendFromName ?? '',
+        fromName: env.resendFromName?.trim() || DEFAULT_FROM_NAME,
         fromEmail: env.resendFromEmail ?? '',
       },
       {
