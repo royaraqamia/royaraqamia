@@ -127,15 +127,19 @@ export class ResendEmailClient implements EmailClient {
     if (recipients.length === 0) return 0;
     let sent = 0;
     for (const batch of chunk(recipients, EMAIL_BATCH_SIZE)) {
-      await this.resend.batch.send(
+      const result = await this.resend.batch.send(
         batch.map((recipient) => ({
           from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
           to: recipient.email,
           subject: `[رؤية رقمية] ${recipient.subject}`,
           html: this.broadcastEmailHtml(recipient.subject, recipient.body),
-        }))
+        })),
+        { batchValidation: 'permissive' }
       );
-      sent += batch.length;
+      if (result.error) {
+        throw new Error(result.error.message);
+      }
+      sent += result.data?.data.length ?? 0;
     }
     return sent;
   }

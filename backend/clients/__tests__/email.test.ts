@@ -98,7 +98,10 @@ describe('ResendEmailClient', () => {
   });
 
   it('sendBroadcastEmails sends every recipient in one batch', async () => {
-    mockBatchSend.mockResolvedValue({ data: [{ id: 'b1' }, { id: 'b2' }] });
+    mockBatchSend.mockResolvedValue({
+      data: { data: [{ id: 'b1' }, { id: 'b2' }], errors: [] },
+      error: null,
+    });
     const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
 
     const sent = await client.sendBroadcastEmails([
@@ -122,7 +125,12 @@ describe('ResendEmailClient', () => {
   });
 
   it('sendBroadcastEmails chunks recipients into batches of 100', async () => {
-    mockBatchSend.mockResolvedValue({ data: [] });
+    mockBatchSend.mockImplementation((payload: Record<string, unknown>[]) =>
+      Promise.resolve({
+        data: { data: payload.map(() => ({ id: 'x' })), errors: [] },
+        error: null,
+      })
+    );
     const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
     const recipients = Array.from({ length: 250 }, (_, i) => ({
       email: `u${i}@example.com`,
@@ -137,6 +145,30 @@ describe('ResendEmailClient', () => {
       ([payload]) => (payload as Record<string, unknown>[]).length
     );
     expect(sizes).toEqual([100, 100, 50]);
+    const [, options] = mockBatchSend.mock.calls[0] as [
+      Record<string, unknown>[],
+      { batchValidation: string },
+    ];
+    expect(options.batchValidation).toBe('permissive');
+  });
+
+  it('sendBroadcastEmails counts only successfully queued emails in a permissive batch', async () => {
+    mockBatchSend.mockResolvedValue({
+      data: {
+        data: [{ id: 'ok-1' }, { id: 'ok-2' }],
+        errors: [{ index: 2, message: 'invalid email' }],
+      },
+      error: null,
+    });
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
+
+    const sent = await client.sendBroadcastEmails([
+      { email: 'a@example.com', subject: 'تحديث' },
+      { email: 'b@example.com', subject: 'تحديث' },
+      { email: 'bad-address', subject: 'تحديث' },
+    ]);
+
+    expect(sent).toBe(2);
   });
 
   it('sendBroadcastEmails returns 0 for an empty list without calling Resend', async () => {
@@ -149,7 +181,10 @@ describe('ResendEmailClient', () => {
   });
 
   it('sendBroadcastEmails escapes HTML in subject and body', async () => {
-    mockBatchSend.mockResolvedValue({ data: [{ id: 'b1' }] });
+    mockBatchSend.mockResolvedValue({
+      data: { data: [{ id: 'b1' }], errors: [] },
+      error: null,
+    });
     const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
 
     await client.sendBroadcastEmails([
