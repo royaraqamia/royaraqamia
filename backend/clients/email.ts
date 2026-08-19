@@ -1,8 +1,23 @@
 import { Resend } from 'resend';
 
-const baseStyle = `font-family: 'IBM Plex Sans Arabic', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px 20px; background-color: #0f172a; color: #f5f5f5;`;
-
 const EMAIL_BATCH_SIZE = 100;
+
+const palette = {
+  canvas: '#ECEDF5',
+  paper: '#F6F7FB',
+  ink: '#1C1A36',
+  violet: '#6C3DF2',
+  violetSoft: '#EDEAFC',
+  muted: '#5D5A75',
+  hairline: '#E1DEF2',
+  amber: '#B47614',
+};
+
+const fonts = {
+  display: "'Aref Ruqaa', 'IBM Plex Sans Arabic', Tahoma, sans-serif",
+  body: "'IBM Plex Sans Arabic', Tahoma, Arial, sans-serif",
+  mono: "'IBM Plex Mono', 'Courier New', monospace",
+};
 
 export interface EmailSender {
   fromName: string;
@@ -51,6 +66,61 @@ function chunk<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
+function eyebrow(text: string): string {
+  return `<div style="font-size:12px;font-weight:600;color:${palette.violet};margin-bottom:6px;">${text}</div>`;
+}
+
+function heading(text: string): string {
+  return `<div style="font-family:${fonts.display};font-weight:700;font-size:22px;line-height:1.4;color:${palette.ink};">${text}</div>`;
+}
+
+function paragraph(text: string): string {
+  return `<p style="margin:14px 0 0;font-size:15px;line-height:1.8;color:${palette.ink};">${text}</p>`;
+}
+
+function brandLockup(): string {
+  return `
+    <div style="text-align:center;padding:36px 32px 30px;">
+      <div style="display:inline-block;vertical-align:middle;position:relative;width:40px;height:40px;border:2px solid ${palette.violet};border-radius:50%;box-sizing:border-box;">
+        <div style="position:absolute;top:-5px;left:50%;margin-left:-4px;width:8px;height:8px;border-radius:50%;background-color:${palette.amber};"></div>
+        <div style="position:absolute;top:50%;left:50%;width:11px;height:11px;margin:-6px 0 0 -6px;border-radius:50%;background-color:${palette.violet};"></div>
+      </div>
+      <div style="display:inline-block;vertical-align:middle;margin-right:14px;">
+        <div style="font-family:${fonts.display};font-weight:700;font-size:24px;color:${palette.ink};">رؤية رقمية</div>
+      </div>
+    </div>`;
+}
+
+function cardFooter(footnote: string): string {
+  return `
+    <div style="border-top:1px solid ${palette.hairline};padding:18px 24px 20px;text-align:center;font-size:12px;color:${palette.muted};">
+      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background-color:${palette.amber};margin-left:8px;vertical-align:middle;"></span>
+      <span style="vertical-align:middle;">${footnote}</span>
+      <div style="margin-top:10px;">رؤية رقمية</div>
+    </div>`;
+}
+
+function preheader(text: string): string {
+  return `<div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">${text}&nbsp;</div>`;
+}
+
+function layout(content: string, preheaderText?: string): string {
+  const preheaderHtml = preheaderText ? preheader(preheaderText) : '';
+  return `
+    <div dir="rtl" lang="ar" style="margin:0;padding:0;background-color:${palette.canvas};">
+      ${preheaderHtml}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${palette.canvas}" style="background-color:${palette.canvas};">
+        <tr>
+          <td align="center" bgcolor="${palette.canvas}" style="padding:40px 16px;background-color:${palette.canvas};">
+            <div style="max-width:600px;width:100%;margin:0 auto;background-color:${palette.paper};border:1px solid ${palette.hairline};border-radius:16px;overflow:hidden;font-family:${fonts.body};color:${palette.ink};">
+              ${content}
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>`;
+}
+
 export class ResendEmailClient implements EmailClient {
   constructor(
     private readonly resend: Resend,
@@ -63,64 +133,70 @@ export class ResendEmailClient implements EmailClient {
       from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
       to: email,
       subject: 'رمز التَّحقُّق - رؤية رقمية',
-      html: `
-          <div dir="rtl" style="${baseStyle}">
-            <div style="text-align: center; margin-bottom: 32px;">
-              <h1 style="color: #c4b5fd; font-size: 24px; margin: 0;">رؤية رقمية</h1>
-            </div>
-            <div style="background: rgba(255,255,255,0.05); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1);">
-              <h2 style="color: #f5f5f5; font-size: 18px; margin: 0 0 16px;">رمز التَّحقُّق</h2>
-              <p style="color: #a1a1aa; font-size: 14px; margin: 0 0 24px;">استخدم هذا الرَّمز لإكمال عمليَّة التَّحقُّق:</p>
-              <div style="text-align: center; padding: 20px; background: rgba(119, 102, 238, 0.1); border-radius: 12px; border: 1px solid rgba(119, 102, 238, 0.3);">
-                <span style="font-size: 32px; font-weight: bold; color: #c4b5fd; letter-spacing: 8px;">${otp}</span>
-              </div>
-              <p style="color: #71717a; font-size: 12px; margin: 24px 0 0; text-align: center;">صالح لمدَّة ${formatMinutes(this.validity.otpMinutes)}</p>
-            </div>
+      html: layout(
+        `
+        ${brandLockup()}
+        <div style="padding:0 32px 32px;">
+          ${eyebrow('التَّحقُّق')}
+          ${heading('رمز التَّحقُّق')}
+          ${paragraph('أدخِل هذا الرَّمز في صفحة تسجيل الدُّخول لإكمال التَّحقُّق من هويَّتك.')}
+          <div style="text-align:center;margin:24px 0 0;padding:18px 16px;background-color:${palette.violetSoft};border:1px solid ${palette.hairline};border-radius:12px;">
+            <div style="direction:ltr;font-family:${fonts.mono};font-size:30px;font-weight:700;color:${palette.violet};letter-spacing:10px;">${escapeHtml(otp)}</div>
           </div>
-        `,
+          <p style="margin:16px 0 0;font-size:12px;color:${palette.muted};text-align:center;">لا تُشارِك هذا الرَّمز مع أي شخص.</p>
+        </div>
+        ${cardFooter(`صالح لمدَّة ${formatMinutes(this.validity.otpMinutes)}`)}
+      `,
+        'رمز التحقق - أدخل الرمز لإكمال التحقق'
+      ),
     });
   }
 
   async sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
+    const safeResetUrl = escapeHtml(resetUrl);
     await this.resend.emails.send({
       from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
       to: email,
       subject: 'إعادة تعيين كلمة المرور - رؤية رقمية',
-      html: `
-          <div dir="rtl" style="${baseStyle}">
-            <div style="text-align: center; margin-bottom: 32px;">
-              <h1 style="color: #c4b5fd; font-size: 24px; margin: 0;">رؤية رقمية</h1>
-            </div>
-            <div style="background: rgba(255,255,255,0.05); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1);">
-              <h2 style="color: #f5f5f5; font-size: 18px; margin: 0 0 16px;">إعادة تعيين كلمة المرور</h2>
-              <p style="color: #a1a1aa; font-size: 14px; margin: 0 0 24px;">اضغط على الزِّر أدناه لإعادة تعيين كلمة المرور:</p>
-              <div style="text-align: center;">
-                <a href="${resetUrl}" style="display: inline-block; padding: 12px 32px; background: linear-gradient(135deg, #7766ee, #6366f1); color: white; text-decoration: none; border-radius: 9999px; font-weight: bold;">إعادة التعيين</a>
-              </div>
-              <p style="color: #71717a; font-size: 12px; margin: 24px 0 0; text-align: center;">صالح لمدَّة ${formatHours(this.validity.passwordResetHours)}</p>
-            </div>
+      html: layout(
+        `
+        ${brandLockup()}
+        <div style="padding:0 32px 32px;">
+          ${eyebrow('الأمان')}
+          ${heading('إعادة تعيين كلمة المرور')}
+          ${paragraph('اضغط الزِّر أدناه لاختيار كلمة مرور جديدة لحسابك.')}
+          <div style="text-align:center;margin:24px 0 0;">
+            <a href="${safeResetUrl}" style="display:inline-block;background-color:${palette.violet};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:600;font-size:15px;">اختيار كلمة مرور جديدة</a>
           </div>
-        `,
+          <div style="text-align:center;margin:16px 0 0;font-size:12px;color:${palette.muted};">
+            إن لم يعمل الزِّر، انسخ الرَّابط وافتحه في المُتصفِّح:
+            <div style="margin-top:6px;direction:ltr;font-family:${fonts.mono};"><a href="${safeResetUrl}" style="color:${palette.muted};word-break:break-all;">${safeResetUrl}</a></div>
+          </div>
+        </div>
+        ${cardFooter(`الرَّابط صالح لمدَّة ${formatHours(this.validity.passwordResetHours)}`)}
+      `,
+        'اختر كلمة مرور جديدة لحسابك'
+      ),
     });
   }
 
   private broadcastEmailHtml(subject: string, body?: string): string {
     const title = escapeHtml(subject);
     const content = body
-      ? `<p style="color: #e4e4e7; font-size: 15px; line-height: 1.8; margin: 0; white-space: pre-wrap;">${escapeHtml(body)}</p>`
+      ? `<div style="margin:14px 0 0;font-size:15px;line-height:1.8;color:${palette.ink};">${escapeHtml(body).replace(/\r?\n/g, '<br>')}</div>`
       : '';
-    return `
-      <div dir="rtl" style="${baseStyle}">
-        <div style="text-align: center; margin-bottom: 32px;">
-          <h1 style="color: #c4b5fd; font-size: 24px; margin: 0;">رؤية رقمية</h1>
-        </div>
-        <div style="background: rgba(255,255,255,0.05); border-radius: 16px; padding: 32px; border: 1px solid rgba(255,255,255,0.1);">
-          <h2 style="color: #f5f5f5; font-size: 18px; margin: 0 0 16px;">${title}</h2>
-          ${content}
-        </div>
-        <p style="color: #71717a; font-size: 12px; margin: 24px 0 0; text-align: center;">رؤية رقمية — منصّة السِّياق الرّقمي</p>
+    return layout(
+      `
+      ${brandLockup()}
+      <div style="padding:0 32px 32px;">
+        ${eyebrow('من رؤية رقمية')}
+        ${heading(title)}
+        ${content}
       </div>
-    `;
+      ${cardFooter('تحديث من رؤية رقمية')}
+    `,
+      title
+    );
   }
 
   async sendBroadcastEmails(recipients: BroadcastEmailRecipient[]): Promise<number> {

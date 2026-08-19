@@ -73,6 +73,20 @@ describe('ResendEmailClient', () => {
     expect(String(payload.html)).toContain('ساعة');
   });
 
+  it('sendPasswordResetEmail HTML-escapes a token URL with query params', async () => {
+    mockSend.mockResolvedValue({ id: 'email-2' });
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
+
+    await client.sendPasswordResetEmail(
+      'user@example.com',
+      'https://x.com/auth?code=abc&type=recovery'
+    );
+
+    const [payload] = mockSend.mock.calls[0] as [Record<string, unknown>];
+    expect(String(payload.html)).toContain('&amp;');
+    expect(String(payload.html)).toContain('https://x.com/auth?code=abc&amp;type=recovery');
+  });
+
   it('uses the configured sender in the from field', async () => {
     mockSend.mockResolvedValue({ id: 'email-3' });
     const client = new ResendEmailClient(
@@ -195,5 +209,21 @@ describe('ResendEmailClient', () => {
     const first = payload[0] as Record<string, unknown>;
     expect(String(first.html)).toContain('&lt;b&gt;');
     expect(String(first.html)).not.toContain('<script>');
+  });
+
+  it('sendBroadcastEmails converts newlines to <br> for Outlook compatibility', async () => {
+    mockBatchSend.mockResolvedValue({
+      data: { data: [{ id: 'b1' }], errors: [] },
+      error: null,
+    });
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
+
+    await client.sendBroadcastEmails([
+      { email: 'a@example.com', subject: 'تحديث', body: 'فقرة أولى\r\n\r\nفقرة ثانية' },
+    ]);
+
+    const [payload] = mockBatchSend.mock.calls[0] as [Record<string, unknown>[]];
+    const first = payload[0] as Record<string, unknown>;
+    expect(String(first.html)).toContain('فقرة أولى<br><br>فقرة ثانية');
   });
 });
