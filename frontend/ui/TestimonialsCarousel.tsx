@@ -227,7 +227,6 @@ export function TestimonialsCarousel({
                       <span className="font-semibold text-slate-100 text-sm sm:text-base truncate group-hover/card:text-violet-200 transition-colors">
                         {testimonial.name}
                       </span>
-                      <span className="text-xs text-slate-400 truncate">{testimonial.role}</span>
                     </div>
                   </div>
 
@@ -305,9 +304,6 @@ export function TestimonialsCarousel({
                       <h3 className="font-bold text-base sm:text-lg text-white truncate">
                         {activeReview.name}
                       </h3>
-                      <p className="text-xs sm:text-sm text-violet-300/80 font-medium truncate">
-                        {activeReview.role}
-                      </p>
                     </div>
                   </div>
 
