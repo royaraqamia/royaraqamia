@@ -13,12 +13,6 @@ export function Testimonials() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 sm:mb-14">
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center max-w-3xl mx-auto flex flex-col items-center">
-            {/* Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-semibold text-violet-400 mb-4 backdrop-blur-md shadow-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-              <span>آراء النَّاس</span>
-            </div>
-
             <h2
               id="testimonials-heading"
               className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-tight"

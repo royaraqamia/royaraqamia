@@ -1,4 +1,3 @@
-import { CircleHelp } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { FAQAccordion, type FAQItem } from './FAQAccordion';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
@@ -58,12 +57,6 @@ export function FAQ() {
           {/* Header */}
           <ScrollAnimation animation="slide-down" duration={0.7}>
             <div className="text-center flex flex-col items-center mb-12 sm:mb-16">
-              {/* Pill Context Badge */}
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs sm:text-sm font-medium tracking-wide mb-4 backdrop-blur-md shadow-xs">
-                <CircleHelp className="w-4 h-4 text-violet-400 shrink-0" />
-                <span>إجابات</span>
-              </div>
-
               <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-tight">
                 <span className="bg-linear-to-r from-violet-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
                   الأسئلة

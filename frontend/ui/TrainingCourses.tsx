@@ -11,7 +11,6 @@ import {
   CheckCircle,
   ShieldCheck,
   Star,
-  Zap,
 } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
@@ -84,11 +83,6 @@ export function TrainingCourses() {
         {/* Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center mb-12 lg:mb-16">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-300 text-xs font-semibold mb-4 backdrop-blur-md">
-              <Zap className="w-3.5 h-3.5 text-purple-500 animate-pulse" />
-              <span>المسار التَّدريبي التَّطبيقي</span>
-            </div>
-
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-4 text-foreground">
               <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
                 التَّدريب

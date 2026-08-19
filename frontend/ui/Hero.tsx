@@ -55,26 +55,6 @@ export function Hero() {
           >
             {/* Left/Right side - Primary Copy & CTA (RTL Support) */}
             <div className="text-center lg:text-right space-y-3 order-1">
-              {/* Pill Badge */}
-              <div
-                className="landing-reveal-item flex justify-center lg:justify-start"
-                style={{ ['--ld' as string]: '0.15s' } as React.CSSProperties}
-              >
-                <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/4 hover:bg-white/8 backdrop-blur-xl text-white border border-white/10 hover:border-white/20 transition-all duration-300 shadow-sm group">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
-                  </span>
-                  <span className="text-xs sm:text-sm font-medium tracking-wide text-neutral-200">
-                    ابدأ رحلتك الرَّقميَّة
-                  </span>
-                  <span className="w-1 h-1 rounded-full bg-white/20" />
-                  <span className="text-[11px] font-semibold text-purple-300/90 tracking-wider">
-                    1448 هـ
-                  </span>
-                </div>
-              </div>
-
               {/* Main Headline */}
               <div
                 className="landing-reveal-item space-y-2 -mt-2"

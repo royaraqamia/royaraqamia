@@ -100,15 +100,6 @@ export function Services() {
           from="translateY(-30px)"
           className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24 flex flex-col items-center"
         >
-          {/* High-End Glass Pill Badge */}
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-900/80 border border-slate-800/80 backdrop-blur-xl shadow-inner text-xs font-semibold text-indigo-300 mb-6 group transition-colors duration-300 hover:border-indigo-500/40 hover:bg-slate-900">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
-            </span>
-            <span className="tracking-wide">خدماتنا المتميِّزة</span>
-          </div>
-
           {/* Heading */}
           <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white mb-6 leading-[1.15]">
             ماذا{' '}

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+﻿import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Hero } from '../Hero';
 
@@ -18,10 +18,5 @@ describe('Hero', () => {
   it('renders the description text', () => {
     render(<Hero />);
     expect(screen.getByText(/نبني مواقع وتطبيقات/)).toBeInTheDocument();
-  });
-
-  it('renders the badge', () => {
-    render(<Hero />);
-    expect(screen.getByText('ابدأ رحلتك الرَّقميَّة')).toBeInTheDocument();
   });
 });

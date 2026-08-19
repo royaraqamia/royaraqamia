@@ -63,15 +63,6 @@ export function WebDevService() {
           from="translateY(24px)"
           className="text-center max-w-3xl mx-auto mb-14 sm:mb-20"
         >
-          {/* Status Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs sm:text-sm font-medium mb-6 backdrop-blur-md">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-purple-500" />
-            </span>
-            <span>تطوير البرمجيَّات</span>
-          </div>
-
           <h2
             id="web-dev-heading"
             className="text-4xl sm:text-5xl lg:text-6xl mb-6 font-extrabold tracking-tight leading-tight"

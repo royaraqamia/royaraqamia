@@ -10,7 +10,7 @@ import {
   useSpring,
   useMotionTemplate,
 } from 'motion/react';
-import { Trophy, Sparkle, ShieldCheck, BadgeCheck, Share2, MoveLeft } from 'lucide-react';
+import { Trophy, ShieldCheck, BadgeCheck, Share2, MoveLeft } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 
 // --- Framer Motion Variants ---
@@ -149,14 +149,6 @@ export function Certificate() {
           variants={headerVariants}
           className="text-center mb-12 sm:mb-16 flex flex-col items-center"
         >
-          {/* Trust Pill Badge */}
-          <motion.div variants={itemVariants} className="mb-5">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-medium bg-purple-500/10 border border-purple-500/20 text-purple-300 backdrop-blur-md shadow-inner shadow-purple-500/10">
-              <Sparkle className="w-4 h-4 text-purple-400 animate-pulse" fill="currentColor" />
-              <span>إثبات الإنجاز والاعتماد المهني</span>
-            </div>
-          </motion.div>
-
           {/* Trophy Badge Container */}
           <motion.div variants={itemVariants} className="mb-6 relative group cursor-pointer">
             <div className="absolute -inset-2 bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 rounded-3xl blur-xl opacity-40 group-hover:opacity-80 transition duration-500" />

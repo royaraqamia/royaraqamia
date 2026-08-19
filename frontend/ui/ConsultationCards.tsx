@@ -59,12 +59,6 @@ export function ConsultationCards() {
         {/* Header Section */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center mb-12 sm:mb-16 md:mb-20">
-            {/* Top Eyebrow Micro-Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/25 text-purple-300 text-xs sm:text-sm font-medium mb-5 backdrop-blur-md shadow-[0_0_20px_rgba(168,85,247,0.15)]">
-              <Sparkle className="w-3.5 h-3.5 text-purple-400 shrink-0" />
-              <span>جلسات تخصُّصيَّة</span>
-            </div>
-
             {/* Main H2 Title */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 text-white">
               <span className="bg-linear-to-r from-purple-300 via-purple-100 to-indigo-300 bg-clip-text text-transparent">

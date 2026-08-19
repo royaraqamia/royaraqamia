@@ -132,12 +132,6 @@ export function WhyUs() {
         {/* Editorial Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.8}>
           <header className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24">
-            {/* Pill Tag Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-xs font-semibold text-indigo-300 tracking-wide uppercase mb-6 backdrop-blur-md shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse" />
-              لماذا نحن
-            </div>
-
             <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.15]">
               لماذا{' '}
               <span className="bg-linear-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">

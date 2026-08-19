@@ -7,19 +7,6 @@ import { itemVariants } from './verify-variants';
 export function VerifyHero() {
   return (
     <header className="text-center">
-      <m.div
-        variants={itemVariants}
-        className="mb-4 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 backdrop-blur-md"
-      >
-        <span className="relative flex size-2">
-          <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-75" />
-          <span className="relative inline-flex size-2 rounded-full bg-primary" />
-        </span>
-        <span className="text-xs font-semibold tracking-wide text-primary">
-          نظام التَّحقُّق الرَّقمي
-        </span>
-      </m.div>
-
       <m.div variants={itemVariants} className="mb-6 flex justify-center">
         <m.div
           className="relative flex size-20 items-center justify-center rounded-3xl bg-linear-to-br from-primary via-indigo-600 to-purple-700 shadow-xl shadow-primary/25 ring-8 ring-primary/10"

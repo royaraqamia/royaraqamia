@@ -26,15 +26,6 @@ export function VerifySection() {
         {/* Section Header */}
         <ScrollAnimation animation="slide-up" duration={0.8}>
           <div className="text-center mb-12 sm:mb-16 lg:mb-20">
-            {/* Encrypted System Pill Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs sm:text-sm font-medium backdrop-blur-md shadow-sm mb-6 transition-colors hover:bg-indigo-500/15 cursor-default">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
-              </span>
-              <span>نظام التَّوثيق الرَّقمي</span>
-            </div>
-
             {/* Glowing Icon Shield Badge */}
             <div className="flex items-center justify-center mb-6">
               <div className="relative group">
