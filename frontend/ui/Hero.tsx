@@ -178,7 +178,12 @@ export function Hero() {
               className="landing-reveal-item relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0"
               style={{ ['--ld' as string]: '0.75s' } as React.CSSProperties}
             >
-              <LazySection id="hero-visual" />
+              {/* Reserve the dashboard's footprint so the lazy HeroVisual mount
+                  doesn't grow the hero and trigger CLS. Ratios match its layout:
+                  stacked cards on mobile (tall), side-by-side from sm up (square). */}
+              <div className="relative w-full aspect-[2/5] sm:aspect-square">
+                <LazySection id="hero-visual" className="w-full h-full" />
+              </div>
             </div>
           </MotionReveal>
         </div>
