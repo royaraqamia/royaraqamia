@@ -1,19 +1,22 @@
 'use client';
 
 import { useState } from 'react';
-import { broadcastAnnouncement } from '@/frontend/api/admin/announcements';
+import { broadcastMessage } from '@/frontend/api/admin/broadcast';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { UserSelect } from '@/frontend/ui/admin/user-select';
-import { Loader2, Send } from 'lucide-react';
+import { ChannelToggle } from '@/frontend/ui/admin/channel-toggle';
+import { BellRing, Loader2, Mail, Send } from 'lucide-react';
 
 export function AnnouncementForm() {
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
   const [recipientUserIds, setRecipientUserIds] = useState<string[]>([]);
+  const [sendNotification, setSendNotification] = useState(true);
+  const [sendEmail, setSendEmail] = useState(false);
   const [sending, setSending] = useState(false);
   const [result, setResult] = useState<{ ok: boolean; message: string } | null>(null);
 
@@ -23,15 +26,29 @@ export function AnnouncementForm() {
       setResult({ ok: false, message: 'العنوان مطلوب' });
       return;
     }
+    if (!sendNotification && !sendEmail) {
+      setResult({ ok: false, message: 'اختر قناة إرسال واحدة على الأقل' });
+      return;
+    }
     setSending(true);
     setResult(null);
-    const res = await broadcastAnnouncement(title.trim(), body.trim(), recipientUserIds);
+    const res = await broadcastMessage(title.trim(), body.trim(), recipientUserIds, {
+      notification: sendNotification,
+      email: sendEmail,
+    });
     setSending(false);
     if (res.success) {
       setTitle('');
       setBody('');
       setRecipientUserIds([]);
-      setResult({ ok: true, message: `تم إرسال الإعلان إلى ${res.sent ?? 0} مستخدم.` });
+      const parts: string[] = [];
+      if (sendNotification) {
+        parts.push(`تم إرسال الإشعار إلى ${res.sent ?? 0} مستخدم`);
+      }
+      if (sendEmail) {
+        parts.push(`تم إرسال البريد إلى ${res.emailsSent ?? 0} مستخدم`);
+      }
+      setResult({ ok: true, message: parts.join('، ') + '.' });
     } else {
       setResult({ ok: false, message: res.error ?? 'فشل إرسال الإعلان' });
     }
@@ -81,6 +98,26 @@ export function AnnouncementForm() {
           />
           <p className="form-help-text -mt-2">اتركه فارغًا للإرسال لجميع المستخدمين.</p>
 
+          <div className="space-y-2.5 pt-1">
+            <p className="form-label mb-0">قنوات الإرسال</p>
+            <ChannelToggle
+              id="channel_notification"
+              checked={sendNotification}
+              onChange={setSendNotification}
+              label="إشعار داخل المنصة"
+              description="يظهر في قائمة الإشعارات مع إشعار المتصفح (اختياري)"
+              icon={<BellRing className="size-4" />}
+            />
+            <ChannelToggle
+              id="channel_email"
+              checked={sendEmail}
+              onChange={setSendEmail}
+              label="بريد إلكتروني"
+              description="يُرسل للبريد الإلكتروني المسجل للمستلمين"
+              icon={<Mail className="size-4" />}
+            />
+          </div>
+
           {result && (
             <p
               className={`text-sm ${result.ok ? 'text-emerald-600' : 'text-destructive'}`}
@@ -100,7 +137,7 @@ export function AnnouncementForm() {
             ) : (
               <Send className="ms-2 size-4" />
             )}
-            {sending ? 'جارٍ الإرسال...' : 'إرسال الإعلان'}
+            {sending ? 'جارٍ الإرسال...' : 'إرسال'}
           </Button>
         </form>
       </CardContent>
