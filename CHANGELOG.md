@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.1] - 2026-08-19
+
+### Changed
+- remove decorative section eyebrow badges
+- simplify testimonial card and dialog layout
+- remove role from testimonials
+- split dropdowns out of initial desktop chunk
+- preload Aref Ruqaa to shorten LCP
+- reserve hero-visual footprint to kill CLS
+
+### Fixed
+- make lazy-section anchors scroll to the mounted section
+- stop card override from painting opaque panels on text
+- match reserved hero-visual height to measured footprint
+
 ## [1.6.0] - 2026-08-18
 
 ### Changed
