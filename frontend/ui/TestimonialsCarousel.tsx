@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
-import { Quote, Star, CheckCircle2, ChevronLeft, UserRound } from 'lucide-react';
+import { CheckCircle2, ChevronLeft, UserRound } from 'lucide-react';
 import { useHorizontalScroll } from '../shared/use-horizontal-scroll';
 import { useUI } from '../state/UIContext';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
@@ -36,29 +36,8 @@ function getGradientByName(name: string): string {
   return AVATAR_GRADIENTS[index] ?? 'from-violet-600 via-indigo-600 to-purple-500';
 }
 
-// Micro-Component: Star Rating Display
-function StarRating({ rating = 5 }: { rating?: number }) {
-  return (
-    <div
-      className="flex items-center gap-0.5 text-amber-400"
-      aria-label={`تقييم ${rating} من 5 نجوم`}
-    >
-      {[...Array(5)].map((_, i) => (
-        <Star
-          key={i}
-          className={`w-3.5 h-3.5 ${
-            i < rating
-              ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.35)]'
-              : 'fill-slate-800 text-slate-700'
-          }`}
-        />
-      ))}
-    </div>
-  );
-}
-
 // Micro-Component: Verified Customer Badge
-function VerifiedBadge({ label = 'عميل مُوثَّق' }: { label?: string }) {
+function VerifiedBadge({ label = 'مُوثَّق' }: { label?: string }) {
   return (
     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 shadow-xs">
       <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
@@ -181,18 +160,6 @@ export function TestimonialsCarousel({
                 />
                 <div className="absolute inset-0 bg-linear-to-b from-white/4 to-transparent pointer-events-none" />
 
-                {/* Top Section: Rating & Quote Glyph */}
-                <div className="relative z-10 flex items-center justify-between gap-2 mb-4">
-                  <div className="flex items-center gap-2">
-                    <StarRating />
-                    <span className="text-xs font-semibold text-slate-400">5.0</span>
-                  </div>
-
-                  <div className="w-8 h-8 rounded-full bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400 group-hover/card:scale-110 group-hover/card:bg-violet-500/20 transition-transform duration-300">
-                    <Quote className="w-4 h-4 rotate-180" />
-                  </div>
-                </div>
-
                 {/* Body Content */}
                 <div className="relative z-10 flex-1 flex flex-col justify-between my-1">
                   <p className="text-slate-200 text-sm sm:text-base leading-relaxed line-clamp-4 font-normal tracking-wide group-hover/card:text-white transition-colors duration-300">
@@ -201,7 +168,7 @@ export function TestimonialsCarousel({
 
                   {/* Read More Inline Link / Action */}
                   <div className="inline-flex items-center gap-1.5 text-violet-400 group-hover/card:text-violet-300 text-xs sm:text-sm font-medium mt-4 transition-colors">
-                    <span>قراءة المراجعة بالكامل</span>
+                    <span>قراءة التَّقييم بالكامل</span>
                     <ChevronLeft className="w-4 h-4 transition-transform duration-300 group-hover/card:-translate-x-1" />
                   </div>
                 </div>
@@ -262,24 +229,14 @@ export function TestimonialsCarousel({
 
           {activeReview && (
             <>
-              <SheetTitle className="sr-only">مراجعة من {activeReview.name}</SheetTitle>
+              <SheetTitle className="sr-only">تقييم من {activeReview.name}</SheetTitle>
               <SheetDescription className="sr-only">
-                المراجعة الكاملة من {activeReview.name}
+                التَّقييم الكامل من {activeReview.name}
               </SheetDescription>
 
               <div className="relative p-6 sm:p-8 flex flex-col justify-between max-h-[calc(90vh-1rem)] overflow-y-auto">
-                {/* Header inside Modal */}
-                <div className="flex items-center justify-between gap-4 pb-5 border-b border-white/10 mt-2 sm:mt-0">
-                  <div className="flex items-center gap-2.5">
-                    <StarRating />
-                    <span className="text-sm font-semibold text-slate-300">(5.0)</span>
-                  </div>
-                  <VerifiedBadge label="مراجعة موثّقة" />
-                </div>
-
-                {/* Expanded Quote Content */}
+                {/* Expanded Review Content */}
                 <div className="my-6 relative">
-                  <Quote className="w-10 h-10 text-violet-500/20 rotate-180 mb-2" />
                   <p className="text-base sm:text-lg text-slate-100 leading-relaxed font-normal whitespace-pre-line select-text">
                     {activeReview.content}
                   </p>
@@ -307,14 +264,7 @@ export function TestimonialsCarousel({
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={closeReviewSheet}
-                    aria-label="إغلاق"
-                    className="px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/15 active:scale-95 text-slate-200 hover:text-white border border-white/10 transition-all cursor-pointer"
-                  >
-                    إغلاق
-                  </button>
+                  <VerifiedBadge label="مُوثَّق" />
                 </div>
               </div>
             </>
