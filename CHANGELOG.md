@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-08-19
+
+### Changed
+- apply prettier formatting to workflow, docs, and eslint config
+- restyle OTP, reset, and broadcast templates
+- refresh generated app version
+- apply prettier formatting
+
+### Added
+- challenge anonymous MCP requests with OAuth 401
+- add admin certificate tools and document MCP encryption key
+- add per-user write tools for user products
+- add read-only MCP tools for user products
+- add stateless streamable HTTP transport and tools registry
+- add OAuth authorization server HTTP endpoints
+- add OAuth 2.1 provider with PKCE, code exchange, and refresh rotation
+- add scope model and session resolution for user-scoped access
+- add OAuth tables, token crypto, and oauth repository
+- add channel toggles to announcement composer
+- add broadcast API client for combined channel sends
+- add broadcast endpoint supporting notification and email channels
+- add EmailBroadcastService and fail-safe admin broadcaster
+- resolve recipient emails via admin users service
+- add broadcast email contract and batch email client
+
+### Fixed
+- default sender name to رؤية رقمية when RESEND_FROM_NAME is missing
+- use permissive batch validation so one bad address can't fail the whole broadcast
+- make Turnstile responsive on narrow screens and match primary theme
+
 ## [1.6.1] - 2026-08-19
 
 ### Changed
