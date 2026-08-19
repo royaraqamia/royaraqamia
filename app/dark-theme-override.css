@@ -136,8 +136,16 @@ footer:not([data-mobile-menu]) {
 }
 
 /* Cards */
-[class*='card'],
-[class*='Card'] {
+[class*='card']:not([class*='/card']):not([class*='card:']):not([class*='card-']):not(
+    [class*='bg-card']
+  ):not([class*='from-card']):not([class*='via-card']):not([class*='to-card']):not(
+    [class*='ring-offset-card']
+  ),
+[class*='Card']:not([class*='/Card']):not([class*='Card:']):not([class*='Card-']):not(
+    [class*='bg-Card']
+  ):not([class*='from-Card']):not([class*='via-Card']):not([class*='to-Card']):not(
+    [class*='ring-offset-Card']
+  ) {
   background-color: hsl(var(--card));
   border-color: hsl(var(--border));
 }
