@@ -243,6 +243,26 @@ export async function runAllChecks(page: Page, screenshotName: string): Promise<
 }
 
 /**
+ * Assert the Cloudflare Turnstile widget is not cropped inside its security card.
+ * The widget has a fixed 300px min-width; on narrow screens it must be scaled
+ * down to fit. Skips when the widget did not load (no network / no sitekey).
+ */
+export async function expectTurnstileNotCropped(page: Page): Promise<void> {
+  const widget = page.locator('iframe[src*="challenges.cloudflare.com"]').first();
+  if (!(await widget.count())) return;
+
+  const fits = await page.evaluate(() => {
+    const frame = document.querySelector('iframe[src*="challenges.cloudflare.com"]');
+    const region = frame?.closest('[role="region"]');
+    if (!region || !frame) return true;
+    const r = region.getBoundingClientRect();
+    const f = frame.getBoundingClientRect();
+    return f.left >= r.left - 1 && f.right <= r.right + 1;
+  });
+  expect(fits, 'Turnstile widget is cropped/clipped inside its card').toBe(true);
+}
+
+/**
  * Login helper for authenticated routes.
  */
 export async function loginAs(page: Page, email: string, password: string): Promise<void> {

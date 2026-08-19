@@ -4,6 +4,7 @@ import {
   expectTouchTargets,
   expectMinFontSize,
   expectNoTextOverflow,
+  expectTurnstileNotCropped,
   takeScreenshot,
 } from './responsive-helpers';
 
@@ -82,6 +83,7 @@ test.describe('Main site - responsive', () => {
 
     await expectNoHorizontalOverflow(page);
     await expectTouchTargets(page);
+    await expectTurnstileNotCropped(page);
     await takeScreenshot(page, 'main/login');
   });
 
@@ -91,6 +93,7 @@ test.describe('Main site - responsive', () => {
 
     await expectNoHorizontalOverflow(page);
     await expectTouchTargets(page);
+    await expectTurnstileNotCropped(page);
     await takeScreenshot(page, 'main/signup');
   });
 
