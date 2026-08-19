@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { buildAuthorizationServerMetadata } from '@/backend/services/mcp/oauth-metadata';
 import { corsHeaders, noStore } from '@/backend/services/mcp/oauth-http';
 
