@@ -1,6 +1,7 @@
 import type { AuthInfo } from '@modelcontextprotocol/sdk/server/auth/types.js';
 import { NextResponse, type NextRequest } from 'next/server';
 import { resolveMcpContext, type McpUserContext } from '@/backend/services/mcp/session';
+import { ALL_SCOPES } from '@/backend/services/mcp/scope';
 import { mcpResourceUrl } from '@/backend/services/mcp/oauth-metadata';
 
 /**
@@ -12,13 +13,22 @@ import { mcpResourceUrl } from '@/backend/services/mcp/oauth-metadata';
  *   every request handler, so tools can read identity/scopes from
  *   `extra.authInfo`.
  *
- * A malformed or expired token yields a 401 JSON response; anonymous requests
- * (no Authorization header) are allowed and resolved to an anonymous context.
+ * Anonymous requests are rejected with a 401 `WWW-Authenticate: Bearer`
+ * challenge (RFC 6750) pointing at the protected-resource metadata. This is
+ * what makes the official MCP clients automatically launch the browser OAuth
+ * flow on first connect — identical to how Supabase's hosted MCP behaves.
+ * No token → challenge; a malformed or expired token → the same challenge.
  */
 
 export interface McpAuthResult {
   ctx: McpUserContext;
   authInfo: AuthInfo;
+}
+
+function buildChallenge(request: NextRequest): string {
+  const origin = new URL(request.url).origin;
+  const resourceMetadata = `${origin}/.well-known/oauth-protected-resource`;
+  return `Bearer resource_metadata="${resourceMetadata}", scope="${ALL_SCOPES.join(' ')}"`;
 }
 
 export async function authenticateMcpRequest(
@@ -31,32 +41,37 @@ export async function authenticateMcpRequest(
 
   const ctx = await resolveMcpContext(bearer);
 
-  if (bearer && !ctx) {
+  // Blanket challenge: anonymous callers (no/invalid token) get the 401 that
+  // triggers the MCP client's automatic OAuth discovery + browser login.
+  if (!ctx || !ctx.userId) {
     return NextResponse.json(
-      { error: 'invalid_token', error_description: 'The access token is invalid or has expired.' },
-      { status: 401, headers: { 'WWW-Authenticate': 'Bearer', 'Cache-Control': 'no-store' } }
+      {
+        error: 'unauthorized',
+        error_description:
+          'Authentication required. Complete the OAuth flow to connect this MCP server.',
+      },
+      {
+        status: 401,
+        headers: { 'WWW-Authenticate': buildChallenge(request), 'Cache-Control': 'no-store' },
+      }
     );
   }
-
-  // `resolveMcpContext` always returns a context for null/undefined tokens
-  // (anonymous), so ctx is non-null here.
-  const resolved = ctx as McpUserContext;
 
   const base = new URL(request.url).origin;
   const authInfo: AuthInfo = {
     token: bearer ?? '',
-    clientId: resolved.clientId ?? '',
-    scopes: resolved.scopes,
-    expiresAt: resolved.tokenExpiresAt ? Math.floor(resolved.tokenExpiresAt / 1000) : undefined,
+    clientId: ctx.clientId ?? '',
+    scopes: ctx.scopes,
+    expiresAt: ctx.tokenExpiresAt ? Math.floor(ctx.tokenExpiresAt / 1000) : undefined,
     resource: new URL(mcpResourceUrl(base)),
     extra: {
-      userId: resolved.userId,
-      email: resolved.email,
-      isAdmin: resolved.isAdmin,
+      userId: ctx.userId,
+      email: ctx.email,
+      isAdmin: ctx.isAdmin,
     },
   };
 
-  return { ctx: resolved, authInfo };
+  return { ctx, authInfo };
 }
 
 /** Extract the bearer token from an authorization header, if any. */

@@ -41,19 +41,21 @@ describe('authenticateMcpRequest', () => {
   beforeEach(() => vi.clearAllMocks());
   afterEach(() => vi.restoreAllMocks());
 
-  it('resolves anonymous context when no Authorization header', async () => {
+  it('challenges anonymous callers with a 401 WWW-Authenticate header', async () => {
     mockResolve.mockResolvedValue(anonymousCtx);
 
     const result = await authenticateMcpRequest(makeRequest(null) as never);
 
     expect(mockResolve).toHaveBeenCalledWith(null);
-    expect(result).not.toBeInstanceOf(Response);
-    if (result instanceof Response) throw new Error('expected success');
-    expect(result.ctx.userId).toBeNull();
-    expect(result.authInfo.token).toBe('');
-    expect(result.authInfo.clientId).toBe('');
-    expect(result.authInfo.scopes).toEqual([]);
-    expect(result.authInfo.resource?.href).toBe('https://royaraqamia.com/mcp');
+    expect(result).toBeInstanceOf(Response);
+    const response = result as Response;
+    expect(response.status).toBe(401);
+    const challenge = response.headers.get('WWW-Authenticate');
+    expect(challenge).toContain('Bearer');
+    expect(challenge).toContain(
+      'resource_metadata="https://royaraqamia.com/.well-known/oauth-protected-resource"'
+    );
+    expect(challenge).toContain('scope="');
   });
 
   it('passes the bearer token to the resolver and builds AuthInfo', async () => {
@@ -75,7 +77,7 @@ describe('authenticateMcpRequest', () => {
     expect(result.ctx).toEqual(validCtx);
   });
 
-  it('returns 401 when a bearer token fails to resolve', async () => {
+  it('returns 401 with the OAuth challenge when a bearer token fails to resolve', async () => {
     mockResolve.mockResolvedValue(null);
 
     const result = await authenticateMcpRequest(makeRequest('Bearer expired') as never);
@@ -83,7 +85,8 @@ describe('authenticateMcpRequest', () => {
     expect(result).toBeInstanceOf(Response);
     const response = result as Response;
     expect(response.status).toBe(401);
-    expect(response.headers.get('WWW-Authenticate')).toBe('Bearer');
+    expect(response.headers.get('WWW-Authenticate')).toContain('resource_metadata=');
+    expect(response.headers.get('WWW-Authenticate')).toContain('scope=');
   });
 });
 
