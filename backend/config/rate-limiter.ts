@@ -80,3 +80,12 @@ export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
     message: 'تم تجاوز حد الطلب: محاولات فتح الروابط محدودة بـ 15 محاولة كل 10 دقائق.',
   };
 }
+
+export function adminEmailBroadcastRateLimitPolicy(adminEmail: string): RateLimitPolicy {
+  return {
+    key: `admin-email-broadcast:${adminEmail}`,
+    limit: 5,
+    windowMs: 60 * 60 * 1000,
+    message: 'تم تجاوز حد الإرسال: يُسمح بإرسال البريد الجماعي 5 مرات في الساعة.',
+  };
+}
