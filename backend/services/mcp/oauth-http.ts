@@ -26,7 +26,7 @@ export function noStore(): Record<string, string> {
 export function corsHeaders(): Record<string, string> {
   return {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization, MCP-Protocol-Version',
     'Access-Control-Expose-Headers': 'WWW-Authenticate',
   };

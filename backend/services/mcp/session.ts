@@ -15,6 +15,8 @@ export interface McpUserContext {
   email: string | null;
   isAdmin: boolean;
   scopes: McpScope[];
+  clientId: string | null;
+  tokenExpiresAt: number | null;
   supabase: SupabaseClient<any>;
 }
 
@@ -114,6 +116,8 @@ export async function resolveMcpContext(
     email,
     isAdmin: isAdminUser,
     scopes: finalScopes,
+    clientId: tokenRow.client_id,
+    tokenExpiresAt: new Date(tokenRow.expires_at).getTime(),
     supabase: userScoped,
   };
 
@@ -136,6 +140,8 @@ function anonymousContext(): McpUserContext {
     email: null,
     isAdmin: false,
     scopes: [],
+    clientId: null,
+    tokenExpiresAt: null,
     supabase,
   };
 }
