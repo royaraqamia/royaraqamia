@@ -20,6 +20,10 @@ export interface UserProfile {
 export interface UserProfileRepository {
   upsert(input: UserProfileInput): Promise<void>;
   getById(id: string): Promise<UserProfile | null>;
+  updateProfile(
+    id: string,
+    input: { name?: string | null; avatar_url?: string | null; bio?: string | null }
+  ): Promise<void>;
 }
 
 export function createUserProfileRepository(
@@ -46,6 +50,16 @@ export function createUserProfileRepository(
         .eq('id', id)
         .maybeSingle();
       return data ?? null;
+    },
+
+    async updateProfile(id, input) {
+      const updates: { name?: string | null; avatar_url?: string | null; bio?: string | null } = {};
+      if (input.name !== undefined) updates.name = input.name;
+      if (input.avatar_url !== undefined) updates.avatar_url = input.avatar_url;
+      if (input.bio !== undefined) updates.bio = input.bio;
+
+      const { error } = await supabase.from('users').update(updates).eq('id', id);
+      if (error) throw error;
     },
   };
 }

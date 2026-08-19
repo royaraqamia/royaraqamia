@@ -89,4 +89,87 @@ Examples:
   );
 }
 
-export type { GetProfileInput };
+// ============================================================
+// Write tool (profile.write)
+// ============================================================
+
+const UpdateProfileInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80).nullable().optional().describe('Display name'),
+    avatar_url: z.string().url().nullable().optional().describe('Avatar image URL'),
+    bio: z.string().trim().max(500).nullable().optional().describe('Short biography'),
+    format: z.enum(['markdown', 'json']).default('markdown').describe('Output format'),
+  })
+  .strict();
+
+type UpdateProfileInput = z.infer<typeof UpdateProfileInputSchema>;
+
+export async function updateProfileHandler(
+  params: UpdateProfileInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['profile.write']);
+    const userId = requireUserId(ctx, 'Updating your profile');
+    const repo = createUserProfileRepository(ctx.supabase as never);
+
+    await repo.updateProfile(userId, {
+      name: params.name,
+      avatar_url: params.avatar_url,
+      bio: params.bio,
+    });
+
+    const output = {
+      name: params.name ?? null,
+      avatar_url: params.avatar_url ?? null,
+      bio: params.bio ?? null,
+      message: 'Profile updated.',
+    };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(
+          [
+            '# Profile Updated',
+            '',
+            `- **Name**: ${params.name ?? '—'}`,
+            `- **Bio**: ${params.bio ?? '—'}`,
+          ].join('\n'),
+          output
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export function registerProfileWriteTools(server: McpServer, ctx: McpUserContext): void {
+  server.registerTool(
+    `${MCP_SERVER_NAME}_profile_update`,
+    {
+      title: 'Update Profile',
+      description: `Updates your profile: name, avatar, and bio. Requires the "profile.write" scope and an authenticated session.
+
+Args:
+  - name (string|null, optional): display name
+  - avatar_url (string|null, optional): avatar image URL
+  - bio (string|null, optional, max 500): short biography
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "name": string|null, "avatar_url": string|null, "bio": string|null, "message": string }
+
+Examples:
+  - Use when: "set my bio to 'Software engineer'" -> bio="Software engineer"
+  - Use when: "update my name to 'Ali'" -> name="Ali"`,
+      inputSchema: UpdateProfileInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    (params) => updateProfileHandler(params, ctx)
+  );
+}
+
+export type { GetProfileInput, UpdateProfileInput };

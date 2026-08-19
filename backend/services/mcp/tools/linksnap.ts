@@ -6,6 +6,9 @@ import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from
 import { requireAnyScope, requireUserId } from './guards';
 import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/supabase-short-link';
 import { SupabaseAnalyticsRepository } from '@/backend/repositories/linksnap/supabase-analytics';
+import { ShortenUrlService } from '@/backend/services/linksnap/shorten-url';
+import { UpdateLinkService } from '@/backend/services/linksnap/update-link';
+import { DeleteLinkService } from '@/backend/services/linksnap/delete-link';
 import type { ShortLink } from '@/shared/contracts/linksnap';
 import {
   buildPaginationMeta,
@@ -228,3 +231,227 @@ Examples:
 }
 
 export type { ListLinksInput, GetAnalyticsInput };
+
+// ============================================================
+// Write tools (linksnap.write)
+// ============================================================
+
+const CreateLinkInputSchema = z
+  .object({
+    url: z.string().min(1).describe('The original URL to shorten'),
+    code: z.string().min(3).max(16).optional().describe('Custom short code (3-16 chars)'),
+    expires_at: z.string().datetime().optional().describe('Expiry as ISO-8601 datetime'),
+    password: z.string().min(1).optional().describe('Optional password to protect the link'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const UpdateLinkInputSchema = z
+  .object({
+    code: z.string().min(1).describe('The current short code'),
+    new_code: z.string().min(3).max(16).optional().describe('New short code (3-16 chars)'),
+    url: z.string().min(1).optional().describe('New destination URL'),
+    expires_at: z
+      .string()
+      .datetime()
+      .nullable()
+      .optional()
+      .describe('New expiry (ISO-8601) or null to clear'),
+    password: z.string().nullable().optional().describe('Set a new password, or null to clear it'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const DeleteLinkInputSchema = z
+  .object({
+    code: z.string().min(1).describe('The short code to delete'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+type CreateLinkInput = z.infer<typeof CreateLinkInputSchema>;
+type UpdateLinkInput = z.infer<typeof UpdateLinkInputSchema>;
+type DeleteLinkInput = z.infer<typeof DeleteLinkInputSchema>;
+
+export async function createLinkHandler(
+  params: CreateLinkInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['linksnap.write']);
+    const userId = requireUserId(ctx, 'Creating a short link');
+    const repo = new SupabaseShortLinkRepository(ctx.supabase as never, ctx.supabase as never);
+    const service = new ShortenUrlService(repo);
+
+    const link = await service.execute(
+      params.url,
+      userId,
+      params.code,
+      params.expires_at ? new Date(params.expires_at) : null,
+      params.password
+    );
+
+    const output = {
+      code: link.code,
+      originalUrl: link.originalUrl,
+      expiresAt: link.expiresAt ? formatDate(link.expiresAt) : null,
+      hasPassword: link.passwordHash !== null,
+    };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(
+          `# Short Link Created\n\n- **Code**: \`${link.code}\`\n- **URL**: ${link.originalUrl}\n- **Expires**: ${output.expiresAt ?? 'never'}\n- **Protected**: ${output.hasPassword ? 'yes' : 'no'}`,
+          output
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function updateLinkHandler(
+  params: UpdateLinkInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['linksnap.write']);
+    const userId = requireUserId(ctx, 'Updating a short link');
+    const repo = new SupabaseShortLinkRepository(ctx.supabase as never, ctx.supabase as never);
+    const service = new UpdateLinkService(repo);
+
+    const link = await service.execute(params.code, userId, {
+      code: params.new_code,
+      originalUrl: params.url,
+      expiresAt:
+        params.expires_at === undefined
+          ? undefined
+          : params.expires_at
+            ? new Date(params.expires_at)
+            : null,
+      password: params.password,
+    });
+
+    const output = {
+      code: link.code,
+      originalUrl: link.originalUrl,
+      expiresAt: link.expiresAt ? formatDate(link.expiresAt) : null,
+    };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(
+          `# Short Link Updated\n\n- **Code**: \`${link.code}\`\n- **URL**: ${link.originalUrl}\n- **Expires**: ${output.expiresAt ?? 'never'}`,
+          output
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function deleteLinkHandler(
+  params: DeleteLinkInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['linksnap.write']);
+    const userId = requireUserId(ctx, 'Deleting a short link');
+    const repo = new SupabaseShortLinkRepository(ctx.supabase as never, ctx.supabase as never);
+    const service = new DeleteLinkService(repo);
+
+    await service.execute(params.code, userId);
+    const output = { code: params.code, message: 'Short link deleted.' };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(`# Short Link Deleted\n\nLink \`${params.code}\` was deleted.`, output);
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export function registerLinkSnapWriteTools(server: McpServer, ctx: McpUserContext): void {
+  server.registerTool(
+    `${MCP_SERVER_NAME}_linksnap_create_link`,
+    {
+      title: 'Create Short Link',
+      description: `Shortens a URL for you. Requires "linksnap.write" and an authenticated session.
+
+Args:
+  - url (string, required): the original URL (http/https)
+  - code (string, optional): custom short code, 3-16 characters
+  - expires_at (string, optional): ISO-8601 expiry datetime
+  - password (string, optional): protect the link with a password
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "code": string, "originalUrl": string, "expiresAt": string|null, "hasPassword": boolean }
+
+Examples:
+  - Use when: "shorten https://example.com" -> url="https://example.com"
+  - Use when: "create link promo with code 'summer'" -> url="https://example.com/deal", code="summer"`,
+      inputSchema: CreateLinkInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => createLinkHandler(params, ctx)
+  );
+
+  server.registerTool(
+    `${MCP_SERVER_NAME}_linksnap_update_link`,
+    {
+      title: 'Update Short Link',
+      description: `Updates the destination, code, expiry, or password of one of your short links. Requires "linksnap.write" and an authenticated session.
+
+Args:
+  - code (string, required): the current short code
+  - new_code (string, optional): a new short code (3-16 chars)
+  - url (string, optional): new destination URL
+  - expires_at (string|null, optional): new expiry (ISO-8601) or null to clear
+  - password (string|null, optional): new password or null to clear
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "code": string, "originalUrl": string, "expiresAt": string|null }
+
+Examples:
+  - Use when: "change the destination of link abc to https://new.example.com" -> code="abc", url="https://new.example.com"`,
+      inputSchema: UpdateLinkInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    (params) => updateLinkHandler(params, ctx)
+  );
+
+  server.registerTool(
+    `${MCP_SERVER_NAME}_linksnap_delete_link`,
+    {
+      title: 'Delete Short Link',
+      description: `Deletes one of your short links. Requires "linksnap.write" and an authenticated session.
+
+Args:
+  - code (string, required): the short code to delete
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "code": string, "message": string }
+
+Examples:
+  - Use when: "delete my short link abc" -> code="abc"`,
+      inputSchema: DeleteLinkInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => deleteLinkHandler(params, ctx)
+  );
+}
+
+export type { CreateLinkInput, UpdateLinkInput, DeleteLinkInput };

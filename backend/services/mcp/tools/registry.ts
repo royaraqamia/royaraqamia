@@ -2,12 +2,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from '../constants';
 import { registerSystemTools } from './system';
-import { registerBlogTools } from './blogpress';
-import { registerLinkSnapTools } from './linksnap';
-import { registerSpendTrackTools } from './spendtrack';
-import { registerHabitFlowTools } from './habitflow';
+import { registerBlogTools, registerBlogWriteTools } from './blogpress';
+import { registerLinkSnapTools, registerLinkSnapWriteTools } from './linksnap';
+import { registerSpendTrackTools, registerSpendTrackWriteTools } from './spendtrack';
+import { registerHabitFlowTools, registerHabitFlowWriteTools } from './habitflow';
 import { registerCertificateTools } from './certificates';
-import { registerProfileTools } from './profile';
+import { registerProfileTools, registerProfileWriteTools } from './profile';
 
 /**
  * Tool registry for the public royaraqamia MCP server.
@@ -25,11 +25,16 @@ export function createMcpServer(ctx: McpUserContext): McpServer {
 
   registerSystemTools(server, ctx);
   registerBlogTools(server, ctx);
+  registerBlogWriteTools(server, ctx);
   registerLinkSnapTools(server, ctx);
+  registerLinkSnapWriteTools(server, ctx);
   registerSpendTrackTools(server, ctx);
+  registerSpendTrackWriteTools(server, ctx);
   registerHabitFlowTools(server, ctx);
+  registerHabitFlowWriteTools(server, ctx);
   registerCertificateTools(server, ctx);
   registerProfileTools(server, ctx);
+  registerProfileWriteTools(server, ctx);
 
   return server;
 }

@@ -206,4 +206,312 @@ Examples:
   );
 }
 
-export type { ListHabitsInput, GetLogsInput };
+// ============================================================
+// Write tools (habitflow.write)
+// ============================================================
+
+const CreateHabitInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(80).describe('Habit name'),
+    icon: z.string().min(1).max(40).optional().describe('Icon name (default: Activity)'),
+    frequency: z.enum(['daily', 'weekly']).optional().describe('Frequency (default: daily)'),
+    target: z.number().int().positive().optional().describe('Weekly/monthly target count'),
+    target_period: z.enum(['week', 'month']).optional().describe('Target period'),
+    reminder_time: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .optional()
+      .describe('Reminder time HH:mm'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const UpdateHabitInputSchema = z
+  .object({
+    id: z.string().min(1).describe('The habit id'),
+    name: z.string().trim().min(1).max(80).optional(),
+    icon: z.string().min(1).max(40).optional(),
+    frequency: z.enum(['daily', 'weekly']).optional(),
+    target: z.number().int().positive().nullable().optional(),
+    target_period: z.enum(['week', 'month']).nullable().optional(),
+    reminder_time: z
+      .string()
+      .regex(/^([01]\d|2[0-3]):([0-5]\d)$/)
+      .nullable()
+      .optional(),
+    archived: z.boolean().optional(),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const DeleteHabitInputSchema = z
+  .object({
+    id: z.string().min(1).describe('The habit id to archive/delete'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const ToggleLogInputSchema = z
+  .object({
+    habit_id: z.string().min(1).describe('The habit id'),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .describe('Log date (YYYY-MM-DD)'),
+    completed: z.boolean().describe('True to complete, false to uncomplete'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+type CreateHabitInput = z.infer<typeof CreateHabitInputSchema>;
+type UpdateHabitInput = z.infer<typeof UpdateHabitInputSchema>;
+type DeleteHabitInput = z.infer<typeof DeleteHabitInputSchema>;
+type ToggleLogInput = z.infer<typeof ToggleLogInputSchema>;
+
+export async function createHabitHandler(
+  params: CreateHabitInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['habitflow.write']);
+    const userId = requireUserId(ctx, 'Creating a habit');
+    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const habit = await repo.createHabit({
+      name: params.name,
+      icon: params.icon ?? 'Activity',
+      frequency: params.frequency ?? 'daily',
+      target: params.target ?? null,
+      targetPeriod: params.target_period ?? null,
+      reminderTime: params.reminder_time ?? null,
+    });
+
+    const output = {
+      id: habit.id,
+      name: habit.name,
+      icon: habit.icon,
+      frequency: habit.frequency,
+      target: habit.target ?? null,
+      targetPeriod: habit.targetPeriod ?? null,
+    };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(`# Habit Created\n\n**${habit.name}** (\`${habit.id}\`)`, output);
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function updateHabitHandler(
+  params: UpdateHabitInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['habitflow.write']);
+    const userId = requireUserId(ctx, 'Updating a habit');
+    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const habit = await repo.updateHabit(params.id, {
+      name: params.name,
+      icon: params.icon,
+      frequency: params.frequency,
+      target: params.target,
+      targetPeriod: params.target_period,
+      reminderTime: params.reminder_time,
+      archived: params.archived,
+    });
+
+    const output = {
+      id: habit.id,
+      name: habit.name,
+      archived: habit.archived,
+      message: 'Habit updated.',
+    };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(`# Habit Updated\n\n**${habit.name}** (\`${habit.id}\`)`, output);
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function deleteHabitHandler(
+  params: DeleteHabitInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['habitflow.write']);
+    const userId = requireUserId(ctx, 'Deleting a habit');
+    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const deleted = await repo.deleteHabit(params.id);
+
+    if (!deleted) {
+      return {
+        isError: true,
+        content: [{ type: 'text', text: 'Habit not found or could not be archived.' }],
+      };
+    }
+
+    const output = { id: params.id, message: 'Habit archived.' };
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(`# Habit Deleted\n\nHabit \`${params.id}\` was archived.`, output);
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function toggleLogHandler(
+  params: ToggleLogInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['habitflow.write']);
+    const userId = requireUserId(ctx, 'Toggling a habit log');
+    const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
+    const log = await repo.toggleLog(params.habit_id, params.date, params.completed);
+
+    const output = {
+      id: log.id,
+      habitId: log.habitId,
+      date: log.date,
+      completed: log.completed,
+      message: params.completed ? 'Habit marked complete.' : 'Habit marked incomplete.',
+    };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(
+          `# Habit Log ${params.completed ? 'Completed' : 'Uncompleted'}\n\nHabit \`${params.habit_id}\` on ${params.date}.`,
+          output
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export function registerHabitFlowWriteTools(server: McpServer, ctx: McpUserContext): void {
+  server.registerTool(
+    `${MCP_SERVER_NAME}_habitflow_create_habit`,
+    {
+      title: 'Create Habit',
+      description: `Creates a new habit. Requires "habitflow.write" and an authenticated session.
+
+Args:
+  - name (string, required): habit name
+  - icon (string, optional): icon name (default: Activity)
+  - frequency ('daily' | 'weekly', optional)
+  - target (number, optional): target count for the target period
+  - target_period ('week' | 'month', optional)
+  - reminder_time (string, optional): HH:mm
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "id": string, "name": string, "icon": string, "frequency": string, "target": number|null, "targetPeriod": string|null }
+
+Examples:
+  - Use when: "create a habit called Reading" -> name="Reading"
+  - Use when: "create daily habit Meditate with 8pm reminder" -> name="Meditate", reminder_time="20:00"`,
+      inputSchema: CreateHabitInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => createHabitHandler(params, ctx)
+  );
+
+  server.registerTool(
+    `${MCP_SERVER_NAME}_habitflow_update_habit`,
+    {
+      title: 'Update Habit',
+      description: `Updates one of your habits. Requires "habitflow.write" and an authenticated session.
+
+Args:
+  - id (string, required): the habit id
+  - name (string, optional)
+  - icon (string, optional)
+  - frequency ('daily' | 'weekly', optional)
+  - target (number|null, optional)
+  - target_period ('week' | 'month'|null, optional)
+  - reminder_time (string|null, optional, HH:mm)
+  - archived (boolean, optional)
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "id": string, "name": string, "archived": boolean, "message": string }
+
+Examples:
+  - Use when: "rename habit h1 to Reading books" -> id="h1", name="Reading books"`,
+      inputSchema: UpdateHabitInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    (params) => updateHabitHandler(params, ctx)
+  );
+
+  server.registerTool(
+    `${MCP_SERVER_NAME}_habitflow_delete_habit`,
+    {
+      title: 'Delete Habit',
+      description: `Archives (soft-deletes) one of your habits. Requires "habitflow.write" and an authenticated session.
+
+Args:
+  - id (string, required): the habit id
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "id": string, "message": string }
+
+Examples:
+  - Use when: "delete habit h1" -> id="h1"`,
+      inputSchema: DeleteHabitInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => deleteHabitHandler(params, ctx)
+  );
+
+  server.registerTool(
+    `${MCP_SERVER_NAME}_habitflow_toggle_log`,
+    {
+      title: 'Toggle Habit Log',
+      description: `Marks a habit complete or incomplete for a given date. Requires "habitflow.write" and an authenticated session.
+
+Args:
+  - habit_id (string, required): the habit id
+  - date (string, required): date YYYY-MM-DD
+  - completed (boolean, required): true to complete, false to uncomplete
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "id": string, "habitId": string, "date": string, "completed": boolean, "message": string }
+
+Examples:
+  - Use when: "mark habit h1 complete today" -> habit_id="h1", date="2026-08-19", completed=true`,
+      inputSchema: ToggleLogInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => toggleLogHandler(params, ctx)
+  );
+}
+
+export type {
+  ListHabitsInput,
+  GetLogsInput,
+  CreateHabitInput,
+  UpdateHabitInput,
+  DeleteHabitInput,
+  ToggleLogInput,
+};

@@ -382,4 +382,351 @@ Examples:
   );
 }
 
-export type { ListTransactionsInput, GetSummaryInput, ListCategoriesInput, ListBudgetsInput };
+// ============================================================
+// Write tools (spendtrack.write)
+// ============================================================
+
+const CreateExpenseInputSchema = z
+  .object({
+    amount: z.number().positive().describe('Expense amount'),
+    category_id: z.string().min(1).describe('Category id'),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .describe('Expense date (YYYY-MM-DD)'),
+    description: z.string().min(1).optional().describe('Optional description'),
+    currency: z.string().min(1).optional().describe('Optional currency code'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const UpdateExpenseInputSchema = z
+  .object({
+    id: z.string().min(1).describe('The expense id'),
+    amount: z.number().positive().optional(),
+    category_id: z.string().min(1).optional(),
+    date: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
+    description: z.string().nullable().optional(),
+    currency: z.string().nullable().optional(),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const DeleteExpenseInputSchema = z
+  .object({
+    id: z.string().min(1).describe('The expense id to delete'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const SetBudgetInputSchema = z
+  .object({
+    month: z
+      .string()
+      .regex(/^\d{4}-\d{2}$/)
+      .describe('Budget month (YYYY-MM)'),
+    amount: z.number().positive().describe('Budget amount'),
+    category_id: z.string().min(1).optional().describe('Category id (default: overall budget)'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+const CreateCategoryInputSchema = z
+  .object({
+    name: z.string().trim().min(1).max(50).describe('Category name'),
+    color_hex: z
+      .string()
+      .regex(/^#[0-9a-fA-F]{6}$/)
+      .describe('Category color as #RRGGBB'),
+    format: ResponseFormatSchema,
+  })
+  .strict();
+
+type CreateExpenseInput = z.infer<typeof CreateExpenseInputSchema>;
+type UpdateExpenseInput = z.infer<typeof UpdateExpenseInputSchema>;
+type DeleteExpenseInput = z.infer<typeof DeleteExpenseInputSchema>;
+type SetBudgetInput = z.infer<typeof SetBudgetInputSchema>;
+type CreateCategoryInput = z.infer<typeof CreateCategoryInputSchema>;
+
+export async function createExpenseHandler(
+  params: CreateExpenseInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['spendtrack.write']);
+    const userId = requireUserId(ctx, 'Creating an expense');
+    const repo = createSpendtrackRepository(ctx.supabase as never);
+
+    const id = await repo.createExpense({
+      user_id: userId,
+      amount: params.amount,
+      category_id: params.category_id,
+      date: params.date,
+      description: params.description ?? null,
+      currency: params.currency ?? null,
+    });
+
+    const output = { id, message: 'Expense created.' };
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(
+          `# Expense Created\n\n${formatAmount(params.amount, params.currency ?? null)} on ${params.date} (\`${id}\`)`,
+          output
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function updateExpenseHandler(
+  params: UpdateExpenseInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['spendtrack.write']);
+    const userId = requireUserId(ctx, 'Updating an expense');
+    const repo = createSpendtrackRepository(ctx.supabase as never);
+
+    await repo.updateExpense(params.id, userId, {
+      amount: params.amount ?? 0,
+      category_id: params.category_id ?? '',
+      date: params.date ?? '',
+      description: params.description ?? null,
+      currency: params.currency ?? null,
+    });
+
+    const output = { id: params.id, message: 'Expense updated.' };
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(`# Expense Updated\n\nExpense \`${params.id}\` was updated.`, output);
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function deleteExpenseHandler(
+  params: DeleteExpenseInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['spendtrack.write']);
+    const userId = requireUserId(ctx, 'Deleting an expense');
+    const repo = createSpendtrackRepository(ctx.supabase as never);
+
+    await repo.deleteExpense(params.id, userId);
+    const output = { id: params.id, message: 'Expense deleted.' };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(`# Expense Deleted\n\nExpense \`${params.id}\` was deleted.`, output);
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function setBudgetHandler(
+  params: SetBudgetInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['spendtrack.write']);
+    const userId = requireUserId(ctx, 'Setting a budget');
+    const repo = createSpendtrackRepository(ctx.supabase as never);
+
+    await repo.setBudget(userId, params.month, params.amount, params.category_id ?? null);
+    const output = {
+      month: params.month,
+      category_id: params.category_id ?? null,
+      amount: params.amount,
+      message: 'Budget saved.',
+    };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(
+          `# Budget Saved\n\n${formatAmount(params.amount, null)} for ${params.month}${
+            params.category_id ? ` (category \`${params.category_id}\`)` : ' (overall)'
+          }.`,
+          output
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export async function createCategoryHandler(
+  params: CreateCategoryInput,
+  ctx: McpUserContext
+): Promise<ToolResult> {
+  try {
+    requireAnyScope(ctx, ['spendtrack.write']);
+    const userId = requireUserId(ctx, 'Creating a category');
+    const repo = createSpendtrackRepository(ctx.supabase as never);
+
+    await repo.createCategory({ user_id: userId, name: params.name, colorHex: params.color_hex });
+    const output = { name: params.name, colorHex: params.color_hex, message: 'Category created.' };
+
+    return params.format === 'json'
+      ? structuredResponse(jsonText(output), output)
+      : structuredResponse(
+          `# Category Created\n\n**${params.name}** (${params.color_hex})`,
+          output
+        );
+  } catch (error) {
+    return toolErrorResponse(error);
+  }
+}
+
+export function registerSpendTrackWriteTools(server: McpServer, ctx: McpUserContext): void {
+  server.registerTool(
+    `${MCP_SERVER_NAME}_spendtrack_create_expense`,
+    {
+      title: 'Create Expense',
+      description: `Records an expense. Requires "spendtrack.write" and an authenticated session.
+
+Args:
+  - amount (number, required): the amount
+  - category_id (string, required): category id (see spendtrack_list_categories)
+  - date (string, required): date YYYY-MM-DD
+  - description (string, optional): short description
+  - currency (string, optional): currency code
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "id": string, "message": string }
+
+Examples:
+  - Use when: "record a 25.50 expense in category cat1 today" -> amount=25.5, category_id="cat1", date="2026-08-19"`,
+      inputSchema: CreateExpenseInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => createExpenseHandler(params, ctx)
+  );
+
+  server.registerTool(
+    `${MCP_SERVER_NAME}_spendtrack_update_expense`,
+    {
+      title: 'Update Expense',
+      description: `Updates one of your expenses. Requires "spendtrack.write" and an authenticated session.
+
+Args:
+  - id (string, required): the expense id
+  - amount (number, optional)
+  - category_id (string, optional)
+  - date (string, optional, YYYY-MM-DD)
+  - description (string|null, optional)
+  - currency (string|null, optional)
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "id": string, "message": string }
+
+Examples:
+  - Use when: "change the amount of expense e1 to 40" -> id="e1", amount=40`,
+      inputSchema: UpdateExpenseInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    (params) => updateExpenseHandler(params, ctx)
+  );
+
+  server.registerTool(
+    `${MCP_SERVER_NAME}_spendtrack_delete_expense`,
+    {
+      title: 'Delete Expense',
+      description: `Deletes one of your expenses. Requires "spendtrack.write" and an authenticated session.
+
+Args:
+  - id (string, required): the expense id
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "id": string, "message": string }
+
+Examples:
+  - Use when: "delete expense e1" -> id="e1"`,
+      inputSchema: DeleteExpenseInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => deleteExpenseHandler(params, ctx)
+  );
+
+  server.registerTool(
+    `${MCP_SERVER_NAME}_spendtrack_set_budget`,
+    {
+      title: 'Set Budget',
+      description: `Creates or updates a monthly budget (overall or per-category). Requires "spendtrack.write" and an authenticated session.
+
+Args:
+  - month (string, required): YYYY-MM
+  - amount (number, required): budget amount
+  - category_id (string, optional): restrict to a category
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "month": string, "category_id": string|null, "amount": number, "message": string }
+
+Examples:
+  - Use when: "set my budget for August 2026 to 2000" -> month="2026-08", amount=2000`,
+      inputSchema: SetBudgetInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    (params) => setBudgetHandler(params, ctx)
+  );
+
+  server.registerTool(
+    `${MCP_SERVER_NAME}_spendtrack_create_category`,
+    {
+      title: 'Create Category',
+      description: `Creates a custom spending category. Requires "spendtrack.write" and an authenticated session.
+
+Args:
+  - name (string, required): category name (max 50)
+  - color_hex (string, required): color as #RRGGBB
+  - format ('markdown' | 'json', default 'markdown'): output format
+
+Returns (JSON): { "name": string, "colorHex": string, "message": string }
+
+Examples:
+  - Use when: "create a category called Travel" -> name="Travel", color_hex="#ff8800"`,
+      inputSchema: CreateCategoryInputSchema,
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    (params) => createCategoryHandler(params, ctx)
+  );
+}
+
+export type {
+  ListTransactionsInput,
+  GetSummaryInput,
+  ListCategoriesInput,
+  ListBudgetsInput,
+  CreateExpenseInput,
+  UpdateExpenseInput,
+  DeleteExpenseInput,
+  SetBudgetInput,
+  CreateCategoryInput,
+};
