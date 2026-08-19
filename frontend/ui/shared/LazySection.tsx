@@ -7,10 +7,12 @@ import { HOME_SECTION_IDS, loadHomeSection, type HomeSectionId } from '../lazy-s
 /**
  * Below-the-fold section that mounts its JS only when it nears the viewport.
  *
- * A server component renders this thin client island as an empty placeholder;
- * an IntersectionObserver (600px look-ahead) or an in-page `#anchor` click
- * triggers the dynamic `import()` of the real section. This keeps the motion/
- * icon-heavy section code out of the homepage's initial critical path.
+ * A server component renders this thin client island as an empty placeholder
+ * carrying the section `id` (so in-page `#anchor` links always resolve to a
+ * scroll target); an IntersectionObserver (600px look-ahead) or an in-page
+ * `#anchor` click triggers the dynamic `import()` of the real section. Clicking
+ * such an anchor scrolls to the mounted section after the lazy mount settles,
+ * so sections above it can't push the target out of view.
  * If `IntersectionObserver` is unavailable (old engines, jsdom) it loads
  * immediately — same convention as `MotionReveal`.
  */
@@ -34,9 +36,53 @@ function attachAnchorPreload() {
     if (!anchor) return;
     const id = anchor.getAttribute('href')?.slice(1);
     if (id && (HOME_SECTION_IDS as readonly string[]).includes(id)) {
+      event.preventDefault();
       preloadSection(id as HomeSectionId);
+      scrollToLazySection(id);
     }
   });
+}
+
+/**
+ * Scrolls to a lazy section, correcting for the layout shift caused by
+ * sections above it mounting after the browser's native anchor navigation.
+ *
+ * The placeholder (with the section id) is scrolled into view first so the
+ * lazy module loads; once the real section replaces it we scroll to it again
+ * and re-check after the surrounding sections have settled.
+ */
+function scrollToLazySection(id: string) {
+  try {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch {
+    /* jsdom does not implement scrollIntoView */
+  }
+
+  let tries = 0;
+  let corrected = false;
+  const attempt = () => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const isReal = el.getAttribute('aria-hidden') !== 'true';
+    if (isReal && !corrected) {
+      corrected = true;
+      try {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch {
+        /* jsdom does not implement scrollIntoView */
+      }
+      window.setTimeout(() => {
+        try {
+          document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch {
+          /* jsdom does not implement scrollIntoView */
+        }
+      }, 600);
+      return;
+    }
+    if (!isReal && tries++ < 120) window.setTimeout(attempt, 100);
+  };
+  attempt();
 }
 
 export function LazySection({ id, className }: { id: HomeSectionId; className?: string }) {
@@ -99,5 +145,5 @@ export function LazySection({ id, className }: { id: HomeSectionId; className?: 
 
   if (Comp) return <Comp />;
   if (failed) return null;
-  return <div ref={ref} className={className} aria-hidden="true" />;
+  return <div ref={ref} id={id} className={className} aria-hidden="true" />;
 }

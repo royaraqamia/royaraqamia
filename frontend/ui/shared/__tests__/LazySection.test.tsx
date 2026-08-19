@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { LazySection } from '../LazySection';
 
 const { loadHomeSectionMock } = vi.hoisted(() => {
-  const TestSection = () => <div data-testid="loaded-section" />;
+  const TestSection = () => <section id="testimonials" data-testid="loaded-section" />;
   const loadHomeSectionMock = vi.fn(() => Promise.resolve(TestSection));
   return { TestSection, loadHomeSectionMock };
 });
@@ -95,9 +95,60 @@ describe('LazySection', () => {
     const anchor = document.createElement('a');
     anchor.setAttribute('href', '#testimonials');
     document.body.appendChild(anchor);
-    anchor.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
     anchor.remove();
 
     await waitFor(() => expect(loadHomeSectionMock).toHaveBeenCalledWith('testimonials'));
+  });
+
+  it('renders the placeholder with the section id so in-page anchors can scroll to it before load', () => {
+    globalThis.IntersectionObserver =
+      FakeIntersectionObserver as unknown as typeof IntersectionObserver;
+
+    const { container } = render(<LazySection id="testimonials" />);
+    const placeholder = container.querySelector('div#testimonials');
+    expect(placeholder).toBeInTheDocument();
+    expect(document.getElementById('testimonials')).toBe(placeholder);
+  });
+
+  it('does not duplicate the section id once loaded', async () => {
+    globalThis.IntersectionObserver =
+      FakeIntersectionObserver as unknown as typeof IntersectionObserver;
+
+    const { container } = render(<LazySection id="testimonials" />);
+    FakeIntersectionObserver.instances[0]?.trigger();
+    await waitFor(() => expect(screen.getByTestId('loaded-section')).toBeInTheDocument());
+    expect(container.querySelector('div#testimonials')).not.toBeInTheDocument();
+  });
+
+  it('scrolls to the mounted section after an anchor click, not the placeholder', async () => {
+    globalThis.IntersectionObserver =
+      FakeIntersectionObserver as unknown as typeof IntersectionObserver;
+
+    if (!Element.prototype.scrollIntoView) {
+      Object.defineProperty(Element.prototype, 'scrollIntoView', {
+        configurable: true,
+        writable: true,
+        value: vi.fn(),
+      });
+    }
+    const scrollMock = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(() => {});
+
+    try {
+      render(<LazySection id="testimonials" />);
+      const anchor = document.createElement('a');
+      anchor.setAttribute('href', '#testimonials');
+      document.body.appendChild(anchor);
+      anchor.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      anchor.remove();
+
+      FakeIntersectionObserver.instances[0]?.trigger();
+      await waitFor(() => expect(screen.getByTestId('loaded-section')).toBeInTheDocument());
+
+      await vi.waitFor(() => expect(scrollMock).toHaveBeenCalled(), { timeout: 2000 });
+      expect(scrollMock).toHaveBeenCalled();
+    } finally {
+      scrollMock.mockRestore();
+    }
   });
 });
