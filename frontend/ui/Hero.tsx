@@ -179,9 +179,11 @@ export function Hero() {
               style={{ ['--ld' as string]: '0.75s' } as React.CSSProperties}
             >
               {/* Reserve the dashboard's footprint so the lazy HeroVisual mount
-                  doesn't grow the hero and trigger CLS. Ratios match its layout:
-                  stacked cards on mobile (tall), side-by-side from sm up (square). */}
-              <div className="relative w-full aspect-[2/5] sm:aspect-square">
+                  doesn't grow the hero and trigger CLS. On mobile the stacked
+                  cards make the visual tall (h ≈ 1.5w + 275) — the min-height
+                  floor covers narrow phones and the aspect-ratio the rest; from
+                  sm up the cards sit side-by-side (near square). */}
+              <div className="relative w-full aspect-[2/4.6] min-h-[820px] flex items-center sm:aspect-square sm:min-h-0">
                 <LazySection id="hero-visual" className="w-full h-full" />
               </div>
             </div>
