@@ -30,6 +30,7 @@ export interface CertificatesReader {
     search: string
   ): Promise<{ data: Certificate[]; total: number }>;
   getById(id: string): Promise<Certificate | null>;
+  listByRecipient(userId: string): Promise<Certificate[]>;
 }
 
 export interface CertificatesWriter {

@@ -65,6 +65,17 @@ export function createCertificatesRepository(
       return data as Certificate;
     },
 
+    async listByRecipient(userId: string): Promise<Certificate[]> {
+      const { data, error } = await supabase
+        .from('certificates')
+        .select('*')
+        .contains('recipient_user_ids', [userId])
+        .order('issue_date', { ascending: false });
+
+      if (error) throw error;
+      return (data as Certificate[]) ?? [];
+    },
+
     async create(input: CertificateCreateInput): Promise<Certificate> {
       const { data, error } = await supabase
         .from('certificates')

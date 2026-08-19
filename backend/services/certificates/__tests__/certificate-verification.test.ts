@@ -58,6 +58,7 @@ function makeDeps(overrides: Partial<CertificateVerifierDeps> = {}) {
     getCodes: vi.fn(),
     list: vi.fn(),
     getById: vi.fn(),
+    listByRecipient: vi.fn(),
   };
 
   const checkRateLimit = vi.fn<CertificateVerifierDeps['checkRateLimit']>(async () => true);

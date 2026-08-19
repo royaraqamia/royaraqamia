@@ -2,6 +2,12 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from '../constants';
 import { registerSystemTools } from './system';
+import { registerBlogTools } from './blogpress';
+import { registerLinkSnapTools } from './linksnap';
+import { registerSpendTrackTools } from './spendtrack';
+import { registerHabitFlowTools } from './habitflow';
+import { registerCertificateTools } from './certificates';
+import { registerProfileTools } from './profile';
 
 /**
  * Tool registry for the public royaraqamia MCP server.
@@ -18,6 +24,12 @@ export function createMcpServer(ctx: McpUserContext): McpServer {
   });
 
   registerSystemTools(server, ctx);
+  registerBlogTools(server, ctx);
+  registerLinkSnapTools(server, ctx);
+  registerSpendTrackTools(server, ctx);
+  registerHabitFlowTools(server, ctx);
+  registerCertificateTools(server, ctx);
+  registerProfileTools(server, ctx);
 
   return server;
 }

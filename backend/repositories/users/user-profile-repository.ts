@@ -8,8 +8,18 @@ export interface UserProfileInput {
   avatar_url?: string | null;
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string | null;
+  avatar_url: string | null;
+  bio: string | null;
+  is_admin: boolean;
+}
+
 export interface UserProfileRepository {
   upsert(input: UserProfileInput): Promise<void>;
+  getById(id: string): Promise<UserProfile | null>;
 }
 
 export function createUserProfileRepository(
@@ -27,6 +37,15 @@ export function createUserProfileRepository(
           created_at: new Date().toISOString(),
         })
         .maybeSingle();
+    },
+
+    async getById(id) {
+      const { data } = await supabase
+        .from('users')
+        .select('id, email, name, avatar_url, bio, is_admin')
+        .eq('id', id)
+        .maybeSingle();
+      return data ?? null;
     },
   };
 }
