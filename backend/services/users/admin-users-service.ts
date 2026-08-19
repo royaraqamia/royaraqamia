@@ -1,4 +1,4 @@
-import type { AdminUsersRepository } from '@/backend/repositories/users/admin-users-repository';
+import type { AdminUsersRepository, RecipientEmail } from '@/backend/repositories/users/admin-users-repository';
 import type { AdminUser } from '@/shared/contracts/users';
 
 export class AdminUsersService {
@@ -10,5 +10,9 @@ export class AdminUsersService {
 
   async findExistingUserIds(ids: string[]): Promise<string[]> {
     return this.repository.findExistingUserIds(ids);
+  }
+
+  async findRecipientEmails(ids?: string[]): Promise<RecipientEmail[]> {
+    return this.repository.findRecipientEmails(ids);
   }
 }

@@ -11,6 +11,7 @@ function makeRepo(overrides: Partial<AdminUsersRepository> = {}) {
   const repository: AdminUsersRepository = {
     search: vi.fn(),
     findExistingUserIds: vi.fn(),
+    findRecipientEmails: vi.fn(),
     ...overrides,
   };
   return { repository, service: new AdminUsersService(repository) };
