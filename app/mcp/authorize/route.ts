@@ -81,10 +81,10 @@ export async function GET(req: NextRequest) {
   // Browser user must be signed in before consent is shown.
   const supabase = await createServerSupabaseClient();
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session?.user) {
+  if (!user) {
     const loginUrl = new URL('/auth/login', req.url);
     loginUrl.searchParams.set('redirect', req.nextUrl.pathname + req.nextUrl.search);
     return NextResponse.redirect(loginUrl, { headers: noStore() });

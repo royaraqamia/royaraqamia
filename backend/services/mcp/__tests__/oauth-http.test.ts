@@ -46,7 +46,7 @@ describe('oauthErrorRedirect', () => {
     expect(location).toContain('error=access_denied');
     expect(location).toContain('error_description=User+denied+consent');
     expect(location).toContain('state=state-123');
-    expect(res.status).toBe(307);
+    expect(res.status).toBe(302);
   });
 
   it('omits state when null', () => {

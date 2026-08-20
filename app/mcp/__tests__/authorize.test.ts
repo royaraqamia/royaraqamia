@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { NextRequest, NextResponse } from 'next/server';
 
 const mockGetClient = vi.fn();
+const mockGetUser = vi.fn();
 const mockGetSession = vi.fn();
 
 vi.mock('@/backend/services/mcp/oauth-provider', () => ({
@@ -10,7 +11,7 @@ vi.mock('@/backend/services/mcp/oauth-provider', () => ({
 
 vi.mock('@/backend/config/supabase', () => ({
   createServerSupabaseClient: () => ({
-    auth: { getSession: () => mockGetSession() },
+    auth: { getUser: () => mockGetUser(), getSession: () => mockGetSession() },
   }),
 }));
 
@@ -78,7 +79,7 @@ describe('GET /mcp/authorize', () => {
         state: 'state-123',
       })
     );
-    expect(res.status).toBe(307);
+    expect(res.status).toBe(302);
     const location = res.headers.get('location') ?? '';
     expect(location).toContain('error=unsupported_response_type');
     expect(location).toContain('state=state-123');
@@ -114,7 +115,7 @@ describe('GET /mcp/authorize', () => {
   });
 
   it('redirects an unauthenticated user to login preserving the full authorize URL', async () => {
-    mockGetSession.mockResolvedValue({ data: { session: null } });
+    mockGetUser.mockResolvedValue({ data: { user: null } });
     const res = await GET(
       makeReq({
         response_type: 'code',
@@ -138,8 +139,8 @@ describe('GET /mcp/authorize', () => {
   });
 
   it('forwards an authenticated user to the consent page with the query preserved', async () => {
-    mockGetSession.mockResolvedValue({
-      data: { session: { user: { id: 'u1', email: 'user@example.com' } } },
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u1', email: 'user@example.com' } },
     });
     const res = await GET(
       makeReq({

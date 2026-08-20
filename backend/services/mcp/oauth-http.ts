@@ -71,5 +71,7 @@ export function oauthErrorRedirect(
   url.searchParams.set('error', error);
   if (description) url.searchParams.set('error_description', description);
   if (state) url.searchParams.set('state', state);
-  return NextResponse.redirect(url.toString(), { headers: noStore() });
+  // 302 (not the 307 default) so the browser issues a GET to the redirect_uri,
+  // as RFC 6749 §4.1.2 expects. A 307 would replay the form POST to the client.
+  return NextResponse.redirect(url.toString(), { status: 302, headers: noStore() });
 }
