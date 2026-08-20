@@ -32,9 +32,11 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   transpilePackages: ['motion'],
-  staleTimes: {
-    dynamic: 30,
-    static: 300,
+  experimental: {
+    staleTimes: {
+      dynamic: 30,
+      static: 300,
+    },
   },
   typescript: {
     ignoreBuildErrors: true,
@@ -141,7 +143,7 @@ const sentryWebpackPluginOptions = {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
   silent: true,
-  dryRun: !process.env.CI && process.env.VERCEL !== '1',
+  dryRun: !process.env.SENTRY_AUTH_TOKEN,
   widenClientFileUpload: true,
   tunnelRoute: '/monitoring',
   hideSourceMaps: true,
@@ -152,7 +154,7 @@ const sentryWebpackPluginOptions = {
   },
 };
 
-const skipSentryPlugin = !process.env.CI && process.env.VERCEL !== '1';
+const skipSentryPlugin = process.env.VERCEL !== '1';
 module.exports = skipSentryPlugin
   ? withBundleAnalyzer(nextConfig)
   : withSentryConfig(withBundleAnalyzer(nextConfig), sentryWebpackPluginOptions);
