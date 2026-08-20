@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.5] - 2026-08-20
+
+### Changed
+- use 302 for OAuth error redirects, prefer getUser() for identity, and drop the scope list from the consent page
+
+### Fixed
+- redirect consent to the client callback with a 302 GET and allow loopback form-action
+
 ## [1.7.4] - 2026-08-20
 
 ### Changed
