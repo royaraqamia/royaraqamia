@@ -1,6 +1,14 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  useRef,
+  useMemo,
+} from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   getSession,
@@ -44,14 +52,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const prevSessionRef = useRef<Session | null>(null);
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
 
   useEffect(() => {
+    let active = true;
+
     if (!hasBrowserSessionToken()) {
       setIsLoading(false);
       return;
     }
 
     getSession().then((session) => {
+      if (!active) return;
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
@@ -59,45 +72,38 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     });
 
     const unsubscribe = subscribeToSessionChanges((session) => {
+      if (!active) return;
       const prevSession = prevSessionRef.current;
+      prevSessionRef.current = session;
       setSession(session);
       setUser(session?.user ?? null);
       setIsLoading(false);
-      prevSessionRef.current = session;
 
       // Session expired (had a session, now null) — not on an auth page
-      if (prevSession && !session && !AUTH_PATHS.some((p) => pathname.startsWith(p))) {
+      if (prevSession && !session && !AUTH_PATHS.some((p) => pathnameRef.current.startsWith(p))) {
+        const currentPath = pathnameRef.current;
         const loginPath =
-          pathname && pathname !== '/'
-            ? `/auth/login?session_expired=1&redirect=${encodeURIComponent(pathname)}`
+          currentPath && currentPath !== '/'
+            ? `/auth/login?session_expired=1&redirect=${encodeURIComponent(currentPath)}`
             : '/auth/login?session_expired=1';
         router.push(loginPath);
       }
     });
 
-    return unsubscribe;
-  }, [pathname, router]);
-
-  const prevPathname = useRef(pathname);
-  useEffect(() => {
-    if (prevPathname.current === pathname) return;
-    prevPathname.current = pathname;
-
-    if (!hasBrowserSessionToken()) return;
-
-    getSession().then((session) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-    });
-  }, [pathname]);
+    return () => {
+      active = false;
+      unsubscribe();
+    };
+  }, [router]);
 
   const signOut = useCallback(async () => {
     await signOutSession();
   }, []);
 
-  return (
-    <SessionContext.Provider value={{ user, session, isLoading, signOut }}>
-      {children}
-    </SessionContext.Provider>
+  const value = useMemo(
+    () => ({ user, session, isLoading, signOut }),
+    [user, session, isLoading, signOut]
   );
+
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
