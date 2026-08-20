@@ -58,18 +58,14 @@ export default async function ConnectPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    const loginUrl = new URL('/auth/login', process.env.NEXT_PUBLIC_BASE_URL ?? '');
-    loginUrl.searchParams.set(
-      'redirect',
-      `/mcp/connect?client_id=${encodeURIComponent(
-        clientId!
-      )}&redirect_uri=${encodeURIComponent(redirectUri!)}&scope=${encodeURIComponent(
-        scope
-      )}&state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(
-        codeChallenge!
-      )}&code_challenge_method=${encodeURIComponent(codeChallengeMethod!)}`
-    );
-    redirect(loginUrl.pathname + loginUrl.search);
+    const redirectTo = `/mcp/connect?client_id=${encodeURIComponent(
+      clientId!
+    )}&redirect_uri=${encodeURIComponent(redirectUri!)}&scope=${encodeURIComponent(
+      scope
+    )}&state=${encodeURIComponent(state)}&code_challenge=${encodeURIComponent(
+      codeChallenge!
+    )}&code_challenge_method=${encodeURIComponent(codeChallengeMethod!)}`;
+    redirect(`/auth/login?redirect=${encodeURIComponent(redirectTo)}`);
   }
 
   return (
