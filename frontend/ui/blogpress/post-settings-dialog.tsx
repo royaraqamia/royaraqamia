@@ -95,7 +95,7 @@ export function PostSettingsDialog({
           <Settings className="size-4.5 transition-transform duration-300 ease-out hover:rotate-45" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg md:max-w-xl w-[calc(100%-2rem)] p-0 gap-0 border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl rounded-2xl sm:rounded-3xl transition-all duration-300">
+      <DialogContent className="sm:max-w-lg md:max-w-xl w-[calc(100%-2rem)] p-0 gap-0 border border-border/60 bg-background/95 backdrop-blur-xl shadow-2xl rounded-2xl sm:rounded-3xl transition-transform duration-300">
         {/* Header */}
         <DialogHeader className="relative border-b border-border/40 bg-muted/30 px-5 sm:px-6 py-4.5 sm:py-5 text-right">
           <div className="flex items-center gap-3">

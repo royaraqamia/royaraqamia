@@ -73,7 +73,7 @@ export function LinkQrModal({ code, baseUrl, open, onOpenChange }: LinkQrModalPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-105 p-6 gap-6 rounded-3xl border border-border/80 bg-background/95 backdrop-blur-xl shadow-2xl transition-all">
+      <DialogContent className="sm:max-w-105 p-6 gap-6 rounded-3xl border border-border/80 bg-background/95 backdrop-blur-xl shadow-2xl transition-transform">
         <DialogHeader className="space-y-3 text-right">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/15 shadow-xs">
