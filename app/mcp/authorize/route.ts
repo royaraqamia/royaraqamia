@@ -21,16 +21,8 @@ export async function GET(req: NextRequest) {
   const codeChallenge = params.get('code_challenge');
   const codeChallengeMethod = params.get('code_challenge_method');
 
-  if (responseType !== 'code') {
-    if (redirectUri) {
-      return oauthErrorRedirect(redirectUri, 'unsupported_response_type', state);
-    }
-    return NextResponse.json(
-      { error: 'unsupported_response_type', error_description: 'response_type must be "code"' },
-      { status: 400, headers: noStore() }
-    );
-  }
-
+  // Resolve the client first so the redirect_uri can be verified against the
+  // registered allowlist before any error redirect (RFC 6749 §4.1.2.1).
   const provider = createMcpOAuthProvider();
   const client = clientId ? await provider.getClient(clientId) : null;
 
@@ -40,8 +32,20 @@ export async function GET(req: NextRequest) {
       { status: 401, headers: noStore() }
     );
   }
+
+  const isRegisteredRedirect = redirectUri !== null && client.redirect_uris.includes(redirectUri);
+
+  if (responseType !== 'code') {
+    if (isRegisteredRedirect && redirectUri) {
+      return oauthErrorRedirect(redirectUri, 'unsupported_response_type', state);
+    }
+    return NextResponse.json(
+      { error: 'unsupported_response_type', error_description: 'response_type must be "code"' },
+      { status: 400, headers: noStore() }
+    );
+  }
   if (client.expires_at && new Date(client.expires_at).getTime() < Date.now()) {
-    if (redirectUri) {
+    if (isRegisteredRedirect && redirectUri) {
       return oauthErrorRedirect(
         redirectUri,
         'unauthorized_client',
@@ -54,7 +58,7 @@ export async function GET(req: NextRequest) {
       { status: 401, headers: noStore() }
     );
   }
-  if (!redirectUri || !client.redirect_uris.includes(redirectUri)) {
+  if (!isRegisteredRedirect) {
     return NextResponse.json(
       {
         error: 'invalid_request',
