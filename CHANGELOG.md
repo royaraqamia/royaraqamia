@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.3] - 2026-08-20
+
+### Changed
+- add supabase CLI as devDependency
+
+### Fixed
+- preserve redirect target across login flows and MCP connect
+- validate redirect_uri before OAuth error redirects
+
 ## [1.7.2] - 2026-08-20
 
 ### Changed
