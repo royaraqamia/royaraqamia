@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.4] - 2026-08-20
+
+### Changed
+- approve install scripts for @sentry/cli and esbuild
+- rename middleware.ts to proxy.ts for Next 16
+- remove decorative header/footer branding and unify font to IBM Plex Sans Arabic
+- subscribe to auth session once instead of on every navigation
+- limit syntax highlighting to a lean language set
+- throttle reading progress updates with requestAnimationFrame
+- promote animated glow orbs to compositor layers with mobile blur caps
+- memoize testimonial cards and precompute card metadata
+- restrict product dialog animations to transform
+- animate overlay primitives with transform and opacity only
+
+### Fixed
+- nest staleTimes under experimental and skip Sentry plugin outside Vercel
+- pass rehypeHighlight as a plugin tuple to fix prerender crash
+- retry transient web-push failures with exponential backoff
+- serve well-known discovery routes with the standard Response API
+- send landing CTA logins straight to the product dashboard
+- preserve current path as redirect target on navbar login link
+- shrink grid columns on narrow screens and show single star
+
 ## [1.7.3] - 2026-08-20
 
 ### Changed
