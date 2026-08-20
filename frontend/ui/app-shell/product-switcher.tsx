@@ -44,7 +44,7 @@ export function ProductSwitcher({ current }: { current: AppProduct }) {
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="w-72 sm:w-80 rounded-2xl border border-border/50 bg-popover/90 p-1.5 shadow-2xl shadow-black/10 backdrop-blur-2xl transition-all duration-200 animate-in fade-in-0 zoom-in-95"
+        className="w-72 sm:w-80 rounded-2xl border border-border/50 bg-popover/90 p-1.5 shadow-2xl shadow-black/10 backdrop-blur-2xl transition-transform duration-200 animate-in fade-in-0 zoom-in-95"
       >
         <DropdownMenuLabel className="px-3 py-2 text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
           منتجاتنا

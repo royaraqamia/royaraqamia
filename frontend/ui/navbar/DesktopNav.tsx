@@ -240,7 +240,7 @@ export function DesktopNav({
                   {isDropdownOpen && (
                     <div
                       id={link.dropdownKey ? `${link.dropdownKey}-dropdown` : undefined}
-                      className="absolute inset-e-0 top-full mt-2.5 w-60 p-1.5 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 shadow-2xl shadow-neutral-950/10 dark:shadow-neutral-950/50 z-50 transition-all duration-200 ease-out animate-in fade-in-0 zoom-in-95 origin-top-right"
+                      className="absolute inset-e-0 top-full mt-2.5 w-60 p-1.5 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 shadow-2xl shadow-neutral-950/10 dark:shadow-neutral-950/50 z-50 transition-transform duration-200 ease-out animate-in fade-in-0 zoom-in-95 origin-top-right"
                       role="menu"
                       aria-orientation="vertical"
                       onMouseEnter={handleMouseEnter}

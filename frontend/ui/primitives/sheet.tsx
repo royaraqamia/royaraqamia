@@ -30,7 +30,7 @@ function SheetOverlay({
     <SheetPrimitive.Overlay
       data-slot="sheet-overlay"
       className={cn(
-        'fixed inset-0 z-10000 bg-black/60 backdrop-blur-md backdrop-saturate-150 transition-all duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
+        'fixed inset-0 z-10000 bg-black/60 backdrop-blur-md backdrop-saturate-150 transition-opacity duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         className
       )}
       {...props}
@@ -52,7 +52,7 @@ function SheetContent({
       <SheetPrimitive.Content
         data-slot="sheet-content"
         className={cn(
-          'fixed z-10000 flex flex-col bg-background/95 backdrop-blur-2xl text-foreground shadow-2xl shadow-black/20 transition duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out overflow-y-auto dialog-scrollbar max-h-dvh focus-visible:outline-none border-border/60',
+          'fixed z-10000 flex flex-col bg-background/95 backdrop-blur-2xl text-foreground shadow-2xl shadow-black/20 transition-transform duration-300 ease-out data-[state=open]:animate-in data-[state=closed]:animate-out overflow-y-auto dialog-scrollbar max-h-dvh focus-visible:outline-none border-border/60',
           side === 'right' &&
             'inset-y-0 right-0 h-full w-full sm:max-w-md border-l data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right',
           side === 'left' &&
