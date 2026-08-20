@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { usePathname } from 'next/navigation';
 import { cn } from '@/frontend/shared/cn';
 import { User, LogOut, Download } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
@@ -9,9 +10,18 @@ import { usePWAContext } from '../PWAProvider';
 import { ConfirmDialog } from './confirm-dialog';
 import { usePortalPopover } from './use-portal-popover';
 
+const AUTH_PATHS = [
+  '/auth/login',
+  '/auth/signup',
+  '/auth/verify-otp',
+  '/auth/reset-password',
+  '/auth/update-password',
+];
+
 export function UserDropdown() {
   const { user, isLoading, signOut } = useSession();
   const { canInstall, promptInstall, isInstalled } = usePWAContext();
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -132,7 +142,11 @@ export function UserDropdown() {
             ) : (
               /* Login Link */
               <a
-                href="/auth/login"
+                href={
+                  pathname && !AUTH_PATHS.some((p) => pathname.startsWith(p)) && pathname !== '/'
+                    ? `/auth/login?redirect=${encodeURIComponent(pathname)}`
+                    : '/auth/login'
+                }
                 onClick={() => setIsOpen(false)}
                 className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                 role="menuitem"
