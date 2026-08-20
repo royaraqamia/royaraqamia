@@ -10,14 +10,9 @@ const palette = {
   violetSoft: '#EDEAFC',
   muted: '#5D5A75',
   hairline: '#E1DEF2',
-  amber: '#B47614',
 };
 
-const fonts = {
-  display: "'Aref Ruqaa', 'IBM Plex Sans Arabic', Tahoma, sans-serif",
-  body: "'IBM Plex Sans Arabic', Tahoma, Arial, sans-serif",
-  mono: "'IBM Plex Mono', 'Courier New', monospace",
-};
+const FONT_FAMILY = "'IBM Plex Sans Arabic'";
 
 export interface EmailSender {
   fromName: string;
@@ -71,32 +66,17 @@ function eyebrow(text: string): string {
 }
 
 function heading(text: string): string {
-  return `<div style="font-family:${fonts.display};font-weight:700;font-size:22px;line-height:1.4;color:${palette.ink};">${text}</div>`;
+  return `<div style="font-family:${FONT_FAMILY};font-weight:700;font-size:22px;line-height:1.4;color:${palette.ink};">${text}</div>`;
 }
 
 function paragraph(text: string): string {
   return `<p style="margin:14px 0 0;font-size:15px;line-height:1.8;color:${palette.ink};">${text}</p>`;
 }
 
-function brandLockup(): string {
-  return `
-    <div style="text-align:center;padding:36px 32px 30px;">
-      <div style="display:inline-block;vertical-align:middle;position:relative;width:40px;height:40px;border:2px solid ${palette.violet};border-radius:50%;box-sizing:border-box;">
-        <div style="position:absolute;top:-5px;left:50%;margin-left:-4px;width:8px;height:8px;border-radius:50%;background-color:${palette.amber};"></div>
-        <div style="position:absolute;top:50%;left:50%;width:11px;height:11px;margin:-6px 0 0 -6px;border-radius:50%;background-color:${palette.violet};"></div>
-      </div>
-      <div style="display:inline-block;vertical-align:middle;margin-right:14px;">
-        <div style="font-family:${fonts.display};font-weight:700;font-size:24px;color:${palette.ink};">رؤية رقمية</div>
-      </div>
-    </div>`;
-}
-
 function cardFooter(footnote: string): string {
   return `
     <div style="border-top:1px solid ${palette.hairline};padding:18px 24px 20px;text-align:center;font-size:12px;color:${palette.muted};">
-      <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background-color:${palette.amber};margin-left:8px;vertical-align:middle;"></span>
-      <span style="vertical-align:middle;">${footnote}</span>
-      <div style="margin-top:10px;">رؤية رقمية</div>
+      <span>${footnote}</span>
     </div>`;
 }
 
@@ -112,7 +92,7 @@ function layout(content: string, preheaderText?: string): string {
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${palette.canvas}" style="background-color:${palette.canvas};">
         <tr>
           <td align="center" bgcolor="${palette.canvas}" style="padding:40px 16px;background-color:${palette.canvas};">
-            <div style="max-width:600px;width:100%;margin:0 auto;background-color:${palette.paper};border:1px solid ${palette.hairline};border-radius:16px;overflow:hidden;font-family:${fonts.body};color:${palette.ink};">
+            <div style="max-width:600px;width:100%;margin:0 auto;background-color:${palette.paper};border:1px solid ${palette.hairline};border-radius:16px;overflow:hidden;font-family:${FONT_FAMILY};color:${palette.ink};">
               ${content}
             </div>
           </td>
@@ -135,13 +115,12 @@ export class ResendEmailClient implements EmailClient {
       subject: 'رمز التَّحقُّق - رؤية رقمية',
       html: layout(
         `
-        ${brandLockup()}
-        <div style="padding:0 32px 32px;">
+        <div style="padding:32px 32px 32px;">
           ${eyebrow('التَّحقُّق')}
           ${heading('رمز التَّحقُّق')}
           ${paragraph('أدخِل هذا الرَّمز في صفحة تسجيل الدُّخول لإكمال التَّحقُّق من هويَّتك.')}
           <div style="text-align:center;margin:24px 0 0;padding:18px 16px;background-color:${palette.violetSoft};border:1px solid ${palette.hairline};border-radius:12px;">
-            <div style="direction:ltr;font-family:${fonts.mono};font-size:30px;font-weight:700;color:${palette.violet};letter-spacing:10px;">${escapeHtml(otp)}</div>
+            <div style="direction:ltr;font-family:${FONT_FAMILY};font-size:30px;font-weight:700;color:${palette.violet};letter-spacing:10px;">${escapeHtml(otp)}</div>
           </div>
           <p style="margin:16px 0 0;font-size:12px;color:${palette.muted};text-align:center;">لا تُشارِك هذا الرَّمز مع أي شخص.</p>
         </div>
@@ -160,8 +139,7 @@ export class ResendEmailClient implements EmailClient {
       subject: 'إعادة تعيين كلمة المرور - رؤية رقمية',
       html: layout(
         `
-        ${brandLockup()}
-        <div style="padding:0 32px 32px;">
+        <div style="padding:32px 32px 32px;">
           ${eyebrow('الأمان')}
           ${heading('إعادة تعيين كلمة المرور')}
           ${paragraph('اضغط الزِّر أدناه لاختيار كلمة مرور جديدة لحسابك.')}
@@ -170,7 +148,7 @@ export class ResendEmailClient implements EmailClient {
           </div>
           <div style="text-align:center;margin:16px 0 0;font-size:12px;color:${palette.muted};">
             إن لم يعمل الزِّر، انسخ الرَّابط وافتحه في المُتصفِّح:
-            <div style="margin-top:6px;direction:ltr;font-family:${fonts.mono};"><a href="${safeResetUrl}" style="color:${palette.muted};word-break:break-all;">${safeResetUrl}</a></div>
+            <div style="margin-top:6px;direction:ltr;font-family:${FONT_FAMILY};"><a href="${safeResetUrl}" style="color:${palette.muted};word-break:break-all;">${safeResetUrl}</a></div>
           </div>
         </div>
         ${cardFooter(`الرَّابط صالح لمدَّة ${formatHours(this.validity.passwordResetHours)}`)}
@@ -187,13 +165,10 @@ export class ResendEmailClient implements EmailClient {
       : '';
     return layout(
       `
-      ${brandLockup()}
-      <div style="padding:0 32px 32px;">
-        ${eyebrow('من رؤية رقمية')}
+      <div style="padding:32px 32px 32px;">
         ${heading(title)}
         ${content}
       </div>
-      ${cardFooter('تحديث من رؤية رقمية')}
     `,
       title
     );
