@@ -115,6 +115,23 @@ export function LinkEditDialog({
   const [passwordValue, setPasswordValue] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+
+  const safePreviewHref = useMemo(() => {
+    const raw = editingUrlValue.trim();
+    if (!raw) return null;
+
+    const candidate = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(raw) ? raw : `https://${raw}`;
+
+    try {
+      const parsed = new URL(candidate);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return parsed.toString();
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }, [editingUrlValue]);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // --- API Hooks ---
@@ -403,13 +420,9 @@ export function LinkEditDialog({
                   *
                 </span>
               </label>
-              {editingUrlValue.trim() && (
+              {safePreviewHref && (
                 <a
-                  href={
-                    editingUrlValue.startsWith('http')
-                      ? editingUrlValue
-                      : `https://${editingUrlValue}`
-                  }
+                  href={safePreviewHref}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
