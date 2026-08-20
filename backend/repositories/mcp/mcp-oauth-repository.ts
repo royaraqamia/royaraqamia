@@ -91,6 +91,7 @@ export interface McpOAuthRepository {
   getTokenByHash(tokenHash: string): Promise<McpTokenRecord | null>;
   getAccessTokenByRefreshHash(refreshTokenHash: string): Promise<McpTokenRecord | null>;
   touchTokenLastUsed(id: string): Promise<void>;
+  updateTokenSessionEnc(id: string, sessionEnc: string): Promise<void>;
   revokeToken(id: string): Promise<void>;
   revokeAllUserTokens(userId: string): Promise<void>;
   deleteExpired(now: Date): Promise<void>;
@@ -197,6 +198,14 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
       const { error } = await (supabase as any)
         .from(TOKENS_TABLE)
         .update({ last_used_at: new Date().toISOString() })
+        .eq('id', id);
+      if (error) throw error;
+    },
+
+    async updateTokenSessionEnc(id, sessionEnc) {
+      const { error } = await (supabase as any)
+        .from(TOKENS_TABLE)
+        .update({ session_enc: sessionEnc })
         .eq('id', id);
       if (error) throw error;
     },

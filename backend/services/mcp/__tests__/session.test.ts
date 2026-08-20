@@ -19,6 +19,7 @@ const mockTokenRecord: McpTokenRecord = {
 const mockRepo = {
   getTokenByHash: vi.fn(),
   touchTokenLastUsed: vi.fn(),
+  updateTokenSessionEnc: vi.fn(),
 };
 
 // Mock the oauth repository module
@@ -34,17 +35,18 @@ vi.mock('@/backend/repositories/mcp/mcp-token-crypto', () => ({
     if (enc === 'encrypted-refresh-token') return 'supabase-refresh-token';
     throw new Error('decrypt failed');
   }),
+  encryptSecret: vi.fn((t: string) => `enc-${t}`),
 }));
 
 // Mock supabase client
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
     auth: {
-      setSession: vi.fn().mockResolvedValue({
+      refreshSession: vi.fn().mockResolvedValue({
         data: {
           session: {
             access_token: 'fresh-access-token',
-            refresh_token: 'supabase-refresh-token',
+            refresh_token: 'rotated-refresh-token',
           },
         },
         error: null,
@@ -129,6 +131,10 @@ describe('resolveMcpContext', () => {
     expect(ctx!.scopes).toEqual(['blog.read', 'linksnap.read']);
     expect(ctx!.supabase).toBeDefined();
     expect(mockRepo.touchTokenLastUsed).toHaveBeenCalledWith('tok-123');
+    expect(mockRepo.updateTokenSessionEnc).toHaveBeenCalledWith(
+      'tok-123',
+      'enc-rotated-refresh-token'
+    );
   });
 
   it('caches the context and returns cached on second call', async () => {

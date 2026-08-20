@@ -3,6 +3,7 @@ import { createMcpOAuthRepository } from '@/backend/repositories/mcp/mcp-oauth-r
 import { McpScope } from './scope';
 import { env } from '@/backend/config/env';
 import { isAdmin } from '@/backend/shared/admin-validator';
+import { logger } from '@/backend/shared/logger';
 
 /**
  * Context attached to an authenticated MCP request (or null for anonymous).
@@ -26,11 +27,14 @@ const TOKEN_CACHE = new Map<string, { ctx: McpUserContext; expiresAt: number }>(
  * Build a user-scoped Supabase client using a live access token from the
  * stored refresh token. The client enforces RLS and satisfies the
  * security-definer RPC self-checks (auth.uid() matches the caller).
+ *
+ * Returns the client and the *rotated* refresh token (Supabase rotates
+ * refresh tokens on every refresh) so the caller can persist it back.
  */
 async function buildUserScopedClient(
   _userId: string,
   storedRefreshToken: string
-): Promise<SupabaseClient<any> | null> {
+): Promise<{ client: SupabaseClient<any>; refreshToken: string } | null> {
   const supabaseUrl = env.supabaseUrl;
   const publishableKey = env.supabasePublishableKey;
   if (!supabaseUrl || !publishableKey) return null;
@@ -40,17 +44,22 @@ async function buildUserScopedClient(
   });
 
   try {
-    const { data, error } = await client.auth.setSession({
-      access_token: '',
+    // setSession({ access_token: '', refresh_token }) throws
+    // AuthSessionMissingError in @supabase/auth-js (empty access_token is
+    // rejected), so refreshSession is the correct call here.
+    const { data, error } = await client.auth.refreshSession({
       refresh_token: storedRefreshToken,
     });
     if (error || !data.session?.access_token) {
-      console.error('[MCP:SESSION] setSession failed:', error?.message);
+      logger.error('[MCP:SESSION] refreshSession failed:', { message: error?.message });
       return null;
     }
-    return client;
+    return {
+      client,
+      refreshToken: data.session.refresh_token ?? storedRefreshToken,
+    };
   } catch (err) {
-    console.error('[MCP:SESSION] setSession exception:', err);
+    logger.error('[MCP:SESSION] refreshSession exception:', { err });
     return null;
   }
 }
@@ -98,8 +107,24 @@ export async function resolveMcpContext(
   const userScoped = await buildUserScopedClient(tokenRow.user_id, storedRefreshToken);
   if (!userScoped) return null;
 
+  // Supabase rotates the refresh token on every refresh. Persist the rotated
+  // token back so subsequent MCP requests (after the token cache expires) can
+  // still build a user-scoped client. If the persist fails we degrade the
+  // current request only.
+  try {
+    const rotated = userScoped.refreshToken;
+    if (rotated && rotated !== storedRefreshToken) {
+      const newEnc = (await import('@/backend/repositories/mcp/mcp-token-crypto')).encryptSecret(
+        rotated
+      );
+      await repo.updateTokenSessionEnc(tokenRow.id, newEnc);
+    }
+  } catch (err) {
+    logger.warn('[MCP:SESSION] failed to persist rotated refresh token', { err });
+  }
+
   // Get the user's email for admin check
-  const { data: userData } = await userScoped.auth.getUser();
+  const { data: userData } = await userScoped.client.auth.getUser();
   const email = userData.user?.email ?? null;
   const isAdminUser = email ? isAdmin(email, env.adminEmails) : false;
 
@@ -118,7 +143,7 @@ export async function resolveMcpContext(
     scopes: finalScopes,
     clientId: tokenRow.client_id,
     tokenExpiresAt: new Date(tokenRow.expires_at).getTime(),
-    supabase: userScoped,
+    supabase: userScoped.client,
   };
 
   // Cache for 5 minutes or until token expiry, whichever is sooner
