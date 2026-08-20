@@ -5,6 +5,16 @@ import { isValidElement } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
+import type { LanguageFn } from 'lowlight';
+import javascript from 'highlight.js/lib/languages/javascript';
+import typescript from 'highlight.js/lib/languages/typescript';
+import xml from 'highlight.js/lib/languages/xml';
+import css from 'highlight.js/lib/languages/css';
+import json from 'highlight.js/lib/languages/json';
+import bash from 'highlight.js/lib/languages/bash';
+import sql from 'highlight.js/lib/languages/sql';
+import python from 'highlight.js/lib/languages/python';
+import markdown from 'highlight.js/lib/languages/markdown';
 import { Button } from '@/frontend/ui/primitives/button';
 import { ArrowRight, Clock, Calendar, BookOpen, User, ChevronLeft } from 'lucide-react';
 import { ReadingProgress } from '../_components/reading-progress';
@@ -18,6 +28,28 @@ import {
 } from '@/backend/loaders/blog';
 import { env } from '@/backend/config/env';
 import type { Metadata } from 'next';
+
+const highlightLanguages: Record<string, LanguageFn> = {
+  javascript,
+  js: javascript,
+  jsx: javascript,
+  typescript,
+  ts: typescript,
+  xml,
+  html: xml,
+  css,
+  json,
+  bash,
+  shell: bash,
+  sh: bash,
+  sql,
+  python,
+  py: python,
+  markdown,
+  md: markdown,
+};
+
+const highlight = rehypeHighlight({ languages: highlightLanguages, detect: false });
 
 export const revalidate = 60;
 
@@ -265,7 +297,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
               <div className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-p:leading-relaxed prose-p:text-foreground/90 prose-p:mb-6 prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-xl prose-img:border prose-img:border-border/50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-border/40 prose-pre:relative prose-pre:bg-muted/90 prose-pre:border prose-pre:border-border/60 prose-pre:rounded-2xl prose-pre:shadow-md prose-blockquote:border-s-primary prose-blockquote:border-s-4 prose-blockquote:bg-muted/30 prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:rounded-e-2xl prose-blockquote:not-italic prose-blockquote:text-foreground/90 prose-hr:border-border/50">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeHighlight]}
+                  rehypePlugins={[highlight]}
                   components={markdownComponents}
                 >
                   {p.content ?? ''}
