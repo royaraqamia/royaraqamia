@@ -15,7 +15,7 @@ worker-src 'self' blob:;
 connect-src 'self' https://api.royaraqamia.com https://royaraqamia.com https://*.supabase.co https://challenges.cloudflare.com wss: ws:;
 frame-src https://challenges.cloudflare.com;
 base-uri 'self';
-form-action 'self' https://forms.gle;
+form-action 'self' https://forms.gle http://127.0.0.1 http://localhost;
 frame-ancestors 'self';
 upgrade-insecure-requests;
 `;

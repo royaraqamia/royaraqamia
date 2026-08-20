@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import type { NextRequest, NextResponse } from 'next/server';
 
 const mockGetClient = vi.fn();
+const mockGetUser = vi.fn();
 const mockGetSession = vi.fn();
 
 vi.mock('@/backend/services/mcp/oauth-provider', () => ({
@@ -10,7 +11,7 @@ vi.mock('@/backend/services/mcp/oauth-provider', () => ({
 
 vi.mock('@/backend/config/supabase', () => ({
   createServerSupabaseClient: () => ({
-    auth: { getSession: () => mockGetSession() },
+    auth: { getUser: () => mockGetUser(), getSession: () => mockGetSession() },
   }),
 }));
 
@@ -65,6 +66,7 @@ beforeEach(() => {
 
 describe('POST /mcp/connect/consent', () => {
   it('redirects to login when the session is missing, preserving the consent query', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: null } });
     mockGetSession.mockResolvedValue({ data: { session: null } });
     const res = (await POST(makeReq(makeForm()))) as NextResponse & {
       headers: Headers;

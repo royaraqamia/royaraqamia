@@ -53,10 +53,15 @@ export async function POST(req: NextRequest) {
 
   const cookieStore = await cookies();
   const supabase = await createServerSupabaseClient(cookieStore);
+  // getUser() for identity (avoids the getSession() `.user` deprecation
+  // warning); getSession() only for the refresh_token we need to encrypt.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  if (!session?.user || !session.refresh_token) {
+  if (!user || !session?.refresh_token) {
     // Session missing/expired — send the browser user to login and bring them
     // back to the consent page afterwards so they can re-submit their choice.
     const consentUrl = new URL('/mcp/connect', req.url);
@@ -81,27 +86,28 @@ export async function POST(req: NextRequest) {
   }
 
   const requested = parseScopes(scope);
-  const granted = effectiveScopes(session.user.email ?? null, requested);
+  const granted = effectiveScopes(user.email ?? null, requested);
   if (granted.length === 0) {
     return oauthErrorRedirect(redirectUri, 'invalid_scope', state, 'No valid scopes requested');
   }
 
-  const sessionEnc = encryptSecret(session.refresh_token);
-
   try {
+    const sessionEnc = encryptSecret(session.refresh_token);
     const { code } = await provider.createAuthorizationCode({
       client,
       redirectUri,
       scope: granted,
       codeChallenge,
       codeChallengeMethod,
-      userId: session.user.id,
+      userId: user.id,
       sessionEnc,
     });
     const url = new URL(redirectUri);
     url.searchParams.set('code', code);
     if (state) url.searchParams.set('state', state);
-    return NextResponse.redirect(url.toString());
+    // 302 (not the 307 default) so the browser follows with a GET to the
+    // client's callback instead of replaying the consent form POST.
+    return NextResponse.redirect(url.toString(), { status: 302, headers: noStore() });
   } catch {
     return oauthErrorRedirect(redirectUri, 'server_error', state);
   }
