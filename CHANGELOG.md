@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.2] - 2026-08-20
+
+### Changed
+- bump react-dom and @types/react-dom
+- Potential fix for code scanning alert no. 31: DOM text reinterpreted as HTML
+- bump @radix-ui/react-radio-group from 1.4.4 to 1.4.7
+- bump @radix-ui/react-navigation-menu from 1.2.18 to 1.2.22
+- bump marked from 18.0.7 to 18.0.9
+- bump @types/node from 26.1.2 to 26.2.0
+- bump @tiptap/core from 3.29.0 to 3.30.1
+- bump @tiptap/extension-link from 3.29.0 to 3.30.1
+- bump react and @types/react
+- bump @tiptap/pm from 3.29.0 to 3.30.1
+- bump lucide from 1.30.0 to 1.31.0
+- bump softprops/action-gh-release from 2 to 3
+
 ## [1.7.1] - 2026-08-19
 
 ### Fixed
