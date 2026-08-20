@@ -13,6 +13,7 @@ import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { Turnstile } from '@/frontend/ui/auth/Turnstile';
+import { authLink } from '@/frontend/ui/auth/auth-links';
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -125,7 +126,7 @@ function LoginForm() {
 
       <div className="flex justify-center mt-3 sm:mt-4">
         <Link
-          href="/auth/reset-password"
+          href={authLink('/auth/reset-password', redirectTo)}
           className="text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 link-underline font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-xs"
         >
           نسيت كلمة المرور؟
@@ -175,7 +176,7 @@ function LoginForm() {
       <p className="text-center text-xs sm:text-sm text-muted-foreground mt-6 sm:mt-8 font-normal">
         ليس لديك حساب؟{' '}
         <Link
-          href="/auth/signup"
+          href={authLink('/auth/signup', redirectTo)}
           className="text-primary font-semibold hover:underline underline-offset-4 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-xs"
         >
           إنشاء حساب

@@ -4,7 +4,7 @@ import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
 import { encryptSecret } from '@/backend/repositories/mcp/mcp-token-crypto';
 import { parseScopes, effectiveScopes } from '@/backend/services/mcp/scope';
-import { oauthErrorRedirect } from '@/backend/services/mcp/oauth-http';
+import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
 
 export const runtime = 'nodejs';
 
@@ -57,7 +57,23 @@ export async function POST(req: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession();
   if (!session?.user || !session.refresh_token) {
-    return oauthErrorRedirect(redirectUri, 'access_denied', state, 'User session is required');
+    // Session missing/expired — send the browser user to login and bring them
+    // back to the consent page afterwards so they can re-submit their choice.
+    const consentUrl = new URL('/mcp/connect', req.url);
+    for (const key of [
+      'client_id',
+      'redirect_uri',
+      'scope',
+      'state',
+      'code_challenge',
+      'code_challenge_method',
+    ]) {
+      const value = form.get(key);
+      if (value) consentUrl.searchParams.set(key, value as string);
+    }
+    const loginUrl = new URL('/auth/login', req.url);
+    loginUrl.searchParams.set('redirect', consentUrl.pathname + consentUrl.search);
+    return NextResponse.redirect(loginUrl, { headers: noStore() });
   }
 
   if (action === 'deny') {

@@ -1,17 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'motion/react';
 import { CircleAlert, CircleCheck, ArrowLeft } from 'lucide-react';
 import { resetPassword } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Button } from '@/frontend/ui/primitives/button';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
+import { authLink } from '@/frontend/ui/auth/auth-links';
 
 const isSuccessMessage = (msg: string) => msg.includes('تمَّ إرسال');
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect');
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
@@ -21,7 +25,7 @@ export default function ResetPasswordPage() {
     setIsPending(true);
     try {
       const formData = new FormData(event.currentTarget);
-      const result = await resetPassword(formData.get('email') as string);
+      const result = await resetPassword(formData.get('email') as string, redirectTo);
       setMessage(result.message);
     } finally {
       setIsPending(false);
@@ -98,16 +102,24 @@ export default function ResetPasswordPage() {
 
       <div className="flex justify-center mt-6 pt-2 border-t border-border/40">
         <Link
-          href="/auth/login"
+          href={authLink('/auth/login', redirectTo)}
           className="group inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-200 ease-out py-1.5 px-3 rounded-lg hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.98]"
         >
           <ArrowLeft
             size={16}
             className="shrink-0 transition-transform duration-200 group-hover:-translate-x-1 rtl:rotate-180 rtl:group-hover:translate-x-1"
           />
-          <span>العودة إلى تسجيل الدُّخول</span>
+          <span>العودة إلى تسجيل الدُّخول</span>
         </Link>
       </div>
     </AuthCard>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordForm />
+    </Suspense>
   );
 }

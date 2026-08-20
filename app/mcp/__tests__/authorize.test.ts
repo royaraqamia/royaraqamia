@@ -112,4 +112,51 @@ describe('GET /mcp/authorize', () => {
     expect(res.status).toBe(401);
     expect(res.headers.get('location')).toBeNull();
   });
+
+  it('redirects an unauthenticated user to login preserving the full authorize URL', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    const res = await GET(
+      makeReq({
+        response_type: 'code',
+        client_id: 'client-1',
+        redirect_uri: 'https://client.example/callback',
+        scope: 'tools/read',
+        state: 'state-123',
+        code_challenge: 'challenge',
+        code_challenge_method: 'S256',
+      })
+    );
+    expect(res.status).toBe(307);
+    const location = res.headers.get('location') ?? '';
+    expect(location).toContain('/auth/login');
+    const redirectParam = decodeURIComponent(new URL(location).searchParams.get('redirect') ?? '');
+    expect(redirectParam).toMatch(/^\/mcp\/authorize\?/);
+    const authorizeQuery = new URL('http://localhost' + redirectParam).searchParams;
+    expect(authorizeQuery.get('client_id')).toBe('client-1');
+    expect(authorizeQuery.get('redirect_uri')).toBe('https://client.example/callback');
+    expect(authorizeQuery.get('code_challenge_method')).toBe('S256');
+  });
+
+  it('forwards an authenticated user to the consent page with the query preserved', async () => {
+    mockGetSession.mockResolvedValue({
+      data: { session: { user: { id: 'u1', email: 'user@example.com' } } },
+    });
+    const res = await GET(
+      makeReq({
+        response_type: 'code',
+        client_id: 'client-1',
+        redirect_uri: 'https://client.example/callback',
+        scope: 'tools/read',
+        state: 'state-123',
+        code_challenge: 'challenge',
+        code_challenge_method: 'S256',
+      })
+    );
+    expect(res.status).toBe(307);
+    const location = res.headers.get('location') ?? '';
+    expect(new URL(location).pathname).toBe('/mcp/connect');
+    const consentQuery = new URL(location).searchParams;
+    expect(consentQuery.get('client_id')).toBe('client-1');
+    expect(consentQuery.get('state')).toBe('state-123');
+  });
 });

@@ -14,6 +14,7 @@ import { PasswordStrength } from '@/frontend/ui/auth/PasswordStrength';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { Turnstile } from '@/frontend/ui/auth/Turnstile';
+import { authLink } from '@/frontend/ui/auth/auth-links';
 
 function SignupForm() {
   const searchParams = useSearchParams();
@@ -222,7 +223,7 @@ function SignupForm() {
         <p className="text-center text-sm text-muted-foreground mt-6 sm:mt-7">
           لديك حساب بالفعل؟{' '}
           <Link
-            href="/auth/login"
+            href={authLink('/auth/login', redirectTo)}
             className="text-primary font-semibold hover:text-primary/80 underline-offset-4 hover:underline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md px-1 py-0.5"
           >
             تسجيل الدُّخول

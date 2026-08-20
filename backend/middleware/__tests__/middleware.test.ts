@@ -256,6 +256,47 @@ describe('middleware', () => {
     expect(result.url).toContain('/auth/login');
   });
 
+  it('redirects unauthenticated users from a nested editor route with the full path', async () => {
+    mockGetSession.mockResolvedValue({ data: { session: null } });
+    mockGetUser.mockResolvedValue({ data: { user: null } });
+    mockNextUrl.pathname = '/blogpress/editor/abc123';
+    mockRequest.url = 'https://royaraqamia.com/blogpress/editor/abc123';
+
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
+    expect(result.status).toBe(307);
+    expect(result.url).toContain('/auth/login');
+    expect(result.url).toContain('redirect=%2Fblogpress%2Feditor%2Fabc123');
+  });
+
+  it('redirects a logged-in user away from /auth/login to the requested safe redirect', async () => {
+    mockSessionCookie();
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
+    mockNextUrl.pathname = '/auth/login';
+    mockNextUrl.searchParams = new URLSearchParams('redirect=/spendtrack/app');
+    mockRequest.url = 'https://royaraqamia.com/auth/login?redirect=%2Fspendtrack%2Fapp';
+
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
+    expect(result.status).toBe(307);
+    expect(result.url).toBe('https://royaraqamia.com/spendtrack/app');
+  });
+
+  it('ignores an unsafe redirect param when bouncing logged-in users off auth pages', async () => {
+    mockSessionCookie();
+    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
+    mockNextUrl.pathname = '/auth/login';
+    mockNextUrl.searchParams = new URLSearchParams('redirect=//evil.com');
+    mockRequest.url = 'https://royaraqamia.com/auth/login?redirect=%2F%2Fevil.com';
+
+    const { middleware } = await import('@/middleware');
+    const result = await middleware(mockRequest as never);
+    expect(result.status).toBe(307);
+    expect(result.url).toBe('https://royaraqamia.com/');
+  });
+
   it('redirects auth signup page to root when user is logged in', async () => {
     mockSessionCookie();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });

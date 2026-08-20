@@ -120,11 +120,14 @@ export async function resendOtp(email: string): Promise<{ message: string }> {
   }
 }
 
-export async function resetPassword(email: string): Promise<{ message: string }> {
+export async function resetPassword(
+  email: string,
+  redirectTo?: string | null
+): Promise<{ message: string }> {
   try {
     const res = await request<{ message: string }>('/auth/api/reset-password', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, redirectTo: redirectTo ?? null }),
     });
     return { message: res.message ?? '' };
   } catch (error) {

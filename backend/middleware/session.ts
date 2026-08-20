@@ -127,7 +127,15 @@ export async function updateSession(request: NextRequest) {
     // Redirect logged-in users away from auth pages
     for (const [path, redirect] of Object.entries(AUTH_ROUTES)) {
       if (pathname === path && user) {
-        return applyCookies(NextResponse.redirect(new URL(redirect, request.url)));
+        const requestedRedirect = request.nextUrl.searchParams.get('redirect');
+        const isAuthPageTarget = requestedRedirect
+          ? Object.keys(AUTH_ROUTES).some((p) => requestedRedirect.startsWith(p))
+          : false;
+        const target =
+          requestedRedirect && isSafeRedirect(requestedRedirect) && !isAuthPageTarget
+            ? requestedRedirect
+            : redirect;
+        return applyCookies(NextResponse.redirect(new URL(target, request.url)));
       }
     }
 

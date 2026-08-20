@@ -9,6 +9,7 @@ import { OtpInput } from '@/frontend/ui/shared/otp-input';
 import { verifyOtp, resendOtp } from '@/frontend/api/auth';
 import { Button } from '@/frontend/ui/primitives/button';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
+import { authLink } from '@/frontend/ui/auth/auth-links';
 
 const OTP_EXPIRY_SECONDS = 5 * 60;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -265,7 +266,7 @@ function VerifyOtpForm() {
 
               <div className="pt-4 flex justify-center border-t border-border/40">
                 <Link
-                  href="/auth/login"
+                  href={authLink('/auth/login', redirectTo)}
                   className="group inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-all duration-200 py-1.5 px-3 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   <ArrowLeft

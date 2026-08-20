@@ -67,7 +67,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
       // Session expired (had a session, now null) — not on an auth page
       if (prevSession && !session && !AUTH_PATHS.some((p) => pathname.startsWith(p))) {
-        router.push('/auth/login?session_expired=1');
+        const loginPath =
+          pathname && pathname !== '/'
+            ? `/auth/login?session_expired=1&redirect=${encodeURIComponent(pathname)}`
+            : '/auth/login?session_expired=1';
+        router.push(loginPath);
       }
     });
 
