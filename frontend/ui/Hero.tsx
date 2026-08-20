@@ -54,7 +54,7 @@ export function Hero() {
             className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center"
           >
             {/* Left/Right side - Primary Copy & CTA (RTL Support) */}
-            <div className="text-center lg:text-right space-y-3 order-1">
+            <div className="text-center lg:text-right space-y-3 order-1 min-w-0">
               {/* Main Headline */}
               <div
                 className="landing-reveal-item space-y-2 -mt-2"
@@ -108,13 +108,10 @@ export function Hero() {
 
                 <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/2 border border-white/5 backdrop-blur-xs text-neutral-300 transition-all duration-300 group-hover:bg-white/6 group-hover:border-white/10">
                   <span className="flex gap-0.5 text-amber-400">
-                    {[...Array(5)].map((_, i) => (
-                      <Star
-                        key={i}
-                        size={14}
-                        className="fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]"
-                      />
-                    ))}
+                    <Star
+                      size={14}
+                      className="fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]"
+                    />
                   </span>
                   <span className="text-xs sm:text-sm font-semibold text-neutral-200">
                     <span className="font-bold text-white">4.9</span>/5
@@ -155,7 +152,7 @@ export function Hero() {
 
             {/* Right side - Visual Element */}
             <div
-              className="landing-reveal-item relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0"
+              className="landing-reveal-item relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0 min-w-0"
               style={{ ['--ld' as string]: '0.75s' } as React.CSSProperties}
             >
               {/* Reserve the dashboard's footprint so the lazy HeroVisual mount
