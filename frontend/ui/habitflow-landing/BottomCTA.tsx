@@ -4,7 +4,7 @@ export function BottomCTA() {
   return (
     <SharedBottomCTA
       appPath="/habitflow/app"
-      loginRedirect="/habitflow"
+      loginRedirect="/habitflow/app"
       sectionClassName="relative w-full overflow-hidden border-t border-border/40 bg-background py-20 sm:py-28 lg:py-36"
       decor={
         <div

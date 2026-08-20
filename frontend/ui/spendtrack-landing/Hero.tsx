@@ -83,7 +83,7 @@ export function Hero() {
         >
           <LandingCta
             appPath="/spendtrack/app"
-            loginRedirect="/spendtrack"
+            loginRedirect="/spendtrack/app"
             scrollTarget="features"
             primaryClassName="group relative w-full sm:w-auto cta-glow text-base px-8 py-6 rounded-full font-semibold shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"

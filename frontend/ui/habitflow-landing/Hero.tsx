@@ -83,7 +83,7 @@ export function Hero() {
         >
           <LandingCta
             appPath="/habitflow/app"
-            loginRedirect="/habitflow"
+            loginRedirect="/habitflow/app"
             scrollTarget="features"
             primaryClassName="group relative h-13 px-8 text-base font-semibold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"
             loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"

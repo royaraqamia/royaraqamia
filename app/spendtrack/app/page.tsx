@@ -313,7 +313,7 @@ export default async function DashboardPage(props: {
 }) {
   const searchParams = await props.searchParams;
   const { user } = await getAuthUser();
-  if (!user) redirect('/auth/login?redirect=/spendtrack');
+  if (!user) redirect('/auth/login?redirect=/spendtrack/app');
 
   const currency = await loadUserCurrency(user.id);
 

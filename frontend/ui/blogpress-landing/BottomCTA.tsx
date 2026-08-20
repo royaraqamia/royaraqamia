@@ -4,7 +4,7 @@ export function BottomCTA() {
   return (
     <SharedBottomCTA
       appPath="/blogpress/app"
-      loginRedirect="/blogpress"
+      loginRedirect="/blogpress/app"
       sectionClassName="relative overflow-hidden py-20 sm:py-28 lg:py-36 border-t border-border/40 bg-background transition-colors duration-500"
       sectionAria={{ label: 'Call to Action' }}
       decor={

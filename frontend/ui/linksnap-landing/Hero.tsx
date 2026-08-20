@@ -74,7 +74,7 @@ export function Hero() {
         >
           <LandingCta
             appPath="/linksnap/app"
-            loginRedirect="/linksnap"
+            loginRedirect="/linksnap/app"
             scrollTarget="features"
             primaryClassName="group relative w-full sm:w-auto min-w-45 h-13 px-8 text-base font-semibold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ مجَّانًا"

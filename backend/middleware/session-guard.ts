@@ -12,7 +12,7 @@ export const verifySession = cache(async () => {
   const { data, error } = await supabase.auth.getUser();
 
   if (error || !data?.user) {
-    redirect('/auth/login?redirect=/blogpress');
+    redirect('/auth/login?redirect=/blogpress/app');
   }
 
   return { isAuth: true, userId: data.user.id, user: data.user };

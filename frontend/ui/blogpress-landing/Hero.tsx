@@ -69,7 +69,7 @@ export function Hero() {
         >
           <LandingCta
             appPath="/blogpress/app"
-            loginRedirect="/blogpress"
+            loginRedirect="/blogpress/app"
             scrollTarget="features"
             primaryClassName="group relative w-full sm:w-auto text-base font-semibold px-8 py-6 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ الكتابة مجَّانًا"

@@ -4,7 +4,7 @@ export function BottomCTA() {
   return (
     <SharedBottomCTA
       appPath="/spendtrack/app"
-      loginRedirect="/spendtrack"
+      loginRedirect="/spendtrack/app"
       sectionClassName="relative overflow-hidden border-t border-border/40 bg-background py-20 sm:py-28 lg:py-36 text-foreground"
       sectionAria={{ label: 'Call to action section' }}
       decor={

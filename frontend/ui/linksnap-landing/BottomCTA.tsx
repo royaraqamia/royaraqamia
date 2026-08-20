@@ -4,7 +4,7 @@ export function BottomCTA() {
   return (
     <SharedBottomCTA
       appPath="/linksnap/app"
-      loginRedirect="/linksnap"
+      loginRedirect="/linksnap/app"
       sectionClassName="relative overflow-hidden border-t border-border/40 bg-background/50 backdrop-blur-xl"
       sectionAria={{ labelledby: 'cta-heading' }}
       decor={
