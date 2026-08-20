@@ -7,6 +7,21 @@ import { logger } from '@/backend/shared/logger';
 
 const TTL_SECONDS = 86400;
 const DEFAULT_MAX_CONCURRENCY = 10;
+const MAX_SEND_ATTEMPTS = 3;
+const DEFAULT_RETRY_DELAY_MS = 200;
+const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
+const TRANSIENT_ERROR_PATTERNS = [
+  'ECONNRESET',
+  'EPIPE',
+  'ETIMEDOUT',
+  'ECONNREFUSED',
+  'EAI_AGAIN',
+  'ENOTFOUND',
+  'socket hang up',
+  'socket disconnected',
+  'network socket',
+  'TLS',
+] as const;
 
 export interface WebPushSendOptions {
   TTL?: number;
@@ -33,6 +48,18 @@ export interface PushServiceOptions {
   allowlist?: string[];
   maxConcurrency?: number;
   adapter?: WebPushAdapter;
+  retryDelayMs?: number;
+}
+
+function isTransientSendError(error: unknown): boolean {
+  const status = (error as PushWebPushError).statusCode;
+  if (status && RETRYABLE_STATUS_CODES.has(status)) return true;
+  const message = String(error instanceof Error ? error.message : error);
+  return TRANSIENT_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function isEndpointAllowed(endpoint: string, allowlist: string[]): boolean {
@@ -79,6 +106,7 @@ export class PushService {
   private readonly vapid: NonNullable<PushServiceOptions['vapid']>;
   private readonly allowlist: string[];
   private readonly maxConcurrency: number;
+  private readonly retryDelayMs: number;
   private readonly adapter: WebPushAdapter;
 
   constructor(options: PushServiceOptions) {
@@ -87,6 +115,7 @@ export class PushService {
     this.vapid = options.vapid;
     this.allowlist = options.allowlist ?? [];
     this.maxConcurrency = options.maxConcurrency ?? DEFAULT_MAX_CONCURRENCY;
+    this.retryDelayMs = options.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS;
     this.adapter = options.adapter ?? {
       setVapidDetails() {},
       async sendNotification() {
@@ -138,6 +167,12 @@ export class PushService {
     });
 
     await mapWithConcurrency(allowed, this.maxConcurrency, async (subscription) => {
+      await this.sendWithRetry(subscription, payload);
+    });
+  }
+
+  private async sendWithRetry(subscription: PushSubscriptionRecord, payload: PushPayload) {
+    for (let attempt = 1; attempt <= MAX_SEND_ATTEMPTS; attempt += 1) {
       try {
         await this.adapter.sendNotification(
           {
@@ -147,28 +182,39 @@ export class PushService {
           JSON.stringify(payload),
           { TTL: TTL_SECONDS, urgency: 'high' }
         );
+        return;
       } catch (error) {
         const status = (error as PushWebPushError).statusCode;
         if (status === 404 || status === 410) {
-          logger.warn('Pruning dead push subscription', {
+          await this.pruneSubscription(subscription, status);
+          return;
+        }
+        const transient = isTransientSendError(error);
+        if (!transient || attempt === MAX_SEND_ATTEMPTS) {
+          logger.warn('Failed to send push notification', {
             endpoint: subscription.endpoint,
-            status,
-          });
-          try {
-            await this.repository.removeEndpoint(subscription.endpoint);
-          } catch (pruneError) {
-            logger.error('Failed to prune dead push subscription', {
-              endpoint: subscription.endpoint,
-              error: String(pruneError),
-            });
-          }
-        } else {
-          logger.error('Failed to send push notification', {
-            endpoint: subscription.endpoint,
+            attempt,
             error: String(error),
           });
+          return;
         }
+        await sleep(this.retryDelayMs * 2 ** (attempt - 1));
       }
+    }
+  }
+
+  private async pruneSubscription(subscription: PushSubscriptionRecord, status: number) {
+    logger.warn('Pruning dead push subscription', {
+      endpoint: subscription.endpoint,
+      status,
     });
+    try {
+      await this.repository.removeEndpoint(subscription.endpoint);
+    } catch (pruneError) {
+      logger.error('Failed to prune dead push subscription', {
+        endpoint: subscription.endpoint,
+        error: String(pruneError),
+      });
+    }
   }
 }

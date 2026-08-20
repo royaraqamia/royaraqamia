@@ -48,6 +48,7 @@ function makeService(
     enabled?: boolean;
     allowlist?: string[];
     maxConcurrency?: number;
+    retryDelayMs?: number;
   } = {}
 ) {
   const repository = overrides.repository ?? makeRepo();
@@ -62,6 +63,7 @@ function makeService(
     },
     allowlist: overrides.allowlist ?? ['fcm.googleapis.com'],
     maxConcurrency: overrides.maxConcurrency,
+    retryDelayMs: overrides.retryDelayMs,
     adapter,
   });
   return { repository, adapter, service };
@@ -175,6 +177,58 @@ describe('PushService', () => {
       );
 
       await expect(service.sendToUser('u-1', payload)).resolves.toBeUndefined();
+      expect(repository.removeEndpoint).not.toHaveBeenCalled();
+    });
+
+    it('retries a transient network error and succeeds on the second attempt', async () => {
+      const { repository, adapter, service } = makeService({ retryDelayMs: 1 });
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>)
+        .mockRejectedValueOnce(Object.assign(new Error('write ECONNRESET')))
+        .mockResolvedValueOnce({ statusCode: 201 });
+
+      await service.sendToUser('u-1', payload);
+
+      expect(adapter.sendNotification).toHaveBeenCalledTimes(2);
+      expect(repository.removeEndpoint).not.toHaveBeenCalled();
+    });
+
+    it('retries a transient 503 and succeeds on the second attempt', async () => {
+      const { repository, adapter, service } = makeService({ retryDelayMs: 1 });
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>)
+        .mockRejectedValueOnce(Object.assign(new Error('unavailable'), { statusCode: 503 }))
+        .mockResolvedValueOnce({ statusCode: 201 });
+
+      await service.sendToUser('u-1', payload);
+
+      expect(adapter.sendNotification).toHaveBeenCalledTimes(2);
+      expect(repository.removeEndpoint).not.toHaveBeenCalled();
+    });
+
+    it('gives up after max attempts on a persistent transient error and does not prune', async () => {
+      const { repository, adapter, service } = makeService({ retryDelayMs: 1 });
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('socket hang up')
+      );
+
+      await expect(service.sendToUser('u-1', payload)).resolves.toBeUndefined();
+
+      expect(adapter.sendNotification).toHaveBeenCalledTimes(3);
+      expect(repository.removeEndpoint).not.toHaveBeenCalled();
+    });
+
+    it('does not retry a non-transient client error', async () => {
+      const { repository, adapter, service } = makeService();
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+        Object.assign(new Error('bad request'), { statusCode: 400 })
+      );
+
+      await service.sendToUser('u-1', payload);
+
+      expect(adapter.sendNotification).toHaveBeenCalledTimes(1);
       expect(repository.removeEndpoint).not.toHaveBeenCalled();
     });
 
