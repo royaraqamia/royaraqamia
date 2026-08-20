@@ -34,7 +34,7 @@ export function ConsultationCards() {
 
       {/* Layered Multi-Color Radial Ambient Glows */}
       <div
-        className="absolute top-1/4 right-1/4 w-[min(400px,85vw)] sm:w-[min(650px,85vw)] h-[min(400px,85vw)] sm:h-[min(650px,85vw)] rounded-full pointer-events-none blur-[120px] sm:blur-[160px] opacity-40 animate-pulse"
+        className="absolute top-1/4 right-1/4 w-[min(400px,85vw)] sm:w-[min(650px,85vw)] h-[min(400px,85vw)] sm:h-[min(650px,85vw)] rounded-full pointer-events-none blur-[120px] max-md:blur-[70px] sm:blur-[160px] opacity-40 animate-pulse transform-gpu will-change-transform"
         style={{
           background: 'radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, transparent 70%)',
         }}

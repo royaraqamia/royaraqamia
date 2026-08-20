@@ -6,7 +6,10 @@ export function GlowOrb({
 }: { className?: string } & React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn('absolute rounded-full blur-3xl pointer-events-none', className)}
+      className={cn(
+        'absolute rounded-full blur-3xl pointer-events-none transform-gpu will-change-transform max-md:blur-2xl',
+        className
+      )}
       {...props}
     />
   );
