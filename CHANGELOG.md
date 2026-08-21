@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.9] - 2026-08-21
+
+### Changed
+- remove always-on ambient drift animations from landing
+- drop decorative backdrop-filters on flat landing surfaces
+- remove brand name from email subjects
+
+### Fixed
+- drop custom legal-page backgrounds and tokenize to main theme
+- restore spacing lost with global heading margins
+
 ## [1.7.8] - 2026-08-21
 
 ### Changed
