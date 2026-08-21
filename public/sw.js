@@ -73,6 +73,14 @@ function isApiCall(url) {
   return url.pathname.startsWith('/api/');
 }
 
+// Server explicitly opted out of storage (e.g. /api/version is no-store).
+// Serving such a response from cache after a network timeout would silently
+// show stale data, so API responses honoring these directives are never put.
+function isCacheable(response) {
+  const cacheControl = response.headers.get('cache-control') || '';
+  return !/no-store|no-cache|private/i.test(cacheControl);
+}
+
 async function cacheFirst(request) {
   const cached = await caches.match(request);
   if (cached) return cached;
@@ -88,13 +96,13 @@ async function cacheFirst(request) {
   }
 }
 
-async function networkFirst(request, timeoutMs = 3000) {
+async function networkFirst(request, timeoutMs = 3000, options = {}) {
   const timeout = new Promise((_, reject) =>
     setTimeout(() => reject(new Error('timeout')), timeoutMs)
   );
   try {
     const response = await Promise.race([fetch(request), timeout]);
-    if (response.ok) {
+    if (response.ok && (!options.respectNoStore || isCacheable(response))) {
       const cache = await caches.open(CACHE);
       cache.put(request, response.clone());
     }
@@ -155,7 +163,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isApiCall(url)) {
-    event.respondWith(networkFirst(request, 5000));
+    event.respondWith(networkFirst(request, 5000, { respectNoStore: true }));
     return;
   }
 
