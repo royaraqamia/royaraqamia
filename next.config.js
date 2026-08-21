@@ -86,13 +86,9 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=600' },
         ],
       },
-      {
-        source: '/sw.js',
-        headers: [
-          { key: 'Cache-Control', value: 'public, max-age=0, must-revalidate' },
-          { key: 'Service-Worker-Allowed', value: '/' },
-        ],
-      },
+      // NOTE: /sw.js caching lives in vercel.json (stricter no-store variant).
+      // Keep it there only — a second definition here produced conflicting
+      // Cache-Control values.
       {
         source: '/:path*.webp',
         headers: [
