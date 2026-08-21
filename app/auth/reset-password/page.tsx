@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'motion/react';
+import { m, AnimatePresence } from 'motion/react';
 import { CircleAlert, CircleCheck, ArrowLeft } from 'lucide-react';
 import { resetPassword } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
@@ -60,7 +60,7 @@ function ResetPasswordForm() {
 
         <AnimatePresence mode="wait">
           {message && (
-            <motion.div
+            <m.div
               key="reset-message-alert"
               initial={{ opacity: 0, y: -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -86,7 +86,7 @@ function ResetPasswordForm() {
               >
                 {message}
               </p>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { AlertTriangle, Download, Globe, Smartphone, Monitor, Cpu, Loader2 } from 'lucide-react';
 import { AnalyticsChart } from './analytics-chart';
 import { AnalyticsSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
@@ -128,7 +128,7 @@ export function LinkAnalyticsDrawer({
   return (
     <AnimatePresence>
       {isExpanded && (
-        <motion.div
+        <m.div
           initial={reducedMotion ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={reducedMotion ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
@@ -328,7 +328,7 @@ export function LinkAnalyticsDrawer({
               </div>
             ) : null}
           </div>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

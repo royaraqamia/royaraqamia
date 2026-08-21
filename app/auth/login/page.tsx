@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { CircleAlert } from 'lucide-react';
 import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
 import { login, signInWithGoogle } from '@/frontend/api/auth';
@@ -98,7 +98,7 @@ function LoginForm() {
         <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
 
         {message && (
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
@@ -112,7 +112,7 @@ function LoginForm() {
             >
               {message}
             </p>
-          </motion.div>
+          </m.div>
         )}
 
         <Button
@@ -162,14 +162,14 @@ function LoginForm() {
         </Button>
 
         {googleError && (
-          <motion.p
+          <m.p
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
             className="text-xs sm:text-sm text-destructive text-center font-medium mt-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20"
           >
             {googleError}
-          </motion.p>
+          </m.p>
         )}
       </div>
 

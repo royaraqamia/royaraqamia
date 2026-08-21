@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, Suspense } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { m, AnimatePresence } from 'motion/react';
 import { UrlShortener } from '@/frontend/ui/linksnap/url-shortener';
 import { LinkDashboard } from '@/frontend/ui/linksnap/link-dashboard';
 import { AdminPanel } from '@/frontend/ui/linksnap/admin-panel';
@@ -78,7 +78,7 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
       <div className="flex-1 flex flex-col justify-center max-w-xl w-full mx-auto space-y-8">
         <RedirectErrorBanner error={redirectError} onDismiss={() => setRedirectError(null)} />
 
-        <motion.div
+        <m.div
           key="app-view"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -96,7 +96,7 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
 
           <AnimatePresence mode="wait" aria-live="polite">
             {effectiveView === 'shorten' ? (
-              <motion.div
+              <m.div
                 key="shorten-form"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -108,10 +108,10 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
                     if (user) setSelectedView('dashboard');
                   }}
                 />
-              </motion.div>
+              </m.div>
             ) : effectiveView === 'dashboard' ? (
               user && (
-                <motion.div
+                <m.div
                   key="dashboard-view"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -120,22 +120,22 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
                   <Suspense fallback={<DashboardSkeleton />}>
                     <LinkDashboard token={session?.access_token ?? ''} refreshTrigger={0} />
                   </Suspense>
-                </motion.div>
+                </m.div>
               )
             ) : effectiveView === 'admin' ? (
               user && (
-                <motion.div
+                <m.div
                   key="admin-view"
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
                   <AdminPanel token={session?.access_token ?? ''} />
-                </motion.div>
+                </m.div>
               )
             ) : null}
           </AnimatePresence>
-        </motion.div>
+        </m.div>
       </div>
     </div>
   );

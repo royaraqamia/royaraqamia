@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'motion/react';
+import { m, AnimatePresence } from 'motion/react';
 import { CircleAlert, CircleCheck } from 'lucide-react';
 import { updatePassword } from '@/frontend/api/auth';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -107,7 +107,7 @@ function UpdatePasswordForm() {
 
                   <AnimatePresence mode="wait">
                     {doPasswordsMatch && (
-                      <motion.span
+                      <m.span
                         initial={{ opacity: 0, scale: 0.9, y: -2 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: -2 }}
@@ -120,7 +120,7 @@ function UpdatePasswordForm() {
                           className="shrink-0 text-emerald-500"
                         />
                         <span>متطابقة</span>
-                      </motion.span>
+                      </m.span>
                     )}
                   </AnimatePresence>
                 </div>
@@ -138,7 +138,7 @@ function UpdatePasswordForm() {
 
                 <AnimatePresence>
                   {showMismatch && (
-                    <motion.p
+                    <m.p
                       initial={{ opacity: 0, y: -4, height: 0 }}
                       animate={{ opacity: 1, y: 0, height: 'auto' }}
                       exit={{ opacity: 0, y: -4, height: 0 }}
@@ -148,7 +148,7 @@ function UpdatePasswordForm() {
                     >
                       <CircleAlert size={14} className="shrink-0" aria-hidden="true" />
                       <span>كلمة المرور غير متطابقة</span>
-                    </motion.p>
+                    </m.p>
                   )}
                 </AnimatePresence>
               </div>
@@ -157,7 +157,7 @@ function UpdatePasswordForm() {
             {/* Server Error / API Response Message Banner */}
             <AnimatePresence>
               {message && (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, y: -8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -8, scale: 0.98 }}
@@ -172,7 +172,7 @@ function UpdatePasswordForm() {
                   <p role="alert" className="text-sm font-medium leading-relaxed">
                     {message}
                   </p>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
 

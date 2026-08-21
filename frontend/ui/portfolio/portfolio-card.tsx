@@ -2,7 +2,7 @@
 
 import { Key } from 'react';
 import Image from 'next/image';
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { cardVariant, type ProjectData } from './portfolio-data';
 
 interface PortfolioCardProps {
@@ -23,11 +23,11 @@ export function PortfolioCard({
   onImageError,
 }: PortfolioCardProps) {
   return (
-    <motion.div
+    <m.div
       variants={cardVariant}
       className="shrink-0 w-[85vw] sm:w-95 md:w-110 lg:w-120 min-w-0 snap-center group/card bg-[#050810] rounded-3xl overflow-hidden"
     >
-      <motion.div
+      <m.div
         onClick={() => onSelect(actualIndex)}
         className="relative group/card-inner rounded-3xl overflow-hidden bg-white/3 border border-white/10 transition-all duration-500 motion-reduce:transition-none hover:border-purple-500/40 hover:shadow-[0_0_40px_-10px_rgba(168,85,247,0.3)] w-full aspect-4/3 cursor-pointer active:scale-[0.98] active:opacity-90 focus-visible:outline-2 focus-visible:outline-purple-400/80 focus-visible:outline-offset-4 backdrop-blur-md"
         role="button"
@@ -126,10 +126,10 @@ export function PortfolioCard({
             </div>
           </div>
         </div>
-      </motion.div>
+      </m.div>
       <h3 className="text-white font-bold text-xl sm:text-2xl mt-4 text-center leading-snug">
         {project.title}
       </h3>
-    </motion.div>
+    </m.div>
   );
 }

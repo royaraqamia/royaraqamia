@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { headerVariant } from './portfolio-data';
 
 export function PortfolioSectionHeader({
@@ -9,7 +9,7 @@ export function PortfolioSectionHeader({
   shouldReduceMotion: boolean | null;
 }) {
   return (
-    <motion.div
+    <m.div
       initial={shouldReduceMotion ? false : 'hidden'}
       whileInView={shouldReduceMotion ? undefined : 'show'}
       viewport={{ once: true, margin: '-100px' }}
@@ -25,6 +25,6 @@ export function PortfolioSectionHeader({
       <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-lg text-slate-400 max-w-2xl leading-relaxed font-normal">
         تصفَّح نُخبة من أهمِّ المشاريع الرَّقميَّة الـمُصمَّمَة بأعلى معايير الجودة.
       </p>
-    </motion.div>
+    </m.div>
   );
 }

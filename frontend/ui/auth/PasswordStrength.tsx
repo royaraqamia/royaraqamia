@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import { useMemo } from 'react';
 
 interface PasswordStrengthProps {
@@ -64,7 +64,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
   if (!password) return null;
 
   return (
-    <motion.div
+    <m.div
       initial={{ opacity: 0, y: -6, scale: 0.98 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -4, scale: 0.98 }}
@@ -83,14 +83,14 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-semibold tracking-wide transition-all duration-300 ${tierStyle.badgeBg}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${tierStyle.dot} animate-pulse`} />
-          <motion.span
+          <m.span
             key={label}
             initial={{ opacity: 0, y: 2 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
           >
             {label}
-          </motion.span>
+          </m.span>
         </div>
       </div>
 
@@ -110,7 +110,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
               key={i}
               className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-200/80 dark:bg-neutral-800/80"
             >
-              <motion.div
+              <m.div
                 initial={{ scaleX: 0 }}
                 animate={{ scaleX: isActive ? 1 : 0 }}
                 transition={{
@@ -132,6 +132,6 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       <span className="sr-only">
         قوَّة كلمة المرور: {label} ({score} من 5)
       </span>
-    </motion.div>
+    </m.div>
   );
 }

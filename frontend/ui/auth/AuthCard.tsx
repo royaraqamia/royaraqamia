@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 import type { ReactNode } from 'react';
 
 interface AuthCardProps {
@@ -13,7 +13,7 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
   return (
     <div className="relative w-full max-w-md mx-auto px-4 sm:px-0">
       {/* Dynamic Motion Ambient Background Glowing Orbs */}
-      <motion.div
+      <m.div
         animate={{
           y: [0, -12, 0],
           scale: [1, 1.05, 1],
@@ -27,7 +27,7 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
         className="pointer-events-none absolute -top-20 -right-20 -z-10 h-64 w-64 rounded-full bg-linear-to-br from-indigo-500/25 via-purple-500/20 to-pink-500/10 blur-3xl sm:h-80 sm:w-80"
         aria-hidden="true"
       />
-      <motion.div
+      <m.div
         animate={{
           y: [0, 12, 0],
           scale: [1, 1.08, 1],
@@ -44,7 +44,7 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
       />
 
       {/* Main Glassmorphic Gradient Border Card Outer Container */}
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 20, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -65,7 +65,7 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
           />
 
           {/* Header Section */}
-          <motion.header
+          <m.header
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
@@ -79,19 +79,19 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
                 {description}
               </div>
             )}
-          </motion.header>
+          </m.header>
 
           {/* Main Content Body */}
-          <motion.section
+          <m.section
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="relative z-10"
           >
             {children}
-          </motion.section>
+          </m.section>
         </div>
-      </motion.div>
+      </m.div>
     </div>
   );
 }

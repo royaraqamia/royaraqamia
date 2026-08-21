@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { DailyClickStat } from '@/shared/contracts/linksnap';
-import { motion, useReducedMotion } from 'motion/react';
+import { m, useReducedMotion } from 'motion/react';
 
 interface AnalyticsChartProps {
   stats: DailyClickStat[];
@@ -37,14 +37,14 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
   // If no stats, render empty state
   if (!stats || stats.length === 0) {
     return (
-      <motion.div
+      <m.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: [0.33, 1, 0.68, 1] }}
         className="h-64 flex items-center justify-center bg-muted/30 rounded-xl border border-dashed border-border"
       >
         <p className="text-sm text-muted-foreground">لا توجد بيانات متاحة لهذه الفترة</p>
-      </motion.div>
+      </m.div>
     );
   }
 
@@ -76,7 +76,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
       : '';
 
   return (
-    <motion.div
+    <m.div
       initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={reducedMotion ? { duration: 0 } : { duration: 0.25, ease: [0.33, 1, 0.68, 1] }}
@@ -217,6 +217,6 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
           })}
         </svg>
       </div>
-    </motion.div>
+    </m.div>
   );
 }

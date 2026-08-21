@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Layers, FileText, AlertCircle, ArrowLeft, Copy, Check, RefreshCw } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
@@ -93,7 +93,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
   return (
     <AnimatePresence mode="wait">
       {!results ? (
-        <motion.form
+        <m.form
           key="bulk-form"
           initial={reducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -132,7 +132,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
           </div>
 
           {error && (
-            <motion.div
+            <m.div
               id="bulk-url-error"
               role="alert"
               initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
@@ -142,7 +142,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
             >
               <AlertCircle aria-hidden="true" className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
-            </motion.div>
+            </m.div>
           )}
 
           <button
@@ -169,9 +169,9 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
               </>
             )}
           </button>
-        </motion.form>
+        </m.form>
       ) : (
-        <motion.div
+        <m.div
           key="bulk-results-view"
           initial={reducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -284,7 +284,7 @@ export function BulkUrlShortener({ token, onLinkCreated }: BulkUrlShortenerProps
             <RefreshCw aria-hidden="true" className="w-3.5 h-3.5 text-muted-foreground" />
             <span>اختصار دفعة أخرى</span>
           </button>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

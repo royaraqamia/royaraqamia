@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'motion/react';
+import { m, AnimatePresence } from 'motion/react';
 import { CircleAlert, ArrowLeft, Clock, CircleCheckBig, CircleCheck } from 'lucide-react';
 import { OtpInput } from '@/frontend/ui/shared/otp-input';
 import { verifyOtp, resendOtp } from '@/frontend/api/auth';
@@ -138,7 +138,7 @@ function VerifyOtpForm() {
       <div className="w-full max-w-sm mx-auto space-y-6">
         <AnimatePresence mode="wait">
           {isVerified ? (
-            <motion.div
+            <m.div
               key="verified-state"
               initial={{ opacity: 0, scale: 0.92, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -165,9 +165,9 @@ function VerifyOtpForm() {
                   جارِ تحويلك تلقائيًّا...
                 </p>
               </div>
-            </motion.div>
+            </m.div>
           ) : (
-            <motion.div
+            <m.div
               key="form-state"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -210,7 +210,7 @@ function VerifyOtpForm() {
                 )}
 
                 {state?.message && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: -6, scale: 0.98 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
@@ -220,7 +220,7 @@ function VerifyOtpForm() {
                     <p role="alert" className="text-xs sm:text-sm font-medium leading-relaxed">
                       {state.message}
                     </p>
-                  </motion.div>
+                  </m.div>
                 )}
 
                 <Button
@@ -253,14 +253,14 @@ function VerifyOtpForm() {
                 </form>
 
                 {resendMessage && (
-                  <motion.div
+                  <m.div
                     initial={{ opacity: 0, y: 4 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium"
                   >
                     <CircleCheck size={14} className="shrink-0" />
                     <span>{resendMessage}</span>
-                  </motion.div>
+                  </m.div>
                 )}
               </div>
 
@@ -276,7 +276,7 @@ function VerifyOtpForm() {
                   <span>العودة إلى تسجيل الدُّخول</span>
                 </Link>
               </div>
-            </motion.div>
+            </m.div>
           )}
         </AnimatePresence>
       </div>

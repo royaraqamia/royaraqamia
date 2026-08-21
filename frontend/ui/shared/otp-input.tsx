@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { m } from 'motion/react';
 
 interface OtpInputProps {
   length?: number;
@@ -81,7 +81,7 @@ export function OtpInput({
         const isFilled = value[i] !== undefined && value[i] !== '';
 
         return (
-          <motion.div
+          <m.div
             key={i}
             animate={
               hasError && !isFocused
@@ -136,7 +136,7 @@ export function OtpInput({
             {isFocused && (
               <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-0.5 rounded-full bg-primary animate-pulse pointer-events-none z-20" />
             )}
-          </motion.div>
+          </m.div>
         );
       })}
     </div>

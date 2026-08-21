@@ -1,5 +1,5 @@
 import { createElement } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { m, useReducedMotion } from 'motion/react';
 import { Check, Flame, Edit3, Snowflake, NotebookPen, Target, MoreHorizontal } from 'lucide-react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import {
@@ -63,7 +63,7 @@ export function HabitCard({
       {/* Main Content Area */}
       <article className="flex items-center gap-3.5 sm:gap-5 min-w-0 flex-1">
         {/* Toggle Button */}
-        <motion.button
+        <m.button
           onClick={() => onToggle(habit.id)}
           whileTap={reduce ? undefined : { scale: 0.92 }}
           transition={reduce ? undefined : { type: 'spring', stiffness: 500, damping: 25 }}
@@ -78,16 +78,16 @@ export function HabitCard({
           id={`check-habit-${habit.id}`}
         >
           {isCompleted && (
-            <motion.span
+            <m.span
               initial={reduce ? false : { scale: 0, rotate: -25 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={reduce ? undefined : { type: 'spring', stiffness: 500, damping: 20 }}
               className="flex items-center justify-center"
             >
               <Check className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.5]" />
-            </motion.span>
+            </m.span>
           )}
-        </motion.button>
+        </m.button>
 
         {/* Icon & Details Container */}
         <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">

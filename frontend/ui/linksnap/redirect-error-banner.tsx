@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { XCircle } from 'lucide-react';
 
 interface RedirectError {
@@ -18,7 +18,7 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
   return (
     <AnimatePresence>
       {error && (
-        <motion.div
+        <m.div
           initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -15 }}
@@ -44,7 +44,7 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
           >
             <XCircle aria-hidden="true" className="w-4 h-4" />
           </button>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

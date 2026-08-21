@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { motion, useReducedMotion } from 'motion/react';
+import { m, useReducedMotion } from 'motion/react';
 import { ChevronRight, ChevronLeft, CalendarDays, FileText, Move, Pencil } from 'lucide-react';
 import type { Post } from '@/shared/contracts/blogpress';
 import { cn } from '@/frontend/shared/cn';
@@ -185,7 +185,7 @@ export function ScheduledCalendar({
                   {posts.map((post) => {
                     const isDragging = draggingId === post.id;
                     return (
-                      <motion.div
+                      <m.div
                         key={post.id}
                         draggable={withReorder && !busy}
                         onDragStart={() => setDraggingId(post.id)}
@@ -217,7 +217,7 @@ export function ScheduledCalendar({
                           {post.title || 'بدون عنوان'}
                         </Link>
                         <Pencil className="size-3 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
-                      </motion.div>
+                      </m.div>
                     );
                   })}
                 </div>

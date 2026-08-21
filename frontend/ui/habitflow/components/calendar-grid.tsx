@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { HabitLog } from '@/shared/contracts/habitflow';
 import { Card } from '@/frontend/ui/primitives/card';
 import {
@@ -585,7 +585,7 @@ export function CalendarGrid({
             {/* Selected / Hovered Day Inspector Banner */}
             <AnimatePresence mode="wait">
               {activeDayDetails && (
-                <motion.div
+                <m.div
                   key={activeDayDetails.date}
                   initial={false}
                   animate={{ opacity: 1, y: 0 }}
@@ -647,7 +647,7 @@ export function CalendarGrid({
                       />
                     </div>
                   </div>
-                </motion.div>
+                </m.div>
               )}
             </AnimatePresence>
 

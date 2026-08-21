@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
+import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   Link,
   Sparkles,
@@ -143,7 +143,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
   return (
     <AnimatePresence mode="wait">
       {!shortenedUrl ? (
-        <motion.form
+        <m.form
           key="input-form"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -178,7 +178,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           </div>
 
           {token && (
-            <motion.div
+            <m.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               className="space-y-1.5"
@@ -271,11 +271,11 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   يُحفظ مشفّراً ولا يمكن استرجاعه لاحقاً.
                 </p>
               </div>
-            </motion.div>
+            </m.div>
           )}
 
           {error && (
-            <motion.div
+            <m.div
               id="single-url-error"
               role="alert"
               initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
@@ -284,7 +284,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg font-medium"
             >
               {error}
-            </motion.div>
+            </m.div>
           )}
 
           <button
@@ -311,9 +311,9 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               </>
             )}
           </button>
-        </motion.form>
+        </m.form>
       ) : (
-        <motion.div
+        <m.div
           key="success-view"
           initial={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -323,7 +323,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <div className="flex flex-col items-center justify-center space-y-2">
             <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
               <svg viewBox="0 0 24 24" className="w-6 h-6 stroke-3 stroke-primary fill-none">
-                <motion.path
+                <m.path
                   d="M5 13l4 4L19 7"
                   initial={{ pathLength: 0 }}
                   animate={{ pathLength: 1 }}
@@ -400,7 +400,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
           <AnimatePresence>
             {showQr && (
-              <motion.div
+              <m.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
@@ -418,7 +418,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 <p className="text-xs text-primary font-semibold mt-2.5">
                   امسح لعرض الرَّابط المُختصَر
                 </p>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -429,7 +429,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             <RotateCcw aria-hidden="true" className="w-3.5 h-3.5" />
             <span>اختصار رابط آخر</span>
           </button>
-        </motion.div>
+        </m.div>
       )}
     </AnimatePresence>
   );

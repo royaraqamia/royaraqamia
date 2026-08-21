@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { motion, AnimatePresence } from 'motion/react';
+import { m, AnimatePresence } from 'motion/react';
 import { CircleAlert, User, Mail, LockKeyhole } from 'lucide-react';
 import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
 import { signup, signInWithGoogle } from '@/frontend/api/auth';
@@ -142,7 +142,7 @@ function SignupForm() {
           {/* Animated Error Alert */}
           <AnimatePresence mode="wait">
             {message && (
-              <motion.div
+              <m.div
                 key="signup-error-alert"
                 initial={{ opacity: 0, y: -8, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -158,7 +158,7 @@ function SignupForm() {
                 <p id="signup-error" role="alert" className="text-sm font-medium leading-relaxed">
                   {message}
                 </p>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
 
@@ -203,7 +203,7 @@ function SignupForm() {
 
           <AnimatePresence mode="wait">
             {googleError && (
-              <motion.div
+              <m.div
                 key="google-error-alert"
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -214,7 +214,7 @@ function SignupForm() {
                 <p role="alert" className="text-sm font-medium text-destructive">
                   {googleError}
                 </p>
-              </motion.div>
+              </m.div>
             )}
           </AnimatePresence>
         </div>

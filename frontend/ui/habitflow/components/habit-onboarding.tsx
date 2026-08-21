@@ -1,7 +1,7 @@
 'use client';
 
 import { createElement } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { m, useReducedMotion } from 'motion/react';
 import { CheckSquare, Plus, Sparkles } from 'lucide-react';
 import { HABIT_TEMPLATES, type HabitTemplate } from '@/frontend/shared/habitflow/habit-templates';
 import { getIconComponent, getIconColorClass } from '@/frontend/shared/habitflow/habit-icons';
@@ -57,7 +57,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
             const Icon = getIconComponent(template.icon);
             const colorClass = getIconColorClass(template.icon);
             return (
-              <motion.button
+              <m.button
                 key={template.name}
                 type="button"
                 whileHover={reduce ? undefined : { y: -4, scale: 1.01 }}
@@ -95,7 +95,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
                     {template.frequency === 'daily' ? 'يومي' : 'أسبوعي'}
                   </span>
                 </div>
-              </motion.button>
+              </m.button>
             );
           })}
         </div>

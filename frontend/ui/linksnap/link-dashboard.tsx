@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { m, useReducedMotion } from 'motion/react';
 import {
   Link2,
   RefreshCw,
@@ -160,7 +160,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
       ) : links.length === 0 ? (
         <DashboardEmptyState />
       ) : (
-        <motion.div
+        <m.div
           initial={reducedMotion ? 'visible' : 'hidden'}
           animate="visible"
           variants={{
@@ -170,7 +170,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
           className="space-y-4"
         >
           {links.map((link) => (
-            <motion.div
+            <m.div
               key={link.code}
               variants={{
                 hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 },
@@ -191,9 +191,9 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
                 isSelected={bulk.selected.has(link.code)}
                 onToggleSelect={bulk.toggle}
               />
-            </motion.div>
+            </m.div>
           ))}
-        </motion.div>
+        </m.div>
       )}
 
       <ConfirmDialog
