@@ -32,13 +32,13 @@ export default function PrivacyPage() {
     >
       {/* Subtle Ambient Radial Lighting Effects */}
       <div className="absolute top-0 right-1/2 translate-x-1/2 w-200 sm:w-300 h-125 bg-linear-to-b from-emerald-500/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-1/3 left-0 w-100 h-100 bg-emerald-500/5 blur-[120px] pointer-events-none -z-10" />
+      <div className="absolute top-1/3 left-0 w-100 h-100 bg-emerald-500/5 glow-blur-lg pointer-events-none -z-10" />
       <div className="absolute inset-0 bg-[radial-gradient(#262626_1px,transparent_1px)] bg-size-[24px_24px] opacity-30 pointer-events-none -z-10" />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20">
         {/* Hero Header */}
         <header className="mb-10 sm:mb-14 border-b border-neutral-800/80 pb-8 sm:pb-12">
-          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm font-medium mb-6 backdrop-blur-md">
+          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm font-medium mb-6">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -112,7 +112,7 @@ export default function PrivacyPage() {
           {/* Section 01 */}
           <section
             id="intro"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
           {/* Section 02 */}
           <section
             id="collected-data"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-6">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -263,7 +263,7 @@ export default function PrivacyPage() {
           {/* Section 03 */}
           <section
             id="data-usage"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -299,7 +299,7 @@ export default function PrivacyPage() {
           {/* Section 04 */}
           <section
             id="third-parties"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -337,7 +337,7 @@ export default function PrivacyPage() {
           {/* Section 05 */}
           <section
             id="security"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-6">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -377,7 +377,7 @@ export default function PrivacyPage() {
           {/* Section 06 */}
           <section
             id="rights"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -431,7 +431,7 @@ export default function PrivacyPage() {
           {/* Section 07 & 08 Dual Grid Layout */}
           <div className="grid sm:grid-cols-2 gap-6">
             {/* Section 07 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
                   07
@@ -447,7 +447,7 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 08 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
                   08
@@ -465,7 +465,7 @@ export default function PrivacyPage() {
           {/* Section 09 & 10 Dual Grid Layout */}
           <div className="grid sm:grid-cols-2 gap-6">
             {/* Section 09 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
                   09
@@ -479,7 +479,7 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 10 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 backdrop-blur-xl p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
                   10

@@ -27,14 +27,14 @@ export function Hero() {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29370f_1px,transparent_1px),linear-gradient(to_bottom,#1f29370f_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
           {/* Glowing radial ambient lights */}
-          <div className="absolute top-1/4 right-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-purple-600/10 blur-[120px] rounded-full transform translate-x-1/3 -translate-y-1/3" />
-          <div className="absolute bottom-1/4 left-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-indigo-600/10 blur-[120px] rounded-full transform -translate-x-1/3 translate-y-1/3" />
+          <div className="absolute top-1/4 right-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-purple-600/10 glow-blur-lg rounded-full transform translate-x-1/3 -translate-y-1/3" />
+          <div className="absolute bottom-1/4 left-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-indigo-600/10 glow-blur-lg rounded-full transform -translate-x-1/3 translate-y-1/3" />
 
           {/* Floating Particles - Ultra subtle background ambient details */}
           {particles.map((particle) => (
             <div
               key={particle.id}
-              className="hero-particle absolute rounded-full bg-white/30 backdrop-blur-xs"
+              className="hero-particle absolute rounded-full bg-white/30"
               style={{
                 width: particle.size,
                 height: particle.size,
@@ -160,7 +160,7 @@ export function Hero() {
                   cards make the visual tall (h ≈ 1.5w + 275) — the min-height
                   floor covers narrow phones and the aspect-ratio the rest; from
                   sm up the cards sit side-by-side (near square). */}
-              <div className="relative w-full aspect-[2/4.6] min-h-[820px] flex items-center sm:aspect-square sm:min-h-0">
+              <div className="relative w-full aspect-[2/4.6] min-h-205 flex items-center sm:aspect-square sm:min-h-0">
                 <LazySection id="hero-visual" className="w-full h-full" />
               </div>
             </div>

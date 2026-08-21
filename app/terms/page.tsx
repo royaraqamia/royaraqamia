@@ -53,7 +53,7 @@ export default function TermsPage() {
             </h1>
 
             <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500 sm:text-sm dark:text-slate-400">
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200/60 bg-white/80 px-3.5 py-1.5 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200/60 bg-white/80 px-3.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80">
                 <svg
                   className="h-4 w-4 text-indigo-500"
                   fill="none"
@@ -70,7 +70,7 @@ export default function TermsPage() {
                 </svg>
                 <span>آخر تحديث: 19 صَفَر 1448 هـ</span>
               </div>
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200/60 bg-white/80 px-3.5 py-1.5 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/80">
+              <div className="flex items-center gap-2 rounded-xl border border-slate-200/60 bg-white/80 px-3.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80">
                 <svg
                   className="h-4 w-4 text-indigo-500"
                   fill="none"
@@ -98,7 +98,7 @@ export default function TermsPage() {
             {/* 01. المقدمة */}
             <section
               id="section-1"
-              className="group rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -120,7 +120,7 @@ export default function TermsPage() {
             {/* 02. وصف الخدمات */}
             <section
               id="section-2"
-              className="group rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -226,7 +226,7 @@ export default function TermsPage() {
             {/* 03. الحساب والمُصادقة */}
             <section
               id="section-3"
-              className="group rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -297,7 +297,7 @@ export default function TermsPage() {
             {/* 04. استخدام الخدمات */}
             <section
               id="section-4"
-              className="group rounded-3xl border border-rose-200/80 bg-rose-50/40 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:shadow-md sm:p-8 dark:border-rose-900/40 dark:bg-rose-950/20"
+              className="group rounded-3xl border border-rose-200/80 bg-rose-50/60 p-6 shadow-xs transition-all duration-300 hover:shadow-md sm:p-8 dark:border-rose-900/40 dark:bg-rose-950/20"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-rose-100 font-bold text-rose-600 dark:border-rose-800/50 dark:bg-rose-900/40 dark:text-rose-400">
@@ -348,7 +348,7 @@ export default function TermsPage() {
             {/* 05. المحتوى والملكيَّة الفكريَّة */}
             <section
               id="section-5"
-              className="group rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -392,7 +392,7 @@ export default function TermsPage() {
             {/* 06. الدَّفع والاسترداد */}
             <section
               id="section-6"
-              className="group rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -463,7 +463,7 @@ export default function TermsPage() {
             {/* 07. إخلاء المسؤوليَّة */}
             <section
               id="section-7"
-              className="group rounded-3xl border border-amber-200/80 bg-amber-50/40 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:shadow-md sm:p-8 dark:border-amber-900/40 dark:bg-amber-950/20"
+              className="group rounded-3xl border border-amber-200/80 bg-amber-50/40 p-6 shadow-xs transition-all duration-300 hover:shadow-md sm:p-8 dark:border-amber-900/40 dark:bg-amber-950/20"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-200 bg-amber-100 font-bold text-amber-700 dark:border-amber-800/50 dark:bg-amber-900/40 dark:text-amber-400">
@@ -554,7 +554,7 @@ export default function TermsPage() {
             {/* 08. تعديلات الشُّروط */}
             <section
               id="section-8"
-              className="group rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -574,7 +574,7 @@ export default function TermsPage() {
             {/* 09. الإنهاء */}
             <section
               id="section-9"
-              className="group rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -593,7 +593,7 @@ export default function TermsPage() {
             {/* 10. القانون الحاكم */}
             <section
               id="section-10"
-              className="group rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs backdrop-blur-xl transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/70 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -612,7 +612,7 @@ export default function TermsPage() {
             {/* 11. التَّواصل معنا */}
             <section
               id="section-11"
-              className="group rounded-3xl border border-indigo-200/80 bg-linear-to-br from-indigo-50/60 via-white to-sky-50/40 p-6 shadow-sm backdrop-blur-xl transition-all duration-300 hover:shadow-md sm:p-8 dark:border-indigo-800/80 dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-900"
+              className="group rounded-3xl border border-indigo-200/80 bg-linear-to-br from-indigo-50/60 via-white to-sky-50/40 p-6 shadow-sm transition-all duration-300 hover:shadow-md sm:p-8 dark:border-indigo-800/80 dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-900"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 font-bold text-white shadow-sm">
@@ -673,7 +673,7 @@ export default function TermsPage() {
           <aside className="sticky top-10 hidden space-y-6 lg:col-span-4 lg:block">
             <nav
               aria-label="جدول المحتويات"
-              className="rounded-3xl border border-slate-200/80 bg-white/70 p-6 shadow-xs backdrop-blur-xl dark:border-slate-800/80 dark:bg-slate-900/70"
+              className="rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/85"
             >
               <h3 className="mb-4 px-2 text-xs font-bold uppercase tracking-wider text-slate-400">
                 جدول المحتويات

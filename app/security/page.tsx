@@ -39,7 +39,7 @@ export default function SecurityPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Hero Header Section */}
           <header className="mb-12 text-start">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wide mb-6 backdrop-blur-md">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wide mb-6">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -51,7 +51,7 @@ export default function SecurityPage() {
               سياسة الأمان
             </h1>
 
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 border border-border/60 px-3.5 py-1.5 rounded-full w-fit backdrop-blur-xs">
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 border border-border/60 px-3.5 py-1.5 rounded-full w-fit">
               <svg
                 className="w-4 h-4 text-muted-foreground shrink-0"
                 fill="none"
@@ -75,7 +75,7 @@ export default function SecurityPage() {
             className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10"
             aria-label="التزامات وقت الاستجابة"
           >
-            <div className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card/60 p-5 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-muted-foreground">تأكيد الاستلام</span>
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-transform group-hover:scale-110">
@@ -103,7 +103,7 @@ export default function SecurityPage() {
               </p>
             </div>
 
-            <div className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card/60 backdrop-blur-md p-5 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card/60 p-5 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-muted-foreground">تحديث الحالة</span>
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-transform group-hover:scale-110">
@@ -135,7 +135,7 @@ export default function SecurityPage() {
           {/* Structured Policy Cards */}
           <div className="space-y-8">
             {/* Section 1: Reporting Vulnerabilities */}
-            <article className="rounded-2xl border border-border/80 bg-card/40 backdrop-blur-md p-6 sm:p-8 transition-all duration-300 hover:border-border">
+            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-all duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
                   <svg
@@ -272,7 +272,7 @@ export default function SecurityPage() {
             </article>
 
             {/* Section 2: In-Scope Vulnerabilities */}
-            <article className="rounded-2xl border border-border/80 bg-card/40 backdrop-blur-md p-6 sm:p-8 transition-all duration-300 hover:border-border">
+            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-all duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
                   <svg
@@ -320,7 +320,7 @@ export default function SecurityPage() {
             </article>
 
             {/* Section 3: Out-of-Scope */}
-            <article className="rounded-2xl border border-border/80 bg-card/40 backdrop-blur-md p-6 sm:p-8 transition-all duration-300 hover:border-border">
+            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-all duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
                   <svg
@@ -376,7 +376,7 @@ export default function SecurityPage() {
             </article>
 
             {/* Section 4: Data Protection */}
-            <article className="rounded-2xl border border-border/80 bg-card/40 backdrop-blur-md p-6 sm:p-8 transition-all duration-300 hover:border-border">
+            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-all duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
                   <svg
