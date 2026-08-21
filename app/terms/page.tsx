@@ -26,91 +26,38 @@ export const metadata: Metadata = {
 
 export default function TermsPage() {
   return (
-    <div
-      className="relative min-h-screen bg-slate-50 text-slate-900 antialiased selection:bg-indigo-500 selection:text-white dark:bg-slate-950 dark:text-slate-100"
-      dir="rtl"
-    >
+    <div className="relative min-h-screen antialiased selection:bg-primary/20" dir="rtl">
       {/* Dynamic Ambient Background Elements */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 right-1/4 h-125 w-125 rounded-full bg-linear-to-br from-indigo-500/10 via-purple-500/5 to-transparent blur-3xl dark:from-indigo-500/20 dark:via-purple-500/10" />
-        <div className="absolute top-1/3 -left-40 h-100 w-100 rounded-full bg-linear-to-tr from-sky-500/10 via-indigo-500/5 to-transparent blur-3xl dark:from-sky-500/15" />
+        <div className="absolute top-1/3 -left-40 h-100 w-100 rounded-full bg-linear-to-tr from-fuchsia-500/10 via-violet-500/5 to-transparent blur-3xl" />
       </div>
 
       <div className="relative mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
         {/* Modern SaaS Header */}
-        <header className="mb-12 border-b border-slate-200/80 pb-8 sm:mb-16 sm:pb-12 dark:border-slate-800/80">
-          <div className="flex flex-col items-start gap-4">
-            <div className="inline-flex items-center gap-2.5 rounded-full border border-indigo-200/80 bg-indigo-50 px-3.5 py-1.5 text-xs font-semibold text-indigo-700 shadow-xs dark:border-indigo-800/50 dark:bg-indigo-950/60 dark:text-indigo-300">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-600 dark:bg-indigo-400"></span>
-              </span>
-              <span>رؤية رقمية • وثيقة قانونية رسمية</span>
-            </div>
-
-            <h1 className="text-3xl font-black leading-[1.15] tracking-tight text-slate-900 sm:text-4xl md:text-5xl lg:text-6xl dark:text-white">
-              شروط الاستخدام
-            </h1>
-
-            <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-slate-500 sm:text-sm dark:text-slate-400">
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200/60 bg-white/80 px-3.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80">
-                <svg
-                  className="h-4 w-4 text-indigo-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <span>آخر تحديث: 19 صَفَر 1448 هـ</span>
-              </div>
-              <div className="flex items-center gap-2 rounded-xl border border-slate-200/60 bg-white/80 px-3.5 py-1.5 dark:border-slate-800 dark:bg-slate-900/80">
-                <svg
-                  className="h-4 w-4 text-indigo-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                  />
-                </svg>
-                <span>زمن القراءة المُقدَّر: 5 دقائق</span>
-              </div>
-            </div>
-          </div>
+        <header className="mb-12 border-b border-border/60 pb-8 sm:mb-16 sm:pb-12">
+          <h1 className="text-3xl font-black leading-[1.15] tracking-tight text-foreground sm:text-4xl md:text-5xl lg:text-6xl">
+            شروط الاستخدام
+          </h1>
         </header>
 
         {/* Responsive Grid Architecture */}
         <div className="items-start lg:grid lg:grid-cols-12 lg:gap-12">
           {/* Main Content Sections Column */}
-          <main className="space-y-8 text-base leading-relaxed text-slate-700 sm:space-y-10 lg:col-span-8 dark:text-slate-300">
+          <main className="space-y-8 text-base leading-relaxed text-muted-foreground sm:space-y-10 lg:col-span-8">
             {/* 01. المقدمة */}
             <section
               id="section-1"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                   01
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
-                  . المُقدِّمة
-                </h2>
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">. المُقدِّمة</h2>
               </div>
-              <p className="leading-relaxed text-slate-600 sm:text-lg dark:text-slate-300">
-                مرحبًا بك في{' '}
-                <strong className="font-bold text-slate-900 dark:text-white">رؤية رقمية</strong>{' '}
+              <p className="leading-relaxed text-muted-foreground sm:text-lg">
+                مرحبًا بك في <strong className="font-bold text-foreground">رؤية رقمية</strong>{' '}
                 (&quot;نحنُ&quot; أو &quot;المُشغِّل&quot;). باستخدامك لمواقعنا وخدماتنا، فإنَّك
                 توافق على الالتزام بهذه الشُّروط. إذا لم توافق على أيٍّ من هذه الشُروط، يُرجَى عدم
                 استخدام خدماتنا.
@@ -120,25 +67,23 @@ export default function TermsPage() {
             {/* 02. وصف الخدمات */}
             <section
               id="section-2"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                   02
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
-                  . وصف الخدمات
-                </h2>
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">. وصف الخدمات</h2>
               </div>
-              <p className="mb-6 text-slate-600 dark:text-slate-300">
+              <p className="mb-6 text-muted-foreground">
                 تُقدِّم رؤية رقمية خدمة بناء مواقع وتطبيقات؛ كما تُقدِّم للطُّلاب والخرِّيجين الجدد
                 تدريبًا احترافيًّا متكاملًا لبناء المواقع والتَّطبيقات مع شهادة مُوثَّقة من قِبَلنا.
                 كما نُقدِّم أدوات وتطبيقات مُساعِدة مثل:
               </p>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
-                  <div className="rounded-xl bg-indigo-500/10 p-2.5 text-indigo-600 dark:text-indigo-400">
+                <div className="flex items-center gap-3.5 rounded-2xl border border-border/50 bg-muted/60 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5">
+                  <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -149,17 +94,13 @@ export default function TermsPage() {
                     </svg>
                   </div>
                   <div>
-                    <strong className="block font-semibold text-slate-900 dark:text-white">
-                      LinkSnap
-                    </strong>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      أداة اختصار الرَّوابط
-                    </span>
+                    <strong className="block font-semibold text-foreground">LinkSnap</strong>
+                    <span className="text-xs text-muted-foreground">أداة اختصار الرَّوابط</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
-                  <div className="rounded-xl bg-indigo-500/10 p-2.5 text-indigo-600 dark:text-indigo-400">
+                <div className="flex items-center gap-3.5 rounded-2xl border border-border/50 bg-muted/60 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5">
+                  <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -170,17 +111,13 @@ export default function TermsPage() {
                     </svg>
                   </div>
                   <div>
-                    <strong className="block font-semibold text-slate-900 dark:text-white">
-                      BlogPress
-                    </strong>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      منصَّة إدارة المدوَّنات
-                    </span>
+                    <strong className="block font-semibold text-foreground">BlogPress</strong>
+                    <span className="text-xs text-muted-foreground">منصَّة إدارة المدوَّنات</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
-                  <div className="rounded-xl bg-indigo-500/10 p-2.5 text-indigo-600 dark:text-indigo-400">
+                <div className="flex items-center gap-3.5 rounded-2xl border border-border/50 bg-muted/60 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5">
+                  <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -191,17 +128,13 @@ export default function TermsPage() {
                     </svg>
                   </div>
                   <div>
-                    <strong className="block font-semibold text-slate-900 dark:text-white">
-                      HabitFlow
-                    </strong>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      تطبيق إدارة العادات
-                    </span>
+                    <strong className="block font-semibold text-foreground">HabitFlow</strong>
+                    <span className="text-xs text-muted-foreground">تطبيق إدارة العادات</span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
-                  <div className="rounded-xl bg-indigo-500/10 p-2.5 text-indigo-600 dark:text-indigo-400">
+                <div className="flex items-center gap-3.5 rounded-2xl border border-border/50 bg-muted/60 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5">
+                  <div className="rounded-xl bg-primary/10 p-2.5 text-primary">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
                         strokeLinecap="round"
@@ -212,12 +145,8 @@ export default function TermsPage() {
                     </svg>
                   </div>
                   <div>
-                    <strong className="block font-semibold text-slate-900 dark:text-white">
-                      SpendTrack
-                    </strong>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                      تطبيق تتبُّع المصروفات
-                    </span>
+                    <strong className="block font-semibold text-foreground">SpendTrack</strong>
+                    <span className="text-xs text-muted-foreground">تطبيق تتبُّع المصروفات</span>
                   </div>
                 </div>
               </div>
@@ -226,67 +155,67 @@ export default function TermsPage() {
             {/* 03. الحساب والمُصادقة */}
             <section
               id="section-3"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
             >
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                   03
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
                   . الحساب والمُصادقة
                 </h2>
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200/50 bg-slate-50/60 p-5 dark:border-slate-700/40 dark:bg-slate-800/40">
-                  <h3 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-slate-900 dark:text-white">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
+                <div className="rounded-2xl border border-border/40 bg-muted/40 p-5">
+                  <h3 className="mb-3 flex items-center gap-2.5 text-lg font-bold text-foreground">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-xs font-extrabold text-primary">
                       أ
                     </span>
                     إنشاء الحساب
                   </h3>
                   <ul className="space-y-2.5 pr-1">
                     <li className="flex items-start gap-3">
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
                       <span>يجب أن يكون عمرك عامًا على الأقل لإنشاء حساب.</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
                       <span>يجب تقديم معلومات دقيقة ومُحدَّثَة أثناء التَّسجيل.</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
                       <span>أنت مسؤول عن الحفاظ على سرِّيَّة كلمة المرور الخاصَّة بك.</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-indigo-500" />
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
                       <span>أنت مسؤول عن جميع الأنشطة التي تتمُّ تحت حسابك.</span>
                     </li>
                   </ul>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/50 bg-slate-50/60 p-5 dark:border-slate-700/40 dark:bg-slate-800/40">
-                  <h3 className="mb-2 flex items-center gap-2.5 text-lg font-bold text-slate-900 dark:text-white">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
+                <div className="rounded-2xl border border-border/40 bg-muted/40 p-5">
+                  <h3 className="mb-2 flex items-center gap-2.5 text-lg font-bold text-foreground">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-xs font-extrabold text-primary">
                       ب
                     </span>
                     الدُّخول عبر Google
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-300">
+                  <p className="text-muted-foreground">
                     عند استخدام ميزة الدُّخول بحساب Google، أنت تمنحنا إذنًا بالوصول إلى معلومات
                     حسابك الأساسيَّة (الاسم والبريد الإلكتروني وصورة الملف الشَّخصي) وِفقًا لإعدادات
                     الخُصوصيَّة في حسابك على Google.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/50 bg-slate-50/60 p-5 dark:border-slate-700/40 dark:bg-slate-800/40">
-                  <h3 className="mb-2 flex items-center gap-2.5 text-lg font-bold text-slate-900 dark:text-white">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
+                <div className="rounded-2xl border border-border/40 bg-muted/40 p-5">
+                  <h3 className="mb-2 flex items-center gap-2.5 text-lg font-bold text-foreground">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-xs font-extrabold text-primary">
                       ج
                     </span>
                     إلغاء الحساب
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-300">
+                  <p className="text-muted-foreground">
                     يمكنك طلب إلغاء حسابك في أيِّ وقت عن طريق التَّواصل معنا عبر البريد الإلكتروني.
                     سنقوم بمعالجة طلبك خلال يومًا.
                   </p>
@@ -297,18 +226,16 @@ export default function TermsPage() {
             {/* 04. استخدام الخدمات */}
             <section
               id="section-4"
-              className="group rounded-3xl border border-rose-200/80 bg-rose-50/60 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8 dark:border-rose-900/40 dark:bg-rose-950/20"
+              className="group rounded-3xl border border-destructive/30 bg-destructive/5 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-rose-100 font-bold text-rose-600 dark:border-rose-800/50 dark:bg-rose-900/40 dark:text-rose-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-destructive/30 bg-destructive/10 font-bold text-destructive">
                   04
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
-                  . استخدام الخدمات
-                </h2>
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">. استخدام الخدمات</h2>
               </div>
 
-              <p className="mb-4 font-semibold text-rose-900 dark:text-rose-200">
+              <p className="mb-4 font-semibold text-destructive">
                 يُحظَر عليك عند استخدام خدماتنا:
               </p>
 
@@ -324,10 +251,10 @@ export default function TermsPage() {
                 ].map((item, idx) => (
                   <li
                     key={idx}
-                    className="flex items-center gap-3 rounded-xl border border-rose-100 bg-white/90 p-3.5 text-slate-700 shadow-2xs dark:border-rose-900/30 dark:bg-slate-900/90 dark:text-slate-300"
+                    className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-card/90 p-3.5 text-muted-foreground shadow-2xs"
                   >
                     <svg
-                      className="h-5 w-5 shrink-0 text-rose-500"
+                      className="h-5 w-5 shrink-0 text-destructive"
                       fill="none"
                       stroke="currentColor"
                       viewBox="0 0 24 24"
@@ -348,40 +275,40 @@ export default function TermsPage() {
             {/* 05. المحتوى والملكيَّة الفكريَّة */}
             <section
               id="section-5"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
             >
               <div className="mb-6 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                   05
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
                   . المحتوى والملكيَّة الفكريَّة
                 </h2>
               </div>
 
               <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200/50 bg-slate-50/60 p-5 dark:border-slate-700/40 dark:bg-slate-800/40">
-                  <h3 className="mb-2 flex items-center gap-2.5 text-lg font-bold text-slate-900 dark:text-white">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
+                <div className="rounded-2xl border border-border/40 bg-muted/40 p-5">
+                  <h3 className="mb-2 flex items-center gap-2.5 text-lg font-bold text-foreground">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-xs font-extrabold text-primary">
                       أ
                     </span>
                     محتوانا
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-300">
+                  <p className="text-muted-foreground">
                     جميع المحتويات المتاحة على منصَّتنا (نصوص، صور، فيديوهات، تصاميم، شهادات، وأكواد
                     برمجيَّة) هي ملكيَّة فكريَّة خاصَّة برؤية رقمية أو مُورِّديها. لا يُسمَح بنسخ أو
                     تعديل أو توزيع أو إعادة استخدام أي محتوى دون إذن كتابي مُسبَق.
                   </p>
                 </div>
 
-                <div className="rounded-2xl border border-slate-200/50 bg-slate-50/60 p-5 dark:border-slate-700/40 dark:bg-slate-800/40">
-                  <h3 className="mb-2 flex items-center gap-2.5 text-lg font-bold text-slate-900 dark:text-white">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-indigo-500/10 text-xs font-extrabold text-indigo-600 dark:text-indigo-400">
+                <div className="rounded-2xl border border-border/40 bg-muted/40 p-5">
+                  <h3 className="mb-2 flex items-center gap-2.5 text-lg font-bold text-foreground">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary/10 text-xs font-extrabold text-primary">
                       ب
                     </span>
                     محتواك
                   </h3>
-                  <p className="text-slate-600 dark:text-slate-300">
+                  <p className="text-muted-foreground">
                     تحتفظ بملكيَّة المحتوى الذي تُنشئه على منصَّتنا (مثل مقالات BlogPress). لكنَّك
                     تمنحنا ترخيصًا غير حصري لاستخدام وعرض هذا المحتوى لتشغيل الخدمات وتقديمها.
                   </p>
@@ -392,21 +319,21 @@ export default function TermsPage() {
             {/* 06. الدَّفع والاسترداد */}
             <section
               id="section-6"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                   06
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
                   . الدَّفع والاسترداد
                 </h2>
               </div>
 
               <ul className="space-y-3">
-                <li className="flex items-start gap-3 rounded-2xl border border-slate-200/50 bg-slate-50/60 p-4 dark:border-slate-700/40 dark:bg-slate-800/40">
+                <li className="flex items-start gap-3 rounded-2xl border border-border/40 bg-muted/40 p-4">
                   <svg
-                    className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500"
+                    className="mt-0.5 h-5 w-5 shrink-0 text-primary"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -422,9 +349,9 @@ export default function TermsPage() {
                     بعض الخدمات قد تتطلَّب أجرًا. تُوضَّح الأسعار بوضوح قبل إتمام أي عمليَّة شراء.
                   </span>
                 </li>
-                <li className="flex items-start gap-3 rounded-2xl border border-slate-200/50 bg-slate-50/60 p-4 dark:border-slate-700/40 dark:bg-slate-800/40">
+                <li className="flex items-start gap-3 rounded-2xl border border-border/40 bg-muted/40 p-4">
                   <svg
-                    className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500"
+                    className="mt-0.5 h-5 w-5 shrink-0 text-primary"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -441,9 +368,9 @@ export default function TermsPage() {
                     الشِّراء.
                   </span>
                 </li>
-                <li className="flex items-start gap-3 rounded-2xl border border-slate-200/50 bg-slate-50/60 p-4 dark:border-slate-700/40 dark:bg-slate-800/40">
+                <li className="flex items-start gap-3 rounded-2xl border border-border/40 bg-muted/40 p-4">
                   <svg
-                    className="mt-0.5 h-5 w-5 shrink-0 text-indigo-500"
+                    className="mt-0.5 h-5 w-5 shrink-0 text-primary"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -463,21 +390,21 @@ export default function TermsPage() {
             {/* 07. إخلاء المسؤوليَّة */}
             <section
               id="section-7"
-              className="group rounded-3xl border border-amber-200/80 bg-amber-50/40 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8 dark:border-amber-900/40 dark:bg-amber-950/20"
+              className="group rounded-3xl border border-warning/30 bg-warning/5 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-200 bg-amber-100 font-bold text-amber-700 dark:border-amber-800/50 dark:bg-amber-900/40 dark:text-amber-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-warning/30 bg-warning/10 font-bold text-warning">
                   07
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
                   . إخلاء المسؤوليَّة
                 </h2>
               </div>
 
               <ul className="space-y-3">
-                <li className="flex items-start gap-3 rounded-2xl border border-amber-200/60 bg-white/90 p-4 dark:border-amber-900/40 dark:bg-slate-900/90">
+                <li className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-card/90 p-4">
                   <svg
-                    className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400"
+                    className="mt-0.5 h-5 w-5 shrink-0 text-warning"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -494,9 +421,9 @@ export default function TermsPage() {
                     ضمنيَّة.
                   </span>
                 </li>
-                <li className="flex items-start gap-3 rounded-2xl border border-amber-200/60 bg-white/90 p-4 dark:border-amber-900/40 dark:bg-slate-900/90">
+                <li className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-card/90 p-4">
                   <svg
-                    className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400"
+                    className="mt-0.5 h-5 w-5 shrink-0 text-warning"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -510,9 +437,9 @@ export default function TermsPage() {
                   </svg>
                   <span>لا نضمن أنَّ الخدمات ستكون غير منقطعة أو خالية من الأخطاء.</span>
                 </li>
-                <li className="flex items-start gap-3 rounded-2xl border border-amber-200/60 bg-white/90 p-4 dark:border-amber-900/40 dark:bg-slate-900/90">
+                <li className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-card/90 p-4">
                   <svg
-                    className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400"
+                    className="mt-0.5 h-5 w-5 shrink-0 text-warning"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -529,9 +456,9 @@ export default function TermsPage() {
                     استخدام الخدمات.
                   </span>
                 </li>
-                <li className="flex items-start gap-3 rounded-2xl border border-amber-200/60 bg-white/90 p-4 dark:border-amber-900/40 dark:bg-slate-900/90">
+                <li className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-card/90 p-4">
                   <svg
-                    className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400"
+                    className="mt-0.5 h-5 w-5 shrink-0 text-warning"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -554,17 +481,17 @@ export default function TermsPage() {
             {/* 08. تعديلات الشُّروط */}
             <section
               id="section-8"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                   08
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
                   . تعديلات الشُّروط
                 </h2>
               </div>
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-muted-foreground">
                 نحتفظ بحقِّ تعديل هذه الشُّروط في أيِّ وقت. سنُعلن عن التَّعديلات الجوهريَّة عبر
                 الموقع أو عبر البريد الإلكتروني. استمرارك في استخدام الخدمات بعد أيِّ تعديلات
                 يُشكِّل قبولًا لها.
@@ -574,17 +501,15 @@ export default function TermsPage() {
             {/* 09. الإنهاء */}
             <section
               id="section-9"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                   09
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
-                  . الإنهاء
-                </h2>
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">. الإنهاء</h2>
               </div>
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-muted-foreground">
                 يمكننا تعليق أو إنهاء حسابك أو وصولك إلى الخدمات في أيِّ وقت، سواءً بسبب انتهاك هذه
                 الشُّروط أو لأيِّ سببٍ آخر، مع أو بدون إخطار مُسبَق.
               </p>
@@ -593,17 +518,15 @@ export default function TermsPage() {
             {/* 10. القانون الحاكم */}
             <section
               id="section-10"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
                   10
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
-                  . القانون الحاكم
-                </h2>
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">. القانون الحاكم</h2>
               </div>
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-muted-foreground">
                 تخضع هذه الشُّروط لقوانين الجمهوريَّة العربيَّة السُّوريَّة. أي نزاعات ناشئة عن هذه
                 الشُّروط أو استخدام الخدمات تخضع للاختصاص القضائي الحصري لمحاكم حلب، سوريا.
               </p>
@@ -612,27 +535,27 @@ export default function TermsPage() {
             {/* 11. التَّواصل معنا */}
             <section
               id="section-11"
-              className="group rounded-3xl border border-indigo-200/80 bg-linear-to-br from-indigo-50/60 via-white to-sky-50/40 p-6 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8 dark:border-indigo-800/80 dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-900"
+              className="group rounded-3xl border border-primary/30 bg-linear-to-br from-primary/10 via-card to-primary/5 p-6 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8"
             >
               <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 font-bold text-white shadow-sm">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary font-bold text-primary-foreground shadow-sm">
                   11
                 </div>
-                <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
-                  . التَّواصل معنا
-                </h2>
+                <h2 className="text-xl font-bold text-foreground sm:text-2xl">. التَّواصل معنا</h2>
               </div>
 
-              <p className="mb-6 text-slate-600 dark:text-slate-300">
+              <p className="mb-6 text-muted-foreground">
                 لأيِّ استفسارات أو طلبات تتعلَّق بشُروط الاستخدام هذه، يُرجَى التَّواصل عبر:
               </p>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-200/60 bg-white/90 p-4 shadow-2xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:border-indigo-500/50 dark:border-slate-700/60 dark:bg-slate-800/80">
-                  <span className="text-xs font-medium text-slate-400">البريد الإلكتروني</span>
+                <div className="flex flex-col gap-1.5 rounded-2xl border border-border/50 bg-card/90 p-4 shadow-2xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:border-primary/50">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    البريد الإلكتروني
+                  </span>
                   <a
                     href="mailto:contact@royaraqamia.com"
-                    className="flex items-center gap-2 text-base font-semibold text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-400"
+                    className="flex items-center gap-2 text-base font-semibold text-primary underline-offset-4 hover:underline"
                   >
                     <span>contact@royaraqamia.com</span>
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -646,13 +569,15 @@ export default function TermsPage() {
                   </a>
                 </div>
 
-                <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-200/60 bg-white/90 p-4 shadow-2xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:border-indigo-500/50 dark:border-slate-700/60 dark:bg-slate-800/80">
-                  <span className="text-xs font-medium text-slate-400">الموقع الإلكتروني</span>
+                <div className="flex flex-col gap-1.5 rounded-2xl border border-border/50 bg-card/90 p-4 shadow-2xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:border-primary/50">
+                  <span className="text-xs font-medium text-muted-foreground">
+                    الموقع الإلكتروني
+                  </span>
                   <a
                     href="https://royaraqamia.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-base font-semibold text-indigo-600 underline-offset-4 hover:underline dark:text-indigo-400"
+                    className="flex items-center gap-2 text-base font-semibold text-primary underline-offset-4 hover:underline"
                   >
                     <span>https://royaraqamia.com</span>
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -668,57 +593,6 @@ export default function TermsPage() {
               </div>
             </section>
           </main>
-
-          {/* Sticky Sidebar Table of Contents (Desktop) */}
-          <aside className="sticky top-10 hidden space-y-6 lg:col-span-4 lg:block">
-            <nav
-              aria-label="جدول المحتويات"
-              className="rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs dark:border-slate-800/80 dark:bg-slate-900/85"
-            >
-              <h3 className="mb-4 px-2 text-xs font-bold uppercase tracking-wider text-slate-400">
-                جدول المحتويات
-              </h3>
-              <ul className="space-y-1 text-xs font-medium text-slate-600 dark:text-slate-400">
-                {[
-                  { id: 'section-1', label: '01. المُقدِّمة' },
-                  { id: 'section-2', label: '02. وصف الخدمات' },
-                  { id: 'section-3', label: '03. الحساب والمُصادقة' },
-                  { id: 'section-4', label: '04. استخدام الخدمات' },
-                  { id: 'section-5', label: '05. المحتوى والملكيَّة الفكريَّة' },
-                  { id: 'section-6', label: '06. الدَّفع والاسترداد' },
-                  { id: 'section-7', label: '07. إخلاء المسؤوليَّة' },
-                  { id: 'section-8', label: '08. تعديلات الشُّروط' },
-                  { id: 'section-9', label: '09. الإنهاء' },
-                  { id: 'section-10', label: '10. القانون الحاكم' },
-                  { id: 'section-11', label: '11. التَّواصل معنا' },
-                ].map((link) => (
-                  <li key={link.id}>
-                    <a
-                      href={`#${link.id}`}
-                      className="flex items-center gap-2 rounded-xl px-3 py-2 text-slate-600 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:bg-indigo-50/60 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400"
-                    >
-                      <span>{link.label}</span>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-
-            <div className="rounded-3xl border border-indigo-100 bg-indigo-50/40 p-6 text-xs text-slate-600 dark:border-indigo-900/40 dark:bg-indigo-950/20 dark:text-slate-400">
-              <p className="mb-1 font-semibold text-slate-900 dark:text-white">
-                هل لديك أسئلة حول الشروط؟
-              </p>
-              <p className="mb-3 leading-relaxed">
-                يمكنك دائمًا الوصول إلى فريق الدعم لمساعدتك في أي استفسارات قانونية أو تقنية.
-              </p>
-              <a
-                href="mailto:contact@royaraqamia.com"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 py-2.5 px-4 font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:bg-indigo-700 active:scale-[0.98]"
-              >
-                تواصل مع الفريق
-              </a>
-            </div>
-          </aside>
         </div>
       </div>
     </div>

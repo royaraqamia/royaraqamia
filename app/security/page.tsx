@@ -39,35 +39,9 @@ export default function SecurityPage() {
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Hero Header Section */}
           <header className="mb-12 text-start">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold tracking-wide mb-6">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-              </span>
-              مركز الأمان والإفصاح المسؤول
-            </div>
-
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4 leading-tight">
               سياسة الأمان
             </h1>
-
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground bg-muted/50 border border-border/60 px-3.5 py-1.5 rounded-full w-fit">
-              <svg
-                className="w-4 h-4 text-muted-foreground shrink-0"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-                />
-              </svg>
-              <span>آخر تحديث: 19 صَفَر 1448 هـ</span>
-            </div>
           </header>
 
           {/* SLA Performance Metrics Section */}
@@ -274,7 +248,7 @@ export default function SecurityPage() {
             {/* Section 2: In-Scope Vulnerabilities */}
             <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
+                <div className="w-10 h-10 rounded-xl bg-success/10 text-success flex items-center justify-center shrink-0 border border-success/20">
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -308,10 +282,10 @@ export default function SecurityPage() {
                     className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors"
                   >
                     <div className="flex items-center gap-2.5">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="w-2 h-2 rounded-full bg-success shrink-0" />
                       <span className="text-sm font-medium text-foreground/90">{item.text}</span>
                     </div>
-                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-semibold dir-ltr shrink-0">
+                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-success/10 text-success border border-success/20 font-semibold dir-ltr shrink-0">
                       {item.badge}
                     </span>
                   </div>
@@ -322,7 +296,7 @@ export default function SecurityPage() {
             {/* Section 3: Out-of-Scope */}
             <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
+                <div className="w-10 h-10 rounded-xl bg-warning/10 text-warning flex items-center justify-center shrink-0 border border-warning/20">
                   <svg
                     className="w-5 h-5"
                     fill="none"
@@ -353,7 +327,7 @@ export default function SecurityPage() {
                     key={idx}
                     className="flex items-start gap-3 p-3.5 rounded-xl bg-muted/30 border border-border/40"
                   >
-                    <div className="w-5 h-5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                    <div className="w-5 h-5 rounded-full bg-warning/10 text-warning flex items-center justify-center shrink-0 mt-0.5">
                       <svg
                         className="w-3 h-3"
                         fill="none"

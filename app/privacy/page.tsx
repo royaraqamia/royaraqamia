@@ -27,101 +27,37 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div
-      className="min-h-screen bg-neutral-950 text-neutral-200 font-sans selection:bg-emerald-500/20 selection:text-emerald-300 relative overflow-hidden"
+      className="min-h-screen font-sans selection:bg-primary/20 relative overflow-hidden"
       dir="rtl"
     >
       {/* Subtle Ambient Radial Lighting Effects */}
-      <div className="absolute top-0 right-1/2 translate-x-1/2 w-200 sm:w-300 h-125 bg-linear-to-b from-emerald-500/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-1/3 left-0 w-100 h-100 bg-emerald-500/5 glow-blur-lg pointer-events-none -z-10" />
+      <div className="absolute top-0 right-1/2 translate-x-1/2 w-200 sm:w-300 h-125 bg-linear-to-b from-primary/10 via-fuchsia-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
+      <div className="absolute top-1/3 left-0 w-100 h-100 bg-primary/5 glow-blur-lg pointer-events-none -z-10" />
       <div className="absolute inset-0 bg-[radial-gradient(#262626_1px,transparent_1px)] bg-size-[24px_24px] opacity-30 pointer-events-none -z-10" />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20">
         {/* Hero Header */}
-        <header className="mb-10 sm:mb-14 border-b border-neutral-800/80 pb-8 sm:pb-12">
-          <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs sm:text-sm font-medium mb-6">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-            </span>
-            <span>وثيقة رسمية • آخر تحديث: 19 صَفَر 1448 هـ</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-4 leading-tight">
+        <header className="mb-10 sm:mb-14 border-b border-border/50 pb-8 sm:pb-12">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground mb-4 leading-tight">
             سياسة الخصوصيَّة
           </h1>
-
-          <p className="text-base sm:text-lg text-neutral-400 max-w-2xl leading-relaxed">
-            سياسة الخصوصيَّة لـ <strong className="text-white font-semibold">رؤية رقمية</strong> –
-            تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.
-          </p>
         </header>
-
-        {/* Quick Navigation Scroll Pill */}
-        <nav
-          className="mb-10 sm:mb-12 overflow-x-auto pb-2 scrollbar-none"
-          aria-label="فهرس السِّياسة"
-        >
-          <div className="inline-flex gap-2 min-w-full sm:min-w-0">
-            <a
-              href="#intro"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              01. المُقدِّمة
-            </a>
-            <a
-              href="#collected-data"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              02. المعلومات المجمعة
-            </a>
-            <a
-              href="#data-usage"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              03. الاستخدام
-            </a>
-            <a
-              href="#third-parties"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              04. المشاركة
-            </a>
-            <a
-              href="#security"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              05. الأمان
-            </a>
-            <a
-              href="#rights"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              06. حقوقك
-            </a>
-            <a
-              href="#contact"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              11. التَّواصل
-            </a>
-          </div>
-        </nav>
 
         {/* Content Stream */}
         <div className="space-y-8 sm:space-y-10">
           {/* Section 01 */}
           <section
             id="intro"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5"
           >
             <div className="flex items-center gap-3 mb-4">
-              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                 01
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">. المُقدِّمة</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">. المُقدِّمة</h2>
             </div>
-            <p className="text-neutral-300 text-base sm:text-lg leading-relaxed">
-              مرحبًا بك في <strong className="text-white font-semibold">رؤية رقمية</strong>{' '}
+            <p className="text-foreground/80 text-base sm:text-lg leading-relaxed">
+              مرحبًا بك في <strong className="text-foreground font-semibold">رؤية رقمية</strong>{' '}
               (&quot;نحن&quot; أو &quot;المُشغِّل&quot;). نُقدِّر ثقتك بنا. تشرح هذه السِّياسة
               كيفيَّة جمع معلوماتك الشَّخصيَّة واستخدامها وحمايتها عند استخدامك لمواقعنا وخدماتنا
               إلكترونيًّا.
@@ -131,22 +67,24 @@ export default function PrivacyPage() {
           {/* Section 02 */}
           <section
             id="collected-data"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5"
           >
             <div className="flex items-center gap-3 mb-6">
-              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                 02
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">. المعلومات التي نجمعها</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                . المعلومات التي نجمعها
+              </h2>
             </div>
 
             <div className="space-y-6">
               {/* Card 2.A */}
-              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 sm:p-6 transition-colors hover:border-neutral-700">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  <span className="text-emerald-400 font-mono">أ)</span> معلومات التَّسجيل والدُّخول
+              <div className="rounded-xl border border-border/40 bg-muted/30 p-5 sm:p-6 transition-colors hover:border-primary/30">
+                <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <span className="text-primary font-mono">أ)</span> معلومات التَّسجيل والدُّخول
                 </h3>
-                <p className="text-neutral-400 text-sm sm:text-base mb-4">
+                <p className="text-muted-foreground text-sm sm:text-base mb-4">
                   عند إنشاء حساب أو تسجيل الدُّخول، نجمع:
                 </p>
                 <ul className="space-y-2.5">
@@ -157,10 +95,10 @@ export default function PrivacyPage() {
                   ].map((item, idx) => (
                     <li
                       key={idx}
-                      className="flex items-start gap-3 text-neutral-300 text-sm sm:text-base"
+                      className="flex items-start gap-3 text-foreground/80 text-sm sm:text-base"
                     >
                       <svg
-                        className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0"
+                        className="w-5 h-5 text-primary mt-0.5 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -179,11 +117,11 @@ export default function PrivacyPage() {
               </div>
 
               {/* Card 2.B */}
-              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 sm:p-6 transition-colors hover:border-neutral-700">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  <span className="text-emerald-400 font-mono">ب)</span> معلومات الدُّخول عبر Google
+              <div className="rounded-xl border border-border/40 bg-muted/30 p-5 sm:p-6 transition-colors hover:border-primary/30">
+                <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <span className="text-primary font-mono">ب)</span> معلومات الدُّخول عبر Google
                 </h3>
-                <p className="text-neutral-400 text-sm sm:text-base mb-4">
+                <p className="text-muted-foreground text-sm sm:text-base mb-4">
                   عند اختيار تسجيل الدُّخول باستخدام حساب Google، نتلقَّى المعلومات التَّالية من
                   Google وِفقًا لتصريح خصوصيَّتك في حسابك:
                 </p>
@@ -195,10 +133,10 @@ export default function PrivacyPage() {
                   ].map((item, idx) => (
                     <li
                       key={idx}
-                      className="flex items-start gap-3 text-neutral-300 text-sm sm:text-base"
+                      className="flex items-start gap-3 text-foreground/80 text-sm sm:text-base"
                     >
                       <svg
-                        className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0"
+                        className="w-5 h-5 text-primary mt-0.5 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -214,18 +152,18 @@ export default function PrivacyPage() {
                     </li>
                   ))}
                 </ul>
-                <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/20 p-4 text-xs sm:text-sm text-emerald-300/90 leading-relaxed">
+                <div className="rounded-xl bg-primary/5 border border-primary/20 p-4 text-xs sm:text-sm text-primary/90 leading-relaxed">
                   نستخدم هذه المعلومات فقط لأغراض المُصادقة وإنشاء حسابك على منصَّتنا. لن نُشارك هذه
                   المعلومات مع Google أو أي طرف ثالث لأغراض تسويقيَّة.
                 </div>
               </div>
 
               {/* Card 2.C */}
-              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 sm:p-6 transition-colors hover:border-neutral-700">
-                <h3 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-                  <span className="text-emerald-400 font-mono">ج)</span> معلومات الاستخدام
+              <div className="rounded-xl border border-border/40 bg-muted/30 p-5 sm:p-6 transition-colors hover:border-primary/30">
+                <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <span className="text-primary font-mono">ج)</span> معلومات الاستخدام
                 </h3>
-                <p className="text-neutral-400 text-sm sm:text-base mb-4">
+                <p className="text-muted-foreground text-sm sm:text-base mb-4">
                   قد نجمع تلقائيًّا معلومات معيَّنة عند استخدامك للمنصَّة، منها:
                 </p>
                 <ul className="space-y-2.5">
@@ -237,10 +175,10 @@ export default function PrivacyPage() {
                   ].map((item, idx) => (
                     <li
                       key={idx}
-                      className="flex items-start gap-3 text-neutral-300 text-sm sm:text-base"
+                      className="flex items-start gap-3 text-foreground/80 text-sm sm:text-base"
                     >
                       <svg
-                        className="w-5 h-5 text-emerald-400 mt-0.5 shrink-0"
+                        className="w-5 h-5 text-primary mt-0.5 shrink-0"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -263,17 +201,17 @@ export default function PrivacyPage() {
           {/* Section 03 */}
           <section
             id="data-usage"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5"
           >
             <div className="flex items-center gap-3 mb-4">
-              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                 03
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">
                 . كيفيَّة استخدام معلوماتك
               </h2>
             </div>
-            <p className="text-neutral-400 text-sm sm:text-base mb-6">
+            <p className="text-muted-foreground text-sm sm:text-base mb-6">
               نستخدم المعلومات التي نجمعها للأغراض التَّالية:
             </p>
             <div className="grid sm:grid-cols-2 gap-3.5">
@@ -287,9 +225,9 @@ export default function PrivacyPage() {
               ].map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 p-3.5 rounded-xl border border-neutral-800/60 bg-neutral-950/40 text-neutral-300 text-sm sm:text-base"
+                  className="flex items-start gap-3 p-3.5 rounded-xl border border-border/40 bg-muted/20 text-foreground/80 text-sm sm:text-base"
                 >
-                  <div className="h-2 w-2 rounded-full bg-emerald-400 mt-2 shrink-0" />
+                  <div className="h-2 w-2 rounded-full bg-primary mt-2 shrink-0" />
                   <span>{item}</span>
                 </div>
               ))}
@@ -299,35 +237,36 @@ export default function PrivacyPage() {
           {/* Section 04 */}
           <section
             id="third-parties"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5"
           >
             <div className="flex items-center gap-3 mb-4">
-              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                 04
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">
                 . مشاركة المعلومات مع أطراف ثالثة
               </h2>
             </div>
-            <p className="text-neutral-300 text-base sm:text-lg mb-6 leading-relaxed">
+            <p className="text-foreground/80 text-base sm:text-lg mb-6 leading-relaxed">
               نحنُ لا نبيع معلوماتك الشَّخصيَّة لأيِّ طرفٍ ثالث. قد نُشارك معلوماتك فقط في الحالات
               التَّالية:
             </p>
             <div className="space-y-4">
-              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 leading-relaxed">
-                <strong className="text-white block mb-2 text-base">مُزوِّدو الخدمات:</strong>
-                <span className="text-neutral-300 text-sm sm:text-base">
+              <div className="rounded-xl border border-border/40 bg-muted/30 p-5 leading-relaxed">
+                <strong className="text-foreground block mb-2 text-base">مُزوِّدو الخدمات:</strong>
+                <span className="text-foreground/80 text-sm sm:text-base">
                   نستخدم خدمات مُزوِّدين موثوقين مثل{' '}
-                  <span className="text-emerald-400 font-medium">Supabase</span> (لتخزين البيانات
-                  والمُصادقة) و <span className="text-emerald-400 font-medium">Vercel</span>{' '}
-                  (لاستضافة الموقع) و <span className="text-emerald-400 font-medium">Resend</span>{' '}
-                  (لإرسال رسائل البريد الإلكتروني). تُخزَّن هذه البيانات على خوادمهم بما يتوافق مع
-                  معايير الأمان.
+                  <span className="text-primary font-medium">Supabase</span> (لتخزين البيانات
+                  والمُصادقة) و <span className="text-primary font-medium">Vercel</span> (لاستضافة
+                  الموقع) و <span className="text-primary font-medium">Resend</span> (لإرسال رسائل
+                  البريد الإلكتروني). تُخزَّن هذه البيانات على خوادمهم بما يتوافق مع معايير الأمان.
                 </span>
               </div>
-              <div className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-5 leading-relaxed">
-                <strong className="text-white block mb-2 text-base">الالتزامات القانونيَّة:</strong>
-                <span className="text-neutral-300 text-sm sm:text-base">
+              <div className="rounded-xl border border-border/40 bg-muted/30 p-5 leading-relaxed">
+                <strong className="text-foreground block mb-2 text-base">
+                  الالتزامات القانونيَّة:
+                </strong>
+                <span className="text-foreground/80 text-sm sm:text-base">
                   قد نكشف معلوماتك إذا طُلِب ذلك قانونيًّا أو ردًّا على إجراءات قانونيَّة صالحة.
                 </span>
               </div>
@@ -337,13 +276,13 @@ export default function PrivacyPage() {
           {/* Section 05 */}
           <section
             id="security"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5"
           >
             <div className="flex items-center gap-3 mb-6">
-              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                 05
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">. الأمان والتَّخزين</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">. الأمان والتَّخزين</h2>
             </div>
             <div className="space-y-3">
               {[
@@ -353,10 +292,10 @@ export default function PrivacyPage() {
               ].map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex items-start gap-3 p-4 rounded-xl border border-neutral-800/80 bg-neutral-950/40 text-neutral-300 text-sm sm:text-base"
+                  className="flex items-start gap-3 p-4 rounded-xl border border-border/40 bg-muted/20 text-foreground/80 text-sm sm:text-base"
                 >
                   <svg
-                    className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5"
+                    className="w-5 h-5 text-primary shrink-0 mt-0.5"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -377,15 +316,15 @@ export default function PrivacyPage() {
           {/* Section 06 */}
           <section
             id="rights"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5"
           >
             <div className="flex items-center gap-3 mb-4">
-              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                 06
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">. حقوقك</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">. حقوقك</h2>
             </div>
-            <p className="text-neutral-400 text-sm sm:text-base mb-6">
+            <p className="text-muted-foreground text-sm sm:text-base mb-6">
               لك حقوق فيما يتعلَّق بمعلوماتك الشَّخصيَّة:
             </p>
 
@@ -407,21 +346,21 @@ export default function PrivacyPage() {
               ].map((right, idx) => (
                 <div
                   key={idx}
-                  className="rounded-xl border border-neutral-800 bg-neutral-950/50 p-4 leading-relaxed"
+                  className="rounded-xl border border-border/40 bg-muted/30 p-4 leading-relaxed"
                 >
-                  <strong className="text-white block mb-1 text-sm sm:text-base">
+                  <strong className="text-foreground block mb-1 text-sm sm:text-base">
                     {right.title}
                   </strong>
-                  <p className="text-neutral-400 text-xs sm:text-sm">{right.desc}</p>
+                  <p className="text-muted-foreground text-xs sm:text-sm">{right.desc}</p>
                 </div>
               ))}
             </div>
 
-            <p className="text-neutral-300 text-sm sm:text-base pt-4 border-t border-neutral-800/80">
+            <p className="text-foreground/80 text-sm sm:text-base pt-4 border-t border-border/50">
               لممارسة أيٍّ من هذه الحقوق، يُرجَى التَّواصل معنا عبر البريد الإلكتروني:{' '}
               <a
                 href="mailto:contact@royaraqamia.com"
-                className="inline-flex items-center gap-1 text-emerald-400 font-medium underline underline-offset-4 hover:text-emerald-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded-sm"
+                className="inline-flex items-center gap-1 text-primary font-medium underline underline-offset-4 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
               >
                 contact@royaraqamia.com
               </a>
@@ -431,30 +370,30 @@ export default function PrivacyPage() {
           {/* Section 07 & 08 Dual Grid Layout */}
           <div className="grid sm:grid-cols-2 gap-6">
             {/* Section 07 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5">
               <div className="flex items-center gap-3 mb-4">
-                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                   07
                 </span>
-                <h2 className="text-lg sm:text-xl font-bold text-white">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">
                   . ملفَّات تعريف الارتباط (Cookies)
                 </h2>
               </div>
-              <p className="text-neutral-300 text-sm sm:text-base leading-relaxed">
+              <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
                 نستخدم ملفَّات تعريف الارتباط الضَّروريَّة لتشغيل الموقع وتأمين الجلسات. لا نستخدم
                 ملفَّات تعريف ارتباط التَّتبُّع لأغراض تحليليَّة أو تسويقيَّة.
               </p>
             </section>
 
             {/* Section 08 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5">
               <div className="flex items-center gap-3 mb-4">
-                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                   08
                 </span>
-                <h2 className="text-lg sm:text-xl font-bold text-white">. خصوصيَّة الأحداث</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">. خصوصيَّة الأحداث</h2>
               </div>
-              <p className="text-neutral-300 text-sm sm:text-base leading-relaxed">
+              <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
                 قد تتمُّ معالجة بعض بياناتك من خلال خدمات مُزوِّدين مثل Vercel Analytics وSentry
                 لتحسين أداء الموقع واكتشاف الأخطاء. تُعالج هذه البيانات بشكل مُجمَّع وغير مُحدَّد
                 الهويَّة.
@@ -465,30 +404,30 @@ export default function PrivacyPage() {
           {/* Section 09 & 10 Dual Grid Layout */}
           <div className="grid sm:grid-cols-2 gap-6">
             {/* Section 09 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5">
               <div className="flex items-center gap-3 mb-4">
-                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                   09
                 </span>
-                <h2 className="text-lg sm:text-xl font-bold text-white">. الأطفال</h2>
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">. الأطفال</h2>
               </div>
-              <p className="text-neutral-300 text-sm sm:text-base leading-relaxed">
+              <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
                 خدماتنا غير مُوجَّهة لأقل من عامًا. لا نجمع عن عمد معلومات شخصيَّة من الأطفال. إذا
                 علمنا أنَّنا جمعنا معلومات من طفل دون عامًا، سنقوم بمحو هذه المعلومات فورًا.
               </p>
             </section>
 
             {/* Section 10 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-border/60 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5">
               <div className="flex items-center gap-3 mb-4">
-                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
+                <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-mono font-bold">
                   10
                 </span>
-                <h2 className="text-lg sm:text-xl font-bold text-white">
+                <h2 className="text-lg sm:text-xl font-bold text-foreground">
                   . التَّغييرات على هذه السِّياسة
                 </h2>
               </div>
-              <p className="text-neutral-300 text-sm sm:text-base leading-relaxed">
+              <p className="text-foreground/80 text-sm sm:text-base leading-relaxed">
                 قد نُحدِّث هذه السِّياسة من وقت لآخر. سنُعلن عن أي تغييرات جوهريَّة عبر الموقع أو
                 عبر البريد الإلكتروني. نُشجِّعك على مراجعة هذه السِّياسة بانتظام.
               </p>
@@ -498,31 +437,31 @@ export default function PrivacyPage() {
           {/* Section 11 - Contact CTA Section */}
           <section
             id="contact"
-            className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-emerald-500/30 bg-linear-to-br from-neutral-900 via-neutral-900/90 to-emerald-950/20 p-6 sm:p-10 shadow-2xl"
+            className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-primary/30 bg-linear-to-br from-card via-card/90 to-primary/10 p-6 sm:p-10 shadow-2xl"
           >
             <div className="flex items-center gap-3 mb-4">
-              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-mono font-bold">
+              <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary/20 border border-primary/40 text-primary text-xs font-mono font-bold">
                 11
               </span>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">. التَّواصل معنا</h2>
+              <h2 className="text-xl sm:text-2xl font-bold text-foreground">. التَّواصل معنا</h2>
             </div>
-            <p className="text-neutral-300 text-sm sm:text-base mb-6 leading-relaxed">
+            <p className="text-foreground/80 text-sm sm:text-base mb-6 leading-relaxed">
               لأيِّ استفسارات أو طلبات تتعلَّق بسياسة الخصوصيَّة هذه، يُرجَى التَّواصل عبر:
             </p>
 
             <div className="grid sm:grid-cols-2 gap-4">
               <a
                 href="mailto:contact@royaraqamia.com"
-                className="group flex items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 hover:border-emerald-500/50 hover:bg-neutral-900 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="group flex items-center justify-between p-4 rounded-xl border border-border/40 bg-muted/30 hover:border-primary/50 hover:bg-card/70 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <div className="space-y-1">
-                  <span className="text-xs text-neutral-400 block">البريد الإلكتروني</span>
-                  <span className="text-sm sm:text-base text-white font-medium group-hover:text-emerald-400 transition-colors">
+                  <span className="text-xs text-muted-foreground block">البريد الإلكتروني</span>
+                  <span className="text-sm sm:text-base text-foreground font-medium group-hover:text-primary transition-colors">
                     contact@royaraqamia.com
                   </span>
                 </div>
                 <svg
-                  className="w-5 h-5 text-neutral-500 group-hover:text-emerald-400 transition-colors shrink-0"
+                  className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -540,16 +479,16 @@ export default function PrivacyPage() {
                 href="https://royaraqamia.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 hover:border-emerald-500/50 hover:bg-neutral-900 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="group flex items-center justify-between p-4 rounded-xl border border-border/40 bg-muted/30 hover:border-primary/50 hover:bg-card/70 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <div className="space-y-1">
-                  <span className="text-xs text-neutral-400 block">الموقع الإلكتروني</span>
-                  <span className="text-sm sm:text-base text-white font-medium group-hover:text-emerald-400 transition-colors">
+                  <span className="text-xs text-muted-foreground block">الموقع الإلكتروني</span>
+                  <span className="text-sm sm:text-base text-foreground font-medium group-hover:text-primary transition-colors">
                     https://royaraqamia.com
                   </span>
                 </div>
                 <svg
-                  className="w-5 h-5 text-neutral-500 group-hover:text-emerald-400 transition-colors shrink-0"
+                  className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
