@@ -129,14 +129,14 @@ export function Certificate() {
         {/* Parallax Purple Dynamic Light Sphere */}
         <motion.div
           style={{ y: backgroundY }}
-          className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 bg-purple-600/15 rounded-full blur-[140px] pointer-events-none"
+          className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 bg-purple-600/15 rounded-full glow-blur-xl pointer-events-none"
         />
 
         {/* Indigo Ambient Pulsing Glow */}
         <motion.div
           animate={{ scale: [1, 1.15, 1], opacity: [0.08, 0.18, 0.08] }}
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 bg-indigo-600/15 rounded-full blur-[160px] pointer-events-none"
+          className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 bg-indigo-600/15 rounded-full glow-blur-xl pointer-events-none"
         />
       </div>
 

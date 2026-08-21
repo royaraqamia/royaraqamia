@@ -6,7 +6,7 @@ export function Testimonials() {
     <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden" id="testimonials">
       {/* Background Subtle Ambient Glow */}
       <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden">
-        <div className="h-87.5 w-125 sm:h-112.5 sm:w-175 rounded-full bg-violet-600/10 blur-[120px] transform-gpu" />
+        <div className="h-87.5 w-125 sm:h-112.5 sm:w-175 rounded-full bg-violet-600/10 glow-blur-lg transform-gpu" />
       </div>
 
       {/* Section Header */}

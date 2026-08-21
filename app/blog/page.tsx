@@ -23,7 +23,7 @@ export default async function BlogPage() {
         {/* Deep Ambient Background Glows */}
         <div
           aria-hidden="true"
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(600px,100vw)] bg-linear-to-tr from-primary/20 via-indigo-500/10 to-transparent blur-[130px] rounded-full pointer-events-none -z-10"
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(600px,100vw)] bg-linear-to-tr from-primary/20 via-indigo-500/10 to-transparent glow-blur-lg rounded-full pointer-events-none -z-10"
         />
         <div
           aria-hidden="true"

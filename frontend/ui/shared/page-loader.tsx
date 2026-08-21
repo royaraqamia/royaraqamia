@@ -11,8 +11,8 @@ export function PageLoader() {
         aria-hidden="true"
         className="pointer-events-none absolute inset-0 flex items-center justify-center mix-blend-screen"
       >
-        <div className="absolute h-120 w-120 rounded-full bg-linear-to-tr from-violet-600/10 via-purple-900/10 to-transparent blur-[80px] transform-gpu sm:h-200 sm:w-200 sm:blur-[120px]" />
-        <div className="absolute h-60 w-60 rounded-full bg-indigo-500/10 blur-[60px] transform-gpu sm:h-100 sm:w-100 sm:blur-[100px]" />
+        <div className="absolute h-120 w-120 rounded-full bg-linear-to-tr from-violet-600/10 via-purple-900/10 to-transparent glow-blur-md transform-gpu sm:h-200 sm:w-200 sm:glow-blur-lg" />
+        <div className="absolute h-60 w-60 rounded-full bg-indigo-500/10 glow-blur-sm transform-gpu sm:h-100 sm:w-100 sm:glow-blur-md" />
       </div>
 
       {/* Premium Interactive Glassmorphic Card */}

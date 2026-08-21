@@ -13,9 +13,9 @@ export function Hero() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] pointer-events-none" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
-          <GlowOrb className="w-125 h-125 bg-primary/20 top-1/4 -right-48 animate-pulse-slow blur-[120px]" />
+          <GlowOrb className="w-125 h-125 bg-primary/20 top-1/4 -right-48 animate-pulse-slow glow-blur-lg" />
           <GlowOrb
-            className="w-112.5 h-112.5 bg-indigo-500/15 bottom-1/4 -left-40 animate-pulse-slow blur-[120px]"
+            className="w-112.5 h-112.5 bg-indigo-500/15 bottom-1/4 -left-40 animate-pulse-slow glow-blur-lg"
             style={{ animationDelay: '2s' }}
           />
         </>

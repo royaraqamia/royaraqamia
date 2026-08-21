@@ -17,9 +17,9 @@ export function VerifySection() {
         <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] bg-size-[24px_24px] opacity-20 mask-[radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)]" />
 
         {/* High-End Ambient Glowing Orbs */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-150 bg-linear-to-b from-[#7766EE]/20 via-[#6366F1]/10 to-transparent blur-[140px] rounded-full pointer-events-none" />
-        <div className="absolute -bottom-20 right-1/4 w-112.5 h-112.5 bg-linear-to-t from-[#A78BFA]/15 via-purple-900/10 to-transparent blur-[130px] rounded-full pointer-events-none" />
-        <div className="absolute top-1/2 -left-20 -translate-y-1/2 w-87.5 h-87.5 bg-[#6366F1]/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-150 bg-linear-to-b from-[#7766EE]/20 via-[#6366F1]/10 to-transparent glow-blur-xl rounded-full pointer-events-none" />
+        <div className="absolute -bottom-20 right-1/4 w-112.5 h-112.5 bg-linear-to-t from-[#A78BFA]/15 via-purple-900/10 to-transparent glow-blur-lg rounded-full pointer-events-none" />
+        <div className="absolute top-1/2 -left-20 -translate-y-1/2 w-87.5 h-87.5 bg-[#6366F1]/10 glow-blur-lg rounded-full pointer-events-none" />
       </div>
 
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">

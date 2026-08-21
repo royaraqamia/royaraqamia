@@ -87,9 +87,9 @@ export function Services() {
 
       {/* Dynamic Background Spotlight & Floating Mesh Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none mix-blend-screen z-0">
-        <div className="animate-orb-drift-a absolute top-1/4 right-1/4 w-80 h-80 sm:w-96 sm:h-96 bg-indigo-600/15 rounded-full blur-[130px]" />
-        <div className="animate-orb-drift-b absolute bottom-1/4 left-1/4 w-80 h-80 sm:w-96 sm:h-96 bg-purple-600/15 rounded-full blur-[140px]" />
-        <div className="animate-orb-drift-c absolute top-1/3 left-1/2 -translate-x-1/2 w-md h-112 bg-violet-600/12 rounded-full blur-[140px]" />
+        <div className="animate-orb-drift-a absolute top-1/4 right-1/4 w-80 h-80 sm:w-96 sm:h-96 bg-indigo-600/15 rounded-full glow-blur-lg" />
+        <div className="animate-orb-drift-b absolute bottom-1/4 left-1/4 w-80 h-80 sm:w-96 sm:h-96 bg-purple-600/15 rounded-full glow-blur-xl" />
+        <div className="animate-orb-drift-c absolute top-1/3 left-1/2 -translate-x-1/2 w-md h-112 bg-violet-600/12 rounded-full glow-blur-xl" />
         {/* Tactile Noise Overlay */}
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.025] mix-blend-overlay" />
       </div>

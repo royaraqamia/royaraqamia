@@ -14,8 +14,8 @@ export function BottomCTA() {
 
           {/* Atmospheric mesh grid & dynamic radial lighting */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-137.5 md:w-175 h-80 sm:h-137.5 md:h-175 bg-primary/10 rounded-full blur-[100px] sm:blur-[130px] pointer-events-none" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-50 sm:w-87.5 h-50 sm:h-87.5 bg-primary/15 rounded-full blur-[70px] pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-137.5 md:w-175 h-80 sm:h-137.5 md:h-175 bg-primary/10 rounded-full glow-blur-md sm:glow-blur-lg pointer-events-none" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-50 sm:w-87.5 h-50 sm:h-87.5 bg-primary/15 rounded-full glow-blur-sm pointer-events-none" />
         </>
       }
       containerClassName="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 md:py-36 text-center"

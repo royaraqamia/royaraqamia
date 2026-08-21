@@ -220,7 +220,7 @@ export function TestimonialsCarousel({
       className="relative w-full py-8 md:py-14 overflow-hidden select-none"
     >
       {/* Background Ambience & Lighting Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 md:w-250 h-87.5 bg-linear-to-r from-violet-600/10 via-indigo-500/10 to-fuchsia-600/10 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 md:w-250 h-87.5 bg-linear-to-r from-violet-600/10 via-indigo-500/10 to-fuchsia-600/10 glow-blur-lg rounded-full pointer-events-none -z-10" />
 
       {/* Main Carousel Wrapper with Edge Navigation Controls */}
       <div className="relative w-full group/carousel">

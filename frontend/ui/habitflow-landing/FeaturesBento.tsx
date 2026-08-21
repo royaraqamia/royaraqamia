@@ -225,8 +225,8 @@ export function FeaturesBento() {
       sectionClassName="relative py-20 sm:py-28 lg:py-36 overflow-hidden bg-slate-950 text-slate-100"
       decor={
         <>
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-violet-600/10 blur-[140px] rounded-full pointer-events-none" />
-          <div className="absolute bottom-10 right-10 w-100 h-100 bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-violet-600/10 glow-blur-xl rounded-full pointer-events-none" />
+          <div className="absolute bottom-10 right-10 w-100 h-100 bg-indigo-600/10 glow-blur-lg rounded-full pointer-events-none" />
         </>
       }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"

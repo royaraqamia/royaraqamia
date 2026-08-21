@@ -35,7 +35,7 @@ export function HowItWorks() {
           className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
           aria-hidden="true"
         >
-          <div className="h-95 w-162.5 rounded-full bg-primary/10 blur-[130px] dark:bg-primary/15" />
+          <div className="h-95 w-162.5 rounded-full bg-primary/10 glow-blur-lg dark:bg-primary/15" />
         </div>
       }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"

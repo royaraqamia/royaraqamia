@@ -35,9 +35,9 @@ export function HowItWorks() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
           >
-            <div className="h-112.5 w-175 rounded-full bg-primary/10 blur-[130px] opacity-60" />
-            <div className="absolute top-1/4 -right-24 h-75 w-75 rounded-full bg-emerald-500/10 blur-[100px]" />
-            <div className="absolute bottom-1/4 -left-24 h-75 w-75 rounded-full bg-cyan-500/10 blur-[100px]" />
+            <div className="h-112.5 w-175 rounded-full bg-primary/10 glow-blur-lg opacity-60" />
+            <div className="absolute top-1/4 -right-24 h-75 w-75 rounded-full bg-emerald-500/10 glow-blur-md" />
+            <div className="absolute bottom-1/4 -left-24 h-75 w-75 rounded-full bg-cyan-500/10 glow-blur-md" />
           </div>
 
           <div

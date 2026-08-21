@@ -33,7 +33,7 @@ export function HowItWorks() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
         >
-          <div className="h-112.5 w-150 sm:w-200 rounded-full bg-linear-to-tr from-primary/10 via-primary/5 to-transparent blur-[120px] opacity-70" />
+          <div className="h-112.5 w-150 sm:w-200 rounded-full bg-linear-to-tr from-primary/10 via-primary/5 to-transparent glow-blur-lg opacity-70" />
         </div>
       }
       containerClassName="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 container-padding"

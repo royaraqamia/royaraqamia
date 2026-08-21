@@ -81,7 +81,7 @@ export function MetricCards() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-80 bg-linear-to-b from-purple-500/10 via-indigo-500/5 to-transparent blur-3xl" />
 
         {/* Deep ambient radial glow orb */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(900px,100vw)] bg-linear-to-tr from-purple-600/10 via-indigo-600/10 to-transparent opacity-60 blur-[140px] rounded-full" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(900px,100vw)] bg-linear-to-tr from-purple-600/10 via-indigo-600/10 to-transparent opacity-60 glow-blur-xl rounded-full" />
 
         {/* Top and bottom subtle section boundaries */}
         <div className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />

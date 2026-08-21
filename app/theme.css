@@ -43,3 +43,19 @@
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-fade-in-up: fadeInUp 1s ease-out forwards;
 }
+
+/* Shared ambient-glow blur tiers. One rule per tier replaces dozens of
+   one-off blur-[Npx] utilities; ±15px drift on low-opacity blobs is
+   imperceptible while keeping the compiled CSS and paint work bounded. */
+@utility glow-blur-sm {
+  filter: blur(70px);
+}
+@utility glow-blur-md {
+  filter: blur(90px);
+}
+@utility glow-blur-lg {
+  filter: blur(125px);
+}
+@utility glow-blur-xl {
+  filter: blur(155px);
+}

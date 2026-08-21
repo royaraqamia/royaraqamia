@@ -110,7 +110,7 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
 
       {/* Static ambient background glow */}
       <div
-        className="absolute -top-12 -left-12 w-64 h-64 opacity-0 group-hover/service:opacity-20 blur-[80px] transition-opacity duration-700 -z-10 pointer-events-none rounded-full"
+        className="absolute -top-12 -left-12 w-64 h-64 opacity-0 group-hover/service:opacity-20 glow-blur-md transition-opacity duration-700 -z-10 pointer-events-none rounded-full"
         style={{ background: colors.gradient }}
       />
 

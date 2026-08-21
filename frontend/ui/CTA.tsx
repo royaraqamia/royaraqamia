@@ -18,8 +18,8 @@ export function CTA() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(1000px,100vw)] h-[min(600px,80vw)] bg-[radial-gradient(ellipse_at_center,rgba(147,51,234,0.15)_0%,rgba(79,70,229,0.08)_40%,transparent_70%)] blur-3xl transform-gpu" />
 
         {/* High-end Ambient Glow Spheres */}
-        <div className="absolute top-0 right-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-purple-600/10 rounded-full blur-[120px] transform-gpu" />
-        <div className="absolute bottom-0 left-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-indigo-600/10 rounded-full blur-[120px] transform-gpu" />
+        <div className="absolute top-0 right-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-purple-600/10 rounded-full glow-blur-lg transform-gpu" />
+        <div className="absolute bottom-0 left-1/4 w-72 sm:w-96 h-72 sm:h-96 bg-indigo-600/10 rounded-full glow-blur-lg transform-gpu" />
 
         {/* Subtle Tech Grid Texture Overlay */}
         <div className="absolute inset-0 bg-[radial-gradient(#334155_1px,transparent_1px)] bg-size-[24px_24px] opacity-20 mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />

@@ -31,7 +31,7 @@ export default function Error({
     >
       {/* Visual Background Lighting & Grid Texture */}
       <div className="pointer-events-none absolute top-0 left-1/2 -z-10 h-96 w-full max-w-7xl -translate-x-1/2 bg-linear-to-b from-destructive/10 via-destructive/5 to-transparent blur-3xl" />
-      <div className="pointer-events-none absolute -z-10 h-72 w-72 rounded-full bg-destructive/15 blur-[120px]" />
+      <div className="pointer-events-none absolute -z-10 h-72 w-72 rounded-full bg-destructive/15 glow-blur-lg" />
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
       {/* Modern Glassmorphic Container Card */}
