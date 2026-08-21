@@ -168,7 +168,7 @@ const TestimonialCard = memo(function TestimonialCard({
         </div>
 
         {/* Verified Badge */}
-        <div className="shrink-0 hidden sm:block">
+        <div className="shrink-0">
           <VerifiedBadge />
         </div>
       </div>
@@ -287,7 +287,7 @@ export function TestimonialsCarousel({
                 </div>
 
                 {/* Detailed Author Profile Footer */}
-                <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10 bg-white/2 -mx-6 -mb-6 p-6 sm:-mx-8 sm:-mb-8 sm:p-8 rounded-b-3xl">
+                <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10 bg-white/2 -mx-6 -mb-6 px-6 pb-6 sm:-mx-8 sm:-mb-8 sm:px-8 sm:pb-8 rounded-b-3xl">
                   <div className="flex items-center gap-4 min-w-0">
                     <div
                       className={`
@@ -310,7 +310,7 @@ export function TestimonialsCarousel({
                     </div>
                   </div>
 
-                  <VerifiedBadge label="مُوثَّك" />
+                  <VerifiedBadge label="مُوثَّق" />
                 </div>
               </div>
             </>
