@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.8] - 2026-08-21
+
+### Changed
+- drop utilities colliding with Tailwind core
+- route simple animations through LazyMotion m component
+- drop unused wa-bounce keyframes; cap whatsapp pulse ring
+- scope transitions to animated properties on legal pages
+- run functions in dub1 next to Supabase eu-west-1
+- skip version polling while tab is hidden
+- drop decorative backdrop-filter on flat backgrounds
+- consolidate ambient glow blurs into shared tiers
+
+### Fixed
+- remove global heading margins breaking flex centering
+- show verified badge on mobile and harden dialog footer spacing
+- stop caching no-store API responses
+- remove duplicate sw.js cache-control definition
+- cap function duration to bound hung SSE streams
+
 ## [1.7.7] - 2026-08-20
 
 ### Fixed
