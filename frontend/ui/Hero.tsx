@@ -72,7 +72,7 @@ export function Hero() {
 
               {/* Description */}
               <p
-                className="landing-reveal-item text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal -mt-2 pt-1"
+                className="landing-reveal-item text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal pt-1"
                 style={{ ['--ld' as string]: '0.39s' } as React.CSSProperties}
               >
                 نبني مواقع وتطبيقات برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛

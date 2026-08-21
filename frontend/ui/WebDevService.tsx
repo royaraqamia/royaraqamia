@@ -146,7 +146,7 @@ export function WebDevService() {
                   </div>
                   <div className="text-start min-w-0">
                     <h3 className="text-lg sm:text-xl font-bold text-foreground">موقع Web</h3>
-                    <p className="text-xs sm:text-sm text-foreground/60 -mt-3">بدون Backend</p>
+                    <p className="text-xs sm:text-sm text-foreground/60 mt-1">بدون Backend</p>
                   </div>
                 </div>
                 <div className="text-end shrink-0">
@@ -179,7 +179,7 @@ export function WebDevService() {
                     <h3 className="text-lg sm:text-xl font-bold text-foreground">
                       تطبيق Web أو Mobile
                     </h3>
-                    <p className="text-xs sm:text-sm text-foreground/60 -mt-3">مع Backend</p>
+                    <p className="text-xs sm:text-sm text-foreground/60 mt-1">مع Backend</p>
                   </div>
                 </div>
                 <div className="text-end shrink-0">

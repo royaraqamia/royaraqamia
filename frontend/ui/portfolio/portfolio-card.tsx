@@ -127,7 +127,7 @@ export function PortfolioCard({
           </div>
         </div>
       </m.div>
-      <h3 className="text-white font-bold text-xl sm:text-2xl mt-4 text-center leading-snug">
+      <h3 className="text-white font-bold text-xl sm:text-2xl mt-4 mb-4 text-center leading-snug">
         {project.title}
       </h3>
     </m.div>
