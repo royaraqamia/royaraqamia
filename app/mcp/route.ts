@@ -6,6 +6,11 @@ import { corsHeaders, optionsResponse } from '@/backend/services/mcp/oauth-http'
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+// Stateless mode never pushes server-initiated events, but SDK GET requests
+// still open a standalone SSE stream that some clients hold open forever.
+// Cap the function so a lingering stream cannot pin an execution to the
+// platform maximum (observed 300s timeouts in production).
+export const maxDuration = 60;
 
 /**
  * Public MCP endpoint (Streamable HTTP, stateless).
