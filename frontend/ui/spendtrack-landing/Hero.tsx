@@ -27,9 +27,9 @@ export function Hero() {
             className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"
           />
 
-          <GlowOrb className="transform-gpu w-72 h-72 sm:w-96 sm:h-96 bg-primary/20 top-1/4 -right-24 sm:-right-48 animate-pulse-slow" />
+          <GlowOrb className="transform-gpu w-72 h-72 sm:w-96 sm:h-96 bg-primary/35 top-1/4 -right-24 sm:-right-48 animate-pulse-slow" />
           <GlowOrb
-            className="transform-gpu w-64 h-64 sm:w-80 sm:h-80 bg-accent-indigo/15 bottom-1/4 -left-20 sm:-left-40 animate-pulse-slow"
+            className="transform-gpu w-64 h-64 sm:w-80 sm:h-80 bg-accent-indigo/25 bottom-1/4 -left-20 sm:-left-40 animate-pulse-slow"
             style={{ animationDelay: '2s' }}
           />
         </>
@@ -41,7 +41,7 @@ export function Hero() {
       <div className="landing-enter-up lg:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* Status Pill Badge */}
         <div
-          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 hover:bg-primary/15 transition-colors"
+          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 hover:bg-primary/25 transition-colors"
           style={{ ['--ld' as string]: '0.2s' } as React.CSSProperties}
         >
           <span className="relative flex h-2 w-2">
@@ -89,7 +89,7 @@ export function Hero() {
             loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="arrow-bounce transition-transform duration-300 group-hover:-translate-x-1"
-            secondaryClassName="w-full sm:w-auto text-base px-8 py-6 rounded-full font-medium border-border/80 bg-background/60 backdrop-blur-md hover:bg-accent hover:text-accent-foreground transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            secondaryClassName="w-full sm:w-auto text-base px-8 py-6 rounded-full font-medium border-border/80 bg-background/75 hover:bg-accent hover:text-accent-foreground transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             secondaryLabel="اعرف المزيد"
           />
         </div>
@@ -108,7 +108,7 @@ export function Hero() {
           />
 
           <div
-            className="landing-float glass-card relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/70 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-2xl shadow-primary/10 overflow-hidden transform-gpu"
+            className="landing-float glass-card relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/82 border border-white/20 dark:border-white/10 shadow-2xl shadow-primary/10 overflow-hidden transform-gpu"
             style={
               {
                 ['--landing-float-dur' as string]: '6s',
@@ -119,11 +119,11 @@ export function Hero() {
             {/* Window Control Header */}
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/40">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-red-500/80 inline-block shadow-xs" />
-                <span className="w-3 h-3 rounded-full bg-yellow-500/80 inline-block shadow-xs" />
-                <span className="w-3 h-3 rounded-full bg-green-500/80 inline-block shadow-xs" />
+                <span className="w-3 h-3 rounded-full bg-red-500/88 inline-block shadow-xs" />
+                <span className="w-3 h-3 rounded-full bg-yellow-500/88 inline-block shadow-xs" />
+                <span className="w-3 h-3 rounded-full bg-green-500/88 inline-block shadow-xs" />
               </div>
-              <div className="ms-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/60 border border-border/40 text-xs font-mono text-muted-foreground">
+              <div className="ms-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/75 border border-border/40 text-xs font-mono text-muted-foreground">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 royaraqamia.com
               </div>
@@ -139,7 +139,7 @@ export function Hero() {
                   $3,057
                 </span>
               </div>
-              <div className="px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 text-primary text-xs font-semibold whitespace-nowrap">
+              <div className="px-2.5 py-1 rounded-lg bg-primary/14 border border-primary/20 text-primary text-xs font-semibold whitespace-nowrap">
                 المجموع الحالي
               </div>
             </div>
@@ -149,11 +149,11 @@ export function Hero() {
               {transactions.map((tx, i) => (
                 <div
                   key={tx.desc}
-                  className="landing-enter-right glass rounded-xl sm:rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-background/50 hover:bg-background/80 border border-border/30 hover:border-border/60 transition-all duration-200 group"
+                  className="landing-enter-right glass rounded-xl sm:rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-background/65 hover:bg-background/88 border border-border/30 hover:border-border/60 transition-all duration-200 group"
                   style={{ ['--ld' as string]: `${0.8 + i * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-primary/20 transition-all duration-200">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/14 border border-primary/20 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-primary/35 transition-all duration-200">
                       <Wallet size={18} className="text-primary" />
                     </div>
                     <div className="min-w-0">
@@ -187,7 +187,7 @@ export function Hero() {
                 <span className="text-xs sm:text-sm font-bold text-primary">مُستهلَك 68%</span>
               </div>
 
-              <div className="w-full h-2 rounded-full bg-muted/60 overflow-hidden p-0.5 border border-border/20">
+              <div className="w-full h-2 rounded-full bg-muted/75 overflow-hidden p-0.5 border border-border/20">
                 <div className="h-full rounded-full bg-linear-to-r from-primary to-purple-500 w-[68%] transition-all duration-1000 ease-out" />
               </div>
             </div>

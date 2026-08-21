@@ -4,11 +4,11 @@ import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 
 const bentoCardTheme = {
   cardClassName:
-    'group relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/60 dark:bg-zinc-950/70 p-6 sm:p-8 backdrop-blur-2xl transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/50',
+    'group relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/75 dark:bg-zinc-950/82 p-6 sm:p-8 transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/50',
   contentClassName: 'relative z-10 h-full flex flex-col justify-between',
   headerClassName: 'flex items-center gap-3.5 mb-4',
   iconBoxClassName:
-    'w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-violet-500/20 group-hover:scale-105 transition-all duration-300',
+    'w-12 h-12 rounded-2xl bg-violet-500/14 border border-violet-500/20 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-violet-500/35 group-hover:scale-105 transition-all duration-300',
   iconClassName: 'text-violet-400 group-hover:text-violet-300 transition-colors duration-300',
   iconSize: 24,
   titleClassName: 'text-xl sm:text-2xl font-bold tracking-tight text-slate-100',
@@ -38,10 +38,10 @@ const habits = [
 
 function HabitTracker() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/50 dark:bg-zinc-900/50 p-4 sm:p-5 space-y-3 backdrop-blur-xl shadow-lg">
+    <div className="rounded-2xl border border-white/10 bg-slate-900/65 dark:bg-zinc-900/65 p-4 sm:p-5 space-y-3 shadow-lg">
       <div className="flex items-center justify-between mb-3 px-1">
         <span className="text-sm font-semibold text-slate-200">عادات اليوم</span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-semibold text-emerald-400">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/14 border border-emerald-500/20 text-xs font-semibold text-emerald-400">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           3/4 تمّ
         </span>
@@ -50,10 +50,10 @@ function HabitTracker() {
         {habits.map((habit, i) => (
           <div
             key={habit.name}
-            className={`landing-reveal-item group/item rounded-xl p-3 sm:p-3.5 flex items-center justify-between border backdrop-blur-md transition-all duration-300 hover:scale-[1.01] ${
+            className={`landing-reveal-item group/item rounded-xl p-3 sm:p-3.5 flex items-center justify-between border transition-all duration-300 hover:scale-[1.01] ${
               habit.done
-                ? 'bg-violet-500/10 border-violet-500/30 border-s-4 border-s-violet-500 shadow-xs shadow-violet-500/10'
-                : 'bg-white/2 border-white/10 border-s-4 border-s-slate-600 hover:border-slate-500'
+                ? 'bg-violet-500/14 border-violet-500/30 border-s-4 border-s-violet-500 shadow-xs shadow-violet-500/10'
+                : 'bg-white/5 border-white/10 border-s-4 border-s-slate-600 hover:border-slate-500'
             }`}
             style={{ ['--ld' as string]: `${0.2 + i * 0.08}s` } as React.CSSProperties}
           >
@@ -61,7 +61,7 @@ function HabitTracker() {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform duration-300 group-hover/item:scale-110 ${
                   habit.done
-                    ? 'bg-violet-500/20 text-violet-300 shadow-xs shadow-violet-500/20'
+                    ? 'bg-violet-500/35 text-violet-300 shadow-xs shadow-violet-500/20'
                     : 'bg-slate-800 border border-slate-700 text-slate-500'
                 }`}
               >
@@ -79,7 +79,7 @@ function HabitTracker() {
                 {habit.name}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 shrink-0">
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/14 border border-amber-500/20 text-amber-400 shrink-0">
               <Flame size={14} fill="currentColor" className="text-amber-400" />
               <span className="text-xs font-semibold tracking-wide">{habit.streak}d</span>
             </div>
@@ -95,7 +95,7 @@ const streakData = [5, 7, 4, 6];
 
 function StreakCalendar() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/50 dark:bg-zinc-900/50 p-4 sm:p-5 backdrop-blur-xl shadow-lg">
+    <div className="rounded-2xl border border-white/10 bg-slate-900/65 dark:bg-zinc-900/65 p-4 sm:p-5 shadow-lg">
       <div className="flex items-center justify-between mb-5 px-1">
         <span className="text-sm font-semibold text-slate-200">السَّلاسل الشَّهريَّة</span>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-linear-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30">
@@ -130,7 +130,7 @@ function StreakCalendar() {
                     className={`flex-1 h-8 sm:h-9 rounded-lg flex items-center justify-center text-xs transition-all duration-300 ${
                       isChecked
                         ? 'bg-linear-to-b from-violet-500/40 to-indigo-600/30 border border-violet-500/40 text-violet-200 shadow-xs shadow-violet-500/20 font-semibold'
-                        : 'bg-white/3 border border-white/5 text-slate-600'
+                        : 'bg-white/6 border border-white/5 text-slate-600'
                     }`}
                   >
                     {isChecked ? (
@@ -157,10 +157,10 @@ const progressStats = [
 
 function ProgressAnalytics() {
   return (
-    <div className="rounded-2xl border border-white/10 bg-slate-900/50 dark:bg-zinc-900/50 p-4 sm:p-5 space-y-5 backdrop-blur-xl shadow-lg">
+    <div className="rounded-2xl border border-white/10 bg-slate-900/65 dark:bg-zinc-900/65 p-4 sm:p-5 space-y-5 shadow-lg">
       <div className="flex items-center justify-between px-1">
         <span className="text-sm font-semibold text-slate-200">نظرة عامَّة على التَّقدُّم</span>
-        <span className="text-xs text-violet-400 font-medium bg-violet-500/10 border border-violet-500/20 px-2.5 py-0.5 rounded-full">
+        <span className="text-xs text-violet-400 font-medium bg-violet-500/14 border border-violet-500/20 px-2.5 py-0.5 rounded-full">
           مُحدَّث الآن
         </span>
       </div>
@@ -169,7 +169,7 @@ function ProgressAnalytics() {
         {progressStats.map((stat, i) => (
           <div
             key={stat.label}
-            className="landing-reveal-item rounded-xl border border-white/10 bg-white/3 p-3 text-center transition-all duration-300 hover:border-violet-500/30 hover:bg-white/6"
+            className="landing-reveal-item rounded-xl border border-white/10 bg-white/6 p-3 text-center transition-all duration-300 hover:border-violet-500/30 hover:bg-white/6"
             style={{ ['--ld' as string]: `${0.3 + i * 0.1}s` } as React.CSSProperties}
           >
             <span className="text-base sm:text-xl font-bold bg-linear-to-r from-violet-300 via-purple-200 to-indigo-300 bg-clip-text text-transparent block">
@@ -178,7 +178,7 @@ function ProgressAnalytics() {
             <span className="text-[11px] sm:text-xs text-slate-400 block mt-1 line-clamp-1">
               {stat.label}
             </span>
-            <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded bg-emerald-500/10 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20">
+            <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded bg-emerald-500/14 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20">
               {stat.change}
             </span>
           </div>
@@ -207,7 +207,7 @@ function ProgressAnalytics() {
               } as React.CSSProperties
             }
           >
-            <div className="absolute top-0 right-0 h-full w-2 bg-white/50 blur-[2px] rounded-full" />
+            <div className="absolute top-0 right-0 h-full w-2 bg-white/65 blur-[2px] rounded-full" />
           </div>
         </div>
         <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium pt-0.5">
@@ -225,14 +225,14 @@ export function FeaturesBento() {
       sectionClassName="relative py-20 sm:py-28 lg:py-36 overflow-hidden bg-slate-950 text-slate-100"
       decor={
         <>
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-violet-600/10 glow-blur-xl rounded-full pointer-events-none" />
-          <div className="absolute bottom-10 right-10 w-100 h-100 bg-indigo-600/10 glow-blur-lg rounded-full pointer-events-none" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-violet-600/14 glow-blur-xl rounded-full pointer-events-none" />
+          <div className="absolute bottom-10 right-10 w-100 h-100 bg-indigo-600/14 glow-blur-lg rounded-full pointer-events-none" />
         </>
       }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         badge: (
-          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs shadow-violet-500/10 backdrop-blur-md">
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-violet-500/14 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs shadow-violet-500/10">
             <span className="w-2 h-2 rounded-full bg-violet-400 animate-ping" />
             ميِّزات قويَّة
           </span>

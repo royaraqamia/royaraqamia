@@ -29,7 +29,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       return {
         activeBg: 'bg-rose-500 dark:bg-rose-500',
         badgeBg:
-          'bg-rose-500/10 text-rose-700 dark:text-rose-400 border-rose-500/20 dark:border-rose-500/30',
+          'bg-rose-500/14 text-rose-700 dark:text-rose-400 border-rose-500/20 dark:border-rose-500/30',
         glow: 'shadow-[0_0_12px_rgba(244,63,94,0.35)]',
         dot: 'bg-rose-500',
       };
@@ -38,7 +38,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       return {
         activeBg: 'bg-amber-500 dark:bg-amber-500',
         badgeBg:
-          'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/30',
+          'bg-amber-500/14 text-amber-700 dark:text-amber-400 border-amber-500/20 dark:border-amber-500/30',
         glow: 'shadow-[0_0_12px_rgba(245,158,11,0.35)]',
         dot: 'bg-amber-500',
       };
@@ -47,7 +47,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       return {
         activeBg: 'bg-indigo-500 dark:bg-indigo-500',
         badgeBg:
-          'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20 dark:border-indigo-500/30',
+          'bg-indigo-500/14 text-indigo-700 dark:text-indigo-400 border-indigo-500/20 dark:border-indigo-500/30',
         glow: 'shadow-[0_0_12px_rgba(99,102,241,0.35)]',
         dot: 'bg-indigo-500',
       };
@@ -55,7 +55,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
     return {
       activeBg: 'bg-emerald-500 dark:bg-emerald-500',
       badgeBg:
-        'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30',
+        'bg-emerald-500/14 text-emerald-700 dark:text-emerald-400 border-emerald-500/20 dark:border-emerald-500/30',
       glow: 'shadow-[0_0_12px_rgba(16,185,129,0.35)]',
       dot: 'bg-emerald-500',
     };
@@ -69,7 +69,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -4, scale: 0.98 }}
       transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full space-y-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/50 p-3.5 backdrop-blur-md dark:border-neutral-800/80 dark:bg-neutral-900/50 sm:p-4 transition-all duration-300 shadow-xs"
+      className="w-full space-y-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/65 p-3.5 dark:border-neutral-800/80 dark:bg-neutral-900/65 sm:p-4 transition-all duration-300 shadow-xs"
       dir="rtl"
     >
       {/* Header Info & Dynamic Pill Badge */}
@@ -108,7 +108,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
           return (
             <div
               key={i}
-              className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-200/80 dark:bg-neutral-800/80"
+              className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-200/88 dark:bg-neutral-800/88"
             >
               <m.div
                 initial={{ scaleX: 0 }}

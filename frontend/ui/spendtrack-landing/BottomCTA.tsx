@@ -12,7 +12,7 @@ export function BottomCTA() {
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 -z-10 overflow-hidden select-none"
         >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-125 sm:w-187.5 sm:h-187.5 bg-primary/10 rounded-full glow-blur-lg opacity-75" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-125 h-125 sm:w-187.5 sm:h-187.5 bg-primary/14 rounded-full glow-blur-lg opacity-75" />
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-px bg-linear-to-r from-transparent via-primary/30 to-transparent" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,var(--color-border)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-border)_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] opacity-[0.15]" />
         </div>
@@ -20,7 +20,7 @@ export function BottomCTA() {
       containerClassName="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
       contentMotion={{ initialY: 24, viewportMargin: '-60px', duration: 0.7 }}
       contentClassName="flex flex-col items-center"
-      badgeMotionClassName="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-8 backdrop-blur-md transition-all duration-300 hover:bg-primary/15 hover:border-primary/35 hover:shadow-sm hover:shadow-primary/20"
+      badgeMotionClassName="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-8 transition-all duration-300 hover:bg-primary/25 hover:border-primary/35 hover:shadow-sm hover:shadow-primary/20"
       badgeText="ابدأ التَّتبُّع اليوم"
       badgeSparkleClassName="text-primary transition-transform duration-300 group-hover:rotate-12"
       headingClassName="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.1] mb-6 max-w-3xl text-balance"
@@ -33,7 +33,7 @@ export function BottomCTA() {
       actionsMotion={{ initialY: 16, duration: 0.5, useEase: false }}
       primaryButtonClassName="group relative inline-flex items-center justify-center gap-2.5 h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-semibold rounded-full shadow-lg shadow-primary/20 transition-all duration-300 ease-out hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       arrowClassName="transition-transform duration-300 ease-out group-hover:-translate-x-1.5"
-      secondaryButtonClassName="h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-medium rounded-full border-border/80 bg-background/60 hover:bg-accent/80 hover:text-accent-foreground backdrop-blur-md transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      secondaryButtonClassName="h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-medium rounded-full border-border/80 bg-background/75 hover:bg-accent/88 hover:text-accent-foreground transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     />
   );
 }

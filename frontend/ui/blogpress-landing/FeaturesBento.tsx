@@ -4,7 +4,7 @@ import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 
 const bentoCardTheme = {
   cardClassName:
-    'group relative overflow-hidden rounded-3xl border border-neutral-800/80 bg-neutral-900/60 backdrop-blur-xl p-6 sm:p-8 transition-all duration-500 hover:border-indigo-500/40 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 focus-within:ring-2 focus-within:ring-indigo-500/50',
+    'group relative overflow-hidden rounded-3xl border border-neutral-800/80 bg-neutral-900/75 p-6 sm:p-8 transition-all duration-500 hover:border-indigo-500/40 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 focus-within:ring-2 focus-within:ring-indigo-500/50',
   topDecor: (
     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
   ),
@@ -52,17 +52,17 @@ function EditorPreview() {
   ];
 
   return (
-    <div className="rounded-2xl border border-neutral-800/90 bg-neutral-950/80 backdrop-blur-xl p-4 sm:p-5 shadow-2xl relative overflow-hidden group/editor">
+    <div className="rounded-2xl border border-neutral-800/90 bg-neutral-950/88 p-4 sm:p-5 shadow-2xl relative overflow-hidden group/editor">
       {/* Ambient glowing backdrop circle */}
-      <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+      <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/14 rounded-full blur-2xl pointer-events-none" />
 
       {/* Editor Header Bar */}
       <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
           <div className="flex items-center gap-1.5">
-            <span className="w-3 h-3 rounded-full bg-rose-500/80 border border-rose-600/50 block shadow-xs" />
-            <span className="w-3 h-3 rounded-full bg-amber-500/80 border border-amber-600/50 block shadow-xs" />
-            <span className="w-3 h-3 rounded-full bg-emerald-500/80 border border-emerald-600/50 block shadow-xs" />
+            <span className="w-3 h-3 rounded-full bg-rose-500/88 border border-rose-600/50 block shadow-xs" />
+            <span className="w-3 h-3 rounded-full bg-amber-500/88 border border-amber-600/50 block shadow-xs" />
+            <span className="w-3 h-3 rounded-full bg-emerald-500/88 border border-emerald-600/50 block shadow-xs" />
           </div>
           <div className="mr-3 px-2.5 py-0.5 rounded-full bg-neutral-900 border border-neutral-800 text-[11px] font-mono text-neutral-400 flex items-center gap-1.5">
             <FileText size={12} className="text-indigo-400" />
@@ -70,7 +70,7 @@ function EditorPreview() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-indigo-400 font-medium">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/14 border border-indigo-500/20 text-[11px] text-indigo-400 font-medium">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
@@ -84,7 +84,7 @@ function EditorPreview() {
         {mdLines.map((line, i) => (
           <div
             key={i}
-            className="landing-reveal-item flex items-start gap-3 group/line hover:bg-neutral-900/60 rounded px-1.5 py-0.5 transition-colors"
+            className="landing-reveal-item flex items-start gap-3 group/line hover:bg-neutral-900/75 rounded px-1.5 py-0.5 transition-colors"
             style={{ ['--ld' as string]: `${0.2 + i * 0.04}s` } as React.CSSProperties}
           >
             <span className="select-none text-neutral-600 font-mono text-[11px] w-5 text-left shrink-0 opacity-60">
@@ -109,7 +109,7 @@ function EditorPreview() {
               ) : line.includes('**BlogPress**') ? (
                 <span className="text-neutral-300">
                   {line.split('**BlogPress**')[0]}
-                  <span className="px-1.5 py-0.5 mx-0.5 rounded bg-indigo-500/20 text-indigo-300 font-semibold border border-indigo-500/30 text-[11px] shadow-xs inline-flex items-center gap-1">
+                  <span className="px-1.5 py-0.5 mx-0.5 rounded bg-indigo-500/35 text-indigo-300 font-semibold border border-indigo-500/30 text-[11px] shadow-xs inline-flex items-center gap-1">
                     <Sparkle size={10} className="text-indigo-400 animate-pulse" />
                     رؤية رقمية
                   </span>
@@ -151,7 +151,7 @@ const draftStats = [
 
 function DraftsOverviewCard() {
   return (
-    <div className="rounded-2xl border border-neutral-800/90 bg-neutral-950/80 backdrop-blur-xl p-5 sm:p-6 shadow-2xl relative overflow-hidden group/draft">
+    <div className="rounded-2xl border border-neutral-800/90 bg-neutral-950/88 p-5 sm:p-6 shadow-2xl relative overflow-hidden group/draft">
       {/* Top Gradient Stripe */}
       <div className="absolute top-0 left-0 right-0 h-1 bg-linear-to-r from-indigo-500 via-purple-500 to-violet-500 opacity-80" />
 
@@ -169,7 +169,7 @@ function DraftsOverviewCard() {
         {draftStats.map((stat, i) => (
           <div
             key={stat.label}
-            className="landing-reveal-item p-2.5 rounded-xl hover:bg-neutral-900/60 transition-colors border border-transparent hover:border-neutral-800/60"
+            className="landing-reveal-item p-2.5 rounded-xl hover:bg-neutral-900/75 transition-colors border border-transparent hover:border-neutral-800/60"
             style={{ ['--ld' as string]: `${0.3 + i * 0.1}s` } as React.CSSProperties}
           >
             <div className="flex items-center justify-between mb-2">
@@ -198,7 +198,7 @@ function DraftsOverviewCard() {
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
           إجمالي المنشورات
         </span>
-        <span className="text-indigo-300 font-bold font-mono text-sm bg-indigo-500/10 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
+        <span className="text-indigo-300 font-bold font-mono text-sm bg-indigo-500/14 px-2.5 py-0.5 rounded-full border border-indigo-500/20">
           34
         </span>
       </div>
@@ -216,13 +216,13 @@ const seoChecks = [
 
 function SEOPreview() {
   return (
-    <div className="rounded-2xl border border-neutral-800/90 bg-neutral-950/80 backdrop-blur-xl p-5 sm:p-6 shadow-2xl relative overflow-hidden group/seo">
+    <div className="rounded-2xl border border-neutral-800/90 bg-neutral-950/88 p-5 sm:p-6 shadow-2xl relative overflow-hidden group/seo">
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
           <Search size={18} className="text-indigo-400" />
           <span className="text-sm font-semibold text-neutral-200">قائمة تحسين محرِّكات البحث</span>
         </div>
-        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-bold text-emerald-400 font-mono shadow-xs">
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/14 border border-emerald-500/20 text-xs font-bold text-emerald-400 font-mono shadow-xs">
           <Sparkle size={12} className="text-emerald-400" />
           80%
         </div>
@@ -232,15 +232,15 @@ function SEOPreview() {
         {seoChecks.map((item, i) => (
           <div
             key={item.label}
-            className="landing-reveal-item flex items-center justify-between p-2 rounded-xl hover:bg-neutral-900/60 transition-colors border border-transparent hover:border-neutral-800/50"
+            className="landing-reveal-item flex items-center justify-between p-2 rounded-xl hover:bg-neutral-900/75 transition-colors border border-transparent hover:border-neutral-800/50"
             style={{ ['--ld' as string]: `${0.3 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">
               <div
                 className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 border transition-transform duration-200 group-hover:scale-110 ${
                   item.pass
-                    ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.2)]'
-                    : 'bg-amber-500/15 border-amber-500/30 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
+                    ? 'bg-emerald-500/25 border-emerald-500/30 text-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.2)]'
+                    : 'bg-amber-500/25 border-amber-500/30 text-amber-400 shadow-[0_0_8px_rgba(245,158,11,0.2)]'
                 }`}
               >
                 {item.pass ? <Check size={14} /> : <TriangleAlert size={14} />}
@@ -251,8 +251,8 @@ function SEOPreview() {
             <span
               className={`text-[11px] font-mono px-2 py-0.5 rounded ${
                 item.pass
-                  ? 'text-emerald-400/80 bg-emerald-500/5'
-                  : 'text-amber-400/80 bg-amber-500/5'
+                  ? 'text-emerald-400/80 bg-emerald-500/9'
+                  : 'text-amber-400/80 bg-amber-500/9'
               }`}
             >
               {item.pass ? 'مكتمل' : 'تحسين'}
@@ -285,17 +285,17 @@ function SEOPreview() {
 export function FeaturesBento() {
   return (
     <FeaturesSection
-      sectionClassName="relative py-20 sm:py-28 lg:py-32 bg-neutral-950 text-neutral-100 selection:bg-indigo-500/30 selection:text-indigo-200 overflow-hidden"
+      sectionClassName="relative py-20 sm:py-28 lg:py-32 bg-neutral-950 text-neutral-100 selection:bg-indigo-500/45 selection:text-indigo-200 overflow-hidden"
       decor={
         <>
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-indigo-600/10 rounded-full glow-blur-xl pointer-events-none" />
-          <div className="absolute bottom-10 left-10 w-80 h-80 bg-purple-600/10 rounded-full glow-blur-lg pointer-events-none" />
+          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-indigo-600/14 rounded-full glow-blur-xl pointer-events-none" />
+          <div className="absolute bottom-10 left-10 w-80 h-80 bg-purple-600/14 rounded-full glow-blur-lg pointer-events-none" />
         </>
       }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         badge: (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs sm:text-sm font-medium mb-6 backdrop-blur-md shadow-xs">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/14 border border-indigo-500/20 text-indigo-400 text-xs sm:text-sm font-medium mb-6 shadow-xs">
             <Sparkle size={14} className="text-indigo-400 animate-pulse" />
             <span>ميِّزات قويَّة</span>
           </div>

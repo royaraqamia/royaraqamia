@@ -106,7 +106,7 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
       <div
         role="region"
         aria-label="فحص الأمان للتَّحقُّق البشري"
-        className="group relative overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-3.5 sm:p-4 shadow-xs backdrop-blur-md transition-all duration-300 ease-out hover:border-neutral-300 hover:shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/60 dark:hover:border-neutral-700"
+        className="group relative overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/75 p-3.5 sm:p-4 shadow-xs transition-all duration-300 ease-out hover:border-neutral-300 hover:shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/75 dark:hover:border-neutral-700"
       >
         {/* توهج شبكي محيطي خفيف */}
         <div
@@ -117,7 +117,7 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
         {/* رأس البطاقة ومؤشر الحالة */}
         <div className="mb-3 flex items-center justify-between gap-2 px-0.5">
           <div className="flex items-center gap-2">
-            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary dark:bg-primary/20">
+            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-primary/14 text-primary dark:bg-primary/35">
               <svg className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path
                   fillRule="evenodd"
@@ -143,7 +143,7 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
         </div>
 
         {/* حاوية تركيب Turnstile */}
-        <div className="relative flex min-h-16.25 w-full items-center justify-center overflow-hidden rounded-xl bg-white/80 p-1 ring-1 ring-neutral-200/50 dark:bg-neutral-950/80 dark:ring-neutral-800/50">
+        <div className="relative flex min-h-16.25 w-full items-center justify-center overflow-hidden rounded-xl bg-white/88 p-1 ring-1 ring-neutral-200/50 dark:bg-neutral-950/88 dark:ring-neutral-800/50">
           <div
             ref={containerRef}
             className="flex min-h-16.25 w-full items-center justify-center transition-opacity duration-300 ease-in-out"

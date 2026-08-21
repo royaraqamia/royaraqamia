@@ -35,9 +35,9 @@ export function HowItWorks() {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
           >
-            <div className="h-112.5 w-175 rounded-full bg-primary/10 glow-blur-lg opacity-60" />
-            <div className="absolute top-1/4 -right-24 h-75 w-75 rounded-full bg-emerald-500/10 glow-blur-md" />
-            <div className="absolute bottom-1/4 -left-24 h-75 w-75 rounded-full bg-cyan-500/10 glow-blur-md" />
+            <div className="h-112.5 w-175 rounded-full bg-primary/14 glow-blur-lg opacity-60" />
+            <div className="absolute top-1/4 -right-24 h-75 w-75 rounded-full bg-emerald-500/14 glow-blur-md" />
+            <div className="absolute bottom-1/4 -left-24 h-75 w-75 rounded-full bg-cyan-500/14 glow-blur-md" />
           </div>
 
           <div
@@ -49,7 +49,7 @@ export function HowItWorks() {
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         badge: (
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 backdrop-blur-md text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs transition-transform duration-300 hover:scale-105">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs transition-transform duration-300 hover:scale-105">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
@@ -90,7 +90,7 @@ export function HowItWorks() {
             as="li"
             delay={i * 0.15}
             tabIndex={0}
-            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/60 hover:bg-card/95 border border-border/60 hover:border-primary/40 backdrop-blur-xl shadow-lg hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 ease-out hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/75 hover:bg-card/95 border border-border/60 hover:border-primary/40 shadow-lg hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 ease-out hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             {/* Subtle Inner Card Lighting Effect */}
             <div className="absolute inset-x-0 top-0 h-px rounded-t-3xl bg-linear-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -108,7 +108,7 @@ export function HowItWorks() {
               className="landing-reveal-item relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 group-hover:border-primary/50 flex items-center justify-center mb-8 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 transition-all duration-500"
               style={{ ['--ld' as string]: `${i * 0.15 + 0.1}s` } as React.CSSProperties}
             >
-              <div className="absolute inset-0 rounded-2xl bg-primary/10 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="absolute inset-0 rounded-2xl bg-primary/14 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <StepIcon
                 size={36}
                 className="text-primary relative z-10 transition-transform duration-500 group-hover:scale-110"
@@ -117,7 +117,7 @@ export function HowItWorks() {
             </div>
 
             {/* Step Badge */}
-            <span className="inline-block px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold tracking-wider mb-4 border border-primary/15 font-mono">
+            <span className="inline-block px-3 py-1 rounded-full bg-primary/14 text-primary text-xs font-bold tracking-wider mb-4 border border-primary/15 font-mono">
               الخطوة {step.number}
             </span>
 

@@ -49,7 +49,7 @@ export function CertificateQRCodeClient({
         role="status"
         aria-label="Generating Certificate QR Code"
         className={cn(
-          'group relative inline-flex max-w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/90 p-5 shadow-2xl backdrop-blur-2xl transition-all duration-300 ease-out',
+          'group relative inline-flex max-w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/90 p-5 shadow-2xl transition-all duration-300 ease-out',
           className
         )}
       >
@@ -59,7 +59,7 @@ export function CertificateQRCodeClient({
 
         {/* Loading Spinner Container */}
         <div
-          className="relative z-10 flex items-center justify-center rounded-2xl border border-white/10 bg-neutral-900/90 p-3 shadow-inner backdrop-blur-md"
+          className="relative z-10 flex items-center justify-center rounded-2xl border border-white/10 bg-neutral-900/90 p-3 shadow-inner"
           style={{ width: size, height: size }}
         >
           <div className="absolute inset-0 rounded-2xl bg-linear-to-r from-cyan-500/10 to-indigo-500/10 opacity-50 blur-sm" />
@@ -75,7 +75,7 @@ export function CertificateQRCodeClient({
       role="figure"
       aria-label={`Verification QR code for certificate code ${code}`}
       className={cn(
-        'group relative inline-flex max-w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/90 p-5 shadow-2xl shadow-black/80 backdrop-blur-2xl transition-all duration-300 ease-out hover:scale-[1.01] hover:border-white/20 hover:shadow-cyan-500/10 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950',
+        'group relative inline-flex max-w-full flex-col items-center justify-center overflow-hidden rounded-3xl border border-white/10 bg-neutral-950/90 p-5 shadow-2xl shadow-black/80 transition-all duration-300 ease-out hover:scale-[1.01] hover:border-white/20 hover:shadow-cyan-500/10 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950',
         className
       )}
     >
@@ -86,7 +86,7 @@ export function CertificateQRCodeClient({
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent" />
 
       {/* QR Code Precision Canvas Frame */}
-      <div className="relative z-10 rounded-2xl border border-white/10 bg-neutral-900/90 p-3 shadow-inner backdrop-blur-md transition-all duration-300 group-hover:border-white/20 group-hover:bg-neutral-900">
+      <div className="relative z-10 rounded-2xl border border-white/10 bg-neutral-900/90 p-3 shadow-inner transition-all duration-300 group-hover:border-white/20 group-hover:bg-neutral-900">
         {/* Decorative Target Reticle Corners */}
         <div className="pointer-events-none absolute left-2 top-2 h-2.5 w-2.5 rounded-tl-sm border-l-2 border-t-2 border-cyan-400/40 transition-colors duration-300 group-hover:border-cyan-400" />
         <div className="pointer-events-none absolute right-2 top-2 h-2.5 w-2.5 rounded-tr-sm border-r-2 border-t-2 border-cyan-400/40 transition-colors duration-300 group-hover:border-cyan-400" />

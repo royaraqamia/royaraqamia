@@ -41,7 +41,7 @@ export function HowItWorks() {
       heading={{
         as: 'header',
         badge: (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-6 shadow-xs backdrop-blur-md">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-6 shadow-xs">
             <Sparkle size={14} fill="currentColor" className="text-primary animate-pulse" />
             <span>سير عمل بسيط</span>
           </div>
@@ -75,9 +75,9 @@ export function HowItWorks() {
         const Icon = step.icon;
         return (
           <Reveal key={step.number} as="li" delay={i * 0.15} className="relative group">
-            <div className="h-full flex flex-col items-center text-center p-6 sm:p-8 rounded-3xl bg-card/60 dark:bg-card/30 backdrop-blur-xl border border-border/60 hover:border-primary/40 shadow-xs hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 ease-out hover:-translate-y-1.5">
+            <div className="h-full flex flex-col items-center text-center p-6 sm:p-8 rounded-3xl bg-card/75 dark:bg-card/45 border border-border/60 hover:border-primary/40 shadow-xs hover:shadow-2xl hover:shadow-primary/5 transition-all duration-300 ease-out hover:-translate-y-1.5">
               {/* Floating Step Number Pill */}
-              <div className="absolute top-5 right-6 text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-muted/80 text-muted-foreground border border-border/40 group-hover:border-primary/30 group-hover:text-primary transition-colors duration-300">
+              <div className="absolute top-5 right-6 text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-muted/88 text-muted-foreground border border-border/40 group-hover:border-primary/30 group-hover:text-primary transition-colors duration-300">
                 {step.number}
               </div>
 
@@ -86,7 +86,7 @@ export function HowItWorks() {
                 className="landing-reveal-item relative z-10 w-20 h-20 rounded-2xl bg-linear-to-b from-primary/15 via-primary/10 to-transparent border border-primary/20 flex items-center justify-center mb-6 shadow-md shadow-primary/5 group-hover:scale-105 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/10 transition-all duration-300"
                 style={{ ['--ld' as string]: `${i * 0.15 + 0.15}s` } as React.CSSProperties}
               >
-                <div className="absolute inset-0 rounded-2xl bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute inset-0 rounded-2xl bg-primary/9 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <Icon
                   size={32}
                   className="text-primary relative z-10 group-hover:rotate-3 transition-transform duration-300"
@@ -104,7 +104,7 @@ export function HowItWorks() {
 
               {/* Subtle bottom indicator line on hover */}
               <div className="mt-auto pt-6 w-full flex justify-center">
-                <div className="w-8 h-1 rounded-full bg-primary/20 group-hover:w-16 group-hover:bg-primary transition-all duration-300" />
+                <div className="w-8 h-1 rounded-full bg-primary/35 group-hover:w-16 group-hover:bg-primary transition-all duration-300" />
               </div>
             </div>
           </Reveal>

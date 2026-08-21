@@ -129,14 +129,14 @@ export function Certificate() {
         {/* Parallax Purple Dynamic Light Sphere */}
         <motion.div
           style={{ y: backgroundY }}
-          className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 bg-purple-600/15 rounded-full glow-blur-xl pointer-events-none"
+          className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 bg-purple-600/25 rounded-full glow-blur-xl pointer-events-none"
         />
 
         {/* Indigo Ambient Pulsing Glow */}
         <motion.div
           animate={{ scale: [1, 1.15, 1], opacity: [0.08, 0.18, 0.08] }}
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 bg-indigo-600/15 rounded-full glow-blur-xl pointer-events-none"
+          className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 bg-indigo-600/25 rounded-full glow-blur-xl pointer-events-none"
         />
       </div>
 
@@ -202,10 +202,10 @@ export function Certificate() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium backdrop-blur-xl border transition-all duration-500 shadow-lg ${
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium border transition-all duration-500 shadow-lg ${
               hasInteracted
-                ? 'bg-purple-950/40 text-purple-300 border-purple-500/30'
-                : 'bg-slate-900/80 text-slate-300 border-white/10 hover:border-purple-400/40'
+                ? 'bg-purple-950/55 text-purple-300 border-purple-500/30'
+                : 'bg-slate-900/88 text-slate-300 border-white/10 hover:border-purple-400/40'
             }`}
           >
             <MoveLeft
@@ -220,7 +220,7 @@ export function Certificate() {
           </motion.div>
 
           {/* Outer Glass Frame */}
-          <div className="w-full max-w-4xl p-2 sm:p-3 md:p-4 rounded-3xl md:rounded-[2.5rem] bg-slate-900/40 border border-white/10 backdrop-blur-2xl shadow-[0_30px_100px_-20px_rgba(0,0,0,0.9)] hover:shadow-[0_30px_100px_-10px_rgba(147,51,234,0.25)] transition-shadow duration-700">
+          <div className="w-full max-w-4xl p-2 sm:p-3 md:p-4 rounded-3xl md:rounded-[2.5rem] bg-slate-900/55 border border-white/10 shadow-[0_30px_100px_-20px_rgba(0,0,0,0.9)] hover:shadow-[0_30px_100px_-10px_rgba(147,51,234,0.25)] transition-shadow duration-700">
             {/* Interactive 3D Card */}
             <motion.div
               onMouseMove={handleMouseMove}
@@ -237,7 +237,7 @@ export function Certificate() {
                 scale: isPressed ? 1.02 : 1,
               }}
               transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-              className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/15 bg-slate-950/80 cursor-grab active:cursor-grabbing group touch-pan-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#040711]"
+              className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/15 bg-slate-950/88 cursor-grab active:cursor-grabbing group touch-pan-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#040711]"
               tabIndex={0}
               role="region"
               aria-label="معاينة ثلاثيَّة الأبعاد لشهادة الإتمام"
@@ -274,8 +274,8 @@ export function Certificate() {
 
           {/* Certificate Credential Features Bar */}
           <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4 mt-4">
-            <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/2 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors duration-300">
-              <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 shrink-0">
+            <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/9 transition-colors duration-300">
+              <div className="p-2.5 rounded-xl bg-purple-500/14 border border-purple-500/20 text-purple-400 shrink-0">
                 <BadgeCheck className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
               </div>
               <div>
@@ -288,8 +288,8 @@ export function Certificate() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/2 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors duration-300">
-              <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 shrink-0">
+            <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/9 transition-colors duration-300">
+              <div className="p-2.5 rounded-xl bg-indigo-500/14 border border-indigo-500/20 text-indigo-400 shrink-0">
                 <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
               </div>
               <div>
@@ -300,8 +300,8 @@ export function Certificate() {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/2 border border-white/10 backdrop-blur-md hover:bg-white/5 transition-colors duration-300">
-              <div className="p-2.5 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 shrink-0">
+            <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/9 transition-colors duration-300">
+              <div className="p-2.5 rounded-xl bg-violet-500/14 border border-violet-500/20 text-violet-400 shrink-0">
                 <Share2 className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
               </div>
               <div>

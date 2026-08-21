@@ -33,7 +33,7 @@ export function Hero() {
       <div className="landing-enter-up lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* Announcement Badge */}
         <div
-          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 dark:bg-primary/15 border border-primary/25 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 backdrop-blur-md shadow-sm transition-all duration-300 hover:bg-primary/20 hover:border-primary/40 cursor-default"
+          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/14 dark:bg-primary/25 border border-primary/25 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 shadow-sm transition-all duration-300 hover:bg-primary/35 hover:border-primary/40 cursor-default"
           style={{ ['--ld' as string]: '0.2s' } as React.CSSProperties}
         >
           <span className="relative flex h-2 w-2">
@@ -80,7 +80,7 @@ export function Hero() {
             loggedOutLabel="ابدأ مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="transition-transform duration-300 group-hover:-translate-x-1.5"
-            secondaryClassName="w-full sm:w-auto min-w-40 h-13 px-8 text-base font-medium rounded-full border-border/80 hover:bg-accent/50 hover:border-border hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            secondaryClassName="w-full sm:w-auto min-w-40 h-13 px-8 text-base font-medium rounded-full border-border/80 hover:bg-accent/65 hover:border-border hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             secondaryLabel="اعرف المزيد"
           />
         </div>
@@ -97,7 +97,7 @@ export function Hero() {
 
           {/* Main Glass Card */}
           <div
-            className="landing-float relative backdrop-blur-2xl bg-card/80 dark:bg-neutral-900/80 border border-border/80 rounded-2xl p-6 xl:p-8 shadow-2xl shadow-primary/10 transform-gpu transition-all duration-500 hover:border-primary/30"
+            className="landing-float relative bg-card/88 dark:bg-neutral-900/88 border border-border/80 rounded-2xl p-6 xl:p-8 shadow-2xl shadow-primary/10 transform-gpu transition-all duration-500 hover:border-primary/30"
             style={
               {
                 transform: 'rotateY(-6deg) rotateX(4deg)',
@@ -110,11 +110,11 @@ export function Hero() {
             {/* Mock Window Topbar */}
             <div className="flex items-center justify-between pb-6 mb-6 border-b border-border/60">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-500/80 hover:opacity-100 transition-opacity" />
-                <div className="w-3 h-3 rounded-full bg-amber-500/80 hover:opacity-100 transition-opacity" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500/80 hover:opacity-100 transition-opacity" />
+                <div className="w-3 h-3 rounded-full bg-rose-500/88 hover:opacity-100 transition-opacity" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/88 hover:opacity-100 transition-opacity" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/88 hover:opacity-100 transition-opacity" />
               </div>
-              <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-muted/60 text-xs font-mono text-muted-foreground border border-border/40">
+              <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-muted/75 text-xs font-mono text-muted-foreground border border-border/40">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span>royaraqamia.com</span>
               </div>
@@ -144,14 +144,14 @@ export function Hero() {
               ].map((item, i) => (
                 <div
                   key={i}
-                  className="landing-enter-left group/item relative backdrop-blur-md bg-muted/40 hover:bg-muted/80 border border-border/40 hover:border-primary/30 rounded-xl p-3.5 transition-all duration-300 shadow-sm"
+                  className="landing-enter-left group/item relative bg-muted/55 hover:bg-muted/88 border border-border/40 hover:border-primary/30 rounded-xl p-3.5 transition-all duration-300 shadow-sm"
                   style={{ ['--ld' as string]: `${0.8 + i * 0.15}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between gap-3 mb-1.5">
                     <span className="text-xs font-mono text-muted-foreground truncate max-w-45">
                       {item.url}
                     </span>
-                    <span className="inline-flex items-center text-[10px] font-semibold text-emerald-500 bg-emerald-500/10 px-1.5 py-0.5 rounded">
+                    <span className="inline-flex items-center text-[10px] font-semibold text-emerald-500 bg-emerald-500/14 px-1.5 py-0.5 rounded">
                       {item.growth}
                     </span>
                   </div>
@@ -173,7 +173,7 @@ export function Hero() {
               style={{ ['--ld' as string]: '1.4s' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-primary/15 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
+                <div className="w-9 h-9 rounded-xl bg-primary/25 border border-primary/20 flex items-center justify-center text-primary shadow-inner">
                   <Link size={18} />
                 </div>
                 <div>
@@ -204,7 +204,7 @@ export function Hero() {
                 } as React.CSSProperties
               }
             >
-              <div className="backdrop-blur-xl bg-card/70 border border-border/60 rounded-2xl p-3.5 shadow-xl shadow-black/5">
+              <div className=" bg-card/82 border border-border/60 rounded-2xl p-3.5 shadow-xl shadow-black/5">
                 <Icon size={size} className="text-primary/70" />
               </div>
             </div>

@@ -4,11 +4,11 @@ import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 
 const bentoCardTheme = {
   cardClassName:
-    'group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10',
+    'group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/75 p-6 sm:p-8 transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10',
   contentClassName: 'relative z-10 flex h-full flex-col justify-between space-y-6',
   headerClassName: 'flex items-center gap-4 mb-4',
   iconBoxClassName:
-    'flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/10 text-violet-400 shadow-inner group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/20 transition-all duration-300',
+    'flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/14 text-violet-400 shadow-inner group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/35 transition-all duration-300',
   iconClassName: 'text-violet-400 transition-transform duration-300 group-hover:scale-110',
   iconSize: 26,
   titleClassName:
@@ -35,7 +35,7 @@ const barData = [35, 55, 42, 78, 62, 90, 75, 88, 95, 70, 85, 92];
 
 function MiniChart() {
   return (
-    <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 shadow-inner backdrop-blur-md space-y-4">
+    <div className="rounded-2xl border border-slate-800/80 bg-slate-950/82 p-5 shadow-inner space-y-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
@@ -88,10 +88,10 @@ const analyticsMetrics = [
 
 function AnalyticsPreview() {
   return (
-    <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 shadow-inner backdrop-blur-md space-y-3.5">
+    <div className="rounded-2xl border border-slate-800/80 bg-slate-950/82 p-5 shadow-inner space-y-3.5">
       <div className="flex items-center justify-between mb-1">
         <span className="text-sm font-semibold text-slate-300">نظرة عامَّة فوريَّة</span>
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/14 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           مباشر
         </span>
@@ -100,7 +100,7 @@ function AnalyticsPreview() {
       {analyticsMetrics.map((metric, i) => (
         <div
           key={metric.label}
-          className="landing-reveal-item flex items-center justify-between p-2.5 rounded-xl bg-slate-900/60 border border-slate-800/60 hover:border-slate-700 hover:bg-slate-900/90 transition-all"
+          className="landing-reveal-item flex items-center justify-between p-2.5 rounded-xl bg-slate-900/75 border border-slate-800/60 hover:border-slate-700 hover:bg-slate-900/90 transition-all"
           style={{ ['--ld' as string]: `${0.4 + i * 0.1}s` } as React.CSSProperties}
         >
           <span className="text-xs sm:text-sm font-medium text-slate-400">{metric.label}</span>
@@ -114,7 +114,7 @@ function AnalyticsPreview() {
 
       <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
         <span>آخر 24 ساعة</span>
-        <span className="inline-flex items-center gap-1 font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+        <span className="inline-flex items-center gap-1 font-semibold text-emerald-400 bg-emerald-500/14 px-2 py-0.5 rounded-md border border-emerald-500/20">
           +12.5% ↑
         </span>
       </div>
@@ -135,7 +135,7 @@ export function FeaturesBento() {
       containerClassName="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       heading={{
         badge: (
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs backdrop-blur-md">
+          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/14 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs">
             ✨ ميِّزات قويَّة
           </span>
         ),
@@ -161,7 +161,7 @@ export function FeaturesBento() {
         className="lg:col-span-2 lg:row-span-2"
         delay={0.1}
       >
-        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/70 p-5 shadow-inner backdrop-blur-md space-y-4">
+        <div className="rounded-2xl border border-slate-800/80 bg-slate-950/82 p-5 shadow-inner space-y-4">
           <div className="flex items-center gap-3" dir="ltr">
             <div className="flex-1 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center px-4 overflow-hidden shadow-xs">
               <span className="text-xs sm:text-sm font-mono text-slate-400 truncate">

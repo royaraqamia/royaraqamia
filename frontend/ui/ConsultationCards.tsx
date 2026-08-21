@@ -23,7 +23,7 @@ export function ConsultationCards() {
     <section
       id="consultation"
       dir="rtl"
-      className="relative overflow-hidden py-20 sm:py-28 md:py-36 bg-slate-950 text-slate-100 selection:bg-purple-500/30 selection:text-purple-200"
+      className="relative overflow-hidden py-20 sm:py-28 md:py-36 bg-slate-950 text-slate-100 selection:bg-purple-500/45 selection:text-purple-200"
       aria-label="الاستشارة التقنية الشاملة"
     >
       {/* Dynamic Grid Overlay & Mesh Ambient Lighting */}
@@ -83,7 +83,7 @@ export function ConsultationCards() {
             />
 
             {/* Glassmorphic Container Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-linear-to-b from-purple-950/40 via-slate-950/80 to-slate-950/95 backdrop-blur-2xl border border-purple-500/30 shadow-[0_25px_50px_-12px_rgba(124,58,237,0.25),0_0_80px_-20px_rgba(168,85,247,0.2),inset_0_1px_1px_rgba(255,255,255,0.1)] transition-all duration-500 hover:border-purple-400/50">
+            <div className="relative rounded-3xl overflow-hidden bg-linear-to-b from-purple-950/40 via-slate-950/80 to-slate-950/95 border border-purple-500/30 shadow-[0_25px_50px_-12px_rgba(124,58,237,0.25),0_0_80px_-20px_rgba(168,85,247,0.2),inset_0_1px_1px_rgba(255,255,255,0.1)] transition-all duration-500 hover:border-purple-400/50">
               {/* Vibrant Accent Top Strip */}
               <div className="h-1 w-full bg-linear-to-r from-transparent via-purple-500 to-transparent opacity-80" />
 
@@ -102,7 +102,7 @@ export function ConsultationCards() {
                   </div>
 
                   {/* Microphone Feature Badge */}
-                  <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-purple-500/15 border border-purple-400/30 backdrop-blur-md self-start sm:self-auto shadow-inner shadow-purple-500/10">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-purple-500/25 border border-purple-400/30 self-start sm:self-auto shadow-inner shadow-purple-500/10">
                     <Mic className="w-4 h-4 text-purple-300 animate-pulse shrink-0" />
                     <span className="text-xs sm:text-sm text-purple-200 font-semibold tracking-wide">
                       جلسة تفاعليَّة صوتيَّة
@@ -123,19 +123,19 @@ export function ConsultationCards() {
 
                 {/* Feature Value Highlights Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-10 text-slate-200 text-sm sm:text-base">
-                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/10 backdrop-blur-xs">
+                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-purple-950/35 border border-purple-500/10">
                     <CheckCircle className="w-5 h-5 text-purple-400 shrink-0" />
                     <span className="font-medium">جلسة صوتيَّة مباشرة (1:1)</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/10 backdrop-blur-xs">
+                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-purple-950/35 border border-purple-500/10">
                     <Clock className="w-5 h-5 text-purple-400 shrink-0" />
                     <span className="font-medium">توقيت مرن يُناسب جدولك</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/10 backdrop-blur-xs">
+                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-purple-950/35 border border-purple-500/10">
                     <Sparkle className="w-5 h-5 text-purple-400 shrink-0" />
                     <span className="font-medium">خطَّة عمل وإرشاد مُخصَّص</span>
                   </div>
-                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/10 backdrop-blur-xs">
+                  <div className="flex items-center gap-3 p-3.5 rounded-2xl bg-purple-950/35 border border-purple-500/10">
                     <WhatsappIcon className="w-5 h-5 text-purple-400 shrink-0" />
                     <span className="font-medium">تأكيد وحجز سريع عبر واتساب</span>
                   </div>

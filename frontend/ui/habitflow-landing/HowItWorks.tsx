@@ -39,7 +39,7 @@ export function HowItWorks() {
       containerClassName="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 container-padding"
       heading={{
         badge: (
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 backdrop-blur-md shadow-sm shadow-primary/5 transition-all duration-300 hover:bg-primary/15 hover:border-primary/30">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-sm shadow-primary/5 transition-all duration-300 hover:bg-primary/25 hover:border-primary/30">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
@@ -74,7 +74,7 @@ export function HowItWorks() {
             key={step.number}
             as="li"
             delay={i * 0.18}
-            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/80 dark:bg-neutral-900/70 backdrop-blur-2xl border border-border/80 dark:border-neutral-800/80 shadow-xl shadow-black/2 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 outline-none"
+            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/88 dark:bg-neutral-900/82 border border-border/80 dark:border-neutral-800/80 shadow-xl shadow-black/2 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 outline-none"
           >
             {/* Subtle Background Hover Light Glow */}
             <div className="absolute inset-0 rounded-3xl bg-linear-to-b from-primary/4 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
@@ -109,7 +109,7 @@ export function HowItWorks() {
 
             {/* Step Title & Metadata */}
             <div className="relative z-10 flex flex-col items-center">
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold tracking-wider text-primary bg-primary/10 border border-primary/20 mb-3 select-none">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold tracking-wider text-primary bg-primary/14 border border-primary/20 mb-3 select-none">
                 الخطوة {step.number}
               </span>
               <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-3 tracking-tight">

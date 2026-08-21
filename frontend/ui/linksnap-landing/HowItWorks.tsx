@@ -35,13 +35,13 @@ export function HowItWorks() {
           className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
           aria-hidden="true"
         >
-          <div className="h-95 w-162.5 rounded-full bg-primary/10 glow-blur-lg dark:bg-primary/15" />
+          <div className="h-95 w-162.5 rounded-full bg-primary/14 glow-blur-lg dark:bg-primary/25" />
         </div>
       }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         badge: (
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 backdrop-blur-md transition-all duration-300 hover:bg-primary/15">
+          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 transition-all duration-300 hover:bg-primary/25">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
@@ -76,7 +76,7 @@ export function HowItWorks() {
             key={step.number}
             as="li"
             delay={i * 0.15}
-            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/60 dark:bg-card/40 border border-border/60 hover:border-primary/40 backdrop-blur-xl shadow-xs hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 ease-out hover:-translate-y-2"
+            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/75 dark:bg-card/55 border border-border/60 hover:border-primary/40 shadow-xs hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 ease-out hover:-translate-y-2"
           >
             {/* Subtle inner hover glow gradient */}
             <div className="absolute inset-0 rounded-3xl bg-linear-to-b from-primary/4 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
@@ -94,7 +94,7 @@ export function HowItWorks() {
             </div>
 
             {/* Step Number Badge */}
-            <span className="text-xs sm:text-sm font-mono font-bold tracking-widest text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+            <span className="text-xs sm:text-sm font-mono font-bold tracking-widest text-primary bg-primary/14 border border-primary/20 px-3 py-1 rounded-full mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
               {step.number}
             </span>
 

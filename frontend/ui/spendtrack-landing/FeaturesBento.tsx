@@ -8,7 +8,7 @@ const bentoCardTheme = {
   viewportMargin: '-60px',
   duration: 0.6,
   cardClassName:
-    'group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/60 p-6 sm:p-8 backdrop-blur-xl transition-all duration-500 hover:border-border/80 hover:shadow-2xl hover:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2',
+    'group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/75 p-6 sm:p-8 transition-all duration-500 hover:border-border/80 hover:shadow-2xl hover:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2',
   topDecor: (
     <div
       aria-hidden="true"
@@ -19,7 +19,7 @@ const bentoCardTheme = {
   contentClassName: 'relative z-10 flex h-full flex-col',
   headerClassName: 'mb-4 flex items-center gap-4',
   iconBoxClassName:
-    'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-xs ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-105 group-hover:bg-primary/15',
+    'relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/14 text-primary shadow-xs ring-1 ring-primary/20 transition-transform duration-300 group-hover:scale-105 group-hover:bg-primary/25',
   iconClassName: 'text-primary transition-transform duration-300 group-hover:rotate-3',
   iconSize: 24,
   titleWrapperClassName: 'block',
@@ -80,7 +80,7 @@ const expenseEntries = [
 
 function ExpenseLogger() {
   return (
-    <div className="space-y-4 rounded-2xl border border-border/40 bg-background/50 p-4 shadow-inner backdrop-blur-md transition-all duration-300 sm:p-5">
+    <div className="space-y-4 rounded-2xl border border-border/40 bg-background/65 p-4 shadow-inner transition-all duration-300 sm:p-5">
       <div className="flex items-center justify-between border-b border-border/30 pb-2">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
@@ -91,7 +91,7 @@ function ExpenseLogger() {
             مصروفات اليوم
           </span>
         </div>
-        <span className="inline-flex items-center rounded-full border border-border/30 bg-muted/60 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+        <span className="inline-flex items-center rounded-full border border-border/30 bg-muted/75 px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
           5 مدخلات
         </span>
       </div>
@@ -102,24 +102,24 @@ function ExpenseLogger() {
             desc: 'قهوة',
             amount: '$4.50',
             cat: 'طعام',
-            badgeColor: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+            badgeColor: 'bg-violet-500/14 text-violet-500 border-violet-500/20',
           },
           {
             desc: 'مشوار أوبر',
             amount: '$12.00',
             cat: 'مواصلات',
-            badgeColor: 'bg-indigo-500/10 text-indigo-500 border-indigo-500/20',
+            badgeColor: 'bg-indigo-500/14 text-indigo-500 border-indigo-500/20',
           },
           {
             desc: 'غداء',
             amount: '$18.50',
             cat: 'طعام',
-            badgeColor: 'bg-violet-500/10 text-violet-500 border-violet-500/20',
+            badgeColor: 'bg-violet-500/14 text-violet-500 border-violet-500/20',
           },
         ].map((item, i) => (
           <div
             key={item.desc + i}
-            className="landing-reveal-item group/item flex items-center justify-between rounded-xl border border-border/30 bg-card/40 px-3.5 py-2.5 transition-all duration-300 hover:scale-[1.01] hover:border-primary/30 hover:bg-card/80 hover:shadow-md"
+            className="landing-reveal-item group/item flex items-center justify-between rounded-xl border border-border/30 bg-card/55 px-3.5 py-2.5 transition-all duration-300 hover:scale-[1.01] hover:border-primary/30 hover:bg-card/88 hover:shadow-md"
             style={{ ['--ld' as string]: `${0.2 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">
@@ -156,12 +156,12 @@ function ExpenseLogger() {
 
 function CategoryChart() {
   return (
-    <div className="space-y-4 rounded-2xl border border-border/40 bg-background/50 p-4 shadow-inner backdrop-blur-md sm:p-5">
+    <div className="space-y-4 rounded-2xl border border-border/40 bg-background/65 p-4 shadow-inner sm:p-5">
       <div className="flex items-center justify-between border-b border-border/30 pb-2">
         <span className="text-xs font-semibold text-foreground sm:text-sm">
           المصروفات حسب التَّصنيف
         </span>
-        <span className="rounded-full border border-border/20 bg-muted/40 px-2 py-0.5 text-xs font-medium text-muted-foreground/80">
+        <span className="rounded-full border border-border/20 bg-muted/55 px-2 py-0.5 text-xs font-medium text-muted-foreground/80">
           هذا الشَّهر
         </span>
       </div>
@@ -190,7 +190,7 @@ function CategoryChart() {
                 </span>
               </div>
             </div>
-            <div className="h-2 w-full overflow-hidden rounded-full border border-border/10 bg-muted/50 p-0.5">
+            <div className="h-2 w-full overflow-hidden rounded-full border border-border/10 bg-muted/65 p-0.5">
               <div
                 className={`landing-grow-w h-full rounded-full ${entry.color} shadow-xs transition-all duration-300 group-hover/bar:brightness-110`}
                 style={
@@ -222,12 +222,12 @@ function MonthlyTrend() {
   const maxVal = Math.max(...monthlyData);
 
   return (
-    <div className="space-y-4 rounded-2xl border border-border/40 bg-background/50 p-4 shadow-inner backdrop-blur-md sm:p-5">
+    <div className="space-y-4 rounded-2xl border border-border/40 bg-background/65 p-4 shadow-inner sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-1 border-b border-border/30 pb-2">
         <span className="text-xs font-semibold text-foreground sm:text-sm">
           الاتِّجاهات الشَّهريَّة
         </span>
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/14 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
           <TrendingUp size={12} className="shrink-0 text-emerald-500 sm:size-3.5" />
           <span className="whitespace-nowrap">-12% مقابل الشَّهر الماضي</span>
         </span>
@@ -244,11 +244,11 @@ function MonthlyTrend() {
                 style={{ ['--ld' as string]: `${0.2 + i * 0.06}s` } as React.CSSProperties}
               >
                 {/* Tooltip on hover */}
-                <div className="mb-1.5 rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary opacity-0 transition-opacity duration-200 group-hover/col:opacity-100">
+                <div className="mb-1.5 rounded border border-primary/20 bg-primary/14 px-1.5 py-0.5 font-mono text-[10px] font-bold text-primary opacity-0 transition-opacity duration-200 group-hover/col:opacity-100">
                   ${val}
                 </div>
 
-                <div className="flex h-full w-full items-end rounded-t-lg bg-muted/40 p-0.5">
+                <div className="flex h-full w-full items-end rounded-t-lg bg-muted/55 p-0.5">
                   <div
                     className={`landing-grow-h w-full rounded-t-md transition-all duration-300 group-hover/col:brightness-125 ${
                       isHighest
@@ -283,11 +283,11 @@ export function FeaturesBento() {
         <>
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/4 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 opacity-30 blur-3xl"
+            className="pointer-events-none absolute left-1/2 top-1/4 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/14 opacity-30 blur-3xl"
           />
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute bottom-10 right-10 h-96 w-96 rounded-full bg-violet-500/10 opacity-20 blur-3xl"
+            className="pointer-events-none absolute bottom-10 right-10 h-96 w-96 rounded-full bg-violet-500/14 opacity-20 blur-3xl"
           />
         </>
       }
@@ -295,7 +295,7 @@ export function FeaturesBento() {
       heading={{
         as: 'header',
         badge: (
-          <div className="mb-6 inline-flex cursor-default items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3.5 py-1.5 text-xs font-semibold text-primary shadow-xs backdrop-blur-md transition-colors duration-300 hover:bg-primary/15 sm:text-sm">
+          <div className="mb-6 inline-flex cursor-default items-center gap-2 rounded-full border border-primary/20 bg-primary/14 px-3.5 py-1.5 text-xs font-semibold text-primary shadow-xs transition-colors duration-300 hover:bg-primary/25 sm:text-sm">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
               <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>

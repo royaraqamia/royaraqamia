@@ -29,7 +29,7 @@ export function PortfolioCard({
     >
       <m.div
         onClick={() => onSelect(actualIndex)}
-        className="relative group/card-inner rounded-3xl overflow-hidden bg-white/3 border border-white/10 transition-all duration-500 motion-reduce:transition-none hover:border-purple-500/40 hover:shadow-[0_0_40px_-10px_rgba(168,85,247,0.3)] w-full aspect-4/3 cursor-pointer active:scale-[0.98] active:opacity-90 focus-visible:outline-2 focus-visible:outline-purple-400/80 focus-visible:outline-offset-4 backdrop-blur-md"
+        className="relative group/card-inner rounded-3xl overflow-hidden bg-white/6 border border-white/10 transition-all duration-500 motion-reduce:transition-none hover:border-purple-500/40 hover:shadow-[0_0_40px_-10px_rgba(168,85,247,0.3)] w-full aspect-4/3 cursor-pointer active:scale-[0.98] active:opacity-90 focus-visible:outline-2 focus-visible:outline-purple-400/80 focus-visible:outline-offset-4"
         role="button"
         tabIndex={0}
         aria-label={`مشروع ${project.title}`}
@@ -53,17 +53,17 @@ export function PortfolioCard({
         <div className="absolute inset-0 bg-linear-to-t from-[#050810] via-[#050810]/40 to-transparent transition-opacity duration-300" />
 
         <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10 pointer-events-none">
-          <span className="px-3 py-1 text-xs font-medium rounded-full bg-[#050810]/70 backdrop-blur-md text-purple-300 border border-white/10 shadow-lg">
+          <span className="px-3 py-1 text-xs font-medium rounded-full bg-[#050810]/70 text-purple-300 border border-white/10 shadow-lg">
             {project.category || 'مشروع رقمي'}
           </span>
-          <span className="text-xs font-mono font-medium text-white/50 bg-[#050810]/60 backdrop-blur-md px-2.5 py-1 rounded-full border border-white/5">
+          <span className="text-xs font-mono font-medium text-white/50 bg-[#050810]/60 px-2.5 py-1 rounded-full border border-white/5">
             #{(displayIdx + 1).toString().padStart(2, '0')}
           </span>
         </div>
 
-        <div className="absolute inset-0 bg-[#050810]/90 backdrop-blur-md opacity-0 group-hover/card-inner:opacity-100 transition-all duration-300 motion-reduce:duration-0 flex flex-col justify-between p-6 sm:p-8 text-right z-20">
+        <div className="absolute inset-0 bg-[#050810]/90 opacity-0 group-hover/card-inner:opacity-100 transition-all duration-300 motion-reduce:duration-0 flex flex-col justify-between p-6 sm:p-8 text-right z-20">
           <div className="flex items-center justify-between">
-            <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+            <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-500/35 text-purple-300 border border-purple-500/30">
               {project.category || 'مشروع رقمي'}
             </span>
             <span className="text-xs font-mono text-slate-400">
@@ -85,7 +85,7 @@ export function PortfolioCard({
               {(project.metrics ?? []).map((_metric: string, mi: Key | null | undefined) => (
                 <div
                   key={mi}
-                  className="bg-white/10 backdrop-blur-md rounded-xl px-4 py-2 min-w-20 border border-white/10 text-xs text-purple-200"
+                  className="bg-white/14 rounded-xl px-4 py-2 min-w-20 border border-white/10 text-xs text-purple-200"
                 />
               ))}
             </div>
@@ -108,7 +108,7 @@ export function PortfolioCard({
                 />
               </svg>
             </span>
-            <div className="w-8 h-8 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center text-purple-300 group-hover/card-inner:bg-purple-500 group-hover/card-inner:text-white transition-all duration-300">
+            <div className="w-8 h-8 rounded-full bg-purple-500/35 border border-purple-500/30 flex items-center justify-center text-purple-300 group-hover/card-inner:bg-purple-500 group-hover/card-inner:text-white transition-all duration-300">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"

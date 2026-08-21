@@ -20,7 +20,7 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
     <article
       tabIndex={0}
       aria-labelledby={`reason-title-${index}`}
-      className="group/why relative h-full rounded-3xl p-7 sm:p-8 lg:p-9 bg-neutral-950/60 border border-white/10 hover:border-indigo-500/30 transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:shadow-indigo-500/10 flex flex-col justify-between overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 select-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-white/20 group-hover/why:before:via-indigo-400/50 before:transition-colors before:duration-500"
+      className="group/why relative h-full rounded-3xl p-7 sm:p-8 lg:p-9 bg-neutral-950/75 border border-white/10 hover:border-indigo-500/30 transition-all duration-500 ease-out hover:-translate-y-2 hover:shadow-[0_20px_50px_rgba(0,0,0,0.6)] hover:shadow-indigo-500/10 flex flex-col justify-between overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 select-none before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-white/20 group-hover/why:before:via-indigo-400/50 before:transition-colors before:duration-500"
     >
       {/* Dynamic Ambient Spotlight Glow */}
       <div
@@ -37,7 +37,7 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
       {/* Glass Icon Header & Badge */}
       <div className="flex items-center justify-between mb-8 sm:mb-10">
         <div
-          className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center bg-white/4 border border-white/10 shadow-inner group-hover/why:border-indigo-500/30 group-hover/why:bg-indigo-500/10 transition-all duration-500 group-hover/why:scale-110 group-hover/why:-rotate-3 motion-reduce:group-hover/why:scale-100 motion-reduce:group-hover/why:rotate-0`}
+          className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center bg-white/8 border border-white/10 shadow-inner group-hover/why:border-indigo-500/30 group-hover/why:bg-indigo-500/14 transition-all duration-500 group-hover/why:scale-110 group-hover/why:-rotate-3 motion-reduce:group-hover/why:scale-100 motion-reduce:group-hover/why:rotate-0`}
         >
           <div
             className="absolute inset-0 opacity-0 group-hover/why:opacity-20 transition-opacity duration-500 rounded-2xl blur-sm"
@@ -47,7 +47,7 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
         </div>
 
         {/* Numeric Badge Indicator */}
-        <span className="text-xs font-mono font-medium text-neutral-500 group-hover/why:text-indigo-400/80 transition-colors duration-300 bg-white/2 border border-white/5 px-2.5 py-1 rounded-full">
+        <span className="text-xs font-mono font-medium text-neutral-500 group-hover/why:text-indigo-400/80 transition-colors duration-300 bg-white/5 border border-white/5 px-2.5 py-1 rounded-full">
           0{index + 1}
         </span>
       </div>
@@ -121,8 +121,8 @@ export function WhyUs() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(99,102,241,0.15),rgba(255,255,255,0))]" />
 
         {/* Soft Mesh Ambient Blur Orbs */}
-        <div className="absolute top-1/4 left-10 w-96 h-96 bg-indigo-600/10 glow-blur-lg rounded-full" />
-        <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-purple-600/10 glow-blur-lg rounded-full" />
+        <div className="absolute top-1/4 left-10 w-96 h-96 bg-indigo-600/14 glow-blur-lg rounded-full" />
+        <div className="absolute bottom-1/4 right-10 w-96 h-96 bg-purple-600/14 glow-blur-lg rounded-full" />
 
         {/* Micro-Grid Texture Mask */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />

@@ -17,21 +17,21 @@ const habitData = [
 export function Hero() {
   return (
     <HeroSection
-      sectionClassName="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0 selection:bg-primary/20 selection:text-primary"
+      sectionClassName="relative min-h-dvh flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0 selection:bg-primary/35 selection:text-primary"
       decor={
         <>
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] pointer-events-none" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
           <GlowOrb
-            className="opacity-60 select-none w-md h-112 sm:w-xl sm:h-144 bg-primary/20 top-1/4 -left-36 sm:-left-48 animate-pulse"
+            className="opacity-60 select-none w-md h-112 sm:w-xl sm:h-144 bg-primary/35 top-1/4 -left-36 sm:-left-48 animate-pulse"
             style={{ animationDuration: '8s' }}
           />
           <GlowOrb
-            className="opacity-60 select-none w-[24rem] h-96 sm:w-lg sm:h-128 bg-indigo-500/15 bottom-1/4 -right-36 sm:-right-40 animate-pulse"
+            className="opacity-60 select-none w-[24rem] h-96 sm:w-lg sm:h-128 bg-indigo-500/25 bottom-1/4 -right-36 sm:-right-40 animate-pulse"
             style={{ animationDuration: '10s', animationDelay: '2s' }}
           />
-          <GlowOrb className="opacity-60 select-none w-80 h-80 bg-purple-500/10 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+          <GlowOrb className="opacity-60 select-none w-80 h-80 bg-purple-500/14 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </>
       }
       containerClassName="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
@@ -41,7 +41,7 @@ export function Hero() {
       <div className="landing-enter-up lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* Pulsing Status Pill */}
         <div
-          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/25 backdrop-blur-md text-primary text-xs sm:text-sm font-semibold tracking-wide shadow-xs hover:bg-primary/15 transition-all duration-300 cursor-default mb-8"
+          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/14 border border-primary/25 text-primary text-xs sm:text-sm font-semibold tracking-wide shadow-xs hover:bg-primary/25 transition-all duration-300 cursor-default mb-8"
           style={{ ['--ld' as string]: '0.15s' } as React.CSSProperties}
         >
           <span className="relative flex h-2 w-2">
@@ -89,7 +89,7 @@ export function Hero() {
             loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="transition-transform duration-300 group-hover:-translate-x-1.5"
-            secondaryClassName="h-13 px-8 text-base font-medium rounded-full border-border/80 bg-background/60 backdrop-blur-md hover:bg-muted/80 hover:border-border hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out w-full sm:w-auto cursor-pointer"
+            secondaryClassName="h-13 px-8 text-base font-medium rounded-full border-border/80 bg-background/75 hover:bg-muted/88 hover:border-border hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out w-full sm:w-auto cursor-pointer"
             secondaryLabel="اعرف المزيد"
           />
         </div>
@@ -105,7 +105,7 @@ export function Hero() {
           <div className="absolute -inset-1 rounded-3xl bg-linear-to-r from-primary/30 via-indigo-500/20 to-purple-500/30 opacity-60 blur-xl group-hover:opacity-100 transition duration-1000" />
 
           <div
-            className="landing-float relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/85 backdrop-blur-2xl border border-border/60 shadow-2xl shadow-primary/5 ring-1 ring-white/10 dark:ring-white/5 overflow-hidden"
+            className="landing-float relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/92 border border-border/60 shadow-2xl shadow-primary/5 ring-1 ring-white/10 dark:ring-white/5 overflow-hidden"
             style={
               {
                 ['--landing-float-dur' as string]: '6s',
@@ -119,19 +119,19 @@ export function Hero() {
             {/* Glassmorphic Window Controls */}
             <div className="flex items-center justify-between pb-4 mb-5 border-b border-border/40">
               <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-rose-500/80 shadow-xs" />
-                <div className="w-3 h-3 rounded-full bg-amber-500/80 shadow-xs" />
-                <div className="w-3 h-3 rounded-full bg-emerald-500/80 shadow-xs" />
+                <div className="w-3 h-3 rounded-full bg-rose-500/88 shadow-xs" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/88 shadow-xs" />
+                <div className="w-3 h-3 rounded-full bg-emerald-500/88 shadow-xs" />
               </div>
-              <div className="px-2.5 py-1 rounded-md bg-muted/60 text-[11px] font-mono font-medium text-muted-foreground border border-border/30">
+              <div className="px-2.5 py-1 rounded-md bg-muted/75 text-[11px] font-mono font-medium text-muted-foreground border border-border/30">
                 royaraqamia.com
               </div>
             </div>
 
             {/* Weekly Streak Header */}
-            <div className="flex items-center justify-between mb-5 bg-muted/30 p-3.5 rounded-xl border border-border/30">
+            <div className="flex items-center justify-between mb-5 bg-muted/45 p-3.5 rounded-xl border border-border/30">
               <span className="text-xs sm:text-sm font-semibold text-foreground">هذا الأسبوع</span>
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-500 text-xs sm:text-sm font-bold shadow-xs">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-500/14 border border-orange-500/20 text-orange-500 text-xs sm:text-sm font-bold shadow-xs">
                 <Flame size={18} fill="currentColor" className="text-orange-500 animate-pulse" />
                 <span>12</span>
               </div>
@@ -157,14 +157,14 @@ export function Hero() {
               {habitData.map((habit, i) => (
                 <div
                   key={habit.name}
-                  className="landing-enter-left group/row rounded-xl p-3 bg-muted/20 hover:bg-muted/40 border border-border/40 hover:border-border/80 transition-all duration-300"
+                  className="landing-enter-left group/row rounded-xl p-3 bg-muted/35 hover:bg-muted/55 border border-border/40 hover:border-border/80 transition-all duration-300"
                   style={{ ['--ld' as string]: `${0.6 + i * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between mb-2.5">
                     <span className="text-xs sm:text-sm font-semibold text-foreground group-hover/row:text-primary transition-colors">
                       {habit.name}
                     </span>
-                    <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-md bg-muted/80 text-muted-foreground border border-border/20">
+                    <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-md bg-muted/88 text-muted-foreground border border-border/20">
                       {habit.done.filter(Boolean).length}/{habit.done.length}
                     </span>
                   </div>
@@ -177,7 +177,7 @@ export function Hero() {
                         className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all duration-300 ${
                           done
                             ? `${habit.color} text-white shadow-xs scale-100 ring-1 ring-white/20`
-                            : 'bg-muted/50 text-muted-foreground/40 hover:bg-muted/80'
+                            : 'bg-muted/65 text-muted-foreground/40 hover:bg-muted/88'
                         }`}
                       >
                         {done ? (

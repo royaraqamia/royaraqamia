@@ -27,14 +27,14 @@ export function Hero() {
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29370f_1px,transparent_1px),linear-gradient(to_bottom,#1f29370f_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
           {/* Glowing radial ambient lights */}
-          <div className="absolute top-1/4 right-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-purple-600/10 glow-blur-lg rounded-full transform translate-x-1/3 -translate-y-1/3" />
-          <div className="absolute bottom-1/4 left-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-indigo-600/10 glow-blur-lg rounded-full transform -translate-x-1/3 translate-y-1/3" />
+          <div className="absolute top-1/4 right-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-purple-600/14 glow-blur-lg rounded-full transform translate-x-1/3 -translate-y-1/3" />
+          <div className="absolute bottom-1/4 left-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] bg-indigo-600/14 glow-blur-lg rounded-full transform -translate-x-1/3 translate-y-1/3" />
 
           {/* Floating Particles - Ultra subtle background ambient details */}
           {particles.map((particle) => (
             <div
               key={particle.id}
-              className="hero-particle absolute rounded-full bg-white/30"
+              className="hero-particle absolute rounded-full bg-white/45"
               style={{
                 width: particle.size,
                 height: particle.size,
@@ -88,7 +88,7 @@ export function Hero() {
                 aria-label="انتقل إلى آراء العملاء"
                 style={{ ['--ld' as string]: '0.51s' } as React.CSSProperties}
               >
-                <div className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-white/3 hover:bg-white/8 border border-white/10 hover:border-white/20 backdrop-blur-md transition-all duration-300 shadow-xs">
+                <div className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-white/6 hover:bg-white/8 border border-white/10 hover:border-white/20 transition-all duration-300 shadow-xs">
                   <div className="flex">
                     {['أ', 'ز', 'ك'].map((letter, i) => (
                       <div
@@ -106,7 +106,7 @@ export function Hero() {
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/2 border border-white/5 backdrop-blur-xs text-neutral-300 transition-all duration-300 group-hover:bg-white/6 group-hover:border-white/10">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/5 border border-white/5 text-neutral-300 transition-all duration-300 group-hover:bg-white/6 group-hover:border-white/10">
                   <span className="flex gap-0.5 text-amber-400">
                     <Star
                       size={14}
@@ -142,10 +142,10 @@ export function Hero() {
 
                 <a
                   href="#portfolio"
-                  className="group relative h-13 sm:h-14 w-auto px-6 sm:px-8 rounded-full border border-white/15 hover:border-white/30 bg-white/4 hover:bg-white/8 text-white text-base sm:text-lg font-bold backdrop-blur-md transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-xs flex items-center justify-center gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                  className="group relative h-13 sm:h-14 w-auto px-6 sm:px-8 rounded-full border border-white/15 hover:border-white/30 bg-white/8 hover:bg-white/8 text-white text-base sm:text-lg font-bold transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-xs flex items-center justify-center gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
                   <span className="relative z-10">نبذة عن أعمالنا</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-white/40 group-hover:bg-white transition-colors" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-white/55 group-hover:bg-white transition-colors" />
                 </a>
               </div>
             </div>
