@@ -121,8 +121,7 @@ export function MetricCards() {
                 <div className="flex flex-col h-full relative z-10">
                   {/* Floating Icon Badge Container */}
                   <div
-                    className={`animate-metric-icon-bob w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-8 sm:mb-10 lg:mb-12 transition-all duration-500 ease-out bg-white/3 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shadow-lg ${colors.iconGlow}`}
-                    style={{ animationDelay: `${index * 0.5}s` }}
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-8 sm:mb-10 lg:mb-12 transition-all duration-500 ease-out bg-white/3 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shadow-lg ${colors.iconGlow}`}
                   >
                     <div
                       className={`absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 ${colors.glowBg} blur-sm`}
