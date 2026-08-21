@@ -432,65 +432,11 @@
     line-height: 1.5;
   }
 
-  /* Letter spacing utilities */
-  .tracking-tight {
-    letter-spacing: -0.02em;
-  }
-
-  .tracking-normal {
-    letter-spacing: 0em;
-  }
-
-  .tracking-wide {
-    letter-spacing: 0.05em;
-  }
-
   .tracking-extra-wide {
     letter-spacing: 0.1em;
   }
 
-  /* Line height utilities */
-  .leading-tight {
-    line-height: 1.2;
-  }
-
-  .leading-snug {
-    line-height: 1.3;
-  }
-
-  .leading-normal {
-    line-height: 1.5;
-  }
-
-  .leading-relaxed {
-    line-height: 1.6;
-  }
-
-  .leading-loose {
-    line-height: 1.8;
-  }
-
   /* Premium Shadow Utilities */
-  .shadow-xs {
-    box-shadow: var(--shadow-xs);
-  }
-
-  .shadow-sm {
-    box-shadow: var(--shadow-sm);
-  }
-
-  .shadow-md {
-    box-shadow: var(--shadow-md);
-  }
-
-  .shadow-lg {
-    box-shadow: var(--shadow-lg);
-  }
-
-  .shadow-xl {
-    box-shadow: var(--shadow-xl);
-  }
-
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
   }
@@ -534,10 +480,6 @@
 
   .ease-out-expo {
     transition-timing-function: var(--ease-out-expo);
-  }
-
-  .ease-in-out {
-    transition-timing-function: var(--ease-in-out);
   }
 
   .ease-smooth {
