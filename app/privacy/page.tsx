@@ -64,43 +64,43 @@ export default function PrivacyPage() {
           <div className="inline-flex gap-2 min-w-full sm:min-w-0">
             <a
               href="#intro"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
               01. المُقدِّمة
             </a>
             <a
               href="#collected-data"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
               02. المعلومات المجمعة
             </a>
             <a
               href="#data-usage"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
               03. الاستخدام
             </a>
             <a
               href="#third-parties"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
               04. المشاركة
             </a>
             <a
               href="#security"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
               05. الأمان
             </a>
             <a
               href="#rights"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
               06. حقوقك
             </a>
             <a
               href="#contact"
-              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-all whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              className="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-neutral-900 border border-neutral-800 text-neutral-400 hover:text-white hover:border-neutral-700 transition-[color,background-color,border-color,box-shadow,transform,opacity] whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
             >
               11. التَّواصل
             </a>
@@ -112,7 +112,7 @@ export default function PrivacyPage() {
           {/* Section 01 */}
           <section
             id="intro"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -131,7 +131,7 @@ export default function PrivacyPage() {
           {/* Section 02 */}
           <section
             id="collected-data"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-6">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -263,7 +263,7 @@ export default function PrivacyPage() {
           {/* Section 03 */}
           <section
             id="data-usage"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -299,7 +299,7 @@ export default function PrivacyPage() {
           {/* Section 04 */}
           <section
             id="third-parties"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -337,7 +337,7 @@ export default function PrivacyPage() {
           {/* Section 05 */}
           <section
             id="security"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-6">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -377,7 +377,7 @@ export default function PrivacyPage() {
           {/* Section 06 */}
           <section
             id="rights"
-            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
+            className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5"
           >
             <div className="flex items-center gap-3 mb-4">
               <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
@@ -431,7 +431,7 @@ export default function PrivacyPage() {
           {/* Section 07 & 08 Dual Grid Layout */}
           <div className="grid sm:grid-cols-2 gap-6">
             {/* Section 07 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
                   07
@@ -447,7 +447,7 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 08 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
                   08
@@ -465,7 +465,7 @@ export default function PrivacyPage() {
           {/* Section 09 & 10 Dual Grid Layout */}
           <div className="grid sm:grid-cols-2 gap-6">
             {/* Section 09 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
                   09
@@ -479,7 +479,7 @@ export default function PrivacyPage() {
             </section>
 
             {/* Section 10 */}
-            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-all duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
+            <section className="group rounded-2xl sm:rounded-3xl border border-neutral-800/80 bg-neutral-900/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-neutral-700/80 hover:shadow-2xl hover:shadow-emerald-500/5">
               <div className="flex items-center gap-3 mb-4">
                 <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono font-bold">
                   10
@@ -513,7 +513,7 @@ export default function PrivacyPage() {
             <div className="grid sm:grid-cols-2 gap-4">
               <a
                 href="mailto:contact@royaraqamia.com"
-                className="group flex items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 hover:border-emerald-500/50 hover:bg-neutral-900 transition-all duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="group flex items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 hover:border-emerald-500/50 hover:bg-neutral-900 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
                 <div className="space-y-1">
                   <span className="text-xs text-neutral-400 block">البريد الإلكتروني</span>
@@ -540,7 +540,7 @@ export default function PrivacyPage() {
                 href="https://royaraqamia.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="group flex items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 hover:border-emerald-500/50 hover:bg-neutral-900 transition-all duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                className="group flex items-center justify-between p-4 rounded-xl border border-neutral-800 bg-neutral-950/60 hover:border-emerald-500/50 hover:bg-neutral-900 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
               >
                 <div className="space-y-1">
                   <span className="text-xs text-neutral-400 block">الموقع الإلكتروني</span>

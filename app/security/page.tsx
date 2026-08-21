@@ -75,7 +75,7 @@ export default function SecurityPage() {
             className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-10"
             aria-label="التزامات وقت الاستجابة"
           >
-            <div className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card/60 p-5 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card/60 p-5 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-muted-foreground">تأكيد الاستلام</span>
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-transform group-hover:scale-110">
@@ -103,7 +103,7 @@ export default function SecurityPage() {
               </p>
             </div>
 
-            <div className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card/60 p-5 transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
+            <div className="group relative overflow-hidden rounded-2xl border border-border/80 bg-card/60 p-5 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-muted-foreground">تحديث الحالة</span>
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center transition-transform group-hover:scale-110">
@@ -135,7 +135,7 @@ export default function SecurityPage() {
           {/* Structured Policy Cards */}
           <div className="space-y-8">
             {/* Section 1: Reporting Vulnerabilities */}
-            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-all duration-300 hover:border-border">
+            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0 border border-primary/20">
                   <svg
@@ -272,7 +272,7 @@ export default function SecurityPage() {
             </article>
 
             {/* Section 2: In-Scope Vulnerabilities */}
-            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-all duration-300 hover:border-border">
+            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-500/20">
                   <svg
@@ -320,7 +320,7 @@ export default function SecurityPage() {
             </article>
 
             {/* Section 3: Out-of-Scope */}
-            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-all duration-300 hover:border-border">
+            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/20">
                   <svg
@@ -376,7 +376,7 @@ export default function SecurityPage() {
             </article>
 
             {/* Section 4: Data Protection */}
-            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-all duration-300 hover:border-border">
+            <article className="rounded-2xl border border-border/80 bg-card/40 p-6 sm:p-8 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-border">
               <header className="flex items-center gap-3.5 mb-6">
                 <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
                   <svg
@@ -414,7 +414,7 @@ export default function SecurityPage() {
             </article>
 
             {/* Section 5: Direct Action Callout Card */}
-            <article className="relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 via-background to-card p-6 sm:p-8 shadow-xl shadow-primary/5 transition-all duration-300 hover:border-primary/40">
+            <article className="relative overflow-hidden rounded-2xl border border-primary/20 bg-linear-to-br from-primary/10 via-background to-card p-6 sm:p-8 shadow-xl shadow-primary/5 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/40">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2.5">
@@ -445,7 +445,7 @@ export default function SecurityPage() {
 
                 <a
                   href="mailto:contact@royaraqamia.com?subject=%5BSECURITY%5D"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm transition-all duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shrink-0 dir-ltr"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shrink-0 dir-ltr"
                 >
                   <svg
                     className="w-4 h-4"

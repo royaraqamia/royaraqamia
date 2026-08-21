@@ -98,7 +98,7 @@ export default function TermsPage() {
             {/* 01. المقدمة */}
             <section
               id="section-1"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -120,7 +120,7 @@ export default function TermsPage() {
             {/* 02. وصف الخدمات */}
             <section
               id="section-2"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -137,7 +137,7 @@ export default function TermsPage() {
               </p>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
+                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
                   <div className="rounded-xl bg-indigo-500/10 p-2.5 text-indigo-600 dark:text-indigo-400">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -158,7 +158,7 @@ export default function TermsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
+                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
                   <div className="rounded-xl bg-indigo-500/10 p-2.5 text-indigo-600 dark:text-indigo-400">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -179,7 +179,7 @@ export default function TermsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
+                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
                   <div className="rounded-xl bg-indigo-500/10 p-2.5 text-indigo-600 dark:text-indigo-400">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -200,7 +200,7 @@ export default function TermsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-all duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
+                <div className="flex items-center gap-3.5 rounded-2xl border border-slate-200/60 bg-slate-50/80 p-4 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:-translate-y-0.5 hover:border-indigo-300 hover:bg-indigo-50/40 dark:border-slate-700/50 dark:bg-slate-800/50 dark:hover:border-indigo-700 dark:hover:bg-indigo-950/30">
                   <div className="rounded-xl bg-indigo-500/10 p-2.5 text-indigo-600 dark:text-indigo-400">
                     <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -226,7 +226,7 @@ export default function TermsPage() {
             {/* 03. الحساب والمُصادقة */}
             <section
               id="section-3"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -297,7 +297,7 @@ export default function TermsPage() {
             {/* 04. استخدام الخدمات */}
             <section
               id="section-4"
-              className="group rounded-3xl border border-rose-200/80 bg-rose-50/60 p-6 shadow-xs transition-all duration-300 hover:shadow-md sm:p-8 dark:border-rose-900/40 dark:bg-rose-950/20"
+              className="group rounded-3xl border border-rose-200/80 bg-rose-50/60 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8 dark:border-rose-900/40 dark:bg-rose-950/20"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-200 bg-rose-100 font-bold text-rose-600 dark:border-rose-800/50 dark:bg-rose-900/40 dark:text-rose-400">
@@ -348,7 +348,7 @@ export default function TermsPage() {
             {/* 05. المحتوى والملكيَّة الفكريَّة */}
             <section
               id="section-5"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-6 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -392,7 +392,7 @@ export default function TermsPage() {
             {/* 06. الدَّفع والاسترداد */}
             <section
               id="section-6"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -463,7 +463,7 @@ export default function TermsPage() {
             {/* 07. إخلاء المسؤوليَّة */}
             <section
               id="section-7"
-              className="group rounded-3xl border border-amber-200/80 bg-amber-50/40 p-6 shadow-xs transition-all duration-300 hover:shadow-md sm:p-8 dark:border-amber-900/40 dark:bg-amber-950/20"
+              className="group rounded-3xl border border-amber-200/80 bg-amber-50/40 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8 dark:border-amber-900/40 dark:bg-amber-950/20"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-amber-200 bg-amber-100 font-bold text-amber-700 dark:border-amber-800/50 dark:bg-amber-900/40 dark:text-amber-400">
@@ -554,7 +554,7 @@ export default function TermsPage() {
             {/* 08. تعديلات الشُّروط */}
             <section
               id="section-8"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -574,7 +574,7 @@ export default function TermsPage() {
             {/* 09. الإنهاء */}
             <section
               id="section-9"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -593,7 +593,7 @@ export default function TermsPage() {
             {/* 10. القانون الحاكم */}
             <section
               id="section-10"
-              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-all duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
+              className="group rounded-3xl border border-slate-200/80 bg-white/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-indigo-500/30 hover:shadow-md sm:p-8 dark:border-slate-800/80 dark:bg-slate-900/85 dark:hover:border-indigo-500/30"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-indigo-100 bg-indigo-50 font-bold text-indigo-600 dark:border-indigo-900/50 dark:bg-indigo-950/60 dark:text-indigo-400">
@@ -612,7 +612,7 @@ export default function TermsPage() {
             {/* 11. التَّواصل معنا */}
             <section
               id="section-11"
-              className="group rounded-3xl border border-indigo-200/80 bg-linear-to-br from-indigo-50/60 via-white to-sky-50/40 p-6 shadow-sm transition-all duration-300 hover:shadow-md sm:p-8 dark:border-indigo-800/80 dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-900"
+              className="group rounded-3xl border border-indigo-200/80 bg-linear-to-br from-indigo-50/60 via-white to-sky-50/40 p-6 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8 dark:border-indigo-800/80 dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-900"
             >
               <div className="mb-4 flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-indigo-600 font-bold text-white shadow-sm">
@@ -628,7 +628,7 @@ export default function TermsPage() {
               </p>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-200/60 bg-white/90 p-4 shadow-2xs transition-all duration-200 hover:border-indigo-500/50 dark:border-slate-700/60 dark:bg-slate-800/80">
+                <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-200/60 bg-white/90 p-4 shadow-2xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:border-indigo-500/50 dark:border-slate-700/60 dark:bg-slate-800/80">
                   <span className="text-xs font-medium text-slate-400">البريد الإلكتروني</span>
                   <a
                     href="mailto:contact@royaraqamia.com"
@@ -646,7 +646,7 @@ export default function TermsPage() {
                   </a>
                 </div>
 
-                <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-200/60 bg-white/90 p-4 shadow-2xs transition-all duration-200 hover:border-indigo-500/50 dark:border-slate-700/60 dark:bg-slate-800/80">
+                <div className="flex flex-col gap-1.5 rounded-2xl border border-slate-200/60 bg-white/90 p-4 shadow-2xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:border-indigo-500/50 dark:border-slate-700/60 dark:bg-slate-800/80">
                   <span className="text-xs font-medium text-slate-400">الموقع الإلكتروني</span>
                   <a
                     href="https://royaraqamia.com"
@@ -695,7 +695,7 @@ export default function TermsPage() {
                   <li key={link.id}>
                     <a
                       href={`#${link.id}`}
-                      className="flex items-center gap-2 rounded-xl px-3 py-2 text-slate-600 transition-all duration-200 hover:bg-indigo-50/60 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400"
+                      className="flex items-center gap-2 rounded-xl px-3 py-2 text-slate-600 transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:bg-indigo-50/60 hover:text-indigo-600 dark:text-slate-400 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400"
                     >
                       <span>{link.label}</span>
                     </a>
@@ -713,7 +713,7 @@ export default function TermsPage() {
               </p>
               <a
                 href="mailto:contact@royaraqamia.com"
-                className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 py-2.5 px-4 font-semibold text-white shadow-xs transition-all duration-200 hover:bg-indigo-700 active:scale-[0.98]"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 py-2.5 px-4 font-semibold text-white shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-200 hover:bg-indigo-700 active:scale-[0.98]"
               >
                 تواصل مع الفريق
               </a>
