@@ -55,11 +55,20 @@ export function useAppVersion(): AppVersionState {
 
   useEffect(() => {
     checkVersion();
-    const id = setInterval(checkVersion, POLL_INTERVAL);
+    // Skip network work while the tab is hidden; visibilitychange re-checks
+    // the moment the user returns, so update detection stays immediate.
+    const id = setInterval(() => {
+      if (document.visibilityState === 'visible') checkVersion();
+    }, POLL_INTERVAL);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') checkVersion();
+    };
+    document.addEventListener('visibilitychange', onVisible);
     window.addEventListener('focus', checkVersion);
 
     return () => {
       clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
       window.removeEventListener('focus', checkVersion);
     };
   }, [checkVersion]);
