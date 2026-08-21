@@ -48,7 +48,7 @@ describe('ResendEmailClient', () => {
     expect(payload).toMatchObject({
       from: 'رؤية رقمية <no-reply@royaraqamia.com>',
       to: 'user@example.com',
-      subject: 'رمز التَّحقُّق - رؤية رقمية',
+      subject: 'رمز التَّحقُّق',
     });
     expect(String(payload.html)).toContain('123456');
     expect(String(payload.html)).toContain('dir="rtl"');
@@ -67,7 +67,7 @@ describe('ResendEmailClient', () => {
     const [payload] = mockSend.mock.calls[0] as [Record<string, unknown>];
     expect(payload).toMatchObject({
       to: 'user@example.com',
-      subject: 'إعادة تعيين كلمة المرور - رؤية رقمية',
+      subject: 'إعادة تعيين كلمة المرور',
     });
     expect(String(payload.html)).toContain('https://royaraqamia.com/auth/update-password');
     expect(String(payload.html)).toContain('ساعة');
@@ -130,7 +130,7 @@ describe('ResendEmailClient', () => {
     expect(payload[0]).toMatchObject({
       from: 'رؤية رقمية <no-reply@royaraqamia.com>',
       to: 'a@example.com',
-      subject: '[رؤية رقمية] تحديث جديد',
+      subject: 'تحديث جديد',
     });
     const first = payload[0] as Record<string, unknown>;
     expect(first.html).toContain('dir="rtl"');

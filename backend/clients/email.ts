@@ -112,7 +112,7 @@ export class ResendEmailClient implements EmailClient {
     await this.resend.emails.send({
       from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
       to: email,
-      subject: 'رمز التَّحقُّق - رؤية رقمية',
+      subject: 'رمز التَّحقُّق',
       html: layout(
         `
         <div style="padding:32px 32px 32px;">
@@ -126,7 +126,7 @@ export class ResendEmailClient implements EmailClient {
         </div>
         ${cardFooter(`صالح لمدَّة ${formatMinutes(this.validity.otpMinutes)}`)}
       `,
-        'رمز التحقق - أدخل الرمز لإكمال التحقق'
+        'رمز التَّحقُّق - أدخِل الرَّمز لإكمال التَّحقُّق'
       ),
     });
   }
@@ -136,7 +136,7 @@ export class ResendEmailClient implements EmailClient {
     await this.resend.emails.send({
       from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
       to: email,
-      subject: 'إعادة تعيين كلمة المرور - رؤية رقمية',
+      subject: 'إعادة تعيين كلمة المرور',
       html: layout(
         `
         <div style="padding:32px 32px 32px;">
@@ -182,7 +182,7 @@ export class ResendEmailClient implements EmailClient {
         batch.map((recipient) => ({
           from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
           to: recipient.email,
-          subject: `[رؤية رقمية] ${recipient.subject}`,
+          subject: recipient.subject,
           html: this.broadcastEmailHtml(recipient.subject, recipient.body),
         })),
         { batchValidation: 'permissive' }
