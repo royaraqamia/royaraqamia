@@ -2,7 +2,7 @@
 
 import { useRef, useState, MouseEvent, TouchEvent } from 'react';
 import {
-  motion,
+  m,
   useInView,
   useScroll,
   useTransform,
@@ -127,13 +127,13 @@ export function Certificate() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-72 bg-linear-to-b from-purple-500/15 via-violet-500/5 to-transparent blur-3xl pointer-events-none" />
 
         {/* Parallax Purple Dynamic Light Sphere */}
-        <motion.div
+        <m.div
           style={{ y: backgroundY }}
           className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 bg-purple-600/25 rounded-full glow-blur-xl pointer-events-none"
         />
 
         {/* Indigo Ambient Pulsing Glow */}
-        <motion.div
+        <m.div
           animate={{ scale: [1, 1.15, 1], opacity: [0.08, 0.18, 0.08] }}
           transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
           className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 bg-indigo-600/25 rounded-full glow-blur-xl pointer-events-none"
@@ -142,7 +142,7 @@ export function Certificate() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
-        <motion.header
+        <m.header
           ref={headerRef}
           initial="hidden"
           animate={isHeaderInView ? 'visible' : 'hidden'}
@@ -150,7 +150,7 @@ export function Certificate() {
           className="text-center mb-12 sm:mb-16 flex flex-col items-center"
         >
           {/* Trophy Badge Container */}
-          <motion.div variants={itemVariants} className="mb-6 relative group cursor-pointer">
+          <m.div variants={itemVariants} className="mb-6 relative group cursor-pointer">
             <div className="absolute -inset-2 bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 rounded-3xl blur-xl opacity-40 group-hover:opacity-80 transition duration-500" />
 
             <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-purple-400 via-violet-500 to-purple-700 flex items-center justify-center shadow-2xl shadow-purple-500/30 relative overflow-hidden group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-500 border border-purple-300/40">
@@ -161,10 +161,10 @@ export function Certificate() {
                 fill="currentColor"
               />
             </div>
-          </motion.div>
+          </m.div>
 
           {/* Headline */}
-          <motion.h2
+          <m.h2
             id="certificate-heading"
             variants={itemVariants}
             className="text-3xl sm:text-5xl lg:text-6xl mb-5 font-black tracking-tight text-white leading-[1.15]"
@@ -173,20 +173,20 @@ export function Certificate() {
             <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-300 via-violet-300 to-indigo-400 drop-shadow-sm">
               الشَّهادة
             </span>
-          </motion.h2>
+          </m.h2>
 
           {/* Subtitle */}
-          <motion.p
+          <m.p
             variants={itemVariants}
             className="text-base sm:text-lg text-slate-300/80 max-w-2xl mx-auto leading-relaxed font-normal"
           >
             وثيقة تُثبت جدارتك المهنيَّة، وتُعَد جواز مرورك لفرص وظيفيَّة ومشاريع حقيقيَّة في
             السُّوق الرَّقمي.
-          </motion.p>
-        </motion.header>
+          </m.p>
+        </m.header>
 
         {/* 3D Certificate Visual Stage */}
-        <motion.div
+        <m.div
           ref={certificateRef}
           initial={{ opacity: 0, y: 50, scale: 0.96 }}
           animate={
@@ -198,7 +198,7 @@ export function Certificate() {
           className="flex flex-col items-center justify-center perspective-[2000px] gap-6"
         >
           {/* Dynamic Motion Indicator */}
-          <motion.div
+          <m.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
@@ -217,12 +217,12 @@ export function Certificate() {
                 ? 'المعاينة التَّفاعليَّة ثلاثيَّة الأبعاد نشطة'
                 : 'حرِّك الفأرة أو اللمس لتغيير المنظور 3D'}
             </span>
-          </motion.div>
+          </m.div>
 
           {/* Outer Glass Frame */}
           <div className="w-full max-w-4xl p-2 sm:p-3 md:p-4 rounded-3xl md:rounded-[2.5rem] bg-slate-900/55 border border-white/10 shadow-[0_30px_100px_-20px_rgba(0,0,0,0.9)] hover:shadow-[0_30px_100px_-10px_rgba(147,51,234,0.25)] transition-shadow duration-700">
             {/* Interactive 3D Card */}
-            <motion.div
+            <m.div
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
               onTouchStart={handleTouchStart}
@@ -243,7 +243,7 @@ export function Certificate() {
               aria-label="معاينة ثلاثيَّة الأبعاد لشهادة الإتمام"
             >
               {/* Dynamic Glare Overlay */}
-              <motion.div
+              <m.div
                 className={`absolute inset-0 z-20 pointer-events-none mix-blend-overlay transition-opacity duration-300 ${
                   isPressed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                 }`}
@@ -269,7 +269,7 @@ export function Certificate() {
                 height={848}
                 className="w-full h-auto relative z-0 object-cover transform transition-transform duration-700"
               />
-            </motion.div>
+            </m.div>
           </div>
 
           {/* Certificate Credential Features Bar */}
@@ -312,7 +312,7 @@ export function Certificate() {
               </div>
             </div>
           </div>
-        </motion.div>
+        </m.div>
       </div>
     </section>
   );

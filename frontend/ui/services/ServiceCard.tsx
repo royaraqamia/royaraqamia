@@ -1,7 +1,7 @@
 'use client';
 
 import { ElementType, MouseEvent } from 'react';
-import { motion, useMotionTemplate, useMotionValue } from 'motion/react';
+import { m, useMotionTemplate, useMotionValue } from 'motion/react';
 import { Check, ArrowRight, Code, Lightbulb, MessageCircle } from 'lucide-react';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
@@ -76,7 +76,7 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
   }
 
   return (
-    <motion.article
+    <m.article
       custom={index}
       initial="hidden"
       whileInView="show"
@@ -95,7 +95,7 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
         The Magic: Mouse-tracking spotlight background. 
         It injects the specific service color gradient bound to cursor position. 
       */}
-      <motion.div
+      <m.div
         className="absolute -inset-px z-0 opacity-0 group-hover/service:opacity-100 transition-opacity duration-500 pointer-events-none mix-blend-screen rounded-4xl"
         style={{
           background: useMotionTemplate`
@@ -203,6 +203,6 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
           )}
         </div>
       </div>
-    </motion.article>
+    </m.article>
   );
 }

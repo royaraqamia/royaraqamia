@@ -32,23 +32,25 @@ export function ConsultationCards() {
         aria-hidden="true"
       />
 
-      {/* Layered Multi-Color Radial Ambient Glows */}
+      {/* Layered Multi-Color Radial Ambient Glows — the gradients already fade
+          to transparent, so no blur filter (or pulse animation) is needed on
+          top; the filter would re-rasterize a 650px layer for zero visual gain. */}
       <div
-        className="absolute top-1/4 right-1/4 w-[min(400px,85vw)] sm:w-[min(650px,85vw)] h-[min(400px,85vw)] sm:h-[min(650px,85vw)] rounded-full pointer-events-none glow-blur-lg max-md:glow-blur-sm sm:glow-blur-xl opacity-40 animate-pulse transform-gpu will-change-transform"
+        className="absolute top-1/4 right-1/4 w-[min(400px,85vw)] sm:w-[min(650px,85vw)] h-[min(400px,85vw)] sm:h-[min(650px,85vw)] rounded-full pointer-events-none opacity-40"
         style={{
           background: 'radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, transparent 70%)',
         }}
         aria-hidden="true"
       />
       <div
-        className="absolute bottom-10 left-1/4 w-[min(350px,80vw)] sm:w-[min(550px,80vw)] h-[min(350px,80vw)] sm:h-[min(550px,80vw)] rounded-full pointer-events-none glow-blur-md sm:glow-blur-xl opacity-35"
+        className="absolute bottom-10 left-1/4 w-[min(350px,80vw)] sm:w-[min(550px,80vw)] h-[min(350px,80vw)] sm:h-[min(550px,80vw)] rounded-full pointer-events-none opacity-35"
         style={{
           background: 'radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, transparent 70%)',
         }}
         aria-hidden="true"
       />
       <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(500px,95vw)] sm:w-[min(900px,95vw)] h-[min(250px,80vw)] sm:h-[min(450px,80vw)] rounded-full pointer-events-none glow-blur-xl sm:glow-blur-xl opacity-30"
+        className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(500px,95vw)] sm:w-[min(900px,95vw)] h-[min(250px,80vw)] sm:h-[min(450px,80vw)] rounded-full pointer-events-none opacity-30"
         style={{
           background: 'radial-gradient(ellipse, rgba(124, 58, 237, 0.15) 0%, transparent 60%)',
         }}

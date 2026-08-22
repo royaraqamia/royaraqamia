@@ -1,5 +1,4 @@
 import { ArrowLeft, Star } from 'lucide-react';
-import { MotionReveal } from './MotionReveal';
 import { LazySection } from './shared/LazySection';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
@@ -49,9 +48,14 @@ export function Hero() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-          <MotionReveal
-            from="none"
-            className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center"
+          {/* Above-the-fold content uses `.css-reveal` (pure CSS entrance) so
+              the headline paints — and becomes LCP — without waiting for
+              hydration; MotionReveal's JS-gated variant would keep it at
+              opacity:0 until React mounts. `--landing-reveal-from: none`
+              preserves the fade-only stagger the items had before. */}
+          <div
+            className="css-reveal grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center"
+            style={{ ['--landing-reveal-from' as string]: 'none' }}
           >
             {/* Left/Right side - Primary Copy & CTA (RTL Support) */}
             <div className="text-center lg:text-right space-y-3 order-1 min-w-0">
@@ -164,7 +168,7 @@ export function Hero() {
                 <LazySection id="hero-visual" className="w-full h-full" />
               </div>
             </div>
-          </MotionReveal>
+          </div>
         </div>
       </section>
     </>

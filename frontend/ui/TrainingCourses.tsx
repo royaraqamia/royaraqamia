@@ -60,14 +60,11 @@ export function TrainingCourses() {
       {/* Background Ambient Lights & Pattern Grid */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-250 h-125 bg-radial from-purple-600/15 via-violet-600/5 to-transparent blur-3xl opacity-70" />
-        <div
-          className="absolute top-1/4 -right-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl max-md:blur-2xl motion-safe:animate-pulse transform-gpu will-change-transform"
-          style={{ animationDuration: '8s' }}
-        />
-        <div
-          className="absolute bottom-10 -left-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl max-md:blur-2xl motion-safe:animate-pulse transform-gpu will-change-transform"
-          style={{ animationDuration: '10s', animationDelay: '2s' }}
-        />
+        {/* Static ambient orbs — pulsing 320-384px blurred layers would
+            recomposite the whole texture every frame for a barely-visible
+            opacity wobble at 10% fill. */}
+        <div className="absolute top-1/4 -right-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl max-md:blur-2xl" />
+        <div className="absolute bottom-10 -left-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl max-md:blur-2xl" />
 
         {/* Modern Micro Dot Pattern Mask */}
         <div
