@@ -35,7 +35,7 @@ export default function PrivacyPage() {
       <div className="absolute top-1/3 left-0 w-100 h-100 bg-primary/5 glow-blur-lg pointer-events-none -z-10" />
       <div className="absolute inset-0 bg-[radial-gradient(#262626_1px,transparent_1px)] bg-size-[24px_24px] opacity-30 pointer-events-none -z-10" />
 
-      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20">
+      <main className="cv-auto max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20">
         {/* Hero Header */}
         <header className="mb-10 sm:mb-14 border-b border-border/50 pb-8 sm:pb-12">
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground mb-4 leading-tight">

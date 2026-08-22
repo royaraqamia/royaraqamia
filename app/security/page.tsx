@@ -36,7 +36,7 @@ export default function SecurityPage() {
           <div className="absolute left-1/2 top-0 -translate-x-1/2 w-250 h-87.5 bg-linear-to-b from-primary/10 via-primary/5 to-transparent blur-3xl opacity-60 dark:opacity-40" />
         </div>
 
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+        <div className="cv-auto mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Hero Header Section */}
           <header className="mb-12 text-start">
             <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4 leading-tight">

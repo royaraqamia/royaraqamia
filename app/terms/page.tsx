@@ -44,7 +44,7 @@ export default function TermsPage() {
         {/* Responsive Grid Architecture */}
         <div className="items-start lg:grid lg:grid-cols-12 lg:gap-12">
           {/* Main Content Sections Column */}
-          <main className="space-y-8 text-base leading-relaxed text-muted-foreground sm:space-y-10 lg:col-span-8">
+          <main className="cv-auto space-y-8 text-base leading-relaxed text-muted-foreground sm:space-y-10 lg:col-span-8">
             {/* 01. المقدمة */}
             <section
               id="section-1"

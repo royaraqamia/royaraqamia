@@ -16,7 +16,7 @@ export default function NotFound() {
           className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
         >
           <div className="h-128 w-lg rounded-full bg-linear-to-tr from-primary/15 via-primary/5 to-transparent blur-3xl" />
-          <div className="absolute top-1/3 h-72 w-[18rem] animate-pulse rounded-full bg-primary/10 blur-2xl" />
+          <div className="absolute top-1/3 h-72 w-[18rem] rounded-full bg-primary/10 blur-2xl" />
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,var(--tw-gradient-stops))] from-transparent via-background/60 to-background" />
         </div>
 

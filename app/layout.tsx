@@ -127,10 +127,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ) : (
           <link rel="stylesheet" href="/design-system/lib/design-tokens.css" />
         )}
-        <link rel="manifest" href="/manifest.json" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="mobile-web-app-capable" content="yes" />
+        {/* PWA/manifest metas come from `metadata` above — don't duplicate them here. */}
         <meta name="application-name" content="رؤية رقمية" />
       </head>
       <body>
