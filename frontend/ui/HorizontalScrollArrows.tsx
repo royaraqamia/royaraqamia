@@ -21,7 +21,7 @@ export function HorizontalScrollArrows({
   const [hoveredArrow, setHoveredArrow] = useState<'left' | 'right' | null>(null);
 
   const arrowBase =
-    'hidden md:flex absolute top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110';
+    'hidden md:flex absolute top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110';
 
   const getArrowStyle = (direction: 'left' | 'right') => ({
     backgroundColor: hoveredArrow === direction ? '#7766EE' : 'rgba(0, 0, 0, 0.6)',
