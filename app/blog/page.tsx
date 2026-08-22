@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { loadBlogIndex } from '@/backend/loaders/blog';
-import { BlogSearch } from './_components/blog-search';
 import { BlogIndexResults } from './_components/blog-index-results';
 import { BlogResults } from './_components/blog-results';
 import { BLOG_PAGE_SIZE } from './_components/constants';
@@ -34,20 +33,6 @@ export default async function BlogPage() {
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-b from-foreground via-foreground/80 to-muted-foreground leading-[1.15] mb-6">
             المدوَّنة
           </h1>
-
-          <p className="text-base sm:text-lg lg:text-xl text-muted-foreground max-w-xl font-normal leading-relaxed mb-10 text-balance">
-            أفكار، دروس، وقصص في العالم الرَّقمي
-          </p>
-
-          <div className="w-full max-w-lg relative z-20">
-            <Suspense
-              fallback={
-                <div className="h-11 w-full rounded-xl bg-background/60 border border-border/50" />
-              }
-            >
-              <BlogSearch />
-            </Suspense>
-          </div>
         </div>
       </section>
 
