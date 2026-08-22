@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { motion, useReducedMotion } from 'motion/react';
+import { m, useReducedMotion } from 'motion/react';
 import {
   Plus,
   TrendingUp,
@@ -151,7 +151,7 @@ export function DashboardShell({
       >
         <div className="max-w-350 mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12 flex flex-col gap-10 lg:gap-14">
           {/* Header & Date Navigation Toolbar */}
-          <motion.header
+          <m.header
             initial={shouldReduce ? false : { opacity: 0, y: -15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={shouldReduce ? undefined : { type: 'spring', stiffness: 280, damping: 25 }}
@@ -200,7 +200,7 @@ export function DashboardShell({
                 </Button>
               </div>
 
-              <motion.div
+              <m.div
                 initial={false}
                 animate={{
                   opacity: activeDate !== todayDate ? 1 : 0,
@@ -218,9 +218,9 @@ export function DashboardShell({
                 >
                   اليوم
                 </Button>
-              </motion.div>
+              </m.div>
             </div>
-          </motion.header>
+          </m.header>
 
           {/* Stats Section */}
           <section aria-label="إحصائيَّات العادات" className="w-full">
@@ -259,7 +259,7 @@ export function DashboardShell({
           )}
 
           {/* Main Workspace Layout */}
-          <motion.div
+          <m.div
             initial={shouldReduce ? false : { opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.05 }}
@@ -300,7 +300,7 @@ export function DashboardShell({
               </div>
 
               {habits.length === 0 ? (
-                <motion.div
+                <m.div
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.4 }}
@@ -321,7 +321,7 @@ export function DashboardShell({
                       setIsAddModalOpen(true);
                     }}
                   />
-                </motion.div>
+                </m.div>
               ) : (
                 <div className="flex flex-col gap-4">
                   {habits.map((habit) => (
@@ -353,10 +353,10 @@ export function DashboardShell({
                 />
               </div>
             </section>
-          </motion.div>
+          </m.div>
 
           {/* Backup & Data Management Footer Banner */}
-          <motion.footer
+          <m.footer
             initial={shouldReduce ? false : { opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
@@ -417,7 +417,7 @@ export function DashboardShell({
                 </Button>
               </div>
             </div>
-          </motion.footer>
+          </m.footer>
 
           {/* Dialogs & Modals */}
           <AddHabitModal

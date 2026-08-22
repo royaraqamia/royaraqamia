@@ -1,4 +1,4 @@
-import { motion, useReducedMotion, useSpring, useMotionValue } from 'motion/react';
+import { m, useReducedMotion, useSpring, useMotionValue } from 'motion/react';
 import { useEffect, useState } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { Card } from '@/frontend/ui/primitives/card';
@@ -44,7 +44,7 @@ export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProp
   const reduce = prefersReduce === true;
 
   return (
-    <motion.div
+    <m.div
       initial={reduce ? false : { opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={
@@ -87,6 +87,6 @@ export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProp
           </div>
         </div>
       </Card>
-    </motion.div>
+    </m.div>
   );
 }
