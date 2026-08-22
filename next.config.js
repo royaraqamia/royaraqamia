@@ -43,6 +43,9 @@ const nextConfig = {
   },
   images: {
     formats: ['image/avif', 'image/webp'],
+    // Optimized variants are content-addressed by URL; a long TTL lets the
+    // CDN serve repeat requests without re-validating against the origin.
+    minimumCacheTTL: 86400,
     remotePatterns: [
       { protocol: 'https', hostname: 'royaraqamia.com' },
       { protocol: 'https', hostname: '*.royaraqamia.com' },
