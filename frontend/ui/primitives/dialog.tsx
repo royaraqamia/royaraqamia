@@ -30,7 +30,9 @@ const DialogOverlay = React.forwardRef<
     ref={ref}
     data-slot="dialog-overlay"
     className={cn(
-      'fixed inset-0 z-10000 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ease-out',
+      // Near-opaque overlay: a full-viewport backdrop-filter re-rasterizes the
+      // entire screen every frame during its fade transition.
+      'fixed inset-0 z-10000 bg-black/70 transition-opacity duration-300 ease-out',
       'data-[state=open]:animate-in data-[state=open]:fade-in-0',
       'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
       className

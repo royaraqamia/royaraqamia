@@ -322,9 +322,10 @@ export function MobileMenu({
     <>
       {createPortal(
         <div className="fixed inset-0 z-10001 md:hidden">
-          {/* Gaussian Blur Backdrop */}
+          {/* Dim backdrop — near-opaque instead of blurred: a full-viewport
+              backdrop-filter re-rasterizes the whole screen during its fade. */}
           <div
-            className={`fixed inset-0 bg-neutral-950/60 dark:bg-black/75 backdrop-blur-md transition-opacity duration-300 ease-out ${
+            className={`fixed inset-0 bg-neutral-950/80 dark:bg-black/85 transition-opacity duration-300 ease-out ${
               isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
             onClick={handleClose}

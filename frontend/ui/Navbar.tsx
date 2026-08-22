@@ -145,13 +145,18 @@ export function Navbar() {
     },
   ];
 
-  // Dynamic Glassmorphism & Elevation Generator for Tailwind v4 Architecture
+  // Glassmorphism & elevation generator.
+  // Perf note: the two persistent states (scrolled / menu-open) sit above
+  // continuously-scrolling content, so they use near-opaque fills instead of
+  // backdrop-blur — a blurred full-width strip would re-rasterize every frame
+  // while scrolling. Only the transient top-of-hero state keeps a light frost
+  // (and it stops costing anything once the page scrolls past it).
   const getNavbarClass = () => {
     if (isMobileMenuOpen) {
-      return 'bg-white/95 dark:bg-neutral-950/95 backdrop-blur-2xl border-b border-neutral-200/80 dark:border-neutral-800/80 shadow-lg shadow-black/5 dark:shadow-black/20';
+      return 'bg-white/95 dark:bg-neutral-950/95 border-b border-neutral-200/80 dark:border-neutral-800/80 shadow-lg shadow-black/5 dark:shadow-black/20';
     }
     if (isScrolled) {
-      return 'bg-white/80 dark:bg-neutral-950/80 backdrop-blur-xl backdrop-saturate-150 border-b border-neutral-200/60 dark:border-neutral-800/60 shadow-sm shadow-neutral-950/5 dark:shadow-neutral-950/30 glass-navbar-enhanced';
+      return 'bg-white/90 dark:bg-neutral-950/90 border-b border-neutral-200/70 dark:border-neutral-800/70 shadow-sm shadow-neutral-950/5 dark:shadow-neutral-950/30';
     }
     return 'bg-white/40 dark:bg-neutral-950/40 backdrop-blur-md border-b border-neutral-200/30 dark:border-neutral-800/30 glass-navbar-hero';
   };
