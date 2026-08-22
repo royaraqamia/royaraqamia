@@ -1,9 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Link, Layers } from 'lucide-react';
 import { SingleUrlShortener } from './single-url-shortener';
-import { BulkUrlShortener } from './bulk-url-shortener';
+
+// The bulk tab is secondary; its chunk loads on first open (or tab hover)
+// instead of weighing down the default single-link view.
+const BulkUrlShortener = dynamic(
+  () => import('./bulk-url-shortener').then((mod) => mod.BulkUrlShortener),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-64 animate-pulse rounded-2xl bg-muted/40" aria-hidden="true" />
+    ),
+  }
+);
+
+const prefetchBulkShortener = () => {
+  void import('./bulk-url-shortener');
+};
 
 interface UrlShortenerProps {
   token: string | null;
@@ -46,6 +62,8 @@ export function UrlShortener({ token, onLinkCreated }: UrlShortenerProps) {
             role="tab"
             aria-selected={activeTab === 'bulk'}
             onClick={() => switchTab('bulk')}
+            onMouseEnter={prefetchBulkShortener}
+            onFocus={prefetchBulkShortener}
             className={`flex-1 py-2 text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-2 cursor-pointer press-scale focus-ring touch-target btn-press ${
               activeTab === 'bulk'
                 ? 'bg-card text-foreground shadow-sm border border-border/50 font-bold'

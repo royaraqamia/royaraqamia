@@ -1,14 +1,27 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { m, AnimatePresence } from 'motion/react';
 import { UrlShortener } from '@/frontend/ui/linksnap/url-shortener';
-import { LinkDashboard } from '@/frontend/ui/linksnap/link-dashboard';
-import { AdminPanel } from '@/frontend/ui/linksnap/admin-panel';
 import { RedirectErrorBanner } from '@/frontend/ui/linksnap/redirect-error-banner';
 import { ViewSelector } from '@/frontend/ui/linksnap/view-selector';
 import { useSession } from '@/frontend/state/session-provider';
 import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
+
+// Dashboard + admin are separate views of the same page; code-splitting them
+// keeps their JS (charts, tables, admin tooling) out of the initial payload.
+// Neither ever renders during SSR — the session is unresolved then — so
+// `ssr: false` matches real render behavior exactly.
+const LinkDashboard = dynamic(() => import('./link-dashboard').then((mod) => mod.LinkDashboard), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />,
+});
+
+const AdminPanel = dynamic(() => import('./admin-panel').then((mod) => mod.AdminPanel), {
+  ssr: false,
+  loading: () => <DashboardSkeleton />,
+});
 
 interface RedirectError {
   type: string;
@@ -117,9 +130,7 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                 >
-                  <Suspense fallback={<DashboardSkeleton />}>
-                    <LinkDashboard token={session?.access_token ?? ''} refreshTrigger={0} />
-                  </Suspense>
+                  <LinkDashboard token={session?.access_token ?? ''} refreshTrigger={0} />
                 </m.div>
               )
             ) : effectiveView === 'admin' ? (
