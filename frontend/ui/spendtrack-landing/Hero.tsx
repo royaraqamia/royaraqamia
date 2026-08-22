@@ -27,11 +27,10 @@ export function Hero() {
             className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"
           />
 
-          <GlowOrb className="transform-gpu w-72 h-72 sm:w-96 sm:h-96 bg-primary/35 top-1/4 -right-24 sm:-right-48 animate-pulse-slow" />
-          <GlowOrb
-            className="transform-gpu w-64 h-64 sm:w-80 sm:h-80 bg-accent-indigo/25 bottom-1/4 -left-20 sm:-left-40 animate-pulse-slow"
-            style={{ animationDelay: '2s' }}
-          />
+          {/* Static glows — pulsing 288-384px blurred layers would recomposite
+              the whole texture every frame for an invisible-at-35% wobble. */}
+          <GlowOrb className="w-72 h-72 sm:w-96 sm:h-96 bg-primary/35 top-1/4 -right-24 sm:-right-48" />
+          <GlowOrb className="w-64 h-64 sm:w-80 sm:h-80 bg-accent-indigo/25 bottom-1/4 -left-20 sm:-left-40" />
         </>
       }
       containerClassName="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 container-padding"
