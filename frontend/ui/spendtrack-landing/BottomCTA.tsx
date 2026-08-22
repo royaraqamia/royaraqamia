@@ -20,9 +20,6 @@ export function BottomCTA() {
       containerClassName="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
       contentMotion={{ initialY: 24, viewportMargin: '-60px', duration: 0.7 }}
       contentClassName="flex flex-col items-center"
-      badgeMotionClassName="group inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-8 transition-all duration-300 hover:bg-primary/25 hover:border-primary/35 hover:shadow-sm hover:shadow-primary/20"
-      badgeText="ابدأ التَّتبُّع اليوم"
-      badgeSparkleClassName="text-primary transition-transform duration-300 group-hover:rotate-12"
       headingClassName="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.1] mb-6 max-w-3xl text-balance"
       headingPrefix="هل أنت مستعد للتَّحكُّم "
       headingHighlight="بأموالك؟"

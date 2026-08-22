@@ -48,15 +48,6 @@ export function HowItWorks() {
       }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
-        badge: (
-          <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs transition-transform duration-300 hover:scale-105">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-            </span>
-            <span>سير عمل بسيط</span>
-          </div>
-        ),
         wrapperClassName: 'text-center mb-16 sm:mb-20 lg:mb-24 max-w-3xl mx-auto',
         titleId: 'how-it-works-heading',
         titleClassName:

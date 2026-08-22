@@ -294,12 +294,6 @@ export function FeaturesBento() {
       }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
-        badge: (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/14 border border-indigo-500/20 text-indigo-400 text-xs sm:text-sm font-medium mb-6 shadow-xs">
-            <Sparkle size={14} className="text-indigo-400 animate-pulse" />
-            <span>ميِّزات قويَّة</span>
-          </div>
-        ),
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-20',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight text-white',

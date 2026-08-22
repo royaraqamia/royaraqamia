@@ -25,18 +25,6 @@ export function Hero() {
     >
       {/* Main Content Column */}
       <div className="landing-enter-up lg:col-span-6 xl:col-span-6 text-center lg:text-right flex flex-col items-center lg:items-start">
-        {/* Live Pill Badge */}
-        <div
-          className="landing-enter-up-sm group inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-primary/14 hover:bg-primary/25 border border-primary/20 hover:border-primary/30 text-primary text-xs sm:text-sm font-medium mb-8 transition-all duration-300 cursor-default shadow-xs"
-          style={{ ['--ld' as string]: '0.15s' } as React.CSSProperties}
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-          </span>
-          <span className="tracking-wide">منصَّة التَّدوين</span>
-        </div>
-
         {/* High-Impact Typography Headline */}
         <h1
           className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"

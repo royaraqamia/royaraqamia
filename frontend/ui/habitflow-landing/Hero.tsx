@@ -35,18 +35,6 @@ export function Hero() {
     >
       {/* Main Hero Typography & Action Controls */}
       <div className="landing-enter-up lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
-        {/* Pulsing Status Pill */}
-        <div
-          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-primary/14 border border-primary/25 text-primary text-xs sm:text-sm font-semibold tracking-wide shadow-xs hover:bg-primary/25 transition-all duration-300 cursor-default mb-8"
-          style={{ ['--ld' as string]: '0.15s' } as React.CSSProperties}
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary" />
-          </span>
-          <span>تتبُّع العادات</span>
-        </div>
-
         {/* High-Contrast Gradient Typography */}
         <h1
           className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"

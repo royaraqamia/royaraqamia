@@ -21,10 +21,6 @@ export function BottomCTA() {
       containerClassName="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20 sm:py-28 md:py-36 text-center"
       contentMotion={{ initialY: 30, viewportMargin: '-80px', duration: 0.8 }}
       contentClassName="flex flex-col items-center"
-      badgeScale={0.85}
-      badgeMotionClassName="group relative inline-flex items-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-semibold tracking-wide mb-8 shadow-sm shadow-primary/10 hover:bg-primary/25 hover:border-primary/30 transition-all duration-300 cursor-default"
-      badgeText="ابدأ التَّتبُّع اليوم"
-      badgeSparkleClassName="text-primary animate-pulse transition-transform duration-300 group-hover:rotate-12 group-hover:scale-110"
       headingId="cta-heading"
       headingClassName="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.1] mb-6 text-foreground text-balance max-w-4xl"
       headingPrefix="هل أنت مستعد "

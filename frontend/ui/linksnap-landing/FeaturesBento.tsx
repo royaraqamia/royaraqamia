@@ -134,11 +134,6 @@ export function FeaturesBento() {
       }
       containerClassName="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       heading={{
-        badge: (
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/14 border border-violet-500/20 text-violet-300 text-xs sm:text-sm font-semibold tracking-wide mb-6 shadow-xs">
-            ✨ ميِّزات قويَّة
-          </span>
-        ),
         wrapperClassName: 'text-center mb-16 sm:mb-20',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-slate-100',

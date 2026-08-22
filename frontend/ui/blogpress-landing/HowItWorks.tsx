@@ -1,4 +1,4 @@
-import { FileText, Eye, Globe, Sparkle } from 'lucide-react';
+import { FileText, Eye, Globe } from 'lucide-react';
 import { HowItWorksSection } from '@/frontend/ui/landing-shared/HowItWorksSection';
 import { Reveal } from '@/frontend/ui/landing-shared/Reveal';
 
@@ -40,12 +40,6 @@ export function HowItWorks() {
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         as: 'header',
-        badge: (
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-6 shadow-xs">
-            <Sparkle size={14} fill="currentColor" className="text-primary animate-pulse" />
-            <span>سير عمل بسيط</span>
-          </div>
-        ),
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-24',
         titleId: 'how-it-works-title',
         titleClassName:

@@ -1,7 +1,6 @@
 import { Reveal } from './Reveal';
 
 interface SectionHeadingProps {
-  badge?: React.ReactNode;
   as?: 'div' | 'header';
   wrapperClassName: string;
   titleId?: string;
@@ -18,7 +17,6 @@ interface SectionHeadingProps {
 }
 
 export function SectionHeading({
-  badge,
   as = 'div',
   wrapperClassName,
   titleId,
@@ -42,7 +40,6 @@ export function SectionHeading({
         } as React.CSSProperties
       }
     >
-      {badge}
       <h2 id={titleId} className={titleClassName}>
         {titlePrefix}
         <span className={titleHighlightClassName}>{titleHighlight}</span>

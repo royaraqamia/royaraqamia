@@ -1,4 +1,3 @@
-import { Sparkle } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
 import { Reveal } from './Reveal';
 import { LandingCta } from './LandingCta';
@@ -17,11 +16,6 @@ interface BottomCTAProps {
   contentMotion: { initialY: number; viewportMargin: string; duration: number };
   contentClassName: string;
   contentDecor?: React.ReactNode;
-  badgeScale?: number;
-  badgeMotionClassName: string;
-  badgePillClassName?: string;
-  badgeText: string;
-  badgeSparkleClassName: string;
   headingId?: string;
   headingClassName: string;
   headingPrefix: string;
@@ -47,10 +41,6 @@ export function BottomCTA({
   card,
   contentClassName,
   contentDecor,
-  badgeMotionClassName,
-  badgePillClassName,
-  badgeText,
-  badgeSparkleClassName,
   headingId,
   headingClassName,
   headingPrefix,
@@ -64,29 +54,9 @@ export function BottomCTA({
   arrowClassName,
   secondaryButtonClassName,
 }: BottomCTAProps) {
-  const badge = (
-    <div
-      className={cn('landing-reveal-item', badgeMotionClassName)}
-      style={{ ['--ld' as string]: '0.15s' } as React.CSSProperties}
-    >
-      {badgePillClassName ? (
-        <div className={badgePillClassName}>
-          <Sparkle size={16} fill="currentColor" className={badgeSparkleClassName} />
-          <span>{badgeText}</span>
-        </div>
-      ) : (
-        <>
-          <Sparkle size={16} fill="currentColor" className={badgeSparkleClassName} />
-          <span>{badgeText}</span>
-        </>
-      )}
-    </div>
-  );
-
   const content = (
     <>
       {contentDecor}
-      {badge}
 
       <h2 id={headingId} className={headingClassName}>
         {headingPrefix}

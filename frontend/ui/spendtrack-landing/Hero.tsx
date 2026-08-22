@@ -38,18 +38,6 @@ export function Hero() {
     >
       {/* Main Hero Content */}
       <div className="landing-enter-up lg:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
-        {/* Status Pill Badge */}
-        <div
-          className="landing-enter-up-sm inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-primary/14 border border-primary/20 text-primary text-xs sm:text-sm font-medium mb-6 sm:mb-8 hover:bg-primary/25 transition-colors"
-          style={{ ['--ld' as string]: '0.2s' } as React.CSSProperties}
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
-          </span>
-          <span>تتبُّع المصروفات</span>
-        </div>
-
         {/* Typography Heading */}
         <h1
           className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"

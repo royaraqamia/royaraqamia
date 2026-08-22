@@ -26,11 +26,7 @@ export function BottomCTA() {
       }}
       contentMotion={{ initialY: 24, viewportMargin: '-60px', duration: 0.7 }}
       contentClassName=""
-      badgeMotionClassName="inline-flex items-center"
-      badgePillClassName="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/14 border border-primary/25 text-primary text-xs sm:text-sm font-semibold tracking-wide shadow-xs transition-all duration-300 hover:bg-primary/25 hover:border-primary/40 hover:scale-[1.02] cursor-default"
-      badgeText="ابدأ بناء العادات"
-      badgeSparkleClassName="text-primary animate-pulse"
-      headingClassName="mt-6 text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.15] text-foreground max-w-3xl mx-auto text-balance"
+      headingClassName="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-[1.15] text-foreground max-w-3xl mx-auto text-balance"
       headingPrefix="هل أنت مستعد لبناء "
       headingHighlight="عادات أفضل؟"
       headingHighlightClassName="bg-linear-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent drop-shadow-xs"
