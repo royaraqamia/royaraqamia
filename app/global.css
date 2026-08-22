@@ -1716,7 +1716,9 @@
   }
 
   .animate-slide-up,
-  .animate-fade-in {
+  .animate-fade-in,
+  .css-reveal,
+  .css-reveal .landing-reveal-item {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
@@ -2023,9 +2025,43 @@
   animation-delay: var(--ld, 0s);
 }
 
+/*
+ * Above-the-fold variant: same entrance, zero JS dependency.
+ *
+ * `landing-reveal` keeps content at opacity:0 until React hydrates and adds
+ * `.is-visible`, so the hero's headline cannot paint before hydration —
+ * LCP falls back to whatever static chrome paints first. `.css-reveal`
+ * applies the identical keyframes immediately via `fill-mode: both`: the
+ * hidden state lives in the animation's from-frame (plus its delay), so
+ * content animates in as soon as CSS is parsed — no hydration required.
+ */
+.css-reveal {
+  animation: landing-reveal-in var(--landing-reveal-dur, 0.6s) cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.css-reveal .landing-reveal-item {
+  animation: landing-item-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--ld, 0s);
+}
+
 /* Growing bars / meters inside a revealed group */
 .landing-grow-w {
   width: 0;
+}
+
+/*
+ * Off-screen render skipping for long-form content (blog articles, legal
+ * pages). The browser skips layout *and* paint for everything below the
+ * viewport until it approaches, cutting initial render cost on text-heavy
+ * pages to roughly one screenful. `auto` in contain-intrinsic-size makes the
+ * browser remember each block's real height once rendered, so the scrollbar
+ * converges after the first pass. Anchor jumps (TOC) and find-in-page force
+ * rendering of their target automatically. Ignored by engines without
+ * support — pure progressive enhancement.
+ */
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3000px;
 }
 
 .landing-reveal.is-visible .landing-grow-w {

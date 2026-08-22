@@ -38,6 +38,18 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --font-sans: var(--font-arabic);
+  /* Blur budget: every backdrop-blur/blur utility reads this scale, so capping
+     the tokens bounds GPU fill-rate site-wide. Large radii are the single most
+     expensive paint effect on low-end devices; halving them keeps the frosted
+     look while cutting per-frame rasterization cost roughly 4x (blur cost
+     grows ~quadratically with radius). */
+  --blur-sm: 6px;
+  --blur-md: 8px;
+  --blur-lg: 12px;
+  --blur-xl: 14px;
+  --blur-2xl: 20px;
+  --blur-3xl: 28px;
+
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-delayed: float-delayed 3.5s ease-in-out infinite;
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -45,17 +57,18 @@
 }
 
 /* Shared ambient-glow blur tiers. One rule per tier replaces dozens of
-   one-off blur-[Npx] utilities; ±15px drift on low-opacity blobs is
-   imperceptible while keeping the compiled CSS and paint work bounded. */
+   one-off blur-[Npx] utilities. Radii are kept modest on purpose: a glow
+   halo at 5-15% opacity reads the same to the eye at half the radius, while
+   the Gaussian fill cost drops ~4x per halving. */
 @utility glow-blur-sm {
-  filter: blur(70px);
+  filter: blur(36px);
 }
 @utility glow-blur-md {
-  filter: blur(90px);
+  filter: blur(44px);
 }
 @utility glow-blur-lg {
-  filter: blur(125px);
+  filter: blur(56px);
 }
 @utility glow-blur-xl {
-  filter: blur(155px);
+  filter: blur(70px);
 }
