@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-08-22
+
+### Changed
+- remove rounded badge pills above hero, features, how-it-works and CTA sections
+- static glow orbs, drop wasted blurs, narrow transitions, RSC sections
+- eliminate overlay jank in dialogs, sheets, dropdowns and toasts
+
+### Added
+- render all sections on page entry instead of lazily on scroll
+
+### Fixed
+- raise horizontal scroll arrows above card layers so they stay clickable
+
 ## [1.8.0] - 2026-08-22
 
 ### Changed
