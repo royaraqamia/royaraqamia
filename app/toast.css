@@ -9,8 +9,8 @@
 
 /* ---- Theme palettes (drive sonner's internal vars) ---- */
 html [data-sonner-toaster][data-sonner-theme='dark'] {
-  --normal-bg: hsl(var(--card) / 0.8);
-  --normal-bg-hover: hsl(var(--card) / 0.92);
+  --normal-bg: hsl(var(--card) / 0.92);
+  --normal-bg-hover: hsl(var(--card) / 0.97);
   --normal-border: hsl(var(--border) / 0.6);
   --normal-text: hsl(var(--foreground));
 
@@ -35,8 +35,7 @@ html [data-sonner-toaster][data-sonner-theme='dark'] {
 
 /* Glass card shell */
 html [data-sonner-toaster][data-sonner-theme='dark'] [data-sonner-toast][data-styled='true'] {
-  background: hsl(var(--card) / 0.8);
-  backdrop-filter: blur(16px) saturate(150%);
+  background: hsl(var(--card) / 0.92);
   border: 1px solid hsl(var(--border) / 0.6);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-elevated);
@@ -44,6 +43,9 @@ html [data-sonner-toaster][data-sonner-theme='dark'] [data-sonner-toast][data-st
   font-family: var(--font-sans);
   padding: 14px 16px;
   gap: 10px;
+  transition:
+    transform 250ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 250ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Accent strip per type (start = right in RTL) */

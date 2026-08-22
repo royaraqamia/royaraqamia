@@ -54,7 +54,7 @@ export function PortfolioGalleryDialog({
 
   return (
     <Dialog open={selectedProject !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 backdrop-blur-2xl shadow-2xl shadow-purple-950/50 overflow-y-auto dialog-scrollbar max-md:max-h-[80dvh] max-md:my-auto">
+      <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 shadow-2xl shadow-purple-950/50 overflow-y-auto dialog-scrollbar max-md:max-h-[80dvh] max-md:my-auto">
         {selectedProject !== null &&
           (() => {
             const project = projectData[selectedProject]!;

@@ -95,7 +95,7 @@ export function UserDropdown() {
             ref={panelRef}
             data-glass-panel
             style={style}
-            className="z-50 rounded-2xl bg-popover/60 backdrop-blur-2xl backdrop-saturate-150 border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 transition-all duration-200 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto"
+            className="z-50 rounded-2xl bg-popover/90 backdrop-blur-lg border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto"
             role="menu"
             aria-label="قائمة المستخدِم"
             onKeyDown={(e) => {

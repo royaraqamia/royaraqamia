@@ -31,7 +31,6 @@ function AlertDialogOverlay({
         'fixed inset-0 z-10000 bg-black/70',
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
-        'transition-all duration-300 ease-out',
         className
       )}
       {...props}
@@ -49,7 +48,7 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          'fixed z-10000 grid w-full max-w-lg gap-6 border border-border/80 bg-background/95 p-6 shadow-2xl backdrop-blur-xl outline-none duration-200 sm:rounded-2xl sm:p-7',
+          'fixed z-10000 grid w-full max-w-lg gap-6 border border-border/80 bg-background/95 p-6 shadow-2xl outline-none duration-200 sm:rounded-2xl sm:p-7',
           'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
           'max-h-[85dvh] overflow-y-auto dialog-scrollbar',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
@@ -128,7 +127,7 @@ function AlertDialogAction({
     <AlertDialogPrimitive.Action
       className={cn(
         buttonVariants(),
-        'inline-flex items-center justify-center font-medium transition-all duration-200 hover:opacity-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center font-medium transition-[background-color,opacity,box-shadow,transform] duration-200 hover:opacity-95 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
         className
       )}
       {...props}
@@ -144,7 +143,7 @@ function AlertDialogCancel({
     <AlertDialogPrimitive.Cancel
       className={cn(
         buttonVariants({ variant: 'outline' }),
-        'inline-flex items-center justify-center font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 mt-2 sm:mt-0',
+        'inline-flex items-center justify-center font-medium transition-[background-color,opacity,box-shadow,transform] duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 mt-2 sm:mt-0',
         className
       )}
       {...props}

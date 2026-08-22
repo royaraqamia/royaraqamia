@@ -127,7 +127,7 @@ export function CreateExpenseDialog({
           <span>إضافة مصروف</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white/95 p-6 sm:p-7 shadow-2xl backdrop-blur-2xl transition-transform dark:border-neutral-800/80 dark:bg-neutral-900/95 space-y-6">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
         <DialogHeader className="flex flex-row items-center gap-3.5 space-y-0 text-start pb-4 border-b border-neutral-100 dark:border-neutral-800/60">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 shadow-inner">
             <Plus className="size-5" />
@@ -216,7 +216,7 @@ export function EditExpenseDialog({
           <Pencil className="size-4 transition-transform duration-200 group-hover:scale-110" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white/95 p-6 sm:p-7 shadow-2xl backdrop-blur-2xl transition-transform dark:border-neutral-800/80 dark:bg-neutral-900/95 space-y-6">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
         <DialogHeader className="flex flex-row items-center gap-3.5 space-y-0 text-start pb-4 border-b border-neutral-100 dark:border-neutral-800/60">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 shadow-inner">
             <Pencil className="size-5" />

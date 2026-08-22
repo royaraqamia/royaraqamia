@@ -54,8 +54,8 @@ export function AddHabitModal({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background/85 backdrop-blur-2xl shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] transition-transform duration-400 ease-[cubic-bezier(0.23,1,0.32,1)]">
-        <DialogHeader className="sticky top-0 z-10 px-6 sm:px-8 pt-8 pb-4 text-start rounded-t-[28px] bg-background/85 backdrop-blur-2xl">
+      <DialogContent className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]">
+        <DialogHeader className="sticky top-0 z-10 px-6 sm:px-8 pt-8 pb-4 text-start rounded-t-[28px] bg-background">
           <DialogTitle className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground/90">
             إنشاء عادة روتينيَّة
           </DialogTitle>

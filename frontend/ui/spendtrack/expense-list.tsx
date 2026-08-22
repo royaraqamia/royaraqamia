@@ -211,7 +211,7 @@ function ExpenseRow({
           </Button>
 
           <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-            <DialogContent className="sm:max-w-md rounded-2xl border-border/80 bg-background/95 backdrop-blur-2xl p-6 shadow-2xl">
+            <DialogContent className="sm:max-w-md rounded-2xl border-border/80 bg-background/95 p-6 shadow-2xl">
               <DialogHeader className="space-y-2 text-start">
                 <DialogTitle className="text-lg font-bold text-foreground">حذف المصروف</DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground leading-relaxed">

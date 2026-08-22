@@ -49,11 +49,24 @@
   --blur-xl: 14px;
   --blur-2xl: 20px;
   --blur-3xl: 28px;
+  --blur-4xl: 34px;
 
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-delayed: float-delayed 3.5s ease-in-out infinite;
   --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-fade-in-up: fadeInUp 1s ease-out forwards;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --blur-sm: 3px;
+    --blur-md: 4px;
+    --blur-lg: 6px;
+    --blur-xl: 7px;
+    --blur-2xl: 10px;
+    --blur-3xl: 14px;
+    --blur-4xl: 17px;
+  }
 }
 
 /* Shared ambient-glow blur tiers. One rule per tier replaces dozens of

@@ -114,7 +114,7 @@ export function NotificationDropdown() {
             style={style}
             className={cn(
               'z-50 overflow-hidden',
-              'bg-popover/60 backdrop-blur-2xl backdrop-saturate-150 border border-border/80 shadow-2xl rounded-2xl',
+              'bg-popover/90 backdrop-blur-lg border border-border/80 shadow-2xl rounded-2xl',
               'animate-in fade-in-0 zoom-in-95 duration-200 ease-out'
             )}
             onKeyDown={handleKeyDown}

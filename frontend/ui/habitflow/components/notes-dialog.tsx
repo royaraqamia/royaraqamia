@@ -45,7 +45,7 @@ export function NotesDialog({
     >
       <DialogContent
         dir="rtl"
-        className="sm:max-w-xl w-[calc(100%-1.5rem)] mx-auto p-0 rounded-4xl border border-border/40 bg-background/85 backdrop-blur-3xl shadow-[0_24px_60px_-12px_rgba(0,0,0,0.15)] transform-gpu transition-all duration-300 ease-out"
+        className="sm:max-w-xl w-[calc(100%-1.5rem)] mx-auto p-0 rounded-4xl border border-border/40 bg-background shadow-[0_24px_60px_-12px_rgba(0,0,0,0.15)]"
       >
         {/* Header Section */}
         <div className="relative rounded-t-4xl border-b border-border/30 bg-linear-to-b from-muted/40 to-transparent px-6 sm:px-8 pt-8 pb-6">

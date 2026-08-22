@@ -33,10 +33,10 @@ function DropdownMenuContent({
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}
         className={cn(
-          'bg-popover/95 text-popover-foreground backdrop-blur-sm',
+          'bg-popover/95 text-popover-foreground',
           'border border-border/60 shadow-2xl shadow-neutral-950/10 dark:shadow-neutral-950/50 ring-1 ring-black/5 dark:ring-white/10',
           'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
-          'z-10001 max-h-(--radix-dropdown-menu-content-available-height) min-w-48 max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-2xl p-1.5 transition-transform duration-200',
+          'z-10001 max-h-(--radix-dropdown-menu-content-available-height) min-w-48 max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-2xl p-1.5',
           className
         )}
         {...props}
@@ -225,10 +225,10 @@ function DropdownMenuSubContent({
     <DropdownMenuPrimitive.SubContent
       data-slot="dropdown-menu-sub-content"
       className={cn(
-        'bg-popover/95 text-popover-foreground backdrop-blur-xl',
+        'bg-popover/95 text-popover-foreground',
         'border border-border/60 shadow-2xl shadow-neutral-950/10 dark:shadow-neutral-950/50 ring-1 ring-black/5 dark:ring-white/10',
         'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
-        'z-10001 min-w-48 max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-2xl p-1.5 transition-all duration-200',
+        'z-10001 min-w-48 max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) overflow-hidden rounded-2xl p-1.5',
         className
       )}
       {...props}

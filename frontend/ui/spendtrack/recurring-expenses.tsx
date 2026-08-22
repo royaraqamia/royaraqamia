@@ -233,7 +233,7 @@ function RecurringDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg w-[calc(100%-2rem)] max-w-full p-6 bg-card/95 backdrop-blur-2xl border border-border/80 rounded-3xl shadow-2xl transition-transform">
+      <DialogContent className="sm:max-w-lg w-[calc(100%-2rem)] max-w-full p-6 bg-card/95 border border-border/80 rounded-3xl shadow-2xl">
         <DialogHeader className="text-start space-y-1">
           <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
             {item ? 'تعديل مصروف مُتكرِّر' : 'إضافة مصروف مُتكرِّر'}
