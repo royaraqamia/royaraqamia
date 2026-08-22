@@ -23,14 +23,10 @@ export function Hero() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] pointer-events-none" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
-          <GlowOrb
-            className="opacity-60 select-none w-md h-112 sm:w-xl sm:h-144 bg-primary/35 top-1/4 -left-36 sm:-left-48 animate-pulse"
-            style={{ animationDuration: '8s' }}
-          />
-          <GlowOrb
-            className="opacity-60 select-none w-[24rem] h-96 sm:w-lg sm:h-128 bg-indigo-500/25 bottom-1/4 -right-36 sm:-right-40 animate-pulse"
-            style={{ animationDuration: '10s', animationDelay: '2s' }}
-          />
+          {/* Static glows — pulsing 400-576px blurred layers recomposites the
+              whole texture every frame for an effect invisible at 60% opacity. */}
+          <GlowOrb className="opacity-60 select-none w-md h-112 sm:w-xl sm:h-144 bg-primary/35 top-1/4 -left-36 sm:-left-48" />
+          <GlowOrb className="opacity-60 select-none w-[24rem] h-96 sm:w-lg sm:h-128 bg-indigo-500/25 bottom-1/4 -right-36 sm:-right-40" />
           <GlowOrb className="opacity-60 select-none w-80 h-80 bg-purple-500/14 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
         </>
       }

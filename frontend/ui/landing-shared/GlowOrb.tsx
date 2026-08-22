@@ -7,7 +7,9 @@ export function GlowOrb({
   return (
     <div
       className={cn(
-        'absolute rounded-full blur-3xl pointer-events-none transform-gpu will-change-transform max-md:blur-2xl',
+        // No will-change/transform-gpu here: layer promotion costs memory per
+        // orb and only pays off while animating. Orbs are static decoration.
+        'absolute rounded-full blur-3xl pointer-events-none max-md:blur-2xl',
         className
       )}
       {...props}
