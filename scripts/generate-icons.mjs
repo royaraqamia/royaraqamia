@@ -33,7 +33,10 @@ const BADGE_SIZE = 96;
 // Badge glyph occupies this fraction of the canvas so Android can downscale it
 // into a clean status-bar silhouette without the glyph reading as a solid block.
 const BADGE_SCALE = 0.62;
-const FAVICON_SIZES = [16, 32, 48, 256];
+// Tab favicons only ever need small raster sizes; larger surfaces resolve to
+// the PNG icons declared in root metadata (`icons.icon-*.png`), so keeping a
+// 256px frame inside the .ico would ship ~30KB of dead weight per visit.
+const FAVICON_SIZES = [16, 32, 48];
 
 if (!fs.existsSync(MASTER)) {
   console.error(
