@@ -16,9 +16,10 @@ const mockService = {
 
 vi.mock('next/server', () => ({
   NextResponse: {
-    json: vi.fn((data: unknown, init?: { status?: number }) => ({
+    json: vi.fn((data: unknown, init?: { status?: number; headers?: Record<string, string> }) => ({
       data,
       status: init?.status ?? 200,
+      headers: init?.headers ?? {},
     })),
   },
 }));
@@ -241,9 +242,11 @@ describe('GET /api/version', () => {
     expectVersionShape(body);
   });
 
-  it('sets a no-store cache control header', async () => {
+  it('sets an edge-cacheable cache control header', async () => {
     vi.stubEnv('VERCEL_DEPLOYMENT_ID', 'dpl_123');
     const res = await versionGET({} as NextRequest);
     expect(res.status).toBe(200);
+    const cacheControl = (res.headers as unknown as Record<string, string>)['Cache-Control'];
+    expect(cacheControl).toContain('s-maxage=60');
   });
 });
