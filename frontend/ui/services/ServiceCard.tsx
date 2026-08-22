@@ -83,7 +83,7 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
       viewport={{ once: true, margin: '-50px' }}
       variants={cardVariant}
       onMouseMove={handleMouseMove}
-      className="group/service relative rounded-4xl p-6 sm:p-8 lg:p-9 h-full flex flex-col overflow-hidden bg-neutral-900/70 border border-white/10 transition-all duration-500 ease-out hover:border-white/20 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60 z-10"
+      className="group/service relative rounded-4xl p-6 sm:p-8 lg:p-9 h-full flex flex-col overflow-hidden bg-neutral-900/70 border border-white/10 transition-[transform,border-color,box-shadow] duration-500 ease-out hover:border-white/20 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60 z-10"
       style={{
         boxShadow: `0 0 0 0 ${service.shadowColor}`, // Fallback
       }}
@@ -116,7 +116,7 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
 
       <div className="relative z-10 flex flex-col h-full">
         {/* Minimalist Glass Icon Container */}
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-6 sm:mb-8 bg-white/4 border border-white/10 transition-all duration-500 ease-out group-hover/service:scale-105 group-hover/service:border-white/25 relative overflow-hidden shrink-0 shadow-inner">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-6 sm:mb-8 bg-white/4 border border-white/10 transition-[transform,border-color] duration-500 ease-out group-hover/service:scale-105 group-hover/service:border-white/25 relative overflow-hidden shrink-0 shadow-inner">
           <div
             className="absolute inset-0 opacity-0 group-hover/service:opacity-30 transition-opacity duration-500"
             style={{ background: colors.gradient }}
@@ -144,7 +144,7 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
                 key={idx}
                 className="flex items-start gap-3.5 group/item p-1.5 -mx-1.5 rounded-full hover:bg-white/3 transition-colors duration-200"
               >
-                <div className="mt-0.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shrink-0 bg-white/5 border border-white/10 transition-all duration-300 group-hover/item:border-white/30 group-hover/item:scale-110 relative overflow-hidden">
+                <div className="mt-0.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shrink-0 bg-white/5 border border-white/10 transition-[border-color,transform] duration-300 group-hover/item:border-white/30 group-hover/item:scale-110 relative overflow-hidden">
                   <Check
                     className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neutral-400 transition-colors duration-300 group-hover/item:text-white"
                     aria-hidden="true"
@@ -175,7 +175,7 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
             <div className="mt-auto pt-6 border-t border-white/10 relative">
               <a
                 href={service.href}
-                className="group/cta relative w-full flex items-center justify-center gap-2.5 px-6 py-3.5 sm:py-4 rounded-full font-semibold text-sm sm:text-base text-white overflow-hidden transition-all duration-300 border border-white/15 bg-neutral-800/60 hover:bg-neutral-800/90 hover:border-white/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-[0.98] shadow-md shadow-black/30"
+                className="group/cta relative w-full flex items-center justify-center gap-2.5 px-6 py-3.5 sm:py-4 rounded-full font-semibold text-sm sm:text-base text-white overflow-hidden transition-[background-color,border-color,transform] duration-300 border border-white/15 bg-neutral-800/60 hover:bg-neutral-800/90 hover:border-white/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-[0.98] shadow-md shadow-black/30"
                 aria-label={`${service.pricing.cta} - ${service.title}`}
               >
                 {/* Background gradient injection */}

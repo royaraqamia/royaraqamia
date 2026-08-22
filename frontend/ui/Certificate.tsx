@@ -4,7 +4,6 @@ import { useRef, useState, MouseEvent, TouchEvent } from 'react';
 import {
   m,
   useInView,
-  useScroll,
   useTransform,
   useMotionValue,
   useSpring,
@@ -104,13 +103,7 @@ export function Certificate() {
     mouseY.set(0.5);
   };
 
-  // Background Parallax Scroll
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ['start end', 'end start'],
-  });
-  const backgroundY = useTransform(scrollYProgress, [0, 1], [0, 120]);
-
+  // --- Desktop Handlers ---
   return (
     <section
       ref={sectionRef}
@@ -127,17 +120,10 @@ export function Certificate() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-72 bg-linear-to-b from-purple-500/15 via-violet-500/5 to-transparent blur-3xl pointer-events-none" />
 
         {/* Parallax Purple Dynamic Light Sphere */}
-        <m.div
-          style={{ y: backgroundY }}
-          className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 bg-purple-600/25 rounded-full glow-blur-xl pointer-events-none"
-        />
+        <div className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 bg-purple-600/25 rounded-full glow-blur-xl pointer-events-none" />
 
-        {/* Indigo Ambient Pulsing Glow */}
-        <m.div
-          animate={{ scale: [1, 1.15, 1], opacity: [0.08, 0.18, 0.08] }}
-          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 bg-indigo-600/25 rounded-full glow-blur-xl pointer-events-none"
-        />
+        {/* Indigo Ambient Glow (static — animated blur of this size re-rasterizes every frame) */}
+        <div className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 bg-indigo-600/15 rounded-full glow-blur-xl pointer-events-none" />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

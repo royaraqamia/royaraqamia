@@ -100,7 +100,7 @@ export function Footer() {
 
   return (
     <footer
-      className="relative w-full border-t border-border/50 bg-card/60 backdrop-blur-2xl transition-colors duration-300 overflow-hidden"
+      className="relative w-full border-t border-border/50 bg-card/60 transition-colors duration-300 overflow-hidden"
       dir="rtl"
     >
       {/* Ambient Radial Backdrop Glow & Accent Divider */}

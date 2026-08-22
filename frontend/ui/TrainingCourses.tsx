@@ -95,7 +95,7 @@ export function TrainingCourses() {
         {/* Master Course Container Card */}
         <ScrollAnimation animation="slide-up" duration={0.8} delay={0.2}>
           <div className="relative rounded-3xl sm:rounded-[2.5rem] p-px bg-linear-to-b from-purple-500/30 via-border/40 to-purple-500/10 shadow-2xl shadow-purple-950/10 dark:shadow-purple-950/30">
-            <div className="rounded-[calc(1.5rem-1px)] sm:rounded-[calc(2.5rem-1px)] bg-card text-card-foreground overflow-hidden backdrop-blur-xl">
+            <div className="rounded-[calc(1.5rem-1px)] sm:rounded-[calc(2.5rem-1px)] bg-card text-card-foreground overflow-hidden">
               {/* Card Banner Header */}
               <div className="relative p-6 sm:p-8 lg:p-10 text-white overflow-hidden bg-linear-to-br from-slate-950 via-purple-950/90 to-slate-900 border-b border-white/10">
                 {/* Decorative Visual Background Elements */}

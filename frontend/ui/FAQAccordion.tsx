@@ -25,10 +25,10 @@ export function FAQAccordion({ faqs }: FAQAccordionProps) {
           <ScrollAnimation key={index} animation="slide-up" delay={index * 0.05} duration={0.5}>
             <div
               className={`
-                group relative rounded-2xl transition-all duration-300 ease-out overflow-hidden border
+                group relative rounded-2xl transition-[background-color,border-color,box-shadow] duration-300 ease-out overflow-hidden border
                 ${
                   isOpen
-                    ? 'bg-card/90 border-violet-500/40 shadow-[0_12px_32px_-12px_rgba(124,58,237,0.22)] backdrop-blur-xl'
+                    ? 'bg-card/90 border-violet-500/40 shadow-[0_12px_32px_-12px_rgba(124,58,237,0.22)]'
                     : 'bg-card/40 hover:bg-card/70 border-border/60 hover:border-border backdrop-blur-md'
                 }
               `}
@@ -42,7 +42,7 @@ export function FAQAccordion({ faqs }: FAQAccordionProps) {
                 type="button"
                 id={`faq-question-${index}`}
                 onClick={() => setOpenIndex(isOpen ? null : index)}
-                className="relative w-full px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-4 text-right cursor-pointer outline-none transition-all focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl active:scale-[0.995]"
+                className="relative w-full px-5 py-4 sm:px-6 sm:py-5 flex items-center justify-between gap-4 text-right cursor-pointer outline-none transition-[transform,box-shadow] focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl active:scale-[0.995]"
                 aria-expanded={isOpen}
                 aria-controls={`faq-answer-${index}`}
               >
@@ -68,7 +68,7 @@ export function FAQAccordion({ faqs }: FAQAccordionProps) {
 
                 <div
                   className={`
-                    shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-all duration-300
+                    shrink-0 w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center transition-[background-color,color,border-color,box-shadow,transform] duration-300
                     ${
                       isOpen
                         ? 'bg-violet-600 text-white rotate-180 shadow-md shadow-violet-600/30 ring-2 ring-violet-500/20'
@@ -90,7 +90,7 @@ export function FAQAccordion({ faqs }: FAQAccordionProps) {
               >
                 <div className="overflow-hidden">
                   <div
-                    className={`px-5 sm:px-6 pb-5 sm:pb-6 pt-1 transition-all duration-300 ${
+                    className={`px-5 sm:px-6 pb-5 sm:pb-6 pt-1 transition-[opacity,transform] duration-300 ${
                       isOpen ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'
                     }`}
                   >

@@ -262,7 +262,7 @@ export function TestimonialsCarousel({
         <SheetContent
           id="testimonials-review-sheet"
           side="bottom"
-          className="gap-0 p-0 max-h-[90vh] left-3 right-3 bottom-3 sm:left-6 sm:right-6 sm:bottom-6 rounded-3xl border border-white/15 bg-slate-950/90 backdrop-blur-3xl transition-transform text-slate-100 shadow-[0_25px_70px_rgba(0,0,0,0.85)] md:left-1/2 md:right-auto md:-translate-x-1/2 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:w-full md:max-w-xl md:rounded-3xl overflow-hidden focus:outline-none"
+          className="gap-0 p-0 max-h-[90vh] left-3 right-3 bottom-3 sm:left-6 sm:right-6 sm:bottom-6 rounded-3xl border border-white/15 bg-slate-950/95 text-slate-100 shadow-[0_25px_70px_rgba(0,0,0,0.85)] md:left-1/2 md:right-auto md:-translate-x-1/2 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:w-full md:max-w-xl md:rounded-3xl overflow-hidden focus:outline-none"
         >
           {/* Subtle Modal Ambient Accent */}
           <div className="absolute top-0 right-0 left-0 h-1.5 bg-linear-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
