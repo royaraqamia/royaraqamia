@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-08-22
+
+### Changed
+- remove blog page subtitle and search suspension
+- optimize hero glow orbs and regenerate favicon (smaller .ico, subset fonts)
+- add cv-auto for long-form content and cleanup PWA manifest duplication
+- remove animate-pulse from static GlowOrb in landing heroes
+- code-split dashboard+admin panels and bulk url shortener in linksnap
+- convert motion to m in habitflow dashboard and stats-card
+- convert Motion components to m/runtime primitives across UI library
+- replace backdrop-blur with static fills in UI primitives and navbar
+- add blur budget tokens and CSS reveal for LCP optimization
+- add minimumCacheTTL for optimized image CDN caching
+- subset Arabic fonts and optimize favicon sizes
+
+### Added
+- add edge-cacheable Cache-Control header for version endpoint
+
 ## [1.7.9] - 2026-08-21
 
 ### Changed
