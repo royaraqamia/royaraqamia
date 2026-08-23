@@ -6,7 +6,6 @@ import {
   applicationServerKeyMatches,
   isPushDisabledByUser,
   isPushSupported,
-  registerPushSubscriptionChangeHandler,
   subscribeToPush,
   unsubscribeFromPush,
 } from '@/frontend/api/push';
@@ -29,6 +28,13 @@ export function PushNotificationToggle() {
       setState({ kind: 'denied' });
       return;
     }
+    // The stored preference wins over a browser-side subscription: the service
+    // worker may have re-subscribed after an endpoint rotation before it saw
+    // the opt-out marker, and the UI must never advertise push as enabled.
+    if (isPushDisabledByUser()) {
+      setState({ kind: 'disabled' });
+      return;
+    }
     const registration = await navigator.serviceWorker.ready;
     const subscription = await registration.pushManager.getSubscription();
     setState(subscription ? { kind: 'enabled' } : { kind: 'disabled' });
@@ -40,7 +46,8 @@ export function PushNotificationToggle() {
 
   // Auto-heal: permission already granted but no subscription yet, or the
   // existing subscription was bound to a rotated application server key
-  // (VAPID regeneration). Re-subscribe automatically in both cases.
+  // (VAPID regeneration). Re-subscribe automatically in both cases. Endpoint
+  // rotation while no page is open is handled inside the service worker.
   useEffect(() => {
     if (!isPushSupported()) return;
     if (Notification.permission !== 'granted') return;
@@ -55,15 +62,6 @@ export function PushNotificationToggle() {
       const result = await subscribeToPush();
       setState(result === 'subscribed' ? { kind: 'enabled' } : { kind: 'disabled' });
     })();
-  }, []);
-
-  // Re-subscribe when the push service rotates the endpoint.
-  useEffect(() => {
-    let cleanup: () => void = () => undefined;
-    void registerPushSubscriptionChangeHandler().then((fn) => {
-      cleanup = fn;
-    });
-    return () => cleanup();
   }, []);
 
   const handleToggle = async () => {

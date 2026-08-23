@@ -2,6 +2,24 @@ import { request } from '@/frontend/transport/http';
 import { VAPID_PUBLIC_KEY } from '@/frontend/shared/constants';
 
 const PUSH_DISABLED_KEY = 'royaraqamia.push.disabled';
+const PUSH_PREF_CACHE = 'royaraqamia-push-prefs';
+const PUSH_DISABLED_CACHE_URL = '/__push_disabled__';
+
+/**
+ * Mirrors the opt-out flag into Cache Storage, which — unlike localStorage —
+ * is readable from the service worker while no page is open. The SW refuses
+ * to auto-resubscribe on endpoint rotation when this marker exists.
+ */
+async function syncDisabledCache(disabled: boolean): Promise<void> {
+  try {
+    if (typeof caches === 'undefined') return;
+    const cache = await caches.open(PUSH_PREF_CACHE);
+    if (disabled) await cache.put(PUSH_DISABLED_CACHE_URL, new Response('1'));
+    else await cache.delete(PUSH_DISABLED_CACHE_URL);
+  } catch {
+    return;
+  }
+}
 
 export function isPushDisabledByUser(): boolean {
   if (typeof window === 'undefined' || !('localStorage' in window)) return false;
@@ -20,6 +38,7 @@ export function setPushDisabledByUser(disabled: boolean): void {
   } catch {
     return;
   }
+  void syncDisabledCache(disabled);
 }
 
 export function urlBase64ToUint8Array(base64String: string): Uint8Array<ArrayBuffer> {
@@ -126,39 +145,4 @@ export async function unsubscribeFromPush(): Promise<void> {
   } finally {
     await subscription.unsubscribe();
   }
-}
-
-/**
- * Re-subscribes after the push service rotates an endpoint
- * (`pushsubscriptionchange`). Attached to the service worker registration once
- * it is ready; returns a cleanup function.
- */
-type ExtendableLikeEvent = Event & { waitUntil: (promise: Promise<unknown>) => void };
-
-export async function registerPushSubscriptionChangeHandler(): Promise<() => void> {
-  if (!isPushSupported()) return () => undefined;
-  const registration = await navigator.serviceWorker.ready;
-
-  const handler = (event: Event) => {
-    (event as ExtendableLikeEvent).waitUntil(
-      (async () => {
-        if (Notification.permission !== 'granted') return;
-        try {
-          const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
-          });
-          await request('/api/push/subscribe', {
-            method: 'POST',
-            body: JSON.stringify(subscription.toJSON()),
-          });
-        } catch {
-          // Server keeps pruning dead endpoints; nothing to do here.
-        }
-      })()
-    );
-  };
-
-  registration.addEventListener('pushsubscriptionchange', handler);
-  return () => registration.removeEventListener('pushsubscriptionchange', handler);
 }

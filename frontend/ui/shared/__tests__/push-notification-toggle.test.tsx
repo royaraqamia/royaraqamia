@@ -9,7 +9,6 @@ const { mocks } = vi.hoisted(() => ({
     applicationServerKeyMatches: vi.fn(),
     subscribeToPush: vi.fn(),
     unsubscribeFromPush: vi.fn(),
-    registerPushSubscriptionChangeHandler: vi.fn(),
   },
 }));
 
@@ -44,7 +43,6 @@ beforeEach(() => {
   mocks.isPushSupported.mockReturnValue(true);
   mocks.isPushDisabledByUser.mockReturnValue(false);
   mocks.applicationServerKeyMatches.mockReturnValue(true);
-  mocks.registerPushSubscriptionChangeHandler.mockResolvedValue(() => {});
   mocks.subscribeToPush.mockResolvedValue('subscribed');
   mocks.unsubscribeFromPush.mockResolvedValue(undefined);
   installGlobals();
@@ -60,6 +58,16 @@ describe('PushNotificationToggle auto-heal', () => {
     const button = await screen.findByRole('button');
     expect(button).toHaveTextContent('تفعيل إشعارات الجهاز');
     expect(button).toHaveAttribute('aria-pressed', 'false');
+  });
+
+  it('shows push as disabled even when a browser-side subscription exists but the preference is off', async () => {
+    mocks.isPushDisabledByUser.mockReturnValue(true);
+    installGlobals({ existing: true });
+    render(<PushNotificationToggle />);
+    const button = await screen.findByRole('button');
+    expect(button).toHaveTextContent('تفعيل إشعارات الجهاز');
+    expect(button).toHaveAttribute('aria-pressed', 'false');
+    expect(mocks.subscribeToPush).not.toHaveBeenCalled();
   });
 
   it('auto-heals a dropped subscription when the user has not disabled push', async () => {
