@@ -8,6 +8,14 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - 'dependencies'
+    groups:
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
 
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -17,3 +25,10 @@ updates:
     open-pull-requests-limit: 5
     labels:
       - 'ci'
+    groups:
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+    commit-message:
+      prefix: 'ci'
