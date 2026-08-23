@@ -141,6 +141,10 @@ const nextConfig = {
 const sentryWebpackPluginOptions = {
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
+  // Name releases after the git tag (vX.Y.Z) so Vercel-uploaded sourcemaps,
+  // CI commit association and Sentry issues all reference the same release.
+  // npm_package_version is injected by npm for the `build` lifecycle script.
+  release: process.env.SENTRY_RELEASE ?? `v${process.env.npm_package_version}`,
   silent: true,
   dryRun: !process.env.SENTRY_AUTH_TOKEN,
   widenClientFileUpload: true,
