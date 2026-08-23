@@ -3,6 +3,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const isCI = Boolean(process.env.CI);
+
 const VIEWPORTS = {
   mobileSmall: { width: 320, height: 568 },
   mobileMedium: { width: 375, height: 812 },
@@ -65,9 +67,9 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run dev',
+    command: isCI ? 'npm run build && npm run start' : 'npm run dev',
     port: 3000,
     reuseExistingServer: false,
-    timeout: 180_000,
+    timeout: isCI ? 600_000 : 180_000,
   },
 });
