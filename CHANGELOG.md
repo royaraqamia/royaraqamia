@@ -7,6 +7,39 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-08-23
+
+### Changed
+- bump motion from 12.42.2 to 13.1.1
+- bump jsdom from 29.1.1 to 30.0.1
+- bump the minor-and-patch group with 43 updates
+- bump actions/upload-artifact from 4.6.2 to 7.0.1
+- bump actions/cache from 4.3.0 to 6.1.0
+- remove unused specs
+- enable optional native push round-trip via PUSH_E2E secret
+- remove inaccurate dependabot comment
+- group dependabot minor and patch updates
+- enforce conventional PR titles and lint workflow files
+- add concurrency and sane timeout to CodeQL analysis
+- harden security scan with concurrency, timeouts and weekly full audit
+- abort release when tested commit is no longer HEAD
+- add Playwright E2E workflow against production build
+- split code quality pipeline into parallel jobs with concurrency control
+- cache Next.js build artifacts in shared setup action
+- add PUSH_E2E-gated native push round-trip spec
+- also revoke sweep execute from authenticated
+- weekly sweep of stale push subscriptions
+- remove completed features plan and scratch file list
+
+### Added
+- keep push delivery diagnostics in the service worker
+- prune superseded device rows and track endpoint liveness
+
+### Fixed
+- refresh subscription liveness on site visits
+- persist push opt-out where the service worker can read it
+- re-subscribe inside the service worker on endpoint rotation
+
 ## [1.9.0] - 2026-08-22
 
 ### Changed
