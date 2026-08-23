@@ -11,8 +11,8 @@
   "scripts": {
     "postinstall": "node -e \"const fs=require('fs'),p=require('path');const d=p.join('node_modules','typescript','lib');if(!fs.existsSync(d)){fs.mkdirSync(d,{recursive:true})}const f=p.join(d,'typescript.js');if(!fs.existsSync(f)){fs.writeFileSync(f,\\\"module.exports = require('typescript/unstable/sync');\\\\n\\\")}\"",
     "dev": "node scripts/dev.mjs",
-    "predev": "node scripts/compute-version.mjs",
-    "prebuild": "node scripts/generate-icons.mjs && node scripts/compute-version.mjs",
+    "predev": "node scripts/generate-sw-config.mjs && node scripts/compute-version.mjs",
+    "prebuild": "node scripts/generate-sw-config.mjs && node scripts/generate-icons.mjs && node scripts/compute-version.mjs",
     "build": "tsc --noEmit && next build",
     "start": "next start",
     "lint": "eslint .",

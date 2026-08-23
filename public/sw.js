@@ -1,4 +1,5 @@
 try { importScripts('/sw-version.js'); } catch { self.CACHE_VERSION = 'royaraqamia-dev'; }
+try { importScripts('/sw-push-config.js'); } catch { self.PUSH_CONFIG = null; }
 const CACHE = self.CACHE_VERSION;
 const STATIC_CACHE = 'royaraqamia-static-' + (self.CACHE_VERSION ? self.CACHE_VERSION.split('-').pop() : 'v1');
 const FALLBACK_URL = '/offline';
@@ -22,13 +23,15 @@ self.addEventListener('install', (event) => {
   );
 });
 
+const PUSH_PREF_CACHE = 'royaraqamia-push-prefs';
+
 self.addEventListener('activate', (event) => {
   event.waitUntil(
     (async () => {
       const keys = await caches.keys();
       await Promise.all(
         keys.map((key) => {
-          if (key !== CACHE && key !== STATIC_CACHE) {
+          if (key !== CACHE && key !== STATIC_CACHE && key !== PUSH_PREF_CACHE) {
             return caches.delete(key);
           }
         })
@@ -198,6 +201,74 @@ self.addEventListener('message', (event) => {
       await cache.addAll(urls);
     }
   })());
+});
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; i++) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+function arrayBuffersEqual(a, b) {
+  if (!a || !b || a.byteLength !== b.byteLength) return false;
+  const left = new Uint8Array(a);
+  const right = new Uint8Array(b);
+  for (let i = 0; i < left.length; i++) {
+    if (left[i] !== right[i]) return false;
+  }
+  return true;
+}
+
+async function isPushDisabledByPreference() {
+  try {
+    const cached = await caches.match('/__push_disabled__');
+    return Boolean(cached);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Re-subscribes when the push service rotates the subscription endpoint.
+ * This MUST live inside the service worker: `pushsubscriptionchange` is
+ * delivered to the SW context, typically while no page is open, so listeners
+ * registered from a page never run — without this the server keeps pushing to
+ * a dead endpoint and no native notification can ever show.
+ */
+async function resubscribePush() {
+  const publicKey = self.PUSH_CONFIG && self.PUSH_CONFIG.publicKey;
+  if (!publicKey) return;
+  if (typeof Notification === 'undefined' || Notification.permission !== 'granted') return;
+  if (await isPushDisabledByPreference()) return;
+
+  const expectedKey = urlBase64ToUint8Array(publicKey);
+  const existing = await self.registration.pushManager.getSubscription();
+  if (existing) {
+    const getKey = existing.getKey;
+    const currentKey = getKey ? getKey.call(existing, 'applicationServerKey') : null;
+    if (currentKey && arrayBuffersEqual(currentKey, expectedKey)) return;
+    await existing.unsubscribe();
+  }
+
+  const fresh = await self.registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: expectedKey,
+  });
+  await fetch('/api/push/subscribe', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(fresh.toJSON()),
+  });
+}
+
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(resubscribePush().catch(() => undefined));
 });
 
 self.addEventListener('push', (event) => {
