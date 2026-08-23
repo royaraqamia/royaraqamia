@@ -1,0 +1,97 @@
+name: 'Bundle Size'
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bundle-size-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  report:
+    name: Bundle Size
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # main pushes persist sizes here; PRs restore the latest main snapshot
+      # to diff against (default-branch caches are readable from PRs).
+      - name: Restore baseline bundle sizes
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: bundle-size.json
+          key: bundle-size-main-${{ github.sha }}
+          restore-keys: bundle-size-main-
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+          NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Measure bundle and publish summary
+        shell: bash
+        run: |
+          total_js_gzip=0
+          chunk_count=0
+          while IFS= read -r -d '' f; do
+            bytes=$(gzip -c -- "$f" | wc -c)
+            total_js_gzip=$((total_js_gzip + bytes))
+            chunk_count=$((chunk_count + 1))
+          done < <(find .next/static -type f -name '*.js' -print0)
+          build_bytes=$(du -sb .next | cut -f1)
+
+          node -e "
+            const fs = require('fs');
+            const mib = (b) => (b / 1048576).toFixed(2) + ' MiB';
+            const current = {
+              totalJsGzip: $total_js_gzip,
+              chunks: $chunk_count,
+              buildBytes: $build_bytes,
+            };
+            const rows = [];
+            let baseline = null;
+            if (fs.existsSync('bundle-size.json')) {
+              baseline = JSON.parse(fs.readFileSync('bundle-size.json', 'utf8'));
+            }
+            const cell = (label, now, prev, fmt) => {
+              if (prev == null) return '| ' + label + ' | ' + fmt(now) + ' | — | — |';
+              const delta = now - prev;
+              const pct = prev === 0 ? 0 : (delta / prev) * 100;
+              const arrow = delta === 0 ? '·' : delta > 0 ? '🔴 +' : '🟢 ';
+              const deltaTxt = delta === 0 ? '0' : arrow + Math.abs(pct).toFixed(2) + '% (' + (delta > 0 ? '+' : '-') + fmt(Math.abs(delta)).trim() + ')';
+              return '| ' + label + ' | ' + fmt(now) + ' | ' + fmt(prev) + ' | ' + deltaTxt + ' |';
+            };
+            rows.push(cell('Static JS (gzip)', current.totalJsGzip, baseline && baseline.totalJsGzip, mib));
+            rows.push(cell('JS chunks', current.chunks, baseline && baseline.chunks, (n) => String(n)));
+            rows.push(cell('.next total', current.buildBytes, baseline && baseline.buildBytes, mib));
+            ['| Metric | this commit | main | Δ |', '| --- | --- | --- | --- |', ...rows]
+              .forEach((line) => fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, line + '\n'));
+            if (process.env.GITHUB_EVENT_NAME === 'push') {
+              fs.writeFileSync('bundle-size.json', JSON.stringify(current));
+            }
+          "
+
+      - name: Upload bundle report artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: bundle-size
+          path: bundle-size.json
+          retention-days: 30
