@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.1] - 2026-08-23
+
+### Changed
+- add opencode agentic scan pipeline with supabase mcp access
+- ignore generated coverage output in eslint
+- associate Sentry releases with git tags and commits
+- report client bundle sizes with main-branch baseline diff
+- publish vitest coverage summary on CI runs
+- allow manual E2E workflow dispatch
+
+### Fixed
+- apply intended release name via valid sentry version input
+- make the notifications list scroll instead of clipping
+
 ## [1.10.0] - 2026-08-23
 
 ### Changed
