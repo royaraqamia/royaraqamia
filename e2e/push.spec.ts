@@ -21,7 +21,9 @@ const PASSWORD = process.env.E2E_TEST_PASSWORD!;
 
 test.skip(!ENABLED, 'requires PUSH_E2E=1 (headed browser, push-service network access)');
 
-test.use({ headless: false });
+// Headed only where the OS denies web-notification permission to headless
+// browsers (Windows/macOS). Linux CI runs headless and grants just fine.
+test.use({ headless: process.platform !== 'linux' });
 
 test('native web push round-trip', async ({ browser, baseURL }) => {
   test.setTimeout(180_000);

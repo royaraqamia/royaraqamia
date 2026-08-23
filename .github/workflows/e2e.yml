@@ -63,6 +63,14 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          # Optional live native-push round-trip (e2e/push.spec.ts). Skipped
+          # unless PUSH_E2E is exactly '1'; enabling requires these repo
+          # secrets: PUSH_E2E, VAPID_SUBJECT, NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+          # VAPID_PRIVATE_KEY.
+          PUSH_E2E: ${{ secrets.PUSH_E2E }}
+          VAPID_SUBJECT: ${{ secrets.VAPID_SUBJECT }}
+          NEXT_PUBLIC_VAPID_PUBLIC_KEY: ${{ secrets.NEXT_PUBLIC_VAPID_PUBLIC_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
 
       - name: Upload Playwright report
         if: failure() && steps.creds.outputs.enabled == 'true'
