@@ -19,6 +19,7 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
     <AnimatePresence>
       {error && (
         <m.div
+          role="status"
           initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -15 }}
