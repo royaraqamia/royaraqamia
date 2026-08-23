@@ -295,7 +295,18 @@ self.addEventListener('push', (event) => {
   };
   if (notificationId) options.tag = notificationId;
 
-  event.waitUntil(self.registration.showNotification(title, options));
+  // Field diagnostics: surfaced through service-worker console listeners
+  // (e.g. e2e/push.spec.ts) since OS-delivered toasts aren't introspectable.
+  console.log('[sw] push event received', JSON.stringify(payload));
+  event.waitUntil(
+    self.registration
+      .showNotification(title, options)
+      .then(() => console.log('[sw] showNotification OK'))
+      .catch((err) => {
+        console.log('[sw] showNotification FAILED', String(err));
+        throw err;
+      })
+  );
 });
 
 self.addEventListener('notificationclick', (event) => {
