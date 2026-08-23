@@ -9,6 +9,8 @@
 #
 # Uses the OpenCode GitHub App (id-token exchange): commits and pull requests
 # are authored by the app identity and DO re-trigger code-quality workflows.
+# Checkout must NOT persist credentials — opencode injects its own app token
+# (persisted credentials cause a duplicate-Authorization failure on push).
 # A runner-only opencode config grants the Supabase MCP server (project-scoped);
 # SUPABASE_ACCESS_TOKEN itself never touches disk ({env:} resolved in-memory).
 
@@ -41,6 +43,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Configure Supabase MCP (runner-only)
         env:
