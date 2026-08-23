@@ -23,6 +23,7 @@ jobs:
   release:
     name: Create Release
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     if: |
       (github.event_name == 'workflow_dispatch') ||
       (github.event.workflow_run.event == 'push' &&
@@ -31,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           fetch-tags: true
@@ -39,6 +40,17 @@ jobs:
 
       - name: Fetch Tags Explicitly
         run: git fetch --tags --force
+
+      - name: Verify Tested Commit Is Still HEAD
+        if: github.event_name == 'workflow_run'
+        shell: bash
+        run: |
+          tested="${{ github.event.workflow_run.head_sha }}"
+          current="$(git rev-parse HEAD)"
+          if [ "$tested" != "$current" ]; then
+            echo "::error::Tested commit ${tested} is no longer HEAD (${current}) — aborting to avoid releasing untested code. The newer commit's own pipeline will release it."
+            exit 1
+          fi
 
       - name: Setup Build Environment
         uses: ./.github/actions/setup-environment
@@ -94,7 +106,7 @@ jobs:
 
       - name: Create GitHub Release
         if: steps.guard.outputs.skip != 'true' && inputs.dry_run != true
-        uses: softprops/action-gh-release@v3
+        uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3
         with:
           tag_name: v${{ steps.next.outputs.version }}
           body_path: ${{ runner.temp }}/release-notes.md
