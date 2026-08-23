@@ -59,14 +59,14 @@ export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProp
       }
       className="h-full"
     >
-      <Card className="group relative h-full overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-4.5 sm:p-5 lg:p-6 backdrop-blur-xl transition-all duration-300 ease-out hover:border-border hover:bg-card/90 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.99] focus-within:ring-2 focus-within:ring-primary/20">
+      <Card className="group relative h-full overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5 lg:p-6 backdrop-blur-xl transition-all duration-300 ease-out hover:border-border hover:bg-card/90 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.99] focus-within:ring-2 focus-within:ring-primary/20">
         {/* Ambient Subtle Hover Glow */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100 bg-linear-to-br from-primary/10 via-transparent to-transparent"
         />
 
-        <div className="relative z-10 flex items-center gap-3.5 sm:gap-4.5 min-w-0">
+        <div className="relative z-10 flex items-center gap-3.5 sm:gap-4 min-w-0">
           {/* Icon Badge with Ring & Micro-interaction */}
           <div
             className={`relative flex shrink-0 items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-xs transition-all duration-300 ease-out ${
@@ -75,12 +75,12 @@ export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProp
                 : ''
             }`}
           >
-            <Icon className="w-5 h-5 sm:w-5.5 sm:h-5.5 transition-transform duration-300 group-hover:scale-105" />
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-105" />
           </div>
 
           {/* Metadata & Numeric Value */}
           <div className="flex flex-col justify-center min-w-0 flex-1 space-y-0.5">
-            <p className="text-[11px] sm:text-xs font-semibold uppercase tracking-wider text-muted-foreground/90 transition-colors duration-200 group-hover:text-foreground/80 select-none truncate">
+            <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground/90 transition-colors duration-200 group-hover:text-foreground/80 select-none truncate">
               {label}
             </p>
             <AnimatedValue value={value} reduce={reduce} />

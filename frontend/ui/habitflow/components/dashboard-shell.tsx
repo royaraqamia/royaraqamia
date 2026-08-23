@@ -158,7 +158,7 @@ export function DashboardShell({
             className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-zinc-200/60 dark:border-zinc-800/60"
           >
             <div className="flex flex-col gap-3">
-              <h1 className="text-4xl sm:text-5xl font-bold tracking-tight bg-linear-to-b from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400 bg-clip-text text-transparent">
+              <h1 className="text-4xl sm:text-5xl font-bold bg-linear-to-b from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400 bg-clip-text text-transparent">
                 إدارة العادات
               </h1>
             </div>
@@ -172,7 +172,7 @@ export function DashboardShell({
                   onClick={() => handleDateShift(-1)}
                   aria-label="اليوم السَّابق"
                   id="btn-prev-day"
-                  className="size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="size-11 sm:size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
@@ -180,7 +180,7 @@ export function DashboardShell({
                 <div className="flex items-center gap-2 px-4 py-1">
                   <CalendarIcon className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                   <span
-                    className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 whitespace-nowrap min-w-30 text-center select-none tracking-wide"
+                    className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 whitespace-nowrap min-w-30 text-center select-none"
                     aria-live="polite"
                     aria-atomic="true"
                   >
@@ -194,7 +194,7 @@ export function DashboardShell({
                   onClick={() => handleDateShift(1)}
                   aria-label="اليوم التَّالي"
                   id="btn-next-day"
-                  className="size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="size-11 sm:size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -228,7 +228,7 @@ export function DashboardShell({
               <StatsCard
                 index={0}
                 icon={TrendingUp}
-                label="الاستمراريَّة ( يوم)"
+                label="الاستمراريَّة (يوم)"
                 value={`${activeStats.averageCompletionRate}%`}
               />
               <StatsCard
@@ -273,7 +273,7 @@ export function DashboardShell({
             >
               <div className="flex items-center justify-between gap-4 pb-2 border-b border-transparent">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
+                  <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
                     قائمة عادات اليوم
                   </h2>
                   {habits.length > 0 && (
@@ -343,7 +343,7 @@ export function DashboardShell({
 
             {/* Calendar Grid Column */}
             <section className="lg:col-span-5 xl:col-span-4" aria-label="التَّقويم والسِّجل">
-              <div className="sticky top-8 rounded-3xl border border-zinc-200/70 dark:border-zinc-800/70 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-2xl p-6 sm:p-8 shadow-sm transition-colors duration-300 hover:border-zinc-300/80 dark:hover:border-zinc-700/80">
+              <div className="sticky top-8">
                 <CalendarGrid
                   calendarGrid={calendarGrid}
                   logs={logs}
@@ -361,15 +361,15 @@ export function DashboardShell({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={shouldReduce ? undefined : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="mt-4 rounded-3xl border border-zinc-200/60 dark:border-zinc-800/60 bg-linear-to-r from-zinc-100/50 via-white/50 to-zinc-50/50 dark:from-zinc-900/50 dark:via-zinc-900/30 dark:to-zinc-950/50 backdrop-blur-xl p-6 sm:p-8 shadow-sm transition-all hover:shadow-md hover:border-zinc-300/80 dark:hover:border-zinc-700/80 group"
+            className="rounded-3xl border border-zinc-200/60 dark:border-zinc-800/60 bg-linear-to-r from-zinc-100/50 via-white/50 to-zinc-50/50 dark:from-zinc-900/50 dark:via-zinc-900/30 dark:to-zinc-950/50 backdrop-blur-xl p-6 sm:p-8 shadow-sm transition-all hover:shadow-md hover:border-zinc-300/80 dark:hover:border-zinc-700/80 group"
           >
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="p-3 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-600 dark:text-zinc-300 shadow-sm group-hover:scale-105 transition-transform duration-300 ease-out">
+                <div className="p-3 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700/80 text-zinc-600 dark:text-zinc-300 shadow-sm">
                   <Database className="w-6 h-6" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100 tracking-wide">
+                  <h3 className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                     النَّسخ الاحتياطي وإدارة البيانات
                   </h3>
                   <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400">
@@ -381,6 +381,7 @@ export function DashboardShell({
               <div className="flex items-center gap-3 self-stretch sm:self-auto">
                 <input
                   ref={fileInputRef}
+                  id="file-input-ref"
                   type="file"
                   accept=".json"
                   className="hidden"
@@ -509,20 +510,6 @@ export function DashboardShell({
             cancelLabel="إلغاء"
             onConfirm={confirmImport}
             onCancel={cancelImport}
-          />
-
-          <ConfirmDialog
-            open={false}
-            title={''}
-            message={''}
-            confirmLabel={''}
-            cancelLabel={''}
-            onConfirm={function (): void {
-              throw new Error('Function not implemented.');
-            }}
-            onCancel={function (): void {
-              throw new Error('Function not implemented.');
-            }}
           />
         </div>
       </main>

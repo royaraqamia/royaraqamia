@@ -32,7 +32,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
           <div className="inline-flex items-center">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-xs backdrop-blur-md">
               <Sparkles
-                className="w-3.5 h-3.5 shrink-0 text-primary animate-pulse"
+                className="w-3.5 h-3.5 shrink-0 text-primary animate-pulse motion-reduce:animate-none"
                 aria-hidden="true"
               />
               ابدأ بسرعة
@@ -41,7 +41,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
 
           <h2
             id="habit-onboarding-title"
-            className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-foreground"
+            className="text-xl sm:text-2xl md:text-3xl font-extrabold text-foreground"
           >
             اختر عادة روتينيَّة
           </h2>
@@ -91,7 +91,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
                 </div>
 
                 <div className="pt-2 z-10">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-muted-foreground group-hover:text-primary bg-muted/60 group-hover:bg-primary/10 border border-border/40 group-hover:border-primary/20 transition-all duration-200 uppercase tracking-wider">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-muted-foreground group-hover:text-primary bg-muted/60 group-hover:bg-primary/10 border border-border/40 group-hover:border-primary/20 transition-all duration-200">
                     {template.frequency === 'daily' ? 'يومي' : 'أسبوعي'}
                   </span>
                 </div>

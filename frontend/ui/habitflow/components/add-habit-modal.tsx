@@ -56,7 +56,7 @@ export function AddHabitModal({
     >
       <DialogContent className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]">
         <DialogHeader className="sticky top-0 z-10 px-6 sm:px-8 pt-8 pb-4 text-start rounded-t-[28px] bg-background">
-          <DialogTitle className="text-xl sm:text-2xl font-semibold tracking-tight text-foreground/90">
+          <DialogTitle className="text-xl sm:text-2xl font-semibold text-foreground/90">
             إنشاء عادة روتينيَّة
           </DialogTitle>
         </DialogHeader>
@@ -160,7 +160,7 @@ export function AddHabitModal({
                     aria-pressed={isSelected}
                     className={`group relative aspect-square rounded-2xl flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-95 ${
                       isSelected
-                        ? 'bg-primary text-primary-foreground shadow-[0_4px_14px_0_rgba(var(--primary),0.3)] scale-[1.05]'
+                        ? 'bg-primary text-primary-foreground shadow-[0_4px_14px_0] shadow-primary/30 scale-[1.05]'
                         : 'bg-muted/20 border border-transparent hover:border-border/60 hover:bg-muted/50 text-muted-foreground hover:text-foreground hover:shadow-sm'
                     }`}
                   >
@@ -274,7 +274,7 @@ export function AddHabitModal({
               type="submit"
               disabled={isSubmitting}
               id="btn-submit-add-habit"
-              className="w-full sm:w-auto rounded-xl px-7 py-5 sm:py-2.5 text-[14px] font-semibold bg-primary text-primary-foreground hover:bg-primary/95 shadow-[0_4px_14px_0_rgba(var(--primary),0.2)] dark:shadow-[0_4px_14px_0_rgba(var(--primary),0.1)] transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5"
+              className="w-full sm:w-auto rounded-xl px-7 py-5 sm:py-2.5 text-[14px] font-semibold bg-primary text-primary-foreground hover:bg-primary/95 shadow-[0_4px_14px_0] shadow-primary/20 dark:shadow-primary/10 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5"
             >
               {isSubmitting ? (
                 <>

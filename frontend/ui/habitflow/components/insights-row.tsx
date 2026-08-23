@@ -28,7 +28,7 @@ function InsightCard({ icon: Icon, label, value }: InsightCardProps) {
       {/* Icon container with glass inset & hardware-accelerated hover shifts */}
       <div className="relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/20 backdrop-blur-md transition-all duration-300 group-hover:scale-105 group-hover:bg-primary group-hover:text-primary-foreground group-hover:shadow-md group-hover:shadow-primary/25 group-hover:ring-primary sm:h-12 sm:w-12">
         <Icon
-          className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 sm:h-5.5 sm:w-5.5"
+          className="h-5 w-5 transition-transform duration-300 group-hover:scale-110 sm:h-6 sm:w-6"
           aria-hidden="true"
         />
       </div>
@@ -39,7 +39,7 @@ function InsightCard({ icon: Icon, label, value }: InsightCardProps) {
           {label}
         </span>
         <p
-          className="truncate text-lg font-bold tracking-tight text-foreground transition-colors sm:text-xl"
+          className="truncate text-lg font-bold text-foreground transition-colors sm:text-xl"
           title={value}
         >
           {value}
@@ -59,7 +59,7 @@ export function InsightsRow({ insights }: InsightsRowProps) {
   const celebrating = isCelebrationStreak(insights.largestCurrentStreak);
 
   return (
-    <section aria-label="رؤى سريعة" className="mx-auto w-full max-w-7xl space-y-3.5 sm:space-y-4">
+    <section aria-label="رؤى سريعة" className="w-full space-y-3.5 sm:space-y-4">
       {celebrating && (
         <div
           role="alert"

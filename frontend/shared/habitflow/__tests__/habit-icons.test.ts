@@ -33,7 +33,9 @@ describe('getIconColorClass', () => {
   });
 
   it('falls back to the gray classes for unknown names', () => {
-    expect(getIconColorClass('Nope')).toBe('text-gray-500 bg-gray-50');
+    expect(getIconColorClass('Nope')).toBe(
+      'text-gray-500 bg-gray-50 dark:text-gray-400 dark:bg-gray-500/15'
+    );
   });
 });
 

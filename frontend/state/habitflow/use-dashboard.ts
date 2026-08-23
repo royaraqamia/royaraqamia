@@ -5,19 +5,8 @@ import { useDashboardToggle } from './use-dashboard-toggle';
 import { useDashboardBackup } from './use-dashboard-backup';
 
 export function useDashboard(seed: DashboardSeed) {
-  const {
-    habits,
-    logs,
-    mode,
-    user,
-    setHabits,
-    setLogs,
-    showSyncConfirm,
-    confirmSyncToCloud,
-    cancelSyncToCloud,
-    refreshData,
-    syncUser,
-  } = useDashboardData(seed);
+  const { habits, logs, mode, user, setHabits, setLogs, refreshData, syncUser } =
+    useDashboardData(seed);
 
   const {
     activeDate,
@@ -116,9 +105,6 @@ export function useDashboard(seed: DashboardSeed) {
     showImportConfirm,
     confirmImport,
     cancelImport,
-    showSyncConfirm,
-    confirmSyncToCloud,
-    cancelSyncToCloud,
     togglingHabitId,
     skippingHabitId,
     handleDateShift,

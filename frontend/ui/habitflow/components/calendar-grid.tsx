@@ -219,7 +219,7 @@ export function CalendarGrid({
     <section
       dir="rtl"
       aria-label="تقويم سلسلة الإنجاز"
-      className={`relative w-full max-w-4xl mx-auto space-y-6 sm:space-y-8 font-sans antialiased text-foreground selection:bg-primary/20 selection:text-primary ${className}`}
+      className={`relative w-full mx-auto space-y-6 sm:space-y-8 font-sans antialiased text-foreground selection:bg-primary/20 selection:text-primary ${className}`}
     >
       {/* Dynamic Ambient Background Glows */}
       <div
@@ -240,9 +240,7 @@ export function CalendarGrid({
           </div>
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
-                سلسلة الإنجاز
-              </h2>
+              <h2 className="text-xl sm:text-2xl font-black text-foreground">سلسلة الإنجاز</h2>
               {stats.perfectDays > 0 && (
                 <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-2xs">
                   <Flame className="w-3 h-3 text-amber-500 fill-amber-500 animate-pulse motion-reduce:animate-none" />
@@ -361,7 +359,7 @@ export function CalendarGrid({
       )}
 
       {/* Main Glassmorphic Container Card */}
-      <Card className="relative overflow-hidden p-3.5 sm:p-6 md:p-8 rounded-3xl sm:rounded-4xl border border-border/50 bg-card/60 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.25)] transition-all duration-300 motion-reduce:transition-none">
+      <Card className="relative overflow-hidden p-4 sm:p-6 md:p-8 rounded-3xl sm:rounded-4xl border border-border/50 bg-card/60 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.25)] transition-all duration-300 motion-reduce:transition-none">
         {habitsCount === 0 ? (
           /* High-End Empty State */
           <div className="relative overflow-hidden py-14 sm:py-20 px-6 text-center space-y-6 flex flex-col items-center justify-center bg-linear-to-b from-muted/20 via-muted/5 to-transparent rounded-2xl sm:rounded-3xl border-2 border-dashed border-border/60">
@@ -377,7 +375,7 @@ export function CalendarGrid({
             </div>
 
             <div className="space-y-2.5 max-w-md mx-auto">
-              <h3 className="text-xl sm:text-2xl font-black text-foreground tracking-tight">
+              <h3 className="text-xl sm:text-2xl font-black text-foreground">
                 لا توجد عادات نشطة بعد
               </h3>
               <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
@@ -399,7 +397,7 @@ export function CalendarGrid({
                 <div
                   key={`row-${rowIndex}`}
                   role="row"
-                  className="grid grid-cols-5 gap-2 sm:gap-3.5 md:gap-4 lg:gap-4.5"
+                  className="grid grid-cols-5 gap-2 sm:gap-3.5"
                 >
                   {row.map((gridItem, colIndex) => {
                     const idx = rowIndex * GRID_COLUMNS + colIndex;
@@ -486,7 +484,7 @@ export function CalendarGrid({
 
                           {/* Top Row: Weekday Label & Indicators */}
                           <div className="w-full relative flex items-center justify-between z-10">
-                            <span className="text-[10px] sm:text-xs font-bold tracking-tight opacity-80 group-hover:opacity-100 transition-opacity truncate">
+                            <span className="text-[10px] sm:text-xs font-bold opacity-80 group-hover:opacity-100 transition-opacity truncate">
                               {gridItem.dayLabel}
                             </span>
 

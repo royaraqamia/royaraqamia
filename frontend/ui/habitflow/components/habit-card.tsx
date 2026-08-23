@@ -104,7 +104,7 @@ export function HabitCard({
           {/* Text & Metadata Grid */}
           <div className="min-w-0 flex-1 flex flex-col justify-center space-y-1 sm:space-y-1.5">
             <h4
-              className={`text-[15px] sm:text-[17px] font-semibold leading-tight tracking-tight truncate transition-all duration-300 ${
+              className={`text-[15px] sm:text-[17px] font-semibold leading-tight truncate transition-all duration-300 ${
                 isCompleted
                   ? 'line-through decoration-zinc-400 dark:decoration-zinc-600 text-zinc-500 dark:text-zinc-500'
                   : isSkipped
@@ -124,7 +124,7 @@ export function HabitCard({
                   <span>مُتخطّى</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 whitespace-nowrap transition-colors">
+                <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 whitespace-nowrap transition-colors">
                   {habit.frequency === 'daily' ? 'يومي' : 'أسبوعي'}
                 </span>
               )}

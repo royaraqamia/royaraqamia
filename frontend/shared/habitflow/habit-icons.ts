@@ -107,5 +107,5 @@ export function getIconComponent(name: string) {
 
 export function getIconColorClass(name: string) {
   const found = HABIT_ICONS.find((i) => i.name === name);
-  return found ? found.color : 'text-gray-500 bg-gray-50';
+  return found ? found.color : 'text-gray-500 bg-gray-50 dark:text-gray-400 dark:bg-gray-500/15';
 }

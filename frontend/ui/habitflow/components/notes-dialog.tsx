@@ -55,7 +55,7 @@ export function NotesDialog({
             </div>
             <div className="flex-1 min-w-0 pt-0.5">
               <DialogHeader className="p-0 space-y-0 text-right">
-                <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
                   ملاحظة اليوم
                 </DialogTitle>
               </DialogHeader>
@@ -83,7 +83,7 @@ export function NotesDialog({
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40 opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                   </span>
-                  <span className="text-sm font-semibold text-foreground/90 truncate wrap-break-word line-clamp-2 sm:line-clamp-1">
+                  <span className="text-sm font-semibold text-foreground/90 wrap-break-word line-clamp-2 sm:line-clamp-1">
                     {habitName}
                   </span>
                 </div>

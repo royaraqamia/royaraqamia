@@ -13,6 +13,7 @@ export function formatArabicDate(dateStr: string): string {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
+      numberingSystem: 'latn',
     }).format(dateObj);
   } catch {
     return dateStr;
