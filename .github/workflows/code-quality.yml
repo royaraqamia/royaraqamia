@@ -2,29 +2,32 @@ name: 'Code Quality'
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
 
 permissions:
   contents: read
-  statuses: write
+
+concurrency:
+  group: code-quality-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   lint:
-    name: Lint Code Base
+    name: Lint & Type Check
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Build Environment
         uses: ./.github/actions/setup-environment
         with:
           node-version: '22'
+          cache-next: 'false'
 
       - name: Format Check
         run: npx prettier --check .
@@ -38,8 +41,37 @@ jobs:
       - name: Type Check
         run: npx tsc --noEmit
 
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          cache-next: 'false'
+
       - name: Test
         run: npm test
+
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
 
       - name: Build
         run: npm run build
