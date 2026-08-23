@@ -143,7 +143,10 @@ export function NotificationDropdown() {
             </div>
 
             {/* List Content */}
-            <ScrollArea className="max-h-95 min-h-40">
+            {/* The scroll constraint must live on Radix's viewport (not just
+                the overflow-hidden root) or tall lists get clipped instead of
+                scrolled. */}
+            <ScrollArea className="max-h-95 min-h-40 [&>[data-slot=scroll-area-viewport]]:max-h-95">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                   <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
