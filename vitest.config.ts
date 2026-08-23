@@ -11,6 +11,11 @@ export default defineConfig({
       NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904',
       NEXT_PUBLIC_VAPID_PUBLIC_KEY: 'test-public-key',
     },
+    coverage: {
+      provider: 'v8',
+      reporter: ['text-summary', 'html', 'json-summary'],
+      reportsDirectory: './coverage',
+    },
   },
   resolve: {
     alias: {

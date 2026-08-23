@@ -56,8 +56,28 @@ jobs:
           node-version: '22'
           cache-next: 'false'
 
-      - name: Test
-        run: npm test
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Publish coverage summary
+        shell: bash
+        run: |
+          node -e "
+            const s = require('./coverage/coverage-summary.json');
+            const fmt = (v) => v.pct.toFixed(1) + '% (' + v.covered + '/' + v.total + ')';
+            const rows = ['statements', 'branches', 'functions', 'lines']
+              .map((k) => '| ' + k[0].toUpperCase() + k.slice(1) + ' | ' + fmt(s.total[k]) + ' |');
+            ['| Metric | Coverage |', '| --- | --- |', ...rows]
+              .forEach((line) => require('fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, line + '\n'));
+          "
+
+      - name: Upload coverage report
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
 
   build:
     name: Build
