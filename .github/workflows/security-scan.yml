@@ -2,27 +2,32 @@ name: 'Security Scan'
 
 on:
   push:
-    branches: [main, master]
+    branches: [main]
   pull_request:
-    branches: [main, master]
+    branches: [main]
   schedule:
     - cron: '0 6 * * 1'
 
 permissions:
   contents: read
 
+concurrency:
+  group: security-scan-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   secrets:
     name: Secrets Scan (gitleaks)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
       - name: Run gitleaks
-        uses: gitleaks/gitleaks-action@v3
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e # v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
@@ -30,18 +35,24 @@ jobs:
   audit:
     name: Dependency Audit (npm audit)
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Build Environment
         uses: ./.github/actions/setup-environment
         with:
           node-version: '22'
-          install-web-deps: 'true'
+          cache-next: 'false'
 
+      # Blocking on every push/PR: production dependencies only.
       - name: Audit Production Dependencies
         run: npm audit --omit=dev --audit-level=high
 
+      # Full dependency audit is inherently flaky on event-driven runs
+      # (new CVEs published mid-day break unrelated PRs), so it only
+      # gates the scheduled weekly run and reports there.
       - name: Audit All Dependencies
+        if: github.event_name == 'schedule'
         run: npm audit --audit-level=high
