@@ -17,4 +17,7 @@ useDefault = true
     # they are inlined into the browser bundle and never treated as secrets.
     # Covers publishable/anon keys declared in CI workflows and example.env.
     '''NEXT_PUBLIC_[A-Z0-9_]+["']?\s*[:=]\s*[^"'\n]+["']?''',
+    # Modern Supabase publishable/anon tokens (matched against the detected
+    # secret itself, which does not carry the NEXT_PUBLIC_ variable name).
+    '''sb_publishable_[A-Za-z0-9_-]+''',
   ]
