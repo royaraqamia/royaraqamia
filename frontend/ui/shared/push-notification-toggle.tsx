@@ -6,6 +6,7 @@ import {
   applicationServerKeyMatches,
   isPushDisabledByUser,
   isPushSupported,
+  refreshSubscriptionLiveness,
   subscribeToPush,
   unsubscribeFromPush,
 } from '@/frontend/api/push';
@@ -56,7 +57,12 @@ export function PushNotificationToggle() {
       const registration = await navigator.serviceWorker.ready;
       const existing = await registration.pushManager.getSubscription();
       if (existing) {
-        if (applicationServerKeyMatches(existing, VAPID_PUBLIC_KEY)) return;
+        if (applicationServerKeyMatches(existing, VAPID_PUBLIC_KEY)) {
+          // Still valid server-side; just refresh its liveness timestamp so
+          // the stale-subscription sweep keeps it.
+          void refreshSubscriptionLiveness(existing);
+          return;
+        }
         await existing.unsubscribe();
       }
       const result = await subscribeToPush();

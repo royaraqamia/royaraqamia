@@ -9,6 +9,7 @@ const { mocks } = vi.hoisted(() => ({
     applicationServerKeyMatches: vi.fn(),
     subscribeToPush: vi.fn(),
     unsubscribeFromPush: vi.fn(),
+    refreshSubscriptionLiveness: vi.fn(),
   },
 }));
 
@@ -43,6 +44,7 @@ beforeEach(() => {
   mocks.isPushSupported.mockReturnValue(true);
   mocks.isPushDisabledByUser.mockReturnValue(false);
   mocks.applicationServerKeyMatches.mockReturnValue(true);
+  mocks.refreshSubscriptionLiveness.mockResolvedValue(undefined);
   mocks.subscribeToPush.mockResolvedValue('subscribed');
   mocks.unsubscribeFromPush.mockResolvedValue(undefined);
   installGlobals();
@@ -77,7 +79,7 @@ describe('PushNotificationToggle auto-heal', () => {
     });
   });
 
-  it('keeps a subscription whose application server key still matches', async () => {
+  it('keeps a subscription whose application server key still matches and refreshes its liveness', async () => {
     const { subscription } = installGlobals({ existing: true });
     render(<PushNotificationToggle />);
     await waitFor(() => {
@@ -85,6 +87,11 @@ describe('PushNotificationToggle auto-heal', () => {
     });
     expect(mocks.subscribeToPush).not.toHaveBeenCalled();
     expect(subscription.unsubscribe).not.toHaveBeenCalled();
+    await waitFor(() => {
+      expect(mocks.refreshSubscriptionLiveness).toHaveBeenCalledWith(
+        expect.objectContaining({ endpoint: subscription.endpoint })
+      );
+    });
   });
 
   it('re-subscribes automatically after a VAPID key rotation', async () => {

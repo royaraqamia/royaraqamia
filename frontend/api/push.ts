@@ -2,6 +2,8 @@ import { request } from '@/frontend/transport/http';
 import { VAPID_PUBLIC_KEY } from '@/frontend/shared/constants';
 
 const PUSH_DISABLED_KEY = 'royaraqamia.push.disabled';
+const PUSH_LAST_SYNC_KEY = 'royaraqamia.push.lastSync';
+const PUSH_LAST_SYNC_THROTTLE_MS = 24 * 60 * 60 * 1000;
 const PUSH_PREF_CACHE = 'royaraqamia-push-prefs';
 const PUSH_DISABLED_CACHE_URL = '/__push_disabled__';
 
@@ -96,6 +98,32 @@ export function applicationServerKeyMatches(
 
 export type PushSubscribeResult = 'subscribed' | 'denied' | 'unsupported';
 
+async function postSubscription(subscription: PushSubscription): Promise<void> {
+  await request('/api/push/subscribe', {
+    method: 'POST',
+    body: JSON.stringify(subscription.toJSON()),
+  });
+}
+
+/**
+ * Idempotent re-POST of an existing, still-valid subscription. Refreshes the
+ * server-side liveness timestamp so the stale-subscription sweep never drops
+ * rows of users who visit but simply have not received a push recently.
+ * Throttled to once per day per browser.
+ */
+export async function refreshSubscriptionLiveness(existing: PushSubscription): Promise<void> {
+  try {
+    const last = Number(window.localStorage.getItem(PUSH_LAST_SYNC_KEY));
+    const throttled = Number.isFinite(last) && Date.now() - last < PUSH_LAST_SYNC_THROTTLE_MS;
+    if (!throttled) {
+      await postSubscription(existing);
+      window.localStorage.setItem(PUSH_LAST_SYNC_KEY, String(Date.now()));
+    }
+  } catch {
+    // Liveness refresh is best-effort; the next visit or dispatch retries.
+  }
+}
+
 export async function subscribeToPush(): Promise<PushSubscribeResult> {
   if (!isPushSupported()) return 'unsupported';
 
@@ -114,10 +142,7 @@ export async function subscribeToPush(): Promise<PushSubscribeResult> {
   }
 
   try {
-    await request('/api/push/subscribe', {
-      method: 'POST',
-      body: JSON.stringify(subscription.toJSON()),
-    });
+    await postSubscription(subscription);
     setPushDisabledByUser(false);
     return 'subscribed';
   } catch {
