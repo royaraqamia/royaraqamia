@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.3] - 2026-08-23
+
+### Fixed
+- correct UI typography, spacing, and a11y defects across dashboard
+- stop persisting checkout credentials for opencode app auth
+
 ## [1.10.2] - 2026-08-23
 
 ### Changed
