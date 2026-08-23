@@ -52,6 +52,13 @@ Per-project facts that make the global skills (`~/.agents/skills/plan`, `impleme
 - **RLS / access control:** RLS on tables; admin-only writes via `ADMIN_EMAILS` allowlist + `backend/shared/admin-validator`; service-role key is server-only and never in the browser.
 - **Migrations convention:** incremental timestamped files in `supabase/migrations/`, applied in filename order via `supabase db push`. **Never edit an applied migration.** The base schema lives only on the remote project (first migration `20260718105449` is an intentional stub) — add new changes as NEW migration files only.
 
+### CI agent database rules (OpenCode workflows, when Supabase MCP is connected)
+
+- The agent may inspect the live project (`list_tables`, `list_migrations`, `get_advisors`, logs) and apply schema changes **only** through `apply_migration`.
+- Mirror discipline: write the identical SQL as a NEW timestamped file in `supabase/migrations/` FIRST, then apply it remotely with the same name — remote history must always match the repository.
+- Forbidden without explicit human approval in the trigger comment: destructive DDL (`DROP TABLE/COLUMN`, `TRUNCATE`), disabling or weakening RLS, modifying `auth.users` data, storage bucket changes, data backfills over user tables.
+- Prefer additive, reversible migrations; include a rollback note in the PR body for any applied migration.
+
 ## Secrets & environment
 
 - Env lives in `.env.local` (copy from `example.env`); never commit real secrets (`.env` is git-ignored).

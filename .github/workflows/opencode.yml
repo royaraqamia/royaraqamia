@@ -1,0 +1,74 @@
+# Interactive OpenCode agent: comment "/oc <task>" or "/opencode <task>"
+# on any issue or PR to trigger it (explain, fix, implement, review...).
+# Only collaborators with write access can trigger it (enforced by the action).
+#
+# Setup (repo secrets):
+#   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
+#   SUPABASE_ACCESS_TOKEN - https://supabase.com/dashboard/account/tokens
+#   SUPABASE_PROJECT_REF  - target Supabase project reference
+#
+# Uses the OpenCode GitHub App (id-token exchange): commits and pull requests
+# are authored by the app identity and DO re-trigger code-quality workflows.
+# A runner-only opencode config grants the Supabase MCP server (project-scoped);
+# SUPABASE_ACCESS_TOKEN itself never touches disk ({env:} resolved in-memory).
+
+name: 'OpenCode'
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: opencode-${{ github.event.comment.id }}
+  cancel-in-progress: false
+
+jobs:
+  opencode:
+    if: >-
+      contains(github.event.comment.body, '/oc') ||
+      contains(github.event.comment.body, '/opencode')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Configure Supabase MCP (runner-only)
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          mkdir -p "$HOME/.config/opencode"
+          cat > "$HOME/.config/opencode/opencode.json" <<EOF
+          {
+            "\$schema": "https://opencode.ai/config.json",
+            "mcp": {
+              "supabase": {
+                "type": "remote",
+                "url": "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}&features=database,debugging,docs",
+                "enabled": true,
+                "oauth": false,
+                "headers": {
+                  "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: Run OpenCode
+        uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        with:
+          model: opencode/x-preview-f-free
+          share: 'false'

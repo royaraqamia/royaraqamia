@@ -1,0 +1,112 @@
+# Autonomous maintenance pipeline: analyze -> implement -> review/test -> PR.
+# Runs daily at 18:00 Damascus time (UTC+3) and on demand from the Actions tab.
+# Hard time limit per run: 60 minutes (job timeout).
+#
+# Setup (repo secrets):
+#   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
+#   SUPABASE_ACCESS_TOKEN - https://supabase.com/dashboard/account/tokens
+#   SUPABASE_PROJECT_REF  - target Supabase project reference
+#
+# Uses the OpenCode GitHub App (id-token exchange): commits and pull requests
+# are authored by the app identity and DO re-trigger code-quality workflows.
+# A runner-only opencode config grants the Supabase MCP server (project-scoped);
+# SUPABASE_ACCESS_TOKEN itself never touches disk ({env:} resolved in-memory).
+
+name: 'OpenCode Agent'
+
+on:
+  schedule:
+    # 15:00 UTC = 18:00 Damascus (UTC+3, no DST) — daily
+    - cron: '0 15 * * *'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: opencode-agent-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  agent:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          cache-next: 'false'
+
+      - name: Configure Supabase MCP (runner-only)
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: |
+          mkdir -p "$HOME/.config/opencode"
+          cat > "$HOME/.config/opencode/opencode.json" <<EOF
+          {
+            "\$schema": "https://opencode.ai/config.json",
+            "mcp": {
+              "supabase": {
+                "type": "remote",
+                "url": "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}&features=database,debugging,docs",
+                "enabled": true,
+                "oauth": false,
+                "headers": {
+                  "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
+                }
+              }
+            }
+          }
+          EOF
+
+      - name: List Pending Agent PRs
+        id: pending-prs
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            const pending = prs.data
+              .filter((pr) => pr.head.ref.startsWith('opencode/'))
+              .map((pr) => '#' + pr.number + ' ' + pr.title)
+              .join('; ');
+            return pending || 'none';
+
+      - name: Run OpenCode Agent
+        uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        with:
+          model: opencode/x-preview-f-free
+          share: 'false'
+          prompt: |
+            You are performing one autonomous maintenance pass on this repository (Next.js App Router + React 19 + TypeScript strict, Arabic RTL SaaS, Supabase Postgres backend). The OpenCode infrastructure has already checked out a dedicated branch for you and will handle committing, pushing, and opening the pull request automatically after you finish. Do NOT run any git commands yourself: no branching, committing, pushing, or PR creation. Execute the phases below in order, then stop.
+
+            Phase A - Analyze
+            Scan the codebase for concrete, high-confidence findings: bugs, logic errors, security gaps, performance lags, missing error handling, accessibility gaps, RLS gaps, missing indexes, and small well-scoped feature improvements. Ground database-related analysis in reality by inspecting the connected Supabase project with the supabase MCP tools (list_tables, list_migrations, get_advisors). Rank findings by impact and confidence. Ignore speculative or cosmetic nitpicks.
+
+            De-duplication context: open agent pull requests already awaiting review are [${{ steps.pending-prs.outputs.result }}]. Exclude any finding already addressed by those pending changes; if every remaining finding duplicates pending work, leave the working tree untouched and respond with an analysis summary only.
+
+            Phase B - Implement
+            Select ONLY the single highest-ranked finding that is safe and small (one concern, at most about 5 files plus at most one migration) and implement it directly in the working tree, following AGENTS.md conventions exactly: layered architecture controller -> service -> repository/client, Zod validation in shared/contracts, structured loggers instead of console logging, RTL-first UI without inline styles. Never upgrade or add dependencies, never edit existing files under supabase/migrations, scripts/compute-version.mjs, scripts/release-tools.mjs, backend/config/generated files, or any env files. Leave the working tree clean: no scratch files, logs, or temporary artifacts.
+
+            Database change rules: if the fix needs a schema change, first write the migration as a NEW file in supabase/migrations named <UTC-timestamp>_<snake_name>.sql matching the repo convention, then apply the exact same SQL via the supabase MCP apply_migration tool with the same name so the remote migration history mirrors the repository. Never run destructive DDL (DROP TABLE, DROP COLUMN, TRUNCATE, disabling RLS, weakening policies) through execute_sql; propose it in the report instead. Never touch auth.users contents, storage buckets, or the ADMIN_EMAILS allowlist behavior.
+
+            Phase C - Review and test
+            Review your own diff critically for correctness, layering violations, regressions, and RLS implications; fix anything you find. Then run these commands in order until each passes: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; npm test . Iterate until all four are green. Do not run e2e tests and do not run npm run build. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and say so instead of forcing it.
+
+            Phase D - Report
+            Your final response becomes the pull request description. Structure it exactly as: (1) a ranked table of ALL findings from Phase A including items you did not fix, (2) what you changed and why including any migration applied and its exact name, (3) evidence that all four gates passed, quoting each command's final output summary. If nothing was worth changing, leave the working tree untouched and respond with only the analysis summary so no pull request is opened.
