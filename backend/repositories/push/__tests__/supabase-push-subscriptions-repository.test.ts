@@ -3,6 +3,17 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createPushSubscriptionsRepository } from '@/backend/repositories/push/supabase-repository';
 
+const { loggerWarn } = vi.hoisted(() => ({ loggerWarn: vi.fn() }));
+
+vi.mock('@/backend/shared/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: loggerWarn,
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 type Row = Database['public']['Tables']['push_subscriptions']['Row'];
 
 function makeRow(overrides: Partial<Row> = {}): Row {
@@ -24,6 +35,7 @@ function makeClient(
     upsertError?: Error | null;
     selectError?: Error | null;
     deleteError?: Error | null;
+    updateError?: Error | null;
     rows?: Row[];
   } = {}
 ) {
@@ -42,24 +54,65 @@ function makeClient(
   const selectEq = vi.fn().mockReturnValue(eqChain);
   select.mockReturnValue({ eq: selectEq, in: inSelect });
 
-  const deleteError = overrides.deleteError ?? null;
-  const deleteDelete = vi.fn().mockResolvedValue({ error: deleteError });
-  const deleteEq = vi.fn().mockReturnValue({
-    eq: deleteDelete,
-    then: (onFulfilled: (v: { error: Error | null }) => void) => {
-      onFulfilled({ error: deleteError });
-      return Promise.resolve({ error: deleteError });
-    },
+  // Delete/update chains accept arbitrary .eq()/.neq() filters and record the
+  // applied filter sequence so callers can assert exact scoping.
+  const deleteFilters: string[][] = [];
+  const updateFilters: string[][] = [];
+
+  const filterStep = (filters: string[], terminalError: Error | null) => {
+    type Step = {
+      eq: ReturnType<typeof vi.fn>;
+      neq: ReturnType<typeof vi.fn>;
+      then: (onFulfilled: (v: { error: Error | null }) => void) => Promise<{ error: Error | null }>;
+    };
+    const step: Step = {
+      eq: vi.fn((column: string, value: unknown) => {
+        filters.push(`eq:${column}=${String(value)}`);
+        return step;
+      }),
+      neq: vi.fn((column: string, value: unknown) => {
+        filters.push(`neq:${column}=${String(value)}`);
+        return step;
+      }),
+      then: (onFulfilled: (v: { error: Error | null }) => void) => {
+        onFulfilled({ error: terminalError });
+        return Promise.resolve({ error: terminalError });
+      },
+    };
+    return step;
+  };
+
+  const deleteFn = vi.fn().mockImplementation(() => {
+    const filters: string[] = [];
+    deleteFilters.push(filters);
+    return filterStep(filters, overrides.deleteError ?? null);
   });
-  const deleteFn = vi.fn().mockReturnValue({ eq: deleteEq });
+
+  const updateFn = vi.fn().mockImplementation((payload: unknown) => {
+    void payload;
+    const filters: string[] = [];
+    updateFilters.push(filters);
+    return filterStep(filters, overrides.updateError ?? null);
+  });
 
   const from = vi.fn().mockImplementation((table: string) => {
     if (table !== 'push_subscriptions') throw new Error(`unexpected table: ${table}`);
-    return { upsert, select, delete: deleteFn };
+    return { upsert, select, delete: deleteFn, update: updateFn };
   });
 
   const client = { from } as unknown as SupabaseClient<Database>;
-  return { client, from, upsert, select, selectEq, inSelect, deleteFn, deleteEq, deleteDelete };
+  return {
+    client,
+    from,
+    upsert,
+    select,
+    selectEq,
+    inSelect,
+    deleteFn,
+    deleteFilters,
+    updateFn,
+    updateFilters,
+  };
 }
 
 describe('createPushSubscriptionsRepository', () => {
@@ -87,18 +140,58 @@ describe('createPushSubscriptionsRepository', () => {
       );
     });
 
-    it('allows a null user agent', async () => {
-      const { client, upsert } = makeClient();
+    it('prunes superseded same-device rows after a successful upsert', async () => {
+      const { client, deleteFilters } = makeClient();
       const repo = createPushSubscriptionsRepository(client);
+
+      await repo.upsert('u-1', {
+        endpoint: 'https://fcm.googleapis.com/fcm/send/new',
+        p256dh: 'p256',
+        auth: 'auth',
+        userAgent: 'Chrome/140',
+      });
+
+      expect(deleteFilters).toEqual([
+        [
+          'eq:user_id=u-1',
+          'eq:user_agent=Chrome/140',
+          'neq:endpoint=https://fcm.googleapis.com/fcm/send/new',
+        ],
+      ]);
+    });
+
+    it('skips device cleanup when no user agent is available', async () => {
+      const { client, deleteFilters } = makeClient();
+      const repo = createPushSubscriptionsRepository(client);
+
       await repo.upsert('u-1', {
         endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
         p256dh: 'p256',
         auth: 'auth',
         userAgent: null,
       });
-      expect(upsert).toHaveBeenCalledWith(expect.objectContaining({ user_agent: null }), {
-        onConflict: 'endpoint',
-      });
+
+      expect(deleteFilters).toHaveLength(0);
+    });
+
+    it('keeps the subscription when the device cleanup fails (warn only)', async () => {
+      const { client, deleteFilters } = makeClient({ deleteError: new Error('cleanup failed') });
+      const repo = createPushSubscriptionsRepository(client);
+
+      await expect(
+        repo.upsert('u-1', {
+          endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
+          p256dh: 'p256',
+          auth: 'auth',
+          userAgent: 'Chrome/128',
+        })
+      ).resolves.toBeUndefined();
+
+      expect(deleteFilters).toHaveLength(1);
+      expect(loggerWarn).toHaveBeenCalledWith(
+        'Failed to prune superseded push subscriptions for device',
+        expect.objectContaining({ userId: 'u-1' })
+      );
     });
 
     it('throws when the upsert fails', async () => {
@@ -165,17 +258,16 @@ describe('createPushSubscriptionsRepository', () => {
 
   describe('removeByEndpoint', () => {
     it('deletes scoped to the owner and endpoint', async () => {
-      const { client, deleteFn, deleteEq, deleteDelete } = makeClient();
+      const { client, deleteFn, deleteFilters } = makeClient();
       const repo = createPushSubscriptionsRepository(client);
 
       await repo.removeByEndpoint('u-1', 'https://fcm.googleapis.com/fcm/send/abc');
 
       expect(deleteFn).toHaveBeenCalled();
-      expect(deleteEq).toHaveBeenCalledWith('user_id', 'u-1');
-      expect(deleteDelete).toHaveBeenCalledWith(
-        'endpoint',
-        'https://fcm.googleapis.com/fcm/send/abc'
-      );
+      expect(deleteFilters[0]).toEqual([
+        'eq:user_id=u-1',
+        'eq:endpoint=https://fcm.googleapis.com/fcm/send/abc',
+      ]);
     });
 
     it('throws when the delete fails', async () => {
@@ -189,13 +281,13 @@ describe('createPushSubscriptionsRepository', () => {
 
   describe('removeEndpoint', () => {
     it('deletes by endpoint only (service-role prune)', async () => {
-      const { client, deleteFn, deleteEq } = makeClient();
+      const { client, deleteFn, deleteFilters } = makeClient();
       const repo = createPushSubscriptionsRepository(client);
 
       await repo.removeEndpoint('https://fcm.googleapis.com/fcm/send/abc');
 
       expect(deleteFn).toHaveBeenCalled();
-      expect(deleteEq).toHaveBeenCalledWith('endpoint', 'https://fcm.googleapis.com/fcm/send/abc');
+      expect(deleteFilters[0]).toEqual(['eq:endpoint=https://fcm.googleapis.com/fcm/send/abc']);
     });
 
     it('throws when the delete fails', async () => {
@@ -203,6 +295,32 @@ describe('createPushSubscriptionsRepository', () => {
       const repo = createPushSubscriptionsRepository(client);
       await expect(repo.removeEndpoint('https://fcm.googleapis.com/fcm/send/abc')).rejects.toThrow(
         'delete failed'
+      );
+    });
+  });
+
+  describe('touch', () => {
+    it('refreshes updated_at scoped to the endpoint', async () => {
+      const { client, updateFn, updateFilters } = makeClient();
+      const repo = createPushSubscriptionsRepository(client);
+      vi.useFakeTimers();
+
+      try {
+        await repo.touch('https://fcm.googleapis.com/fcm/send/abc');
+        expect(updateFn).toHaveBeenCalledWith({
+          updated_at: new Date().toISOString(),
+        });
+        expect(updateFilters[0]).toEqual(['eq:endpoint=https://fcm.googleapis.com/fcm/send/abc']);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('throws when the touch fails (service decides severity)', async () => {
+      const { client } = makeClient({ updateError: new Error('touch failed') });
+      const repo = createPushSubscriptionsRepository(client);
+      await expect(repo.touch('https://fcm.googleapis.com/fcm/send/abc')).rejects.toThrow(
+        'touch failed'
       );
     });
   });

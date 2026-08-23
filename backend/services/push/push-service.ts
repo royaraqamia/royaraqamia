@@ -182,6 +182,9 @@ export class PushService {
           JSON.stringify(payload),
           { TTL: TTL_SECONDS, urgency: 'high' }
         );
+        // Liveness marker for the stale-subscription sweep; a touch failure
+        // must never turn a delivered push into a reported failure.
+        await this.repository.touch(subscription.endpoint).catch(() => undefined);
         return;
       } catch (error) {
         const status = (error as PushWebPushError).statusCode;
@@ -194,6 +197,7 @@ export class PushService {
           logger.warn('Failed to send push notification', {
             endpoint: subscription.endpoint,
             attempt,
+            statusCode: status ?? null,
             error: String(error),
           });
           return;

@@ -6,6 +6,17 @@ import type {
 } from '@/backend/repositories/push/push-subscriptions-repository';
 import type { PushPayload } from '@/shared/contracts/push';
 
+const { loggerWarn } = vi.hoisted(() => ({ loggerWarn: vi.fn() }));
+
+vi.mock('@/backend/shared/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: loggerWarn,
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
 const payload: PushPayload = { title: 'شهادة جديدة', body: 'نص', type: 'certificate_issued' };
 
 function makeRecord(overrides: Partial<PushSubscriptionRecord> = {}): PushSubscriptionRecord {
@@ -25,6 +36,7 @@ function makeRecord(overrides: Partial<PushSubscriptionRecord> = {}): PushSubscr
 function makeRepo() {
   const repository: PushSubscriptionRepository = {
     upsert: vi.fn(),
+    touch: vi.fn(async () => undefined),
     findByUserId: vi.fn(async () => []),
     findForUsers: vi.fn(async () => []),
     removeByEndpoint: vi.fn(),
@@ -112,6 +124,40 @@ describe('PushService', () => {
 
       expect(repository.findForUsers).toHaveBeenCalledWith(['u-1', 'u-2']);
       expect(adapter.sendNotification).toHaveBeenCalledTimes(1);
+    });
+
+    it('touches endpoint liveness after a successful send', async () => {
+      const { repository, service } = makeService();
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+
+      await service.sendToUser('u-1', payload);
+
+      expect(repository.touch).toHaveBeenCalledWith('https://fcm.googleapis.com/fcm/send/abc');
+    });
+
+    it('does not touch liveness when the send fails', async () => {
+      const { repository, adapter, service } = makeService();
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('network down')
+      );
+
+      await service.sendToUser('u-1', payload);
+
+      expect(repository.touch).not.toHaveBeenCalled();
+    });
+
+    it('still reports the push as delivered when the liveness touch fails', async () => {
+      const { repository, adapter, service } = makeService();
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+      (repository.touch as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('db down'));
+
+      await expect(service.sendToUser('u-1', payload)).resolves.toBeUndefined();
+      expect(adapter.sendNotification).toHaveBeenCalledTimes(1);
+      expect(loggerWarn).not.toHaveBeenCalledWith(
+        'Failed to send push notification',
+        expect.anything()
+      );
     });
 
     it('does nothing for an empty user id list', async () => {
@@ -230,6 +276,40 @@ describe('PushService', () => {
 
       expect(adapter.sendNotification).toHaveBeenCalledTimes(1);
       expect(repository.removeEndpoint).not.toHaveBeenCalled();
+    });
+
+    it('logs the HTTP status code when a send finally fails', async () => {
+      const { repository, adapter, service } = makeService();
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+        Object.assign(new Error('bad request'), { statusCode: 400 })
+      );
+
+      await service.sendToUser('u-1', payload);
+
+      expect(loggerWarn).toHaveBeenCalledWith(
+        'Failed to send push notification',
+        expect.objectContaining({
+          endpoint: 'https://fcm.googleapis.com/fcm/send/abc',
+          attempt: 1,
+          statusCode: 400,
+        })
+      );
+    });
+
+    it('logs a null status code for errors without one', async () => {
+      const { repository, adapter, service } = makeService({ retryDelayMs: 1 });
+      (repository.findByUserId as ReturnType<typeof vi.fn>).mockResolvedValue([makeRecord()]);
+      (adapter.sendNotification as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('socket hang up')
+      );
+
+      await service.sendToUser('u-1', payload);
+
+      expect(loggerWarn).toHaveBeenCalledWith(
+        'Failed to send push notification',
+        expect.objectContaining({ statusCode: null, attempt: 3 })
+      );
     });
 
     it('still resolves when the repository read throws', async () => {

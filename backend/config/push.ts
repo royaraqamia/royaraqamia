@@ -50,6 +50,7 @@ export function createPushNotifier(): PushService {
     ? createPushSubscriptionsRepository(getAdminSupabase())
     : {
         upsert: async () => undefined,
+        touch: async () => undefined,
         findByUserId: async () => [],
         findForUsers: async () => [],
         removeByEndpoint: async () => undefined,

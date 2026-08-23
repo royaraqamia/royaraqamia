@@ -18,6 +18,8 @@ export interface PushSubscriptionUpsertInput {
 
 export interface PushSubscriptionRepository {
   upsert(userId: string, input: PushSubscriptionUpsertInput): Promise<void>;
+  /** Marks an endpoint as recently reachable (dispatch-liveness signal). */
+  touch(endpoint: string): Promise<void>;
   findByUserId(userId: string): Promise<PushSubscriptionRecord[]>;
   findForUsers(userIds: string[]): Promise<PushSubscriptionRecord[]>;
   removeByEndpoint(userId: string, endpoint: string): Promise<void>;

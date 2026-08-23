@@ -1,3 +1,4 @@
+import { logger } from '@/backend/shared/logger';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type {
@@ -46,6 +47,32 @@ export function createPushSubscriptionsRepository(
         },
         { onConflict: 'endpoint' }
       );
+      if (error) throw error;
+
+      // Endpoint rotation debris: the same browser re-subscribed with a fresh
+      // endpoint, leaving its predecessor behind. Drop superseded rows for
+      // this device (same user agent) so fan-out stays one row per device.
+      if (!input.userAgent || input.userAgent.trim().length === 0) return;
+      const { error: cleanupError } = await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', userId)
+        .eq('user_agent', input.userAgent)
+        .neq('endpoint', input.endpoint);
+      if (cleanupError) {
+        logger.warn('Failed to prune superseded push subscriptions for device', {
+          userId,
+          endpoint: input.endpoint,
+          error: String(cleanupError),
+        });
+      }
+    },
+
+    async touch(endpoint: string) {
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .update({ updated_at: new Date().toISOString() })
+        .eq('endpoint', endpoint);
       if (error) throw error;
     },
 
