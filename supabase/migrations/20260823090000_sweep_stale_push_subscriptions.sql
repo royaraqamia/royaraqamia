@@ -27,7 +27,8 @@ begin
 end;
 $fn$;
 
-revoke execute on function public.sweep_stale_push_subscriptions() from public, anon;
+revoke execute on function public.sweep_stale_push_subscriptions()
+  from public, anon, authenticated;
 
 do $do$
 begin
