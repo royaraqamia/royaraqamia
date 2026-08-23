@@ -10,16 +10,29 @@ inputs:
     description: 'Whether to install web dependencies'
     required: false
     default: 'true'
+  cache-next:
+    description: 'Whether to cache Next.js build artifacts (.next/cache)'
+    required: false
+    default: 'true'
 
 runs:
   using: 'composite'
   steps:
     - name: Setup Node.js environment
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'npm'
         cache-dependency-path: './package-lock.json'
+
+    - name: Cache Next.js build artifacts
+      if: inputs.cache-next == 'true'
+      uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+      with:
+        path: .next/cache
+        key: nextjs-${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          nextjs-${{ runner.os }}-
 
     - name: Install Web Dependencies
       if: inputs.install-web-deps == 'true'
