@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.4] - 2026-08-24
+
+### Changed
+- bump getsentry/action-release from 1.11.0 to 3.7.0
+- Fixed linksnap error UX; gates green
+
 ## [1.10.3] - 2026-08-23
 
 ### Fixed
