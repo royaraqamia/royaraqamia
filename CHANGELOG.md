@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-08-24
+
+### Changed
+- add habitflow calendar grid visual sweep
+
+### Added
+- rebuild calendar grid with container queries
+
+### Fixed
+- hide WhatsApp float on product workspace routes
+- a11y semantics and Arabic plural forms in dashboard components
+
 ## [1.10.5] - 2026-08-24
 
 ### Changed
