@@ -94,6 +94,12 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          # Public build-time values (same as the code-quality build job) so the
+          # agent can run `npm run build` as a gate.
+          NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+          NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         with:
           model: opencode/x-preview-f-free
           share: 'false'
@@ -114,10 +120,10 @@ jobs:
             With the fix from Phase B working, improve ONLY the code you just wrote toward clean architecture, keeping observable behavior identical. Enforce the repo layering strictly: controllers stay thin (parse input -> call ONE service -> shape response, no business logic), services depend on interfaces and never touch SQL or HTTP, repositories remain the only code aware of Supabase/.from(), external clients stay behind ports in backend/clients, all wiring goes through backend/config factory functions, and request/response shapes come from shared/contracts instead of duplicated types. Remove duplication and dead code, prefer small focused units with clear names, and replace any console logging with the structured loggers. Never widen scope beyond Phase B: no new features, no dependency changes, none of the forbidden files, and the combined diff must stay within the Phase B file budget. If a worthwhile refactor would risk behavior changes or blow the budget, skip it and note why.
 
             Phase D - Review and test
-            Review your own diff critically for correctness, layering violations, regressions, and RLS implications; fix anything you find. Then run these commands in order until each passes: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; npm test . Iterate until all four are green. Do not run e2e tests and do not run npm run build. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and say so instead of forcing it.
+            Review your own diff critically for correctness, layering violations, regressions, and RLS implications; fix anything you find. Then run these commands in order until each passes: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; npm test ; npm run build . Iterate until all five are green. Do not run e2e tests. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and say so instead of forcing it.
 
             Phase E - Report
-            Your final response becomes the pull request description, and its first line becomes the pull request title: start your final response with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area such as blog, blogpress, habitflow, linksnap, spendtrack, certificates, auth, or ci. Structure the rest exactly as: (1) a ranked table of ALL findings from Phase A including items you did not fix, (2) what you changed and why including any migration applied and its exact name and any refactoring applied in Phase C, (3) evidence that all four gates passed, quoting each command's final output summary. If nothing was worth changing, leave the working tree untouched and respond with only the analysis summary so no pull request is opened.
+            Your final response becomes the pull request description, and its first line becomes the pull request title: start your final response with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area such as blog, blogpress, habitflow, linksnap, spendtrack, certificates, auth, or ci. Structure the rest exactly as: (1) a ranked table of ALL findings from Phase A including items you did not fix, (2) what you changed and why including any migration applied and its exact name and any refactoring applied in Phase C, (3) evidence that all five gates passed, quoting each command's final output summary. If nothing was worth changing, leave the working tree untouched and respond with only the analysis summary so no pull request is opened.
 
       - name: Normalize Agent PR Titles
         # Guardrail: repo-checks rejects non-Conventional-Commit PR titles, and the
