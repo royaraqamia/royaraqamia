@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.5] - 2026-08-24
+
+### Changed
+- remove unused responsive-helpers module
+- mark redirect-error files as synced with main
+- remove e2e testing workflow
+- replace deprecated version input with release in sentry step
+- add production build gate to agent pipeline
+- add clean-architecture refactor phase to agent pipeline
+- normalize non-conventional agent PR titles
+
 ## [1.10.4] - 2026-08-24
 
 ### Changed
