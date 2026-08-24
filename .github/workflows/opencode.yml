@@ -77,3 +77,32 @@ jobs:
         with:
           model: opencode/x-preview-f-free
           share: 'false'
+
+      - name: Normalize Agent PR Titles
+        # Guardrail: repo-checks rejects non-Conventional-Commit PR titles, and
+        # titles generated during /oc tasks are not guaranteed to comply. Rewrite
+        # any open opencode/* PR title that fails the same regex (rename triggers
+        # `edited`, which re-runs Repo Checks green).
+        if: always()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const pattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9._/-]+\))?(!)?: .+/;
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            for (const pr of prs.data) {
+              if (!pr.head.ref.startsWith('opencode/')) continue;
+              if (pattern.test(pr.title)) continue;
+              const title = ('chore(maintenance): ' + pr.title.replace(/\s+/g, ' ').trim()).slice(0, 200);
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                title,
+              });
+              core.info('Renamed PR #' + pr.number + ': \'' + pr.title + '\' -> \'' + title + '\'');
+            }

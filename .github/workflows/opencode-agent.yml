@@ -114,4 +114,33 @@ jobs:
             Review your own diff critically for correctness, layering violations, regressions, and RLS implications; fix anything you find. Then run these commands in order until each passes: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; npm test . Iterate until all four are green. Do not run e2e tests and do not run npm run build. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and say so instead of forcing it.
 
             Phase D - Report
-            Your final response becomes the pull request description. Structure it exactly as: (1) a ranked table of ALL findings from Phase A including items you did not fix, (2) what you changed and why including any migration applied and its exact name, (3) evidence that all four gates passed, quoting each command's final output summary. If nothing was worth changing, leave the working tree untouched and respond with only the analysis summary so no pull request is opened.
+            Your final response becomes the pull request description, and its first line becomes the pull request title: start your final response with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area such as blog, blogpress, habitflow, linksnap, spendtrack, certificates, auth, or ci. Structure the rest exactly as: (1) a ranked table of ALL findings from Phase A including items you did not fix, (2) what you changed and why including any migration applied and its exact name, (3) evidence that all four gates passed, quoting each command's final output summary. If nothing was worth changing, leave the working tree untouched and respond with only the analysis summary so no pull request is opened.
+
+      - name: Normalize Agent PR Titles
+        # Guardrail: repo-checks rejects non-Conventional-Commit PR titles, and the
+        # agent's generated title is not guaranteed to comply. Rewrite any open
+        # opencode/* PR title that fails the same regex (rename triggers `edited`,
+        # which re-runs Repo Checks green).
+        if: always()
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const pattern = /^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-zA-Z0-9._/-]+\))?(!)?: .+/;
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100,
+            });
+            for (const pr of prs.data) {
+              if (!pr.head.ref.startsWith('opencode/')) continue;
+              if (pattern.test(pr.title)) continue;
+              const title = ('chore(maintenance): ' + pr.title.replace(/\s+/g, ' ').trim()).slice(0, 200);
+              await github.rest.pulls.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pr.number,
+                title,
+              });
+              core.info('Renamed PR #' + pr.number + ': \'' + pr.title + '\' -> \'' + title + '\'');
+            }
