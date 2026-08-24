@@ -137,5 +137,5 @@ jobs:
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
-          version: v${{ steps.next.outputs.version }}
+          release: v${{ steps.next.outputs.version }}
           finalize: false
