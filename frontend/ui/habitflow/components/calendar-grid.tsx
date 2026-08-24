@@ -3,6 +3,7 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { HabitLog } from '@/shared/contracts/habitflow';
+import { LucideIcon, TrendingUp } from 'lucide-react';
 import { Card } from '@/frontend/ui/primitives/card';
 import {
   formatArabicDate,
@@ -18,7 +19,6 @@ import {
   Snowflake,
   Flame,
   Trophy,
-  TrendingUp,
   Calendar as CalendarIcon,
   Star,
   Info,
@@ -61,6 +61,39 @@ const ACTIVE_HABIT_FORMS: PluralForms = {
   other: 'عادة نشطة',
 };
 const TIME_FORMS: PluralForms = { one: 'مرة', two: 'مرتين', few: 'مرات', other: 'مرة' };
+
+interface MetricCardProps {
+  icon: LucideIcon;
+  iconClassName: string;
+  label: string;
+  value: string;
+  unit?: string;
+}
+
+function MetricCard({ icon: Icon, iconClassName, label, value, unit }: MetricCardProps) {
+  return (
+    <div className="flex items-center gap-2.5 @min-[440px]:gap-3 min-w-0 p-2.5 @min-[440px]:p-3 rounded-xl bg-card/40 border border-border/40 backdrop-blur-xl">
+      <div
+        className={`flex items-center justify-center shrink-0 w-8 h-8 @min-[440px]:w-9 @min-[440px]:h-9 rounded-lg border ${iconClassName}`}
+      >
+        <Icon className="w-4 h-4 @min-[440px]:w-[18px] @min-[440px]:h-[18px]" aria-hidden="true" />
+      </div>
+      <div className="flex flex-col justify-center min-w-0 gap-1">
+        <span className="text-[10px] @min-[440px]:text-[11px] font-medium text-muted-foreground truncate leading-none">
+          {label}
+        </span>
+        <span className="text-sm @min-[440px]:text-base font-black tracking-tight text-foreground tabular-nums truncate leading-none">
+          {value}
+          {unit ? (
+            <span className="ms-1 text-[10px] @min-[440px]:text-xs font-normal text-muted-foreground">
+              {unit}
+            </span>
+          ) : null}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function CalendarGrid({
   calendarGrid,
@@ -219,12 +252,12 @@ export function CalendarGrid({
     <section
       dir="rtl"
       aria-label="تقويم سلسلة الإنجاز"
-      className={`relative w-full mx-auto space-y-6 sm:space-y-8 font-sans antialiased text-foreground selection:bg-primary/20 selection:text-primary ${className}`}
+      className={`@container relative w-full mx-auto space-y-4 @min-[440px]:space-y-5 @min-[560px]:space-y-6 font-sans antialiased text-foreground selection:bg-primary/20 selection:text-primary ${className}`}
     >
       {/* Dynamic Ambient Background Glows */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl h-56 bg-linear-to-r from-primary/20 via-primary/10 to-transparent blur-3xl opacity-70 rounded-full dark:opacity-40"
+        className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-full max-w-2xl h-48 @min-[560px]:h-56 bg-linear-to-r from-primary/20 via-primary/10 to-transparent blur-3xl opacity-70 rounded-full dark:opacity-40"
       />
       <div
         aria-hidden="true"
@@ -232,37 +265,44 @@ export function CalendarGrid({
       />
 
       {/* Header Section */}
-      <header className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/40">
-        <div className="flex items-center gap-3.5 sm:gap-4">
-          <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-linear-to-br from-primary/25 via-primary/10 to-background border border-primary/30 text-primary shadow-sm ring-1 ring-primary/20 shrink-0">
-            <CalendarDays className="w-6 h-6 sm:w-7 sm:h-7" aria-hidden="true" />
-            <div className="absolute inset-0 rounded-2xl bg-primary/10 blur-xs" />
+      <header className="relative flex items-start justify-between gap-3 pb-4 @min-[440px]:pb-5 border-b border-border/40">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="relative flex items-center justify-center shrink-0 w-10 h-10 @min-[440px]:w-12 @min-[440px]:h-12 rounded-xl @min-[440px]:rounded-2xl bg-linear-to-br from-primary/25 via-primary/10 to-background border border-primary/30 text-primary shadow-sm ring-1 ring-primary/20">
+            <CalendarDays
+              className="w-5 h-5 @min-[440px]:w-6 @min-[440px]:h-6"
+              aria-hidden="true"
+            />
           </div>
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-black text-foreground">سلسلة الإنجاز</h2>
+          <div className="min-w-0 space-y-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="text-lg @min-[520px]:text-2xl font-black text-foreground whitespace-nowrap leading-tight">
+                سلسلة الإنجاز
+              </h2>
               {stats.perfectDays > 0 && (
-                <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-2xs">
-                  <Flame className="w-3 h-3 text-amber-500 fill-amber-500 animate-pulse motion-reduce:animate-none" />
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] @min-[440px]:text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
+                  <Flame
+                    className="w-3 h-3 text-amber-500 fill-amber-500 animate-pulse motion-reduce:animate-none"
+                    aria-hidden="true"
+                  />
                   <span>
                     {stats.perfectDays} {pluralize(stats.perfectDays, PERFECT_DAY_FORMS)}
                   </span>
                 </span>
               )}
             </div>
-            <p className="text-xs sm:text-sm text-muted-foreground font-medium">
+            <p className="text-xs @min-[440px]:text-sm text-muted-foreground font-medium leading-snug line-clamp-1 @min-[520px]:line-clamp-none">
               تتبّع وتيرة التزامك اليومي وحافظ على استمراريّة عاداتك
             </p>
           </div>
         </div>
 
-        {/* Header Right Actions & Badges */}
-        <div className="flex items-center gap-2.5 self-start sm:self-center shrink-0 flex-wrap">
+        {/* Header Actions & Badges */}
+        <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
           {todayItem && activeDate !== todayItem.date && (
             <button
               type="button"
               onClick={() => onDateSelect(todayItem.date)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border border-border/50 backdrop-blur-md transition-all duration-200 active:scale-95 cursor-pointer motion-reduce:transform-none motion-reduce:transition-none"
+              className="inline-flex items-center gap-1.5 px-2.5 @min-[440px]:px-3 py-1.5 rounded-lg @min-[440px]:rounded-xl text-[11px] @min-[440px]:text-xs font-bold text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border border-border/50 backdrop-blur-md transition-all duration-200 active:scale-95 cursor-pointer motion-reduce:transform-none motion-reduce:transition-none"
               title="الانتقال إلى تاريخ اليوم"
             >
               <CalendarIcon className="w-3.5 h-3.5 text-primary" />
@@ -271,7 +311,7 @@ export function CalendarGrid({
           )}
 
           {habitsCount > 0 && (
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-extrabold bg-linear-to-r from-primary/15 via-primary/10 to-primary/5 text-primary border border-primary/30 shadow-xs backdrop-blur-md">
+            <div className="inline-flex items-center gap-1.5 px-2.5 @min-[440px]:px-3.5 py-1.5 rounded-lg @min-[440px]:rounded-xl text-[11px] @min-[440px]:text-xs font-extrabold bg-linear-to-r from-primary/15 via-primary/10 to-primary/5 text-primary border border-primary/30 backdrop-blur-md whitespace-nowrap">
               <Sparkles
                 className="w-3.5 h-3.5 text-primary animate-pulse motion-reduce:animate-none"
                 aria-hidden="true"
@@ -286,87 +326,49 @@ export function CalendarGrid({
 
       {/* Quick Metrics Ribbon (Only shown if habits exist) */}
       {habitsCount > 0 && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
-          {/* Rate Card */}
-          <div className="relative overflow-hidden p-3 sm:p-3.5 rounded-2xl bg-card/40 border border-border/40 backdrop-blur-xl shadow-2xs flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-              <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="block text-[11px] font-medium text-muted-foreground truncate">
-                معدل الإنجاز
-              </span>
-              <span className="text-base sm:text-lg font-black tracking-tight text-foreground tabular-nums">
-                {stats.completionRate}%
-              </span>
-            </div>
-          </div>
-
-          {/* Perfect Days Card */}
-          <div className="relative overflow-hidden p-3 sm:p-3.5 rounded-2xl bg-card/40 border border-border/40 backdrop-blur-xl shadow-2xs flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
-              <Trophy className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="block text-[11px] font-medium text-muted-foreground truncate">
-                أيام مكتملة 100%
-              </span>
-              <span className="text-base sm:text-lg font-black tracking-tight text-foreground tabular-nums">
-                {stats.perfectDays}{' '}
-                <span className="text-xs font-normal text-muted-foreground">
-                  {pluralize(stats.perfectDays, DAY_FORMS)}
-                </span>
-              </span>
-            </div>
-          </div>
-
-          {/* Completed Habits Count */}
-          <div className="relative overflow-hidden p-3 sm:p-3.5 rounded-2xl bg-card/40 border border-border/40 backdrop-blur-xl shadow-2xs flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500 shrink-0">
-              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="block text-[11px] font-medium text-muted-foreground truncate">
-                العادات المنجزة
-              </span>
-              <span className="text-base sm:text-lg font-black tracking-tight text-foreground tabular-nums">
-                {stats.totalCompleted}{' '}
-                <span className="text-xs font-normal text-muted-foreground">
-                  {pluralize(stats.totalCompleted, TIME_FORMS)}
-                </span>
-              </span>
-            </div>
-          </div>
-
-          {/* Freeze Protection Days */}
-          <div className="relative overflow-hidden p-3 sm:p-3.5 rounded-2xl bg-card/40 border border-border/40 backdrop-blur-xl shadow-2xs flex items-center gap-3">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-500 shrink-0">
-              <Snowflake className="w-4 h-4 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="block text-[11px] font-medium text-muted-foreground truncate">
-                أيام التجميد
-              </span>
-              <span className="text-base sm:text-lg font-black tracking-tight text-foreground tabular-nums">
-                {stats.freezeDays}{' '}
-                <span className="text-xs font-normal text-muted-foreground">
-                  {pluralize(stats.freezeDays, DAY_FORMS)}
-                </span>
-              </span>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 @min-[560px]:grid-cols-4 gap-2 @min-[440px]:gap-2.5">
+          <MetricCard
+            icon={TrendingUp}
+            iconClassName="bg-primary/10 border-primary/20 text-primary"
+            label="معدل الإنجاز"
+            value={`${stats.completionRate}%`}
+          />
+          <MetricCard
+            icon={Trophy}
+            iconClassName="bg-amber-500/10 border-amber-500/20 text-amber-500"
+            label="أيام مكتملة 100%"
+            value={`${stats.perfectDays}`}
+            unit={pluralize(stats.perfectDays, DAY_FORMS)}
+          />
+          <MetricCard
+            icon={CheckCircle2}
+            iconClassName="bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+            label="العادات المنجزة"
+            value={`${stats.totalCompleted}`}
+            unit={pluralize(stats.totalCompleted, TIME_FORMS)}
+          />
+          <MetricCard
+            icon={Snowflake}
+            iconClassName="bg-sky-500/10 border-sky-500/20 text-sky-500"
+            label="أيام التجميد"
+            value={`${stats.freezeDays}`}
+            unit={pluralize(stats.freezeDays, DAY_FORMS)}
+          />
         </div>
       )}
 
       {/* Main Glassmorphic Container Card */}
-      <Card className="relative overflow-hidden p-4 sm:p-6 md:p-8 rounded-3xl sm:rounded-4xl border border-border/50 bg-card/60 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.25)] transition-all duration-300 motion-reduce:transition-none">
+      <Card className="relative overflow-hidden p-3 @min-[440px]:p-5 @min-[560px]:p-6 rounded-2xl @min-[440px]:rounded-3xl border border-border/50 bg-card/60 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.25)] transition-all duration-300 motion-reduce:transition-none">
         {habitsCount === 0 ? (
           /* High-End Empty State */
-          <div className="relative overflow-hidden py-14 sm:py-20 px-6 text-center space-y-6 flex flex-col items-center justify-center bg-linear-to-b from-muted/20 via-muted/5 to-transparent rounded-2xl sm:rounded-3xl border-2 border-dashed border-border/60">
+          <div className="relative overflow-hidden py-10 @min-[440px]:py-14 px-4 @min-[440px]:px-6 text-center space-y-5 @min-[440px]:space-y-6 flex flex-col items-center justify-center bg-linear-to-b from-muted/20 via-muted/5 to-transparent rounded-2xl border-2 border-dashed border-border/60">
             <div className="relative flex items-center justify-center">
               <div className="absolute -inset-4 rounded-full bg-primary/20 blur-2xl animate-pulse motion-reduce:animate-none" />
-              <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-linear-to-br from-primary/20 via-primary/10 to-background border border-primary/30 flex items-center justify-center text-primary shadow-lg ring-1 ring-primary/20">
-                <CalendarDays className="w-10 h-10 sm:w-12 sm:h-12 opacity-90" aria-hidden="true" />
+              <div className="relative w-16 h-16 @min-[440px]:w-20 @min-[440px]:h-20 rounded-2xl @min-[440px]:rounded-3xl bg-linear-to-br from-primary/20 via-primary/10 to-background border border-primary/30 flex items-center justify-center text-primary shadow-lg ring-1 ring-primary/20">
+                <CalendarDays
+                  className="w-8 h-8 @min-[440px]:w-10 @min-[440px]:h-10 opacity-90"
+                  aria-hidden="true"
+                />
               </div>
               <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5">
                 <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75"></span>
@@ -374,30 +376,30 @@ export function CalendarGrid({
               </span>
             </div>
 
-            <div className="space-y-2.5 max-w-md mx-auto">
-              <h3 className="text-xl sm:text-2xl font-black text-foreground">
+            <div className="space-y-2 max-w-md mx-auto">
+              <h3 className="text-lg @min-[440px]:text-2xl font-black text-foreground">
                 لا توجد عادات نشطة بعد
               </h3>
-              <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              <p className="text-xs @min-[440px]:text-sm text-muted-foreground leading-relaxed">
                 أضِف عاداتك اليومية لتبدأ في بناء سلسلة الاستمرارية وتتبّع نموّك خطوة بخطوة في هذا
                 التقويم
               </p>
             </div>
           </div>
         ) : (
-          <div className="space-y-6 sm:space-y-8">
+          <div className="space-y-4 @min-[440px]:space-y-5 @min-[560px]:space-y-6">
             {/* Calendar Grid Cells */}
             <div
               ref={gridContainerRef}
               role="grid"
               aria-label="شبكة أيام الإنجاز"
-              className="space-y-2 sm:space-y-3.5"
+              className="space-y-1.5 @min-[440px]:space-y-2.5"
             >
               {gridRows.map((row, rowIndex) => (
                 <div
                   key={`row-${rowIndex}`}
                   role="row"
-                  className="grid grid-cols-5 gap-2 sm:gap-3.5"
+                  className="grid grid-cols-5 gap-1.5 @min-[440px]:gap-2.5"
                 >
                   {row.map((gridItem, colIndex) => {
                     const idx = rowIndex * GRID_COLUMNS + colIndex;
@@ -436,7 +438,7 @@ export function CalendarGrid({
 
                     if (isSelected) {
                       glowRing =
-                        'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/25 z-20 scale-[1.02] sm:scale-[1.03]';
+                        'ring-2 ring-primary ring-offset-2 ring-offset-background shadow-lg shadow-primary/25 z-20 scale-[1.02] @min-[440px]:scale-[1.03]';
                     } else if (isToday) {
                       glowRing = 'ring-2 ring-primary/80 ring-offset-2 ring-offset-background z-10';
                     }
@@ -446,7 +448,7 @@ export function CalendarGrid({
                         key={gridItem.date}
                         role="gridcell"
                         aria-selected={isSelected}
-                        className="relative aspect-square rounded-2xl sm:rounded-3xl"
+                        className="relative aspect-square rounded-xl @min-[440px]:rounded-2xl"
                       >
                         <button
                           data-cell
@@ -465,11 +467,12 @@ export function CalendarGrid({
                           }${isToday ? ' (اليوم)' : ''}`}
                           aria-current={isToday ? 'date' : undefined}
                           className={`
-                            relative group w-full h-full rounded-2xl sm:rounded-3xl flex flex-col items-center justify-between
-                            p-2 sm:p-3 md:p-3.5 text-center cursor-pointer select-none outline-none border
+                            relative group w-full h-full rounded-xl @min-[440px]:rounded-2xl
+                            flex flex-col items-center justify-center
+                            text-center cursor-pointer select-none outline-none border
                             focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
                             touch-manipulation overflow-hidden
-                            transition-all duration-300 ease-out hover:scale-[1.03] hover:-translate-y-0.5 active:scale-[0.97] active:translate-y-0
+                            transition-all duration-200 ease-out hover:scale-[1.04] active:scale-[0.97]
                             motion-reduce:transform-none motion-reduce:transition-none
                             ${cellBackground} ${glowRing}
                           `}
@@ -482,96 +485,56 @@ export function CalendarGrid({
                             />
                           )}
 
-                          {/* Top Row: Weekday Label & Indicators */}
-                          <div className="w-full relative flex items-center justify-between z-10">
-                            <span className="text-[10px] sm:text-xs font-bold opacity-80 group-hover:opacity-100 transition-opacity truncate">
-                              {gridItem.dayLabel}
-                            </span>
-
-                            <div className="flex items-center gap-1 shrink-0">
-                              {isPerfectDay && (
-                                <Star
-                                  className="w-3 h-3 text-amber-500 fill-amber-500 shrink-0"
-                                  aria-hidden="true"
-                                />
-                              )}
-                              {isToday && (
-                                <span
-                                  className="relative flex h-2 w-2"
-                                  aria-hidden="true"
-                                  title="اليوم"
-                                >
-                                  <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-primary opacity-85" />
-                                  <span className="relative inline-flex rounded-full h-2 w-2 bg-primary shadow-xs" />
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Middle: Day Number */}
-                          <div className="relative my-auto flex flex-col items-center justify-center z-10">
-                            <span className="text-base sm:text-2xl md:text-3xl font-black tracking-tight leading-none tabular-nums text-foreground">
-                              {dayNum}
-                            </span>
-                          </div>
-
-                          {/* Bottom: Progress Badge / Mini Track */}
-                          <div className="w-full relative z-10 flex flex-col items-center gap-1">
-                            {/* Interactive Badge */}
-                            <div className="h-4 sm:h-5 flex items-center justify-center gap-1 w-full">
-                              {completedCount > 0 && (
-                                <span className="inline-flex items-center gap-0.5 sm:gap-1 text-[9px] sm:text-[11px] font-black px-1.5 py-0.5 rounded-full bg-background/90 text-foreground border border-border/60 backdrop-blur-md shadow-2xs">
-                                  <CheckCircle2
-                                    className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-primary shrink-0"
-                                    aria-hidden="true"
-                                  />
-                                  <span className="tabular-nums">
-                                    {completedCount}
-                                    <span className="hidden sm:inline opacity-60 font-normal">
-                                      /{habitsCount}
-                                    </span>
-                                  </span>
-                                </span>
-                              )}
-
-                              {isFrozenDay && (
-                                <span className="inline-flex items-center gap-0.5 text-[9px] sm:text-[10px] font-black px-1.5 py-0.5 rounded-full bg-sky-500/20 text-sky-600 dark:text-sky-300 border border-sky-500/30 backdrop-blur-md shadow-2xs">
-                                  <Snowflake className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-sky-500 shrink-0" />
-                                  <span className="hidden sm:inline">مجمد</span>
-                                </span>
-                              )}
-
-                              {completedCount === 0 && !isFrozenDay && (
-                                <span
-                                  aria-hidden="true"
-                                  className="text-[10px] opacity-0 group-hover:opacity-40 transition-opacity font-medium"
-                                >
-                                  -
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Mini Subtle Progress Bar */}
-                            {habitsCount > 0 && (
-                              <div
+                          {/* Status Indicators */}
+                          <div className="absolute top-1 @min-[440px]:top-1.5 start-1 @min-[440px]:start-1.5 flex items-center gap-0.5 z-10">
+                            {isPerfectDay && (
+                              <Star
+                                className="w-2.5 h-2.5 @min-[440px]:w-3 @min-[440px]:h-3 text-amber-500 fill-amber-500 shrink-0"
                                 aria-hidden="true"
-                                className="w-full h-1 bg-foreground/5 rounded-full overflow-hidden"
+                              />
+                            )}
+                            {isFrozenDay && (
+                              <Snowflake
+                                className="w-2.5 h-2.5 @min-[440px]:w-3 @min-[440px]:h-3 text-sky-500 shrink-0"
+                                aria-hidden="true"
+                              />
+                            )}
+                            {isToday && (
+                              <span
+                                className="relative flex h-1.5 w-1.5 @min-[440px]:h-2 @min-[440px]:w-2"
+                                aria-hidden="true"
                               >
-                                <div
-                                  className={`h-full rounded-full transition-all duration-500 motion-reduce:transition-none ${
-                                    isPerfectDay
-                                      ? 'bg-linear-to-r from-primary to-amber-400'
-                                      : isFrozenDay
-                                        ? 'bg-sky-400'
-                                        : 'bg-primary'
-                                  }`}
-                                  style={{
-                                    width: `${isFrozenDay ? 100 : Math.min(100, completionRatio * 100)}%`,
-                                  }}
-                                />
-                              </div>
+                                <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-primary opacity-80" />
+                                <span className="relative inline-flex rounded-full h-full w-full bg-primary" />
+                              </span>
                             )}
                           </div>
+
+                          {/* Day Number */}
+                          <span className="text-base @min-[440px]:text-xl @min-[560px]:text-2xl font-black tracking-tight leading-none tabular-nums text-foreground">
+                            {dayNum}
+                          </span>
+
+                          {/* Progress Fill — rendered only when there is progress */}
+                          {completionRatio > 0 && (
+                            <div
+                              aria-hidden="true"
+                              className="absolute bottom-1 @min-[440px]:bottom-1.5 inset-x-1.5 @min-[440px]:inset-x-2.5 h-0.5 @min-[440px]:h-1 bg-foreground/10 rounded-full overflow-hidden"
+                            >
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 motion-reduce:transition-none ${
+                                  isPerfectDay
+                                    ? 'bg-linear-to-r from-primary to-amber-400'
+                                    : isFrozenDay
+                                      ? 'bg-sky-400'
+                                      : 'bg-primary'
+                                }`}
+                                style={{
+                                  width: `${isFrozenDay ? 100 : Math.min(100, completionRatio * 100)}%`,
+                                }}
+                              />
+                            </div>
+                          )}
                         </button>
                       </div>
                     );
@@ -589,60 +552,57 @@ export function CalendarGrid({
                   animate={{ opacity: 1, y: 0 }}
                   exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -6 }}
                   transition={reducedMotion ? { duration: 0 } : { duration: 0.2 }}
-                  className="relative overflow-hidden p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-linear-to-r from-muted/30 via-muted/15 to-transparent border border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                  className="relative overflow-hidden p-3.5 @min-[440px]:p-4 @min-[560px]:p-5 rounded-2xl bg-linear-to-r from-muted/30 via-muted/15 to-transparent border border-border/50"
                 >
-                  <div className="flex items-center gap-3.5">
-                    <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                      {activeDayDetails.isPerfect ? (
-                        <Trophy className="w-5 h-5 text-amber-500" />
-                      ) : activeDayDetails.completedCount > 0 ? (
-                        <CalendarIcon className="w-5 h-5" />
-                      ) : activeDayDetails.skipCount > 0 ? (
-                        <Snowflake className="w-5 h-5 text-sky-500" />
-                      ) : (
-                        <CalendarIcon className="w-5 h-5" />
-                      )}
-                    </div>
-                    <div className="space-y-0.5">
-                      <div className="flex items-center gap-2">
-                        <h4 className="text-sm sm:text-base font-black text-foreground">
-                          {activeDayDetails.formattedDate}
-                        </h4>
-                        {activeDayDetails.isToday && (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary/20 text-primary border border-primary/30">
-                            اليوم
-                          </span>
+                  <div className="flex flex-col @min-[560px]:flex-row @min-[560px]:items-center @min-[560px]:justify-between gap-3 @min-[560px]:gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-9 h-9 @min-[560px]:w-10 @min-[560px]:h-10 rounded-xl @min-[560px]:rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                        {activeDayDetails.isPerfect ? (
+                          <Trophy className="w-4.5 h-4.5 @min-[560px]:w-5 @min-[560px]:h-5 text-amber-500" />
+                        ) : activeDayDetails.completedCount > 0 ? (
+                          <CalendarIcon className="w-4.5 h-4.5 @min-[560px]:w-5 @min-[560px]:h-5" />
+                        ) : activeDayDetails.skipCount > 0 ? (
+                          <Snowflake className="w-4.5 h-4.5 @min-[560px]:w-5 @min-[560px]:h-5 text-sky-500" />
+                        ) : (
+                          <CalendarIcon className="w-4.5 h-4.5 @min-[560px]:w-5 @min-[560px]:h-5" />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground font-medium">
-                        {activeDayDetails.isPerfect
-                          ? 'إنجاز استثنائي! تم إتمام جميع العادات المقررة بنجاح'
-                          : activeDayDetails.completedCount > 0
-                            ? `تم إنجاز ${activeDayDetails.completedCount} من أصل ${habitsCount} ${pluralize(habitsCount, HABIT_FORMS)} (${activeDayDetails.pct}%)`
-                            : activeDayDetails.skipCount > 0
-                              ? 'يوم تجميد لحفظ السلسلة والاستراحة'
-                              : 'لم يتم تسجيل إنجازات في هذا اليوم حتى الآن'}
-                      </p>
+                      <div className="min-w-0 space-y-0.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm @min-[560px]:text-base font-black text-foreground leading-tight">
+                            {activeDayDetails.formattedDate}
+                          </h4>
+                          {activeDayDetails.isToday && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-primary/20 text-primary border border-primary/30 shrink-0">
+                              اليوم
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-xs @min-[560px]:text-sm text-muted-foreground font-medium leading-snug">
+                          {activeDayDetails.isPerfect
+                            ? 'إنجاز استثنائي! تم إتمام جميع العادات المقررة بنجاح'
+                            : activeDayDetails.completedCount > 0
+                              ? `تم إنجاز ${activeDayDetails.completedCount} من أصل ${habitsCount} ${pluralize(habitsCount, HABIT_FORMS)} (${activeDayDetails.pct}%)`
+                              : activeDayDetails.skipCount > 0
+                                ? 'يوم تجميد لحفظ السلسلة والاستراحة'
+                                : 'لم يتم تسجيل إنجازات في هذا اليوم حتى الآن'}
+                        </p>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Right Progress Capsule */}
-                  <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 shrink-0">
-                    <div className="text-left sm:text-right">
-                      <span className="text-xs font-bold text-muted-foreground block">
-                        نسبة اليوم
-                      </span>
-                      <span className="text-base font-black text-foreground tabular-nums">
+                    {/* Day Progress Capsule */}
+                    <div className="flex items-center gap-2.5 shrink-0 @min-[560px]:w-36">
+                      <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden border border-border/50">
+                        <div
+                          className={`h-full rounded-full transition-all duration-300 motion-reduce:transition-none ${
+                            activeDayDetails.isPerfect ? 'bg-amber-400' : 'bg-primary'
+                          }`}
+                          style={{ width: `${activeDayDetails.pct}%` }}
+                        />
+                      </div>
+                      <span className="text-xs @min-[560px]:text-sm font-black text-foreground tabular-nums shrink-0">
                         {activeDayDetails.pct}%
                       </span>
-                    </div>
-                    <div className="w-24 sm:w-28 h-2 bg-muted rounded-full overflow-hidden border border-border/50">
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 motion-reduce:transition-none ${
-                          activeDayDetails.isPerfect ? 'bg-amber-400' : 'bg-primary'
-                        }`}
-                        style={{ width: `${activeDayDetails.pct}%` }}
-                      />
                     </div>
                   </div>
                 </m.div>
@@ -650,41 +610,43 @@ export function CalendarGrid({
             </AnimatePresence>
 
             {/* Heatmap Legend Bar */}
-            <div className="pt-4 border-t border-border/40 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-muted-foreground font-medium">
-              <div className="flex items-center gap-1.5">
+            <div className="pt-3 @min-[440px]:pt-4 border-t border-border/40 flex items-center gap-3 text-xs text-muted-foreground font-medium">
+              <div className="flex items-center gap-1.5 shrink-0">
                 <Info className="w-3.5 h-3.5 text-primary/70 shrink-0" aria-hidden="true" />
-                <span>دليل وتيرة الإنجاز:</span>
+                <span className="hidden @min-[560px]:inline whitespace-nowrap">
+                  دليل وتيرة الإنجاز:
+                </span>
               </div>
 
-              <div className="flex items-center gap-2.5 sm:gap-4 flex-wrap justify-center">
+              <div className="flex items-center gap-3 @min-[440px]:gap-4 flex-1 min-w-0 overflow-x-auto pb-0.5 pe-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {/* 0% */}
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded-md bg-muted/30 border border-border/60 shrink-0" />
-                  <span className="text-[11px]">لم يُنجز</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="w-3 h-3 @min-[440px]:w-3.5 @min-[440px]:h-3.5 rounded-md bg-muted/30 border border-border/60 shrink-0" />
+                  <span className="text-[11px] whitespace-nowrap">لم يُنجز</span>
                 </div>
                 {/* 1 - 49% */}
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded-md bg-primary/15 border border-primary/30 shrink-0" />
-                  <span className="text-[11px]">جزئي</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="w-3 h-3 @min-[440px]:w-3.5 @min-[440px]:h-3.5 rounded-md bg-primary/15 border border-primary/30 shrink-0" />
+                  <span className="text-[11px] whitespace-nowrap">جزئي</span>
                 </div>
                 {/* 50 - 99% */}
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded-md bg-primary/30 border border-primary/50 shrink-0" />
-                  <span className="text-[11px]">متقدم</span>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="w-3 h-3 @min-[440px]:w-3.5 @min-[440px]:h-3.5 rounded-md bg-primary/30 border border-primary/50 shrink-0" />
+                  <span className="text-[11px] whitespace-nowrap">متقدم</span>
                 </div>
                 {/* 100% */}
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded-md bg-linear-to-br from-primary/40 to-amber-500/30 border border-primary/60 shrink-0 flex items-center justify-center">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="w-3 h-3 @min-[440px]:w-3.5 @min-[440px]:h-3.5 rounded-md bg-linear-to-br from-primary/40 to-amber-500/30 border border-primary/60 shrink-0 flex items-center justify-center">
                     <Star className="w-2 h-2 text-amber-500 fill-amber-500" />
                   </span>
-                  <span className="text-[11px]">مكتمل 100%</span>
+                  <span className="text-[11px] whitespace-nowrap">مكتمل 100%</span>
                 </div>
                 {/* Freeze */}
-                <div className="flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded-md bg-sky-500/20 border border-sky-500/40 shrink-0 flex items-center justify-center">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <span className="w-3 h-3 @min-[440px]:w-3.5 @min-[440px]:h-3.5 rounded-md bg-sky-500/20 border border-sky-500/40 shrink-0 flex items-center justify-center">
                     <Snowflake className="w-2 h-2 text-sky-500" />
                   </span>
-                  <span className="text-[11px]">تجميد</span>
+                  <span className="text-[11px] whitespace-nowrap">تجميد</span>
                 </div>
               </div>
             </div>

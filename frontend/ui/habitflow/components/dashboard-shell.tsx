@@ -32,7 +32,10 @@ import { HabitOnboarding } from '@/frontend/ui/habitflow/components/habit-onboar
 import { InsightsRow } from '@/frontend/ui/habitflow/components/insights-row';
 import type { HabitTemplate } from '@/frontend/shared/habitflow/habit-templates';
 import { calculateInsights } from '@/frontend/shared/habitflow/habit-insights';
+import { pluralize, type PluralForms } from '@/frontend/shared/habitflow/calendar-format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+
+const DAY_FORMS: PluralForms = { one: 'يوم', two: 'يومين', few: 'أيام', other: 'يوم' };
 
 interface DashboardShellProps {
   initialHabits: Habit[];
@@ -115,6 +118,7 @@ export function DashboardShell({
   const shouldReduce = useReducedMotion();
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [noteHabitId, setNoteHabitId] = useState<string | null>(null);
+  const [isSavingNote, setIsSavingNote] = useState(false);
   const { signOut, isLoggingOut } = useLogout();
 
   const insights = useMemo(
@@ -209,6 +213,7 @@ export function DashboardShell({
                 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
                 className={activeDate !== todayDate ? '' : 'pointer-events-none'}
+                inert={activeDate === todayDate}
               >
                 <Button
                   variant="outline"
@@ -228,14 +233,14 @@ export function DashboardShell({
               <StatsCard
                 index={0}
                 icon={TrendingUp}
-                label="الاستمراريَّة (يوم)"
+                label="الاستمراريَّة (%)"
                 value={`${activeStats.averageCompletionRate}%`}
               />
               <StatsCard
                 index={1}
                 icon={Flame}
                 label="أطول سلسلة نشطة"
-                value={`${activeStats.highestStreak} أيام`}
+                value={`${activeStats.highestStreak} ${pluralize(activeStats.highestStreak, DAY_FORMS)}`}
               />
               <StatsCard
                 index={2}
@@ -342,8 +347,8 @@ export function DashboardShell({
             </section>
 
             {/* Calendar Grid Column */}
-            <section className="lg:col-span-5 xl:col-span-4" aria-label="التَّقويم والسِّجل">
-              <div className="sticky top-8">
+            <section className="lg:col-span-5 xl:col-span-4" aria-label="التَّقويم والسِّجل">
+              <div className="lg:sticky lg:top-8 lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain">
                 <CalendarGrid
                   calendarGrid={calendarGrid}
                   logs={logs}
@@ -476,9 +481,16 @@ export function DashboardShell({
                 : ''
             }
             onClose={() => setNoteHabitId(null)}
-            onSave={(note) => {
-              if (noteHabitId) handleSaveNote(noteHabitId, note);
-              setNoteHabitId(null);
+            isSaving={isSavingNote}
+            onSave={async (note) => {
+              if (!noteHabitId) return;
+              setIsSavingNote(true);
+              try {
+                await handleSaveNote(noteHabitId, note);
+                setNoteHabitId(null);
+              } finally {
+                setIsSavingNote(false);
+              }
             }}
           />
 
