@@ -2,7 +2,10 @@
 
 import { CalendarClock, Clock3, HeartPulse, Trophy, Sparkles } from 'lucide-react';
 import { HabitInsights, isCelebrationStreak } from '@/frontend/shared/habitflow/habit-insights';
+import { pluralize, type PluralForms } from '@/frontend/shared/habitflow/calendar-format';
 import { Card } from '@/frontend/ui/primitives/card';
+
+const DAY_FORMS: PluralForms = { one: 'يوم', two: 'يومين', few: 'أيام', other: 'يوم' };
 
 interface InsightCardProps {
   icon: typeof CalendarClock;
@@ -88,7 +91,8 @@ export function InsightsRow({ insights }: InsightsRowProps) {
             <p className="min-w-0 flex-1 text-sm font-medium leading-relaxed text-foreground/90 sm:text-base">
               واصل التَّقدُّم! سلسلتك الحاليَّة{' '}
               <span className="mx-1 inline-flex items-center whitespace-nowrap rounded-full bg-primary/15 px-2.5 py-0.5 text-xs font-bold text-primary ring-1 ring-inset ring-primary/30 shadow-2xs transition-transform duration-300 group-hover:scale-105">
-                {insights.largestCurrentStreak} أيَّام
+                {insights.largestCurrentStreak}{' '}
+                {pluralize(insights.largestCurrentStreak, DAY_FORMS)}
               </span>{' '}
               — حافظ على الأداء اليومي لبناء عادة ثابتة.
             </p>
@@ -108,7 +112,11 @@ export function InsightsRow({ insights }: InsightsRowProps) {
           label="مُعدَّل التَّعافي"
           value={`${insights.recoveryRate}%`}
         />
-        <InsightCard icon={Trophy} label="أطول سلسلة" value={`${insights.largestStreak} أيَّام`} />
+        <InsightCard
+          icon={Trophy}
+          label="أطول سلسلة"
+          value={`${insights.largestStreak} ${pluralize(insights.largestStreak, DAY_FORMS)}`}
+        />
       </div>
     </section>
   );

@@ -123,6 +123,7 @@ export function EditHabitModal({
               <button
                 type="button"
                 onClick={() => onFrequencyChange('daily')}
+                aria-pressed={habitFrequency === 'daily'}
                 className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                   habitFrequency === 'daily'
                     ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-semibold'
@@ -134,6 +135,7 @@ export function EditHabitModal({
               <button
                 type="button"
                 onClick={() => onFrequencyChange('weekly')}
+                aria-pressed={habitFrequency === 'weekly'}
                 className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                   habitFrequency === 'weekly'
                     ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-semibold'
@@ -222,6 +224,7 @@ export function EditHabitModal({
                         key={value}
                         type="button"
                         onClick={() => onTargetPeriodChange(isSelected ? '' : value)}
+                        aria-pressed={isSelected}
                         className={`flex-1 flex items-center justify-center text-[12px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                           isSelected
                             ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-semibold'

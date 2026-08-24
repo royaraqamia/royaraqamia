@@ -30,12 +30,15 @@ function AnimatedValue({ value: raw, reduce }: { value: string; reduce: boolean 
   }, [target, springValue, motionValue, suffix, shouldAnimate]);
 
   return (
-    <p
-      className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl xl:text-4xl font-display tabular-nums min-w-0 truncate"
-      aria-live="polite"
-    >
-      {display}
-    </p>
+    <>
+      <span className="sr-only">{raw}</span>
+      <p
+        aria-hidden="true"
+        className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl xl:text-4xl font-display tabular-nums min-w-0 truncate"
+      >
+        {display}
+      </p>
+    </>
   );
 }
 

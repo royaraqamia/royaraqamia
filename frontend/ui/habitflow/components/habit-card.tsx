@@ -186,7 +186,7 @@ export function HabitCard({
               variant="ghost"
               size="icon"
               aria-label={`إجراءات عادة ${habit.name}`}
-              className="shrink-0 flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 border border-transparent outline-none transition-all duration-300 ease-out active:scale-95 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 opacity-100 sm:opacity-0 sm:focus-visible:opacity-100 group-hover:opacity-100 cursor-pointer group/btn"
+              className="shrink-0 flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 border border-transparent outline-none transition-all duration-300 ease-out active:scale-95 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 opacity-100 group-hover:opacity-100 sm:[@media(hover:hover)_and_(pointer:fine)]:opacity-0 sm:[@media(hover:hover)_and_(pointer:fine)]:focus-visible:opacity-100 cursor-pointer group/btn"
             >
               <MoreHorizontal className="w-5 h-5 transition-transform duration-300 group-hover/btn:rotate-90" />
             </Button>
