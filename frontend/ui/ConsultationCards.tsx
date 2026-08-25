@@ -91,20 +91,10 @@ export function ConsultationCards() {
 
               {/* Internal Card Canvas */}
               <div className="p-6 sm:p-8 md:p-10 lg:p-12">
-                {/* Header Row: Pricing & Interactive Pill Badge */}
-                <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 pb-8 border-b border-purple-500/15">
-                  {/* Price Typography */}
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-4xl sm:text-5xl lg:text-6xl font-black text-transparent bg-clip-text bg-linear-to-l from-purple-200 via-white to-purple-400 tracking-tight">
-                      $25
-                    </span>
-                    <span className="text-slate-400 text-base sm:text-lg font-medium pr-1">
-                      / للسَّاعة
-                    </span>
-                  </div>
-
+                {/* Header Row: Interactive Pill Badge */}
+                <div className="mb-8 pb-8 border-b border-purple-500/15">
                   {/* Microphone Feature Badge */}
-                  <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-purple-500/25 border border-purple-400/30 self-start sm:self-auto shadow-inner shadow-purple-500/10">
+                  <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-purple-500/25 border border-purple-400/30 shadow-inner shadow-purple-500/10">
                     <Mic className="w-4 h-4 text-purple-300 animate-pulse shrink-0" />
                     <span className="text-xs sm:text-sm text-purple-200 font-semibold tracking-wide">
                       جلسة تفاعليَّة صوتيَّة
