@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-08-25
+
+### Changed
+- extract shared ShellHeader, make switcher current optional
+
+### Added
+- add switcher and command palette to blog, verify, consultation booking
+
+### Fixed
+- remove subtitles from homepage section headers
+- tighten vertical spacing on certificate verify page
+- remove blog page hero title
+- remove pricing from consultation section
+
 ## [1.13.0] - 2026-08-25
 
 ### Added
