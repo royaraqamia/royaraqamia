@@ -2,7 +2,6 @@
 
 import { usePathname } from 'next/navigation';
 import { Navbar } from '../Navbar';
-import { Footer } from '../Footer';
 import { SkipToContent } from '../SkipToContent';
 
 export function SpendTrackLayout({ children }: { children: React.ReactNode }) {
@@ -19,7 +18,6 @@ export function SpendTrackLayout({ children }: { children: React.ReactNode }) {
       <main id="main-content" className="flex-1">
         {children}
       </main>
-      <Footer />
     </div>
   );
 }
