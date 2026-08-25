@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { List, X, House, Package, ShieldCheck, BookOpen } from 'lucide-react';
+import { List, X, House, Package, BookOpen } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
@@ -123,23 +123,18 @@ export function Navbar() {
       hasDropdown: true,
       dropdownKey: 'projects',
       subItems: [
-        { href: '/linksnap', label: 'LinkSnap', isRoute: true },
-        { href: '/blogpress', label: 'BlogPress', isRoute: true },
-        { href: '/habitflow', label: 'HabitFlow', isRoute: true },
-        { href: '/spendtrack', label: 'SpendTrack', isRoute: true },
+        { href: '/verify', label: 'التَّحقُّق من الشَّهادة', isRoute: true },
+        { href: '/consultation/book', label: 'حجز استشارة', isRoute: true },
+        { href: '/linksnap', label: 'إدارة الرَّوابط', isRoute: true },
+        { href: '/blogpress', label: 'إدارة المقالات', isRoute: true },
+        { href: '/habitflow', label: 'إدارة العادات', isRoute: true },
+        { href: '/spendtrack', label: 'إدارة المصاريف', isRoute: true },
       ],
     },
     {
       href: '/blog',
-      label: 'المدوَّنة',
+      label: 'المدوَّنة',
       icon: BookOpen,
-      isRoute: true,
-      visible: true,
-    },
-    {
-      href: '/verify',
-      label: 'التَّحقُّق من الشَّهادة',
-      icon: ShieldCheck,
       isRoute: true,
       visible: true,
     },

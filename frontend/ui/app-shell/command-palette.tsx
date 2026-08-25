@@ -158,13 +158,8 @@ export function CommandPalette() {
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-all duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
                     <Icon className="size-4 text-foreground/80 group-data-[selected=true]:text-primary transition-colors" />
                   </span>
-                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                    <span className="truncate text-sm font-semibold tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
-                      {product.label}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground/80 group-data-[selected=true]:text-accent-foreground/80">
-                      {product.tagline}
-                    </span>
+                  <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
+                    {product.label}
                   </span>
                   <span className="flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-[selected=true]:opacity-100 text-muted-foreground/60 group-data-[selected=true]:text-primary">
                     <kbd className="hidden sm:inline-block font-mono text-[10px] text-muted-foreground/50">

@@ -5,7 +5,6 @@ export type AppProduct = 'linksnap' | 'blogpress' | 'habitflow' | 'spendtrack';
 export interface AppProductDef {
   id: AppProduct;
   label: string;
-  tagline: string;
   appPath: string;
   landingPath: string;
   icon: LucideIcon;
@@ -14,32 +13,28 @@ export interface AppProductDef {
 export const APP_PRODUCTS: AppProductDef[] = [
   {
     id: 'linksnap',
-    label: 'LinkSnap',
-    tagline: 'اختصار الروابط وتحليل النقرات',
+    label: 'إدارة الرَّوابط',
     appPath: '/linksnap/app',
     landingPath: '/linksnap',
     icon: Link2,
   },
   {
     id: 'blogpress',
-    label: 'BlogPress',
-    tagline: 'تحرير المقالات ونشرها',
+    label: 'إدارة المقالات',
     appPath: '/blogpress/app',
     landingPath: '/blogpress',
     icon: NotebookPen,
   },
   {
     id: 'habitflow',
-    label: 'HabitFlow',
-    tagline: 'تتبّع عاداتك وبناء الاستمرارية',
+    label: 'إدارة العادات',
     appPath: '/habitflow/app',
     landingPath: '/habitflow',
     icon: CheckSquare,
   },
   {
     id: 'spendtrack',
-    label: 'SpendTrack',
-    tagline: 'إدارة المصروفات والميزانية',
+    label: 'إدارة المصاريف',
     appPath: '/spendtrack/app',
     landingPath: '/spendtrack',
     icon: Wallet,

@@ -79,20 +79,15 @@ export function ProductSwitcher({ current }: { current: AppProduct }) {
                     <Icon className="size-4 transition-transform duration-200 group-hover/item:scale-110" />
                   </span>
 
-                  <span className="flex min-w-0 flex-1 flex-col justify-center">
-                    <span
-                      className={cn(
-                        'text-sm font-semibold leading-snug tracking-tight transition-colors duration-200',
-                        isActive
-                          ? 'text-foreground'
-                          : 'text-foreground/90 group-hover/item:text-foreground'
-                      )}
-                    >
-                      {product.label}
-                    </span>
-                    <span className="truncate text-xs text-muted-foreground/80 transition-colors duration-200 group-hover/item:text-muted-foreground">
-                      {product.tagline}
-                    </span>
+                  <span
+                    className={cn(
+                      'min-w-0 flex-1 truncate text-sm font-semibold leading-snug tracking-tight transition-colors duration-200',
+                      isActive
+                        ? 'text-foreground'
+                        : 'text-foreground/90 group-hover/item:text-foreground'
+                    )}
+                  >
+                    {product.label}
                   </span>
 
                   {isActive && (
