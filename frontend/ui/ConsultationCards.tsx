@@ -146,9 +146,7 @@ export function ConsultationCards() {
                 {/* Action CTA Container */}
                 <div className="space-y-4">
                   <a
-                    href="https://wa.me/963968478904?text=%D8%A7%D9%84%D8%B3%D9%91%D9%8E%D9%84%D8%A7%D9%85%20%D8%B9%D9%84%D9%8A%D9%83%D9%85%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%AD%D8%AC%D8%B2%20%D8%A7%D8%B3%D8%AA%D8%B4%D8%A7%D8%B1%D8%A9."
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href="/consultation/book"
                     className="block group/btn rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                     aria-label="احجز استشارتك الآن"
                   >
