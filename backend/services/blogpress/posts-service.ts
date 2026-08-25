@@ -118,14 +118,23 @@ export class BlogpressPostsService {
     return this.repository.deletePost(postId, authorId);
   }
 
-  async restorePost(authorId: string, snapshot: RestorePostSnapshot): Promise<{ id: string }> {
+  async restorePost(
+    authorId: string,
+    snapshot: RestorePostSnapshot,
+    authorEmail = ''
+  ): Promise<{ id: string }> {
     if (!snapshot.title || !snapshot.title.trim()) {
       throw new Error('عنوان المقال مطلوب');
     }
     if (!snapshot.slug || !snapshot.slug.trim()) {
       throw new Error('المعرّف (slug) مطلوب');
     }
-    const { id } = await this.repository.restorePost(authorId, snapshot);
+
+    const blogVisible = isAdmin(authorEmail, this.adminEmails) && snapshot.blog_visible;
+    const { id } = await this.repository.restorePost(authorId, {
+      ...snapshot,
+      blog_visible: blogVisible,
+    });
     if (snapshot.tagIds && snapshot.tagIds.length > 0) {
       await this.repository.setPostTags(id, authorId, snapshot.tagIds);
     }

@@ -10,9 +10,9 @@ import {
   BulkPostsActionSchema,
   SchedulePostSchema,
 } from '@/shared/contracts/blog';
+import { RestorePostSnapshotSchema } from '@/shared/contracts/blogpress';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import type { RevalidationHint } from '@/backend/transport/http-result';
-import type { RestorePostSnapshot } from '@/shared/contracts/blogpress';
 import { BLOG_MUTATION_TAGS } from '@/backend/shared/blog-cache-tags';
 
 function postRevalidation(slug: string): RevalidationHint[] {
@@ -111,17 +111,22 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
     const { user, supabase } = await getAuthUser();
     if (!user) return jsonResult(401, { error: 'غير مصرح' });
 
+    const validated = RestorePostSnapshotSchema.safeParse(body);
+    if (!validated.success) {
+      return jsonResult(400, { error: 'بيانات استرجاع المقال غير صالحة' });
+    }
+
     const { id } = await createBlogpressPostsService(supabase).restorePost(
       user.id,
-      body as unknown as RestorePostSnapshot
+      validated.data,
+      user.email ?? ''
     );
 
-    const slug = String(body.slug ?? '');
     return jsonResult(
       200,
       { success: true, id },
       {
-        revalidate: slug ? postRevalidation(slug) : undefined,
+        revalidate: postRevalidation(validated.data.slug),
         tags: BLOG_MUTATION_TAGS,
       }
     );

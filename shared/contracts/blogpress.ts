@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 export type PostStatus = 'draft' | 'published' | 'scheduled';
 
 export interface Post {
@@ -42,22 +44,24 @@ export interface PostAuthor {
 }
 
 /** Full snapshot of a deleted post, re-sent by the client to undo a delete. */
-export interface RestorePostSnapshot {
-  title: string;
-  slug: string;
-  content: string | null;
-  status: PostStatus;
-  cover_image: string | null;
-  meta_title: string | null;
-  meta_desc: string | null;
-  published_at: string | null;
-  publish_at: string | null;
-  view_count: number;
-  featured: boolean;
-  blog_visible: boolean;
-  reading_time_minutes: number;
-  tagIds?: string[];
-}
+export const RestorePostSnapshotSchema = z.object({
+  title: z.string().min(1, 'عنوان المقال مطلوب'),
+  slug: z.string().min(1, 'الرابط مطلوب'),
+  content: z.string().nullable(),
+  status: z.enum(['draft', 'published', 'scheduled']),
+  cover_image: z.string().nullable(),
+  meta_title: z.string().nullable(),
+  meta_desc: z.string().nullable(),
+  published_at: z.string().nullable(),
+  publish_at: z.string().nullable(),
+  view_count: z.number().int().min(0),
+  featured: z.boolean(),
+  blog_visible: z.boolean(),
+  reading_time_minutes: z.number().int().min(0),
+  tagIds: z.array(z.string().uuid('معرّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم').optional(),
+});
+
+export type RestorePostSnapshot = z.infer<typeof RestorePostSnapshotSchema>;
 
 export interface PublishedPostsResult {
   posts: PostSummary[];
