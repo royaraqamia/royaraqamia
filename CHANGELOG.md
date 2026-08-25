@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-08-25
+
+### Added
+- drop email field from booking form (account email auto-used)
+
+### Fixed
+- remove hero and trust badges from verify and booking pages
+- remove footer from verify, consultation booking, and auth pages
+- remove page titles from product app dashboards
+
 ## [1.12.1] - 2026-08-25
 
 ### Changed
