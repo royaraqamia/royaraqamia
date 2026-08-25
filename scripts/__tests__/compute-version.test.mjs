@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { resolveReleaseVersion } from '../compute-version.mjs';
+import { resolveReleaseVersion, shouldWriteAppVersion } from '../compute-version.mjs';
 
 describe('compute-version', () => {
   it('produces +build.0.<sha> when HEAD is exactly the tag', () => {
@@ -62,5 +62,36 @@ describe('compute-version', () => {
       count: 0,
     });
     expect(Number.isNaN(Date.parse(result.releasedAt))).toBe(false);
+  });
+});
+
+describe('shouldWriteAppVersion', () => {
+  it('skips the write for plain local runs', () => {
+    expect(shouldWriteAppVersion({})).toBe(false);
+  });
+
+  it('writes on GitHub Actions (CI=true)', () => {
+    expect(shouldWriteAppVersion({ CI: 'true' })).toBe(true);
+  });
+
+  it('writes when CI=1', () => {
+    expect(shouldWriteAppVersion({ CI: '1' })).toBe(true);
+  });
+
+  it('writes on Vercel builds (VERCEL=1)', () => {
+    expect(shouldWriteAppVersion({ VERCEL: '1' })).toBe(true);
+  });
+
+  it('writes when Vercel build metadata exists', () => {
+    expect(shouldWriteAppVersion({ VERCEL_GIT_COMMIT_SHA: 'abc1234' })).toBe(true);
+    expect(shouldWriteAppVersion({ VERCEL_ENV: 'production' })).toBe(true);
+  });
+
+  it('APP_VERSION_WRITE=force forces a local write', () => {
+    expect(shouldWriteAppVersion({ APP_VERSION_WRITE: 'force' })).toBe(true);
+  });
+
+  it('APP_VERSION_WRITE=skip overrides CI detection', () => {
+    expect(shouldWriteAppVersion({ APP_VERSION_WRITE: 'skip', CI: 'true' })).toBe(false);
   });
 });
