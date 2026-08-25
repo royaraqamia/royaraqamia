@@ -6,6 +6,9 @@ interface InputProps extends React.ComponentProps<'input'> {
   error?: boolean;
 }
 
+const LATIN_DIGIT_TYPES = new Set(['number', 'time', 'date', 'datetime-local', 'month', 'week']);
+const LATIN_DIGIT_LANG = 'ar-u-nu-latn';
+
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, error, ...props }, ref) => {
     return (
@@ -46,6 +49,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className
           )}
           {...props}
+          lang={type !== undefined && LATIN_DIGIT_TYPES.has(type) ? LATIN_DIGIT_LANG : props.lang}
         />
         {error && (
           <div
