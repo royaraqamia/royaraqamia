@@ -13,7 +13,8 @@ import {
   formatSessionTimeDamascus,
 } from '@/frontend/shared/consultation-time';
 import { Label } from '@/frontend/ui/primitives/label';
-import { Input } from '@/frontend/ui/primitives/input';
+import { DatePicker } from '@/frontend/ui/primitives/date-picker';
+import { TimePicker } from '@/frontend/ui/primitives/time-picker';
 import { cn } from '@/frontend/shared/cn';
 
 /** Local datetime-local value → UTC ISO with offset. */
@@ -26,8 +27,12 @@ export function AdminAvailabilityView() {
     Array<AvailabilitySlot & { active_booking_id: string | null }>
   >([]);
   const [loading, setLoading] = useState(true);
-  const [startsAt, setStartsAt] = useState('');
-  const [endsAt, setEndsAt] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [startTime, setStartTime] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [endTime, setEndTime] = useState('');
+  const startsAt = startDate && startTime ? `${startDate}T${startTime}` : '';
+  const endsAt = endDate && endTime ? `${endDate}T${endTime}` : '';
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
@@ -57,8 +62,10 @@ export function AdminAvailabilityView() {
     setSaving(false);
     if (result.success) {
       setMessage({ ok: true, text: 'تمت إضافة الموعد.' });
-      setStartsAt('');
-      setEndsAt('');
+      setStartDate('');
+      setStartTime('');
+      setEndDate('');
+      setEndTime('');
       void refresh();
     } else {
       setMessage({ ok: false, text: result.error ?? 'فشل إضافة الموعد.' });
@@ -85,29 +92,31 @@ export function AdminAvailabilityView() {
         className="rounded-2xl border border-border bg-card p-5 grid gap-4 sm:grid-cols-[1fr_1fr_auto]"
         noValidate
       >
-        <div className="form-field">
-          <Label htmlFor="slot-start" className="form-label">
-            بداية الموعد
-          </Label>
-          <Input
-            id="slot-start"
-            type="datetime-local"
-            value={startsAt}
-            onChange={(e) => setStartsAt(e.target.value)}
-            className="bg-muted border-border rounded-xl focus-ring"
-          />
+        <div className="form-field space-y-1.5">
+          <Label className="form-label">بداية الموعد</Label>
+          <div className="flex gap-2">
+            <DatePicker
+              value={startDate}
+              onChange={setStartDate}
+              placeholder="التاريخ"
+              aria-label="تاريخ بداية الموعد"
+              className="flex-1 bg-muted border-border rounded-xl"
+            />
+            <TimePicker value={startTime} onChange={setStartTime} aria-label="وقت بداية الموعد" />
+          </div>
         </div>
-        <div className="form-field">
-          <Label htmlFor="slot-end" className="form-label">
-            نهاية الموعد
-          </Label>
-          <Input
-            id="slot-end"
-            type="datetime-local"
-            value={endsAt}
-            onChange={(e) => setEndsAt(e.target.value)}
-            className="bg-muted border-border rounded-xl focus-ring"
-          />
+        <div className="form-field space-y-1.5">
+          <Label className="form-label">نهاية الموعد</Label>
+          <div className="flex gap-2">
+            <DatePicker
+              value={endDate}
+              onChange={setEndDate}
+              placeholder="التاريخ"
+              aria-label="تاريخ نهاية الموعد"
+              className="flex-1 bg-muted border-border rounded-xl"
+            />
+            <TimePicker value={endTime} onChange={setEndTime} aria-label="وقت نهاية الموعد" />
+          </div>
         </div>
         <div className="flex items-end">
           <button

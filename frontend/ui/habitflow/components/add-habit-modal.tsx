@@ -5,6 +5,7 @@ import { AlertCircle, Loader2, Bell, Target } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
+import { TimePicker } from '@/frontend/ui/primitives/time-picker';
 import { HABIT_ICONS } from '@/frontend/shared/habitflow/habit-icons';
 import { HabitTargetPeriod } from '@/shared/contracts/habitflow';
 
@@ -250,12 +251,12 @@ export function AddHabitModal({
               </span>
             </legend>
             <div className="relative">
-              <Input
-                type="time"
+              <TimePicker
                 value={habitReminderTime}
-                onChange={(e) => onReminderTimeChange(e.target.value)}
-                id="input-add-habit-reminder-time"
-                className="w-full h-12 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all duration-300 text-[14px] font-medium placeholder:text-muted-foreground/40 scheme-light dark:scheme-dark"
+                onChange={onReminderTimeChange}
+                aria-label="وقت التذكير اليومي"
+                className="w-full"
+                triggerClassName="flex-1 h-12"
               />
             </div>
             <p className="text-[11px] text-muted-foreground/50 leading-relaxed text-pretty">

@@ -17,6 +17,7 @@ import { shorten } from '@/frontend/api/linksnap';
 import { DashboardEmptyState } from './dashboard-empty-state';
 import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { DatePicker } from '@/frontend/ui/primitives/date-picker';
 import { useLinks } from '@/frontend/state/linksnap/use-links';
 import { useBulkLinks } from '@/frontend/state/linksnap/use-bulk-links';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
@@ -299,12 +300,12 @@ function BulkActionBar({
 
       {expiryOpen ? (
         <div className="flex items-center gap-1.5 flex-wrap">
-          <input
-            type="date"
+          <DatePicker
             value={expiryDate}
-            onChange={(e) => onExpiryDateChange(e.target.value)}
+            onChange={onExpiryDateChange}
             aria-label="تاريخ انتهاء الصلاحية"
-            className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-foreground focus-ring touch-target"
+            placeholder="اختر التاريخ"
+            className="h-8 rounded-lg px-2.5 text-xs"
           />
           <button
             type="button"

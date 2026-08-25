@@ -27,6 +27,7 @@ import { useUpdateLink } from '@/frontend/state/linksnap/use-links';
 import { useSlugAvailability } from '@/frontend/state/linksnap/use-slug-availability';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { DatePicker } from '@/frontend/ui/primitives/date-picker';
+import { TimePicker } from '@/frontend/ui/primitives/time-picker';
 import {
   Dialog,
   DialogContent,
@@ -645,12 +646,12 @@ export function LinkEditDialog({
                         <Clock className="w-3 h-3" />
                         الوقت
                       </span>
-                      <input
-                        type="time"
+                      <TimePicker
                         value={expiresTimeValue}
-                        onChange={(e) => setExpiresTimeValue(e.target.value)}
+                        onChange={setExpiresTimeValue}
                         aria-label="وقت انتهاء الصلاحية"
-                        className="w-full h-10 px-3 bg-background dark:bg-neutral-950 border border-border/70 dark:border-neutral-800 rounded-xl text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        triggerClassName="h-10 text-xs flex-1"
+                        className="w-full"
                       />
                     </div>
                   </div>
