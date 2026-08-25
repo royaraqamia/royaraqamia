@@ -1,22 +1,11 @@
 import type { Metadata } from 'next';
-import { Navbar } from '@/frontend/ui/Navbar';
-import { Footer } from '@/frontend/ui/Footer';
-import { SkipToContent } from '@/frontend/ui/SkipToContent';
+import { LinkSnapLayout } from '@/frontend/ui/linksnap/linksnap-layout';
 
 export const metadata: Metadata = {
   title: 'LinkSnap',
-  description: 'اختصر روابطك الطَّويلة وتتبَّع أداءها بسهولة مع LinkSnap من رؤية رقمية.',
+  description: 'اختصر روابطك الطَّويلة وتتبَّع أداءها بسهولة مع LinkSnap من رؤية رقمية.',
 };
 
-export default function LinkSnapLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-dvh bg-background text-foreground flex flex-col safe-area-inset-top">
-      <SkipToContent />
-      <Navbar />
-      <main id="main-content" className="flex-1">
-        {children}
-      </main>
-      <Footer />
-    </div>
-  );
+export default function LinkSnapLayoutRoute({ children }: { children: React.ReactNode }) {
+  return <LinkSnapLayout>{children}</LinkSnapLayout>;
 }

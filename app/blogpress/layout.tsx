@@ -1,7 +1,5 @@
 import type { Metadata } from 'next';
-import { Navbar } from '@/frontend/ui/Navbar';
-import { Footer } from '@/frontend/ui/Footer';
-import { SkipToContent } from '@/frontend/ui/SkipToContent';
+import { BlogPressLayout } from '@/frontend/ui/blogpress/blogpress-layout';
 
 export const metadata: Metadata = {
   title: {
@@ -10,15 +8,6 @@ export const metadata: Metadata = {
   },
 };
 
-export default function BlogPressLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="min-h-dvh bg-background text-foreground flex flex-col safe-area-inset-top">
-      <SkipToContent />
-      <Navbar />
-      <main id="main-content" className="flex-1">
-        {children}
-      </main>
-      <Footer />
-    </div>
-  );
+export default function BlogPressLayoutRoute({ children }: { children: React.ReactNode }) {
+  return <BlogPressLayout>{children}</BlogPressLayout>;
 }
