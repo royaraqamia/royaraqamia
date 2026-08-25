@@ -14,11 +14,15 @@ const VIEWPORTS = {
 
 export default defineConfig({
   testDir: './e2e',
+  outputDir: 'node_modules/.playwright/test-results',
   timeout: 120_000,
   expect: { timeout: 15_000 },
   fullyParallel: false,
   retries: 1,
-  reporter: [['list'], ['html', { open: 'never' }]],
+  reporter: [
+    ['list'],
+    ['html', { open: 'never', outputFolder: 'node_modules/.playwright/report' }],
+  ],
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',

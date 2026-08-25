@@ -4,5 +4,12 @@
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
+  },
+  "files.exclude": {
+    "**/test-results": true,
+    "**/playwright-report": true,
+    "**/coverage": true,
+    "**/*.tsbuildinfo": true,
+    "**/next-env.d.ts": true
   }
 }
