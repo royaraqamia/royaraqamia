@@ -5,11 +5,9 @@ import { verifyCertificate } from '@/frontend/api/certificates';
 import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { containerVariants, resultVariants } from '@/frontend/ui/verify/verify-variants';
-import { VerifyHero } from '@/frontend/ui/verify/verify-hero';
 import { VerifySearchCard } from '@/frontend/ui/verify/verify-search-card';
 import { VerifyLoadingState } from '@/frontend/ui/verify/verify-loading-state';
 import { VerifyErrorState } from '@/frontend/ui/verify/verify-error-state';
-import { VerifyTrustFooter } from '@/frontend/ui/verify/verify-trust-footer';
 import { CertificateResultCard } from '@/frontend/ui/verify/certificate-result-card';
 import type { PublicCertificate } from '@/shared/contracts/certificates';
 
@@ -87,8 +85,6 @@ export default function VerifyPage() {
           animate="visible"
           className="space-y-8"
         >
-          <VerifyHero />
-
           <VerifySearchCard
             code={code}
             isValidFormat={isValidFormat}
@@ -139,8 +135,6 @@ export default function VerifyPage() {
               </m.div>
             )}
           </AnimatePresence>
-
-          <VerifyTrustFooter />
         </m.div>
       </div>
     </main>
