@@ -1,21 +1,19 @@
 'use client';
 
 import Link from 'next/link';
-import { Check, ChevronsUpDown } from 'lucide-react';
+import { Check, ChevronsUpDown, Package } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/frontend/ui/primitives/dropdown-menu';
 import { cn } from '@/frontend/shared/cn';
 import { APP_PRODUCTS, getAppProduct, type AppProduct } from './constants';
 
-export function ProductSwitcher({ current }: { current: AppProduct }) {
-  const active = getAppProduct(current);
-  const ActiveIcon = active.icon;
+export function ProductSwitcher({ current }: { current?: AppProduct }) {
+  const active = current ? getAppProduct(current) : undefined;
+  const ActiveIcon = active?.icon ?? Package;
 
   return (
     <DropdownMenu>
@@ -35,7 +33,7 @@ export function ProductSwitcher({ current }: { current: AppProduct }) {
             <ActiveIcon className="size-3.5" />
           </span>
           <span className="max-w-35 truncate font-semibold tracking-tight text-foreground/90 sm:max-w-none group-hover:text-foreground">
-            {active.label}
+            {active ? active.label : 'منتجاتنا'}
           </span>
           <ChevronsUpDown className="size-3.5 shrink-0 text-muted-foreground/70 transition-all duration-300 group-hover:text-foreground group-data-[state=open]:rotate-180 group-data-[state=open]:text-foreground" />
         </button>
@@ -46,16 +44,10 @@ export function ProductSwitcher({ current }: { current: AppProduct }) {
         sideOffset={8}
         className="w-72 sm:w-80 rounded-2xl border border-border/50 bg-popover/90 p-1.5 shadow-2xl shadow-black/10 backdrop-blur-2xl transition-transform duration-200 animate-in fade-in-0 zoom-in-95"
       >
-        <DropdownMenuLabel className="px-3 py-2 text-[11px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
-          منتجاتنا
-        </DropdownMenuLabel>
-
-        <DropdownMenuSeparator className="my-1 -mx-1 bg-border/40" />
-
         <div className="space-y-0.5 p-0.5">
           {APP_PRODUCTS.map((product) => {
             const Icon = product.icon;
-            const isActive = product.id === current;
+            const isActive = current !== undefined && product.id === current;
             return (
               <DropdownMenuItem key={product.id} asChild className="p-0 focus:bg-transparent">
                 <Link
