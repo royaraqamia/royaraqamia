@@ -47,13 +47,17 @@ export class SupabaseOtpRepository implements OtpRepository {
     };
   }
 
-  async incrementOtpAttempts(id: string, currentAttempts: number): Promise<void> {
+  async incrementOtpAttempts(id: string, currentAttempts: number): Promise<boolean> {
     const supabase = this.supabase;
-    const { error } = await supabase
+    // Guard on the expected counter so concurrent verifications cannot lose updates.
+    const { data, error } = await supabase
       .from('otp_codes')
       .update({ attempts: currentAttempts + 1 })
-      .eq('id', id);
+      .eq('id', id)
+      .eq('attempts', currentAttempts)
+      .select('id');
     if (error) throw error;
+    return (data?.length ?? 0) > 0;
   }
 
   async markOtpVerified(id: string): Promise<void> {

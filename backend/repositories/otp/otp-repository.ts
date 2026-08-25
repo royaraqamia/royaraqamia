@@ -16,6 +16,12 @@ export interface OtpRepository {
     maxAttempts: number;
   }): Promise<void>;
   findLatestPendingOtp(email: string): Promise<OtpRecordData | null>;
-  incrementOtpAttempts(id: string, currentAttempts: number): Promise<void>;
+  /**
+   * Atomically increments the attempt counter only when it still equals
+   * `currentAttempts` (compare-and-swap). Resolves to `true` when the
+   * increment landed, `false` when a concurrent writer changed it first —
+   * guaranteeing no failed verification attempt is ever lost.
+   */
+  incrementOtpAttempts(id: string, currentAttempts: number): Promise<boolean>;
   markOtpVerified(id: string): Promise<void>;
 }

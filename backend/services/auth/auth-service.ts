@@ -31,6 +31,8 @@ export type UpdatePasswordResult =
 
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
 
+const OTP_ATTEMPT_CAS_MAX_RETRIES = 3;
+
 export interface AuthServiceDeps {
   otpRepository: OtpRepository;
   userProfileRepository: UserProfileRepository;
@@ -252,7 +254,7 @@ export class AuthService {
     }
 
     if (!verifyOtp(input.otp, record.otpHash, record.salt)) {
-      await this.otpRepository.incrementOtpAttempts(record.id, record.attempts);
+      await this.countFailedOtpAttempt(input.email, record.id, record.attempts);
       return { ok: false, message: 'رمز التحقق غير صحيح' };
     }
 
@@ -445,6 +447,25 @@ export class AuthService {
 
   async logout(): Promise<void> {
     await this.gateway.signOut();
+  }
+
+  /**
+   * Records a failed verification attempt via the repository's atomic
+   * compare-and-swap, re-reading and retrying under contention so no wrong
+   * guess escapes the brute-force counter.
+   */
+  private async countFailedOtpAttempt(
+    email: string,
+    otpId: string,
+    knownAttempts: number
+  ): Promise<void> {
+    let attempts = knownAttempts;
+    for (let retry = 0; retry < OTP_ATTEMPT_CAS_MAX_RETRIES; retry += 1) {
+      if (await this.otpRepository.incrementOtpAttempts(otpId, attempts)) return;
+      const fresh = await this.otpRepository.findLatestPendingOtp(email);
+      if (!fresh || fresh.id !== otpId) return;
+      attempts = fresh.attempts;
+    }
   }
 
   async signInWithOAuth(provider: 'google', redirectTo?: string): Promise<OAuthResult> {
