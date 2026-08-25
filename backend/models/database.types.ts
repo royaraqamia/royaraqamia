@@ -58,6 +58,27 @@ export type Database = {
         };
         Relationships: [];
       };
+      availability_slots: {
+        Row: {
+          created_at: string;
+          ends_at: string;
+          id: string;
+          starts_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          ends_at: string;
+          id?: string;
+          starts_at: string;
+        };
+        Update: {
+          created_at?: string;
+          ends_at?: string;
+          id?: string;
+          starts_at?: string;
+        };
+        Relationships: [];
+      };
       budgets: {
         Row: {
           amount: number;
@@ -207,6 +228,161 @@ export type Database = {
           recipient_email?: string | null;
           recipient_user_ids?: string[];
           student_name?: string;
+        };
+        Relationships: [];
+      };
+      consultation_booking_slots: {
+        Row: {
+          booking_id: string;
+          is_active: boolean;
+          slot_id: string;
+        };
+        Insert: {
+          booking_id: string;
+          is_active?: boolean;
+          slot_id: string;
+        };
+        Update: {
+          booking_id?: string;
+          is_active?: boolean;
+          slot_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'consultation_booking_slots_booking_id_fkey';
+            columns: ['booking_id'];
+            isOneToOne: false;
+            referencedRelation: 'consultation_bookings';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'consultation_booking_slots_slot_id_fkey';
+            columns: ['slot_id'];
+            isOneToOne: false;
+            referencedRelation: 'availability_slots';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      consultation_bookings: {
+        Row: {
+          amount_due_usd: number;
+          confirmed_at: string | null;
+          created_at: string;
+          email: string;
+          expires_at: string;
+          full_name: string;
+          id: string;
+          package_id: string;
+          payment_method: string;
+          phone_whatsapp: string;
+          receipt_sent_at: string | null;
+          region: string;
+          rejected_reason: string | null;
+          status: string;
+          topic_description: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          amount_due_usd: number;
+          confirmed_at?: string | null;
+          created_at?: string;
+          email: string;
+          expires_at: string;
+          full_name: string;
+          id?: string;
+          package_id: string;
+          payment_method: string;
+          phone_whatsapp: string;
+          receipt_sent_at?: string | null;
+          region: string;
+          rejected_reason?: string | null;
+          status?: string;
+          topic_description: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          amount_due_usd?: number;
+          confirmed_at?: string | null;
+          created_at?: string;
+          email?: string;
+          expires_at?: string;
+          full_name?: string;
+          id?: string;
+          package_id?: string;
+          payment_method?: string;
+          phone_whatsapp?: string;
+          receipt_sent_at?: string | null;
+          region?: string;
+          rejected_reason?: string | null;
+          status?: string;
+          topic_description?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'consultation_bookings_package_id_fkey';
+            columns: ['package_id'];
+            isOneToOne: false;
+            referencedRelation: 'consultation_packages';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      consultation_packages: {
+        Row: {
+          created_at: string;
+          description: string | null;
+          duration_minutes: number;
+          id: string;
+          is_active: boolean;
+          name: string;
+          price_usd: number;
+          sessions_count: number;
+          sort_order: number;
+        };
+        Insert: {
+          created_at?: string;
+          description?: string | null;
+          duration_minutes: number;
+          id?: string;
+          is_active?: boolean;
+          name: string;
+          price_usd: number;
+          sessions_count?: number;
+          sort_order?: number;
+        };
+        Update: {
+          created_at?: string;
+          description?: string | null;
+          duration_minutes?: number;
+          id?: string;
+          is_active?: boolean;
+          name?: string;
+          price_usd?: number;
+          sessions_count?: number;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
+      consultation_settings: {
+        Row: {
+          key: string;
+          updated_at: string;
+          value: string;
+        };
+        Insert: {
+          key: string;
+          updated_at?: string;
+          value: string;
+        };
+        Update: {
+          key?: string;
+          updated_at?: string;
+          value?: string;
         };
         Relationships: [];
       };
@@ -773,6 +949,21 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      cancel_consultation_booking: { Args: { p_booking_id: string }; Returns: undefined };
+      create_consultation_booking: {
+        Args: {
+          p_email: string;
+          p_full_name: string;
+          p_package_id: string;
+          p_payment_method: string;
+          p_phone_whatsapp: string;
+          p_region: string;
+          p_slot_ids: string[];
+          p_topic_description: string;
+        };
+        Returns: string;
+      };
+      expire_stale_consultation_bookings: { Args: never; Returns: number };
       generate_certificate_code: { Args: never; Returns: string };
       get_category_breakdown: {
         Args: {
@@ -812,6 +1003,7 @@ export type Database = {
       increment_post_view_count: { Args: { p_post_id: string }; Returns: undefined };
       increment_otp_attempts: { Args: { row_id: string }; Returns: number };
       is_admin: { Args: never; Returns: boolean };
+      mark_consultation_receipt_sent: { Args: { p_booking_id: string }; Returns: undefined };
       recompute_admin_flags: {
         Args: { p_emails: string[] };
         Returns: undefined;
