@@ -268,9 +268,44 @@ describe('BlogpressPostsService (thin delegation)', () => {
       tagIds: ['t-1', 't-2'],
     };
 
-    await expect(service.restorePost('u-1', snapshot)).resolves.toEqual({ id: 'p-2' });
-    expect(repository.restorePost).toHaveBeenCalledWith('u-1', snapshot);
+    await expect(service.restorePost('u-1', snapshot, 'user@example.com')).resolves.toEqual({
+      id: 'p-2',
+    });
+    expect(repository.restorePost).toHaveBeenCalledWith('u-1', {
+      ...snapshot,
+      blog_visible: false,
+    });
     expect(repository.setPostTags).toHaveBeenCalledWith('p-2', 'u-1', ['t-1', 't-2']);
+  });
+
+  it('keeps blog_visible when an admin restores a post', async () => {
+    const { repository, service } = makeRepo();
+    (repository.restorePost as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'p-2' });
+
+    await service.restorePost(
+      'u-1',
+      {
+        title: 'مقال',
+        slug: 'post-1',
+        content: null,
+        status: 'published',
+        cover_image: null,
+        meta_title: null,
+        meta_desc: null,
+        published_at: null,
+        publish_at: null,
+        view_count: 3,
+        featured: false,
+        blog_visible: true,
+        reading_time_minutes: 2,
+      },
+      'admin@example.com'
+    );
+
+    expect(repository.restorePost).toHaveBeenCalledWith(
+      'u-1',
+      expect.objectContaining({ blog_visible: true })
+    );
   });
 
   it('skips tag re-attachment when the snapshot has no tags', async () => {
@@ -293,9 +328,12 @@ describe('BlogpressPostsService (thin delegation)', () => {
       reading_time_minutes: 0,
     };
 
-    await service.restorePost('u-1', snapshot);
+    await service.restorePost('u-1', snapshot, 'user@example.com');
 
-    expect(repository.restorePost).toHaveBeenCalledWith('u-1', snapshot);
+    expect(repository.restorePost).toHaveBeenCalledWith('u-1', {
+      ...snapshot,
+      blog_visible: false,
+    });
     expect(repository.setPostTags).not.toHaveBeenCalled();
   });
 
