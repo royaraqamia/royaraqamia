@@ -60,7 +60,7 @@ export default function VerifyPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
+    <div className="relative min-h-screen overflow-hidden bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
       {/* Dynamic Background Grid & Glowing Lighting */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] dark:bg-[radial-gradient(#1f2937_1px,transparent_1px)] bg-size-[24px_24px] opacity-30" />
@@ -78,7 +78,7 @@ export default function VerifyPage() {
         />
       </div>
 
-      <div className="relative z-10 mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8 md:py-20 lg:py-24">
+      <div className="relative z-10 mx-auto max-w-4xl px-4 pt-4 pb-10 sm:px-6 lg:px-8 sm:pb-12">
         <m.div
           variants={containerVariants}
           initial="hidden"
@@ -137,6 +137,6 @@ export default function VerifyPage() {
           </AnimatePresence>
         </m.div>
       </div>
-    </main>
+    </div>
   );
 }
