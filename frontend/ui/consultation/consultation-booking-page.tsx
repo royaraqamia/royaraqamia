@@ -9,12 +9,8 @@ import { useBookingFlow } from '@/frontend/state/consultation/use-booking-flow';
 import { BookingWizard } from '@/frontend/ui/consultation/booking-wizard';
 import { BookingSummary } from '@/frontend/ui/consultation/booking-summary';
 
-interface ConsultationBookingPageProps {
-  defaultEmail?: string;
-}
-
-export function ConsultationBookingPage({ defaultEmail }: ConsultationBookingPageProps) {
-  const flow = useBookingFlow(defaultEmail);
+export function ConsultationBookingPage() {
+  const flow = useBookingFlow();
   const [settings, setSettings] = useState<Partial<ConsultationSettings>>({});
   const [bookings, setBookings] = useState<ConsultationBooking[]>([]);
   const [loading, setLoading] = useState(true);

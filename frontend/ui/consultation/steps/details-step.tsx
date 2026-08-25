@@ -53,49 +53,26 @@ export function DetailsStep({
         )}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="form-field">
-          <Label htmlFor="booking-phone" className="form-label">
-            رقم واتساب{' '}
-            <span className="text-destructive" aria-hidden="true">
-              *
-            </span>
-          </Label>
-          <Input
-            id="booking-phone"
-            value={contact.phone_whatsapp}
-            onChange={(e) => onChange({ phone_whatsapp: e.target.value })}
-            inputMode="tel"
-            dir="ltr"
-            placeholder="+963 9XX XXX XXX"
-            className="bg-muted border-border rounded-xl focus-ring text-left"
-          />
-          {fieldErrors['phone_whatsapp'] && (
-            <p className="text-sm text-destructive mt-1">{fieldErrors['phone_whatsapp']}</p>
-          )}
-        </div>
-
-        <div className="form-field">
-          <Label htmlFor="booking-email" className="form-label">
-            البريد الإلكتروني{' '}
-            <span className="text-destructive" aria-hidden="true">
-              *
-            </span>
-          </Label>
-          <Input
-            id="booking-email"
-            value={contact.email}
-            onChange={(e) => onChange({ email: e.target.value })}
-            type="email"
-            dir="ltr"
-            autoComplete="email"
-            placeholder="you@example.com"
-            className="bg-muted border-border rounded-xl focus-ring text-left"
-          />
-          {fieldErrors['email'] && (
-            <p className="text-sm text-destructive mt-1">{fieldErrors['email']}</p>
-          )}
-        </div>
+      <div className="form-field">
+        <Label htmlFor="booking-phone" className="form-label">
+          رقم واتساب{' '}
+          <span className="text-destructive" aria-hidden="true">
+            *
+          </span>
+        </Label>
+        <Input
+          id="booking-phone"
+          value={contact.phone_whatsapp}
+          onChange={(e) => onChange({ phone_whatsapp: e.target.value })}
+          inputMode="tel"
+          dir="ltr"
+          autoComplete="tel"
+          placeholder="+963 9XX XXX XXX"
+          className="bg-muted border-border rounded-xl focus-ring text-left"
+        />
+        {fieldErrors['phone_whatsapp'] && (
+          <p className="text-sm text-destructive mt-1">{fieldErrors['phone_whatsapp']}</p>
+        )}
       </div>
 
       <div className="form-field">

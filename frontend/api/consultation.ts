@@ -74,7 +74,6 @@ export async function submitBooking(input: {
   slot_ids: string[];
   full_name: string;
   phone_whatsapp: string;
-  email: string;
   topic_description: string;
   region: 'syria' | 'global';
   payment_method: 'shamcash' | 'moneygram';

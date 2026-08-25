@@ -90,7 +90,6 @@ export const BookingContactSchema = z.object({
     .min(2, 'الاسم يجب أن يكون حرفين على الأقل')
     .max(120, 'الاسم طويل جدًا'),
   phone_whatsapp: z.string().trim().regex(whatsappPhoneRegex, 'رقم واتساب غير صحيح'),
-  email: z.string().trim().email('البريد الإلكتروني غير صحيح'),
   topic_description: z
     .string()
     .trim()

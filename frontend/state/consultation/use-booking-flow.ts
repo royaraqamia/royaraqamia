@@ -19,14 +19,12 @@ export type BookingStep = (typeof BOOKING_STEPS)[number];
 export interface BookingContactDraft {
   full_name: string;
   phone_whatsapp: string;
-  email: string;
   topic_description: string;
 }
 
 const EMPTY_CONTACT: BookingContactDraft = {
   full_name: '',
   phone_whatsapp: '',
-  email: '',
   topic_description: '',
 };
 
@@ -62,15 +60,13 @@ export interface UseBookingFlowResult {
 /**
  * Wizard state machine for /consultation/book.
  * Payment method follows the chosen region by default but stays overridable.
+ * Email is not collected — the server uses the authenticated account's email.
  */
-export function useBookingFlow(defaultEmail?: string): UseBookingFlowResult {
+export function useBookingFlow(): UseBookingFlowResult {
   const [stepIndex, setStepIndex] = useState(0);
   const [packages, setPackages] = useState<ConsultationPackage[]>([]);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
-  const [contact, setContact] = useState<BookingContactDraft>({
-    ...EMPTY_CONTACT,
-    email: defaultEmail ?? '',
-  });
+  const [contact, setContact] = useState<BookingContactDraft>(EMPTY_CONTACT);
   const [region, setRegion] = useState<ConsultationRegion>('syria');
   const [paymentOverride, setPaymentOverride] = useState<ConsultationPaymentMethod | null>(null);
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
@@ -144,7 +140,6 @@ export function useBookingFlow(defaultEmail?: string): UseBookingFlowResult {
         return (
           contact.full_name.trim().length > 1 &&
           contact.phone_whatsapp.trim().length > 5 &&
-          /.+@.+\..+/.test(contact.email) &&
           contact.topic_description.trim().length >= 10
         );
       case 'slots':
@@ -198,7 +193,6 @@ export function useBookingFlow(defaultEmail?: string): UseBookingFlowResult {
         slot_ids: selectedSlotIds,
         full_name: contact.full_name.trim(),
         phone_whatsapp: contact.phone_whatsapp.trim(),
-        email: contact.email.trim(),
         topic_description: contact.topic_description.trim(),
         region,
         payment_method: paymentMethod,

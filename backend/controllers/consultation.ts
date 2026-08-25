@@ -63,7 +63,11 @@ function bookingErrorResponse(error: unknown): HttpResult | null {
 }
 
 async function withAuthenticatedUser(
-  run: (userId: string, supabase: SupabaseClient<Database>) => Promise<HttpResult>
+  run: (
+    userId: string,
+    supabase: SupabaseClient<Database>,
+    userEmail: string
+  ) => Promise<HttpResult>
 ): Promise<HttpResult> {
   try {
     const { user, supabase } = await getAuthUser();
@@ -71,7 +75,7 @@ async function withAuthenticatedUser(
     if (!userId) {
       return jsonResult(401, { success: false, error: 'يجب تسجيل الدخول أولًا.' });
     }
-    return await run(userId, supabase as unknown as SupabaseClient<Database>);
+    return await run(userId, supabase as unknown as SupabaseClient<Database>, user?.email ?? '');
   } catch (error) {
     Sentry.captureException(error);
     const mapped = bookingErrorResponse(error);
@@ -121,11 +125,12 @@ export async function createBooking(body: unknown): Promise<HttpResult> {
     });
   }
 
-  return withAuthenticatedUser(async (userId, supabase) => {
-    const bookingId = await createUserConsultationService(supabase).createBooking(
-      userId,
-      parsed.data
-    );
+  return withAuthenticatedUser(async (userId, supabase, userEmail) => {
+    // Email is no longer collected in the form — the account's email is used.
+    const bookingId = await createUserConsultationService(supabase).createBooking(userId, {
+      ...parsed.data,
+      email: userEmail,
+    });
     return jsonResult(200, { success: true, bookingId });
   });
 }

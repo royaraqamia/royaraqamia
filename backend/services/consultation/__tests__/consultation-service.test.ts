@@ -7,8 +7,10 @@ import {
   PackageInUseError,
   SlotReservedError,
 } from '@/backend/services/consultation/consultation-service';
-import type { ConsultationRepositories } from '@/backend/repositories/consultation';
-import type { CreateBookingInput } from '@/shared/contracts/consultation';
+import type {
+  ConsultationRepositories,
+  CreateBookingCommand,
+} from '@/backend/repositories/consultation';
 
 const NOW = '2026-08-25T10:00:00.000Z';
 
@@ -51,7 +53,7 @@ function makeService(repositories: ConsultationRepositories) {
   return new ConsultationService(repositories, { nowIso: () => NOW });
 }
 
-const singleSessionInput: CreateBookingInput = {
+const singleSessionInput: Omit<CreateBookingCommand, 'userId'> = {
   package_id: 'pkg-1',
   slot_ids: ['slot-1'],
   full_name: 'أحمد محمد',

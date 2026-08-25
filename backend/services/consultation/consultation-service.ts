@@ -4,7 +4,6 @@ import type {
   ConsultationBookingStatus,
   ConsultationPackage,
   ConsultationSettings,
-  CreateBookingInput,
   PackageUpsertInput,
   SlotCreateInput,
 } from '@/shared/contracts/consultation';
@@ -12,6 +11,7 @@ import type {
   AdminAvailabilitySlot,
   BookingListResult,
   ConsultationRepositories,
+  CreateBookingCommand,
 } from '@/backend/repositories/consultation';
 
 export class ConsultationValidationError extends Error {}
@@ -69,7 +69,10 @@ export class ConsultationService {
     return this.repositories.slots.listAvailable(this.config.nowIso());
   }
 
-  async createBooking(userId: string, input: CreateBookingInput): Promise<string> {
+  async createBooking(
+    userId: string,
+    input: Omit<CreateBookingCommand, 'userId'>
+  ): Promise<string> {
     const pkg = await this.repositories.packages.getById(input.package_id);
     if (!pkg || !pkg.is_active) {
       throw new ConsultationValidationError('PACKAGE_NOT_FOUND');

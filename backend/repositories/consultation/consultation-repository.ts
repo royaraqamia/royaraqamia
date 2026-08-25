@@ -68,6 +68,8 @@ export interface ConsultationBookingsReader {
 
 export interface CreateBookingCommand extends CreateBookingInput {
   userId: string;
+  /** Authenticated account email, injected server-side (not collected in the form). */
+  email: string;
 }
 
 export interface ConsultationBookingsWriter {
