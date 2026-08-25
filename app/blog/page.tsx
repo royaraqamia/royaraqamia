@@ -17,27 +17,8 @@ export default async function BlogPage() {
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 selection:text-white pb-24">
-      {/* Editorial Hero Section */}
-      <section className="relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-24 lg:pt-28 lg:pb-28 border-b border-border">
-        {/* Deep Ambient Background Glows */}
-        <div
-          aria-hidden="true"
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(600px,100vw)] bg-linear-to-tr from-primary/20 via-indigo-500/10 to-transparent glow-blur-lg rounded-full pointer-events-none -z-10"
-        />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none -z-10"
-        />
-
-        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-transparent bg-clip-text bg-linear-to-b from-foreground via-foreground/80 to-muted-foreground leading-[1.15] mb-6">
-            المدوَّنة
-          </h1>
-        </div>
-      </section>
-
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4 relative z-10">
         <Suspense
           fallback={
             <div
@@ -64,7 +45,7 @@ export default async function BlogPage() {
             <BlogResults posts={posts} totalPages={totalPages} page={1} query="" />
           </BlogIndexResults>
         </Suspense>
-      </main>
+      </div>
     </div>
   );
 }
