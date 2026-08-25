@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/frontend/ui/Navbar';
-import { Footer } from '@/frontend/ui/Footer';
 
 export const metadata: Metadata = {
   title: 'حجز استشارة تقنية | رؤية رقمية',
@@ -15,7 +14,6 @@ export default function ConsultationBookLayout({ children }: { children: React.R
       <main id="main-content" className="flex-1 pt-24">
         <div className="container mx-auto max-w-4xl px-4 pb-16">{children}</div>
       </main>
-      <Footer />
     </div>
   );
 }

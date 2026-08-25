@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/frontend/ui/Navbar';
-import { Footer } from '@/frontend/ui/Footer';
 
 export const metadata: Metadata = {
   title: {
@@ -17,7 +16,6 @@ export default function VerifyLayout({ children }: { children: React.ReactNode }
       <main id="main-content" className="flex-1 pt-24">
         {children}
       </main>
-      <Footer />
     </div>
   );
 }

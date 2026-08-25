@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/frontend/ui/Navbar';
-import { Footer } from '@/frontend/ui/Footer';
 
 export const metadata: Metadata = {
   title: {
@@ -31,7 +30,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       >
         {children}
       </main>
-      <Footer />
     </div>
   );
 }
