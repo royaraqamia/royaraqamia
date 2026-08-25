@@ -348,7 +348,7 @@ export function DashboardShell({
 
             {/* Calendar Grid Column */}
             <section className="lg:col-span-5 xl:col-span-4" aria-label="التَّقويم والسِّجل">
-              <div className="lg:sticky lg:top-8 lg:max-h-[calc(100dvh-4rem)] lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain">
+              <div>
                 <CalendarGrid
                   calendarGrid={calendarGrid}
                   logs={logs}
