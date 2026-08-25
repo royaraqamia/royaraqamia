@@ -187,24 +187,6 @@ export function Footer() {
             className="flex flex-wrap items-center justify-center gap-x-4 sm:gap-x-6 gap-y-2 text-sm font-medium text-muted-foreground"
           >
             <Link
-              href="/blog"
-              className="hover:text-primary transition-colors cursor-pointer rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
-            >
-              المدوَّنة
-            </Link>
-            <span className="text-border/60 select-none" aria-hidden="true">
-              |
-            </span>
-            <Link
-              href="/verify"
-              className="hover:text-primary transition-colors cursor-pointer rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
-            >
-              التَّحقُّق من الشَّهادة
-            </Link>
-            <span className="text-border/60 select-none" aria-hidden="true">
-              |
-            </span>
-            <Link
               href="/privacy"
               className="hover:text-primary transition-colors cursor-pointer rounded-md px-2 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-95"
             >
