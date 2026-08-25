@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-08-25
+
+### Changed
+- drop blog and verify links from footer
+- relocate playwright output and hide generated artifacts in vscode
+- move sw.test.mjs to co-located scripts/__tests__
+- regenerate app-version only on CI/Vercel to keep local trees clean
+
+### Added
+- arabize product labels, drop taglines, expand products dropdown
+- add TimePicker primitive and replace native time and date inputs
+- show release version in footer and mobile menu
+- add consultations bookings, availability, packages, and settings dashboard
+- add booking wizard, payment steps, and /consultation/book page
+- expose public and admin booking API routes
+- add contracts, repositories, service, and controllers
+- add consultation booking schema, RLS, and settings
+
+### Fixed
+- force Latin digits on native numeric and temporal inputs
+- remove site footer from HabitFlow, BlogPress, LinkSnap, and SpendTrack
+- render single Navbar on HabitFlow, BlogPress, and LinkSnap app routes
+- remove viewport-capped scroll wrapper around calendar grid
+
 ## [1.11.0] - 2026-08-24
 
 ### Changed
