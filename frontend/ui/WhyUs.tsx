@@ -132,17 +132,13 @@ export function WhyUs() {
         {/* Editorial Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.8}>
           <header className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24">
-            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.15]">
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.15]">
               لماذا{' '}
               <span className="bg-linear-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
                 رؤية رقمية
               </span>
               ؟
             </h2>
-            <p className="text-base sm:text-lg lg:text-xl text-neutral-400 leading-relaxed font-normal max-w-2xl mx-auto">
-              ما يميِّزنا عن غيرنا ويجعلنا خيارك الأوَّل ومحطَّتك الآمنة في رحلة التَّحوُّل
-              الرَّقمي.
-            </p>
           </header>
         </ScrollAnimation>
 

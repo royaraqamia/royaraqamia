@@ -22,9 +22,6 @@ export function PortfolioSectionHeader({
           أعمالنا
         </span>
       </h2>
-      <p className="mt-4 sm:mt-6 text-sm sm:text-base lg:text-lg text-slate-400 max-w-2xl leading-relaxed font-normal">
-        تصفَّح نُخبة من أهمِّ المشاريع الرَّقميَّة الـمُصمَّمَة بأعلى معايير الجودة.
-      </p>
     </m.div>
   );
 }

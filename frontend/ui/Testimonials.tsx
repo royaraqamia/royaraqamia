@@ -23,9 +23,6 @@ export function Testimonials() {
               </span>
               ؟
             </h2>
-            <p className="mt-3 text-sm sm:text-base lg:text-lg text-foreground/70 max-w-2xl leading-relaxed">
-              تجارب حقيقيَّة ورؤى صادقة من زبائننا حول ما نُقدِّم
-            </p>
           </div>
         </ScrollAnimation>
       </div>

@@ -65,15 +65,12 @@ export function WebDevService() {
         >
           <h2
             id="web-dev-heading"
-            className="text-4xl sm:text-5xl lg:text-6xl mb-6 font-extrabold tracking-tight leading-tight"
+            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight"
           >
             <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 via-violet-300 to-indigo-300">
               البناء
             </span>
           </h2>
-          <p className="text-base sm:text-lg lg:text-xl text-foreground/80 leading-relaxed font-medium max-w-2xl mx-auto">
-            خدمات هندسيَّة وإداريَّة متكاملة للمواقع والتَّطبيقات من الفكرة حتَّى الإطلاق.
-          </p>
         </MotionReveal>
 
         {/* Grid Layout */}

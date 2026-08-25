@@ -80,15 +80,11 @@ export function TrainingCourses() {
         {/* Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center mb-12 lg:mb-16">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight mb-4 text-foreground">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-foreground">
               <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
-                التَّدريب
+                التَّدريب
               </span>
             </h2>
-
-            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed font-medium">
-              المسار التَّدريبي العربي المتكامل الذي ينقلك من فكرة إلى مشروع قائم دون كتابة كود.
-            </p>
           </div>
         </ScrollAnimation>
 

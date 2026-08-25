@@ -153,22 +153,13 @@ export function Certificate() {
           <m.h2
             id="certificate-heading"
             variants={itemVariants}
-            className="text-3xl sm:text-5xl lg:text-6xl mb-5 font-black tracking-tight text-white leading-[1.15]"
+            className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.15]"
           >
             نموذج عن{' '}
             <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-300 via-violet-300 to-indigo-400 drop-shadow-sm">
-              الشَّهادة
+              الشَّهادة
             </span>
           </m.h2>
-
-          {/* Subtitle */}
-          <m.p
-            variants={itemVariants}
-            className="text-base sm:text-lg text-slate-300/80 max-w-2xl mx-auto leading-relaxed font-normal"
-          >
-            وثيقة تُثبت جدارتك المهنيَّة، وتُعَد جواز مرورك لفرص وظيفيَّة ومشاريع حقيقيَّة في
-            السُّوق الرَّقمي.
-          </m.p>
         </m.header>
 
         {/* 3D Certificate Visual Stage */}

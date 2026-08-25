@@ -61,11 +61,8 @@ export function FAQ() {
                 <span className="bg-linear-to-r from-violet-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
                   الأسئلة
                 </span>{' '}
-                الشَّائعة
+                الشَّائعة
               </h2>
-              <p className="mt-3.5 text-base sm:text-lg text-muted-foreground max-w-xl mx-auto leading-relaxed">
-                كل ما تحتاج معرفته عنَّا.
-              </p>
             </div>
           </ScrollAnimation>
 

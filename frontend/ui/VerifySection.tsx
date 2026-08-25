@@ -43,18 +43,13 @@ export function VerifySection() {
             {/* Section Main Title */}
             <h2
               id="verify-heading"
-              className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-100 mb-4 sm:mb-6 leading-tight sm:leading-tight"
+              className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-100 leading-tight sm:leading-tight"
             >
-              التَّحقُّق من{' '}
+              التَّحقُّق من{' '}
               <span className="bg-linear-to-r from-[#7766EE] via-purple-300 to-[#A78BFA] bg-clip-text text-transparent">
-                الشَّهادة
+                الشَّهادة
               </span>
             </h2>
-
-            {/* Description */}
-            <p className="text-base sm:text-lg lg:text-xl text-slate-400 max-w-2xl mx-auto font-normal leading-relaxed text-balance">
-              نظام توثيق رقمي يضمن لك مصداقيَّة الشَّهادات الصَّادرة عن رؤية رقمية.
-            </p>
           </div>
         </ScrollAnimation>
 

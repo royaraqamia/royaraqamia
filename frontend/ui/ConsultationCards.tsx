@@ -62,16 +62,11 @@ export function ConsultationCards() {
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center mb-12 sm:mb-16 md:mb-20">
             {/* Main H2 Title */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-4 text-white">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white">
               <span className="bg-linear-to-r from-purple-300 via-purple-100 to-indigo-300 bg-clip-text text-transparent">
                 الاستشارات
               </span>
             </h2>
-
-            {/* Subtitle */}
-            <p className="text-base sm:text-lg lg:text-xl text-slate-300/90 leading-relaxed sm:leading-8 max-w-2xl mx-auto font-normal">
-              نختصر عليك سنوات من البحث ونمنحك الخلاصة التِّقنيَّة والعمليَّة بصدق وأمانة.
-            </p>
           </div>
         </ScrollAnimation>
 
