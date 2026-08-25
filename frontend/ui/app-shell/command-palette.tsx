@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  BookOpen,
   CornerDownLeft,
   FilePlus2,
   House,
@@ -34,7 +33,6 @@ interface PaletteItem {
 
 const GENERAL_ITEMS: PaletteItem[] = [
   { id: 'home', label: 'الرَّئيسيَّة', group: 'general', href: '/', icon: House },
-  { id: 'blog', label: 'المدوَّنة', group: 'general', href: '/blog', icon: BookOpen },
   {
     id: 'verify',
     label: 'التَّحقُّق من الشَّهادة',

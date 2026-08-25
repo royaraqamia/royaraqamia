@@ -1,6 +1,6 @@
-import { CheckSquare, Link2, NotebookPen, Wallet, type LucideIcon } from 'lucide-react';
+import { BookOpen, CheckSquare, Link2, NotebookPen, Wallet, type LucideIcon } from 'lucide-react';
 
-export type AppProduct = 'linksnap' | 'blogpress' | 'habitflow' | 'spendtrack';
+export type AppProduct = 'linksnap' | 'blogpress' | 'habitflow' | 'spendtrack' | 'blog';
 
 export interface AppProductDef {
   id: AppProduct;
@@ -38,6 +38,13 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/spendtrack/app',
     landingPath: '/spendtrack',
     icon: Wallet,
+  },
+  {
+    id: 'blog',
+    label: 'المدوَّنة',
+    appPath: '/blog',
+    landingPath: '/blog',
+    icon: BookOpen,
   },
 ];
 
