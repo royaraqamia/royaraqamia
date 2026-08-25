@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { X, ChevronDown, type LucideIcon } from 'lucide-react';
 import { useFocusTrap } from '../../shared/use-focus-trap';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
+import { displayVersion } from '@/frontend/shared/version';
 
 // ============================================================================
 // Types
@@ -450,6 +451,13 @@ export function MobileMenu({
                 </span>
                 <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out bg-linear-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
               </a>
+
+              <p
+                className="mt-3.5 text-center text-xs font-medium text-neutral-400 dark:text-neutral-600"
+                dir="ltr"
+              >
+                v{displayVersion}
+              </p>
             </footer>
           </div>
         </div>,

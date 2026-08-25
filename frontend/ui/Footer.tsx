@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { formatHijriDate } from '@/frontend/shared/format';
 import { scrollToSection, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
+import { displayVersion } from '@/frontend/shared/version';
 
 const TelegramIcon = ({
   size = '1em',
@@ -242,6 +243,10 @@ export function Footer() {
               •
             </span>
             جميع الحقوق محفوظة
+            <span className="mx-2 text-primary/40" aria-hidden="true">
+              •
+            </span>
+            <span dir="ltr">v{displayVersion}</span>
           </p>
         </div>
       </div>
