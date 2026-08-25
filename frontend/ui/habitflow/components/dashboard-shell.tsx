@@ -161,12 +161,6 @@ export function DashboardShell({
             transition={shouldReduce ? undefined : { type: 'spring', stiffness: 280, damping: 25 }}
             className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-zinc-200/60 dark:border-zinc-800/60"
           >
-            <div className="flex flex-col gap-3">
-              <h1 className="text-4xl sm:text-5xl font-bold bg-linear-to-b from-zinc-900 to-zinc-600 dark:from-white dark:to-zinc-400 bg-clip-text text-transparent">
-                إدارة العادات
-              </h1>
-            </div>
-
             <div className="flex items-center gap-4 self-start md:self-auto flex-wrap sm:flex-nowrap">
               {/* Apple-style Segmented Date Control */}
               <div className="flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-full p-1.5 shadow-sm transition-all hover:border-zinc-300 dark:hover:border-zinc-700">

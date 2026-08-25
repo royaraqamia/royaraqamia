@@ -97,8 +97,6 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
           animate={{ opacity: 1 }}
           className="space-y-8"
         >
-          <h1 className="text-3xl font-display font-bold tracking-tight">إدارة الرَّوابط</h1>
-
           {user && (
             <ViewSelector
               selectedView={selectedView}

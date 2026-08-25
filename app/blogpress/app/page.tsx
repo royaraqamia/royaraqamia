@@ -71,9 +71,6 @@ export default async function DashboardPage({
     <div>
       {create === '1' && <AutoCreatePost />}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
-        <div>
-          <h1 className="text-3xl font-display font-bold tracking-tight">إدارة المقالات</h1>
-        </div>
         <div className="flex items-center gap-2">
           <Link
             href="/blogpress/app/calendar"
