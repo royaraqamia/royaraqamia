@@ -36,7 +36,7 @@ The application is a single Next.js 16 (App Router) deployment that serves multi
 - **Blog** — public, SEO-oriented articles rendered from Markdown (`app/blog`).
 - **BlogPress** — a full WYSIWYG blog editor built on TipTap, with post management (`app/blogpress`).
 - **HabitFlow** — habit tracking with calendars, logs, local-first data, and backup (`app/habitflow`).
-- **LinkSnap** — URL shortener with bulk creation, click analytics, admin moderation, and redirects (`app/linksnap`, `app/[code]`).
+- **LinkSnap** — URL shortener with click analytics, admin moderation, and redirects (`app/linksnap`, `app/[code]`).
 - **SpendTrack** — expense tracking with categories and charts (`app/spendtrack`).
 - **Certificates** — certificate issuance, admin management, and QR-based public verification (`app/admin/certificates`, `app/verify`).
 - **Auth & Accounts** — OTP-based email authentication, password reset, and admin role management (`app/auth`).

@@ -15,7 +15,6 @@ const mockGetErrorMessage = vi.fn((err: unknown) =>
 );
 
 const mockShorten = { execute: vi.fn() };
-const mockBulkShorten = { execute: vi.fn() };
 const mockListLinks = { execute: vi.fn() };
 const mockUpdateLink = { execute: vi.fn() };
 const mockDeleteLink = { execute: vi.fn() };
@@ -65,7 +64,6 @@ vi.mock('@/backend/shared/errors', async (importOriginal) => {
 
 vi.mock('@/backend/config/linksnap', () => ({
   createShortenUrlService: () => mockShorten,
-  createBulkShortenService: () => mockBulkShorten,
   createListLinksService: () => mockListLinks,
   createUpdateLinkService: () => mockUpdateLink,
   createDeleteLinkService: () => mockDeleteLink,
@@ -78,7 +76,6 @@ vi.mock('@/backend/config/linksnap', () => ({
 }));
 
 import { POST as shortenPOST } from '@/app/linksnap/api/shorten/route';
-import { POST as bulkPOST } from '@/app/linksnap/api/shorten/bulk/route';
 import {
   GET as linksGET,
   PATCH as linksPATCH,
@@ -179,61 +176,6 @@ describe('POST /linksnap/api/shorten', () => {
 
     expect(res.status).toBe(400);
     expect(readBody(res)).toEqual({ success: false, error: 'URL cannot be empty.' });
-  });
-});
-
-describe('POST /linksnap/api/shorten/bulk', () => {
-  it('returns 401 without authentication', async () => {
-    mockGetAuthenticatedUser.mockResolvedValue(null);
-
-    const res = await bulkPOST(makeReq({ urls: ['https://a.com'] }));
-
-    expect(res.status).toBe(401);
-    expect(readBody<{ error: string }>(res).error).toContain('غير مصرح');
-  });
-
-  it('returns 400 when urls is not an array', async () => {
-    mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
-    mockBulkShorten.execute.mockRejectedValue(
-      new AppError("يجب أن يحتوي الإدخال على مصفوفة من 'urls'.", 400)
-    );
-
-    const res = await bulkPOST(makeReq({ urls: 'not-an-array' }));
-
-    expect(res.status).toBe(400);
-    expect(readBody<{ error: string }>(res).error).toContain('urls');
-  });
-
-  it('returns 400 when urls is missing', async () => {
-    mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
-    mockBulkShorten.execute.mockRejectedValue(
-      new AppError("يجب أن يحتوي الإدخال على مصفوفة من 'urls'.", 400)
-    );
-
-    const res = await bulkPOST(makeReq({}));
-
-    expect(res.status).toBe(400);
-  });
-
-  it('returns the bulk results for a valid request', async () => {
-    mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
-    mockBulkShorten.execute.mockResolvedValue([{ originalUrl: 'https://a.com', shortLink }]);
-
-    const res = await bulkPOST(makeReq({ urls: ['https://a.com'] }));
-
-    expect(res.status).toBe(200);
-    expect(readBody<{ success: boolean; results: unknown[] }>(res).success).toBe(true);
-    expect(readBody<{ results: unknown[] }>(res).results).toHaveLength(1);
-    expect(mockBulkShorten.execute).toHaveBeenCalledWith(['https://a.com'], 'u-1');
-  });
-
-  it('returns 429 when rate limited', async () => {
-    mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
-    mockCheckRateLimitApi.mockResolvedValue({ data: { success: false }, status: 429 });
-
-    const res = await bulkPOST(makeReq({ urls: ['https://a.com'] }));
-
-    expect(res.status).toBe(429);
   });
 });
 

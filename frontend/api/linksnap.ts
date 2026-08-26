@@ -67,12 +67,6 @@ export interface AnalyticsExportRow {
   browser: string;
 }
 
-export interface BulkShortenResultItem {
-  originalUrl: string;
-  shortLink?: { code: string };
-  error?: string;
-}
-
 export async function listLinks(token: string): Promise<ShortenedLink[]> {
   const data = await request<{ links: ShortenedLink[] }>('/linksnap/api/links', {
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -103,18 +97,6 @@ export async function unlockLink(code: string, password: string): Promise<{ orig
     method: 'POST',
     body: JSON.stringify({ code, password }),
   });
-}
-
-export async function shortenBulk(
-  urls: string[],
-  token: string | null
-): Promise<BulkShortenResultItem[]> {
-  const data = await request<{ results: BulkShortenResultItem[] }>('/linksnap/api/shorten/bulk', {
-    method: 'POST',
-    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: JSON.stringify({ urls }),
-  });
-  return data.results || [];
 }
 
 export async function deleteLink(code: string, token: string): Promise<void> {

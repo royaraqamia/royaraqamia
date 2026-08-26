@@ -5,7 +5,6 @@ import { env } from '@/backend/config/env';
 import { logger } from '@/backend/shared/logger';
 import {
   createBulkLinkActionService,
-  createBulkShortenService,
   createCheckCodeAvailabilityService,
   createDeleteLinkService,
   createGetSystemStatsService,
@@ -18,7 +17,6 @@ import {
   createRedirectUrlService,
 } from '@/backend/config/linksnap';
 import {
-  bulkShortenRateLimitPolicy,
   shortenRateLimitPolicy,
   slugAvailabilityRateLimitPolicy,
   unlockRateLimitPolicy,
@@ -212,30 +210,6 @@ export async function shortenUrl(
     });
   } catch (err: unknown) {
     return errorResponse(err, 'Error in shorten API route:');
-  }
-}
-
-export async function bulkShorten(
-  authorization: string | null,
-  body: { urls?: unknown }
-): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, {
-        success: false,
-        error: 'غير مصرح. يرجى تسجيل الدخول لاستخدام الاختصار بالجملة.',
-      });
-    }
-
-    const rateLimitResult = await checkRateLimitApi(bulkShortenRateLimitPolicy(user.id));
-    if (rateLimitResult) return rateLimitResult;
-
-    const results = await createBulkShortenService().execute(body.urls as string[], user.id);
-
-    return jsonResult(200, { success: true, results });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in bulk shortening endpoint:');
   }
 }
 

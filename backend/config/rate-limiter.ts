@@ -53,16 +53,6 @@ export function shortenRateLimitPolicy(userId: string | null, ip: string): RateL
   };
 }
 
-export function bulkShortenRateLimitPolicy(userId: string): RateLimitPolicy {
-  return {
-    key: `bulk-shorten:${userId}`,
-    limit: 10,
-    windowMs: SHORTEN_WINDOW_MS,
-    message:
-      'تم تجاوز حد الطلب: طلبات الاختصار بالجملة محدودة بـ 10 دفعات كل 10 دقائق لحماية سلامة قاعدة البيانات.',
-  };
-}
-
 export function slugAvailabilityRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `slug-availability:${ip}`,

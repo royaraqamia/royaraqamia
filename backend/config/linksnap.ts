@@ -2,7 +2,6 @@ import { SupabaseShortLinkRepository } from '@/backend/repositories/linksnap/sup
 import { SupabaseAnalyticsRepository } from '@/backend/repositories/linksnap/supabase-analytics';
 import { SupabaseAdminRepository } from '@/backend/repositories/linksnap/supabase-admin';
 import { ShortenUrlService } from '@/backend/services/linksnap/shorten-url';
-import { BulkShortenService } from '@/backend/services/linksnap/bulk-shorten';
 import { ListLinksService } from '@/backend/services/linksnap/list-links';
 import { UpdateLinkService } from '@/backend/services/linksnap/update-link';
 import { CheckCodeAvailabilityService } from '@/backend/services/linksnap/check-code-availability';
@@ -39,10 +38,6 @@ export function createAdminRepository(): SupabaseAdminRepository {
 
 export function createShortenUrlService(): ShortenUrlService {
   return new ShortenUrlService(createShortLinkRepository());
-}
-
-export function createBulkShortenService(): BulkShortenService {
-  return new BulkShortenService(createShortLinkRepository());
 }
 
 export function createListLinksService(): ListLinksService {
