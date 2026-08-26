@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
 import { Navbar } from '@/frontend/ui/Navbar';
-import { Footer } from '@/frontend/ui/Footer';
 import { Megaphone } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -44,7 +43,6 @@ export default async function AdminAnnouncementsLayout({
           {children}
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

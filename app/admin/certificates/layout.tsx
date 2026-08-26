@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
 import { Navbar } from '@/frontend/ui/Navbar';
-import { Footer } from '@/frontend/ui/Footer';
 import { Plus, ShieldCheck } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -48,7 +47,6 @@ export default async function AdminCertificatesLayout({ children }: { children: 
           {children}
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

@@ -3,7 +3,6 @@ import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
 import { Navbar } from '@/frontend/ui/Navbar';
-import { Footer } from '@/frontend/ui/Footer';
 import { CalendarCheck2 } from 'lucide-react';
 
 export const metadata: Metadata = {
@@ -64,7 +63,6 @@ export default async function AdminConsultationsLayout({
           {children}
         </div>
       </main>
-      <Footer />
     </div>
   );
 }
