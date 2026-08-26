@@ -43,4 +43,13 @@ describe('WhatsAppFloat', () => {
     });
     expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
   });
+
+  it.each(['/verify', '/verify/CERT-123', '/consultation/book'])('hides on %s', (pathname) => {
+    mockUsePathname.mockReturnValue(pathname);
+    renderWithProviders(<WhatsAppFloat />);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
+  });
 });
