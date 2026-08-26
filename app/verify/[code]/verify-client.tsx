@@ -64,24 +64,8 @@ function NotFoundState({ code }: { code: string }) {
   return (
     <div
       dir="rtl"
-      className="relative min-h-screen w-full overflow-x-hidden bg-neutral-50/50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 flex items-center justify-center py-12 md:py-20 px-4 sm:px-6 lg:px-8 selection:bg-red-500/20 selection:text-red-500"
+      className="relative w-full overflow-x-hidden bg-background text-foreground flex items-center justify-center py-12 md:py-20 px-4 sm:px-6 lg:px-8 selection:bg-red-500/20 selection:text-red-500"
     >
-      {/* Dynamic Ambient Glow Background */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden no-print">
-        <m.div
-          className="absolute -top-32 right-1/4 h-96 w-96 rounded-full bg-red-500/10 glow-blur-lg"
-          animate={reduce ? false : { scale: [1, 1.15, 1], x: [0, 20, 0] }}
-          transition={reduce ? undefined : { duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <m.div
-          className="absolute -bottom-32 left-1/4 h-96 w-96 rounded-full bg-orange-500/10 glow-blur-lg"
-          animate={reduce ? false : { scale: [1, 1.2, 1], x: [0, -20, 0] }}
-          transition={
-            reduce ? undefined : { duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 1 }
-          }
-        />
-      </div>
-
       <div className="relative z-10 w-full max-w-2xl mx-auto">
         <m.div
           variants={staggerVariants}
@@ -267,7 +251,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
   return (
     <div
       dir="rtl"
-      className="relative min-h-screen w-full overflow-x-hidden bg-neutral-50/50 dark:bg-neutral-950 text-neutral-900 dark:text-neutral-50 py-10 md:py-20 px-4 sm:px-6 lg:px-8 selection:bg-primary/20 selection:text-primary"
+      className="relative w-full overflow-x-hidden bg-background text-foreground py-10 md:py-20 px-4 sm:px-6 lg:px-8 selection:bg-primary/20 selection:text-primary"
     >
       <style>{`
         @media print {
@@ -286,27 +270,6 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
           }
         }
       `}</style>
-
-      {/* Dynamic Background Ambient Glows */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden no-print">
-        <m.div
-          className="absolute -top-40 right-10 h-112 w-md rounded-full bg-primary/10 glow-blur-xl"
-          animate={reduce ? false : { scale: [1, 1.15, 1], x: [0, 30, 0] }}
-          transition={reduce ? undefined : { duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <m.div
-          className="absolute -bottom-40 left-10 h-112 w-md rounded-full bg-accent-indigo/10 glow-blur-xl"
-          animate={reduce ? false : { scale: [1, 1.2, 1], x: [0, -30, 0] }}
-          transition={
-            reduce ? undefined : { duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 1 }
-          }
-        />
-        <m.div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-80 w-80 rounded-full bg-primary/5 glow-blur-xl"
-          animate={reduce ? false : { opacity: [0.3, 0.6, 0.3] }}
-          transition={reduce ? undefined : { duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      </div>
 
       <div className="relative z-10 w-full max-w-4xl mx-auto">
         <m.div variants={staggerVariants} initial={reduce ? false : 'hidden'} animate="visible">

@@ -6,14 +6,6 @@ import { ShellHeader } from './shell-header';
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-dvh flex flex-col bg-background text-foreground antialiased selection:bg-primary/15 selection:text-primary font-sans transition-colors duration-300">
-      {/* Subtle ambient lighting effect for a modern SaaS depth feel */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 top-0 -z-10 flex transform-gpu justify-center overflow-hidden blur-3xl"
-      >
-        <div className="aspect-1100/400 w-275 flex-none bg-linear-to-tr from-primary/10 via-primary/5 to-transparent opacity-50 dark:opacity-20" />
-      </div>
-
       {/* Accessible Skip to Main Content Link */}
       <a
         href="#main-content"
