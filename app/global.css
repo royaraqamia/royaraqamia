@@ -70,19 +70,18 @@
 }
 
 @layer components {
+  /* No `will-change` here: pinning ~12 always-on layers costs GPU memory
+     for the whole page lifetime; running animations promote themselves. */
   .hero-particle {
-    will-change: transform;
     animation: hero-particle-rise var(--particle-duration, 16s) ease-in-out infinite;
     animation-delay: var(--particle-delay, 0s);
   }
 
   .animate-icon-float {
-    will-change: transform;
     animation: icon-float-rotate 5s ease-in-out infinite;
   }
 
   .animate-icon-float-delayed {
-    will-change: transform;
     animation: icon-float-rotate-delayed 6s ease-in-out infinite;
     animation-delay: 1s;
   }
@@ -1132,18 +1131,15 @@
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
-  will-change: transform;
 }
 
 .animate-float-delayed {
   animation: float-delayed 3.5s ease-in-out infinite;
   animation-delay: 0.5s;
-  will-change: transform;
 }
 
 .animate-pulse-slow {
   animation: pulse-slow 2s ease-in-out infinite;
-  will-change: opacity;
 }
 
 /* Respect prefers-reduced-motion */

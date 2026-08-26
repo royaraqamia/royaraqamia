@@ -85,3 +85,13 @@
 @utility glow-blur-xl {
   filter: blur(70px);
 }
+
+/* Pre-blurred halo orb. Paints the soft glow as a radial gradient so the
+   browser rasterizes it once instead of running a live Gaussian filter on a
+   large decorative layer. Set the halo color via text-<color>/<alpha>:
+   currentColor carries the alpha into the gradient and fades to transparent
+   at the element edge. Drop-in replacement for bg-* + glow-blur-* pairs. */
+@utility glow-orb {
+  filter: none;
+  background-image: radial-gradient(closest-side, currentColor, transparent);
+}
