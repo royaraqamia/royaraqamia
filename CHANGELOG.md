@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-08-26
+
+### Changed
+- remove habitflow calendar visual spec
+- remove bulk shorten feature, keep single-link shortening
+- remove Footer from admin page layouts
+- align icon column drop migration version with remote history
+- : remove icon field from habit data model and API
+- remove habit icon picker, display, and template icons
+- drop habits.icon column
+
+### Added
+- prioritize verify and consultation products in nav order
+
+### Fixed
+- hide WhatsApp float on blog listing and post pages
+
 ## [1.16.0] - 2026-08-26
 
 ### Changed
