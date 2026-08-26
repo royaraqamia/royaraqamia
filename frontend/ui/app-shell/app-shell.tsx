@@ -1,11 +1,11 @@
 'use client';
 
 import * as React from 'react';
-import { ShellHeader } from './shell-header';
+import { Navbar } from '@/frontend/ui/Navbar';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative min-h-dvh flex flex-col bg-background text-foreground antialiased selection:bg-primary/15 selection:text-primary font-sans transition-colors duration-300">
+    <div className="relative min-h-dvh flex flex-col bg-background text-foreground antialiased selection:bg-primary/15 selection:text-primary font-sans transition-colors duration-300 pt-16 lg:pt-20">
       {/* Accessible Skip to Main Content Link */}
       <a
         href="#main-content"
@@ -14,8 +14,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         Skip to main content
       </a>
 
-      {/* Unified Sticky Navigation Header */}
-      <ShellHeader />
+      {/* Primary Navbar (fixed to viewport top) */}
+      <Navbar />
 
       {/* Main Content Viewport */}
       <main
