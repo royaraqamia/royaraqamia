@@ -109,8 +109,7 @@ const TestimonialCard = memo(function TestimonialCard({
         w-[82vw] sm:w-95 md:w-105 
         snap-start rounded-3xl p-6 sm:p-7 md:p-8 
         flex flex-col justify-between 
-        bg-slate-900/60 hover:bg-slate-900/80 
-        backdrop-blur-2xl
+        bg-slate-900/95 hover:bg-slate-900
         border border-white/10 hover:border-violet-500/40 
         ring-1 ring-white/5 
         transition-[transform,box-shadow,border-color,background-color] duration-400 ease-out 

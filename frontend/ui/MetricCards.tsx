@@ -105,7 +105,7 @@ export function MetricCards() {
             return (
               <article
                 key={index}
-                className={`landing-reveal-item group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-[transform,border-color] duration-500 ease-out overflow-hidden bg-neutral-900/40 border border-white/10 backdrop-blur-xl z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
+                className={`landing-reveal-item group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-[transform,border-color] duration-500 ease-out overflow-hidden bg-neutral-900/95 border border-white/10 z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
                 style={
                   {
                     ['--ld' as string]: `${index * 0.2}s`,

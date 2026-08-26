@@ -28,8 +28,8 @@ export function FAQAccordion({ faqs }: FAQAccordionProps) {
                 group relative rounded-2xl transition-[background-color,border-color,box-shadow] duration-300 ease-out overflow-hidden border
                 ${
                   isOpen
-                    ? 'bg-card/90 border-violet-500/40 shadow-[0_12px_32px_-12px_rgba(124,58,237,0.22)]'
-                    : 'bg-card/40 hover:bg-card/70 border-border/60 hover:border-border backdrop-blur-md'
+                    ? 'bg-card border-violet-500/40 shadow-[0_12px_32px_-12px_rgba(124,58,237,0.22)]'
+                    : 'bg-card/95 hover:bg-card border-border/60 hover:border-border'
                 }
               `}
             >
