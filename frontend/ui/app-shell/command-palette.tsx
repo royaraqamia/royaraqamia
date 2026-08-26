@@ -99,10 +99,16 @@ export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="البحث السَّريع"
-        className="relative flex h-11 w-11 items-center justify-center rounded-xl text-neutral-700 dark:text-neutral-200 transition-all duration-200 ease-out hover:bg-neutral-100/80 dark:hover:bg-neutral-800/80 active:scale-95 active:bg-neutral-200/80 dark:active:bg-neutral-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 motion-reduce:transition-none"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className={`group relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/80 backdrop-blur-md text-foreground shadow-xs transition-all duration-200 ease-out hover:border-primary/40 hover:bg-muted/80 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+          open ? 'bg-muted border-primary/50 ring-2 ring-primary/20 shadow-sm scale-[1.02]' : ''
+        }`}
       >
-        <span className="sr-only">البحث السَّريع</span>
-        <Search size={22} />
+        <Search
+          size={20}
+          className="text-foreground/90 transition-transform duration-200 group-hover:scale-110"
+        />
       </button>
 
       {/* Command Palette Modal */}
