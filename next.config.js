@@ -37,6 +37,9 @@ const nextConfig = {
       dynamic: 30,
       static: 300,
     },
+    // Expand lucide-react named imports to per-icon modules so only used
+    // glyphs are bundled instead of the barrel's icon map.
+    optimizePackageImports: ['lucide-react'],
   },
   typescript: {
     ignoreBuildErrors: true,
