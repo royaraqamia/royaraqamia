@@ -30,9 +30,12 @@ type IdleSchedulingWindow = Window & {
 
 /**
  * Boots the client Sentry SDK outside the critical render path so the SDK
- * chunk is never part of the initial page load. In production the SDK starts
- * after the browser is first idle; in development it stays lazy until an
- * error is captured so hot-reload iterating stays fast.
+ * never blocks hydration. NOTE (measured on Next 16 / Turbopack): the async
+ * chunk still appears as a non-blocking <script async> in prerendered HTML
+ * (~71KB gz) because Turbopack emits every reachable dynamic import upfront;
+ * execution — not download — is what we defer here. In production the SDK
+ * starts after the browser is first idle; in development it stays lazy until
+ * an error is captured so hot-reload iterating stays fast.
  */
 export function initClientSentry(): void {
   if (typeof window === 'undefined') return;
