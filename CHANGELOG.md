@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-08-26
+
+### Changed
+- remove insights row and its orphaned insights module
+- render Navbar directly in app layouts, drop ShellHeader wrapper
+- replace Arabic ShamCash label with Latin brand name
+
+### Added
+- searchable country-code selector on booking phone field
+- add country dial-code data and phone parsing utils
+
+### Fixed
+- dedupe slot step rows, Hijri dates, 12h times, custom scrollbar
+- stack backup action buttons on narrow screens to stop 360px overflow
+- remove ambient glows and min-h-screen overflow on verify pages
+- hide WhatsApp float on verify and consultation booking pages
+
 ## [1.15.0] - 2026-08-26
 
 ### Changed
