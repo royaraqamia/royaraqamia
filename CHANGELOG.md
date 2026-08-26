@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-08-26
+
+### Changed
+- match command palette navbar trigger to dropdown icons
+- drop product switcher, superseded by command palette
+
+### Added
+- add icon-only command palette beside navbar account controls
+
+### Fixed
+- remove subtitle from services section header
+
 ## [1.14.1] - 2026-08-26
 
 ### Fixed
