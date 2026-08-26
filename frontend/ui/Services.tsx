@@ -108,11 +108,6 @@ export function Services() {
             </span>
             ؟
           </h2>
-
-          {/* Subtitle */}
-          <p className="text-base sm:text-lg lg:text-xl text-slate-400 leading-relaxed font-normal max-w-2xl">
-            بُنية تحتيَّة شاملة للأفراد وأصحاب الأعمال تحت سقف واحد.
-          </p>
         </MotionReveal>
 
         {/* Dynamic Grid Layout */}
