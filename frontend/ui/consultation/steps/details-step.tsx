@@ -5,6 +5,7 @@ import { REGION_LABELS, type ConsultationRegion } from '@/shared/contracts/consu
 import { Input } from '@/frontend/ui/primitives/input';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { Label } from '@/frontend/ui/primitives/label';
+import { CountryPhoneInput } from '@/frontend/ui/consultation/country-phone-input';
 import type { BookingContactDraft } from '@/frontend/state/consultation/use-booking-flow';
 import { cn } from '@/frontend/shared/cn';
 
@@ -60,15 +61,12 @@ export function DetailsStep({
             *
           </span>
         </Label>
-        <Input
+        <CountryPhoneInput
           id="booking-phone"
           value={contact.phone_whatsapp}
-          onChange={(e) => onChange({ phone_whatsapp: e.target.value })}
-          inputMode="tel"
-          dir="ltr"
-          autoComplete="tel"
-          placeholder="+963 9XX XXX XXX"
-          className="bg-muted border-border rounded-xl focus-ring text-left"
+          onChange={(phone_whatsapp) => onChange({ phone_whatsapp })}
+          placeholder="9XX XXX XXX"
+          invalid={Boolean(fieldErrors['phone_whatsapp'])}
         />
         {fieldErrors['phone_whatsapp'] && (
           <p className="text-sm text-destructive mt-1">{fieldErrors['phone_whatsapp']}</p>
