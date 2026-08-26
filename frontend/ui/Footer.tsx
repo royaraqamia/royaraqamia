@@ -1,13 +1,8 @@
-'use client';
-
-import { useRef, useEffect } from 'react';
 import { MapPin, Mail } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname, useRouter } from 'next/navigation';
 import { formatHijriDate } from '@/frontend/shared/format';
-import { scrollToSection, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
 import { displayVersion } from '@/frontend/shared/version';
+import { FooterLogoButton } from './FooterLogoButton';
 
 const TelegramIcon = ({
   size = '1em',
@@ -79,26 +74,6 @@ const socialLinks = [
 ];
 
 export function Footer() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const scrollCancelRef = useRef<{ cancel: () => void } | null>(null);
-
-  useEffect(() => {
-    return () => {
-      scrollCancelRef.current?.cancel();
-    };
-  }, []);
-
-  const scrollToHero = () => {
-    scrollCancelRef.current?.cancel();
-
-    if (pathname !== '/') {
-      scrollCancelRef.current = scrollToSectionAfterNavigation('home', () => router.push('/'));
-    } else {
-      scrollToSection('home');
-    }
-  };
-
   return (
     <footer
       className="relative w-full border-t border-border/50 bg-card/60 transition-colors duration-300 overflow-hidden"
@@ -118,25 +93,8 @@ export function Footer() {
         <div className="flex flex-col items-center text-center space-y-8 md:space-y-10">
           {/* Brand & Metadata Section */}
           <div className="flex flex-col items-center space-y-4 max-w-md mx-auto">
-            {/* Interactive Logo + Brand Name */}
-            <button
-              type="button"
-              onClick={scrollToHero}
-              className="group relative inline-flex items-center gap-2.5 p-1.5 rounded-2xl transition-[background-color,transform] duration-300 hover:bg-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer min-h-11"
-              aria-label="العودة إلى الصفحة الرئيسية"
-            >
-              <Image
-                src="/logo.webp"
-                alt=""
-                width={48}
-                height={48}
-                className="h-12 w-12 object-contain rounded-full transition-transform duration-500 group-hover:scale-110"
-              />
-
-              <span className="logo-text font-heading font-bold text-3xl sm:text-3xl text-primary tracking-tight transition-opacity duration-300 group-hover:opacity-90">
-                رؤية رقمية
-              </span>
-            </button>
+            {/* Interactive Logo + Brand Name (client island) */}
+            <FooterLogoButton />
 
             {/* Subtitle / Tagline */}
             <p className="text-sm sm:text-base text-muted-foreground font-medium leading-relaxed">
