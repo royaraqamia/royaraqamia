@@ -62,7 +62,6 @@ export function DashboardShell({
     isEditModalOpen,
     selectedHabit,
     habitName,
-    habitIcon,
     habitFrequency,
     habitTarget,
     habitTargetPeriod,
@@ -71,7 +70,6 @@ export function DashboardShell({
     activeStats,
     calendarGrid,
     setHabitName,
-    setHabitIcon,
     setHabitFrequency,
     setHabitTarget,
     setHabitTargetPeriod,
@@ -294,14 +292,12 @@ export function DashboardShell({
                   <HabitOnboarding
                     onTemplateSelect={(template: HabitTemplate) => {
                       setHabitName(template.name);
-                      setHabitIcon(template.icon);
                       setHabitFrequency(template.frequency);
                       setFormError('');
                       setIsAddModalOpen(true);
                     }}
                     onCreateBlank={() => {
                       setHabitName('');
-                      setHabitIcon('Activity');
                       setHabitFrequency('daily');
                       setFormError('');
                       setIsAddModalOpen(true);
@@ -410,7 +406,6 @@ export function DashboardShell({
           <AddHabitModal
             isOpen={isAddModalOpen}
             habitName={habitName}
-            habitIcon={habitIcon}
             habitFrequency={habitFrequency}
             habitTarget={habitTarget}
             habitTargetPeriod={habitTargetPeriod}
@@ -422,7 +417,6 @@ export function DashboardShell({
               setFormError('');
             }}
             onNameChange={setHabitName}
-            onIconChange={setHabitIcon}
             onFrequencyChange={setHabitFrequency}
             onTargetChange={setHabitTarget}
             onTargetPeriodChange={setHabitTargetPeriod}
@@ -434,7 +428,6 @@ export function DashboardShell({
             isOpen={isEditModalOpen}
             habit={selectedHabit}
             habitName={habitName}
-            habitIcon={habitIcon}
             habitFrequency={habitFrequency}
             habitTarget={habitTarget}
             habitTargetPeriod={habitTargetPeriod}
@@ -443,7 +436,6 @@ export function DashboardShell({
             isSubmitting={isSubmitting}
             onClose={closeEditModal}
             onNameChange={setHabitName}
-            onIconChange={setHabitIcon}
             onFrequencyChange={setHabitFrequency}
             onTargetChange={setHabitTarget}
             onTargetPeriodChange={setHabitTargetPeriod}

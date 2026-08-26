@@ -11,7 +11,6 @@ export interface DashboardForm {
   isEditModalOpen: boolean;
   selectedHabit: Habit | null;
   habitName: string;
-  habitIcon: string;
   habitFrequency: 'daily' | 'weekly';
   habitTarget: string;
   habitTargetPeriod: HabitTargetPeriod | '';
@@ -20,7 +19,6 @@ export interface DashboardForm {
   formError: string;
   confirmArchiveHabitId: string | null;
   setHabitName: Dispatch<SetStateAction<string>>;
-  setHabitIcon: Dispatch<SetStateAction<string>>;
   setHabitFrequency: Dispatch<SetStateAction<'daily' | 'weekly'>>;
   setHabitTarget: Dispatch<SetStateAction<string>>;
   setHabitTargetPeriod: Dispatch<SetStateAction<HabitTargetPeriod | ''>>;
@@ -52,7 +50,6 @@ export function useDashboardForm(
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null);
 
   const [habitName, setHabitName] = useState<string>('');
-  const [habitIcon, setHabitIcon] = useState<string>('Activity');
   const [habitFrequency, setHabitFrequency] = useState<'daily' | 'weekly'>('daily');
   const [habitTarget, setHabitTarget] = useState<string>('');
   const [habitTargetPeriod, setHabitTargetPeriod] = useState<HabitTargetPeriod | ''>('');
@@ -72,7 +69,7 @@ export function useDashboardForm(
       try {
         const result = await ApiClient.createHabit(
           habitName,
-          habitIcon,
+          'Activity',
           habitFrequency,
           parseTarget(habitTarget),
           habitTargetPeriod === '' ? null : habitTargetPeriod,
@@ -94,7 +91,7 @@ export function useDashboardForm(
       try {
         const habit = await localRepo.createHabit({
           name: habitName.trim(),
-          icon: habitIcon,
+          icon: 'Activity',
           frequency: habitFrequency,
           target: parseTarget(habitTarget),
           targetPeriod: habitTargetPeriod === '' ? null : habitTargetPeriod,
@@ -123,7 +120,7 @@ export function useDashboardForm(
         const result = await ApiClient.updateHabit(
           selectedHabit.id,
           habitName,
-          habitIcon,
+          selectedHabit.icon,
           habitFrequency,
           parseTarget(habitTarget),
           habitTargetPeriod === '' ? null : habitTargetPeriod,
@@ -146,7 +143,6 @@ export function useDashboardForm(
       try {
         const updated = await localRepo.updateHabit(selectedHabit.id, {
           name: habitName.trim(),
-          icon: habitIcon,
           frequency: habitFrequency,
           target: parseTarget(habitTarget),
           targetPeriod: habitTargetPeriod === '' ? null : habitTargetPeriod,
@@ -245,7 +241,6 @@ export function useDashboardForm(
 
   const resetFields = () => {
     setHabitName('');
-    setHabitIcon('Activity');
     setHabitFrequency('daily');
     setHabitTarget('');
     setHabitTargetPeriod('');
@@ -256,7 +251,6 @@ export function useDashboardForm(
   const openEditModal = (habit: Habit) => {
     setSelectedHabit(habit);
     setHabitName(habit.name);
-    setHabitIcon(habit.icon);
     setHabitFrequency(habit.frequency);
     setHabitTarget(habit.target != null ? String(habit.target) : '');
     setHabitTargetPeriod(habit.targetPeriod ?? '');
@@ -276,7 +270,6 @@ export function useDashboardForm(
     isEditModalOpen,
     selectedHabit,
     habitName,
-    habitIcon,
     habitFrequency,
     habitTarget,
     habitTargetPeriod,
@@ -285,7 +278,6 @@ export function useDashboardForm(
     formError,
     confirmArchiveHabitId,
     setHabitName,
-    setHabitIcon,
     setHabitFrequency,
     setHabitTarget,
     setHabitTargetPeriod,

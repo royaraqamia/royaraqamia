@@ -1,4 +1,3 @@
-import { createElement } from 'react';
 import { m, useReducedMotion } from 'motion/react';
 import { Check, Flame, Edit3, Snowflake, NotebookPen, Target, MoreHorizontal } from 'lucide-react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
@@ -6,7 +5,6 @@ import {
   calculateHabitStats,
   calculateTargetProgress,
 } from '@/frontend/shared/habitflow/habit-stats';
-import { getIconComponent, getIconColorClass } from '@/frontend/shared/habitflow/habit-icons';
 import { Card } from '@/frontend/ui/primitives/card';
 import { Button } from '@/frontend/ui/primitives/button';
 import {
@@ -48,7 +46,6 @@ export function HabitCard({
   const isToggling = togglingHabitId === habit.id;
   const stats = calculateHabitStats(habit.id, logs, activeDate);
   const targetProgress = calculateTargetProgress(habit, logs, activeDate);
-  const colorClass = getIconColorClass(habit.icon);
 
   return (
     <Card
@@ -89,91 +86,78 @@ export function HabitCard({
           )}
         </m.button>
 
-        {/* Icon & Details Container */}
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0 flex-1">
-          {/* Visual Icon Box */}
-          <div
-            className={`flex items-center justify-center shrink-0 w-10 h-10 sm:w-11.5 sm:h-11.5 rounded-[14px] sm:rounded-2xl transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-105 shadow-sm ${colorClass}`}
-            aria-hidden="true"
+        {/* Text & Metadata Grid */}
+        <div className="min-w-0 flex-1 flex flex-col justify-center space-y-1 sm:space-y-1.5">
+          <h4
+            className={`text-[15px] sm:text-[17px] font-semibold leading-tight truncate transition-all duration-300 ${
+              isCompleted
+                ? 'line-through decoration-zinc-400 dark:decoration-zinc-600 text-zinc-500 dark:text-zinc-500'
+                : isSkipped
+                  ? 'text-zinc-500 dark:text-zinc-400'
+                  : 'text-zinc-900 dark:text-zinc-100'
+            }`}
+            title={habit.name}
           >
-            {createElement(getIconComponent(habit.icon), {
-              className: 'w-5 h-5 sm:w-[22px] sm:h-[22px] opacity-90',
-            })}
-          </div>
+            {habit.name}
+          </h4>
 
-          {/* Text & Metadata Grid */}
-          <div className="min-w-0 flex-1 flex flex-col justify-center space-y-1 sm:space-y-1.5">
-            <h4
-              className={`text-[15px] sm:text-[17px] font-semibold leading-tight truncate transition-all duration-300 ${
-                isCompleted
-                  ? 'line-through decoration-zinc-400 dark:decoration-zinc-600 text-zinc-500 dark:text-zinc-500'
-                  : isSkipped
-                    ? 'text-zinc-500 dark:text-zinc-400'
-                    : 'text-zinc-900 dark:text-zinc-100'
-              }`}
-              title={habit.name}
-            >
-              {habit.name}
-            </h4>
-
-            {/* Dynamic Wrapping Tags */}
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
-              {isSkipped ? (
-                <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 whitespace-nowrap shrink-0 transition-colors">
-                  <Snowflake className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                  <span>مُتخطّى</span>
-                </span>
-              ) : (
-                <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 whitespace-nowrap transition-colors">
-                  {habit.frequency === 'daily' ? 'يومي' : 'أسبوعي'}
-                </span>
-              )}
-
-              <span
-                className="text-[10px] text-zinc-300 dark:text-zinc-700 shrink-0 select-none"
-                aria-hidden="true"
-              >
-                •
+          {/* Dynamic Wrapping Tags */}
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+            {isSkipped ? (
+              <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 whitespace-nowrap shrink-0 transition-colors">
+                <Snowflake className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span>مُتخطّى</span>
               </span>
+            ) : (
+              <span className="inline-flex items-center px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200/80 dark:border-zinc-700/80 whitespace-nowrap transition-colors">
+                {habit.frequency === 'daily' ? 'يومي' : 'أسبوعي'}
+              </span>
+            )}
 
-              {stats.currentStreak > 0 ? (
-                <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/20 whitespace-nowrap shrink-0 shadow-[0_1px_2px_rgba(249,115,22,0.1)] transition-colors">
-                  <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current opacity-80" />
-                  <span>{stats.currentStreak}</span>
-                </span>
-              ) : (
-                <span className="text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 font-medium truncate">
-                  لا يوجد تسلسل
-                </span>
-              )}
+            <span
+              className="text-[10px] text-zinc-300 dark:text-zinc-700 shrink-0 select-none"
+              aria-hidden="true"
+            >
+              •
+            </span>
 
-              {targetProgress && (
-                <>
-                  <span
-                    className="text-[10px] text-zinc-300 dark:text-zinc-700 shrink-0 select-none"
-                    aria-hidden="true"
-                  >
-                    •
-                  </span>
-                  <span
-                    className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold border whitespace-nowrap shrink-0 transition-colors ${
-                      targetProgress.percent >= 100
-                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
-                        : 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20'
-                    }`}
-                    title={`${targetProgress.period === 'week' ? 'الهدف الأسبوعي' : 'الهدف الشهري'}: ${targetProgress.completed} من ${targetProgress.target}`}
-                  >
-                    <Target className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span>
-                      {targetProgress.completed} / {targetProgress.target}
-                      <span className="hidden sm:inline ms-1 font-medium opacity-80">
-                        {targetProgress.period === 'week' ? 'أسبوعي' : 'شهري'}
-                      </span>
+            {stats.currentStreak > 0 ? (
+              <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/20 whitespace-nowrap shrink-0 shadow-[0_1px_2px_rgba(249,115,22,0.1)] transition-colors">
+                <Flame className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current opacity-80" />
+                <span>{stats.currentStreak}</span>
+              </span>
+            ) : (
+              <span className="text-[10px] sm:text-[11px] text-zinc-400 dark:text-zinc-500 font-medium truncate">
+                لا يوجد تسلسل
+              </span>
+            )}
+
+            {targetProgress && (
+              <>
+                <span
+                  className="text-[10px] text-zinc-300 dark:text-zinc-700 shrink-0 select-none"
+                  aria-hidden="true"
+                >
+                  •
+                </span>
+                <span
+                  className={`inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold border whitespace-nowrap shrink-0 transition-colors ${
+                    targetProgress.percent >= 100
+                      ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/20'
+                      : 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-500/20'
+                  }`}
+                  title={`${targetProgress.period === 'week' ? 'الهدف الأسبوعي' : 'الهدف الشهري'}: ${targetProgress.completed} من ${targetProgress.target}`}
+                >
+                  <Target className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  <span>
+                    {targetProgress.completed} / {targetProgress.target}
+                    <span className="hidden sm:inline ms-1 font-medium opacity-80">
+                      {targetProgress.period === 'week' ? 'أسبوعي' : 'شهري'}
                     </span>
                   </span>
-                </>
-              )}
-            </div>
+                </span>
+              </>
+            )}
           </div>
         </div>
       </article>

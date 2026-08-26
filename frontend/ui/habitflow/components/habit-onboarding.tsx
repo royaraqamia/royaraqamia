@@ -1,10 +1,8 @@
 'use client';
 
-import { createElement } from 'react';
 import { m, useReducedMotion } from 'motion/react';
 import { CheckSquare, Plus, Sparkles } from 'lucide-react';
 import { HABIT_TEMPLATES, type HabitTemplate } from '@/frontend/shared/habitflow/habit-templates';
-import { getIconComponent, getIconColorClass } from '@/frontend/shared/habitflow/habit-icons';
 import { Button } from '@/frontend/ui/primitives/button';
 
 interface HabitOnboardingProps {
@@ -54,8 +52,6 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
         {/* Template Cards Grid */}
         <div className="grid grid-cols-1 min-[440px]:grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4">
           {HABIT_TEMPLATES.map((template) => {
-            const Icon = getIconComponent(template.icon);
-            const colorClass = getIconColorClass(template.icon);
             return (
               <m.button
                 key={template.name}
@@ -74,12 +70,6 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
                   className="absolute inset-0 rounded-2xl bg-linear-to-b from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
                   aria-hidden="true"
                 />
-
-                <div
-                  className={`w-11 h-11 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-1 shadow-sm ${colorClass}`}
-                >
-                  {createElement(Icon, { className: 'w-5 h-5 sm:w-6 sm:h-6', 'aria-hidden': true })}
-                </div>
 
                 <div className="space-y-1 my-auto w-full text-center z-10">
                   <span className="block text-xs sm:text-sm font-bold text-foreground group-hover:text-primary transition-colors duration-200 line-clamp-1">

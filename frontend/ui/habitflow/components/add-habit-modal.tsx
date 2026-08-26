@@ -6,20 +6,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { TimePicker } from '@/frontend/ui/primitives/time-picker';
-import { HABIT_ICONS } from '@/frontend/shared/habitflow/habit-icons';
 import { HabitTargetPeriod } from '@/shared/contracts/habitflow';
 
 interface AddHabitModalProps {
   isOpen: boolean;
   habitName: string;
-  habitIcon: string;
   habitFrequency: 'daily' | 'weekly';
   habitTarget: string;
   habitTargetPeriod: HabitTargetPeriod | '';
   habitReminderTime: string;
   onClose: () => void;
   onNameChange: (name: string) => void;
-  onIconChange: (icon: string) => void;
   onFrequencyChange: (freq: 'daily' | 'weekly') => void;
   onTargetChange: (value: string) => void;
   onTargetPeriodChange: (period: HabitTargetPeriod | '') => void;
@@ -32,7 +29,6 @@ interface AddHabitModalProps {
 export function AddHabitModal({
   isOpen,
   habitName,
-  habitIcon,
   habitFrequency,
   habitTarget,
   habitTargetPeriod,
@@ -41,7 +37,6 @@ export function AddHabitModal({
   isSubmitting,
   onClose,
   onNameChange,
-  onIconChange,
   onFrequencyChange,
   onTargetChange,
   onTargetPeriodChange,
@@ -142,38 +137,6 @@ export function AddHabitModal({
               >
                 أسبوعيَّة
               </button>
-            </div>
-          </fieldset>
-
-          {/* Habit Icon Section */}
-          <fieldset className="space-y-2.5 border-0 p-0 m-0">
-            <legend className="text-[13px] font-medium text-foreground/80 mb-2.5">
-              أيقونة العادة
-            </legend>
-            <div className="grid grid-cols-5 sm:grid-cols-6 gap-2 max-h-45 overflow-y-auto overscroll-contain p-2 -mx-2 px-2">
-              {HABIT_ICONS.map((item) => {
-                const IconComp = item.icon;
-                const isSelected = habitIcon === item.name;
-                return (
-                  <button
-                    key={item.name}
-                    type="button"
-                    onClick={() => onIconChange(item.name)}
-                    aria-label={`اختيار أيقونة ${item.name}`}
-                    aria-pressed={isSelected}
-                    className={`group relative aspect-square rounded-2xl flex items-center justify-center transition-all duration-300 ease-[cubic-bezier(0.23,1,0.32,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-95 ${
-                      isSelected
-                        ? 'bg-primary text-primary-foreground shadow-[0_4px_14px_0] shadow-primary/30 scale-[1.05]'
-                        : 'bg-muted/20 border border-transparent hover:border-border/60 hover:bg-muted/50 text-muted-foreground hover:text-foreground hover:shadow-sm'
-                    }`}
-                  >
-                    <IconComp
-                      className="w-5.5 h-5.5 transition-transform duration-300 ease-out group-hover:scale-110"
-                      aria-hidden="true"
-                    />
-                  </button>
-                );
-              })}
             </div>
           </fieldset>
 
