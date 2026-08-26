@@ -89,6 +89,14 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=600' },
         ],
       },
+      // The homepage is fully static (prerendered at build); let the CDN serve
+      // it without re-validating while SWR keeps it fresh in the background.
+      {
+        source: '/',
+        headers: [
+          { key: 'Cache-Control', value: 'public, s-maxage=3600, stale-while-revalidate=86400' },
+        ],
+      },
       // NOTE: /sw.js caching lives in vercel.json (stricter no-store variant).
       // Keep it there only — a second definition here produced conflicting
       // Cache-Control values.
