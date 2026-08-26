@@ -20,6 +20,9 @@ export const ibmPlexSansArabic = localFont({
   ],
   variable: '--font-arabic',
   display: 'swap',
+  // Metric-compatible fallback (auto size-adjust/ascent overrides) shrinks the
+  // layout shift when the real font swaps in.
+  adjustFontFallback: 'Arial',
 });
 
 export const arefRuqaa = localFont({
@@ -32,4 +35,5 @@ export const arefRuqaa = localFont({
   ],
   variable: '--font-heading',
   display: 'swap',
+  adjustFontFallback: 'Arial',
 });
