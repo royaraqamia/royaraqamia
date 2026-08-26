@@ -21,11 +21,26 @@ function makeClient(
     record?: OtpRecord | null;
     fetchError?: Error | null;
     updateError?: Error | null;
+    updatedRows?: { id: string }[] | null;
   } = {}
 ) {
   const insert = vi.fn().mockResolvedValue({ error: overrides.insertError ?? null });
-  const updateEq = vi.fn().mockResolvedValue({ error: overrides.updateError ?? null });
-  const update = vi.fn().mockReturnValue({ eq: updateEq });
+  const updateOutcome = () => ({
+    data: overrides.updatedRows ?? [{ id: 'otp-1' }],
+    error: overrides.updateError ?? null,
+  });
+  const selectUpdated = vi.fn(async () => updateOutcome());
+  // `eq('attempts', …)` is awaited only after `.select(…)`; the node itself
+  // stays thenable so either chain shape resolves like the real client.
+  const updateEqAttemptsNode = Object.assign(Promise.resolve(updateOutcome()), {
+    select: selectUpdated,
+  });
+  const updateEqAttempts = vi.fn(() => updateEqAttemptsNode);
+  const updateEqIdNode = Object.assign(Promise.resolve({ error: overrides.updateError ?? null }), {
+    eq: updateEqAttempts,
+  });
+  const updateEqId = vi.fn(() => updateEqIdNode);
+  const update = vi.fn(() => ({ eq: updateEqId }));
   const maybeSingle = vi
     .fn()
     .mockResolvedValue({ data: overrides.record ?? null, error: overrides.fetchError ?? null });
@@ -40,7 +55,18 @@ function makeClient(
   });
 
   const client = { from } as unknown as SupabaseClient<Database>;
-  return { client, insert, update, updateEq, maybeSingle, from, selectEq, is };
+  return {
+    client,
+    insert,
+    update,
+    updateEqId,
+    updateEqAttempts,
+    selectUpdated,
+    maybeSingle,
+    from,
+    selectEq,
+    is,
+  };
 }
 
 function makeRecord(overrides: Partial<OtpRecord> = {}): OtpRecord {
@@ -130,14 +156,23 @@ describe('SupabaseOtpRepository', () => {
   });
 
   describe('incrementOtpAttempts', () => {
-    it('updates attempts to current + 1', async () => {
-      const { client, update, updateEq } = makeClient();
+    it('compare-and-swaps attempts to current + 1 and reports success', async () => {
+      const { client, update, updateEqId, updateEqAttempts, selectUpdated } = makeClient();
       const repo = new SupabaseOtpRepository(client);
 
-      await repo.incrementOtpAttempts('otp-1', 2);
+      await expect(repo.incrementOtpAttempts('otp-1', 2)).resolves.toBe(true);
 
       expect(update).toHaveBeenCalledWith({ attempts: 3 });
-      expect(updateEq).toHaveBeenCalledWith('id', 'otp-1');
+      expect(updateEqId).toHaveBeenCalledWith('id', 'otp-1');
+      expect(updateEqAttempts).toHaveBeenCalledWith('attempts', 2);
+      expect(selectUpdated).toHaveBeenCalledWith('id');
+    });
+
+    it('reports a lost race when no row matched the expected counter', async () => {
+      const { client } = makeClient({ updatedRows: [] });
+      const repo = new SupabaseOtpRepository(client);
+
+      await expect(repo.incrementOtpAttempts('otp-1', 2)).resolves.toBe(false);
     });
 
     it('throws when the update fails', async () => {
@@ -149,13 +184,13 @@ describe('SupabaseOtpRepository', () => {
 
   describe('markOtpVerified', () => {
     it('sets verified_at on the record', async () => {
-      const { client, update, updateEq } = makeClient();
+      const { client, update, updateEqId } = makeClient();
       const repo = new SupabaseOtpRepository(client);
 
       await repo.markOtpVerified('otp-1');
 
       expect(update).toHaveBeenCalledWith({ verified_at: expect.any(String) });
-      expect(updateEq).toHaveBeenCalledWith('id', 'otp-1');
+      expect(updateEqId).toHaveBeenCalledWith('id', 'otp-1');
     });
 
     it('throws when the update fails', async () => {

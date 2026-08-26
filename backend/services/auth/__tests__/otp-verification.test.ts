@@ -35,7 +35,7 @@ function createService(
   const otpRepository: OtpRepository = {
     createOtpRecord: vi.fn().mockResolvedValue(undefined),
     findLatestPendingOtp,
-    incrementOtpAttempts: vi.fn().mockResolvedValue(undefined),
+    incrementOtpAttempts: vi.fn().mockResolvedValue(true),
     markOtpVerified: vi.fn().mockResolvedValue(undefined),
   };
   const passwordResetTokenRepository = {
@@ -161,6 +161,37 @@ describe('AuthService.verifyOtp', () => {
     });
     expect(otpRepository.incrementOtpAttempts).toHaveBeenCalledWith('otp-1', 1);
     expect(otpRepository.markOtpVerified).not.toHaveBeenCalled();
+  });
+
+  it('re-reads and retries the increment when a concurrent verification wins the race', async () => {
+    const { service, otpRepository } = createService();
+    vi.mocked(otpRepository.findLatestPendingOtp)
+      .mockResolvedValueOnce(makeOtpRecord({ attempts: 1 }))
+      .mockResolvedValueOnce(makeOtpRecord({ attempts: 2 }));
+    vi.mocked(otpRepository.incrementOtpAttempts)
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true);
+
+    await expect(service.verifyOtp({ ...verifyInput, otp: '000000' })).resolves.toEqual({
+      ok: false,
+      message: 'رمز التحقق غير صحيح',
+    });
+    expect(otpRepository.incrementOtpAttempts).toHaveBeenNthCalledWith(1, 'otp-1', 1);
+    expect(otpRepository.incrementOtpAttempts).toHaveBeenNthCalledWith(2, 'otp-1', 2);
+  });
+
+  it('stops retrying when the pending OTP was replaced during contention', async () => {
+    const { service, otpRepository } = createService();
+    vi.mocked(otpRepository.findLatestPendingOtp)
+      .mockResolvedValueOnce(makeOtpRecord({ attempts: 1 }))
+      .mockResolvedValue(makeOtpRecord({ id: 'otp-2', attempts: 0 }));
+    vi.mocked(otpRepository.incrementOtpAttempts).mockResolvedValue(false);
+
+    await expect(service.verifyOtp({ ...verifyInput, otp: '000000' })).resolves.toEqual({
+      ok: false,
+      message: 'رمز التحقق غير صحيح',
+    });
+    expect(otpRepository.incrementOtpAttempts).toHaveBeenCalledTimes(1);
   });
 
   it('marks the record verified and continues for a correct OTP', async () => {
