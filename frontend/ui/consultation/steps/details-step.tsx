@@ -17,7 +17,7 @@ interface DetailsStepProps {
 }
 
 const REGION_HINTS: Record<ConsultationRegion, string> = {
-  syria: 'الدفع عبر شام كاش',
+  syria: 'الدفع عبر ShamCash',
   global: 'الدفع عبر MoneyGram',
 };
 

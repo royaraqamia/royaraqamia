@@ -25,8 +25,8 @@ const FIELDS: Array<{
   },
   {
     key: 'payment_shamcash_code',
-    label: 'رمز إيصال شام كاش',
-    hint: 'الرمز الذي ينسخه الدافع ويلصقه في تطبيق شام كاش لإتمام التحويل',
+    label: 'رمز إيصال ShamCash',
+    hint: 'الرمز الذي ينسخه الدافع ويلصقه في تطبيق ShamCash لإتمام التحويل',
     dir: 'ltr',
   },
   {

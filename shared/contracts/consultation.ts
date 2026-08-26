@@ -150,7 +150,7 @@ export const ConsultationSettingsSchema = z.object({
       /^https:\/\/(wa\.me|chat\.whatsapp\.com|api\.whatsapp\.com)\//,
       'يجب أن يكون رابط واتساب صالح'
     ),
-  payment_shamcash_code: z.string().trim().min(4, 'رمز شام كاش قصير جدًا').max(64),
+  payment_shamcash_code: z.string().trim().min(4, 'رمز ShamCash قصير جدًا').max(64),
   payment_moneygram_name: z.string().trim().min(2, 'الاسم مطلوب').max(160),
   payment_moneygram_phone: z.string().trim().regex(whatsappPhoneRegex, 'رقم هاتف غير صحيح'),
   payment_moneygram_branch: z.string().trim().min(2, 'الفرع مطلوب').max(200),
@@ -219,7 +219,7 @@ export function buildReceiptWhatsappMessage(input: ReceiptMessageInput): string 
 }
 
 export const PAYMENT_METHOD_LABELS: Record<ConsultationPaymentMethod, string> = {
-  shamcash: 'شام كاش',
+  shamcash: 'ShamCash',
   moneygram: 'MoneyGram',
 };
 

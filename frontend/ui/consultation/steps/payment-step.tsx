@@ -74,10 +74,10 @@ function ShamcashCard({ settings }: { settings: Partial<ConsultationSettings> })
     <div className="rounded-2xl border-2 border-primary/40 bg-card p-6 space-y-4">
       <div className="flex items-center gap-2 text-primary font-bold">
         <ReceiptText className="size-5" />
-        <span>الدفع عبر شام كاش</span>
+        <span>الدفع عبر ShamCash</span>
       </div>
       <p className="text-sm text-muted-foreground leading-relaxed">
-        انسخ رمز الإيصال التالي والصقه في تطبيق شام كاش لإتمام التحويل، ثم أرسل صورة الإيصال عبر
+        انسخ رمز الإيصال التالي والصقه في تطبيق ShamCash لإتمام التحويل، ثم أرسل صورة الإيصال عبر
         واتساب لتأكيد الحجز.
       </p>
 
@@ -106,7 +106,7 @@ function ShamcashCard({ settings }: { settings: Partial<ConsultationSettings> })
       </div>
 
       <ol className="list-inside list-decimal space-y-1 text-xs text-muted-foreground">
-        <li>افتح تطبيق شام كاش واختر «تحويل عبر الرمز».</li>
+        <li>افتح تطبيق ShamCash واختر «تحويل عبر الرمز».</li>
         <li>الصق الرمز المنسوخ وأكمل المبلغ المطلوب.</li>
         <li>أرسل صورة إيصال النجاح عبر واتساب.</li>
       </ol>
