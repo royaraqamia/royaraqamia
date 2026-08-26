@@ -103,14 +103,14 @@ export function Footer() {
 
             {/* Location & Contact Information Pills */}
             <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm pt-1">
-              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border/60 bg-muted/40 text-muted-foreground backdrop-blur-xs transition-colors hover:border-border hover:bg-muted/60">
+              <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border/60 bg-muted/90 text-muted-foreground transition-colors hover:border-border hover:bg-muted">
                 <MapPin className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                 <span>حَلَب، سوريا</span>
               </span>
 
               <a
                 href="mailto:contact@royaraqamia.com"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border/60 bg-muted/40 text-muted-foreground backdrop-blur-xs transition-[background-color,border-color,color] duration-300 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border/60 bg-muted/90 text-muted-foreground transition-[background-color,border-color,color] duration-300 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
               >
                 <Mail className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                 <span dir="ltr">contact@royaraqamia.com</span>
