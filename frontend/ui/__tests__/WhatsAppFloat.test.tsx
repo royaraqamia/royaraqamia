@@ -52,4 +52,22 @@ describe('WhatsAppFloat', () => {
     });
     expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
   });
+
+  it.each(['/blog', '/blog/my-post'])('hides on blog page %s', (pathname) => {
+    mockUsePathname.mockReturnValue(pathname);
+    renderWithProviders(<WhatsAppFloat />);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
+  });
+
+  it('stays visible on blogpress landing page', () => {
+    mockUsePathname.mockReturnValue('/blogpress');
+    renderWithProviders(<WhatsAppFloat />);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.getByLabelText('تواصل معنا عبر واتساب')).toBeInTheDocument();
+  });
 });

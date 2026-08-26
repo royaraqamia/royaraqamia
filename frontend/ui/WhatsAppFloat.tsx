@@ -6,6 +6,7 @@ import { useUI } from '../state/UIContext';
 import { WHATSAPP_PHONE, WHATSAPP_MESSAGE } from '@/frontend/shared/constants';
 
 // Routes where a floating support button would cover working UI
+const HIDDEN_ROUTE_EXACTS = ['/blog'];
 const HIDDEN_ROUTE_PREFIXES = [
   '/habitflow/app',
   '/spendtrack/app',
@@ -16,6 +17,8 @@ const HIDDEN_ROUTE_PREFIXES = [
   '/admin',
   '/verify',
   '/consultation/book',
+  // Blog post pages (the listing page is matched exactly above)
+  '/blog/',
 ];
 
 interface WhatsAppFloatProps {
@@ -34,7 +37,9 @@ export function WhatsAppFloat({
   // Determine if the button should be hidden due to UI overlays or because
   // the current page is a route where it would cover working UI
   const onHiddenRoute =
-    !!pathname && HIDDEN_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+    !!pathname &&
+    (HIDDEN_ROUTE_EXACTS.includes(pathname) ||
+      HIDDEN_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix)));
   const shouldHide = isMobileMenuOpen || isReviewSheetOpen || onHiddenRoute;
 
   useEffect(() => {
