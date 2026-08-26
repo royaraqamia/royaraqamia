@@ -377,7 +377,7 @@ export function DashboardShell({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 self-stretch sm:self-auto">
+              <div className="grid grid-cols-1 gap-3 self-stretch sm:grid-cols-3 sm:self-auto">
                 <input
                   ref={fileInputRef}
                   id="file-input-ref"
@@ -394,7 +394,7 @@ export function DashboardShell({
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   aria-controls="file-input-ref"
-                  className="flex-1 sm:flex-none rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <Upload className="w-4 h-4" />
                   <span>استيراد</span>
@@ -402,7 +402,7 @@ export function DashboardShell({
                 <Button
                   variant="outline"
                   onClick={handleDownloadBackup}
-                  className="flex-1 sm:flex-none rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <Download className="w-4 h-4" />
                   <span>تصدير</span>
@@ -410,7 +410,7 @@ export function DashboardShell({
                 <Button
                   variant="outline"
                   onClick={handleDownloadCsv}
-                  className="flex-1 sm:flex-none rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   <span>تصدير CSV</span>
