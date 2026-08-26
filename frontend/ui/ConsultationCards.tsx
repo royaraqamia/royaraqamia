@@ -75,12 +75,12 @@ export function ConsultationCards() {
           <div className="relative group">
             {/* Dynamic Glow Halo on Hover */}
             <div
-              className="absolute -inset-1 rounded-3xl bg-linear-to-r from-purple-600/30 via-violet-600/20 to-indigo-600/30 opacity-70 blur-xl group-hover:opacity-100 transition duration-700 ease-out pointer-events-none"
+              className="absolute -inset-1 rounded-3xl opacity-70 group-hover:opacity-100 transition duration-700 ease-out pointer-events-none shadow-[0_0_32px_6px_rgba(147,51,234,0.35),0_0_56px_18px_rgba(124,58,237,0.22),0_0_80px_28px_rgba(79,70,229,0.18)]"
               aria-hidden="true"
             />
 
             {/* Glassmorphic Container Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-linear-to-b from-purple-950/40 via-slate-950/80 to-slate-950/95 border border-purple-500/30 shadow-[0_25px_50px_-12px_rgba(124,58,237,0.25),0_0_80px_-20px_rgba(168,85,247,0.2),inset_0_1px_1px_rgba(255,255,255,0.1)] transition-all duration-500 hover:border-purple-400/50">
+            <div className="relative rounded-3xl overflow-hidden bg-linear-to-b from-purple-950/40 via-slate-950/80 to-slate-950/95 border border-purple-500/30 shadow-[0_25px_50px_-12px_rgba(124,58,237,0.25),0_0_80px_-20px_rgba(168,85,247,0.2),inset_0_1px_1px_rgba(255,255,255,0.1)] transition-[border-color] duration-500 hover:border-purple-400/50">
               {/* Vibrant Accent Top Strip */}
               <div className="h-1 w-full bg-linear-to-r from-transparent via-purple-500 to-transparent opacity-80" />
 
@@ -135,7 +135,7 @@ export function ConsultationCards() {
                     className="block group/btn rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                     aria-label="احجز استشارتك الآن"
                   >
-                    <Button className="w-full h-14 sm:h-16 text-lg sm:text-xl font-bold text-white rounded-full bg-linear-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:via-indigo-500 hover:to-purple-500 transition-all duration-300 ease-out hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] shadow-xl shadow-purple-900/40 cursor-pointer border border-purple-400/30 active:scale-[0.98] flex items-center justify-center gap-3 min-h-11">
+                    <Button className="w-full h-14 sm:h-16 text-lg sm:text-xl font-bold text-white rounded-full bg-linear-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:via-indigo-500 hover:to-purple-500 transition-transform duration-300 ease-out hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] shadow-xl shadow-purple-900/40 cursor-pointer border border-purple-400/30 active:scale-[0.98] flex items-center justify-center gap-3 min-h-11">
                       <span>احجز استشارتك الآن</span>
                       <ArrowLeft className="w-5 h-5 text-purple-200 group-hover/btn:-translate-x-1.5 transition-transform duration-300 shrink-0" />
                     </Button>
@@ -146,13 +146,11 @@ export function ConsultationCards() {
 
             {/* Floating Soft Ambient Glow Background Orbs */}
             <div
-              className="absolute -top-6 -right-6 w-28 h-28 rounded-full blur-3xl pointer-events-none -z-10"
-              style={{ background: 'rgba(139, 92, 246, 0.35)' }}
+              className="absolute -top-6 -right-6 w-28 h-28 rounded-full text-violet-500/35 glow-orb pointer-events-none -z-10"
               aria-hidden="true"
             />
             <div
-              className="absolute -bottom-6 -left-6 w-36 h-36 rounded-full blur-3xl pointer-events-none -z-10"
-              style={{ background: 'rgba(168, 85, 247, 0.25)' }}
+              className="absolute -bottom-6 -left-6 w-36 h-36 rounded-full text-purple-500/25 glow-orb pointer-events-none -z-10"
               aria-hidden="true"
             />
           </div>

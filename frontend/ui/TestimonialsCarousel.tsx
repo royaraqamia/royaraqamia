@@ -219,8 +219,16 @@ export function TestimonialsCarousel({
       aria-labelledby={headingId}
       className="relative w-full py-8 md:py-14 overflow-hidden select-none"
     >
-      {/* Background Ambience & Lighting Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 md:w-250 h-87.5 bg-linear-to-r from-violet-600/10 via-indigo-500/10 to-fuchsia-600/10 glow-blur-lg rounded-full pointer-events-none -z-10" />
+      {/* Background Ambience & Lighting Glow — three overlapping pre-blurred
+          halos recreate the violet→indigo→fuchsia wash without live filters */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 md:w-250 h-87.5 pointer-events-none -z-10"
+        aria-hidden="true"
+      >
+        <div className="absolute inset-y-0 left-0 w-2/3 text-violet-600/10 glow-orb rounded-full" />
+        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-2/3 text-indigo-500/10 glow-orb rounded-full" />
+        <div className="absolute inset-y-0 right-0 w-2/3 text-fuchsia-600/10 glow-orb rounded-full" />
+      </div>
 
       {/* Main Carousel Wrapper with Edge Navigation Controls */}
       <div className="relative w-full group/carousel">
@@ -266,7 +274,7 @@ export function TestimonialsCarousel({
         >
           {/* Subtle Modal Ambient Accent */}
           <div className="absolute top-0 right-0 left-0 h-1.5 bg-linear-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
-          <div className="absolute -top-20 -right-20 w-52 h-52 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-20 -right-20 w-52 h-52 rounded-full text-violet-600/20 glow-orb pointer-events-none" />
 
           {/* Mobile Handle Indicator */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full md:hidden" />

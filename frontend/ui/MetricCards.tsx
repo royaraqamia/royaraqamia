@@ -77,11 +77,16 @@ export function MetricCards() {
         {/* Subtle grid pattern background */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
-        {/* Top ambient color glow highlight */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-80 bg-linear-to-b from-purple-500/10 via-indigo-500/5 to-transparent blur-3xl" />
+        {/* Top ambient color glow highlight — horizontal mask replaces a
+            live blur filter: same soft edges, rasterized once */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-80 bg-linear-to-b from-purple-500/10 via-indigo-500/5 to-transparent mask-[linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]" />
 
-        {/* Deep ambient radial glow orb */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(900px,100vw)] bg-linear-to-tr from-purple-600/10 via-indigo-600/10 to-transparent opacity-60 glow-blur-xl rounded-full" />
+        {/* Deep ambient radial glow orb — two offset pre-blurred halos
+            recreate the purple→indigo wash without a live 70px filter */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(900px,100vw)] opacity-60">
+          <div className="absolute inset-0 text-purple-600/10 glow-orb -translate-x-[6%] -translate-y-[4%] rounded-full" />
+          <div className="absolute inset-0 text-indigo-600/10 glow-orb translate-x-[6%] translate-y-[4%] rounded-full" />
+        </div>
 
         {/* Top and bottom subtle section boundaries */}
         <div className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
@@ -100,7 +105,7 @@ export function MetricCards() {
             return (
               <article
                 key={index}
-                className={`landing-reveal-item group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-[transform,border-color,box-shadow] duration-500 ease-out overflow-hidden bg-neutral-900/40 border border-white/10 backdrop-blur-xl z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
+                className={`landing-reveal-item group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-[transform,border-color] duration-500 ease-out overflow-hidden bg-neutral-900/40 border border-white/10 backdrop-blur-xl z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
                 style={
                   {
                     ['--ld' as string]: `${index * 0.2}s`,
@@ -121,7 +126,7 @@ export function MetricCards() {
                 <div className="flex flex-col h-full relative z-10">
                   {/* Floating Icon Badge Container */}
                   <div
-                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-8 sm:mb-10 lg:mb-12 transition-all duration-500 ease-out bg-white/3 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shadow-lg ${colors.iconGlow}`}
+                    className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-8 sm:mb-10 lg:mb-12 transition-transform duration-500 ease-out bg-white/3 border border-white/10 group-hover/card:scale-110 group-hover/card:-rotate-3 relative overflow-hidden shadow-lg ${colors.iconGlow}`}
                   >
                     <div
                       className={`absolute inset-0 opacity-0 group-hover/card:opacity-100 transition-opacity duration-500 ${colors.glowBg} blur-sm`}
@@ -153,7 +158,7 @@ export function MetricCards() {
 
                     {/* Dynamic Gradient Accent Divider */}
                     <div
-                      className={`w-12 h-1 rounded-full mb-6 transition-all duration-500 ease-out group-hover/card:w-24 bg-linear-to-r ${colors.dividerGradient}`}
+                      className={`w-12 h-1 rounded-full mb-6 transition-[width] duration-500 ease-out group-hover/card:w-24 bg-linear-to-r ${colors.dividerGradient}`}
                       aria-hidden="true"
                     />
 

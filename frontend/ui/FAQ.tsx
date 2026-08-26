@@ -50,8 +50,8 @@ export function FAQ() {
         style={{ contentVisibility: 'auto' }}
       >
         {/* Ambient Radial Background Glows */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-87.5 bg-violet-600/10 glow-blur-lg rounded-full pointer-events-none -z-10" />
-        <div className="absolute top-1/3 right-10 w-75 h-50 bg-fuchsia-600/5 glow-blur-md rounded-full pointer-events-none -z-10" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-87.5 text-violet-600/10 glow-orb rounded-full pointer-events-none -z-10" />
+        <div className="absolute top-1/3 right-10 w-75 h-50 text-fuchsia-600/5 glow-orb rounded-full pointer-events-none -z-10" />
 
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}

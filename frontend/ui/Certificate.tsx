@@ -116,14 +116,15 @@ export function Certificate() {
         {/* Modern Radial Masked Grid Pattern */}
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff0d_1px,transparent_1px)] bg-size-[24px_24px] opacity-70 mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
-        {/* Top Ambient Light Beam */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-72 bg-linear-to-b from-purple-500/15 via-violet-500/5 to-transparent blur-3xl pointer-events-none" />
+        {/* Top Ambient Light Beam — horizontal mask replaces a live blur
+            filter: same soft edges, rasterized once */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-72 bg-linear-to-b from-purple-500/15 via-violet-500/5 to-transparent mask-[linear-gradient(to_right,transparent,black_15%,black_85%,transparent)] pointer-events-none" />
 
         {/* Parallax Purple Dynamic Light Sphere */}
-        <div className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 bg-purple-600/25 rounded-full glow-blur-xl pointer-events-none" />
+        <div className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 text-purple-600/25 rounded-full glow-orb pointer-events-none" />
 
         {/* Indigo Ambient Glow (static — animated blur of this size re-rasterizes every frame) */}
-        <div className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 bg-indigo-600/15 rounded-full glow-blur-xl pointer-events-none" />
+        <div className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 text-indigo-600/15 rounded-full glow-orb pointer-events-none" />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -137,7 +138,7 @@ export function Certificate() {
         >
           {/* Trophy Badge Container */}
           <m.div variants={itemVariants} className="mb-6 relative group cursor-pointer">
-            <div className="absolute -inset-2 bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 rounded-3xl blur-xl opacity-40 group-hover:opacity-80 transition duration-500" />
+            <div className="absolute -inset-2 rounded-3xl opacity-40 group-hover:opacity-80 transition duration-500 shadow-[0_0_28px_8px_rgba(147,51,234,0.55),0_0_48px_16px_rgba(139,92,246,0.35),0_0_64px_24px_rgba(79,70,229,0.25)]" />
 
             <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-purple-400 via-violet-500 to-purple-700 flex items-center justify-center shadow-2xl shadow-purple-500/30 relative overflow-hidden group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-500 border border-purple-300/40">
               {/* Internal Shimmer Highlight */}
@@ -179,7 +180,7 @@ export function Certificate() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.5 }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium border transition-all duration-500 shadow-lg ${
+            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium border transition-[background-color,border-color,color] duration-500 shadow-lg ${
               hasInteracted
                 ? 'bg-purple-950/55 text-purple-300 border-purple-500/30'
                 : 'bg-slate-900/88 text-slate-300 border-white/10 hover:border-purple-400/40'
@@ -231,7 +232,7 @@ export function Certificate() {
 
               {/* Glowing Active Ring Border */}
               <div
-                className={`absolute inset-0 z-10 pointer-events-none border-2 rounded-2xl md:rounded-3xl transition-all duration-500 ${
+                className={`absolute inset-0 z-10 pointer-events-none border-2 rounded-2xl md:rounded-3xl transition-[border-color,box-shadow] duration-500 ${
                   isPressed
                     ? 'border-purple-400/60 shadow-[inset_0_0_60px_rgba(168,85,247,0.25)]'
                     : 'border-purple-500/0 group-hover:border-purple-400/40 group-hover:shadow-[inset_0_0_60px_rgba(168,85,247,0.15)]'

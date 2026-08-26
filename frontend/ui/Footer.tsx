@@ -122,7 +122,7 @@ export function Footer() {
             <button
               type="button"
               onClick={scrollToHero}
-              className="group relative inline-flex items-center gap-2.5 p-1.5 rounded-2xl transition-all duration-300 hover:bg-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer min-h-11"
+              className="group relative inline-flex items-center gap-2.5 p-1.5 rounded-2xl transition-[background-color,transform] duration-300 hover:bg-accent/40 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer min-h-11"
               aria-label="العودة إلى الصفحة الرئيسية"
             >
               <Image
@@ -133,7 +133,7 @@ export function Footer() {
                 className="h-12 w-12 object-contain rounded-full transition-transform duration-500 group-hover:scale-110"
               />
 
-              <span className="logo-text font-heading font-bold text-3xl sm:text-3xl text-primary tracking-tight transition-all duration-300 group-hover:opacity-90">
+              <span className="logo-text font-heading font-bold text-3xl sm:text-3xl text-primary tracking-tight transition-opacity duration-300 group-hover:opacity-90">
                 رؤية رقمية
               </span>
             </button>
@@ -152,7 +152,7 @@ export function Footer() {
 
               <a
                 href="mailto:contact@royaraqamia.com"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border/60 bg-muted/40 text-muted-foreground backdrop-blur-xs transition-all duration-300 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full border border-border/60 bg-muted/40 text-muted-foreground backdrop-blur-xs transition-[background-color,border-color,color] duration-300 hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
               >
                 <Mail className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
                 <span dir="ltr">contact@royaraqamia.com</span>
@@ -172,7 +172,7 @@ export function Footer() {
                   rel="noopener noreferrer"
                   aria-label={social.ariaLabel}
                   title={social.ariaLabel}
-                  className="group relative h-11 w-11 rounded-xl bg-muted/50 hover:bg-primary/15 border border-border/70 hover:border-primary/40 flex items-center justify-center text-muted-foreground hover:text-primary transition-all duration-300 hover:-translate-y-0.5 active:scale-95 shadow-xs hover:shadow-md hover:shadow-primary/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  className="group relative h-11 w-11 rounded-xl bg-muted/50 hover:bg-primary/15 border border-border/70 hover:border-primary/40 flex items-center justify-center text-muted-foreground hover:text-primary transition-[background-color,border-color,color,transform] duration-300 hover:-translate-y-0.5 active:scale-95 shadow-xs hover:shadow-md hover:shadow-primary/10 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                 >
                   <Icon className="w-5 h-5 transition-transform duration-300 group-hover:scale-110" />
                 </a>
