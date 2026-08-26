@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.1] - 2026-08-26
+
+### Changed
+- drop pointless backdrop-filters in HeroVisual
+- lazy-load auth internals in SessionProvider
+- defer service-worker registration to load + idle
+- drop last backdrop-filters from footer pills
+- optimize lucide-react package imports
+- replace card backdrop-filters with near-opaque fills
+- add metric-compatible fallbacks to reduce swap CLS
+- convert Footer to server component, extract logo client island
+- serve prerendered homepage from CDN with s-maxage+SWR
+- correct lazy-chunk comments to reflect measured Turbopack emission
+- bake glow halos into gradients, cap mobile particles, scope hover transitions
+- add glow-orb utility, drop will-change from ambient loops
+
 ## [1.17.0] - 2026-08-26
 
 ### Changed
