@@ -6,7 +6,7 @@ export default async function LinkSnapAppLayout({ children }: { children: React.
   await requireAuth('/auth/login?redirect=/linksnap/app');
 
   return (
-    <AppShell product="linksnap">
+    <AppShell>
       <ProgressBar />
       {children}
     </AppShell>

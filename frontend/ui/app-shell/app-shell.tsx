@@ -2,15 +2,8 @@
 
 import * as React from 'react';
 import { ShellHeader } from './shell-header';
-import { type AppProduct } from './constants';
 
-export function AppShell({
-  product,
-  children,
-}: {
-  product: AppProduct;
-  children: React.ReactNode;
-}) {
+export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative min-h-dvh flex flex-col bg-background text-foreground antialiased selection:bg-primary/15 selection:text-primary font-sans transition-colors duration-300">
       {/* Subtle ambient lighting effect for a modern SaaS depth feel */}
@@ -30,7 +23,7 @@ export function AppShell({
       </a>
 
       {/* Unified Sticky Navigation Header */}
-      <ShellHeader product={product} />
+      <ShellHeader />
 
       {/* Main Content Viewport */}
       <main

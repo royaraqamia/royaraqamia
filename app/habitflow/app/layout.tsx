@@ -4,5 +4,5 @@ import { AppShell } from '@/frontend/ui/app-shell/app-shell';
 export default async function HabitFlowAppLayout({ children }: { children: React.ReactNode }) {
   await requireAuth('/auth/login?redirect=/habitflow/app');
 
-  return <AppShell product="habitflow">{children}</AppShell>;
+  return <AppShell>{children}</AppShell>;
 }

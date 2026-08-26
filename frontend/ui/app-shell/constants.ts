@@ -1,6 +1,15 @@
-import { BookOpen, CheckSquare, Link2, NotebookPen, Wallet, type LucideIcon } from 'lucide-react';
+import {
+  CalendarCheck,
+  CheckSquare,
+  Link2,
+  NotebookPen,
+  ScanLine,
+  Wallet,
+  type LucideIcon,
+} from 'lucide-react';
 
-export type AppProduct = 'linksnap' | 'blogpress' | 'habitflow' | 'spendtrack' | 'blog';
+export type AppProduct =
+  'linksnap' | 'blogpress' | 'habitflow' | 'spendtrack' | 'verify' | 'consultation' | 'blog';
 
 export interface AppProductDef {
   id: AppProduct;
@@ -40,16 +49,17 @@ export const APP_PRODUCTS: AppProductDef[] = [
     icon: Wallet,
   },
   {
-    id: 'blog',
-    label: 'المدوَّنة',
-    appPath: '/blog',
-    landingPath: '/blog',
-    icon: BookOpen,
+    id: 'verify',
+    label: 'التَّحقُّق من الشَّهادة',
+    appPath: '/verify',
+    landingPath: '/verify',
+    icon: ScanLine,
+  },
+  {
+    id: 'consultation',
+    label: 'حجز استشارة',
+    appPath: '/consultation/book',
+    landingPath: '/consultation/book',
+    icon: CalendarCheck,
   },
 ];
-
-export function getAppProduct(id: AppProduct): AppProductDef {
-  const product = APP_PRODUCTS.find((p) => p.id === id);
-  if (!product) throw new Error(`Unknown app product: ${id}`);
-  return product;
-}
