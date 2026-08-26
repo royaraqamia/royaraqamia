@@ -40,9 +40,33 @@ export function PWAProvider({ children, onUpdateAvailable }: PWAProviderProps) {
 
     registered.current = true;
 
-    navigator.serviceWorker.register(SW_PATH, { scope: '/' }).catch(() => {
-      // silent
-    });
+    // Register only after the page is fully loaded and the main thread is
+    // idle: SW install/bytecode parsing otherwise competes with hydration
+    // and first render for CPU/network on low-end devices.
+    const register = () => {
+      navigator.serviceWorker.register(SW_PATH, { scope: '/' }).catch(() => {
+        // silent
+      });
+    };
+
+    const registerWhenIdle = () => {
+      const idleWindow = window as Window & {
+        requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
+      };
+      if (typeof idleWindow.requestIdleCallback === 'function') {
+        idleWindow.requestIdleCallback(register, { timeout: 5000 });
+      } else {
+        window.setTimeout(register, 2000);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      registerWhenIdle();
+      return;
+    }
+
+    window.addEventListener('load', registerWhenIdle, { once: true });
+    return () => window.removeEventListener('load', registerWhenIdle);
   }, []);
 
   return <PWAContext.Provider value={pwa}>{children}</PWAContext.Provider>;
