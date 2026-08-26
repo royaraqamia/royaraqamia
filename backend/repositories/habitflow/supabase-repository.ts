@@ -13,7 +13,6 @@ import { logger } from '@/backend/shared/logger';
 interface HabitRow {
   id: string;
   name: string;
-  icon: string;
   frequency: 'daily' | 'weekly';
   created_at: string;
   archived: boolean;
@@ -38,7 +37,6 @@ function toHabit(row: HabitRow): Habit {
   return {
     id: row.id,
     name: row.name,
-    icon: row.icon,
     frequency: row.frequency,
     createdAt: row.created_at,
     archived: row.archived,
@@ -107,7 +105,6 @@ export class SupabaseHabitRepository implements HabitRepository {
       .from('habits')
       .insert({
         name: habit.name,
-        icon: habit.icon,
         frequency: habit.frequency,
         archived: false,
         user_id: this.userId,
@@ -128,7 +125,6 @@ export class SupabaseHabitRepository implements HabitRepository {
   async updateHabit(id: string, updates: Partial<Habit>): Promise<Habit> {
     const dbUpdates: Record<string, unknown> = {};
     if (updates.name !== undefined) dbUpdates.name = updates.name;
-    if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
     if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
     if (updates.archived !== undefined) dbUpdates.archived = updates.archived;
     if (updates.target !== undefined) dbUpdates.target = updates.target;
@@ -197,7 +193,6 @@ export class SupabaseHabitRepository implements HabitRepository {
     const dbHabits = input.habits.map((h) => ({
       id: h.id.startsWith('h-') ? undefined : h.id,
       name: h.name,
-      icon: h.icon,
       frequency: h.frequency,
       archived: h.archived || false,
       created_at: h.createdAt || new Date().toISOString(),

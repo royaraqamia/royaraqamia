@@ -29,7 +29,6 @@ function habit(id: string): Habit {
   return {
     id,
     name: `عادة ${id}`,
-    icon: 'Activity',
     frequency: 'daily',
     createdAt: '2026-01-01T00:00:00.000Z',
     archived: false,
@@ -239,7 +238,6 @@ describe('calculateTargetProgress', () => {
     return {
       id: 'h-target',
       name: 'هدف',
-      icon: 'Target',
       frequency: 'daily',
       createdAt: '2026-01-01T00:00:00.000Z',
       archived: false,

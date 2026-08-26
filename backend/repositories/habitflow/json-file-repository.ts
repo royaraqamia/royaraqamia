@@ -138,7 +138,6 @@ export class JsonFileHabitRepository implements HabitRepository {
       habits: input.habits.map((h) => ({
         id: h.id,
         name: h.name,
-        icon: h.icon,
         frequency: h.frequency as Habit['frequency'],
         createdAt: h.createdAt || new Date().toISOString(),
         archived: h.archived || false,

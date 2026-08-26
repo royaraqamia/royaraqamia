@@ -39,13 +39,12 @@ export class HabitBackupService {
 
     const rows: string[] = [];
     rows.push('# Habits');
-    rows.push('id,name,icon,frequency,target,target_period,reminder_time,archived,created_at');
+    rows.push('id,name,frequency,target,target_period,reminder_time,archived,created_at');
     for (const h of habits) {
       rows.push(
         [
           h.id,
           h.name,
-          h.icon,
           h.frequency,
           h.target ?? '',
           h.targetPeriod ?? '',

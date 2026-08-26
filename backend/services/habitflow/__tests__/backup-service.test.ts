@@ -22,7 +22,6 @@ function makeRepository() {
 const habitFixture: Habit = {
   id: 'h-abc',
   name: 'قراءة',
-  icon: 'BookOpen',
   frequency: 'daily',
   createdAt: '2026-08-01T00:00:00.000Z',
   archived: false,
@@ -74,7 +73,7 @@ describe('HabitBackupService.exportCsv', () => {
 
     expect(csv).toContain('# Habits');
     expect(csv).toContain(
-      'id,name,icon,frequency,target,target_period,reminder_time,archived,created_at'
+      'id,name,frequency,target,target_period,reminder_time,archived,created_at'
     );
     expect(csv).toContain('"عناية, ولياقة"');
     expect(csv).toContain('# Logs');
@@ -93,7 +92,7 @@ describe('HabitBackupService.exportCsv', () => {
 
     const habitsLine = csv.split('\n').find((line) => line.startsWith(habitFixture.id));
     expect(habitsLine).toBe(
-      `${habitFixture.id},${habitFixture.name},${habitFixture.icon},daily,,,,false,${habitFixture.createdAt}`
+      `${habitFixture.id},${habitFixture.name},daily,,,,false,${habitFixture.createdAt}`
     );
   });
 });

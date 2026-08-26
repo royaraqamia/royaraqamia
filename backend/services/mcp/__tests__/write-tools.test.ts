@@ -161,7 +161,6 @@ describe('habitflow write tools', () => {
         createHabit = async (input: { name: string }) => ({
           id: 'h1',
           name: input.name,
-          icon: 'Activity',
           frequency: 'daily' as const,
           createdAt: '2026-08-19',
           archived: false,

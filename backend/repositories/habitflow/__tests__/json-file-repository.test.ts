@@ -29,11 +29,10 @@ describe('JsonFileHabitRepository', () => {
 
   it('creates and reads back a habit', async () => {
     const repo = await loadRepo();
-    const created = await repo.createHabit({ name: 'قراءة', icon: 'BookOpen', frequency: 'daily' });
+    const created = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
 
     expect(created.id).toMatch(/^h-/);
     expect(created.name).toBe('قراءة');
-    expect(created.icon).toBe('BookOpen');
     expect(created.frequency).toBe('daily');
     expect(created.archived).toBe(false);
     expect(created.createdAt).toBeDefined();
@@ -45,7 +44,7 @@ describe('JsonFileHabitRepository', () => {
 
   it('excludes archived habits from getHabits', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await repo.deleteHabit(habit.id);
 
     const habits = await repo.getHabits();
@@ -54,13 +53,12 @@ describe('JsonFileHabitRepository', () => {
 
   it('updates an existing habit, preserving the id', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
 
-    const updated = await repo.updateHabit(habit.id, { name: 'قراءة يومية', icon: 'Star' });
+    const updated = await repo.updateHabit(habit.id, { name: 'قراءة يومية' });
 
     expect(updated.id).toBe(habit.id);
     expect(updated.name).toBe('قراءة يومية');
-    expect(updated.icon).toBe('Star');
 
     const habits = await repo.getHabits();
     expect(habits[0]?.name).toBe('قراءة يومية');
@@ -80,13 +78,13 @@ describe('JsonFileHabitRepository', () => {
 
   it('returns true when deleting (archiving) an existing habit', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await expect(repo.deleteHabit(habit.id)).resolves.toBe(true);
   });
 
   it('toggles a log from unset to completed and back', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
 
     const completed = await repo.toggleLog(habit.id, '2026-08-01', true);
     expect(completed.id).toMatch(/^l-/);
@@ -101,7 +99,7 @@ describe('JsonFileHabitRepository', () => {
 
   it('sets, reads and clears a skip kind on a log', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
 
     const skipped = await repo.setLogKind(habit.id, '2026-08-01', 'skip');
     expect(skipped.completed).toBe(false);
@@ -118,7 +116,7 @@ describe('JsonFileHabitRepository', () => {
 
   it('sets, reads and clears a note on a log', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
 
     const saved = await repo.setLogNote(habit.id, '2026-08-01', 'شعرت بالتركيز بعد القراءة');
     expect(saved.note).toBe('شعرت بالتركيز بعد القراءة');
@@ -132,7 +130,7 @@ describe('JsonFileHabitRepository', () => {
 
   it('keeps one log per habit+date (upsert behaviour)', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
 
     await repo.toggleLog(habit.id, '2026-08-01', true);
     await repo.toggleLog(habit.id, '2026-08-01', true);
@@ -143,7 +141,7 @@ describe('JsonFileHabitRepository', () => {
 
   it('filters logs by date range (inclusive bounds)', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await repo.toggleLog(habit.id, '2026-07-01', true);
     await repo.toggleLog(habit.id, '2026-08-15', true);
     await repo.toggleLog(habit.id, '2026-09-30', true);
@@ -161,7 +159,7 @@ describe('JsonFileHabitRepository', () => {
 
   it('persists data across repository instances (file-backed)', async () => {
     const repo1 = await loadRepo();
-    await repo1.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    await repo1.createHabit({ name: 'قراءة', frequency: 'daily' });
 
     vi.resetModules();
     const repo2 = await loadRepo();
@@ -182,7 +180,7 @@ describe('JsonFileHabitRepository', () => {
 
   it('restoreFromBackup overwrites the file with the restored data', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await repo.toggleLog(habit.id, '2026-08-01', true);
 
     await repo.restoreFromBackup({
@@ -190,7 +188,6 @@ describe('JsonFileHabitRepository', () => {
         {
           id: 'h-imported',
           name: 'رياضة',
-          icon: 'Dumbbell',
           frequency: 'daily',
           createdAt: '2026-07-01T00:00:00.000Z',
           archived: false,
@@ -222,7 +219,7 @@ describe('JsonFileHabitRepository', () => {
 
   it('getLocalData returns the raw persisted data including archived habits', async () => {
     const repo = await loadRepo();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await repo.deleteHabit(habit.id);
 
     const { habits, logs } = await repo.getLocalData();

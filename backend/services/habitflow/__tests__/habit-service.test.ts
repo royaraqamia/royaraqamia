@@ -6,7 +6,6 @@ import type { HabitRepository, Habit, HabitLog } from '@/shared/contracts/habitf
 const habitFixture: Habit = {
   id: 'h-1',
   name: 'قراءة',
-  icon: 'BookOpen',
   frequency: 'daily',
   createdAt: '2026-08-01T00:00:00.000Z',
   archived: false,
@@ -79,7 +78,7 @@ describe('HabitService', () => {
   });
 
   describe('createHabit', () => {
-    it('creates a habit with default icon and frequency', async () => {
+    it('creates a habit with default frequency', async () => {
       const { repository, service } = makeRepo();
       (repository.createHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
 
@@ -87,20 +86,18 @@ describe('HabitService', () => {
 
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'قراءة',
-        icon: 'Activity',
         frequency: 'daily',
       });
     });
 
-    it('preserves an explicit icon and frequency', async () => {
+    it('preserves an explicit frequency', async () => {
       const { repository, service } = makeRepo();
       (repository.createHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
 
-      await service.createHabit({ name: 'رياضة', icon: 'Dumbbell', frequency: 'weekly' });
+      await service.createHabit({ name: 'رياضة', frequency: 'weekly' });
 
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'رياضة',
-        icon: 'Dumbbell',
         frequency: 'weekly',
       });
     });
@@ -118,7 +115,6 @@ describe('HabitService', () => {
 
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'قراءة',
-        icon: 'Activity',
         frequency: 'daily',
         target: 5,
         targetPeriod: 'week',
@@ -139,7 +135,6 @@ describe('HabitService', () => {
 
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'قراءة',
-        icon: 'Activity',
         frequency: 'daily',
         target: 7,
         targetPeriod: 'week',
@@ -155,7 +150,6 @@ describe('HabitService', () => {
 
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'قراءة',
-        icon: 'Activity',
         frequency: 'daily',
         target: null,
         targetPeriod: null,
@@ -251,11 +245,10 @@ describe('HabitService', () => {
       const { repository, service } = makeRepo();
       (repository.updateHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
 
-      await service.updateHabit('h-1', { name: '  قراءة يومية  ', icon: 'Star' });
+      await service.updateHabit('h-1', { name: '  قراءة يومية  ' });
 
       expect(repository.updateHabit).toHaveBeenCalledWith('h-1', {
         name: 'قراءة يومية',
-        icon: 'Star',
       });
     });
 

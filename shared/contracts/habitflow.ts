@@ -3,7 +3,6 @@ export type HabitTargetPeriod = 'week' | 'month';
 export interface Habit {
   id: string;
   name: string;
-  icon: string;
   frequency: 'daily' | 'weekly';
   createdAt: string;
   archived: boolean;
@@ -42,7 +41,6 @@ export interface HabitRepository {
 export interface HabitBackupHabit {
   id: string;
   name: string;
-  icon: string;
   frequency: string;
   archived?: boolean;
   createdAt?: string;

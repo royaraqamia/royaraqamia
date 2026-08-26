@@ -72,7 +72,6 @@ export async function listHabitsHandler(
     const items = page.map((h) => ({
       id: h.id,
       name: h.name,
-      icon: h.icon,
       frequency: h.frequency,
       target: h.target ?? null,
       targetPeriod: h.targetPeriod ?? null,
@@ -162,7 +161,7 @@ Args:
   - offset (number, default 0): 0-based pagination offset
   - format ('markdown' | 'json', default 'markdown'): output format
 
-Returns (JSON): { "habits": {id,name,icon,frequency,target,targetPeriod,reminderTime}[], "total": number, "count": number, "offset": number, "has_more": boolean }
+Returns (JSON): { "habits": {id,name,frequency,target,targetPeriod,reminderTime}[], "total": number, "count": number, "offset": number, "has_more": boolean }
 
 Examples:
   - Use when: "what are my habits"`,
@@ -213,7 +212,6 @@ Examples:
 const CreateHabitInputSchema = z
   .object({
     name: z.string().trim().min(1).max(80).describe('Habit name'),
-    icon: z.string().min(1).max(40).optional().describe('Icon name (default: Activity)'),
     frequency: z.enum(['daily', 'weekly']).optional().describe('Frequency (default: daily)'),
     target: z.number().int().positive().optional().describe('Weekly/monthly target count'),
     target_period: z.enum(['week', 'month']).optional().describe('Target period'),
@@ -230,7 +228,6 @@ const UpdateHabitInputSchema = z
   .object({
     id: z.string().min(1).describe('The habit id'),
     name: z.string().trim().min(1).max(80).optional(),
-    icon: z.string().min(1).max(40).optional(),
     frequency: z.enum(['daily', 'weekly']).optional(),
     target: z.number().int().positive().nullable().optional(),
     target_period: z.enum(['week', 'month']).nullable().optional(),
@@ -278,7 +275,6 @@ export async function createHabitHandler(
     const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
     const habit = await repo.createHabit({
       name: params.name,
-      icon: params.icon ?? 'Activity',
       frequency: params.frequency ?? 'daily',
       target: params.target ?? null,
       targetPeriod: params.target_period ?? null,
@@ -288,7 +284,6 @@ export async function createHabitHandler(
     const output = {
       id: habit.id,
       name: habit.name,
-      icon: habit.icon,
       frequency: habit.frequency,
       target: habit.target ?? null,
       targetPeriod: habit.targetPeriod ?? null,
@@ -312,7 +307,6 @@ export async function updateHabitHandler(
     const repo = new SupabaseHabitRepository(ctx.supabase as never, userId);
     const habit = await repo.updateHabit(params.id, {
       name: params.name,
-      icon: params.icon,
       frequency: params.frequency,
       target: params.target,
       targetPeriod: params.target_period,
@@ -399,14 +393,13 @@ export function registerHabitFlowWriteTools(server: McpServer, ctx: McpUserConte
 
 Args:
   - name (string, required): habit name
-  - icon (string, optional): icon name (default: Activity)
   - frequency ('daily' | 'weekly', optional)
   - target (number, optional): target count for the target period
   - target_period ('week' | 'month', optional)
   - reminder_time (string, optional): HH:mm
   - format ('markdown' | 'json', default 'markdown'): output format
 
-Returns (JSON): { "id": string, "name": string, "icon": string, "frequency": string, "target": number|null, "targetPeriod": string|null }
+Returns (JSON): { "id": string, "name": string, "frequency": string, "target": number|null, "targetPeriod": string|null }
 
 Examples:
   - Use when: "create a habit called Reading" -> name="Reading"
@@ -431,7 +424,6 @@ Examples:
 Args:
   - id (string, required): the habit id
   - name (string, optional)
-  - icon (string, optional)
   - frequency ('daily' | 'weekly', optional)
   - target (number|null, optional)
   - target_period ('week' | 'month'|null, optional)

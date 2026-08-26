@@ -69,7 +69,6 @@ export function useDashboardForm(
       try {
         const result = await ApiClient.createHabit(
           habitName,
-          'Activity',
           habitFrequency,
           parseTarget(habitTarget),
           habitTargetPeriod === '' ? null : habitTargetPeriod,
@@ -91,7 +90,6 @@ export function useDashboardForm(
       try {
         const habit = await localRepo.createHabit({
           name: habitName.trim(),
-          icon: 'Activity',
           frequency: habitFrequency,
           target: parseTarget(habitTarget),
           targetPeriod: habitTargetPeriod === '' ? null : habitTargetPeriod,
@@ -120,7 +118,6 @@ export function useDashboardForm(
         const result = await ApiClient.updateHabit(
           selectedHabit.id,
           habitName,
-          selectedHabit.icon,
           habitFrequency,
           parseTarget(habitTarget),
           habitTargetPeriod === '' ? null : habitTargetPeriod,

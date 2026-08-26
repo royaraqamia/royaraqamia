@@ -12,7 +12,7 @@ describe('LocalStorageHabitRepository', () => {
 
   it('creates and lists a habit', async () => {
     const repo = new LocalStorageHabitRepository();
-    const created = await repo.createHabit({ name: 'قراءة', icon: 'BookOpen', frequency: 'daily' });
+    const created = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
 
     expect(created.id).toMatch(/^h-/);
     expect(created.archived).toBe(false);
@@ -25,7 +25,7 @@ describe('LocalStorageHabitRepository', () => {
 
   it('excludes archived habits from getHabits', async () => {
     const repo = new LocalStorageHabitRepository();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await repo.deleteHabit(habit.id);
 
     expect(await repo.getHabits()).toHaveLength(0);
@@ -33,13 +33,12 @@ describe('LocalStorageHabitRepository', () => {
 
   it('updates a habit, preserving the id', async () => {
     const repo = new LocalStorageHabitRepository();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
 
-    const updated = await repo.updateHabit(habit.id, { name: 'قراءة يومية', icon: 'Star' });
+    const updated = await repo.updateHabit(habit.id, { name: 'قراءة يومية' });
 
     expect(updated.id).toBe(habit.id);
     expect(updated.name).toBe('قراءة يومية');
-    expect(updated.icon).toBe('Star');
   });
 
   it('throws when updating a missing habit', async () => {
@@ -53,13 +52,13 @@ describe('LocalStorageHabitRepository', () => {
     const repo = new LocalStorageHabitRepository();
     await expect(repo.deleteHabit('h-missing')).resolves.toBe(false);
 
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await expect(repo.deleteHabit(habit.id)).resolves.toBe(true);
   });
 
   it('toggles a log on and off', async () => {
     const repo = new LocalStorageHabitRepository();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
 
     const on = await repo.toggleLog(habit.id, '2026-08-02', true);
     expect(on.completed).toBe(true);
@@ -73,7 +72,7 @@ describe('LocalStorageHabitRepository', () => {
 
   it('keeps a single log per habit+date', async () => {
     const repo = new LocalStorageHabitRepository();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await repo.toggleLog(habit.id, '2026-08-02', true);
     await repo.toggleLog(habit.id, '2026-08-02', true);
 
@@ -83,7 +82,7 @@ describe('LocalStorageHabitRepository', () => {
 
   it('filters logs by date range inclusively', async () => {
     const repo = new LocalStorageHabitRepository();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await repo.toggleLog(habit.id, '2026-07-01', true);
     await repo.toggleLog(habit.id, '2026-08-15', true);
 
@@ -103,7 +102,7 @@ describe('LocalStorageHabitRepository', () => {
 
   it('getLocalData returns the raw persisted data including archived habits', async () => {
     const repo = new LocalStorageHabitRepository();
-    const habit = await repo.createHabit({ name: 'قراءة', icon: 'Activity', frequency: 'daily' });
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await repo.toggleLog(habit.id, '2026-08-02', true);
     await repo.deleteHabit(habit.id);
 
@@ -118,7 +117,6 @@ describe('LocalStorageHabitRepository', () => {
       {
         id: 'h-1',
         name: 'قراءة',
-        icon: 'Activity',
         frequency: 'daily',
         createdAt: '2026-01-01T00:00:00.000Z',
         archived: false,

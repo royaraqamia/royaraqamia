@@ -556,7 +556,6 @@ export type Database = {
           archived: boolean;
           created_at: string;
           frequency: string;
-          icon: string | null;
           id: string;
           name: string;
           user_id: string;
@@ -565,7 +564,6 @@ export type Database = {
           archived?: boolean;
           created_at?: string;
           frequency?: string;
-          icon?: string | null;
           id?: string;
           name: string;
           user_id: string;
@@ -574,7 +572,6 @@ export type Database = {
           archived?: boolean;
           created_at?: string;
           frequency?: string;
-          icon?: string | null;
           id?: string;
           name?: string;
           user_id?: string;

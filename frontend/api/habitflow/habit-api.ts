@@ -32,7 +32,6 @@ export class ApiClient {
 
   static async createHabit(
     habitName: string,
-    habitIcon: string,
     habitFrequency: string,
     target?: number | null,
     targetPeriod?: 'week' | 'month' | null,
@@ -42,7 +41,6 @@ export class ApiClient {
       method: 'POST',
       body: JSON.stringify({
         name: habitName,
-        icon: habitIcon,
         frequency: habitFrequency,
         target,
         targetPeriod,
@@ -54,7 +52,6 @@ export class ApiClient {
   static async updateHabit(
     id: string,
     habitName: string,
-    habitIcon: string,
     habitFrequency: string,
     target?: number | null,
     targetPeriod?: 'week' | 'month' | null,
@@ -65,7 +62,6 @@ export class ApiClient {
       body: JSON.stringify({
         id,
         name: habitName,
-        icon: habitIcon,
         frequency: habitFrequency,
         target,
         targetPeriod,

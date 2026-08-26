@@ -22,7 +22,6 @@ export class HabitService {
     }
     return this.repository.createHabit({
       name: data.name.trim(),
-      icon: data.icon || 'Activity',
       frequency: data.frequency || 'daily',
       ...this.normalizeGoalFields(data),
     });
@@ -32,7 +31,6 @@ export class HabitService {
     if (!id) throw new AppError('معرّف العادة مطلوب', 400);
     return this.repository.updateHabit(id, {
       ...(data.name !== undefined && { name: data.name.trim() }),
-      ...(data.icon !== undefined && { icon: data.icon }),
       ...(data.frequency !== undefined && { frequency: data.frequency }),
       ...(data.archived !== undefined && { archived: data.archived }),
       ...this.normalizeGoalFields(data),
