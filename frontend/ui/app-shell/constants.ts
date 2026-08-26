@@ -21,6 +21,20 @@ export interface AppProductDef {
 
 export const APP_PRODUCTS: AppProductDef[] = [
   {
+    id: 'verify',
+    label: 'التَّحقُّق من الشَّهادة',
+    appPath: '/verify',
+    landingPath: '/verify',
+    icon: ScanLine,
+  },
+  {
+    id: 'consultation',
+    label: 'حجز استشارة',
+    appPath: '/consultation/book',
+    landingPath: '/consultation/book',
+    icon: CalendarCheck,
+  },
+  {
     id: 'linksnap',
     label: 'إدارة الرَّوابط',
     appPath: '/linksnap/app',
@@ -47,19 +61,5 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/spendtrack/app',
     landingPath: '/spendtrack',
     icon: Wallet,
-  },
-  {
-    id: 'verify',
-    label: 'التَّحقُّق من الشَّهادة',
-    appPath: '/verify',
-    landingPath: '/verify',
-    icon: ScanLine,
-  },
-  {
-    id: 'consultation',
-    label: 'حجز استشارة',
-    appPath: '/consultation/book',
-    landingPath: '/consultation/book',
-    icon: CalendarCheck,
   },
 ];
