@@ -3,13 +3,13 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
+  BookOpen,
   CornerDownLeft,
   FilePlus2,
   House,
   Link2,
   ListPlus,
   Receipt,
-  ScanLine,
   Search,
 } from 'lucide-react';
 import {
@@ -33,13 +33,7 @@ interface PaletteItem {
 
 const GENERAL_ITEMS: PaletteItem[] = [
   { id: 'home', label: 'الرَّئيسيَّة', group: 'general', href: '/', icon: House },
-  {
-    id: 'verify',
-    label: 'التَّحقُّق من الشَّهادة',
-    group: 'general',
-    href: '/verify',
-    icon: ScanLine,
-  },
+  { id: 'blog', label: 'المدوَّنة', group: 'general', href: '/blog', icon: BookOpen },
 ];
 
 const QUICK_ACTIONS: PaletteItem[] = [
@@ -73,11 +67,16 @@ const QUICK_ACTIONS: PaletteItem[] = [
   },
 ];
 
-export function CommandPalette() {
+interface CommandPaletteProps {
+  enableHotkey?: boolean;
+}
+
+export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    if (!enableHotkey) return;
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
@@ -86,7 +85,7 @@ export function CommandPalette() {
     }
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, []);
+  }, [enableHotkey]);
 
   const run = (href: string) => {
     setOpen(false);
@@ -99,16 +98,11 @@ export function CommandPalette() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        aria-label="البحث السَّريع"
-        className="group relative inline-flex h-10 min-w-10 sm:min-w-60 items-center justify-between gap-3 rounded-xl border border-border/50 bg-background/80 dark:bg-neutral-900/80 px-3.5 text-xs sm:text-sm font-medium text-muted-foreground backdrop-blur-md shadow-2xs transition-all duration-200 ease-out hover:border-primary/40 hover:bg-accent/40 hover:text-foreground hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.98]"
+        aria-label="البحث السَّريع"
+        className="relative flex h-11 w-11 items-center justify-center rounded-xl text-neutral-700 dark:text-neutral-200 transition-all duration-200 ease-out hover:bg-neutral-100/80 dark:hover:bg-neutral-800/80 active:scale-95 active:bg-neutral-200/80 dark:active:bg-neutral-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 motion-reduce:transition-none"
       >
-        <div className="flex items-center gap-2.5">
-          <Search className="size-4 shrink-0 text-muted-foreground/80 transition-transform duration-200 group-hover:scale-110 group-hover:text-foreground" />
-          <span className="hidden sm:inline-block font-medium">بحث سريع…</span>
-        </div>
-        <kbd className="pointer-events-none hidden sm:inline-flex h-5 select-none items-center gap-1 rounded-md border border-border/70 bg-muted/60 dark:bg-neutral-800/60 px-2 font-mono text-[10px] font-semibold text-muted-foreground shadow-2xs group-hover:border-primary/30 group-hover:text-foreground transition-colors">
-          ⌘K
-        </kbd>
+        <span className="sr-only">البحث السَّريع</span>
+        <Search size={22} />
       </button>
 
       {/* Command Palette Modal */}

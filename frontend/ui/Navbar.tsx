@@ -19,6 +19,11 @@ const UserDropdown = dynamic(() => import('./shared/user-dropdown').then((m) => 
   loading: () => null,
 });
 
+const CommandPalette = dynamic(
+  () => import('./app-shell/command-palette').then((m) => m.CommandPalette),
+  { ssr: false, loading: () => null }
+);
+
 export function Navbar() {
   const { isMobileMenuOpen, setIsMobileMenuOpen, isReviewSheetOpen } = useUI();
   const [isScrolled, setIsScrolled] = useState(false);
@@ -195,6 +200,7 @@ export function Navbar() {
 
             {/* Mobile Navigation Controls & Dropdowns */}
             <div className="flex items-center gap-1.5 sm:gap-2.5 lg:hidden">
+              <CommandPalette enableHotkey={false} />
               <NotificationDropdown />
               <UserDropdown />
               <button

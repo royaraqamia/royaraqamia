@@ -21,6 +21,11 @@ const UserDropdown = dynamic(() => import('../shared/user-dropdown').then((m) =>
   loading: () => null,
 });
 
+const CommandPalette = dynamic(
+  () => import('../app-shell/command-palette').then((m) => m.CommandPalette),
+  { ssr: false, loading: () => null }
+);
+
 interface NavLink {
   visible?: boolean;
   href: string;
@@ -401,6 +406,7 @@ export function DesktopNav({
 
       {/* Primary Actions & Controls Container */}
       <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
+        <CommandPalette />
         <NotificationDropdown />
         <UserDropdown />
         <a
