@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.2] - 2026-08-30
+
+### Changed
+- remove unused font files and replace semibold with bold
+
+### Fixed
+- force navbar to always use dark colors regardless of browser theme
+
 ## [1.17.1] - 2026-08-26
 
 ### Changed
