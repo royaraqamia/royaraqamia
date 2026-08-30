@@ -83,7 +83,7 @@ export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProp
 
           {/* Metadata & Numeric Value */}
           <div className="flex flex-col justify-center min-w-0 flex-1 space-y-0.5">
-            <p className="text-[11px] sm:text-xs font-semibold text-muted-foreground/90 transition-colors duration-200 group-hover:text-foreground/80 select-none truncate">
+            <p className="text-[11px] sm:text-xs font-bold text-muted-foreground/90 transition-colors duration-200 group-hover:text-foreground/80 select-none truncate">
               {label}
             </p>
             <AnimatedValue value={value} reduce={reduce} />

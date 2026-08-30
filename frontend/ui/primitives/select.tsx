@@ -111,7 +111,7 @@ function SelectLabel({ className, ...props }: React.ComponentProps<typeof Select
     <SelectPrimitive.Label
       data-slot="select-label"
       className={cn(
-        'px-3 py-1.5 text-[11px] font-semibold tracking-wider text-muted-foreground/80 uppercase select-none',
+        'px-3 py-1.5 text-[11px] font-bold tracking-wider text-muted-foreground/80 uppercase select-none',
         className
       )}
       {...props}
@@ -130,7 +130,7 @@ function SelectItem({
       className={cn(
         'group relative flex w-full cursor-pointer select-none items-center gap-2 rounded-lg py-2 pr-8 pl-3 text-sm font-medium outline-none transition-colors duration-150 ease-out',
         'focus:bg-accent focus:text-accent-foreground',
-        'data-[state=checked]:bg-accent/75 data-[state=checked]:text-accent-foreground data-[state=checked]:font-semibold',
+        'data-[state=checked]:bg-accent/75 data-[state=checked]:text-accent-foreground data-[state=checked]:font-bold',
         'data-disabled:pointer-events-none data-disabled:opacity-40',
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground group-hover:[&_svg:not([class*='text-'])]:text-foreground",
         className

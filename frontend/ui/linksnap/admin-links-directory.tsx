@@ -184,7 +184,7 @@ export function AdminLinksDirectory({
       </div>
 
       {links.length === 0 ? (
-        <div className="py-16 text-center text-muted-foreground text-xs font-semibold">
+        <div className="py-16 text-center text-muted-foreground text-xs font-bold">
           {searchQuery ? 'لا توجد نتائج تطابق بحثك.' : 'لا توجد روابط مختصرة متاحة في الدليل.'}
         </div>
       ) : (
@@ -193,7 +193,7 @@ export function AdminLinksDirectory({
           <div className="hidden md:block overflow-x-auto text-xs">
             <table className="w-full border-collapse">
               <thead>
-                <tr className="bg-muted/30 text-muted-foreground font-semibold border-b border-border/50">
+                <tr className="bg-muted/30 text-muted-foreground font-bold border-b border-border/50">
                   <th scope="col" className="px-6 py-4 text-right">
                     الرمز
                   </th>

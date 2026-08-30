@@ -57,7 +57,7 @@ export function InsightsStrip({
               className="size-3 shrink-0 rounded-full"
               style={{ backgroundColor: insights.topCategory.colorHex }}
             />
-            <p className="text-sm font-semibold truncate">{insights.topCategory.name}</p>
+            <p className="text-sm font-bold truncate">{insights.topCategory.name}</p>
             {shareText && (
               <span className="ms-auto shrink-0 text-xs font-medium text-muted-foreground">
                 {shareText}٪
@@ -98,7 +98,7 @@ export function InsightsStrip({
         >
           {insights.deltaPct === null ? '' : rising ? '▲ ' : '▼ '}
           {deltaText}
-          {insights.deltaPct !== null && <span className="text-sm font-semibold">٪</span>}
+          {insights.deltaPct !== null && <span className="text-sm font-bold">٪</span>}
         </p>
       </div>
     </div>

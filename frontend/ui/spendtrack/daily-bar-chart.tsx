@@ -60,7 +60,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
           </svg>
         </div>
         <div className="max-w-xs space-y-1.5">
-          <p className="text-base font-semibold text-foreground tracking-tight">لا توجد بيانات</p>
+          <p className="text-base font-bold text-foreground tracking-tight">لا توجد بيانات</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
             أضِف مصروفات لرؤية الاتِّجاهات اليوميَّة
           </p>

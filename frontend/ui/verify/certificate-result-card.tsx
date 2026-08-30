@@ -112,7 +112,7 @@ export function CertificateResultCard({
         >
           <Badge
             variant={isExpired ? 'destructive' : 'default'}
-            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-full shadow-xs ${
+            className={`flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-full shadow-xs ${
               isExpired
                 ? 'bg-destructive/15 text-destructive border border-destructive/30'
                 : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
@@ -183,7 +183,7 @@ export function CertificateResultCard({
                 <div className="min-w-0 flex-1">
                   <p className="text-xs text-muted-foreground font-medium">{detail.label}</p>
                   <p
-                    className={`truncate text-sm font-semibold mt-0.5 ${
+                    className={`truncate text-sm font-bold mt-0.5 ${
                       'danger' in detail && detail.danger
                         ? 'text-destructive'
                         : 'highlight' in detail && detail.highlight
@@ -206,7 +206,7 @@ export function CertificateResultCard({
                   {copied ? (
                     <>
                       <Check className="size-3.5 text-emerald-500" />
-                      <span className="text-emerald-500 font-semibold">تمَّ النَّسخ</span>
+                      <span className="text-emerald-500 font-bold">تمَّ النَّسخ</span>
                     </>
                   ) : (
                     <>

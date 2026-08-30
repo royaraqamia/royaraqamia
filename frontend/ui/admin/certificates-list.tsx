@@ -163,8 +163,8 @@ function CertificateListItem({
                   <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
                   <AlertDialogDescription>
                     هل أنت متأكد من حذف شهادة{' '}
-                    <span className="font-semibold text-foreground">{cert.student_name}</span>؟ لا
-                    يمكن التراجع عن هذا الإجراء.
+                    <span className="font-bold text-foreground">{cert.student_name}</span>؟ لا يمكن
+                    التراجع عن هذا الإجراء.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -242,7 +242,7 @@ export function CertificatesList({
             </div>
           </m.div>
           <div className="text-center">
-            <p className="font-semibold">لا توجد شهادات</p>
+            <p className="font-bold">لا توجد شهادات</p>
             <p className="text-muted-foreground text-sm mt-1">
               {hasSearch ? 'لا توجد نتائج تطابق البحث' : 'لم يتم إصدار أي شهادات بعد'}
             </p>

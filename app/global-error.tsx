@@ -84,7 +84,7 @@ export default function GlobalError({
               <button
                 type="button"
                 onClick={() => reset()}
-                className="group relative inline-flex w-full sm:w-auto flex-1 items-center justify-center gap-2.5 rounded-xl bg-linear-to-r from-purple-600 via-purple-500 to-violet-600 px-6 py-3.5 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 ease-out hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 cursor-pointer"
+                className="group relative inline-flex w-full sm:w-auto flex-1 items-center justify-center gap-2.5 rounded-xl bg-linear-to-r from-purple-600 via-purple-500 to-violet-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 ease-out hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 cursor-pointer"
               >
                 <svg
                   className="h-4 w-4 transition-transform duration-500 group-hover:rotate-180"

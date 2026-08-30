@@ -54,7 +54,7 @@ export function SlotStep({ slots, loading, selectedIds, requiredCount, onToggle 
     return (
       <div className="text-center py-12 space-y-2">
         <CalendarClock className="size-10 text-muted-foreground/50 mx-auto" aria-hidden="true" />
-        <p className="font-semibold text-foreground">لا توجد مواعيد مُتاحة حاليًّا</p>
+        <p className="font-bold text-foreground">لا توجد مواعيد مُتاحة حاليًّا</p>
         <p className="text-sm text-muted-foreground">تُضاف مواعيد جديدة دوريًّا — جرِّب لاحقًا.</p>
       </div>
     );
@@ -64,7 +64,7 @@ export function SlotStep({ slots, loading, selectedIds, requiredCount, onToggle 
     <div className="space-y-4">
       <p
         className={cn(
-          'text-sm font-semibold rounded-xl px-4 py-2.5 border',
+          'text-sm font-bold rounded-xl px-4 py-2.5 border',
           selectedIds.length === requiredCount
             ? 'bg-primary/10 border-primary/40 text-foreground'
             : 'bg-muted border-border text-muted-foreground'
@@ -107,7 +107,7 @@ export function SlotStep({ slots, loading, selectedIds, requiredCount, onToggle 
                           : 'border-border bg-card hover:border-primary/60 cursor-pointer'
                     )}
                   >
-                    <span className="block text-sm font-semibold">{range}</span>
+                    <span className="block text-sm font-bold">{range}</span>
                     {damascusHint && (
                       <span
                         className={cn(

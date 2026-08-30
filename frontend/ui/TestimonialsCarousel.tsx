@@ -160,7 +160,7 @@ const TestimonialCard = memo(function TestimonialCard({
 
           {/* User Name & Metadata */}
           <div className="flex flex-col min-w-0">
-            <span className="font-semibold text-slate-100 text-sm sm:text-base truncate group-hover/card:text-violet-200 transition-colors">
+            <span className="font-bold text-slate-100 text-sm sm:text-base truncate group-hover/card:text-violet-200 transition-colors">
               {testimonial.name}
             </span>
           </div>

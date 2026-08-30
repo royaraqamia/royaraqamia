@@ -25,11 +25,11 @@ const calendarClassNames: Partial<ClassNames> = {
   ),
   chevron: 'size-4 transition-transform duration-200 ease-out group-hover:scale-110',
   month_caption: 'flex items-center justify-center h-9 relative px-8',
-  caption_label: 'text-sm font-semibold tracking-tight text-foreground select-none',
+  caption_label: 'text-sm font-bold tracking-tight text-foreground select-none',
   month_grid: 'w-full border-collapse space-y-1',
   weekdays: 'flex items-center justify-between pb-1.5 mb-1 border-b border-border/40',
   weekday:
-    'size-9 flex items-center justify-center text-[0.75rem] font-semibold tracking-wider text-muted-foreground/70 uppercase select-none',
+    'size-9 flex items-center justify-center text-[0.75rem] font-bold tracking-wider text-muted-foreground/70 uppercase select-none',
   weeks: 'space-y-1',
   week: 'flex w-full items-center justify-between mt-1',
   day: cn(
@@ -43,7 +43,7 @@ const calendarClassNames: Partial<ClassNames> = {
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
     'disabled:pointer-events-none disabled:opacity-30',
     // Selection state
-    'group-data-[selected=true]:bg-primary group-data-[selected=true]:text-primary-foreground group-data-[selected=true]:font-semibold',
+    'group-data-[selected=true]:bg-primary group-data-[selected=true]:text-primary-foreground group-data-[selected=true]:font-bold',
     'group-data-[selected=true]:shadow-md group-data-[selected=true]:shadow-primary/25',
     'group-data-[selected=true]:hover:bg-primary/90 group-data-[selected=true]:hover:scale-100',
     'group-data-[selected=true]:focus-visible:bg-primary group-data-[selected=true]:focus-visible:text-primary-foreground',

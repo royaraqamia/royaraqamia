@@ -97,7 +97,7 @@ function EditorPreview() {
                   {line.replace('# ', '')}
                 </span>
               ) : line.startsWith('## ') ? (
-                <span className="text-purple-300 font-semibold text-xs tracking-wide block mt-1">
+                <span className="text-purple-300 font-bold text-xs tracking-wide block mt-1">
                   <span className="text-purple-500/60 select-none me-1">##</span>
                   {line.replace('## ', '')}
                 </span>
@@ -109,7 +109,7 @@ function EditorPreview() {
               ) : line.includes('**BlogPress**') ? (
                 <span className="text-neutral-300">
                   {line.split('**BlogPress**')[0]}
-                  <span className="px-1.5 py-0.5 mx-0.5 rounded bg-indigo-500/35 text-indigo-300 font-semibold border border-indigo-500/30 text-[11px] shadow-xs inline-flex items-center gap-1">
+                  <span className="px-1.5 py-0.5 mx-0.5 rounded bg-indigo-500/35 text-indigo-300 font-bold border border-indigo-500/30 text-[11px] shadow-xs inline-flex items-center gap-1">
                     <Sparkle size={10} className="text-indigo-400 animate-pulse" />
                     رؤية رقمية
                   </span>
@@ -158,7 +158,7 @@ function DraftsOverviewCard() {
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
           <StickyNote size={18} className="text-indigo-400" />
-          <span className="text-sm font-semibold text-neutral-200">نظرة عامَّة</span>
+          <span className="text-sm font-bold text-neutral-200">نظرة عامَّة</span>
         </div>
         <span className="text-[11px] font-medium text-neutral-400 px-2.5 py-1 rounded-full bg-neutral-900 border border-neutral-800">
           آخر 30 يومًا
@@ -220,7 +220,7 @@ function SEOPreview() {
       <div className="flex items-center justify-between mb-5 pb-3 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
           <Search size={18} className="text-indigo-400" />
-          <span className="text-sm font-semibold text-neutral-200">قائمة تحسين محرِّكات البحث</span>
+          <span className="text-sm font-bold text-neutral-200">قائمة تحسين محرِّكات البحث</span>
         </div>
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/14 border border-emerald-500/20 text-xs font-bold text-emerald-400 font-mono shadow-xs">
           <Sparkle size={12} className="text-emerald-400" />
@@ -264,7 +264,7 @@ function SEOPreview() {
       <div className="mt-5 pt-4 border-t border-neutral-800/80">
         <div className="flex items-center justify-between text-xs text-neutral-400 mb-2 font-mono">
           <span>مستوى الجودة</span>
-          <span className="text-emerald-400 font-semibold">ممتاز</span>
+          <span className="text-emerald-400 font-bold">ممتاز</span>
         </div>
         <div className="h-2 rounded-full bg-neutral-900 border border-neutral-800 overflow-hidden p-px">
           <div

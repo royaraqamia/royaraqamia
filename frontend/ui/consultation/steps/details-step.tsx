@@ -119,7 +119,7 @@ export function DetailsStep({
                 <Globe className="size-5 text-primary shrink-0" />
               )}
               <span>
-                <span className="block font-semibold text-foreground">{REGION_LABELS[value]}</span>
+                <span className="block font-bold text-foreground">{REGION_LABELS[value]}</span>
                 <span className="block text-xs text-muted-foreground mt-0.5">
                   {REGION_HINTS[value]}
                 </span>

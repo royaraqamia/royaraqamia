@@ -36,7 +36,7 @@ export function BookingWizard({ flow, settings }: BookingWizardProps) {
             <span
               aria-current={index === flow.stepIndex ? 'step' : undefined}
               className={cn(
-                'flex items-center gap-2 text-xs sm:text-sm font-semibold whitespace-nowrap',
+                'flex items-center gap-2 text-xs sm:text-sm font-bold whitespace-nowrap',
                 index === flow.stepIndex
                   ? 'text-primary'
                   : index < flow.stepIndex
@@ -128,7 +128,7 @@ export function BookingWizard({ flow, settings }: BookingWizardProps) {
           type="button"
           onClick={flow.back}
           disabled={flow.stepIndex === 0}
-          className="inline-flex items-center justify-end gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border"
+          className="inline-flex items-center justify-end gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border"
         >
           <ArrowRight className="size-4" aria-hidden="true" />
           السابق

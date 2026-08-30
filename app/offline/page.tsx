@@ -68,7 +68,7 @@ export default function OfflinePage() {
           <div className="mt-8 flex flex-col gap-3">
             <a
               href="."
-              className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:bg-slate-100 dark:text-slate-900 dark:shadow-slate-100/5 dark:hover:bg-white dark:focus-visible:ring-offset-slate-900"
+              className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-slate-900 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:bg-slate-100 dark:text-slate-900 dark:shadow-slate-100/5 dark:hover:bg-white dark:focus-visible:ring-offset-slate-900"
             >
               <svg
                 className="h-4 w-4 transition-transform duration-500 group-hover:rotate-180"
@@ -90,7 +90,7 @@ export default function OfflinePage() {
 
           {/* Troubleshooting Checklist */}
           <div className="mt-6 rounded-2xl border border-slate-200/60 bg-slate-50/50 p-4 text-right dark:border-slate-800/60 dark:bg-slate-950/50">
-            <span className="mb-2 block text-xs font-semibold text-slate-500 dark:text-slate-400">
+            <span className="mb-2 block text-xs font-bold text-slate-500 dark:text-slate-400">
               خطوات سريعة للتَّحقُّق:
             </span>
             <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">

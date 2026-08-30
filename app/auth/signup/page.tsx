@@ -60,7 +60,7 @@ function SignupForm() {
             <div className="space-y-1.5">
               <label
                 htmlFor="signup-name"
-                className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground/90 select-none"
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground/90 select-none"
               >
                 <User size={15} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
                 <span>الاسم الكامل</span>
@@ -84,7 +84,7 @@ function SignupForm() {
             <div className="space-y-1.5">
               <label
                 htmlFor="signup-email"
-                className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground/90 select-none"
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground/90 select-none"
               >
                 <Mail size={15} className="text-muted-foreground/80 shrink-0" aria-hidden="true" />
                 <span>البريد الإلكتروني</span>
@@ -108,7 +108,7 @@ function SignupForm() {
             <div className="space-y-1.5">
               <label
                 htmlFor="signup-password"
-                className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-foreground/90 select-none"
+                className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-foreground/90 select-none"
               >
                 <LockKeyhole
                   size={15}
@@ -224,7 +224,7 @@ function SignupForm() {
           لديك حساب بالفعل؟{' '}
           <Link
             href={authLink('/auth/login', redirectTo)}
-            className="text-primary font-semibold hover:text-primary/80 underline-offset-4 hover:underline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md px-1 py-0.5"
+            className="text-primary font-bold hover:text-primary/80 underline-offset-4 hover:underline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md px-1 py-0.5"
           >
             تسجيل الدُّخول
           </Link>

@@ -121,7 +121,7 @@ export function Hero() {
                       className="fill-amber-400 text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.5)]"
                     />
                   </span>
-                  <span className="text-xs sm:text-sm font-semibold text-neutral-200">
+                  <span className="text-xs sm:text-sm font-bold text-neutral-200">
                     <span className="font-bold text-white">4.9</span>/5
                   </span>
                 </div>

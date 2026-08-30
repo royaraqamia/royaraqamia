@@ -116,7 +116,7 @@ export function OtpInput({
               disabled={disabled}
               className={`
                 w-10 h-12 min-[380px]:w-12 min-[380px]:h-14 sm:w-14 sm:h-16
-                text-center font-mono font-semibold text-xl sm:text-2xl tabular-nums tracking-widest
+                text-center font-mono font-bold text-xl sm:text-2xl tabular-nums tracking-widest
                 rounded-xl sm:rounded-2xl border-2 outline-none backdrop-blur-md
                 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
                 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none

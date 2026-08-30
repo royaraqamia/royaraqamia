@@ -75,7 +75,7 @@ function NotFoundState({ code }: { code: string }) {
         >
           {/* Top Status Pill */}
           <m.div variants={fadeUp} className="mb-6">
-            <span className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3.5 py-1.5 text-xs font-semibold text-red-600 dark:text-red-400 backdrop-blur-md">
+            <span className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3.5 py-1.5 text-xs font-bold text-red-600 dark:text-red-400 backdrop-blur-md">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
@@ -127,7 +127,7 @@ function NotFoundState({ code }: { code: string }) {
                     <ShieldAlert className="size-5" />
                   </div>
                   <div className="space-y-0.5">
-                    <p className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+                    <p className="text-sm font-bold text-neutral-900 dark:text-neutral-100">
                       الرَّمز المُدخل غير صالح أو انتهت صلاحيَّته
                     </p>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
@@ -339,7 +339,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
 
                   <Badge
                     variant={isExpired ? 'destructive' : 'success'}
-                    className="flex items-center gap-2 px-3.5 py-1.5 text-xs font-semibold rounded-xl"
+                    className="flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-xl"
                   >
                     <span className="relative flex h-2 w-2">
                       {!isExpired && (

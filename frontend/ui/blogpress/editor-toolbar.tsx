@@ -229,7 +229,7 @@ export function EditorToolbar({
           onClick={() => run(btn.action)}
           className={`relative inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
             active
-              ? 'bg-primary text-primary-foreground font-semibold shadow-xs scale-[1.02]'
+              ? 'bg-primary text-primary-foreground font-bold shadow-xs scale-[1.02]'
               : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground active:scale-95'
           }`}
           aria-label={btn.label}
@@ -320,7 +320,7 @@ export function EditorToolbar({
             </span>
           </div>
         )}
-        <kbd className="inline-flex items-center gap-0.5 rounded-md border border-border/80 bg-muted/60 px-2 py-0.5 font-mono text-[10px] font-semibold tracking-tight text-muted-foreground shadow-2xs transition-colors hover:border-border hover:bg-muted">
+        <kbd className="inline-flex items-center gap-0.5 rounded-md border border-border/80 bg-muted/60 px-2 py-0.5 font-mono text-[10px] font-bold tracking-tight text-muted-foreground shadow-2xs transition-colors hover:border-border hover:bg-muted">
           <span>Ctrl</span>
           <span className="text-muted-foreground/60">+</span>
           <span>S</span>

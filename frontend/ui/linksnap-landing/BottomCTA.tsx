@@ -30,7 +30,7 @@ export function BottomCTA() {
       subtitleClassName="text-base sm:text-lg md:text-xl text-muted-foreground/90 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed font-normal text-balance"
       actionsClassName="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4"
       actionsMotion={{ initialY: 20, duration: 0.6, useEase: true }}
-      primaryButtonClassName="cta-glow group relative inline-flex items-center justify-center gap-2.5 text-base sm:text-lg font-semibold px-8 sm:px-12 h-14 sm:h-16 rounded-full transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 hover:shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      primaryButtonClassName="cta-glow group relative inline-flex items-center justify-center gap-2.5 text-base sm:text-lg font-bold px-8 sm:px-12 h-14 sm:h-16 rounded-full transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 hover:shadow-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       arrowClassName="arrow-bounce transition-transform duration-300 group-hover:-translate-x-1 rtl:group-hover:translate-x-1 shrink-0"
       secondaryButtonClassName="group inline-flex items-center justify-center text-base sm:text-lg font-medium h-14 sm:h-16 px-8 sm:px-10 rounded-full border border-border/80 bg-background/75 hover:bg-accent/88 hover:border-border transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     />

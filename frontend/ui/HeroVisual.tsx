@@ -118,7 +118,7 @@ export function HeroVisual() {
                       <TrendingUp className="w-4 h-4 text-purple-400" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-neutral-200 tracking-tight">
+                      <p className="text-xs font-bold text-neutral-200 tracking-tight">
                         اتِّجاه النُّمو
                       </p>
                       <p className="text-[10px] text-neutral-400 font-medium">+28.4% هذا الأسبوع</p>
@@ -169,7 +169,7 @@ export function HeroVisual() {
                       <Users className="w-4 h-4 text-violet-400" />
                     </div>
                     <div>
-                      <p className="text-xs font-semibold text-neutral-200 tracking-tight">
+                      <p className="text-xs font-bold text-neutral-200 tracking-tight">
                         مستخدمون نشطون
                       </p>
                       <p className="text-[10px] text-neutral-400 font-medium">14.2 ألف نشط الآن</p>

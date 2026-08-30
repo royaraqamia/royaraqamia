@@ -28,7 +28,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
         {/* Header Section */}
         <header className="text-center space-y-3 mb-8 sm:mb-10">
           <div className="inline-flex items-center">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20 shadow-xs backdrop-blur-md">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 shadow-xs backdrop-blur-md">
               <Sparkles
                 className="w-3.5 h-3.5 shrink-0 text-primary animate-pulse motion-reduce:animate-none"
                 aria-hidden="true"
@@ -81,7 +81,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
                 </div>
 
                 <div className="pt-2 z-10">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold text-muted-foreground group-hover:text-primary bg-muted/60 group-hover:bg-primary/10 border border-border/40 group-hover:border-primary/20 transition-all duration-200">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold text-muted-foreground group-hover:text-primary bg-muted/60 group-hover:bg-primary/10 border border-border/40 group-hover:border-primary/20 transition-all duration-200">
                     {template.frequency === 'daily' ? 'يومي' : 'أسبوعي'}
                   </span>
                 </div>
@@ -96,7 +96,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
             type="button"
             onClick={onCreateBlank}
             variant="outline"
-            className="w-full sm:w-auto h-11 rounded-xl px-6 text-xs sm:text-sm font-semibold border-border/80 hover:border-primary/40 hover:bg-muted/80 transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer inline-flex items-center justify-center gap-2 group"
+            className="w-full sm:w-auto h-11 rounded-xl px-6 text-xs sm:text-sm font-bold border-border/80 hover:border-primary/40 hover:bg-muted/80 transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer inline-flex items-center justify-center gap-2 group"
           >
             <Plus
               className="w-4 h-4 text-primary group-hover:rotate-90 transition-transform duration-300"

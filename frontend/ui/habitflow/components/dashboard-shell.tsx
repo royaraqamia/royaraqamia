@@ -169,7 +169,7 @@ export function DashboardShell({
                 <div className="flex items-center gap-2 px-4 py-1">
                   <CalendarIcon className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
                   <span
-                    className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 whitespace-nowrap min-w-30 text-center select-none"
+                    className="text-sm font-bold text-zinc-800 dark:text-zinc-200 whitespace-nowrap min-w-30 text-center select-none"
                     aria-live="polite"
                     aria-atomic="true"
                   >
@@ -204,7 +204,7 @@ export function DashboardShell({
                   variant="outline"
                   onClick={() => setActiveDate(todayDate)}
                   aria-label="العودة إلى اليوم"
-                  className="h-12 rounded-full px-5 border-zinc-200/80 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-semibold shadow-sm transition-all duration-300 active:scale-[0.97] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
+                  className="h-12 rounded-full px-5 border-zinc-200/80 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-bold shadow-sm transition-all duration-300 active:scale-[0.97] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
                 >
                   اليوم
                 </Button>
@@ -273,7 +273,7 @@ export function DashboardShell({
                     setFormError('');
                   }}
                   id="btn-create-habit"
-                  className="group rounded-full shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all duration-300 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary text-primary-foreground font-semibold h-11 px-5 text-sm flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
+                  className="group rounded-full shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all duration-300 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary text-primary-foreground font-bold h-11 px-5 text-sm flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
                 >
                   <Plus className="w-4 h-4 transition-transform group-hover:rotate-90 duration-300 ease-out" />
                   <span>إضافة عادة</span>
@@ -377,7 +377,7 @@ export function DashboardShell({
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   aria-controls="file-input-ref"
-                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <Upload className="w-4 h-4" />
                   <span>استيراد</span>
@@ -385,7 +385,7 @@ export function DashboardShell({
                 <Button
                   variant="outline"
                   onClick={handleDownloadBackup}
-                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <Download className="w-4 h-4" />
                   <span>تصدير</span>
@@ -393,7 +393,7 @@ export function DashboardShell({
                 <Button
                   variant="outline"
                   onClick={handleDownloadCsv}
-                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-semibold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   <span>تصدير CSV</span>

@@ -28,7 +28,7 @@ export function BottomCTA() {
       subtitleClassName="text-base sm:text-lg md:text-xl text-muted-foreground/90 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed text-pretty font-normal"
       actionsClassName="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4"
       actionsMotion={{ initialY: 16, duration: 0.5, useEase: false }}
-      primaryButtonClassName="group relative inline-flex items-center justify-center gap-2.5 h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-semibold rounded-full shadow-lg shadow-primary/20 transition-all duration-300 ease-out hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      primaryButtonClassName="group relative inline-flex items-center justify-center gap-2.5 h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-bold rounded-full shadow-lg shadow-primary/20 transition-all duration-300 ease-out hover:shadow-xl hover:shadow-primary/30 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       arrowClassName="transition-transform duration-300 ease-out group-hover:-translate-x-1.5"
       secondaryButtonClassName="h-14 sm:h-16 px-8 sm:px-10 text-base sm:text-lg font-medium rounded-full border-border/80 bg-background/75 hover:bg-accent/88 hover:text-accent-foreground transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
     />

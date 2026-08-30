@@ -72,7 +72,7 @@ export function Hero() {
             appPath="/spendtrack/app"
             loginRedirect="/spendtrack/app"
             scrollTarget="features"
-            primaryClassName="group relative w-full sm:w-auto cta-glow text-base px-8 py-6 rounded-full font-semibold shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            primaryClassName="group relative w-full sm:w-auto cta-glow text-base px-8 py-6 rounded-full font-bold shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="arrow-bounce transition-transform duration-300 group-hover:-translate-x-1"
@@ -126,7 +126,7 @@ export function Hero() {
                   $3,057
                 </span>
               </div>
-              <div className="px-2.5 py-1 rounded-lg bg-primary/14 border border-primary/20 text-primary text-xs font-semibold whitespace-nowrap">
+              <div className="px-2.5 py-1 rounded-lg bg-primary/14 border border-primary/20 text-primary text-xs font-bold whitespace-nowrap">
                 المجموع الحالي
               </div>
             </div>
@@ -144,7 +144,7 @@ export function Hero() {
                       <Wallet size={18} className="text-primary" />
                     </div>
                     <div className="min-w-0">
-                      <span className="text-sm font-semibold text-foreground block truncate">
+                      <span className="text-sm font-bold text-foreground block truncate">
                         {tx.desc}
                       </span>
                       <span className="text-xs text-muted-foreground block truncate">{tx.cat}</span>

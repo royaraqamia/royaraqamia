@@ -85,7 +85,7 @@ export function AdminBookingsView() {
             aria-selected={status === filter.value}
             onClick={() => setStatus(filter.value)}
             className={cn(
-              'rounded-full border px-4 py-2 text-sm font-semibold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 inline-flex items-center',
+              'rounded-full border px-4 py-2 text-sm font-bold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 inline-flex items-center',
               status === filter.value
                 ? 'border-primary bg-primary/10 text-primary'
                 : 'border-border bg-card text-muted-foreground hover:text-foreground'
@@ -152,15 +152,15 @@ export function AdminBookingsView() {
               <dl className="grid grid-cols-1 gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2 lg:grid-cols-3">
                 <div>
                   <dt className="inline text-muted-foreground">الباقة: </dt>
-                  <dd className="inline font-semibold">{b.package_name ?? b.package_id}</dd>
+                  <dd className="inline font-bold">{b.package_name ?? b.package_id}</dd>
                 </div>
                 <div>
                   <dt className="inline text-muted-foreground">المبلغ: </dt>
-                  <dd className="inline font-semibold">${b.amount_due_usd}</dd>
+                  <dd className="inline font-bold">${b.amount_due_usd}</dd>
                 </div>
                 <div>
                   <dt className="inline text-muted-foreground">الدفع: </dt>
-                  <dd className="inline font-semibold">
+                  <dd className="inline font-bold">
                     {PAYMENT_METHOD_LABELS[b.payment_method]} ({REGION_LABELS[b.region]})
                   </dd>
                 </div>
@@ -168,13 +168,13 @@ export function AdminBookingsView() {
 
               <div className="text-sm">
                 <p className="text-muted-foreground mb-1">الموضوع:</p>
-                <p className="rounded-xl bg-muted px-4 py-2.5 leading-relaxed whitespace-pre-wrap break-words">
+                <p className="rounded-xl bg-muted px-4 py-2.5 leading-relaxed whitespace-pre-wrap wrap-break-word">
                   {b.topic_description}
                 </p>
               </div>
 
               <div className="text-sm text-muted-foreground">
-                <p className="mb-1 font-semibold text-foreground">المواعيد (بتوقيت دمشق):</p>
+                <p className="mb-1 font-bold text-foreground">المواعيد (بتوقيت دمشق):</p>
                 <ul>
                   {b.sessions.map((s) => (
                     <li key={s.id || s.starts_at}>

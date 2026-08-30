@@ -56,7 +56,7 @@ function ViewButton({
       id={id}
       tabIndex={active ? 0 : -1}
       onClick={onClick}
-      className={`flex-1 py-2.5 px-3 rounded-full text-xs font-semibold text-center transition-all cursor-pointer press-scale focus-ring touch-target btn-press ${
+      className={`flex-1 py-2.5 px-3 rounded-full text-xs font-bold text-center transition-all cursor-pointer press-scale focus-ring touch-target btn-press ${
         active
           ? 'bg-primary text-primary-foreground shadow-sm'
           : 'text-muted-foreground hover:text-primary'

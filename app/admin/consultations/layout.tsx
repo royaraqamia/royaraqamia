@@ -53,7 +53,7 @@ export default async function AdminConsultationsLayout({
               <Link
                 key={section.href}
                 href={section.href}
-                className="rounded-full border border-border bg-card px-5 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 inline-flex items-center"
+                className="rounded-full border border-border bg-card px-5 py-2 text-sm font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 inline-flex items-center"
               >
                 {section.label}
               </Link>

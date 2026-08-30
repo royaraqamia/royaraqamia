@@ -159,7 +159,7 @@ export function MobileMenu({
 
     const baseClasses = `
       group relative flex items-center justify-between w-full min-h-[52px] px-4 py-3.5 rounded-2xl
-      font-semibold text-base leading-snug tracking-tight
+      font-bold text-base leading-snug tracking-tight
       transition-all duration-200 ease-out select-none cursor-pointer
       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
       active:scale-[0.98]
@@ -231,7 +231,7 @@ export function MobileMenu({
           aria-expanded={isExpanded}
           className={`
             group flex items-center justify-between w-full min-h-13 px-4 py-3.5 rounded-2xl
-            font-semibold text-base leading-snug tracking-tight
+            font-bold text-base leading-snug tracking-tight
             transition-all duration-200 ease-out select-none cursor-pointer
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
             active:scale-[0.98]

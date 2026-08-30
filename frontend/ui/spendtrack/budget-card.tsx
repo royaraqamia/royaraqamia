@@ -78,7 +78,7 @@ export function BudgetCard({
 
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
         <div className="space-y-0.5">
-          <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/80">
+          <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">
             ميزانيَّة الشَّهر
           </CardTitle>
           {month && (
@@ -117,7 +117,7 @@ export function BudgetCard({
 
                 {budget != null && (
                   <span
-                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold border transition-colors ${
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold border transition-colors ${
                       exceeded
                         ? 'bg-destructive/10 text-destructive border-destructive/20'
                         : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
@@ -150,7 +150,7 @@ export function BudgetCard({
               {budget != null && (
                 <div className="pt-1">
                   {exceeded ? (
-                    <div className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-2.5 text-xs text-destructive font-semibold">
+                    <div className="flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 p-2.5 text-xs text-destructive font-bold">
                       <AlertTriangle className="h-4 w-4 shrink-0" />
                       <span>تجاوزت الميزانيَّة هذا الشَّهر</span>
                     </div>
@@ -166,7 +166,7 @@ export function BudgetCard({
 
             {/* Form Section */}
             <form onSubmit={handleSave} className="space-y-3 pt-3 border-t border-border/40">
-              <Label htmlFor="budget" className="text-xs font-semibold text-foreground/80 block">
+              <Label htmlFor="budget" className="text-xs font-bold text-foreground/80 block">
                 حدِّد ميزانيَّة شهريَّة ({getCurrencySymbol(currency)})
               </Label>
               <div className="flex gap-2">

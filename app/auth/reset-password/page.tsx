@@ -94,7 +94,7 @@ function ResetPasswordForm() {
           type="submit"
           isLoading={isPending}
           disabled={isPending}
-          className="w-full h-11 sm:h-12 font-semibold text-white gradient-primary cta-glow shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all duration-200 rounded-full disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
+          className="w-full h-11 sm:h-12 font-bold text-white gradient-primary cta-glow shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all duration-200 rounded-full disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
         >
           {isPending ? 'جاري الإرسال...' : 'إرسال رابط إعادة التَّعيين'}
         </Button>

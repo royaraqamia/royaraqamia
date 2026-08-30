@@ -32,10 +32,10 @@ export function BottomCTA() {
       subtitleClassName="text-base sm:text-xl text-muted-foreground/90 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed sm:leading-loose text-balance"
       actionsClassName="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-5"
       actionsMotion={{ initialY: 20, duration: 0.6, useEase: false }}
-      primaryButtonClassName="group relative inline-flex items-center justify-center gap-3 h-14 sm:h-16 px-8 sm:px-10 rounded-full bg-primary text-primary-foreground font-semibold text-base sm:text-lg shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 border border-primary/30 cursor-pointer"
+      primaryButtonClassName="group relative inline-flex items-center justify-center gap-3 h-14 sm:h-16 px-8 sm:px-10 rounded-full bg-primary text-primary-foreground font-bold text-base sm:text-lg shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 border border-primary/30 cursor-pointer"
       primaryButtonSpanClassName="relative z-10"
       arrowClassName="relative z-10 group-hover:-translate-x-1.5 transition-transform duration-300 shrink-0"
-      secondaryButtonClassName="inline-flex items-center justify-center h-14 sm:h-16 px-8 sm:px-10 rounded-full border border-border/80 bg-background/75 hover:bg-accent/88 hover:border-accent hover:text-accent-foreground text-foreground font-semibold text-base sm:text-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer"
+      secondaryButtonClassName="inline-flex items-center justify-center h-14 sm:h-16 px-8 sm:px-10 rounded-full border border-border/80 bg-background/75 hover:bg-accent/88 hover:border-accent hover:text-accent-foreground text-foreground font-bold text-base sm:text-lg hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer"
     />
   );
 }

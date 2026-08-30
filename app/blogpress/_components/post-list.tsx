@@ -205,7 +205,7 @@ export function PostList({ posts, categories, activeCategory, tagsByPost }: Post
               className={cn(
                 'relative inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all duration-200 ease-out shrink-0 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
                 activeFilter === f.value
-                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-2xs font-semibold'
+                  ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-2xs font-bold'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/40 dark:hover:bg-neutral-800/40'
               )}
             >
@@ -213,7 +213,7 @@ export function PostList({ posts, categories, activeCategory, tagsByPost }: Post
               {f.value !== 'all' && (
                 <span
                   className={cn(
-                    'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-semibold rounded-full transition-all duration-200',
+                    'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-bold rounded-full transition-all duration-200',
                     activeFilter === f.value
                       ? 'bg-primary/10 text-primary dark:bg-primary/20'
                       : 'bg-neutral-200/70 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
@@ -249,7 +249,7 @@ export function PostList({ posts, categories, activeCategory, tagsByPost }: Post
               <X className="size-3" />
             </button>
           ) : (
-            <kbd className="absolute inset-e-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-semibold text-neutral-400 border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800 pointer-events-none select-none">
+            <kbd className="absolute inset-e-2.5 top-1/2 -translate-y-1/2 hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold text-neutral-400 border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800 pointer-events-none select-none">
               <span className="text-[9px]">⌘</span>K
             </kbd>
           )}
@@ -420,7 +420,7 @@ function PostRow({
             )}
             <Link
               href={`/blogpress/editor/${post.id}`}
-              className="text-sm sm:text-base font-semibold text-neutral-900 dark:text-neutral-100 hover:text-primary transition-colors truncate block focus-visible:outline-none focus-visible:underline"
+              className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 hover:text-primary transition-colors truncate block focus-visible:outline-none focus-visible:underline"
             >
               {post.title || 'بدون عنوان'}
             </Link>
@@ -469,7 +469,7 @@ function PostRow({
       <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100 dark:border-neutral-800/60">
         <span
           className={cn(
-            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold border shadow-2xs',
+            'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold border shadow-2xs',
             post.status === 'published'
               ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
               : post.status === 'scheduled'
@@ -645,7 +645,7 @@ function PostRow({
               </DialogTrigger>
               <DialogContent className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 backdrop-blur-xl max-w-md p-6">
                 <DialogHeader className="space-y-2 text-start">
-                  <DialogTitle className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
+                  <DialogTitle className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                     حذف المقال
                   </DialogTitle>
                   <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
@@ -782,7 +782,7 @@ function BulkActionBar({
         type="button"
         onClick={onToggleAll}
         aria-pressed={allSelected}
-        className="inline-flex items-center gap-2 text-xs font-semibold text-foreground hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md p-1"
+        className="inline-flex items-center gap-2 text-xs font-bold text-foreground hover:text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-md p-1"
       >
         <span
           className={cn(
@@ -807,7 +807,7 @@ function BulkActionBar({
         type="button"
         onClick={onClear}
         disabled={!hasSelection || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         مسح
       </button>
@@ -816,7 +816,7 @@ function BulkActionBar({
         type="button"
         onClick={onPublish}
         disabled={!hasSelection || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Eye className="size-3.5" />
         نشر
@@ -826,7 +826,7 @@ function BulkActionBar({
         type="button"
         onClick={onUnpublish}
         disabled={!hasSelection || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <EyeOff className="size-3.5" />
         إلغاء النَّشر
@@ -836,7 +836,7 @@ function BulkActionBar({
         type="button"
         onClick={onCategoryOpen}
         disabled={!hasSelection || busy || categories.length === 0}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <FolderInput className="size-3.5" />
         تصنيف
@@ -861,7 +861,7 @@ function BulkActionBar({
             type="button"
             onClick={onApplyCategory}
             disabled={!categoryId || busy}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {busy ? <Loader2 className="size-3.5 animate-spin" /> : 'تطبيق'}
           </button>
@@ -872,7 +872,7 @@ function BulkActionBar({
         type="button"
         onClick={onOpenDelete}
         disabled={!hasSelection || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
       >
         <Trash2 className="size-3.5" />
         حذف
@@ -889,7 +889,7 @@ function CategoryChip({ label, slug, active, onSelect }: CategoryChipProps) {
       className={cn(
         'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-medium transition-all duration-200 ease-out shrink-0 cursor-pointer select-none border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
         active
-          ? 'bg-primary/10 text-primary border-primary/30 dark:bg-primary/20 shadow-2xs font-semibold'
+          ? 'bg-primary/10 text-primary border-primary/30 dark:bg-primary/20 shadow-2xs font-bold'
           : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200/80 dark:border-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'
       )}
     >

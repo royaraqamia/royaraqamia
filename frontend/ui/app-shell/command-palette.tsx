@@ -132,7 +132,7 @@ export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
           <CommandEmpty className="py-10 text-center text-sm">
             <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
               <Search className="size-8 stroke-[1.5] text-muted-foreground/30" />
-              <p className="font-semibold text-foreground/80">لم يتمَّ العثور على نتائج</p>
+              <p className="font-bold text-foreground/80">لم يتمَّ العثور على نتائج</p>
               <p className="text-xs text-muted-foreground/60">
                 جرِّب البحث عن كلمات أخرى مثل "مدوَّنة" أو "شهادة"
               </p>
@@ -142,7 +142,7 @@ export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
           {/* Apps Section */}
           <CommandGroup
             heading="التَّطبيقات"
-            className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
+            className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
           >
             {APP_PRODUCTS.map((product) => {
               const Icon = product.icon;
@@ -156,7 +156,7 @@ export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
                   <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-all duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
                     <Icon className="size-4 text-foreground/80 group-data-[selected=true]:text-primary transition-colors" />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-semibold tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
+                  <span className="min-w-0 flex-1 truncate text-sm font-bold tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
                     {product.label}
                   </span>
                   <span className="flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-[selected=true]:opacity-100 text-muted-foreground/60 group-data-[selected=true]:text-primary">
@@ -175,7 +175,7 @@ export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
           {/* Quick Actions Section */}
           <CommandGroup
             heading="إجراءات سريعة"
-            className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
+            className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
           >
             {QUICK_ACTIONS.map((item) => {
               const Icon = item.icon;
@@ -205,7 +205,7 @@ export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
           {/* General Section */}
           <CommandGroup
             heading="عام"
-            className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
+            className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
           >
             {GENERAL_ITEMS.map((item) => {
               const Icon = item.icon;

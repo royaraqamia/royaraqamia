@@ -69,7 +69,7 @@ export function Hero() {
             appPath="/habitflow/app"
             loginRedirect="/habitflow/app"
             scrollTarget="features"
-            primaryClassName="group relative h-13 px-8 text-base font-semibold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"
+            primaryClassName="group relative h-13 px-8 text-base font-bold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"
             loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="transition-transform duration-300 group-hover:-translate-x-1.5"
@@ -114,7 +114,7 @@ export function Hero() {
 
             {/* Weekly Streak Header */}
             <div className="flex items-center justify-between mb-5 bg-muted/45 p-3.5 rounded-xl border border-border/30">
-              <span className="text-xs sm:text-sm font-semibold text-foreground">هذا الأسبوع</span>
+              <span className="text-xs sm:text-sm font-bold text-foreground">هذا الأسبوع</span>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-500/14 border border-orange-500/20 text-orange-500 text-xs sm:text-sm font-bold shadow-xs">
                 <Flame size={18} fill="currentColor" className="text-orange-500 animate-pulse" />
                 <span>12</span>
@@ -128,7 +128,7 @@ export function Hero() {
                 {weekDays.map((day, i) => (
                   <span
                     key={i}
-                    className="text-[11px] font-semibold text-muted-foreground w-7 sm:w-8 text-center uppercase tracking-wider"
+                    className="text-[11px] font-bold text-muted-foreground w-7 sm:w-8 text-center uppercase tracking-wider"
                   >
                     {day}
                   </span>
@@ -145,7 +145,7 @@ export function Hero() {
                   style={{ ['--ld' as string]: `${0.6 + i * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between mb-2.5">
-                    <span className="text-xs sm:text-sm font-semibold text-foreground group-hover/row:text-primary transition-colors">
+                    <span className="text-xs sm:text-sm font-bold text-foreground group-hover/row:text-primary transition-colors">
                       {habit.name}
                     </span>
                     <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded-md bg-muted/88 text-muted-foreground border border-border/20">
@@ -158,7 +158,7 @@ export function Hero() {
                     {habit.done.map((done, j) => (
                       <div
                         key={j}
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-semibold transition-all duration-300 ${
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-300 ${
                           done
                             ? `${habit.color} text-white shadow-xs scale-100 ring-1 ring-white/20`
                             : 'bg-muted/65 text-muted-foreground/40 hover:bg-muted/88'

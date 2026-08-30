@@ -63,7 +63,7 @@ export function CategoryBudgets({
     >
       <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/30 p-4 pb-3 sm:p-5 sm:pb-3">
         <div className="flex items-center gap-2.5">
-          <CardTitle className="text-sm font-semibold tracking-tight text-foreground/90">
+          <CardTitle className="text-sm font-bold tracking-tight text-foreground/90">
             ميزانيَّات التَّصنيفات
           </CardTitle>
           <span className="inline-flex items-center rounded-full border border-border/40 bg-muted/80 px-2 py-0.5 font-mono text-xs font-medium text-muted-foreground">

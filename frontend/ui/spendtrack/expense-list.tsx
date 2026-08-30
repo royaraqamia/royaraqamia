@@ -148,7 +148,7 @@ function ExpenseRow({
         )}
 
         <div className="min-w-0 flex-1 space-y-0.5">
-          <p className="font-semibold text-sm text-foreground tracking-tight truncate group-hover/row:text-primary transition-colors duration-200">
+          <p className="font-bold text-sm text-foreground tracking-tight truncate group-hover/row:text-primary transition-colors duration-200">
             {expense.description || 'بدون وصف'}
           </p>
           <div className="flex items-center gap-1.5 text-xs text-muted-foreground/80 font-normal truncate">

@@ -57,7 +57,7 @@ export default function PrivacyPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-foreground">. المُقدِّمة</h2>
             </div>
             <p className="text-foreground/80 text-base sm:text-lg leading-relaxed">
-              مرحبًا بك في <strong className="text-foreground font-semibold">رؤية رقمية</strong>{' '}
+              مرحبًا بك في <strong className="text-foreground font-bold">رؤية رقمية</strong>{' '}
               (&quot;نحن&quot; أو &quot;المُشغِّل&quot;). نُقدِّر ثقتك بنا. تشرح هذه السِّياسة
               كيفيَّة جمع معلوماتك الشَّخصيَّة واستخدامها وحمايتها عند استخدامك لمواقعنا وخدماتنا
               إلكترونيًّا.
@@ -81,7 +81,7 @@ export default function PrivacyPage() {
             <div className="space-y-6">
               {/* Card 2.A */}
               <div className="rounded-xl border border-border/40 bg-muted/30 p-5 sm:p-6 transition-colors hover:border-primary/30">
-                <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                   <span className="text-primary font-mono">أ)</span> معلومات التَّسجيل والدُّخول
                 </h3>
                 <p className="text-muted-foreground text-sm sm:text-base mb-4">
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
 
               {/* Card 2.B */}
               <div className="rounded-xl border border-border/40 bg-muted/30 p-5 sm:p-6 transition-colors hover:border-primary/30">
-                <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                   <span className="text-primary font-mono">ب)</span> معلومات الدُّخول عبر Google
                 </h3>
                 <p className="text-muted-foreground text-sm sm:text-base mb-4">
@@ -160,7 +160,7 @@ export default function PrivacyPage() {
 
               {/* Card 2.C */}
               <div className="rounded-xl border border-border/40 bg-muted/30 p-5 sm:p-6 transition-colors hover:border-primary/30">
-                <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                <h3 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
                   <span className="text-primary font-mono">ج)</span> معلومات الاستخدام
                 </h3>
                 <p className="text-muted-foreground text-sm sm:text-base mb-4">

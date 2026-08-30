@@ -91,7 +91,7 @@ export function ConsultationCards() {
                   {/* Microphone Feature Badge */}
                   <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-purple-500/25 border border-purple-400/30 shadow-inner shadow-purple-500/10">
                     <Mic className="w-4 h-4 text-purple-300 animate-pulse shrink-0" />
-                    <span className="text-xs sm:text-sm text-purple-200 font-semibold tracking-wide">
+                    <span className="text-xs sm:text-sm text-purple-200 font-bold tracking-wide">
                       جلسة تفاعليَّة صوتيَّة
                     </span>
                   </div>

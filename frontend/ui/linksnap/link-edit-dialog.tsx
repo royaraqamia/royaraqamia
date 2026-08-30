@@ -368,13 +368,13 @@ export function LinkEditDialog({
               </span>
               <div className="flex items-center gap-1.5">
                 {passwordEnabled && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-semibold">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">
                     <ShieldCheck className="w-3 h-3" />
                     محمي
                   </span>
                 )}
                 {enableExpiry && remainingTimeBadge && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-semibold">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
                     <Clock className="w-3 h-3" />
                     {remainingTimeBadge}
                   </span>
@@ -489,7 +489,7 @@ export function LinkEditDialog({
                 }
                 maxLength={16}
                 placeholder="custom-slug"
-                className="flex-1 min-w-0 bg-transparent px-3 py-2.5 text-sm font-mono font-semibold focus:outline-none text-foreground placeholder:text-muted-foreground/30"
+                className="flex-1 min-w-0 bg-transparent px-3 py-2.5 text-sm font-mono font-bold focus:outline-none text-foreground placeholder:text-muted-foreground/30"
                 aria-describedby="edit-code-hint"
                 aria-invalid={slugStatus === 'taken' ? true : undefined}
               />
@@ -600,7 +600,7 @@ export function LinkEditDialog({
                 <div className="px-4 pb-4 pt-1 border-t border-border/40 dark:border-neutral-800/60 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
                   {/* Quick Presets */}
                   <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span className="text-[11px] font-semibold text-muted-foreground ml-1">
+                    <span className="text-[11px] font-bold text-muted-foreground ml-1">
                       خيارات سريعة:
                     </span>
                     <button
@@ -800,7 +800,7 @@ export function LinkEditDialog({
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="flex-1 sm:flex-initial h-10 rounded-xl px-5 text-xs font-semibold text-muted-foreground hover:text-foreground hover:bg-muted/80 border-border/70 transition-all duration-200 active:scale-[0.98] cursor-pointer"
+                className="flex-1 sm:flex-initial h-10 rounded-xl px-5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/80 border-border/70 transition-all duration-200 active:scale-[0.98] cursor-pointer"
               >
                 إلغاء
               </Button>
@@ -813,7 +813,7 @@ export function LinkEditDialog({
                   slugTooShort ||
                   !hasChanges
                 }
-                className="flex-1 sm:flex-initial h-10 rounded-xl px-6 text-xs font-semibold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer"
+                className="flex-1 sm:flex-initial h-10 rounded-xl px-6 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer"
               >
                 {updateLoading ? (
                   <>

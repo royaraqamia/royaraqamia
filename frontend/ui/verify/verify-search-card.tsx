@@ -61,7 +61,7 @@ export function VerifySearchCard({
               size="lg"
               isLoading={loading}
               disabled={loading || !code.trim()}
-              className="h-13 min-h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/3 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 sm:w-auto w-full gap-2 shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-13 min-h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/3 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 sm:w-auto w-full gap-2 shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {!loading && <Search className="size-5" />}
               <span>تحقُّق</span>
@@ -76,7 +76,7 @@ export function VerifySearchCard({
             >
               <ScanLine className="size-3.5 text-primary/80 transition-transform group-hover:scale-110" />
               <span>مثال للتَّجربة:</span>
-              <code className="font-mono font-semibold text-primary transition-underline group-hover:underline">
+              <code className="font-mono font-bold text-primary transition-underline group-hover:underline">
                 COMP-2026-UHVW9SG5
               </code>
             </button>

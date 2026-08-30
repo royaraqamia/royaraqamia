@@ -117,7 +117,7 @@ export function PostSettingsDialog({
         <div className="p-5 sm:p-6 space-y-6">
           {/* Card 1: Permalink / Slug */}
           <section className="rounded-2xl border border-border/50 bg-card/50 p-4 sm:p-5 space-y-4 shadow-xs hover:border-border/80 transition-all duration-200">
-            <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
+            <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
               <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Link2 className="size-4" />
               </div>
@@ -147,7 +147,7 @@ export function PostSettingsDialog({
                   <div className="flex items-center gap-1.5 truncate">
                     <Globe className="size-3.5 text-muted-foreground/50 shrink-0" />
                     <span className="text-muted-foreground/60">{siteHost}/blog/</span>
-                    <span className="font-semibold text-primary truncate">
+                    <span className="font-bold text-primary truncate">
                       {slug || <span className="text-muted-foreground/40 italic">رابط-المقال</span>}
                     </span>
                   </div>
@@ -162,7 +162,7 @@ export function PostSettingsDialog({
 
           {/* Card 2: Cover Image */}
           <section className="rounded-2xl border border-border/50 bg-card/50 p-4 sm:p-5 space-y-4 shadow-xs hover:border-border/80 transition-all duration-200">
-            <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
+            <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
               <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <ImageIcon className="size-4" />
               </div>
@@ -233,7 +233,7 @@ export function PostSettingsDialog({
                       <ImageIcon className="size-6 text-muted-foreground group-hover/dropzone:text-primary transition-colors" />
                     )}
                   </div>
-                  <p className="text-xs font-semibold text-foreground group-hover/dropzone:text-primary transition-colors">
+                  <p className="text-xs font-bold text-foreground group-hover/dropzone:text-primary transition-colors">
                     {isCoverUploading ? 'جارٍ الرَّفع...' : 'انقر لرفع صورة الغلاف'}
                   </p>
                   <p className="text-[11px] text-muted-foreground/70 mt-1.5 max-w-xs leading-relaxed">
@@ -246,7 +246,7 @@ export function PostSettingsDialog({
 
           {/* Card 3: SEO Settings */}
           <section className="rounded-2xl border border-border/50 bg-card/50 p-4 sm:p-5 space-y-5 shadow-xs hover:border-border/80 transition-all duration-200">
-            <div className="flex items-center gap-2.5 text-sm font-semibold text-foreground">
+            <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
               <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Search className="size-4" />
               </div>
@@ -289,7 +289,7 @@ export function PostSettingsDialog({
                       isTitleOverLimit
                         ? 'text-rose-600 dark:text-rose-400 font-bold'
                         : isTitleWarning
-                          ? 'text-amber-600 dark:text-amber-400 font-semibold'
+                          ? 'text-amber-600 dark:text-amber-400 font-bold'
                           : 'text-muted-foreground/70'
                     }`}
                   >
@@ -350,7 +350,7 @@ export function PostSettingsDialog({
                       isDescOverLimit
                         ? 'text-rose-600 dark:text-rose-400 font-bold'
                         : isDescWarning
-                          ? 'text-amber-600 dark:text-amber-400 font-semibold'
+                          ? 'text-amber-600 dark:text-amber-400 font-bold'
                           : 'text-muted-foreground/70'
                     }`}
                   >
@@ -388,7 +388,7 @@ export function PostSettingsDialog({
             {/* Live Google Search Preview Card */}
             {(metaTitle || metaDesc) && (
               <div className="pt-2 space-y-2.5">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-muted-foreground">
                   <Eye className="size-3.5 text-primary" />
                   <span>معاينة في نتائج البحث (Google)</span>
                 </div>
@@ -408,7 +408,7 @@ export function PostSettingsDialog({
                     </div>
                   </div>
 
-                  <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer leading-snug truncate">
+                  <p className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer leading-snug truncate">
                     {metaTitle || title || 'عنوان المقال'}
                   </p>
 

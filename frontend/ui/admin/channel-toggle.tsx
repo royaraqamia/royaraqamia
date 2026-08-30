@@ -28,7 +28,7 @@ export function ChannelToggle({
           </span>
         )}
         <div>
-          <label htmlFor={id} className="block text-sm font-semibold">
+          <label htmlFor={id} className="block text-sm font-bold">
             {label}
           </label>
           <p className="text-muted-foreground text-xs">{description}</p>

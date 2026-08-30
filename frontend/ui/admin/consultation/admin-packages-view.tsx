@@ -135,7 +135,7 @@ export function AdminPackagesView() {
           <button
             type="button"
             onClick={() => setShowForm(false)}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
+            className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
           >
             <X className="size-4" />
             إلغاء
@@ -236,7 +236,7 @@ export function AdminPackagesView() {
             />
           </div>
 
-          <label className="flex items-center gap-3 text-sm font-semibold cursor-pointer">
+          <label className="flex items-center gap-3 text-sm font-bold cursor-pointer">
             <input
               type="checkbox"
               checked={draft.is_active}

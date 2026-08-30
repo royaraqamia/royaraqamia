@@ -96,12 +96,12 @@ export function BookingSummary({ booking, whatsappUrl, onChanged }: BookingSumma
         <div className="flex items-center gap-2">
           <CircleDollarSign className="size-4 text-primary shrink-0" aria-hidden="true" />
           <dt className="text-muted-foreground">المبلغ:</dt>
-          <dd className="font-semibold text-foreground">${booking.amount_due_usd}</dd>
+          <dd className="font-bold text-foreground">${booking.amount_due_usd}</dd>
         </div>
         <div className="flex items-center gap-2">
           <ShieldQuestion className="size-4 text-primary shrink-0" aria-hidden="true" />
           <dt className="text-muted-foreground">الدفع:</dt>
-          <dd className="font-semibold text-foreground">
+          <dd className="font-bold text-foreground">
             {PAYMENT_METHOD_LABELS[booking.payment_method]} ({REGION_LABELS[booking.region]})
           </dd>
         </div>
@@ -117,7 +117,7 @@ export function BookingSummary({ booking, whatsappUrl, onChanged }: BookingSumma
       {booking.status === 'pending_payment' && (
         <p
           className={cn(
-            'flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-semibold',
+            'flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold',
             countdown.expired
               ? 'border-destructive/40 bg-destructive/10 text-destructive'
               : 'border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400'
@@ -182,7 +182,7 @@ export function BookingSummary({ booking, whatsappUrl, onChanged }: BookingSumma
             type="button"
             onClick={handleCancel}
             disabled={cancelling}
-            className="inline-flex items-center justify-center gap-2 rounded-full border border-destructive/50 px-5 py-2.5 text-sm font-semibold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-60 disabled:cursor-wait"
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-destructive/50 px-5 py-2.5 text-sm font-bold text-destructive hover:bg-destructive/10 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-60 disabled:cursor-wait"
           >
             <CalendarX2 className="size-4" aria-hidden="true" />
             {cancelling ? 'جارٍ الإلغاء...' : 'إلغاء الحجز'}

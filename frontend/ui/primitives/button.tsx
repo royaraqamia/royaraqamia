@@ -8,7 +8,7 @@ import { cn } from '@/frontend/shared/cn';
 
 const buttonVariants = cva(
   // Core button styles - High-end Linear/Apple/Vercel aesthetic with physics-based transitions
-  "relative inline-flex items-center justify-center whitespace-nowrap rounded-full font-semibold tracking-tight transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 active:scale-[0.98] hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none",
+  "relative inline-flex items-center justify-center whitespace-nowrap rounded-full font-bold tracking-tight transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 active:scale-[0.98] hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none",
   {
     variants: {
       variant: {
@@ -27,10 +27,10 @@ const buttonVariants = cva(
           'bg-primary/60 text-primary-foreground/80 border border-primary/10 cursor-wait pointer-events-none shadow-none hover:translate-y-0 active:scale-100',
       },
       size: {
-        default: 'h-12 px-6 py-3 text-base font-semibold gap-2.5',
+        default: 'h-12 px-6 py-3 text-base font-bold gap-2.5',
         sm: 'h-10 px-4 py-2 text-sm font-medium gap-2',
-        lg: 'h-14 px-8 py-3.5 text-base font-semibold gap-3',
-        xl: 'h-16 px-10 py-4 text-lg font-semibold gap-3.5',
+        lg: 'h-14 px-8 py-3.5 text-base font-bold gap-3',
+        xl: 'h-16 px-10 py-4 text-lg font-bold gap-3.5',
         icon: 'size-12 p-0 justify-center',
         'icon-sm': 'size-10 p-0 justify-center',
         'icon-lg': 'size-14 p-0 justify-center',

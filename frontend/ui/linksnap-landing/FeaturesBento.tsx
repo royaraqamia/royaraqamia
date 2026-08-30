@@ -42,7 +42,7 @@ function MiniChart() {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
-          <span className="text-sm font-semibold text-slate-300">أداء النَّقرات</span>
+          <span className="text-sm font-bold text-slate-300">أداء النَّقرات</span>
         </div>
         <span className="text-2xl font-extrabold bg-linear-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent tracking-tight">
           +156%
@@ -90,7 +90,7 @@ function AnalyticsPreview() {
   return (
     <div className="rounded-2xl border border-slate-800/80 bg-slate-950/82 p-5 shadow-inner space-y-3.5">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-sm font-semibold text-slate-300">نظرة عامَّة فوريَّة</span>
+        <span className="text-sm font-bold text-slate-300">نظرة عامَّة فوريَّة</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/14 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
           <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           مباشر
@@ -114,7 +114,7 @@ function AnalyticsPreview() {
 
       <div className="pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
         <span>آخر 24 ساعة</span>
-        <span className="inline-flex items-center gap-1 font-semibold text-emerald-400 bg-emerald-500/14 px-2 py-0.5 rounded-md border border-emerald-500/20">
+        <span className="inline-flex items-center gap-1 font-bold text-emerald-400 bg-emerald-500/14 px-2 py-0.5 rounded-md border border-emerald-500/20">
           +12.5% ↑
         </span>
       </div>

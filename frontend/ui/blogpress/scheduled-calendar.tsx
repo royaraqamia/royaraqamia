@@ -124,12 +124,12 @@ export function ScheduledCalendar({
         </h2>
 
         {withReorder ? (
-          <span className="inline-flex items-center gap-2 text-xs font-semibold text-muted-foreground">
+          <span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
             <Move className="size-4 text-primary" />
             اسحب لتغيير الموعد
           </span>
         ) : (
-          <span className="text-xs font-semibold text-muted-foreground">&nbsp;</span>
+          <span className="text-xs font-bold text-muted-foreground">&nbsp;</span>
         )}
       </div>
 
@@ -138,7 +138,7 @@ export function ScheduledCalendar({
           {WEEKDAYS.map((label) => (
             <div
               key={label}
-              className="px-2 py-2.5 text-center text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/80 select-none"
+              className="px-2 py-2.5 text-center text-[11px] font-bold uppercase tracking-wider text-muted-foreground/80 select-none"
             >
               {label}
             </div>
@@ -174,7 +174,7 @@ export function ScheduledCalendar({
               >
                 <span
                   className={cn(
-                    'inline-flex items-center justify-center size-6 text-xs font-semibold rounded-md',
+                    'inline-flex items-center justify-center size-6 text-xs font-bold rounded-md',
                     isToday ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
                   )}
                 >
@@ -232,7 +232,7 @@ export function ScheduledCalendar({
           <div className="mx-auto size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
             <CalendarDays className="size-6" />
           </div>
-          <p className="text-sm font-semibold text-foreground">لا توجد مقالات مجدولة</p>
+          <p className="text-sm font-bold text-foreground">لا توجد مقالات مجدولة</p>
           <p className="text-xs text-muted-foreground mt-1">
             حدّد موعد نشر لمقال من محرر BlogPress ليظهر هنا في التقويم.
           </p>

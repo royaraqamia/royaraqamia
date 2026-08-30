@@ -318,7 +318,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
             onChange={(e) => setTitle(e.target.value)}
             onBlur={handleTitleBlur}
             placeholder="عنوان المقال..."
-            className="border-0 text-lg font-semibold bg-transparent px-0 h-auto placeholder:text-muted-foreground/50 transition-smooth focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
+            className="border-0 text-lg font-bold bg-transparent px-0 h-auto placeholder:text-muted-foreground/50 transition-smooth focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           />
         </div>
         <div className="flex items-center gap-1">

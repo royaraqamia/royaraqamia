@@ -87,7 +87,7 @@ export function PostCard({ post, index }: PostCardProps) {
             <span />
           )}
 
-          <span className="inline-flex items-center gap-1.5 text-primary text-xs font-semibold group-hover/blog:text-primary/90 transition-colors">
+          <span className="inline-flex items-center gap-1.5 text-primary text-xs font-bold group-hover/blog:text-primary/90 transition-colors">
             اقرأ المزيد
             <ArrowLeft
               className="size-3.5 transition-transform duration-300 group-hover/blog:-translate-x-1.5 rtl:group-hover/blog:translate-x-1.5"

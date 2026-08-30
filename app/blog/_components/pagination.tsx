@@ -60,7 +60,7 @@ export function Pagination({ page, totalPages, query }: PaginationProps) {
             <Button
               variant={p === page ? 'default' : 'outline'}
               size="icon"
-              className={`size-10 rounded-full transition-all duration-300 text-sm font-semibold ${
+              className={`size-10 rounded-full transition-all duration-300 text-sm font-bold ${
                 p === page
                   ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/25 scale-105 border-transparent'
                   : 'border-border bg-muted/30 text-muted-foreground hover:text-foreground hover:bg-muted/70 hover:border-border'

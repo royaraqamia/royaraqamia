@@ -104,7 +104,7 @@ export default function CertificatesListPage() {
       {/* Stats */}
       <div className="mb-4 flex items-center justify-between text-sm">
         <span className="text-muted-foreground">
-          إجمالي الشهادات: <span className="font-semibold text-foreground">{total}</span>
+          إجمالي الشهادات: <span className="font-bold text-foreground">{total}</span>
         </span>
         {total > 0 && (
           <span className="text-muted-foreground">

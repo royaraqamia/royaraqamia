@@ -80,7 +80,7 @@ export function LinkQrModal({ code, baseUrl, open, onOpenChange }: LinkQrModalPr
               <QrCode className="h-5 w-5" aria-hidden="true" />
             </div>
             <div>
-              <DialogTitle className="text-lg font-semibold tracking-tight text-foreground">
+              <DialogTitle className="text-lg font-bold tracking-tight text-foreground">
                 رمز الـ QR
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -93,7 +93,7 @@ export function LinkQrModal({ code, baseUrl, open, onOpenChange }: LinkQrModalPr
             <span className="text-muted-foreground shrink-0 font-medium">الرَّابط:</span>
             <span
               dir="ltr"
-              className="font-mono text-xs font-semibold text-foreground truncate max-w-60 text-left select-all hover:text-primary transition-colors"
+              className="font-mono text-xs font-bold text-foreground truncate max-w-60 text-left select-all hover:text-primary transition-colors"
               title={shortUrl}
             >
               {shortUrl}
@@ -133,7 +133,7 @@ export function LinkQrModal({ code, baseUrl, open, onOpenChange }: LinkQrModalPr
                   <AlertCircle className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold text-destructive">تعذَّر إنشاء رمز الـ QR</p>
+                  <p className="text-xs font-bold text-destructive">تعذَّر إنشاء رمز الـ QR</p>
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
                     حدث خطأ غير مُتوقَّع أثناء إعداد الرَّمز، يُرجَى المحاولة مرَّة أخرى.
                   </p>

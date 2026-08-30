@@ -62,7 +62,7 @@ function chunk<T>(items: T[], size: number): T[][] {
 }
 
 function eyebrow(text: string): string {
-  return `<div style="font-size:12px;font-weight:600;color:${palette.violet};margin-bottom:6px;">${text}</div>`;
+  return `<div style="font-size:12px;font-weight:700;color:${palette.violet};margin-bottom:6px;">${text}</div>`;
 }
 
 function heading(text: string): string {
@@ -144,7 +144,7 @@ export class ResendEmailClient implements EmailClient {
           ${heading('إعادة تعيين كلمة المرور')}
           ${paragraph('اضغط الزِّر أدناه لاختيار كلمة مرور جديدة لحسابك.')}
           <div style="text-align:center;margin:24px 0 0;">
-            <a href="${safeResetUrl}" style="display:inline-block;background-color:${palette.violet};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:600;font-size:15px;">اختيار كلمة مرور جديدة</a>
+            <a href="${safeResetUrl}" style="display:inline-block;background-color:${palette.violet};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:700;font-size:15px;">اختيار كلمة مرور جديدة</a>
           </div>
           <div style="text-align:center;margin:16px 0 0;font-size:12px;color:${palette.muted};">
             إن لم يعمل الزِّر، انسخ الرَّابط وافتحه في المُتصفِّح:

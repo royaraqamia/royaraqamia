@@ -20,7 +20,7 @@ export function BlogResults({ posts, totalPages, page, query }: BlogResultsProps
           <div className="flex items-center gap-2.5">
             <Search className="size-4 text-primary shrink-0" />
             <span>نتائج البحث عن:</span>
-            <span className="px-3 py-1 rounded-lg bg-primary/15 border border-primary/30 text-primary font-semibold text-xs">
+            <span className="px-3 py-1 rounded-lg bg-primary/15 border border-primary/30 text-primary font-bold text-xs">
               &ldquo;{query}&rdquo;
             </span>
           </div>

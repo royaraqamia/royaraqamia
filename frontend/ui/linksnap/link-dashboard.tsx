@@ -153,7 +153,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
           <span className="flex-1">{error}</span>
           <button
             onClick={fetchLinks}
-            className="px-3 py-1.5 bg-destructive/20 hover:bg-destructive/30 text-destructive font-semibold text-xs rounded-full transition-colors cursor-pointer btn-press shrink-0 focus-ring touch-target"
+            className="px-3 py-1.5 bg-destructive/20 hover:bg-destructive/30 text-destructive font-bold text-xs rounded-full transition-colors cursor-pointer btn-press shrink-0 focus-ring touch-target"
           >
             إعادة المحاولة
           </button>
@@ -249,7 +249,7 @@ function BulkActionBar({
         type="button"
         onClick={onToggleAll}
         aria-pressed={allSelected}
-        className="inline-flex items-center gap-2 text-xs font-semibold text-foreground hover:text-primary transition-colors cursor-pointer focus-ring touch-target p-1 rounded-md"
+        className="inline-flex items-center gap-2 text-xs font-bold text-foreground hover:text-primary transition-colors cursor-pointer focus-ring touch-target p-1 rounded-md"
       >
         <span
           className={`w-4.5 h-4.5 rounded border flex items-center justify-center transition-colors ${
@@ -273,7 +273,7 @@ function BulkActionBar({
         type="button"
         onClick={onClear}
         disabled={selectedCount === 0 || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
       >
         مسح
       </button>
@@ -282,7 +282,7 @@ function BulkActionBar({
         type="button"
         onClick={onCopyAll}
         disabled={selectedCount === 0 || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
       >
         <Copy aria-hidden="true" className="w-3.5 h-3.5" />
         نسخ الروابط
@@ -292,7 +292,7 @@ function BulkActionBar({
         type="button"
         onClick={onOpenExpiry}
         disabled={selectedCount === 0 || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border border-border text-foreground hover:bg-muted/50 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
       >
         <Calendar aria-hidden="true" className="w-3.5 h-3.5" />
         انتهاء
@@ -311,7 +311,7 @@ function BulkActionBar({
             type="button"
             onClick={onApplyExpiry}
             disabled={busy}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press"
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press"
           >
             {busy ? <Loader2 aria-hidden="true" className="w-3.5 h-3.5 animate-spin" /> : 'تطبيق'}
           </button>
@@ -322,7 +322,7 @@ function BulkActionBar({
         type="button"
         onClick={onOpenDelete}
         disabled={selectedCount === 0 || busy}
-        className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
+        className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive hover:bg-destructive/20 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed btn-press focus-ring"
       >
         <Trash2 aria-hidden="true" className="w-3.5 h-3.5" />
         حذف

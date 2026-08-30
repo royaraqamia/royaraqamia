@@ -159,7 +159,7 @@ export function AdminAvailabilityView() {
               key={slot.id}
               className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
             >
-              <span className="text-sm font-semibold text-foreground">
+              <span className="text-sm font-bold text-foreground">
                 {formatSessionDateDamascus(slot.starts_at)} —{' '}
                 {formatSessionTimeDamascus(slot.starts_at)}–
                 {formatSessionTimeDamascus(slot.ends_at)}{' '}

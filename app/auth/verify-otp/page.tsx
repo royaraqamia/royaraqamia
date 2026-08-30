@@ -129,7 +129,7 @@ function VerifyOtpForm() {
       description={
         <span className="block leading-relaxed">
           أدخِل رمز التَّحقُّق المُكوَّن من 6 أرقام المُرسَل إلى{' '}
-          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-foreground border border-neutral-200/80 dark:border-neutral-700/60 shadow-2xs dir-ltr">
+          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md font-mono text-xs font-bold bg-neutral-100 dark:bg-neutral-800 text-foreground border border-neutral-200/80 dark:border-neutral-700/60 shadow-2xs dir-ltr">
             {email}
           </span>
         </span>
@@ -242,7 +242,7 @@ function VerifyOtpForm() {
                     type="submit"
                     variant="link"
                     disabled={isResending || resendCooldown > 0}
-                    className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors p-0 h-auto focus-visible:ring-2 focus-visible:ring-ring rounded-full disabled:opacity-50"
+                    className="text-xs font-bold text-primary hover:text-primary/80 transition-colors p-0 h-auto focus-visible:ring-2 focus-visible:ring-ring rounded-full disabled:opacity-50"
                   >
                     {isResending
                       ? 'جاري إعادة الإرسال...'

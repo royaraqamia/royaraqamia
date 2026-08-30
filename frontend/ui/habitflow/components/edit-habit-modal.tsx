@@ -56,7 +56,7 @@ export function EditHabitModal({
     >
       <DialogContent className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]">
         <DialogHeader className="sticky top-0 z-10 px-6 sm:px-8 pt-8 pb-4 text-start rounded-t-[28px] bg-background">
-          <DialogTitle className="text-xl sm:text-2xl font-semibold text-foreground/90">
+          <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground/90">
             تعديل خصائص العادة
           </DialogTitle>
         </DialogHeader>
@@ -85,9 +85,7 @@ export function EditHabitModal({
               </label>
               <span
                 className={`text-[11px] font-mono font-medium transition-colors duration-300 ${
-                  habitName.length >= 45
-                    ? 'text-amber-500 font-semibold'
-                    : 'text-muted-foreground/50'
+                  habitName.length >= 45 ? 'text-amber-500 font-bold' : 'text-muted-foreground/50'
                 }`}
                 dir="ltr"
                 aria-live="polite"
@@ -122,7 +120,7 @@ export function EditHabitModal({
                 aria-pressed={habitFrequency === 'daily'}
                 className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                   habitFrequency === 'daily'
-                    ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-semibold'
+                    ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-bold'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
@@ -134,7 +132,7 @@ export function EditHabitModal({
                 aria-pressed={habitFrequency === 'weekly'}
                 className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                   habitFrequency === 'weekly'
-                    ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-semibold'
+                    ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-bold'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                 }`}
               >
@@ -191,7 +189,7 @@ export function EditHabitModal({
                         aria-pressed={isSelected}
                         className={`flex-1 flex items-center justify-center text-[12px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                           isSelected
-                            ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-semibold'
+                            ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-bold'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
                         }`}
                       >
@@ -257,7 +255,7 @@ export function EditHabitModal({
                 type="submit"
                 disabled={isSubmitting}
                 id="btn-submit-edit-habit"
-                className="w-full sm:w-auto rounded-xl px-7 py-5 sm:py-2.5 text-[14px] font-semibold bg-primary text-primary-foreground hover:bg-primary/95 shadow-[0_4px_14px_0] shadow-primary/20 dark:shadow-primary/10 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5"
+                className="w-full sm:w-auto rounded-xl px-7 py-5 sm:py-2.5 text-[14px] font-bold bg-primary text-primary-foreground hover:bg-primary/95 shadow-[0_4px_14px_0] shadow-primary/20 dark:shadow-primary/10 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5"
               >
                 {isSubmitting ? (
                   <>

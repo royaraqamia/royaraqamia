@@ -13,7 +13,7 @@ const labelVariants = cva(
         default: 'text-neutral-900 dark:text-neutral-100',
         muted: 'text-neutral-500 dark:text-neutral-400',
         subtle: 'text-neutral-700 dark:text-neutral-300',
-        error: 'text-red-600 dark:text-red-400 font-semibold',
+        error: 'text-red-600 dark:text-red-400 font-bold',
         success: 'text-emerald-600 dark:text-emerald-400',
       },
       size: {
@@ -25,7 +25,7 @@ const labelVariants = cva(
       weight: {
         normal: 'font-normal',
         medium: 'font-medium',
-        semibold: 'font-semibold',
+        semibold: 'font-bold',
         bold: 'font-bold',
       },
     },
@@ -56,7 +56,7 @@ const Label = React.forwardRef<React.ElementRef<typeof LabelPrimitive.Root>, Lab
       {required && (
         <span
           aria-hidden="true"
-          className="ml-0.5 text-xs font-semibold text-red-500 select-none dark:text-red-400"
+          className="ml-0.5 text-xs font-bold text-red-500 select-none dark:text-red-400"
           title="Required field"
         >
           *

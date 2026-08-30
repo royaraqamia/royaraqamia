@@ -63,7 +63,7 @@ export function Hero() {
             appPath="/linksnap/app"
             loginRedirect="/linksnap/app"
             scrollTarget="features"
-            primaryClassName="group relative w-full sm:w-auto min-w-45 h-13 px-8 text-base font-semibold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            primaryClassName="group relative w-full sm:w-auto min-w-45 h-13 px-8 text-base font-bold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="transition-transform duration-300 group-hover:-translate-x-1.5"
@@ -138,12 +138,12 @@ export function Hero() {
                     <span className="text-xs font-mono text-muted-foreground truncate max-w-45">
                       {item.url}
                     </span>
-                    <span className="inline-flex items-center text-[10px] font-semibold text-emerald-500 bg-emerald-500/14 px-1.5 py-0.5 rounded">
+                    <span className="inline-flex items-center text-[10px] font-bold text-emerald-500 bg-emerald-500/14 px-1.5 py-0.5 rounded">
                       {item.growth}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold font-mono text-primary group-hover/item:underline underline-offset-4">
+                    <span className="text-sm font-bold font-mono text-primary group-hover/item:underline underline-offset-4">
                       {item.short}
                     </span>
                     <span className="text-xs text-muted-foreground font-medium">

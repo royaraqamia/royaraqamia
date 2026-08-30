@@ -122,7 +122,7 @@ export function CreateExpenseDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 ease-out hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:focus-visible:ring-neutral-100 cursor-pointer">
+        <Button className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all duration-200 ease-out hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:focus-visible:ring-neutral-100 cursor-pointer">
           <Plus className="size-4 transition-transform duration-200 group-hover:rotate-90" />
           <span>إضافة مصروف</span>
         </Button>
@@ -302,7 +302,7 @@ function ExpenseForm({
         <div className="flex items-center justify-between">
           <Label
             htmlFor="amount"
-            className="text-xs font-semibold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
+            className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
           >
             <DollarSign className="size-3.5 text-neutral-400 dark:text-neutral-500" />
             <span>المبلغ ({getCurrencySymbol(effectiveCurrency)})</span>
@@ -345,7 +345,7 @@ function ExpenseForm({
       <div className="space-y-2">
         <Label
           htmlFor="category_id"
-          className="text-xs font-semibold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
+          className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
         >
           <Tag className="size-3.5 text-neutral-400 dark:text-neutral-500" />
           <span>التَّصنيف</span>
@@ -398,7 +398,7 @@ function ExpenseForm({
 
       {/* DATE FIELD */}
       <div className="space-y-2">
-        <Label className="text-xs font-semibold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
+        <Label className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5">
           <Calendar className="size-3.5 text-neutral-400 dark:text-neutral-500" />
           <span>التَّاريخ</span>
           <span className="text-rose-500 font-bold" aria-hidden="true">
@@ -436,7 +436,7 @@ function ExpenseForm({
         <div className="flex items-center justify-between">
           <Label
             htmlFor="description"
-            className="text-xs font-semibold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
+            className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
           >
             <FileText className="size-3.5 text-neutral-400 dark:text-neutral-500" />
             <span>الوصف</span>
@@ -458,7 +458,7 @@ function ExpenseForm({
         <div className="flex items-center justify-between">
           <Label
             htmlFor="currency"
-            className="text-xs font-semibold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
+            className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
           >
             <Coins className="size-3.5 text-neutral-400 dark:text-neutral-500" />
             <span>العملة</span>
@@ -514,7 +514,7 @@ function ExpenseForm({
         <div className="flex items-center justify-between">
           <Label
             htmlFor="splits"
-            className="text-xs font-semibold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
+            className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
           >
             <PieChart className="size-3.5 text-neutral-400 dark:text-neutral-500" />
             <span>تقسيم على التصنيفات</span>
@@ -598,7 +598,7 @@ function ExpenseForm({
           variant="outline"
           size="sm"
           onClick={handleAppendSplit}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-semibold border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-200 active:scale-95"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-bold border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-200 active:scale-95"
         >
           <Plus className="size-3.5" />
           إضافة تقسيم
@@ -622,7 +622,7 @@ function ExpenseForm({
       {/* SUBMIT BUTTON */}
       <Button
         type="submit"
-        className="w-full h-11 mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 text-neutral-50 font-semibold text-sm shadow-md transition-all duration-200 ease-out hover:bg-neutral-800 hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none disabled:transform-none dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 focus-visible:ring-offset-2 cursor-pointer"
+        className="w-full h-11 mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 text-neutral-50 font-bold text-sm shadow-md transition-all duration-200 ease-out hover:bg-neutral-800 hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none disabled:transform-none dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 focus-visible:ring-offset-2 cursor-pointer"
         disabled={pending}
       >
         {pending ? <Loader2 className="size-4 animate-spin shrink-0" /> : null}

@@ -120,7 +120,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
               className={cn(
                 'transition-colors duration-200 font-medium tabular-nums',
                 isAtLimit
-                  ? 'text-destructive font-semibold'
+                  ? 'text-destructive font-bold'
                   : isNearLimit
                     ? 'text-amber-500 font-medium'
                     : 'text-muted-foreground'

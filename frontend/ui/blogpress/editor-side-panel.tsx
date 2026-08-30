@@ -95,7 +95,7 @@ function CounterBadge({
         )}
       </div>
       <span
-        className={`font-mono text-xs tabular-nums px-2 py-0.5 rounded-md border font-semibold transition-colors ${
+        className={`font-mono text-xs tabular-nums px-2 py-0.5 rounded-md border font-bold transition-colors ${
           status === 'over'
             ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 ring-1 ring-rose-500/20'
             : 'bg-muted/60 text-muted-foreground border-border/50'
@@ -147,7 +147,7 @@ function SeoCheck({
       </div>
       <div className="min-w-0 flex-1">
         <p
-          className={`text-xs font-semibold leading-snug ${
+          className={`text-xs font-bold leading-snug ${
             passed
               ? 'text-foreground'
               : optional
@@ -174,7 +174,7 @@ function StatsRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 px-3 py-2 rounded-xl text-xs hover:bg-muted/50 transition-colors duration-150">
       <span className="text-muted-foreground font-medium">{label}</span>
-      <span className="font-mono text-xs font-semibold text-foreground tabular-nums bg-background/90 dark:bg-neutral-800/90 px-2.5 py-0.5 rounded-lg border border-border/50 shadow-xs">
+      <span className="font-mono text-xs font-bold text-foreground tabular-nums bg-background/90 dark:bg-neutral-800/90 px-2.5 py-0.5 rounded-lg border border-border/50 shadow-xs">
         {value}
       </span>
     </div>
@@ -261,7 +261,7 @@ export function EditorSidePanel({
               type="button"
               variant="ghost"
               size="sm"
-              className={`flex-1 h-8 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-[0.98] ${
+              className={`flex-1 h-8 rounded-xl text-xs font-bold transition-all duration-200 active:scale-[0.98] ${
                 tab === 'seo'
                   ? 'bg-background text-foreground shadow-xs ring-1 ring-black/5 dark:ring-white/10 font-bold'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
@@ -275,7 +275,7 @@ export function EditorSidePanel({
               type="button"
               variant="ghost"
               size="sm"
-              className={`flex-1 h-8 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-[0.98] ${
+              className={`flex-1 h-8 rounded-xl text-xs font-bold transition-all duration-200 active:scale-[0.98] ${
                 tab === 'stats'
                   ? 'bg-background text-foreground shadow-xs ring-1 ring-black/5 dark:ring-white/10 font-bold'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
@@ -289,7 +289,7 @@ export function EditorSidePanel({
               type="button"
               variant="ghost"
               size="sm"
-              className={`flex-1 h-8 rounded-xl text-xs font-semibold transition-all duration-200 active:scale-[0.98] ${
+              className={`flex-1 h-8 rounded-xl text-xs font-bold transition-all duration-200 active:scale-[0.98] ${
                 tab === 'tags'
                   ? 'bg-background text-foreground shadow-xs ring-1 ring-black/5 dark:ring-white/10 font-bold'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/40'
@@ -325,7 +325,7 @@ export function EditorSidePanel({
                 <div className="space-y-2">
                   <Label
                     htmlFor="side-meta-title"
-                    className="text-xs font-semibold text-foreground/90 flex items-center justify-between"
+                    className="text-xs font-bold text-foreground/90 flex items-center justify-between"
                   >
                     <span>عنوان SEO</span>
                   </Label>
@@ -365,7 +365,7 @@ export function EditorSidePanel({
                 <div className="space-y-2">
                   <Label
                     htmlFor="side-meta-desc"
-                    className="text-xs font-semibold text-foreground/90 flex items-center justify-between"
+                    className="text-xs font-bold text-foreground/90 flex items-center justify-between"
                   >
                     <span>وصف SEO</span>
                   </Label>
@@ -432,7 +432,7 @@ export function EditorSidePanel({
                           </span>
                         </div>
                       </div>
-                      <p className="text-sm font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer leading-snug truncate">
+                      <p className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer leading-snug truncate">
                         {metaTitle || title || 'عنوان المقال'}
                       </p>
                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
@@ -447,7 +447,7 @@ export function EditorSidePanel({
               <section className="space-y-2.5 rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xs p-4 shadow-xs">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-bold text-foreground">قائمة جودة تحسين المحتوى</p>
-                  <span className="text-[10px] font-mono font-semibold text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-md border border-border/40">
+                  <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-md border border-border/40">
                     Checklist
                   </span>
                 </div>

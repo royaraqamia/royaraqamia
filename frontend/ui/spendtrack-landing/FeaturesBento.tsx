@@ -87,7 +87,7 @@ function ExpenseLogger() {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
           </span>
-          <span className="text-xs font-semibold tracking-wide text-foreground sm:text-sm">
+          <span className="text-xs font-bold tracking-wide text-foreground sm:text-sm">
             مصروفات اليوم
           </span>
         </div>
@@ -134,7 +134,7 @@ function ExpenseLogger() {
               >
                 {item.cat}
               </span>
-              <span className="text-xs font-semibold tracking-tight text-foreground sm:text-sm">
+              <span className="text-xs font-bold tracking-tight text-foreground sm:text-sm">
                 {item.amount}
               </span>
             </div>
@@ -158,7 +158,7 @@ function CategoryChart() {
   return (
     <div className="space-y-4 rounded-2xl border border-border/40 bg-background/65 p-4 shadow-inner sm:p-5">
       <div className="flex items-center justify-between border-b border-border/30 pb-2">
-        <span className="text-xs font-semibold text-foreground sm:text-sm">
+        <span className="text-xs font-bold text-foreground sm:text-sm">
           المصروفات حسب التَّصنيف
         </span>
         <span className="rounded-full border border-border/20 bg-muted/55 px-2 py-0.5 text-xs font-medium text-muted-foreground/80">
@@ -182,7 +182,7 @@ function CategoryChart() {
                 </span>
               </div>
               <div className="flex items-center gap-3">
-                <span className="text-xs font-semibold tracking-tight text-foreground sm:text-sm">
+                <span className="text-xs font-bold tracking-tight text-foreground sm:text-sm">
                   ${entry.amount}
                 </span>
                 <span className="min-w-8 text-right font-mono text-[11px] text-muted-foreground/80">
@@ -224,10 +224,10 @@ function MonthlyTrend() {
   return (
     <div className="space-y-4 rounded-2xl border border-border/40 bg-background/65 p-4 shadow-inner sm:p-5">
       <div className="flex flex-wrap items-center justify-between gap-1 border-b border-border/30 pb-2">
-        <span className="text-xs font-semibold text-foreground sm:text-sm">
+        <span className="text-xs font-bold text-foreground sm:text-sm">
           الاتِّجاهات الشَّهريَّة
         </span>
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/14 px-2 py-0.5 text-[10px] font-semibold text-emerald-500 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-emerald-500/20 bg-emerald-500/14 px-2 py-0.5 text-[10px] font-bold text-emerald-500 sm:gap-1.5 sm:px-2.5 sm:py-1 sm:text-xs">
           <TrendingUp size={12} className="shrink-0 text-emerald-500 sm:size-3.5" />
           <span className="whitespace-nowrap">-12% مقابل الشَّهر الماضي</span>
         </span>

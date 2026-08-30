@@ -207,7 +207,7 @@ export function LinkRowCard({
                 type="button"
                 onClick={() => window.open(fullShortUrl, '_blank')}
                 className={cn(
-                  'group/code inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/80 bg-neutral-100/70 px-2.5 py-1 font-mono text-sm font-semibold tracking-tight text-neutral-900 transition-all duration-200',
+                  'group/code inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/80 bg-neutral-100/70 px-2.5 py-1 font-mono text-sm font-bold tracking-tight text-neutral-900 transition-all duration-200',
                   'hover:border-blue-500/40 hover:bg-blue-50/50 hover:text-blue-600 dark:border-neutral-800 dark:bg-neutral-900/80 dark:text-neutral-100 dark:hover:border-blue-500/40 dark:hover:bg-blue-950/30 dark:hover:text-blue-400',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950'
                 )}

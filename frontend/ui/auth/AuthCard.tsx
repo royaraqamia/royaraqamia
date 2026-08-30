@@ -71,7 +71,7 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
             transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             className="relative z-10 text-center mb-8 sm:mb-10"
           >
-            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 font-sans">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-sans">
               {title}
             </h1>
             {description && (

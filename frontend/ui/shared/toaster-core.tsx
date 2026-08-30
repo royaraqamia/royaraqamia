@@ -20,7 +20,7 @@ export function RoyaToasterCore() {
         classNames: {
           toast: 'group toast',
           actionButton:
-            'group-[.toast]:bg-neutral-100 group-[.toast]:text-neutral-950 group-[.toast]:font-semibold group-[.toast]:rounded-lg group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:text-xs group-[.toast]:transition-[background-color,transform] group-[.toast]:duration-200 hover:group-[.toast]:bg-white active:group-[.toast]:scale-95 focus-visible:group-[.toast]:outline-none focus-visible:group-[.toast]:ring-2 focus-visible:group-[.toast]:ring-neutral-400/50',
+            'group-[.toast]:bg-neutral-100 group-[.toast]:text-neutral-950 group-[.toast]:font-bold group-[.toast]:rounded-lg group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:text-xs group-[.toast]:transition-[background-color,transform] group-[.toast]:duration-200 hover:group-[.toast]:bg-white active:group-[.toast]:scale-95 focus-visible:group-[.toast]:outline-none focus-visible:group-[.toast]:ring-2 focus-visible:group-[.toast]:ring-neutral-400/50',
           cancelButton:
             'group-[.toast]:bg-neutral-800 group-[.toast]:text-neutral-300 group-[.toast]:font-medium group-[.toast]:rounded-lg group-[.toast]:px-3 group-[.toast]:py-1.5 group-[.toast]:text-xs group-[.toast]:transition-[background-color,transform] group-[.toast]:duration-200 hover:group-[.toast]:bg-neutral-700 active:group-[.toast]:scale-95 focus-visible:group-[.toast]:outline-none focus-visible:group-[.toast]:ring-2 focus-visible:group-[.toast]:ring-neutral-400/50',
         },

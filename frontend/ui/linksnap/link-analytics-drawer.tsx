@@ -156,7 +156,7 @@ export function LinkAnalyticsDrawer({
                         type="button"
                         onClick={() => setRange(preset.value)}
                         aria-pressed={range === preset.value}
-                        className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-colors ${
+                        className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
                           range === preset.value
                             ? 'bg-primary text-primary-foreground shadow-sm'
                             : 'text-muted-foreground hover:text-foreground'
@@ -170,7 +170,7 @@ export function LinkAnalyticsDrawer({
                     type="button"
                     onClick={handleExport}
                     disabled={exportingCsv || analytics.totalClicks === 0}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {exportingCsv ? (
                       <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" />
@@ -201,7 +201,7 @@ export function LinkAnalyticsDrawer({
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       أعلى مصدر إحالة
                     </span>
-                    <span className="text-sm font-semibold text-foreground truncate mt-2">
+                    <span className="text-sm font-bold text-foreground truncate mt-2">
                       {analytics.topReferrers[0]?.name || 'مباشر / غير معروف'}
                     </span>
                   </div>
@@ -210,7 +210,7 @@ export function LinkAnalyticsDrawer({
                       حالة الرابط
                     </span>
                     <span
-                      className={`text-xs font-semibold border px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1 ${
+                      className={`text-xs font-bold border px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1 ${
                         STATUS_META[status]?.className ?? STATUS_META.active.className
                       } ${status === 'active' ? 'animate-pulse' : ''}`}
                     >

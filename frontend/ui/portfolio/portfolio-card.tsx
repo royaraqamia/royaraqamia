@@ -63,7 +63,7 @@ export function PortfolioCard({
 
         <div className="absolute inset-0 bg-[#050810]/90 opacity-0 group-hover/card-inner:opacity-100 transition-all duration-300 motion-reduce:duration-0 flex flex-col justify-between p-6 sm:p-8 text-right z-20">
           <div className="flex items-center justify-between">
-            <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-500/35 text-purple-300 border border-purple-500/30">
+            <span className="px-3 py-1 text-xs font-bold rounded-full bg-purple-500/35 text-purple-300 border border-purple-500/30">
               {project.category || 'مشروع رقمي'}
             </span>
             <span className="text-xs font-mono text-slate-400">
@@ -92,7 +92,7 @@ export function PortfolioCard({
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t border-white/10">
-            <span className="text-xs font-semibold text-purple-300 flex items-center gap-2 group-hover/card-inner:text-purple-200 transition-colors">
+            <span className="text-xs font-bold text-purple-300 flex items-center gap-2 group-hover/card-inner:text-purple-200 transition-colors">
               <span>عرض المشروع</span>
               <svg
                 className="w-4 h-4 rotate-180"

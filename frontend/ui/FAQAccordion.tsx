@@ -54,7 +54,7 @@ export function FAQAccordion({ faqs }: FAQAccordionProps) {
                   )}
                   <span
                     className={`
-                      text-base sm:text-lg font-semibold leading-relaxed transition-colors duration-200 select-none
+                      text-base sm:text-lg font-bold leading-relaxed transition-colors duration-200 select-none
                       ${
                         isOpen
                           ? 'text-violet-400 dark:text-violet-300'

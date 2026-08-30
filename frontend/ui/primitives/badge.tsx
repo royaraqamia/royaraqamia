@@ -3,7 +3,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/frontend/shared/cn';
 
 const badgeVariants = cva(
-  'inline-flex items-center justify-center shrink-0 max-w-full font-semibold select-none rounded-full border text-xs tracking-tight transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 gap-1.5',
+  'inline-flex items-center justify-center shrink-0 max-w-full font-bold select-none rounded-full border text-xs tracking-tight transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/80 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:scale-[0.97] disabled:pointer-events-none disabled:opacity-50 gap-1.5',
   {
     variants: {
       variant: {

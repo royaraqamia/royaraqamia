@@ -57,7 +57,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
             <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
               هذا الرابط محمي بكلمة مرور. أدخلها للمتابعة إلى الوجهة.
             </p>
-            <p className="mt-2 text-xs font-mono font-semibold text-muted-foreground" dir="ltr">
+            <p className="mt-2 text-xs font-mono font-bold text-muted-foreground" dir="ltr">
               /{code}
             </p>
           </div>
@@ -97,7 +97,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
             >
               {loading ? (
                 <>

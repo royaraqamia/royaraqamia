@@ -134,10 +134,10 @@ export default function SecurityPage() {
 
               <div className="space-y-4 text-muted-foreground leading-relaxed text-sm sm:text-base">
                 <p>
-                  تأخذ <strong className="text-foreground font-semibold">رؤية رقمية</strong> أمان
+                  تأخذ <strong className="text-foreground font-bold">رؤية رقمية</strong> أمان
                   منصَّتها على محمل الجد. إذا اكتشفت ثغرة أمنيَّة، يُرجَى الإبلاغ عنها{' '}
-                  <strong className="text-foreground font-semibold">بشكل مسؤول</strong> وعدم نشرها
-                  علنًا قبل معالجتها.
+                  <strong className="text-foreground font-bold">بشكل مسؤول</strong> وعدم نشرها علنًا
+                  قبل معالجتها.
                 </p>
 
                 <ul className="space-y-3 pt-2">
@@ -188,7 +188,7 @@ export default function SecurityPage() {
                     </div>
                     <span className="text-foreground/90">
                       اجعل عنوان الرِّسالة يبدأ بالبادئة:{' '}
-                      <code className="px-2 py-0.5 rounded bg-muted text-foreground text-xs font-mono font-semibold dir-ltr inline-block border border-border/60">
+                      <code className="px-2 py-0.5 rounded bg-muted text-foreground text-xs font-mono font-bold dir-ltr inline-block border border-border/60">
                         [SECURITY]
                       </code>
                     </span>
@@ -238,9 +238,8 @@ export default function SecurityPage() {
 
                 <p className="mt-4 pt-3 border-t border-border/40 text-sm">
                   نتعهَّد بتأكيد استلام التَّقرير خلال{' '}
-                  <strong className="text-foreground font-semibold">48 ساعة</strong>، وتقديم تحديث
-                  عن الحالة خلال{' '}
-                  <strong className="text-foreground font-semibold">5 أيَّام عمل</strong>.
+                  <strong className="text-foreground font-bold">48 ساعة</strong>، وتقديم تحديث عن
+                  الحالة خلال <strong className="text-foreground font-bold">5 أيَّام عمل</strong>.
                 </p>
               </div>
             </article>
@@ -285,7 +284,7 @@ export default function SecurityPage() {
                       <span className="w-2 h-2 rounded-full bg-success shrink-0" />
                       <span className="text-sm font-medium text-foreground/90">{item.text}</span>
                     </div>
-                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-success/10 text-success border border-success/20 font-semibold dir-ltr shrink-0">
+                    <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-success/10 text-success border border-success/20 font-bold dir-ltr shrink-0">
                       {item.badge}
                     </span>
                   </div>
@@ -379,7 +378,7 @@ export default function SecurityPage() {
                 الوصول والتَّصحيح والحذف. للمزيد، راجع{' '}
                 <a
                   href="/privacy"
-                  className="font-semibold text-primary underline underline-offset-4 decoration-primary/40 hover:decoration-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
+                  className="font-bold text-primary underline underline-offset-4 decoration-primary/40 hover:decoration-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm"
                 >
                   سياسة الخصوصيَّة
                 </a>
@@ -419,7 +418,7 @@ export default function SecurityPage() {
 
                 <a
                   href="mailto:contact@royaraqamia.com?subject=%5BSECURITY%5D"
-                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-semibold text-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shrink-0 dir-ltr"
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-primary-foreground font-bold text-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-md shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 shrink-0 dir-ltr"
                 >
                   <svg
                     className="w-4 h-4"

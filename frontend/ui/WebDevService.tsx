@@ -93,7 +93,7 @@ export function WebDevService() {
                     />
                   </div>
                   <div className="flex flex-1 flex-col justify-center min-w-0">
-                    <span className="text-sm sm:text-base font-semibold text-foreground/90 group-hover:text-foreground transition-colors text-start leading-snug">
+                    <span className="text-sm sm:text-base font-bold text-foreground/90 group-hover:text-foreground transition-colors text-start leading-snug">
                       {benefit.text}
                     </span>
                   </div>
@@ -112,7 +112,7 @@ export function WebDevService() {
                   {/* Subtle hover glow effect */}
                   <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                   <div>
-                    <div className="inline-block px-2.5 py-1 rounded-md bg-purple-500/25 text-purple-300 text-xs font-mono font-semibold mb-3 border border-purple-500/20">
+                    <div className="inline-block px-2.5 py-1 rounded-md bg-purple-500/25 text-purple-300 text-xs font-mono font-bold mb-3 border border-purple-500/20">
                       {feature.title}
                     </div>
                     <p className="relative text-xs sm:text-sm text-foreground/80 leading-relaxed font-medium">
@@ -150,7 +150,7 @@ export function WebDevService() {
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
                     $100
                   </div>
-                  <div className="text-[11px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-wider mt-0.5">
+                  <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     اشتراك شهري لمدَّة 3-6 أشهر
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export function WebDevService() {
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
                     $200
                   </div>
-                  <div className="text-[11px] sm:text-xs font-semibold text-foreground/50 uppercase tracking-wider mt-0.5">
+                  <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     اشتراك شهري لمدَّة 3-6 أشهر
                   </div>
                 </div>

@@ -59,14 +59,14 @@ export function AdminPanel({ token }: AdminPanelProps) {
             <Shield className="w-6 h-6 text-primary stroke-[2.5]" />
             <span>لوحة الإدارة</span>
           </h2>
-          <p className="text-xs text-muted-foreground font-semibold mt-0.5">
+          <p className="text-xs text-muted-foreground font-bold mt-0.5">
             مؤشرات صحة النظام والمراقبة الآلية للمحتوى
           </p>
         </div>
         <button
           onClick={fetchAdminStats}
           disabled={loading}
-          className="self-start md:self-auto px-4 py-2 bg-muted/50 hover:bg-muted text-muted-foreground border border-border font-semibold text-xs rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
+          className="self-start md:self-auto px-4 py-2 bg-muted/50 hover:bg-muted text-muted-foreground border border-border font-bold text-xs rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
         >
           <RefreshCw
             className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}

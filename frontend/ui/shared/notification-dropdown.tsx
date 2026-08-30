@@ -124,7 +124,7 @@ export function NotificationDropdown() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3.5 border-b border-border/60">
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-sm tracking-tight text-foreground">الإشعارات</h3>
+                <h3 className="font-bold text-sm tracking-tight text-foreground">الإشعارات</h3>
                 {unreadCount > 0 && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary">
                     {unreadCount} جديد
@@ -146,7 +146,7 @@ export function NotificationDropdown() {
             {/* The scroll constraint must live on Radix's viewport (not just
                 the overflow-hidden root) or tall lists get clipped instead of
                 scrolled. */}
-            <ScrollArea className="max-h-95 min-h-40 [&>[data-slot=scroll-area-viewport]]:max-h-95">
+            <ScrollArea className="max-h-95 min-h-40 *:data-[slot=scroll-area-viewport]:max-h-95">
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                   <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
@@ -159,7 +159,7 @@ export function NotificationDropdown() {
                   <div className="p-3.5 rounded-full bg-muted/60 text-muted-foreground/80 mb-3 border border-border/40 shadow-inner">
                     <Bell size={24} />
                   </div>
-                  <p className="text-sm font-semibold text-foreground">لا توجد إشعارات</p>
+                  <p className="text-sm font-bold text-foreground">لا توجد إشعارات</p>
                   <p className="text-xs text-muted-foreground/70 mt-1">
                     ستظهر هنا الإشعارات والتَّنبيهات الجديدة
                   </p>
@@ -224,7 +224,7 @@ export function NotificationDropdown() {
                               className={cn(
                                 'text-sm leading-snug tracking-tight',
                                 !notification.is_read
-                                  ? 'font-semibold text-foreground'
+                                  ? 'font-bold text-foreground'
                                   : 'font-medium text-foreground/80'
                               )}
                             >

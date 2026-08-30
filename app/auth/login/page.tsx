@@ -177,7 +177,7 @@ function LoginForm() {
         ليس لديك حساب؟{' '}
         <Link
           href={authLink('/auth/signup', redirectTo)}
-          className="text-primary font-semibold hover:underline underline-offset-4 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-xs"
+          className="text-primary font-bold hover:underline underline-offset-4 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-xs"
         >
           إنشاء حساب
         </Link>

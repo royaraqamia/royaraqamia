@@ -42,7 +42,7 @@ function CommandDialog({
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
       <DialogContent className="overflow-hidden p-0 rounded-2xl border border-border/80 bg-popover/95 shadow-2xl sm:max-w-xl max-w-[calc(100vw-2rem)] mx-auto">
-        <Command className="**:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[10px] **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-widest **:[[cmdk-group-heading]]:text-muted-foreground/70 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-2 **:[[cmdk-group]]:px-2.5 [&_[cmdk-input-wrapper]_svg]:size-4.5 **:[[cmdk-input]]:h-13 **:[[cmdk-item]]:px-3 **:[[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:size-4.5">
+        <Command className="**:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[10px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-widest **:[[cmdk-group-heading]]:text-muted-foreground/70 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-2 **:[[cmdk-group]]:px-2.5 [&_[cmdk-input-wrapper]_svg]:size-4.5 **:[[cmdk-input]]:h-13 **:[[cmdk-item]]:px-3 **:[[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:size-4.5">
           {children}
         </Command>
       </DialogContent>
@@ -112,7 +112,7 @@ const CommandGroup = React.forwardRef<
     ref={ref}
     data-slot="command-group"
     className={cn(
-      'text-foreground overflow-hidden p-1.5 **:[[cmdk-group-heading]]:px-2.5 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[10px] **:[[cmdk-group-heading]]:font-semibold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-widest **:[[cmdk-group-heading]]:text-muted-foreground/60 select-none',
+      'text-foreground overflow-hidden p-1.5 **:[[cmdk-group-heading]]:px-2.5 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[10px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-widest **:[[cmdk-group-heading]]:text-muted-foreground/60 select-none',
       className
     )}
     {...props}

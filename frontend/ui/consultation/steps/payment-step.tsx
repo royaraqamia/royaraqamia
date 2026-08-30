@@ -136,7 +136,7 @@ function MoneygramCard({ settings }: { settings: Partial<ConsultationSettings> }
           <div key={label} className="flex items-center gap-3 rounded-xl bg-muted px-4 py-3">
             <Icon className="size-4 text-primary shrink-0" aria-hidden="true" />
             <dt className="text-sm text-muted-foreground shrink-0">{label}:</dt>
-            <dd className="text-sm font-semibold text-foreground break-all" dir="auto">
+            <dd className="text-sm font-bold text-foreground break-all" dir="auto">
               {value || '—'}
             </dd>
           </div>
@@ -197,7 +197,7 @@ export function PaymentStep({
             aria-checked={paymentMethod === method}
             onClick={() => onPaymentMethodChange(method)}
             className={cn(
-              'rounded-xl border-2 px-3 py-2.5 text-sm font-semibold transition-all duration-200 cursor-pointer',
+              'rounded-xl border-2 px-3 py-2.5 text-sm font-bold transition-all duration-200 cursor-pointer',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11',
               paymentMethod === method
                 ? 'border-primary bg-primary/10 text-foreground'

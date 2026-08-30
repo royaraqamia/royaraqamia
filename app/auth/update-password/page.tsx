@@ -181,7 +181,7 @@ function UpdatePasswordForm() {
               type="submit"
               isLoading={isPending}
               disabled={showMismatch}
-              className="w-full h-12 text-sm font-semibold text-white gradient-primary cta-glow rounded-full shadow-md transition-all duration-300 ease-out hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
+              className="w-full h-12 text-sm font-bold text-white gradient-primary cta-glow rounded-full shadow-md transition-all duration-300 ease-out hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
             >
               {isPending ? 'جاري التَّحديث...' : 'تحديث كلمة المرور'}
             </Button>

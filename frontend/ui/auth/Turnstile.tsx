@@ -126,7 +126,7 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
                 />
               </svg>
             </div>
-            <span className="text-xs font-semibold tracking-tight text-neutral-800 dark:text-neutral-200">
+            <span className="text-xs font-bold tracking-tight text-neutral-800 dark:text-neutral-200">
               التَّحقُّق الأمني
             </span>
           </div>

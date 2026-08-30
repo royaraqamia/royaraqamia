@@ -83,11 +83,11 @@ export function NotesDialog({
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40 opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                   </span>
-                  <span className="text-sm font-semibold text-foreground/90 wrap-break-word line-clamp-2 sm:line-clamp-1">
+                  <span className="text-sm font-bold text-foreground/90 wrap-break-word line-clamp-2 sm:line-clamp-1">
                     {habitName}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 self-start sm:self-auto rounded-xl bg-background px-3 py-1.5 text-xs font-semibold text-muted-foreground border border-border/50 shadow-sm shrink-0 transition-colors group-hover:text-foreground/80 group-hover:border-border/80">
+                <div className="flex items-center gap-2 self-start sm:self-auto rounded-xl bg-background px-3 py-1.5 text-xs font-bold text-muted-foreground border border-border/50 shadow-sm shrink-0 transition-colors group-hover:text-foreground/80 group-hover:border-border/80">
                   <Calendar className="h-4 w-4 text-primary/80" aria-hidden="true" />
                   <span>{dateLabel}</span>
                 </div>
@@ -99,7 +99,7 @@ export function NotesDialog({
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
                 <label
                   htmlFor="input-log-note"
-                  className="font-semibold text-foreground/90 flex items-center gap-2 select-none"
+                  className="font-bold text-foreground/90 flex items-center gap-2 select-none"
                 >
                   <Sparkles className="h-4 w-4 text-primary/90" aria-hidden="true" />
                   <span>كيف كانت تجربتك اليوم؟</span>
@@ -145,7 +145,7 @@ export function NotesDialog({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="w-full sm:w-auto rounded-xl px-6 py-2.5 text-sm font-semibold border-border/50 bg-transparent hover:bg-muted/80 hover:text-foreground active:scale-[0.98] transition-all duration-200 h-11"
+              className="w-full sm:w-auto rounded-xl px-6 py-2.5 text-sm font-bold border-border/50 bg-transparent hover:bg-muted/80 hover:text-foreground active:scale-[0.98] transition-all duration-200 h-11"
             >
               إلغاء
             </Button>
@@ -153,7 +153,7 @@ export function NotesDialog({
               type="submit"
               disabled={isSaving}
               id="btn-save-note"
-              className="w-full sm:w-auto rounded-xl px-8 py-2.5 text-sm font-semibold shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-primary/30 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:hover:translate-y-0 disabled:scale-100 disabled:cursor-not-allowed h-11 flex items-center justify-center gap-2.5 bg-primary text-primary-foreground hover:bg-primary/95"
+              className="w-full sm:w-auto rounded-xl px-8 py-2.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-primary/30 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:hover:translate-y-0 disabled:scale-100 disabled:cursor-not-allowed h-11 flex items-center justify-center gap-2.5 bg-primary text-primary-foreground hover:bg-primary/95"
             >
               {isSaving ? (
                 <>

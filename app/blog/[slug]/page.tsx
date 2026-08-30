@@ -153,7 +153,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
       return (
         <h3
           id={getHeadingId(children)}
-          className="scroll-mt-28 text-xl sm:text-2xl font-semibold tracking-tight text-foreground mt-8 mb-4 flex items-center gap-2 group"
+          className="scroll-mt-28 text-xl sm:text-2xl font-bold tracking-tight text-foreground mt-8 mb-4 flex items-center gap-2 group"
         >
           <span
             className="text-primary/30 group-hover:text-primary transition-colors duration-200 text-base sm:text-lg font-mono select-none"
@@ -237,7 +237,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                   </div>
                 )}
 
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary shadow-2xs backdrop-blur-md mb-5 transition-all duration-300 hover:bg-primary/15">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary shadow-2xs backdrop-blur-md mb-5 transition-all duration-300 hover:bg-primary/15">
                   <BookOpen className="size-3.5" />
                   <span>مقال</span>
                 </div>
@@ -262,7 +262,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                           <User className="size-3.5" />
                         </div>
                       )}
-                      <span className="font-semibold text-foreground">{author.name}</span>
+                      <span className="font-bold text-foreground">{author.name}</span>
                     </div>
                   )}
                   {p.published_at && (
@@ -286,7 +286,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                   {postTags.map((tag) => (
                     <span
                       key={tag.id}
-                      className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-semibold text-primary"
+                      className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-bold text-primary"
                     >
                       #{tag.name}
                     </span>
@@ -294,7 +294,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                 </div>
               </header>
 
-              <div className="cv-auto prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-p:leading-relaxed prose-p:text-foreground/90 prose-p:mb-6 prose-a:text-primary prose-a:font-semibold prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-xl prose-img:border prose-img:border-border/50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-border/40 prose-pre:relative prose-pre:bg-muted/90 prose-pre:border prose-pre:border-border/60 prose-pre:rounded-2xl prose-pre:shadow-md prose-blockquote:border-s-primary prose-blockquote:border-s-4 prose-blockquote:bg-muted/30 prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:rounded-e-2xl prose-blockquote:not-italic prose-blockquote:text-foreground/90 prose-hr:border-border/50">
+              <div className="cv-auto prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-p:leading-relaxed prose-p:text-foreground/90 prose-p:mb-6 prose-a:text-primary prose-a:font-bold prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-xl prose-img:border prose-img:border-border/50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-border/40 prose-pre:relative prose-pre:bg-muted/90 prose-pre:border prose-pre:border-border/60 prose-pre:rounded-2xl prose-pre:shadow-md prose-blockquote:border-s-primary prose-blockquote:border-s-4 prose-blockquote:bg-muted/30 prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:rounded-e-2xl prose-blockquote:not-italic prose-blockquote:text-foreground/90 prose-hr:border-border/50">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[[rehypeHighlight, highlightOptions]]}
@@ -381,7 +381,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                       <h3 className="text-base sm:text-lg font-bold text-foreground">
                         {author.name}
                       </h3>
-                      <span className="px-2 py-0.5 rounded-md bg-primary/10 text-[10px] font-semibold text-primary border border-primary/20">
+                      <span className="px-2 py-0.5 rounded-md bg-primary/10 text-[10px] font-bold text-primary border border-primary/20">
                         كاتب
                       </span>
                     </div>
@@ -429,7 +429,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                         </div>
                       )}
                       <div className="p-5 flex flex-col flex-1 justify-between">
-                        <h3 className="text-sm sm:text-base font-semibold leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
+                        <h3 className="text-sm sm:text-base font-bold leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
                           {rp.title}
                         </h3>
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4 pt-3 border-t border-border/40">

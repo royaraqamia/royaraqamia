@@ -40,8 +40,8 @@ function HabitTracker() {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/65 dark:bg-zinc-900/65 p-4 sm:p-5 space-y-3 shadow-lg">
       <div className="flex items-center justify-between mb-3 px-1">
-        <span className="text-sm font-semibold text-slate-200">عادات اليوم</span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/14 border border-emerald-500/20 text-xs font-semibold text-emerald-400">
+        <span className="text-sm font-bold text-slate-200">عادات اليوم</span>
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/14 border border-emerald-500/20 text-xs font-bold text-emerald-400">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           3/4 تمّ
         </span>
@@ -81,7 +81,7 @@ function HabitTracker() {
             </div>
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/14 border border-amber-500/20 text-amber-400 shrink-0">
               <Flame size={14} fill="currentColor" className="text-amber-400" />
-              <span className="text-xs font-semibold tracking-wide">{habit.streak}d</span>
+              <span className="text-xs font-bold tracking-wide">{habit.streak}d</span>
             </div>
           </div>
         ))}
@@ -97,7 +97,7 @@ function StreakCalendar() {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/65 dark:bg-zinc-900/65 p-4 sm:p-5 shadow-lg">
       <div className="flex items-center justify-between mb-5 px-1">
-        <span className="text-sm font-semibold text-slate-200">السَّلاسل الشَّهريَّة</span>
+        <span className="text-sm font-bold text-slate-200">السَّلاسل الشَّهريَّة</span>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-linear-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30">
           <Flame size={18} fill="currentColor" className="text-amber-400 animate-pulse" />
           <span className="text-lg font-black bg-linear-to-r from-amber-300 via-orange-400 to-amber-500 bg-clip-text text-transparent">
@@ -117,7 +117,7 @@ function StreakCalendar() {
                 {week}
                 {i + 1}
               </span>
-              <span className="font-semibold text-slate-300">
+              <span className="font-bold text-slate-300">
                 {streakData[i]}/{7} أيَّام
               </span>
             </div>
@@ -129,7 +129,7 @@ function StreakCalendar() {
                     key={j}
                     className={`flex-1 h-8 sm:h-9 rounded-lg flex items-center justify-center text-xs transition-all duration-300 ${
                       isChecked
-                        ? 'bg-linear-to-b from-violet-500/40 to-indigo-600/30 border border-violet-500/40 text-violet-200 shadow-xs shadow-violet-500/20 font-semibold'
+                        ? 'bg-linear-to-b from-violet-500/40 to-indigo-600/30 border border-violet-500/40 text-violet-200 shadow-xs shadow-violet-500/20 font-bold'
                         : 'bg-white/6 border border-white/5 text-slate-600'
                     }`}
                   >
@@ -159,7 +159,7 @@ function ProgressAnalytics() {
   return (
     <div className="rounded-2xl border border-white/10 bg-slate-900/65 dark:bg-zinc-900/65 p-4 sm:p-5 space-y-5 shadow-lg">
       <div className="flex items-center justify-between px-1">
-        <span className="text-sm font-semibold text-slate-200">نظرة عامَّة على التَّقدُّم</span>
+        <span className="text-sm font-bold text-slate-200">نظرة عامَّة على التَّقدُّم</span>
         <span className="text-xs text-violet-400 font-medium bg-violet-500/14 border border-violet-500/20 px-2.5 py-0.5 rounded-full">
           مُحدَّث الآن
         </span>
@@ -178,7 +178,7 @@ function ProgressAnalytics() {
             <span className="text-[11px] sm:text-xs text-slate-400 block mt-1 line-clamp-1">
               {stat.label}
             </span>
-            <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded bg-emerald-500/14 text-[11px] font-semibold text-emerald-400 border border-emerald-500/20">
+            <span className="inline-block mt-1.5 px-1.5 py-0.5 rounded bg-emerald-500/14 text-[11px] font-bold text-emerald-400 border border-emerald-500/20">
               {stat.change}
             </span>
           </div>
@@ -188,7 +188,7 @@ function ProgressAnalytics() {
       <div className="pt-3 border-t border-white/10 space-y-2">
         <div className="flex items-center justify-between text-xs text-slate-400">
           <span>المُستهدَف</span>
-          <span className="text-violet-300 font-semibold">78% إنجاز</span>
+          <span className="text-violet-300 font-bold">78% إنجاز</span>
         </div>
         <div
           role="progressbar"

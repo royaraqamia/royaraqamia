@@ -425,7 +425,7 @@ export function CalendarGrid({
                         'bg-sky-500/10 hover:bg-sky-500/15 border-sky-400/35 text-sky-700 dark:text-sky-300 shadow-2xs';
                     } else if (isPerfectDay) {
                       cellBackground =
-                        'bg-linear-to-br from-primary/35 via-primary/20 to-amber-500/15 hover:from-primary/45 hover:via-primary/30 hover:to-amber-500/25 border-primary/50 text-foreground font-semibold shadow-md shadow-primary/10';
+                        'bg-linear-to-br from-primary/35 via-primary/20 to-amber-500/15 hover:from-primary/45 hover:via-primary/30 hover:to-amber-500/25 border-primary/50 text-foreground font-bold shadow-md shadow-primary/10';
                     } else if (completedCount > 0) {
                       const opacityTier =
                         completionRatio >= 0.75

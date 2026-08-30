@@ -34,7 +34,7 @@ export function BottomCTA() {
       subtitleClassName="mt-5 text-base sm:text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto leading-relaxed text-balance font-normal"
       actionsClassName="mt-8 sm:mt-10 flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4"
       actionsMotion={{ initialY: 16, duration: 0.5, useEase: false }}
-      primaryButtonClassName="group relative text-base sm:text-lg font-semibold px-8 sm:px-10 h-14 sm:h-16 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      primaryButtonClassName="group relative text-base sm:text-lg font-bold px-8 sm:px-10 h-14 sm:h-16 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
       arrowClassName="transition-transform duration-300 group-hover:-translate-x-1.5"
       secondaryButtonClassName="text-base sm:text-lg font-medium h-14 sm:h-16 px-8 sm:px-10 rounded-full border-border/80 hover:bg-accent/88 hover:text-accent-foreground transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     />

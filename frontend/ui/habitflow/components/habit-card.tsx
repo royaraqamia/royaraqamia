@@ -89,7 +89,7 @@ export function HabitCard({
         {/* Text & Metadata Grid */}
         <div className="min-w-0 flex-1 flex flex-col justify-center space-y-1 sm:space-y-1.5">
           <h4
-            className={`text-[15px] sm:text-[17px] font-semibold leading-tight truncate transition-all duration-300 ${
+            className={`text-[15px] sm:text-[17px] font-bold leading-tight truncate transition-all duration-300 ${
               isCompleted
                 ? 'line-through decoration-zinc-400 dark:decoration-zinc-600 text-zinc-500 dark:text-zinc-500'
                 : isSkipped
@@ -104,7 +104,7 @@ export function HabitCard({
           {/* Dynamic Wrapping Tags */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
             {isSkipped ? (
-              <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-semibold bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 whitespace-nowrap shrink-0 transition-colors">
+              <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 whitespace-nowrap shrink-0 transition-colors">
                 <Snowflake className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                 <span>مُتخطّى</span>
               </span>

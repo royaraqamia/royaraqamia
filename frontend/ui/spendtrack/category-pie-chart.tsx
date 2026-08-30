@@ -37,7 +37,7 @@ function CustomTooltip({
           className="size-3 shrink-0 rounded-full ring-2 ring-background shadow-sm"
           style={{ backgroundColor: item.payload.colorHex }}
         />
-        <span className="text-xs font-semibold text-foreground truncate">{item.name}</span>
+        <span className="text-xs font-bold text-foreground truncate">{item.name}</span>
       </div>
       <div className="mt-2 flex items-baseline justify-between gap-3 border-t border-border/40 pt-2">
         <span className="text-[11px] font-medium text-muted-foreground">المبلغ</span>
@@ -121,7 +121,7 @@ export function CategoryPieChart({
         </div>
 
         <div className="text-center space-y-1.5 max-w-xs">
-          <p className="text-sm sm:text-base font-semibold text-foreground tracking-tight">
+          <p className="text-sm sm:text-base font-bold text-foreground tracking-tight">
             لا توجد بيانات
           </p>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
@@ -221,7 +221,7 @@ export function CategoryPieChart({
 
           {/* Donut Center Display */}
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center text-center">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/90">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground/90">
               الإجمالي
             </span>
             <span className="text-lg sm:text-xl font-bold tracking-tight text-foreground mt-0.5">
@@ -259,7 +259,7 @@ export function CategoryPieChart({
                     style={{ backgroundColor: entry.colorHex }}
                   />
                   <div className="truncate">
-                    <p className="text-xs font-semibold text-foreground truncate">{entry.name}</p>
+                    <p className="text-xs font-bold text-foreground truncate">{entry.name}</p>
                     <span className="text-[11px] text-muted-foreground font-medium">
                       {percentage}% من الإجمالي
                     </span>

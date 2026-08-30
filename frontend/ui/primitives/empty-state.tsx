@@ -56,7 +56,7 @@ export function EmptyState({
       </div>
 
       {/* Title */}
-      <h3 className="text-base sm:text-lg md:text-xl font-semibold tracking-tight text-foreground transition-colors duration-200 wrap-break-word max-w-full">
+      <h3 className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-foreground transition-colors duration-200 wrap-break-word max-w-full">
         {title}
       </h3>
 

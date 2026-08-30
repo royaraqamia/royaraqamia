@@ -64,7 +64,7 @@ export function RecurringExpenses({
             <Repeat className="size-5" />
           </div>
           <div className="min-w-0">
-            <CardTitle className="text-base font-semibold tracking-tight text-foreground truncate">
+            <CardTitle className="text-base font-bold tracking-tight text-foreground truncate">
               المصروفات المُتكرِّرة
             </CardTitle>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
@@ -80,7 +80,7 @@ export function RecurringExpenses({
             <Button
               variant="default"
               size="sm"
-              className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-semibold shadow-xs hover:shadow-sm active:scale-[0.98] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xs hover:shadow-sm active:scale-[0.98] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 shrink-0 cursor-pointer"
             >
               <Plus className="size-3.5" />
               <span>إضافة</span>
@@ -94,7 +94,7 @@ export function RecurringExpenses({
             <div className="flex size-12 items-center justify-center rounded-2xl bg-background border border-border/50 text-muted-foreground/80 shadow-2xs mb-3">
               <Repeat className="size-6" />
             </div>
-            <p className="text-sm font-semibold text-foreground">لا توجد مصروفات مُتكرِّرة بعد</p>
+            <p className="text-sm font-bold text-foreground">لا توجد مصروفات مُتكرِّرة بعد</p>
             <p className="mt-1 text-xs text-muted-foreground max-w-xs leading-relaxed text-balance">
               أضِف الفواتير والاشتراكات الشَّهريَّة ليتمَّ تسجيلها تلقائيًّا في الموعد المُحدَّد.
             </p>
@@ -108,12 +108,12 @@ export function RecurringExpenses({
                 className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-border/50 bg-background/60 hover:bg-accent/30 hover:border-border/80 p-3.5 sm:p-4 transition-all duration-200 shadow-2xs hover:shadow-sm"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
-                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-muted/60 px-2.5 py-1.5 text-xs font-semibold text-foreground/80 font-mono shadow-2xs me-0.5">
+                  <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-muted/60 px-2.5 py-1.5 text-xs font-bold text-foreground/80 font-mono shadow-2xs me-0.5">
                     <CalendarDays className="size-3.5 text-primary/70" />
                     <span>{item.day_of_month}</span>
                   </span>
                   <div className="min-w-0 flex-1 space-y-0.5">
-                    <p className="truncate text-sm font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
+                    <p className="truncate text-sm font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">
                       {item.description || cat?.name || 'مصروف مُتكرِّر'}
                     </p>
                     {cat && (
@@ -247,7 +247,7 @@ function RecurringDialog({
             <div className="space-y-1.5">
               <Label
                 htmlFor="rec-amount"
-                className="text-xs font-semibold tracking-wide text-foreground/80 uppercase"
+                className="text-xs font-bold tracking-wide text-foreground/80 uppercase"
               >
                 المبلغ ({getCurrencySymbol(currency)})
               </Label>
@@ -266,7 +266,7 @@ function RecurringDialog({
             <div className="space-y-1.5">
               <Label
                 htmlFor="rec-day"
-                className="text-xs font-semibold tracking-wide text-foreground/80 uppercase"
+                className="text-xs font-bold tracking-wide text-foreground/80 uppercase"
               >
                 يوم الشَّهر
               </Label>
@@ -284,7 +284,7 @@ function RecurringDialog({
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label className="text-xs font-semibold tracking-wide text-foreground/80 uppercase">
+            <Label className="text-xs font-bold tracking-wide text-foreground/80 uppercase">
               التَّصنيف
             </Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
@@ -313,7 +313,7 @@ function RecurringDialog({
           <div className="space-y-1.5">
             <Label
               htmlFor="rec-desc"
-              className="text-xs font-semibold tracking-wide text-foreground/80 uppercase"
+              className="text-xs font-bold tracking-wide text-foreground/80 uppercase"
             >
               الوصف (اختياري)
             </Label>
@@ -336,7 +336,7 @@ function RecurringDialog({
           )}
           <Button
             type="submit"
-            className="w-full h-11 rounded-xl font-semibold shadow-xs hover:shadow-md active:scale-[0.99] transition-all duration-200 disabled:opacity-50 cursor-pointer"
+            className="w-full h-11 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.99] transition-all duration-200 disabled:opacity-50 cursor-pointer"
             disabled={pending}
           >
             {pending && <Loader2 className="me-2 size-4 animate-spin" />}

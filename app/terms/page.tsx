@@ -94,7 +94,7 @@ export default function TermsPage() {
                     </svg>
                   </div>
                   <div>
-                    <strong className="block font-semibold text-foreground">LinkSnap</strong>
+                    <strong className="block font-bold text-foreground">LinkSnap</strong>
                     <span className="text-xs text-muted-foreground">أداة اختصار الرَّوابط</span>
                   </div>
                 </div>
@@ -111,7 +111,7 @@ export default function TermsPage() {
                     </svg>
                   </div>
                   <div>
-                    <strong className="block font-semibold text-foreground">BlogPress</strong>
+                    <strong className="block font-bold text-foreground">BlogPress</strong>
                     <span className="text-xs text-muted-foreground">منصَّة إدارة المدوَّنات</span>
                   </div>
                 </div>
@@ -128,7 +128,7 @@ export default function TermsPage() {
                     </svg>
                   </div>
                   <div>
-                    <strong className="block font-semibold text-foreground">HabitFlow</strong>
+                    <strong className="block font-bold text-foreground">HabitFlow</strong>
                     <span className="text-xs text-muted-foreground">تطبيق إدارة العادات</span>
                   </div>
                 </div>
@@ -145,7 +145,7 @@ export default function TermsPage() {
                     </svg>
                   </div>
                   <div>
-                    <strong className="block font-semibold text-foreground">SpendTrack</strong>
+                    <strong className="block font-bold text-foreground">SpendTrack</strong>
                     <span className="text-xs text-muted-foreground">تطبيق تتبُّع المصروفات</span>
                   </div>
                 </div>
@@ -235,9 +235,7 @@ export default function TermsPage() {
                 <h2 className="text-xl font-bold text-foreground sm:text-2xl">. استخدام الخدمات</h2>
               </div>
 
-              <p className="mb-4 font-semibold text-destructive">
-                يُحظَر عليك عند استخدام خدماتنا:
-              </p>
+              <p className="mb-4 font-bold text-destructive">يُحظَر عليك عند استخدام خدماتنا:</p>
 
               <ul className="grid grid-cols-1 gap-2.5">
                 {[
@@ -555,7 +553,7 @@ export default function TermsPage() {
                   </span>
                   <a
                     href="mailto:contact@royaraqamia.com"
-                    className="flex items-center gap-2 text-base font-semibold text-primary underline-offset-4 hover:underline"
+                    className="flex items-center gap-2 text-base font-bold text-primary underline-offset-4 hover:underline"
                   >
                     <span>contact@royaraqamia.com</span>
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -577,7 +575,7 @@ export default function TermsPage() {
                     href="https://royaraqamia.com"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-base font-semibold text-primary underline-offset-4 hover:underline"
+                    className="flex items-center gap-2 text-base font-bold text-primary underline-offset-4 hover:underline"
                   >
                     <span>https://royaraqamia.com</span>
                     <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

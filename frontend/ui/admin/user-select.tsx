@@ -127,7 +127,7 @@ export function UserSelect({
                       className="flex items-center justify-between gap-3"
                     >
                       <span className="flex min-w-0 flex-col">
-                        <span className="truncate text-sm font-semibold">{userLabel(user)}</span>
+                        <span className="truncate text-sm font-bold">{userLabel(user)}</span>
                         <span className="text-muted-foreground truncate text-xs">
                           {user.name ? user.email : ''}
                         </span>

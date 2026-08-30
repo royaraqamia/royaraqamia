@@ -154,7 +154,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <div>
             <label
               htmlFor="original-url"
-              className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2"
+              className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2"
             >
               الرَّابط
             </label>
@@ -185,7 +185,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             >
               <label
                 htmlFor="custom-code"
-                className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1"
+                className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1"
               >
                 رمز مُخصَّص (اختياري)
               </label>
@@ -193,7 +193,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 className="flex items-center w-full overflow-hidden bg-muted/50 border border-border rounded-full focus-within:ring-2 focus-within:ring-primary/20 transition-all"
                 dir="ltr"
               >
-                <span className="shrink-0 pr-3 text-sm text-muted-foreground font-semibold select-none whitespace-nowrap py-3.5 leading-snug">
+                <span className="shrink-0 pr-3 text-sm text-muted-foreground font-bold select-none whitespace-nowrap py-3.5 leading-snug">
                   {getBaseUrl()}/
                 </span>
                 <input
@@ -215,7 +215,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 <div
                   role="status"
                   aria-live="polite"
-                  className={`flex items-center gap-1.5 text-xs font-semibold ${
+                  className={`flex items-center gap-1.5 text-xs font-bold ${
                     slugStatus === 'checking'
                       ? 'text-muted-foreground'
                       : slugStatus === 'available'
@@ -248,7 +248,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               <div className="pt-2">
                 <label
                   htmlFor="link-password"
-                  className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1"
+                  className="block text-xs font-bold text-muted-foreground uppercase tracking-wider mb-1"
                 >
                   كلمة مرور (اختياري)
                 </label>
@@ -340,7 +340,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               يُعيد التَّوجيه إلى: <span className="text-primary">{originalUrl}</span>
             </p>
             {password && (
-              <p className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
+              <p className="inline-flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 border border-primary/20 rounded-full px-3 py-1">
                 <LockOpen aria-hidden="true" className="w-3.5 h-3.5" />
                 محمي بكلمة مرور
               </p>
@@ -364,7 +364,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               {copied ? (
                 <>
                   <Check aria-hidden="true" className="w-4 h-4 text-success" />
-                  <span className="text-success font-semibold">تمَّ النَّسخ!</span>
+                  <span className="text-success font-bold">تمَّ النَّسخ!</span>
                 </>
               ) : (
                 <>
@@ -415,7 +415,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                     className="w-44 h-44 bg-background p-2 rounded-full shadow-inner border border-primary/20"
                   />
                 )}
-                <p className="text-xs text-primary font-semibold mt-2.5">
+                <p className="text-xs text-primary font-bold mt-2.5">
                   امسح لعرض الرَّابط المُختصَر
                 </p>
               </m.div>
@@ -424,7 +424,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
           <button
             onClick={resetForm}
-            className="w-full py-3 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-semibold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
+            className="w-full py-3 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-bold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
           >
             <RotateCcw aria-hidden="true" className="w-3.5 h-3.5" />
             <span>اختصار رابط آخر</span>

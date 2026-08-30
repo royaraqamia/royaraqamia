@@ -59,7 +59,7 @@ export function Hero() {
             appPath="/blogpress/app"
             loginRedirect="/blogpress/app"
             scrollTarget="features"
-            primaryClassName="group relative w-full sm:w-auto text-base font-semibold px-8 py-6 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            primaryClassName="group relative w-full sm:w-auto text-base font-bold px-8 py-6 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ الكتابة مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="transition-transform duration-300 ease-out group-hover:-translate-x-1.5"
@@ -110,9 +110,7 @@ export function Hero() {
                   <div className="flex items-center justify-between mb-3 border-b border-border/30 pb-2">
                     <div className="flex items-center gap-1.5">
                       <Code size={14} className="text-primary" />
-                      <span className="text-xs font-semibold font-mono text-foreground">
-                        editor.md
-                      </span>
+                      <span className="text-xs font-bold font-mono text-foreground">editor.md</span>
                     </div>
                     <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-500/14 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                       مسودَّة
@@ -145,7 +143,7 @@ export function Hero() {
                 <div className="rounded-xl border border-border/50 bg-card/75 p-4 shadow-sm">
                   <div className="flex items-center gap-1.5 mb-3 border-b border-border/30 pb-2">
                     <Eye size={14} className="text-primary" />
-                    <span className="text-xs font-semibold text-foreground">معاينة</span>
+                    <span className="text-xs font-bold text-foreground">معاينة</span>
                   </div>
 
                   {/* Rendered Document Mock Lines */}

@@ -194,7 +194,7 @@ export function DesktopNav({
                     type="button"
                     className={`relative inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 ${
                       isActive
-                        ? 'bg-neutral-800 text-violet-300 shadow-sm border border-neutral-700/80 font-semibold'
+                        ? 'bg-neutral-800 text-violet-300 shadow-sm border border-neutral-700/80 font-bold'
                         : 'text-neutral-300 hover:text-white hover:bg-neutral-800/60'
                     }`}
                     aria-label={link.label}
@@ -342,7 +342,7 @@ export function DesktopNav({
 
             const navItemClasses = `relative group/link inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 ${
               isActive
-                ? 'bg-neutral-800 text-violet-300 shadow-sm border border-neutral-700/80 font-semibold'
+                ? 'bg-neutral-800 text-violet-300 shadow-sm border border-neutral-700/80 font-bold'
                 : 'text-neutral-300 hover:text-white hover:bg-neutral-800/60'
             }`;
 
@@ -409,7 +409,7 @@ export function DesktopNav({
           className="group/cta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-full"
         >
           <Button
-            className={`relative overflow-hidden font-semibold transition-all duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white cursor-pointer hover:opacity-95 active:scale-[0.98] border border-violet-500/30 ${
+            className={`relative overflow-hidden font-bold transition-all duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white cursor-pointer hover:opacity-95 active:scale-[0.98] border border-violet-500/30 ${
               isScrolled
                 ? 'h-10 text-xs xl:text-sm px-5 shadow-sm shadow-violet-600/20'
                 : 'h-11 text-sm xl:text-base px-6 shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40'

@@ -8,11 +8,6 @@ export const ibmPlexSansArabic = localFont({
       style: 'normal',
     },
     {
-      path: '../../public/fonts/IBM Plex Sans Arabic/IBMPlexSansArabic-SemiBold.woff2',
-      weight: '600',
-      style: 'normal',
-    },
-    {
       path: '../../public/fonts/IBM Plex Sans Arabic/IBMPlexSansArabic-Bold.woff2',
       weight: '700',
       style: 'normal',

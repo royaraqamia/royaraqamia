@@ -116,7 +116,7 @@ export function ConfirmDialog({
             <button
               type="button"
               onClick={onCancel}
-              className="w-full sm:flex-1 py-2.5 px-4 text-sm font-semibold text-foreground bg-muted hover:bg-muted/80 active:bg-muted/90 border border-border/40 rounded-xl sm:rounded-2xl transition-[background-color,border-color,box-shadow,transform] duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98] touch-manipulation shadow-xs"
+              className="w-full sm:flex-1 py-2.5 px-4 text-sm font-bold text-foreground bg-muted hover:bg-muted/80 active:bg-muted/90 border border-border/40 rounded-xl sm:rounded-2xl transition-[background-color,border-color,box-shadow,transform] duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98] touch-manipulation shadow-xs"
             >
               {cancelLabel}
             </button>
@@ -124,7 +124,7 @@ export function ConfirmDialog({
               type="button"
               onClick={onConfirm}
               autoFocus
-              className={`w-full sm:flex-1 py-2.5 px-4 text-sm font-semibold rounded-xl sm:rounded-2xl transition-[background-color,box-shadow,transform] duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.98] touch-manipulation ${confirmColors[variant]}`}
+              className={`w-full sm:flex-1 py-2.5 px-4 text-sm font-bold rounded-xl sm:rounded-2xl transition-[background-color,box-shadow,transform] duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.98] touch-manipulation ${confirmColors[variant]}`}
             >
               {confirmLabel}
             </button>
