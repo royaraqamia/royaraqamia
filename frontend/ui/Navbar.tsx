@@ -153,12 +153,12 @@ export function Navbar() {
   // (and it stops costing anything once the page scrolls past it).
   const getNavbarClass = () => {
     if (isMobileMenuOpen) {
-      return 'bg-white/95 dark:bg-neutral-950/95 border-b border-neutral-200/80 dark:border-neutral-800/80 shadow-lg shadow-black/5 dark:shadow-black/20';
+      return 'bg-neutral-950/95 border-b border-neutral-800/80 shadow-lg shadow-black/20';
     }
     if (isScrolled) {
-      return 'bg-white/90 dark:bg-neutral-950/90 border-b border-neutral-200/70 dark:border-neutral-800/70 shadow-sm shadow-neutral-950/5 dark:shadow-neutral-950/30';
+      return 'bg-neutral-950/90 border-b border-neutral-800/70 shadow-sm shadow-neutral-950/30';
     }
-    return 'bg-white/40 dark:bg-neutral-950/40 backdrop-blur-md border-b border-neutral-200/30 dark:border-neutral-800/30 glass-navbar-hero';
+    return 'bg-neutral-950/40 backdrop-blur-md border-b border-neutral-800/30 glass-navbar-hero';
   };
 
   return (
@@ -166,7 +166,7 @@ export function Navbar() {
       {/* Skip Navigation Link for Accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:inset-s-4 focus:z-100 focus:inline-flex focus:items-center focus:gap-2 focus:px-4 focus:py-2.5 focus:rounded-xl focus:bg-violet-600 focus:text-white focus:font-medium focus:text-sm focus:shadow-xl focus:shadow-violet-600/25 focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 dark:focus:ring-offset-neutral-950 focus:outline-none transition-all duration-200"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:inset-s-4 focus:z-100 focus:inline-flex focus:items-center focus:gap-2 focus:px-4 focus:py-2.5 focus:rounded-xl focus:bg-violet-600 focus:text-white focus:font-medium focus:text-sm focus:shadow-xl focus:shadow-violet-600/25 focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-neutral-950 focus:outline-none transition-all duration-200"
       >
         تخطي إلى المحتوى الرئيسي
       </a>
@@ -205,7 +205,7 @@ export function Navbar() {
               <UserDropdown />
               <button
                 type="button"
-                className="relative flex h-11 w-11 items-center justify-center rounded-xl text-neutral-700 dark:text-neutral-200 transition-all duration-200 ease-out hover:bg-neutral-100/80 dark:hover:bg-neutral-800/80 active:scale-95 active:bg-neutral-200/80 dark:active:bg-neutral-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 motion-reduce:transition-none"
+                className="relative flex h-11 w-11 items-center justify-center rounded-xl text-neutral-200 transition-all duration-200 ease-out hover:bg-neutral-800/80 active:scale-95 active:bg-neutral-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 motion-reduce:transition-none"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label={isMobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
                 aria-expanded={isMobileMenuOpen}

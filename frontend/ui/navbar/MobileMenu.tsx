@@ -146,9 +146,7 @@ export function MobileMenu({
     return (
       <Icon
         className={`w-5 h-5 shrink-0 transition-colors duration-200 ${
-          isActive
-            ? 'text-violet-600 dark:text-violet-400'
-            : 'text-neutral-500 dark:text-neutral-400 group-hover:text-violet-600 dark:group-hover:text-violet-400'
+          isActive ? 'text-violet-400' : 'text-neutral-400 group-hover:text-violet-400'
         }`}
       />
     );
@@ -163,13 +161,13 @@ export function MobileMenu({
       group relative flex items-center justify-between w-full min-h-[52px] px-4 py-3.5 rounded-2xl
       font-semibold text-base leading-snug tracking-tight
       transition-all duration-200 ease-out select-none cursor-pointer
-      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
       active:scale-[0.98]
     `;
 
     const stateClasses = isActive
-      ? 'bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 border border-violet-200/80 dark:border-violet-800/60 shadow-xs font-bold'
-      : 'text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100/80 dark:hover:bg-neutral-900/60 border border-transparent';
+      ? 'bg-violet-950/40 text-violet-300 border border-violet-800/60 shadow-xs font-bold'
+      : 'text-neutral-200 hover:text-white hover:bg-neutral-900/60 border border-transparent';
 
     const content = (
       <span className="flex items-center gap-3.5">
@@ -191,7 +189,7 @@ export function MobileMenu({
             <span
               className={`text-xs transition-transform duration-200 ${
                 isActive
-                  ? 'text-violet-600 dark:text-violet-400 font-bold'
+                  ? 'text-violet-400 font-bold'
                   : 'text-neutral-400 opacity-0 group-hover:opacity-100 group-hover:-translate-x-1'
               }`}
             >
@@ -209,7 +207,7 @@ export function MobileMenu({
             <span
               className={`text-xs transition-transform duration-200 ${
                 isActive
-                  ? 'text-violet-600 dark:text-violet-400 font-bold'
+                  ? 'text-violet-400 font-bold'
                   : 'text-neutral-400 opacity-0 group-hover:opacity-100 group-hover:-translate-x-1'
               }`}
             >
@@ -235,12 +233,12 @@ export function MobileMenu({
             group flex items-center justify-between w-full min-h-13 px-4 py-3.5 rounded-2xl
             font-semibold text-base leading-snug tracking-tight
             transition-all duration-200 ease-out select-none cursor-pointer
-            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
+            focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
             active:scale-[0.98]
             ${
               isActive
-                ? 'bg-violet-50/80 dark:bg-violet-950/30 text-violet-700 dark:text-violet-300 border border-violet-200/60 dark:border-violet-800/40'
-                : 'text-neutral-800 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100/80 dark:hover:bg-neutral-900/60 border border-transparent'
+                ? 'bg-violet-950/30 text-violet-300 border border-violet-800/40'
+                : 'text-neutral-200 hover:text-white hover:bg-neutral-900/60 border border-transparent'
             }
           `}
         >
@@ -249,8 +247,8 @@ export function MobileMenu({
             <span className="truncate">{link.label}</span>
           </span>
           <ChevronDown
-            className={`w-4 h-4 shrink-0 text-neutral-400 dark:text-neutral-500 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-              isExpanded ? 'rotate-180 text-violet-600 dark:text-violet-400' : ''
+            className={`w-4 h-4 shrink-0 text-neutral-500 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              isExpanded ? 'rotate-180 text-violet-400' : ''
             }`}
           />
         </button>
@@ -263,7 +261,7 @@ export function MobileMenu({
           }`}
         >
           <div className="overflow-hidden">
-            <div className="ms-4 ps-3 border-s-2 border-violet-500/20 dark:border-violet-500/30 flex flex-col gap-1 py-1">
+            <div className="ms-4 ps-3 border-s-2 border-violet-500/30 flex flex-col gap-1 py-1">
               {link.subItems?.map((sub) => (
                 <div key={sub.href} className="w-full">
                   {sub.isRoute ? (
@@ -273,9 +271,9 @@ export function MobileMenu({
                       aria-current={isLinkActive(sub.href) ? 'page' : undefined}
                       className="
                         group/sub relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl
-                        text-sm font-medium text-neutral-600 dark:text-neutral-400
+                        text-sm font-medium text-neutral-400
                         transition-all duration-150 ease-out
-                        hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:text-violet-600 dark:hover:text-violet-300
+                        hover:bg-violet-950/40 hover:text-violet-300
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
                         active:scale-[0.98]
                       "
@@ -292,9 +290,9 @@ export function MobileMenu({
                       aria-current={isLinkActive(sub.href) ? 'page' : undefined}
                       className="
                         group/sub relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl
-                        text-sm font-medium text-neutral-600 dark:text-neutral-400
+                        text-sm font-medium text-neutral-400
                         transition-all duration-150 ease-out
-                        hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:text-violet-600 dark:hover:text-violet-300
+                        hover:bg-violet-950/40 hover:text-violet-300
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
                         active:scale-[0.98]
                       "
@@ -326,7 +324,7 @@ export function MobileMenu({
           {/* Dim backdrop — near-opaque instead of blurred: a full-viewport
               backdrop-filter re-rasterizes the whole screen during its fade. */}
           <div
-            className={`fixed inset-0 bg-neutral-950/80 dark:bg-black/85 transition-opacity duration-300 ease-out ${
+            className={`fixed inset-0 bg-black/85 transition-opacity duration-300 ease-out ${
               isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
             }`}
             onClick={handleClose}
@@ -344,8 +342,8 @@ export function MobileMenu({
             onKeyDown={(e) => e.key === 'Escape' && handleClose()}
             className={`
               fixed inset-0 w-full h-full
-              bg-white dark:bg-neutral-950
-              text-neutral-900 dark:text-neutral-100
+              bg-neutral-950
+              text-neutral-100
               transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
               will-change-transform flex flex-col
               ${
@@ -358,7 +356,7 @@ export function MobileMenu({
             {/* Header */}
             <header
               data-mobile-menu
-              className="flex items-center justify-between px-5 sm:px-6 h-20 shrink-0 border-b border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-950"
+              className="flex items-center justify-between px-5 sm:px-6 h-20 shrink-0 border-b border-neutral-800/60 bg-neutral-950"
             >
               <Link
                 href={isHomePage ? '#home' : '/'}
@@ -375,7 +373,7 @@ export function MobileMenu({
                     className="h-10 w-10 rounded-full logo-glow transition-transform duration-300 ease-out group-hover:scale-105"
                   />
                 )}
-                <span className="text-xl font-bold font-heading tracking-tight text-neutral-900 dark:text-white transition-colors duration-200 group-hover:text-violet-600 dark:group-hover:text-violet-400">
+                <span className="text-xl font-bold font-heading tracking-tight text-white transition-colors duration-200 group-hover:text-violet-400">
                   رؤية رقمية
                 </span>
               </Link>
@@ -390,13 +388,13 @@ export function MobileMenu({
                 className="
                   flex items-center justify-center
                   w-11 h-11 rounded-full
-                  bg-neutral-100 dark:bg-neutral-900
-                  border border-neutral-200/80 dark:border-neutral-800/80
-                  text-neutral-700 dark:text-neutral-300
+                  bg-neutral-900
+                  border border-neutral-800/80
+                  text-neutral-300
                   transition-all duration-200 ease-out
-                  hover:bg-neutral-200/80 dark:hover:bg-neutral-800/80 hover:text-neutral-950 dark:hover:text-white
+                  hover:bg-neutral-800/80 hover:text-white
                   active:scale-90
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
                 "
               >
                 <X size={20} />
@@ -411,7 +409,7 @@ export function MobileMenu({
                 px-4 sm:px-6 py-6
                 flex flex-col gap-2
                 overscroll-contain
-                bg-white dark:bg-neutral-950
+                bg-neutral-950
               "
             >
               {navLinks
@@ -426,7 +424,7 @@ export function MobileMenu({
             {/* Footer with Primary CTA Button */}
             <footer
               data-mobile-menu
-              className="px-5 sm:px-6 py-5 shrink-0 border-t border-neutral-200/60 dark:border-neutral-800/60 bg-white dark:bg-neutral-950"
+              className="px-5 sm:px-6 py-5 shrink-0 border-t border-neutral-800/60 bg-neutral-950"
             >
               <a
                 href={getWhatsAppUrl()}
@@ -443,7 +441,7 @@ export function MobileMenu({
                   shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40
                   transition-all duration-300 ease-out
                   active:scale-[0.98] overflow-hidden
-                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950
+                  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
                 "
               >
                 <span className="relative z-10 flex items-center gap-2">
@@ -452,10 +450,7 @@ export function MobileMenu({
                 <span className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out bg-linear-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
               </a>
 
-              <p
-                className="mt-3.5 text-center text-xs font-medium text-neutral-400 dark:text-neutral-600"
-                dir="ltr"
-              >
+              <p className="mt-3.5 text-center text-xs font-medium text-neutral-600" dir="ltr">
                 v{displayVersion}
               </p>
             </footer>

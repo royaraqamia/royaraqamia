@@ -114,7 +114,7 @@ export function DesktopNav({
       {/* Brand Identity / Logo */}
       <Link
         href={isHomePage ? '#home' : '/'}
-        className="group relative flex items-center gap-3 rounded-2xl py-1 px-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 transition-all duration-300 shrink-0 select-none"
+        className="group relative flex items-center gap-3 rounded-2xl py-1 px-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 transition-all duration-300 shrink-0 select-none"
         aria-label="رؤية رقمية - الصفحة الرئيسية"
         onClick={scrollToHomeNode}
       >
@@ -134,7 +134,7 @@ export function DesktopNav({
           />
         </div>
         <span
-          className={`logo-text font-bold font-heading tracking-tight text-neutral-900 dark:text-white transition-all duration-300 group-hover:text-violet-600 dark:group-hover:text-violet-400 ${
+          className={`logo-text font-bold font-heading tracking-tight text-white transition-all duration-300 group-hover:text-violet-400 ${
             isScrolled ? 'text-lg lg:text-xl' : 'text-xl lg:text-2xl'
           }`}
         >
@@ -192,10 +192,10 @@ export function DesktopNav({
                 >
                   <button
                     type="button"
-                    className={`relative inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 active:scale-95 ${
+                    className={`relative inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 ${
                       isActive
-                        ? 'bg-white dark:bg-neutral-800 text-violet-600 dark:text-violet-300 shadow-sm border border-neutral-200/80 dark:border-neutral-700/80 font-semibold'
-                        : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-white/70 dark:hover:bg-neutral-800/60'
+                        ? 'bg-neutral-800 text-violet-300 shadow-sm border border-neutral-700/80 font-semibold'
+                        : 'text-neutral-300 hover:text-white hover:bg-neutral-800/60'
                     }`}
                     aria-label={link.label}
                     aria-haspopup="menu"
@@ -225,9 +225,7 @@ export function DesktopNav({
                         return (
                           <IconComponent
                             className={`w-4 h-4 transition-transform duration-200 ${
-                              isActive
-                                ? 'text-violet-600 dark:text-violet-400'
-                                : 'text-neutral-500 dark:text-neutral-400'
+                              isActive ? 'text-violet-400' : 'text-neutral-400'
                             }`}
                           />
                         );
@@ -235,9 +233,7 @@ export function DesktopNav({
                     <span>{link.label}</span>
                     <ChevronDown
                       className={`w-3.5 h-3.5 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                        isDropdownOpen
-                          ? 'rotate-180 text-violet-600 dark:text-violet-400'
-                          : 'text-neutral-400 dark:text-neutral-500'
+                        isDropdownOpen ? 'rotate-180 text-violet-400' : 'text-neutral-500'
                       }`}
                     />
                   </button>
@@ -245,7 +241,7 @@ export function DesktopNav({
                   {isDropdownOpen && (
                     <div
                       id={link.dropdownKey ? `${link.dropdownKey}-dropdown` : undefined}
-                      className="absolute inset-e-0 top-full mt-2.5 w-60 p-1.5 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-2xl rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 shadow-2xl shadow-neutral-950/10 dark:shadow-neutral-950/50 z-50 transition-transform duration-200 ease-out animate-in fade-in-0 zoom-in-95 origin-top-right"
+                      className="absolute inset-e-0 top-full mt-2.5 w-60 p-1.5 bg-neutral-900/95 backdrop-blur-2xl rounded-2xl border border-neutral-800/80 shadow-2xl shadow-neutral-950/50 z-50 transition-transform duration-200 ease-out animate-in fade-in-0 zoom-in-95 origin-top-right"
                       role="menu"
                       aria-orientation="vertical"
                       onMouseEnter={handleMouseEnter}
@@ -292,9 +288,9 @@ export function DesktopNav({
                     >
                       <div className="flex flex-col space-y-0.5">
                         {link.subItems?.map((sub: NavLink, subIndex: number) => {
-                          const itemClasses = `group/item relative flex items-center justify-between w-full text-start text-sm font-medium rounded-xl px-4 py-3 transition-all duration-150 ease-out text-neutral-700 dark:text-neutral-200 hover:bg-violet-50 dark:hover:bg-violet-950/40 hover:text-violet-600 dark:hover:text-violet-300 focus-visible:bg-violet-50 dark:focus-visible:bg-violet-950/40 focus-visible:text-violet-600 dark:focus-visible:text-violet-300 focus-visible:outline-none select-none ${
+                          const itemClasses = `group/item relative flex items-center justify-between w-full text-start text-sm font-medium rounded-xl px-4 py-3 transition-all duration-150 ease-out text-neutral-200 hover:bg-violet-950/40 hover:text-violet-300 focus-visible:bg-violet-950/40 focus-visible:text-violet-300 focus-visible:outline-none select-none ${
                             subIndex < (link.subItems?.length || 0) - 1
-                              ? 'border-b border-neutral-100 dark:border-neutral-800/60'
+                              ? 'border-b border-neutral-800/60'
                               : ''
                           }`;
 
@@ -344,10 +340,10 @@ export function DesktopNav({
               );
             }
 
-            const navItemClasses = `relative group/link inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 active:scale-95 ${
+            const navItemClasses = `relative group/link inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 ${
               isActive
-                ? 'bg-white dark:bg-neutral-800 text-violet-600 dark:text-violet-300 shadow-sm border border-neutral-200/80 dark:border-neutral-700/80 font-semibold'
-                : 'text-neutral-700 dark:text-neutral-300 hover:text-neutral-950 dark:hover:text-white hover:bg-white/70 dark:hover:bg-neutral-800/60'
+                ? 'bg-neutral-800 text-violet-300 shadow-sm border border-neutral-700/80 font-semibold'
+                : 'text-neutral-300 hover:text-white hover:bg-neutral-800/60'
             }`;
 
             if (link.isRoute) {
@@ -365,9 +361,7 @@ export function DesktopNav({
                       return (
                         <IconComponent
                           className={`w-4 h-4 transition-transform duration-200 group-hover/link:scale-110 ${
-                            isActive
-                              ? 'text-violet-600 dark:text-violet-400'
-                              : 'text-neutral-500 dark:text-neutral-400'
+                            isActive ? 'text-violet-400' : 'text-neutral-400'
                           }`}
                         />
                       );
@@ -391,9 +385,7 @@ export function DesktopNav({
                     return (
                       <IconComponent
                         className={`w-4 h-4 transition-transform duration-200 group-hover/link:scale-110 ${
-                          isActive
-                            ? 'text-violet-600 dark:text-violet-400'
-                            : 'text-neutral-500 dark:text-neutral-400'
+                          isActive ? 'text-violet-400' : 'text-neutral-400'
                         }`}
                       />
                     );
@@ -414,10 +406,10 @@ export function DesktopNav({
           target="_blank"
           rel="noopener noreferrer"
           aria-label="احجز مكالمة مجانية عبر واتساب"
-          className="group/cta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 rounded-full"
+          className="group/cta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-full"
         >
           <Button
-            className={`relative overflow-hidden font-semibold transition-all duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white cursor-pointer hover:opacity-95 active:scale-[0.98] border border-violet-400/30 dark:border-violet-500/30 ${
+            className={`relative overflow-hidden font-semibold transition-all duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white cursor-pointer hover:opacity-95 active:scale-[0.98] border border-violet-500/30 ${
               isScrolled
                 ? 'h-10 text-xs xl:text-sm px-5 shadow-sm shadow-violet-600/20'
                 : 'h-11 text-sm xl:text-base px-6 shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40'
