@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-09-01
+
+### Changed
+- ignore .agents folder in ESLint
+- remove obsolete agent file
+- bump the minor-and-patch group with 26 updates
+- bump the minor-and-patch group with 3 updates
+
+### Added
+- add .agents folder with all installed skills
+- add skills-lock.json and update AGENTS.md with full skill inventory
+
 ## [1.17.2] - 2026-08-30
 
 ### Changed
