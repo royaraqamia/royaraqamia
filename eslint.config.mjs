@@ -6,7 +6,15 @@ import prettierPlugin from 'eslint-plugin-prettier';
 
 export default [
   {
-    ignores: ['node_modules/', '.next/', 'dist/', 'playwright-report/', 'coverage/', 'scripts/'],
+    ignores: [
+      'node_modules/',
+      '.next/',
+      'dist/',
+      'playwright-report/',
+      'coverage/',
+      'scripts/',
+      '.agents/',
+    ],
   },
   js.configs.recommended,
   {
