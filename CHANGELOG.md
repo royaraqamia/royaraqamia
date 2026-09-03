@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-09-03
+
+### Added
+- hide linksnap, blogpress, habitflow, spendtrack from UI and remove command palette icon
+
+### Fixed
+- reinstall corrupted @tiptap/react and react-hook-form type declarations
+- upgrade browserslist to 4.28.7 to patch memory/prototype CVEs
+- upgrade fast-uri to 3.1.6 to patch SSRF CVE
+- upgrade qs to 6.16.0 to patch array-limit bypass CVE
+
 ## [1.18.0] - 2026-09-01
 
 ### Changed
