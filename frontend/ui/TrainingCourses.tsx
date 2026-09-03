@@ -8,7 +8,6 @@ import {
   Briefcase,
   User,
   ArrowLeft,
-  CheckCircle,
   ShieldCheck,
   Star,
 } from 'lucide-react';
@@ -279,22 +278,6 @@ export function TrainingCourses() {
                       <ArrowLeft className="w-5 h-5 shrink-0 transition-transform group-hover:-translate-x-1 duration-300" />
                     </Button>
                   </a>
-
-                  {/* Trust Footer Badges */}
-                  <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-muted-foreground mt-4 font-medium">
-                    <span className="inline-flex items-center gap-1.5">
-                      <CheckCircle className="w-4 h-4 text-emerald-500" />
-                      تأكيد حجز فوري
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <CheckCircle className="w-4 h-4 text-emerald-500" />
-                      متابعة وإرشاد شخصي
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <CheckCircle className="w-4 h-4 text-emerald-500" />
-                      تطبيقات عمليَّة 100%
-                    </span>
-                  </div>
                 </div>
               </div>
             </div>
