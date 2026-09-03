@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.1] - 2026-09-03
+
+### Changed
+- reduce spacing between review badges in social proof strip
+- update FAQ items, remove categories, add new questions about consultation and training
+- update description text matcher to match current copy
+- remove Trust Footer Badges and unused CheckCircle import
+- remove border/bg from review badges, add underline to social proof link
+- hide CTA/WhyUs, remove header icons and badges from Certificate & VerifySection
+
+### Fixed
+- center layout, align background with privacy page, remove product mentions
+
 ## [1.19.0] - 2026-09-03
 
 ### Added
