@@ -8,9 +8,7 @@ import { TrainingCourses } from './TrainingCourses';
 import { Certificate } from './Certificate';
 import { VerifySection } from './VerifySection';
 import { ConsultationCards } from './ConsultationCards';
-import { WhyUs } from './WhyUs';
 import { FAQ } from './FAQ';
-import { CTA } from './CTA';
 
 export function HomePageContent() {
   return (
@@ -36,9 +34,9 @@ export function HomePageContent() {
         <ConsultationCards />
       </section>
 
-      <WhyUs />
+      {/* <WhyUs /> */}
       <FAQ />
-      <CTA />
+      {/* <CTA /> */}
     </main>
   );
 }

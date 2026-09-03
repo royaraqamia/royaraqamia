@@ -9,7 +9,7 @@ import {
   useSpring,
   useMotionTemplate,
 } from 'motion/react';
-import { Trophy, ShieldCheck, BadgeCheck, Share2, MoveLeft } from 'lucide-react';
+import { ShieldCheck, BadgeCheck, Share2 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 
 // --- Framer Motion Variants ---
@@ -136,20 +136,6 @@ export function Certificate() {
           variants={headerVariants}
           className="text-center mb-12 sm:mb-16 flex flex-col items-center"
         >
-          {/* Trophy Badge Container */}
-          <m.div variants={itemVariants} className="mb-6 relative group cursor-pointer">
-            <div className="absolute -inset-2 rounded-3xl opacity-40 group-hover:opacity-80 transition duration-500 shadow-[0_0_28px_8px_rgba(147,51,234,0.55),0_0_48px_16px_rgba(139,92,246,0.35),0_0_64px_24px_rgba(79,70,229,0.25)]" />
-
-            <div className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-purple-400 via-violet-500 to-purple-700 flex items-center justify-center shadow-2xl shadow-purple-500/30 relative overflow-hidden group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-500 border border-purple-300/40">
-              {/* Internal Shimmer Highlight */}
-              <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out bg-linear-to-r from-transparent via-white/30 to-transparent w-full -skew-x-12 z-0 pointer-events-none" />
-              <Trophy
-                className="w-10 h-10 sm:w-11 sm:h-11 text-white relative z-10 drop-shadow-md"
-                fill="currentColor"
-              />
-            </div>
-          </m.div>
-
           {/* Headline */}
           <m.h2
             id="certificate-heading"
@@ -175,28 +161,6 @@ export function Certificate() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="flex flex-col items-center justify-center perspective-[2000px] gap-6"
         >
-          {/* Dynamic Motion Indicator */}
-          <m.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-xs sm:text-sm font-medium border transition-[background-color,border-color,color] duration-500 shadow-lg ${
-              hasInteracted
-                ? 'bg-purple-950/55 text-purple-300 border-purple-500/30'
-                : 'bg-slate-900/88 text-slate-300 border-white/10 hover:border-purple-400/40'
-            }`}
-          >
-            <MoveLeft
-              className={`w-4 h-4 text-purple-400 ${!hasInteracted ? 'animate-bounce' : ''}`}
-              fill="currentColor"
-            />
-            <span>
-              {hasInteracted
-                ? 'المعاينة التَّفاعليَّة ثلاثيَّة الأبعاد نشطة'
-                : 'حرِّك الفأرة أو اللمس لتغيير المنظور 3D'}
-            </span>
-          </m.div>
-
           {/* Outer Glass Frame */}
           <div className="w-full max-w-4xl p-2 sm:p-3 md:p-4 rounded-3xl md:rounded-[2.5rem] bg-slate-900/55 border border-white/10 shadow-[0_30px_100px_-20px_rgba(0,0,0,0.9)] hover:shadow-[0_30px_100px_-10px_rgba(147,51,234,0.25)] transition-shadow duration-700">
             {/* Interactive 3D Card */}

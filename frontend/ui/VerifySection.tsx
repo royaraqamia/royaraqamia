@@ -1,5 +1,5 @@
-import { ShieldCheck, ArrowLeft, Copy } from 'lucide-react';
-import { ScanLine, Lock, Database, QrCode, CheckCircle, FileText } from 'lucide-react';
+import { ArrowLeft, Copy } from 'lucide-react';
+import { ScanLine, Lock, QrCode, CheckCircle, FileText } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
 import Link from 'next/link';
 
@@ -26,20 +26,6 @@ export function VerifySection() {
         {/* Section Header */}
         <ScrollAnimation animation="slide-up" duration={0.8}>
           <div className="text-center mb-12 sm:mb-16 lg:mb-20">
-            {/* Glowing Icon Shield Badge */}
-            <div className="flex items-center justify-center mb-6">
-              <div className="relative group">
-                <div className="absolute -inset-1.5 bg-linear-to-r from-[#7766EE] via-[#222346] to-[#A78BFA] rounded-3xl blur-lg opacity-40 group-hover:opacity-75 transition duration-500" />
-                <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-linear-to-br from-[#7766EE] via-[#6366F1] to-[#A78BFA] flex items-center justify-center shadow-2xl border border-white/20 overflow-hidden">
-                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
-                  <ShieldCheck
-                    className="w-9 h-9 sm:w-11 sm:h-11 text-white relative z-10 drop-shadow-md"
-                    fill="currentColor"
-                  />
-                </div>
-              </div>
-            </div>
-
             {/* Section Main Title */}
             <h2
               id="verify-heading"
@@ -189,26 +175,6 @@ export function VerifySection() {
                 <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:-translate-x-1.5" />
               </span>
             </Link>
-          </div>
-        </ScrollAnimation>
-
-        {/* Trust & Security Badge Footer */}
-        <ScrollAnimation animation="slide-up" duration={0.8} delay={0.4}>
-          <div className="mt-14 sm:mt-20 border-t border-white/10 pt-8 sm:pt-10">
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs sm:text-sm text-slate-400 font-medium">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/6 border border-white/10 hover:border-white/20 transition-colors">
-                <Lock className="w-4 h-4 text-indigo-400" />
-                <span>اتِّصال مُشفَّر SSL</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/6 border border-white/10 hover:border-white/20 transition-colors">
-                <ShieldCheck className="w-4 h-4 text-purple-400" />
-                <span>نظام توثيق رقمي</span>
-              </div>
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/6 border border-white/10 hover:border-white/20 transition-colors">
-                <Database className="w-4 h-4 text-emerald-400" />
-                <span>التَّحقُّق آني من قاعدة البيانات</span>
-              </div>
-            </div>
           </div>
         </ScrollAnimation>
       </div>
