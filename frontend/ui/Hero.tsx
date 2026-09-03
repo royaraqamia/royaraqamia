@@ -83,10 +83,10 @@ export function Hero() {
                 className="landing-reveal-item text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal pt-1"
                 style={{ ['--ld' as string]: '0.39s' } as React.CSSProperties}
               >
-                نبني مواقع وتطبيقات برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛
+                نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛
                 <br />
-                كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء المواقع
-                والتَّطبيقات.
+                كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء
+                التَّطبيقات.
               </p>
 
               {/* Social Proof Strip - Trust Signals */}
@@ -96,7 +96,7 @@ export function Hero() {
                 aria-label="انتقل إلى آراء العملاء"
                 style={{ ['--ld' as string]: '0.51s' } as React.CSSProperties}
               >
-                <div className="flex items-center gap-3 px-3.5 py-2 rounded-2xl bg-white/6 hover:bg-white/8 border border-white/10 hover:border-white/20 transition-[background-color,border-color] duration-300 shadow-xs">
+                <div className="flex items-center gap-3 px-3.5 py-2 rounded-2xl transition-[background-color,border-color] duration-300 shadow-xs">
                   <div className="flex">
                     {['أ', 'ز', 'ك'].map((letter, i) => (
                       <div
@@ -109,12 +109,12 @@ export function Hero() {
                       </div>
                     ))}
                   </div>
-                  <span className="text-xs sm:text-sm text-neutral-300 font-medium">
+                  <span className="text-xs sm:text-sm text-neutral-300 font-medium underline underline-offset-4 decoration-neutral-500/50">
                     ثقة <span className="font-bold text-white">25+</span> شخص
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl bg-white/5 border border-white/5 text-neutral-300 transition-[background-color,border-color] duration-300 group-hover:bg-white/6 group-hover:border-white/10">
+                <div className="flex items-center gap-2 px-3 py-2 rounded-2xl text-neutral-300 transition-[background-color,border-color] duration-300">
                   <span className="flex gap-0.5 text-amber-400">
                     <Star
                       size={14}
