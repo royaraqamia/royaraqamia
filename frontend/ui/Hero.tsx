@@ -92,7 +92,7 @@ export function Hero() {
               {/* Social Proof Strip - Trust Signals */}
               <a
                 href="#testimonials"
-                className="landing-reveal-item inline-flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition-transform active:scale-[0.99]"
+                className="landing-reveal-item inline-flex flex-wrap items-center justify-center lg:justify-start gap-1 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition-transform active:scale-[0.99]"
                 aria-label="انتقل إلى آراء العملاء"
                 style={{ ['--ld' as string]: '0.51s' } as React.CSSProperties}
               >
