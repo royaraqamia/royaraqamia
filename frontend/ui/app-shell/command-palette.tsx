@@ -23,6 +23,10 @@ import {
 } from '@/frontend/ui/primitives/command';
 import { APP_PRODUCTS } from './constants';
 
+const HIDDEN_PRODUCT_PATHS = new Set(
+  APP_PRODUCTS.filter((p) => p.hidden).map((p) => p.appPath.split('/')[1])
+);
+
 interface PaletteItem {
   id: string;
   label: string;
@@ -144,7 +148,7 @@ export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
             heading="التَّطبيقات"
             className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
           >
-            {APP_PRODUCTS.map((product) => {
+            {APP_PRODUCTS.filter((p) => !p.hidden).map((product) => {
               const Icon = product.icon;
               return (
                 <CommandItem
@@ -177,7 +181,10 @@ export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
             heading="إجراءات سريعة"
             className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
           >
-            {QUICK_ACTIONS.map((item) => {
+            {QUICK_ACTIONS.filter((item) => {
+              const pathSegment = item.href.split('/')[1];
+              return !HIDDEN_PRODUCT_PATHS.has(pathSegment);
+            }).map((item) => {
               const Icon = item.icon;
               return (
                 <CommandItem

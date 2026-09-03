@@ -17,6 +17,7 @@ export interface AppProductDef {
   appPath: string;
   landingPath: string;
   icon: LucideIcon;
+  hidden?: boolean;
 }
 
 export const APP_PRODUCTS: AppProductDef[] = [
@@ -40,6 +41,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/linksnap/app',
     landingPath: '/linksnap',
     icon: Link2,
+    hidden: true,
   },
   {
     id: 'blogpress',
@@ -47,6 +49,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/blogpress/app',
     landingPath: '/blogpress',
     icon: NotebookPen,
+    hidden: true,
   },
   {
     id: 'habitflow',
@@ -54,6 +57,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/habitflow/app',
     landingPath: '/habitflow',
     icon: CheckSquare,
+    hidden: true,
   },
   {
     id: 'spendtrack',
@@ -61,5 +65,6 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/spendtrack/app',
     landingPath: '/spendtrack',
     icon: Wallet,
+    hidden: true,
   },
 ];

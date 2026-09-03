@@ -8,6 +8,7 @@ import { useUI } from '../state/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
 import { MobileMenu } from './navbar/MobileMenu';
 import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
+import { APP_PRODUCTS } from './app-shell/constants';
 
 const NotificationDropdown = dynamic(
   () => import('./shared/notification-dropdown').then((m) => m.NotificationDropdown),
@@ -18,11 +19,6 @@ const UserDropdown = dynamic(() => import('./shared/user-dropdown').then((m) => 
   ssr: false,
   loading: () => null,
 });
-
-const CommandPalette = dynamic(
-  () => import('./app-shell/command-palette').then((m) => m.CommandPalette),
-  { ssr: false, loading: () => null }
-);
 
 export function Navbar() {
   const { isMobileMenuOpen, setIsMobileMenuOpen, isReviewSheetOpen } = useUI();
@@ -127,14 +123,11 @@ export function Navbar() {
       visible: true,
       hasDropdown: true,
       dropdownKey: 'projects',
-      subItems: [
-        { href: '/verify', label: 'التَّحقُّق من الشَّهادة', isRoute: true },
-        { href: '/consultation/book', label: 'حجز استشارة', isRoute: true },
-        { href: '/linksnap', label: 'إدارة الرَّوابط', isRoute: true },
-        { href: '/blogpress', label: 'إدارة المقالات', isRoute: true },
-        { href: '/habitflow', label: 'إدارة العادات', isRoute: true },
-        { href: '/spendtrack', label: 'إدارة المصاريف', isRoute: true },
-      ],
+      subItems: APP_PRODUCTS.filter((p) => !p.hidden).map((p) => ({
+        href: p.landingPath,
+        label: p.label,
+        isRoute: true,
+      })),
     },
     {
       href: '/blog',
@@ -200,7 +193,6 @@ export function Navbar() {
 
             {/* Mobile Navigation Controls & Dropdowns */}
             <div className="flex items-center gap-1.5 sm:gap-2.5 lg:hidden">
-              <CommandPalette enableHotkey={false} />
               <NotificationDropdown />
               <UserDropdown />
               <button
