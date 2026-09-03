@@ -1,22 +1,30 @@
 import { ScrollAnimation } from './ScrollAnimations';
 import { FAQAccordion, type FAQItem } from './FAQAccordion';
-import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 
 const faqs: FAQItem[] = [
   {
     question: 'ما هي طرق الدَّفع المتاحة؟',
     answer: 'تطبيق ShamCash لِمَن هم داخل سوريا، أو منصَّة MoneyGram لِمَن هم خارج سوريا.',
-    category: 'عام',
   },
   {
     question: 'ما العملات التي تقبلون الدَّفع بها؟',
-    answer: 'نقبل الدَّفع بالليرة السُّوريَّة الجديدة أو الدُّولار.',
-    category: 'عام',
+    answer: 'الليرة السُّوريَّة أو الدُّولار أو اليورو.',
   },
   {
-    question: 'كيف يمكنني طلب أحد خدماتكم؟',
-    answer: `من خلال التَّواصل معنا مباشرةً عبر واتساب (${WHATSAPP_PHONE}+).`,
-    category: 'عام',
+    question: 'هل الاستشارة الكتابيَّة مجَّانيَّة؟',
+    answer: `نعم.`,
+  },
+  {
+    question: 'هل الدَّفع بالتَّقسيط مُتاح فيما يخص خدمة البناء؟',
+    answer: `نعم.`,
+  },
+  {
+    question: 'هل يتطلَّب التَّدريب خلفيَّة تقنيَّة',
+    answer: `نعم.`,
+  },
+  {
+    question: 'هل يتطلَّب التَّدريب خبرة مُسبقَة في مجالات مُحدَّدة',
+    answer: `لا.`,
   },
 ];
 
