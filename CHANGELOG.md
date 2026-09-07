@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.2] - 2026-09-07
+
+### Changed
+- Reduce spacing between hero social proof badges
+- Remove watermark icons from verify certificate pages
+- Remove plan and review skills, add opencode-delegate
+- scaffold agent skills config (issue tracker + domain docs)
+- remove LinkSnap, BlogPress, SpendTrack, HabitFlow mentions from docs
+- restructure AGENTS.md with progressive disclosure
+- add opencode-delegate skill from amElnagdy/delegate-skills
+
 ## [1.19.1] - 2026-09-03
 
 ### Changed
