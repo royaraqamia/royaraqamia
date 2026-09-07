@@ -103,6 +103,12 @@
       "skillPath": "skills/misc/migrate-to-shoehorn/SKILL.md",
       "computedHash": "7d31e494a384d1a5b88d1dec6e1f50e673ef1a60f7b0b6e92babfbb242f79b62"
     },
+    "opencode-delegate": {
+      "source": "amElnagdy/delegate-skills",
+      "sourceType": "github",
+      "skillPath": "skills/opencode-delegate/SKILL.md",
+      "computedHash": "42468ef235a0e2c1a0ae3cc7ab290e25f35db14621a57bb40351ac311aff5a95"
+    },
     "prototype": {
       "source": "mattpocock/skills",
       "sourceType": "github",
