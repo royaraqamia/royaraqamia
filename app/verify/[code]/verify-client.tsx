@@ -310,11 +310,6 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
           <m.div variants={fadeUp}>
             <div className="relative group">
               <Card className="cert-print-card relative overflow-hidden rounded-3xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-neutral-900/80 shadow-2xl shadow-neutral-950/5 backdrop-blur-2xl transition-all duration-500">
-                {/* Visual Watermark */}
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-[0.03] dark:opacity-[0.04]">
-                  <ShieldCheck className="size-96 text-primary" />
-                </div>
-
                 {/* Aesthetic Corner Brackets */}
                 <div className="pointer-events-none absolute top-0 inset-s-0 size-12 md:size-16 border-t-2 border-s-2 border-primary/30 rounded-ss-3xl" />
                 <div className="pointer-events-none absolute top-0 inset-e-0 size-12 md:size-16 border-t-2 border-e-2 border-primary/30 rounded-se-3xl" />

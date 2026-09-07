@@ -14,7 +14,6 @@ import {
   Trophy,
   Copy,
   Check,
-  Sparkles,
 } from 'lucide-react';
 import { m } from 'motion/react';
 import { detailVariants } from './verify-variants';
@@ -97,7 +96,6 @@ export function CertificateResultCard({
               <h2 className="text-xl font-bold tracking-tight text-foreground">
                 تمَّ التَّحقُّق بنجاح
               </h2>
-              <Sparkles className="size-4 text-amber-500 animate-pulse" />
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               هذه الشَّهادة أصيلة ومُوثَّقة رسميًّا في سجلات رؤية رقمية
@@ -136,10 +134,6 @@ export function CertificateResultCard({
       <CardContent className="p-6 sm:p-8 space-y-6">
         {/* Main Certificate Showcase Highlight Banner */}
         <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-linear-to-br from-primary/5 via-primary/2 to-transparent p-5 sm:p-6 backdrop-blur-sm">
-          <div className="pointer-events-none absolute -inset-e-6 -bottom-6 opacity-[0.04] dark:opacity-[0.06]">
-            <GraduationCap className="size-44 text-primary" />
-          </div>
-
           <div className="grid gap-6 sm:grid-cols-2 relative z-10">
             {/* Student Info */}
             <div className="space-y-1.5">
@@ -156,7 +150,7 @@ export function CertificateResultCard({
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
                 <GraduationCap className="size-3.5 text-primary" />
-                <span>اسم الدَّورة / البرنامج التَّدريبي</span>
+                <span>اسم الدَّورة / البرنامج التَّدريبي</span>
               </div>
               <p className="text-base sm:text-lg font-bold text-foreground leading-snug">
                 {certificate.course_name}
