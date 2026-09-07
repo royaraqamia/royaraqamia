@@ -4,10 +4,9 @@ Use proactively when task matches. Load with the `skill` tool.
 
 ## Core Engineering (mattpocock/skills)
 
-- `plan` — Architecture/blueprint (MUST run before implement on non-trivial tasks)
 - `implement` — Execute approved blueprint
 - `implement-spec` — Implement a specification in code
-- `review` — QA: typecheck, lint, test, build, E2E
+- `opencode-delegate` — Delegate coding tasks to OpenCode CLI for background implementation
 - `code-review` — Review branch/PR against standards + spec
 - `codebase-design` — Deep module design, seams, testability
 - `improve-codebase-architecture` — Scan for deepening opportunities
