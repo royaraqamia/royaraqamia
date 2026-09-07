@@ -167,8 +167,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - force Latin digits on native numeric and temporal inputs
-- remove site footer from HabitFlow, BlogPress, LinkSnap, and SpendTrack
-- render single Navbar on HabitFlow, BlogPress, and LinkSnap app routes
+
 - remove viewport-capped scroll wrapper around calendar grid
 
 ## [1.11.0] - 2026-08-24
