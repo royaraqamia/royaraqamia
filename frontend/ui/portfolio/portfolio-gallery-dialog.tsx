@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -19,7 +19,7 @@ interface PortfolioGalleryDialogProps {
   onClose: () => void;
 }
 
-export function PortfolioGalleryDialog({
+export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
   selectedProject,
   galleryIndex,
   onGalleryIndexChange,
@@ -233,6 +233,7 @@ export function PortfolioGalleryDialog({
                           ? {
                               transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`,
                               transformOrigin: 'center center',
+                              willChange: 'transform',
                             }
                           : undefined
                       }
@@ -347,4 +348,4 @@ export function PortfolioGalleryDialog({
       </DialogContent>
     </Dialog>
   );
-}
+});

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { CopyPlus, FileDown, FileCode2, Loader2, MoreHorizontal, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { duplicatePost } from '@/frontend/api/blogpress';
@@ -21,7 +21,7 @@ interface PostActionsMenuProps {
   onDuplicated: (newId: string) => void;
 }
 
-export function PostActionsMenu({
+export const PostActionsMenu = memo(function PostActionsMenu({
   postId,
   title,
   getMarkdown,
@@ -107,4 +107,4 @@ export function PostActionsMenu({
       </DropdownMenuContent>
     </DropdownMenu>
   );
-}
+});

@@ -96,7 +96,7 @@ function formatRemainingTime(dateStr: string, timeStr: string): string | null {
   }
 }
 
-export function LinkEditDialog({
+export const LinkEditDialog = React.memo(function LinkEditDialog({
   open,
   code,
   currentUrl,
@@ -307,530 +307,540 @@ export function LinkEditDialog({
         if (!next) onClose();
       }}
     >
-      <DialogContent
-        dir="rtl"
-        onKeyDown={handleKeyDown}
-        className="sm:max-w-xl w-[calc(100%-2rem)] mx-auto p-0 gap-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/80 dark:border-neutral-800/90 bg-background/95 dark:bg-neutral-950/95 backdrop-blur-2xl shadow-2xl dark:shadow-[0_24px_60px_-15px_rgba(0,0,0,0.85)] transition-all duration-300 max-h-[calc(100dvh-3rem)] flex flex-col"
-      >
-        {/* Top Decorative Ambient Accent */}
-        <div
-          className="h-1.5 w-full bg-linear-to-r from-primary/30 via-primary to-primary/30 shrink-0"
-          aria-hidden="true"
-        />
-
-        {/* Dialog Header */}
-        <DialogHeader className="px-6 py-4.5 sm:px-7 sm:py-5 text-start border-b border-border/50 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/40 shrink-0">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-xs shrink-0 flex items-center justify-center">
-                <Pencil className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
-              </div>
-              <div>
-                <DialogTitle className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                  <span>تعديل الرابط المُختصر</span>
-                  {hasChanges && (
-                    <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                      تعديلات معلقة
-                    </span>
-                  )}
-                </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                  قم بتعديل الوجهة، الرمز المخصص، الحماية أو صلاحية الرابط.
-                </DialogDescription>
-              </div>
-            </div>
-
-            {hasChanges && (
-              <button
-                type="button"
-                onClick={resetFormState}
-                title="إعادة تعيين القيم الأصلية"
-                className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-neutral-800 border border-transparent hover:border-border/60 transition-all cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>إعادة تعيين</span>
-              </button>
-            )}
-          </div>
-        </DialogHeader>
-
-        {/* Scrollable Form Body */}
-        <form
-          onSubmit={handleSubmit}
-          className="p-5 sm:p-7 space-y-5 overflow-y-auto custom-scrollbar flex-1 min-h-0 text-start"
+      {open && (
+        <DialogContent
+          dir="rtl"
+          onKeyDown={handleKeyDown}
+          className="sm:max-w-xl w-[calc(100%-2rem)] mx-auto p-0 gap-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/80 dark:border-neutral-800/90 bg-background/95 dark:bg-neutral-950/95 backdrop-blur-sm shadow-2xl dark:shadow-[0_24px_60px_-15px_rgba(0,0,0,0.85)] transition-all duration-300 max-h-[calc(100dvh-3rem)] flex flex-col"
         >
-          {/* Live Link Preview Card */}
-          <div className="p-3.5 rounded-2xl bg-muted/40 dark:bg-neutral-900/60 border border-border/70 dark:border-neutral-800/80 space-y-2.5 transition-all">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5 font-medium">
-                <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                <span>معاينة الرابط المباشر</span>
-              </span>
-              <div className="flex items-center gap-1.5">
-                {passwordEnabled && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">
-                    <ShieldCheck className="w-3 h-3" />
-                    محمي
-                  </span>
-                )}
-                {enableExpiry && remainingTimeBadge && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
-                    <Clock className="w-3 h-3" />
-                    {remainingTimeBadge}
-                  </span>
-                )}
-              </div>
-            </div>
+          {/* Top Decorative Ambient Accent */}
+          <div
+            className="h-1.5 w-full bg-linear-to-r from-primary/30 via-primary to-primary/30 shrink-0"
+            aria-hidden="true"
+          />
 
-            <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-background dark:bg-neutral-950 border border-border/60 dark:border-neutral-800">
-              <div className="flex items-center gap-2 min-w-0 overflow-hidden" dir="ltr">
-                <Link2 className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
-                <span className="text-xs sm:text-sm font-mono font-bold text-foreground truncate">
-                  <span className="text-muted-foreground font-normal">{baseUrl}/</span>
-                  <span className="text-primary">{editingCodeValue || '...'}</span>
-                </span>
-              </div>
-              <div className="flex items-center gap-1 shrink-0" dir="ltr">
-                <button
-                  type="button"
-                  onClick={handleCopyLink}
-                  className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-                  title="نسخ الرابط المختصر"
-                  aria-label="نسخ الرابط المختصر"
-                >
-                  {copiedLink ? (
-                    <CheckCheck className="w-4 h-4 text-emerald-500" />
-                  ) : (
-                    <Copy className="w-4 h-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Destination URL Field */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="edit-url-input"
-                className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
-              >
-                <Globe className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                <span>الرابط الوجهة المستهدف (Destination URL)</span>
-                <span className="text-destructive font-bold" aria-hidden="true">
-                  *
-                </span>
-              </label>
-              {safePreviewHref && (
-                <a
-                  href={safePreviewHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-                >
-                  <span>اختبار الرابط</span>
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              )}
-            </div>
-
-            <div className="relative group">
-              <input
-                id="edit-url-input"
-                type="url"
-                required
-                dir="ltr"
-                value={editingUrlValue}
-                onChange={(e) => setEditingUrlValue(e.target.value)}
-                placeholder="https://example.com/very-long-target-url"
-                className="w-full h-11 px-3.5 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-sm font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 shadow-xs"
-                aria-describedby={updateError ? 'edit-url-error' : undefined}
-                aria-invalid={updateError ? true : undefined}
-              />
-            </div>
-          </div>
-
-          {/* Short Slug Input Field */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <label
-                htmlFor="edit-code-input"
-                className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
-              >
-                <Pencil className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                <span>الرمز المُختصَر (Slug)</span>
-              </label>
-              <span className="text-[11px] font-mono text-muted-foreground">
-                {editingCodeValue.length}/16
-              </span>
-            </div>
-
-            <div
-              className={cn(
-                'flex items-center w-full overflow-hidden bg-background dark:bg-neutral-950 border rounded-xl transition-all duration-200 shadow-xs focus-within:ring-2',
-                slugStatus === 'taken'
-                  ? 'border-destructive/60 focus-within:ring-destructive/20'
-                  : slugStatus === 'available' && editingCodeValue !== code
-                    ? 'border-emerald-500/60 focus-within:ring-emerald-500/20'
-                    : 'border-border/70 dark:border-neutral-800 focus-within:ring-primary/20 focus-within:border-primary'
-              )}
-              dir="ltr"
-            >
-              <span className="shrink-0 px-3 py-2.5 text-xs sm:text-sm font-mono font-medium text-muted-foreground bg-muted/40 dark:bg-neutral-900/60 border-r border-border/60 dark:border-neutral-800 select-none">
-                {baseUrl}/
-              </span>
-              <input
-                id="edit-code-input"
-                type="text"
-                dir="ltr"
-                value={editingCodeValue}
-                onChange={(e) =>
-                  setEditingCodeValue(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 16))
-                }
-                maxLength={16}
-                placeholder="custom-slug"
-                className="flex-1 min-w-0 bg-transparent px-3 py-2.5 text-sm font-mono font-bold focus:outline-none text-foreground placeholder:text-muted-foreground/30"
-                aria-describedby="edit-code-hint"
-                aria-invalid={slugStatus === 'taken' ? true : undefined}
-              />
-            </div>
-
-            {/* Slug Status Feedback Banner */}
-            <div
-              id="edit-code-hint"
-              role="status"
-              aria-live="polite"
-              className="flex items-center justify-between gap-1.5 text-xs font-medium pt-0.5"
-            >
-              {slugStatus === 'checking' ? (
-                <span className="text-muted-foreground flex items-center gap-1.5">
-                  <span
-                    className="h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin"
-                    aria-hidden="true"
-                  />
-                  جاري فحص توفر الرمز...
-                </span>
-              ) : slugStatus === 'available' ? (
-                <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                  <Check className="h-3.5 w-3.5" aria-hidden="true" />
-                  {editingCodeValue === code
-                    ? 'هذا هو الرمز المخصص الحالي.'
-                    : 'الرمز متاح وجاهز للاستخدام!'}
-                </span>
-              ) : slugStatus === 'taken' ? (
-                <span className="text-destructive flex items-center gap-1.5">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                  {slugError || 'هذا الرمز مأخوذ من قبل رابط آخر.'}
-                </span>
-              ) : (
-                <span className="text-muted-foreground/70">
-                  يتيح من 3 إلى 16 حرفاً (أحرف إنجليزية، أرقام، - و _)
-                </span>
-              )}
-            </div>
-          </div>
-
-          {/* Section: Expiry & Security Cards */}
-          <div className="space-y-3.5 pt-2">
-            {/* Expiration Settings Card */}
-            <div
-              className={cn(
-                'rounded-2xl border transition-all duration-200 overflow-hidden',
-                enableExpiry
-                  ? 'border-primary/30 bg-primary/5 dark:bg-primary/2'
-                  : 'border-border/70 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/30'
-              )}
-            >
-              <div className="p-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      'p-2 rounded-xl border shrink-0 transition-colors',
-                      enableExpiry
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-muted dark:bg-neutral-800 text-muted-foreground border-border/50'
-                    )}
-                  >
-                    <CalendarClock className="w-4 h-4" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground">
-                      تاريخ ووقت انتهاء الصلاحية
-                    </h4>
-                    <p className="text-[11px] text-muted-foreground">
-                      تعطيل الرابط تلقائياً بعد حلول هذا الموعد
-                    </p>
-                  </div>
+          {/* Dialog Header */}
+          <DialogHeader className="px-6 py-4.5 sm:px-7 sm:py-5 text-start border-b border-border/50 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/40 shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-primary/10 text-primary border border-primary/20 shadow-xs shrink-0 flex items-center justify-center">
+                  <Pencil className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
                 </div>
-
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={enableExpiry}
-                  aria-label="تفعيل أو تعطيل انتهاء صلاحية الرابط"
-                  onClick={() => {
-                    const nextState = !enableExpiry;
-                    setEnableExpiry(nextState);
-                    if (!nextState) {
-                      setExpiresDateValue('');
-                      setExpiresTimeValue('');
-                    } else if (!expiresDateValue) {
-                      setExpiryPreset(24 * 7); // Default to 7 days
-                    }
-                  }}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                    enableExpiry
-                      ? 'bg-primary border-primary'
-                      : 'bg-muted-foreground/20 border-border dark:bg-neutral-800'
-                  )}
-                  dir="ltr"
-                >
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      'inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200',
-                      enableExpiry ? 'translate-x-6' : 'translate-x-1'
+                <div>
+                  <DialogTitle className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
+                    <span>تعديل الرابط المُختصر</span>
+                    {hasChanges && (
+                      <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                        تعديلات معلقة
+                      </span>
                     )}
-                  />
-                </button>
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                    قم بتعديل الوجهة، الرمز المخصص، الحماية أو صلاحية الرابط.
+                  </DialogDescription>
+                </div>
               </div>
 
-              {enableExpiry && (
-                <div className="px-4 pb-4 pt-1 border-t border-border/40 dark:border-neutral-800/60 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {/* Quick Presets */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                    <span className="text-[11px] font-bold text-muted-foreground ml-1">
-                      خيارات سريعة:
+              {hasChanges && (
+                <button
+                  type="button"
+                  onClick={resetFormState}
+                  title="إعادة تعيين القيم الأصلية"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-neutral-800 border border-transparent hover:border-border/60 transition-all cursor-pointer"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                  <span>إعادة تعيين</span>
+                </button>
+              )}
+            </div>
+          </DialogHeader>
+
+          {/* Scrollable Form Body */}
+          <form
+            onSubmit={handleSubmit}
+            className="p-5 sm:p-7 space-y-5 overflow-y-auto custom-scrollbar flex-1 min-h-0 text-start"
+          >
+            {/* Live Link Preview Card */}
+            <div className="p-3.5 rounded-2xl bg-muted/40 dark:bg-neutral-900/60 border border-border/70 dark:border-neutral-800/80 space-y-2.5 transition-all">
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5 font-medium">
+                  <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+                  <span>معاينة الرابط المباشر</span>
+                </span>
+                <div className="flex items-center gap-1.5">
+                  {passwordEnabled && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-primary/10 text-primary text-[10px] font-bold">
+                      <ShieldCheck className="w-3 h-3" />
+                      محمي
                     </span>
-                    <button
-                      type="button"
-                      onClick={() => setExpiryPreset(24)}
-                      className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-background dark:bg-neutral-900 border border-border/60 hover:border-primary/40 hover:text-primary transition-all cursor-pointer"
-                    >
-                      24 ساعة
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setExpiryPreset(24 * 7)}
-                      className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-background dark:bg-neutral-900 border border-border/60 hover:border-primary/40 hover:text-primary transition-all cursor-pointer"
-                    >
-                      7 أيام
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setExpiryPreset(24 * 30)}
-                      className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-background dark:bg-neutral-900 border border-border/60 hover:border-primary/40 hover:text-primary transition-all cursor-pointer"
-                    >
-                      30 يوماً
-                    </button>
-                  </div>
-
-                  {/* Pickers */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div className="space-y-1">
-                      <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
-                        <Calendar className="w-3 h-3" />
-                        التاريخ
-                      </span>
-                      <DatePicker
-                        value={expiresDateValue}
-                        onChange={setExpiresDateValue}
-                        placeholder="اختر التاريخ"
-                        aria-label="تاريخ انتهاء الصلاحية"
-                        className="w-full h-10 px-3 bg-background dark:bg-neutral-950 border-border/70 dark:border-neutral-800 rounded-xl text-xs font-medium text-foreground"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        الوقت
-                      </span>
-                      <TimePicker
-                        value={expiresTimeValue}
-                        onChange={setExpiresTimeValue}
-                        aria-label="وقت انتهاء الصلاحية"
-                        triggerClassName="h-10 text-xs flex-1"
-                        className="w-full"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Password Protection Card */}
-            <div
-              className={cn(
-                'rounded-2xl border transition-all duration-200 overflow-hidden',
-                passwordEnabled
-                  ? 'border-primary/30 bg-primary/5 dark:bg-primary/2'
-                  : 'border-border/70 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/30'
-              )}
-            >
-              <div className="p-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={cn(
-                      'p-2 rounded-xl border shrink-0 transition-colors',
-                      passwordEnabled
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-muted dark:bg-neutral-800 text-muted-foreground border-border/50'
-                    )}
-                  >
-                    <KeyRound className="w-4 h-4" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-foreground">الحماية بكلمة مرور</h4>
-                    <p className="text-[11px] text-muted-foreground">
-                      طلب رمز أمان سري قبل التوجيه إلى الرابط الأصلي
-                    </p>
-                  </div>
-                </div>
-
-                <button
-                  id="edit-password-toggle"
-                  type="button"
-                  role="switch"
-                  aria-checked={passwordEnabled}
-                  aria-label="تفعيل أو تعطيل الحماية بكلمة مرور"
-                  onClick={() => {
-                    setPasswordEnabled((prev) => !prev);
-                    setPasswordError(null);
-                  }}
-                  className={cn(
-                    'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
-                    passwordEnabled
-                      ? 'bg-primary border-primary'
-                      : 'bg-muted-foreground/20 border-border dark:bg-neutral-800'
                   )}
-                  dir="ltr"
-                >
-                  <span
-                    aria-hidden="true"
-                    className={cn(
-                      'inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200',
-                      passwordEnabled ? 'translate-x-6' : 'translate-x-1'
-                    )}
-                  />
-                </button>
+                  {enableExpiry && remainingTimeBadge && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+                      <Clock className="w-3 h-3" />
+                      {remainingTimeBadge}
+                    </span>
+                  )}
+                </div>
               </div>
 
-              {passwordEnabled && (
-                <div className="px-4 pb-4 pt-1 border-t border-border/40 dark:border-neutral-800/60 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
-                  {currentPasswordProtected && (
-                    <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
-                      <ShieldCheck className="w-4 h-4 shrink-0" />
-                      <span>
-                        الرابط محمي حالياً بكلمة مرور. اتركه فارغاً للإبقاء عليها، أو اكتب كلمة مرور
-                        جديدة لتغييرها.
-                      </span>
-                    </div>
-                  )}
+              <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-background dark:bg-neutral-950 border border-border/60 dark:border-neutral-800">
+                <div className="flex items-center gap-2 min-w-0 overflow-hidden" dir="ltr">
+                  <Link2 className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
+                  <span className="text-xs sm:text-sm font-mono font-bold text-foreground truncate">
+                    <span className="text-muted-foreground font-normal">{baseUrl}/</span>
+                    <span className="text-primary">{editingCodeValue || '...'}</span>
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 shrink-0" dir="ltr">
+                  <button
+                    type="button"
+                    onClick={handleCopyLink}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+                    title="نسخ الرابط المختصر"
+                    aria-label="نسخ الرابط المختصر"
+                  >
+                    {copiedLink ? (
+                      <CheckCheck className="w-4 h-4 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                  <div className="relative">
-                    <input
-                      id="edit-password-input"
-                      type={showPassword ? 'text' : 'password'}
-                      value={passwordValue}
-                      dir="ltr"
-                      onChange={(e) => {
-                        setPasswordValue(e.target.value);
-                        setPasswordError(null);
-                      }}
-                      placeholder={
-                        currentPasswordProtected
-                          ? '•••••••••••• (اتركه فارغاً للإبقاء على الحالية)'
-                          : 'أدخل كلمة مرور قوية'
-                      }
-                      autoComplete="new-password"
-                      aria-invalid={passwordError ? true : undefined}
-                      aria-describedby={passwordError ? 'edit-password-error' : undefined}
-                      className="w-full h-10 pr-3.5 pl-10 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-xs font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 shadow-xs"
+            {/* Destination URL Field */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="edit-url-input"
+                  className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
+                >
+                  <Globe className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+                  <span>الرابط الوجهة المستهدف (Destination URL)</span>
+                  <span className="text-destructive font-bold" aria-hidden="true">
+                    *
+                  </span>
+                </label>
+                {safePreviewHref && (
+                  <a
+                    href={safePreviewHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+                  >
+                    <span>اختبار الرابط</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
+              </div>
+
+              <div className="relative group">
+                <input
+                  id="edit-url-input"
+                  type="url"
+                  required
+                  dir="ltr"
+                  value={editingUrlValue}
+                  onChange={(e) => setEditingUrlValue(e.target.value)}
+                  placeholder="https://example.com/very-long-target-url"
+                  className="w-full h-11 px-3.5 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-sm font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 shadow-xs"
+                  aria-describedby={updateError ? 'edit-url-error' : undefined}
+                  aria-invalid={updateError ? true : undefined}
+                />
+              </div>
+            </div>
+
+            {/* Short Slug Input Field */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="edit-code-input"
+                  className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
+                >
+                  <Pencil className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+                  <span>الرمز المُختصَر (Slug)</span>
+                </label>
+                <span className="text-[11px] font-mono text-muted-foreground">
+                  {editingCodeValue.length}/16
+                </span>
+              </div>
+
+              <div
+                className={cn(
+                  'flex items-center w-full overflow-hidden bg-background dark:bg-neutral-950 border rounded-xl transition-all duration-200 shadow-xs focus-within:ring-2',
+                  slugStatus === 'taken'
+                    ? 'border-destructive/60 focus-within:ring-destructive/20'
+                    : slugStatus === 'available' && editingCodeValue !== code
+                      ? 'border-emerald-500/60 focus-within:ring-emerald-500/20'
+                      : 'border-border/70 dark:border-neutral-800 focus-within:ring-primary/20 focus-within:border-primary'
+                )}
+                dir="ltr"
+              >
+                <span className="shrink-0 px-3 py-2.5 text-xs sm:text-sm font-mono font-medium text-muted-foreground bg-muted/40 dark:bg-neutral-900/60 border-r border-border/60 dark:border-neutral-800 select-none">
+                  {baseUrl}/
+                </span>
+                <input
+                  id="edit-code-input"
+                  type="text"
+                  dir="ltr"
+                  value={editingCodeValue}
+                  onChange={(e) =>
+                    setEditingCodeValue(e.target.value.replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 16))
+                  }
+                  maxLength={16}
+                  placeholder="custom-slug"
+                  className="flex-1 min-w-0 bg-transparent px-3 py-2.5 text-sm font-mono font-bold focus:outline-none text-foreground placeholder:text-muted-foreground/30"
+                  aria-describedby="edit-code-hint"
+                  aria-invalid={slugStatus === 'taken' ? true : undefined}
+                />
+              </div>
+
+              {/* Slug Status Feedback Banner */}
+              <div
+                id="edit-code-hint"
+                role="status"
+                aria-live="polite"
+                className="flex items-center justify-between gap-1.5 text-xs font-medium pt-0.5"
+              >
+                {slugStatus === 'checking' ? (
+                  <span className="text-muted-foreground flex items-center gap-1.5">
+                    <span
+                      className="h-3 w-3 rounded-full border-2 border-primary border-t-transparent animate-spin"
+                      aria-hidden="true"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
-                      title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
-                      aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                    جاري فحص توفر الرمز...
+                  </span>
+                ) : slugStatus === 'available' ? (
+                  <span className="text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                    <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                    {editingCodeValue === code
+                      ? 'هذا هو الرمز المخصص الحالي.'
+                      : 'الرمز متاح وجاهز للاستخدام!'}
+                  </span>
+                ) : slugStatus === 'taken' ? (
+                  <span className="text-destructive flex items-center gap-1.5">
+                    <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    {slugError || 'هذا الرمز مأخوذ من قبل رابط آخر.'}
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground/70">
+                    يتيح من 3 إلى 16 حرفاً (أحرف إنجليزية، أرقام، - و _)
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Section: Expiry & Security Cards */}
+            <div className="space-y-3.5 pt-2">
+              {/* Expiration Settings Card */}
+              <div
+                className={cn(
+                  'rounded-2xl border transition-all duration-200 overflow-hidden',
+                  enableExpiry
+                    ? 'border-primary/30 bg-primary/5 dark:bg-primary/2'
+                    : 'border-border/70 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/30'
+                )}
+              >
+                <div className="p-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'p-2 rounded-xl border shrink-0 transition-colors',
+                        enableExpiry
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted dark:bg-neutral-800 text-muted-foreground border-border/50'
+                      )}
                     >
-                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
+                      <CalendarClock className="w-4 h-4" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground">
+                        تاريخ ووقت انتهاء الصلاحية
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        تعطيل الرابط تلقائياً بعد حلول هذا الموعد
+                      </p>
+                    </div>
                   </div>
 
-                  {passwordError && (
-                    <p
-                      id="edit-password-error"
-                      role="alert"
-                      className="text-xs font-medium text-destructive flex items-center gap-1.5"
-                    >
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
-                      {passwordError}
-                    </p>
-                  )}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enableExpiry}
+                    aria-label="تفعيل أو تعطيل انتهاء صلاحية الرابط"
+                    onClick={() => {
+                      const nextState = !enableExpiry;
+                      setEnableExpiry(nextState);
+                      if (!nextState) {
+                        setExpiresDateValue('');
+                        setExpiresTimeValue('');
+                      } else if (!expiresDateValue) {
+                        setExpiryPreset(24 * 7); // Default to 7 days
+                      }
+                    }}
+                    className={cn(
+                      'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                      enableExpiry
+                        ? 'bg-primary border-primary'
+                        : 'bg-muted-foreground/20 border-border dark:bg-neutral-800'
+                    )}
+                    dir="ltr"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200',
+                        enableExpiry ? 'translate-x-6' : 'translate-x-1'
+                      )}
+                    />
+                  </button>
                 </div>
-              )}
-            </div>
-          </div>
 
-          {/* Dynamic Global Update Error */}
-          {updateError && (
-            <div
-              id="edit-url-error"
-              role="alert"
-              aria-live="polite"
-              className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-xs font-medium leading-normal animate-in fade-in duration-200"
-            >
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
-              <span className="flex-1">{updateError}</span>
-            </div>
-          )}
+                {enableExpiry && (
+                  <div className="px-4 pb-4 pt-1 border-t border-border/40 dark:border-neutral-800/60 space-y-3 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {/* Quick Presets */}
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[11px] font-bold text-muted-foreground ml-1">
+                        خيارات سريعة:
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setExpiryPreset(24)}
+                        className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-background dark:bg-neutral-900 border border-border/60 hover:border-primary/40 hover:text-primary transition-all cursor-pointer"
+                      >
+                        24 ساعة
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExpiryPreset(24 * 7)}
+                        className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-background dark:bg-neutral-900 border border-border/60 hover:border-primary/40 hover:text-primary transition-all cursor-pointer"
+                      >
+                        7 أيام
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExpiryPreset(24 * 30)}
+                        className="px-2.5 py-1 text-[11px] font-medium rounded-lg bg-background dark:bg-neutral-900 border border-border/60 hover:border-primary/40 hover:text-primary transition-all cursor-pointer"
+                      >
+                        30 يوماً
+                      </button>
+                    </div>
 
-          {/* Footer Action Buttons */}
-          <div className="pt-4 sm:pt-5 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-border/50 dark:border-neutral-800/80">
-            <div className="text-[11px] text-muted-foreground/80 hidden sm:block">
-              اضغط <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">Ctrl</kbd>{' '}
-              + <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">Enter</kbd>{' '}
-              للحفظ السريع
-            </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="flex-1 sm:flex-initial h-10 rounded-xl px-5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/80 border-border/70 transition-all duration-200 active:scale-[0.98] cursor-pointer"
-              >
-                إلغاء
-              </Button>
-              <Button
-                type="submit"
-                disabled={
-                  updateLoading ||
-                  slugStatus === 'taken' ||
-                  slugStatus === 'checking' ||
-                  slugTooShort ||
-                  !hasChanges
-                }
-                className="flex-1 sm:flex-initial h-10 rounded-xl px-6 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer"
-              >
-                {updateLoading ? (
-                  <>
-                    <LoaderCircle className="w-4 h-4 animate-spin opacity-90" aria-hidden="true" />
-                    <span>جاري حفظ التعديلات...</span>
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4" />
-                    <span>حفظ التغييرات</span>
-                  </>
+                    {/* Pickers */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
+                          التاريخ
+                        </span>
+                        <DatePicker
+                          value={expiresDateValue}
+                          onChange={setExpiresDateValue}
+                          placeholder="اختر التاريخ"
+                          aria-label="تاريخ انتهاء الصلاحية"
+                          className="w-full h-10 px-3 bg-background dark:bg-neutral-950 border-border/70 dark:border-neutral-800 rounded-xl text-xs font-medium text-foreground"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          الوقت
+                        </span>
+                        <TimePicker
+                          value={expiresTimeValue}
+                          onChange={setExpiresTimeValue}
+                          aria-label="وقت انتهاء الصلاحية"
+                          triggerClassName="h-10 text-xs flex-1"
+                          className="w-full"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </Button>
+              </div>
+
+              {/* Password Protection Card */}
+              <div
+                className={cn(
+                  'rounded-2xl border transition-all duration-200 overflow-hidden',
+                  passwordEnabled
+                    ? 'border-primary/30 bg-primary/5 dark:bg-primary/2'
+                    : 'border-border/70 dark:border-neutral-800/80 bg-muted/20 dark:bg-neutral-900/30'
+                )}
+              >
+                <div className="p-4 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'p-2 rounded-xl border shrink-0 transition-colors',
+                        passwordEnabled
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted dark:bg-neutral-800 text-muted-foreground border-border/50'
+                      )}
+                    >
+                      <KeyRound className="w-4 h-4" aria-hidden="true" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-foreground">الحماية بكلمة مرور</h4>
+                      <p className="text-[11px] text-muted-foreground">
+                        طلب رمز أمان سري قبل التوجيه إلى الرابط الأصلي
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    id="edit-password-toggle"
+                    type="button"
+                    role="switch"
+                    aria-checked={passwordEnabled}
+                    aria-label="تفعيل أو تعطيل الحماية بكلمة مرور"
+                    onClick={() => {
+                      setPasswordEnabled((prev) => !prev);
+                      setPasswordError(null);
+                    }}
+                    className={cn(
+                      'relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
+                      passwordEnabled
+                        ? 'bg-primary border-primary'
+                        : 'bg-muted-foreground/20 border-border dark:bg-neutral-800'
+                    )}
+                    dir="ltr"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        'inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200',
+                        passwordEnabled ? 'translate-x-6' : 'translate-x-1'
+                      )}
+                    />
+                  </button>
+                </div>
+
+                {passwordEnabled && (
+                  <div className="px-4 pb-4 pt-1 border-t border-border/40 dark:border-neutral-800/60 space-y-2.5 animate-in fade-in slide-in-from-top-2 duration-200">
+                    {currentPasswordProtected && (
+                      <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
+                        <ShieldCheck className="w-4 h-4 shrink-0" />
+                        <span>
+                          الرابط محمي حالياً بكلمة مرور. اتركه فارغاً للإبقاء عليها، أو اكتب كلمة
+                          مرور جديدة لتغييرها.
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="relative">
+                      <input
+                        id="edit-password-input"
+                        type={showPassword ? 'text' : 'password'}
+                        value={passwordValue}
+                        dir="ltr"
+                        onChange={(e) => {
+                          setPasswordValue(e.target.value);
+                          setPasswordError(null);
+                        }}
+                        placeholder={
+                          currentPasswordProtected
+                            ? '•••••••••••• (اتركه فارغاً للإبقاء على الحالية)'
+                            : 'أدخل كلمة مرور قوية'
+                        }
+                        autoComplete="new-password"
+                        aria-invalid={passwordError ? true : undefined}
+                        aria-describedby={passwordError ? 'edit-password-error' : undefined}
+                        className="w-full h-10 pr-3.5 pl-10 rounded-xl border border-border/70 dark:border-neutral-800 bg-background dark:bg-neutral-950 text-xs font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 shadow-xs"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1 cursor-pointer"
+                        title={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                        aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+
+                    {passwordError && (
+                      <p
+                        id="edit-password-error"
+                        role="alert"
+                        className="text-xs font-medium text-destructive flex items-center gap-1.5"
+                      >
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                        {passwordError}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        </form>
-      </DialogContent>
+
+            {/* Dynamic Global Update Error */}
+            {updateError && (
+              <div
+                id="edit-url-error"
+                role="alert"
+                aria-live="polite"
+                className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-xs font-medium leading-normal animate-in fade-in duration-200"
+              >
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" aria-hidden="true" />
+                <span className="flex-1">{updateError}</span>
+              </div>
+            )}
+
+            {/* Footer Action Buttons */}
+            <div className="pt-4 sm:pt-5 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-border/50 dark:border-neutral-800/80">
+              <div className="text-[11px] text-muted-foreground/80 hidden sm:block">
+                اضغط{' '}
+                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">Ctrl</kbd> +{' '}
+                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">Enter</kbd>{' '}
+                للحفظ السريع
+              </div>
+
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={onClose}
+                  className="flex-1 sm:flex-initial h-10 rounded-xl px-5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/80 border-border/70 transition-all duration-200 active:scale-[0.98] cursor-pointer"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={
+                    updateLoading ||
+                    slugStatus === 'taken' ||
+                    slugStatus === 'checking' ||
+                    slugTooShort ||
+                    !hasChanges
+                  }
+                  className="flex-1 sm:flex-initial h-10 rounded-xl px-6 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {updateLoading ? (
+                    <>
+                      <LoaderCircle
+                        className="w-4 h-4 animate-spin opacity-90"
+                        aria-hidden="true"
+                      />
+                      <span>جاري حفظ التعديلات...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>حفظ التغييرات</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </form>
+        </DialogContent>
+      )}
     </Dialog>
   );
-}
+});

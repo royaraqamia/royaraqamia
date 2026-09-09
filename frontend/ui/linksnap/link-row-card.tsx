@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import {
   Copy,
   Check,
@@ -74,7 +74,7 @@ interface LinkRowCardProps {
   onToggleSelect?: (code: string) => void;
 }
 
-export function LinkRowCard({
+export const LinkRowCard = memo(function LinkRowCard({
   code,
   originalUrl,
   createdAt,
@@ -449,4 +449,4 @@ export function LinkRowCard({
       />
     </article>
   );
-}
+});

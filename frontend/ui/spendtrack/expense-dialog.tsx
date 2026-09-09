@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { useForm, useFieldArray, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -68,7 +68,7 @@ const INHERIT_CURRENCY_VALUE = '__inherit';
 
 type ExpenseFormValues = z.input<typeof expenseSchema>;
 
-export function CreateExpenseDialog({
+export const CreateExpenseDialog = memo(function CreateExpenseDialog({
   categories,
   currency,
   autoOpen = false,
@@ -127,37 +127,39 @@ export function CreateExpenseDialog({
           <span>إضافة مصروف</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
-        <DialogHeader className="flex flex-row items-center gap-3.5 space-y-0 text-start pb-4 border-b border-neutral-100 dark:border-neutral-800/60">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 shadow-inner">
-            <Plus className="size-5" />
-          </div>
-          <div className="space-y-0.5">
-            <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
-              إضافة مصروف
-            </DialogTitle>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              أدخِل تفاصيل المصروف لتسجيله في حسابك
-            </p>
-          </div>
-        </DialogHeader>
-        <ExpenseForm
-          onSubmit={handleSubmit(onSubmit)}
-          register={register}
-          control={control}
-          errors={errors}
-          categories={categories}
-          pending={pending}
-          serverError={serverError}
-          submitLabel="إضافة مصروف"
-          currency={currency}
-        />
-      </DialogContent>
+      {isOpen && (
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
+          <DialogHeader className="flex flex-row items-center gap-3.5 space-y-0 text-start pb-4 border-b border-neutral-100 dark:border-neutral-800/60">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 shadow-inner">
+              <Plus className="size-5" />
+            </div>
+            <div className="space-y-0.5">
+              <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+                إضافة مصروف
+              </DialogTitle>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                أدخِل تفاصيل المصروف لتسجيله في حسابك
+              </p>
+            </div>
+          </DialogHeader>
+          <ExpenseForm
+            onSubmit={handleSubmit(onSubmit)}
+            register={register}
+            control={control}
+            errors={errors}
+            categories={categories}
+            pending={pending}
+            serverError={serverError}
+            submitLabel="إضافة مصروف"
+            currency={currency}
+          />
+        </DialogContent>
+      )}
     </Dialog>
   );
-}
+});
 
-export function EditExpenseDialog({
+export const EditExpenseDialog = memo(function EditExpenseDialog({
   expense,
   categories,
   currency,
@@ -216,35 +218,37 @@ export function EditExpenseDialog({
           <Pencil className="size-4 transition-transform duration-200 group-hover:scale-110" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
-        <DialogHeader className="flex flex-row items-center gap-3.5 space-y-0 text-start pb-4 border-b border-neutral-100 dark:border-neutral-800/60">
-          <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 shadow-inner">
-            <Pencil className="size-5" />
-          </div>
-          <div className="space-y-0.5">
-            <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
-              تعديل المصروف
-            </DialogTitle>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              تعديل بيانات وتفاصيل المصروف الحالي
-            </p>
-          </div>
-        </DialogHeader>
-        <ExpenseForm
-          onSubmit={handleSubmit(onSubmit)}
-          register={register}
-          control={control}
-          errors={errors}
-          categories={categories}
-          pending={pending}
-          serverError={serverError}
-          submitLabel="حفظ التَّعديلات"
-          currency={currency}
-        />
-      </DialogContent>
+      {isOpen && (
+        <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
+          <DialogHeader className="flex flex-row items-center gap-3.5 space-y-0 text-start pb-4 border-b border-neutral-100 dark:border-neutral-800/60">
+            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 shadow-inner">
+              <Pencil className="size-5" />
+            </div>
+            <div className="space-y-0.5">
+              <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
+                تعديل المصروف
+              </DialogTitle>
+              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                تعديل بيانات وتفاصيل المصروف الحالي
+              </p>
+            </div>
+          </DialogHeader>
+          <ExpenseForm
+            onSubmit={handleSubmit(onSubmit)}
+            register={register}
+            control={control}
+            errors={errors}
+            categories={categories}
+            pending={pending}
+            serverError={serverError}
+            submitLabel="حفظ التَّعديلات"
+            currency={currency}
+          />
+        </DialogContent>
+      )}
     </Dialog>
   );
-}
+});
 
 function ExpenseForm({
   onSubmit,
@@ -364,7 +368,7 @@ function ExpenseForm({
               >
                 <SelectValue placeholder="اختر تصنيف" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg shadow-xl p-1 max-h-60">
+              <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 shadow-xl p-1 max-h-60">
                 {categories.map((cat) => (
                   <SelectItem
                     key={cat.id}
@@ -480,7 +484,7 @@ function ExpenseForm({
               <SelectTrigger className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-all duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
                 <SelectValue placeholder="العملة الأساسية" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg shadow-xl p-1 max-h-60">
+              <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 shadow-xl p-1 max-h-60">
                 <SelectItem
                   value={INHERIT_CURRENCY_VALUE}
                   className="rounded-lg py-2 px-3 text-sm font-medium cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:bg-neutral-100 dark:focus:bg-neutral-800"
@@ -542,7 +546,7 @@ function ExpenseForm({
                       <SelectTrigger className="flex-1 h-10 px-3 bg-white/80 dark:bg-neutral-900/60 border border-neutral-200/90 dark:border-neutral-800 rounded-lg text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-all duration-200 hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
                         <SelectValue placeholder="اختر تصنيف" />
                       </SelectTrigger>
-                      <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-lg shadow-xl p-1 max-h-48">
+                      <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 shadow-xl p-1 max-h-48">
                         {categories.map((cat) => (
                           <SelectItem
                             key={cat.id}

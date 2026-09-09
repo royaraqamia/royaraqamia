@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   BookOpen,
@@ -75,7 +75,9 @@ interface CommandPaletteProps {
   enableHotkey?: boolean;
 }
 
-export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
+export const CommandPalette = memo(function CommandPalette({
+  enableHotkey = true,
+}: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
@@ -267,4 +269,4 @@ export function CommandPalette({ enableHotkey = true }: CommandPaletteProps) {
       </CommandDialog>
     </>
   );
-}
+});

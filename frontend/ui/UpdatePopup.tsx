@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, memo } from 'react';
 import { m, AnimatePresence } from 'motion/react';
 
 interface UpdatePopupProps {
@@ -9,7 +9,11 @@ interface UpdatePopupProps {
   releaseVersion?: string | null;
 }
 
-export function UpdatePopup({ onReload, onDismiss, releaseVersion }: UpdatePopupProps) {
+export const UpdatePopup = memo(function UpdatePopup({
+  onReload,
+  onDismiss,
+  releaseVersion,
+}: UpdatePopupProps) {
   const [visible, setVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const dismissTimerRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -77,7 +81,7 @@ export function UpdatePopup({ onReload, onDismiss, releaseVersion }: UpdatePopup
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.15 } }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm will-change-[opacity]"
             onClick={handleDismiss}
             aria-hidden="true"
           />
@@ -91,7 +95,7 @@ export function UpdatePopup({ onReload, onDismiss, releaseVersion }: UpdatePopup
               transition: { duration: 0.15, ease: 'easeIn' },
             }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="relative w-full border border-border bg-card shadow-2xl shadow-primary/5
+            className="relative w-full border border-border bg-card shadow-2xl shadow-primary/5 will-change-[transform,opacity]
               max-w-sm rounded-3xl
               max-h-[85dvh] overflow-y-auto
               max-md:w-[calc(100%-48px)] max-md:max-w-full max-md:rounded-t-3xl max-md:rounded-b-none"
@@ -116,7 +120,7 @@ export function UpdatePopup({ onReload, onDismiss, releaseVersion }: UpdatePopup
               <h2 className="mb-1.5 font-arabic text-xl font-bold text-foreground">تحديث متاح</h2>
               {displayVersion && (
                 <p className="mb-1.5 font-arabic text-base font-bold text-primary">
-                  النُّسخة الجديدة {displayVersion}
+                  النُّسخة الجديدة {displayVersion}
                 </p>
               )}
               <p className="text-sm leading-relaxed text-muted-foreground">
@@ -143,4 +147,4 @@ export function UpdatePopup({ onReload, onDismiss, releaseVersion }: UpdatePopup
       )}
     </AnimatePresence>
   );
-}
+});

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { AlertTriangle, Download, Globe, Smartphone, Monitor, Cpu, Loader2 } from 'lucide-react';
 import { AnalyticsChart } from './analytics-chart';
@@ -100,7 +100,7 @@ function BreakdownRows({
   );
 }
 
-export function LinkAnalyticsDrawer({
+export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
   isExpanded,
   analyticsLoading,
   analyticsError,
@@ -332,4 +332,4 @@ export function LinkAnalyticsDrawer({
       )}
     </AnimatePresence>
   );
-}
+});
