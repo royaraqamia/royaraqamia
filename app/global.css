@@ -1091,14 +1091,18 @@
   }
 }
 
+/*
+ * pulse-slow: animates `scale` instead of `opacity` so blurred layers are
+ * composited once and scaled on the GPU — no per-frame Gaussian re-raster.
+ */
 @keyframes pulse-slow {
   0%,
   100% {
-    opacity: 1;
+    scale: 1;
   }
 
   50% {
-    opacity: 0.6;
+    scale: 1.08;
   }
 }
 
@@ -2111,4 +2115,11 @@
   .landing-grow-h {
     height: var(--landing-target, 100%) !important;
   }
+}
+
+/* Certificate card pressed scale — CSS-only replacement for framer-motion
+   animate={{ scale }}. The custom property drives the transform in the
+   component's inline style. */
+[role="region"][data-pressed] {
+  --card-scale: 1.02;
 }

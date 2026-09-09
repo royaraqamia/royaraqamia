@@ -1,7 +1,7 @@
 'use client';
 
-import { ElementType, MouseEvent } from 'react';
-import { m, useMotionTemplate, useMotionValue } from 'motion/react';
+import { ElementType, MouseEvent, useCallback, useRef } from 'react';
+import { m } from 'motion/react';
 import { Check, ArrowRight, Code, Lightbulb, MessageCircle } from 'lucide-react';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
@@ -65,18 +65,27 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
   const Icon = iconMap[service.icon]!;
   const colors = colorConfigs[service.colorKey];
 
-  // Elite Detail: Mouse Tracking Spotlight
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+  // RAF-throttled mouse tracking — updates CSS custom properties on the
+  // compositor thread. The radial-gradient in the JSX uses var(--mx)/var(--my)
+  // so the browser recomposites without JS intervention.
+  const rafId = useRef(0);
+  const cardRef = useRef<HTMLElement>(null);
 
-  function handleMouseMove({ currentTarget, clientX, clientY }: MouseEvent<HTMLDivElement>) {
-    const { left, top } = currentTarget.getBoundingClientRect();
-    mouseX.set(clientX - left);
-    mouseY.set(clientY - top);
-  }
+  const handleMouseMove = useCallback(
+    ({ currentTarget, clientX, clientY }: MouseEvent<HTMLDivElement>) => {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        const { left, top } = currentTarget.getBoundingClientRect();
+        cardRef.current?.style.setProperty('--mx', String(clientX - left));
+        cardRef.current?.style.setProperty('--my', String(clientY - top));
+      });
+    },
+    []
+  );
 
   return (
     <m.article
+      ref={cardRef}
       custom={index}
       initial="hidden"
       whileInView="show"
@@ -93,18 +102,13 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
 
       {/* 
         The Magic: Mouse-tracking spotlight background. 
-        It injects the specific service color gradient bound to cursor position. 
+        CSS custom properties --mx/--my drive the gradient position;
+        the browser recomposites on the compositor thread without JS.
       */}
-      <m.div
+      <div
         className="absolute -inset-px z-0 opacity-0 group-hover/service:opacity-100 transition-opacity duration-500 pointer-events-none mix-blend-screen rounded-4xl"
         style={{
-          background: useMotionTemplate`
-            radial-gradient(
-              650px circle at ${mouseX}px ${mouseY}px,
-              ${colors.gradient}25, 
-              transparent 80%
-            )
-          `,
+          background: `radial-gradient(650px circle at var(--mx, 0px) var(--my, 0px), ${colors.gradient}25, transparent 80%)`,
         }}
       />
 

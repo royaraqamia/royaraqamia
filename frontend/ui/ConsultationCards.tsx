@@ -73,9 +73,10 @@ export function ConsultationCards() {
         {/* Main Consultation Card */}
         <ScrollAnimation animation="slide-up" duration={0.8} delay={0.2}>
           <div className="relative group">
-            {/* Dynamic Glow Halo on Hover */}
+            {/* Dynamic Glow Halo on Hover — scale-only transition avoids
+                re-rasterizing the three box-shadows on every opacity frame. */}
             <div
-              className="absolute -inset-1 rounded-3xl opacity-70 group-hover:opacity-100 transition duration-700 ease-out pointer-events-none shadow-[0_0_32px_6px_rgba(147,51,234,0.35),0_0_56px_18px_rgba(124,58,237,0.22),0_0_80px_28px_rgba(79,70,229,0.18)]"
+              className="absolute -inset-1 rounded-3xl pointer-events-none shadow-[0_0_32px_6px_rgba(147,51,234,0.35),0_0_56px_18px_rgba(124,58,237,0.22),0_0_80px_28px_rgba(79,70,229,0.18)] transition-transform duration-700 ease-out scale-90 group-hover:scale-100"
               aria-hidden="true"
             />
 
