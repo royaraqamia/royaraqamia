@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect } from 'react';
-import { m } from 'motion/react';
 
 interface OtpInputProps {
   length?: number;
@@ -81,20 +80,11 @@ export function OtpInput({
         const isFilled = value[i] !== undefined && value[i] !== '';
 
         return (
-          <m.div
+          <div
             key={i}
-            animate={
-              hasError && !isFocused
-                ? {
-                    x: [0, -6, 6, -4, 4, -2, 2, 0],
-                    transition: { duration: 0.45, ease: 'easeInOut' },
-                  }
-                : {
-                    scale: isFocused ? 1.04 : 1,
-                    transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] },
-                  }
-            }
-            className="relative flex items-center justify-center shrink-0"
+            className={`relative flex items-center justify-center shrink-0 ${
+              hasError && !isFocused ? 'animate-shake' : ''
+            } ${isFocused ? 'animate-otp-scale' : ''}`}
           >
             <input
               ref={(el) => {
@@ -136,7 +126,7 @@ export function OtpInput({
             {isFocused && (
               <span className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-0.5 rounded-full bg-primary animate-pulse pointer-events-none z-20" />
             )}
-          </m.div>
+          </div>
         );
       })}
     </div>

@@ -1,20 +1,24 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, lazy } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { m, AnimatePresence } from 'motion/react';
 import { CircleAlert, User, Mail, LockKeyhole } from 'lucide-react';
 import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
 import { signup, signInWithGoogle } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Button } from '@/frontend/ui/primitives/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
-import { PasswordStrength } from '@/frontend/ui/auth/PasswordStrength';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
-import { Turnstile } from '@/frontend/ui/auth/Turnstile';
 import { authLink } from '@/frontend/ui/auth/auth-links';
+
+const PasswordStrength = lazy(() =>
+  import('@/frontend/ui/auth/PasswordStrength').then((m) => ({ default: m.PasswordStrength }))
+);
+const Turnstile = lazy(() =>
+  import('@/frontend/ui/auth/Turnstile').then((m) => ({ default: m.Turnstile }))
+);
 
 function SignupForm() {
   const searchParams = useSearchParams();
@@ -140,27 +144,18 @@ function SignupForm() {
           <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
 
           {/* Animated Error Alert */}
-          <AnimatePresence mode="wait">
-            {message && (
-              <m.div
-                key="signup-error-alert"
-                initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs backdrop-blur-xs"
-              >
-                <CircleAlert
-                  size={20}
-                  className="shrink-0 mt-0.5 text-destructive"
-                  aria-hidden="true"
-                />
-                <p id="signup-error" role="alert" className="text-sm font-medium leading-relaxed">
-                  {message}
-                </p>
-              </m.div>
-            )}
-          </AnimatePresence>
+          {message && (
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs backdrop-blur-xs animate-fade-in-up">
+              <CircleAlert
+                size={20}
+                className="shrink-0 mt-0.5 text-destructive"
+                aria-hidden="true"
+              />
+              <p id="signup-error" role="alert" className="text-sm font-medium leading-relaxed">
+                {message}
+              </p>
+            </div>
+          )}
 
           {/* Primary Action Button */}
           <Button
@@ -201,22 +196,13 @@ function SignupForm() {
             <span>{googleLoading ? 'جارٍ الاتِّصال بـ Google...' : 'التَّسجيل بحساب Google'}</span>
           </Button>
 
-          <AnimatePresence mode="wait">
-            {googleError && (
-              <m.div
-                key="google-error-alert"
-                initial={{ opacity: 0, y: -6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -6 }}
-                transition={{ duration: 0.18, ease: 'easeOut' }}
-                className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-center"
-              >
-                <p role="alert" className="text-sm font-medium text-destructive">
-                  {googleError}
-                </p>
-              </m.div>
-            )}
-          </AnimatePresence>
+          {googleError && (
+            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-center animate-fade-in">
+              <p role="alert" className="text-sm font-medium text-destructive">
+                {googleError}
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Footer Navigation Link */}

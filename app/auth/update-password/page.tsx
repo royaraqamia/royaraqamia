@@ -1,14 +1,16 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, lazy } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { m, AnimatePresence } from 'motion/react';
 import { CircleAlert, CircleCheck } from 'lucide-react';
 import { updatePassword } from '@/frontend/api/auth';
 import { Button } from '@/frontend/ui/primitives/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
-import { PasswordStrength } from '@/frontend/ui/auth/PasswordStrength';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
+
+const PasswordStrength = lazy(() =>
+  import('@/frontend/ui/auth/PasswordStrength').then((m) => ({ default: m.PasswordStrength }))
+);
 
 function UpdatePasswordForm() {
   const searchParams = useSearchParams();
@@ -105,24 +107,16 @@ function UpdatePasswordForm() {
                     تأكيد كلمة المرور
                   </label>
 
-                  <AnimatePresence mode="wait">
-                    {doPasswordsMatch && (
-                      <m.span
-                        initial={{ opacity: 0, scale: 0.9, y: -2 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.9, y: -2 }}
-                        transition={{ duration: 0.15 }}
-                        className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60"
-                      >
-                        <CircleCheck
-                          size={13}
-                          fill="currentColor"
-                          className="shrink-0 text-emerald-500"
-                        />
-                        <span>متطابقة</span>
-                      </m.span>
-                    )}
-                  </AnimatePresence>
+                  {doPasswordsMatch && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60 animate-fade-in">
+                      <CircleCheck
+                        size={13}
+                        fill="currentColor"
+                        className="shrink-0 text-emerald-500"
+                      />
+                      <span>متطابقة</span>
+                    </span>
+                  )}
                 </div>
 
                 <div className="relative">
@@ -136,45 +130,31 @@ function UpdatePasswordForm() {
                   />
                 </div>
 
-                <AnimatePresence>
-                  {showMismatch && (
-                    <m.p
-                      initial={{ opacity: 0, y: -4, height: 0 }}
-                      animate={{ opacity: 1, y: 0, height: 'auto' }}
-                      exit={{ opacity: 0, y: -4, height: 0 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="text-xs font-medium text-destructive flex items-center gap-1.5 pt-0.5"
-                      role="alert"
-                    >
-                      <CircleAlert size={14} className="shrink-0" aria-hidden="true" />
-                      <span>كلمة المرور غير متطابقة</span>
-                    </m.p>
-                  )}
-                </AnimatePresence>
+                {showMismatch && (
+                  <p
+                    className="text-xs font-medium text-destructive flex items-center gap-1.5 pt-0.5 animate-fade-in"
+                    role="alert"
+                  >
+                    <CircleAlert size={14} className="shrink-0" aria-hidden="true" />
+                    <span>كلمة المرور غير متطابقة</span>
+                  </p>
+                )}
               </div>
             </div>
 
             {/* Server Error / API Response Message Banner */}
-            <AnimatePresence>
-              {message && (
-                <m.div
-                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -8, scale: 0.98 }}
-                  transition={{ duration: 0.2, ease: 'easeOut' }}
-                  className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 backdrop-blur-md border border-destructive/25 text-destructive shadow-sm"
-                >
-                  <CircleAlert
-                    size={20}
-                    className="shrink-0 mt-0.5 text-destructive"
-                    aria-hidden="true"
-                  />
-                  <p role="alert" className="text-sm font-medium leading-relaxed">
-                    {message}
-                  </p>
-                </m.div>
-              )}
-            </AnimatePresence>
+            {message && (
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 backdrop-blur-md border border-destructive/25 text-destructive shadow-sm animate-fade-in-up">
+                <CircleAlert
+                  size={20}
+                  className="shrink-0 mt-0.5 text-destructive"
+                  aria-hidden="true"
+                />
+                <p role="alert" className="text-sm font-medium leading-relaxed">
+                  {message}
+                </p>
+              </div>
+            )}
 
             {/* Submit Action Button */}
             <Button
