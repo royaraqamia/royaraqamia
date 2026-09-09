@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { AlertCircle, Loader2, Bell, Target } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -26,7 +26,7 @@ interface AddHabitModalProps {
   isSubmitting?: boolean;
 }
 
-export function AddHabitModal({
+export const AddHabitModal = memo(function AddHabitModal({
   isOpen,
   habitName,
   habitFrequency,
@@ -255,4 +255,4 @@ export function AddHabitModal({
       </DialogContent>
     </Dialog>
   );
-}
+});

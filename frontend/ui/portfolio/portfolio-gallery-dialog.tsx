@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
 import Image from 'next/image';
 import {
   Dialog,
@@ -19,7 +19,7 @@ interface PortfolioGalleryDialogProps {
   onClose: () => void;
 }
 
-export function PortfolioGalleryDialog({
+export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
   selectedProject,
   galleryIndex,
   onGalleryIndexChange,
@@ -49,6 +49,28 @@ export function PortfolioGalleryDialog({
     setZoom({ scale: 1, x: 0, y: 0 });
     setGalleryImageError(false);
   }, [galleryIndex]);
+
+  // Preload adjacent gallery images for instant navigation
+  useEffect(() => {
+    if (selectedProject === null) return;
+    const images = projectImages[selectedProject] ?? [PORTFOLIO_IMAGES[selectedProject]!];
+    const preloadIndices = [galleryIndex - 1, galleryIndex + 1].filter(
+      (i) => i >= 0 && i < images.length
+    );
+    const links = preloadIndices.map((i) => {
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = images[i]!.webp;
+      link.as = 'image';
+      document.head.appendChild(link);
+      return link;
+    });
+    return () => {
+      for (const link of links) {
+        document.head.removeChild(link);
+      }
+    };
+  }, [selectedProject, galleryIndex]);
 
   const setGalleryIndex = onGalleryIndexChange;
 
@@ -201,7 +223,6 @@ export function PortfolioGalleryDialog({
                       alt={project.title}
                       width={1600}
                       height={1152}
-                      unoptimized
                       className={`rounded-2xl shadow-2xl relative z-10 select-none ${
                         zoomed
                           ? 'max-w-none max-h-none'
@@ -212,6 +233,7 @@ export function PortfolioGalleryDialog({
                           ? {
                               transform: `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`,
                               transformOrigin: 'center center',
+                              willChange: 'transform',
                             }
                           : undefined
                       }
@@ -326,4 +348,4 @@ export function PortfolioGalleryDialog({
       </DialogContent>
     </Dialog>
   );
-}
+});

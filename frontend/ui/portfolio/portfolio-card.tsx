@@ -1,9 +1,8 @@
 'use client';
 
-import { Key } from 'react';
+import { type Key } from 'react';
 import Image from 'next/image';
-import { m } from 'motion/react';
-import { cardVariant, type ProjectData } from './portfolio-data';
+import { type ProjectData } from './portfolio-data';
 
 interface PortfolioCardProps {
   actualIndex: number;
@@ -23,11 +22,11 @@ export function PortfolioCard({
   onImageError,
 }: PortfolioCardProps) {
   return (
-    <m.div
-      variants={cardVariant}
-      className="shrink-0 w-[85vw] sm:w-95 md:w-110 lg:w-120 min-w-0 snap-center group/card bg-[#050810] rounded-3xl overflow-hidden"
+    <div
+      className="shrink-0 w-[85vw] sm:w-95 md:w-110 lg:w-120 min-w-0 snap-center group/card bg-[#050810] rounded-3xl overflow-hidden landing-reveal-item"
+      style={{ ['--ld' as string]: `${0.2 + displayIdx * 0.1}s` } as React.CSSProperties}
     >
-      <m.div
+      <div
         onClick={() => onSelect(actualIndex)}
         className="relative group/card-inner rounded-3xl overflow-hidden bg-white/6 border border-white/10 transition-all duration-500 motion-reduce:transition-none hover:border-purple-500/40 hover:shadow-[0_0_40px_-10px_rgba(168,85,247,0.3)] w-full aspect-4/3 cursor-pointer active:scale-[0.98] active:opacity-90 focus-visible:outline-2 focus-visible:outline-purple-400/80 focus-visible:outline-offset-4"
         role="button"
@@ -126,10 +125,10 @@ export function PortfolioCard({
             </div>
           </div>
         </div>
-      </m.div>
+      </div>
       <h3 className="text-white font-bold text-xl sm:text-2xl mt-4 mb-4 text-center leading-snug">
         {project.title}
       </h3>
-    </m.div>
+    </div>
   );
 }

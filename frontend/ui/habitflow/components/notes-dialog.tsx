@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { BookOpenText, Loader2, Calendar, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { Button } from '@/frontend/ui/primitives/button';
@@ -16,7 +16,7 @@ interface NotesDialogProps {
   onSave: (note: string) => void;
 }
 
-export function NotesDialog({
+export const NotesDialog = memo(function NotesDialog({
   isOpen,
   habitName,
   dateLabel,
@@ -169,4 +169,4 @@ export function NotesDialog({
       </DialogContent>
     </Dialog>
   );
-}
+});

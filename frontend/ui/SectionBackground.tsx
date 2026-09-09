@@ -1,5 +1,3 @@
-'use client';
-
 import type { CSSProperties } from 'react';
 
 export function SectionBackground({ blobs }: { blobs: CSSProperties[] }) {

@@ -3,7 +3,6 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { m, AnimatePresence } from 'motion/react';
 import { CircleAlert, CircleCheck, ArrowLeft } from 'lucide-react';
 import { resetPassword } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
@@ -58,37 +57,30 @@ function ResetPasswordForm() {
           />
         </div>
 
-        <AnimatePresence mode="wait">
-          {message && (
-            <m.div
-              key="reset-message-alert"
-              initial={{ opacity: 0, y: -8, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.98 }}
-              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-              className={`flex items-start gap-3 p-3.5 rounded-xl border backdrop-blur-sm transition-all duration-200 ${
-                isSuccessMessage(message)
-                  ? 'bg-success/10 border-success/20 text-success shadow-sm shadow-success/5'
-                  : 'bg-destructive/10 border-destructive/20 text-destructive shadow-sm shadow-destructive/5'
+        {message && (
+          <div
+            className={`flex items-start gap-3 p-3.5 rounded-xl border backdrop-blur-sm transition-all duration-200 animate-fade-in-up ${
+              isSuccessMessage(message)
+                ? 'bg-success/10 border-success/20 text-success shadow-sm shadow-success/5'
+                : 'bg-destructive/10 border-destructive/20 text-destructive shadow-sm shadow-destructive/5'
+            }`}
+          >
+            {isSuccessMessage(message) ? (
+              <CircleCheck size={20} className="shrink-0 mt-0.5 text-success" />
+            ) : (
+              <CircleAlert size={20} className="shrink-0 mt-0.5 text-destructive" />
+            )}
+            <p
+              id="reset-message"
+              role="alert"
+              className={`text-sm font-medium leading-relaxed ${
+                isSuccessMessage(message) ? 'text-success' : 'text-destructive'
               }`}
             >
-              {isSuccessMessage(message) ? (
-                <CircleCheck size={20} className="shrink-0 mt-0.5 text-success" />
-              ) : (
-                <CircleAlert size={20} className="shrink-0 mt-0.5 text-destructive" />
-              )}
-              <p
-                id="reset-message"
-                role="alert"
-                className={`text-sm font-medium leading-relaxed ${
-                  isSuccessMessage(message) ? 'text-success' : 'text-destructive'
-                }`}
-              >
-                {message}
-              </p>
-            </m.div>
-          )}
-        </AnimatePresence>
+              {message}
+            </p>
+          </div>
+        )}
 
         <Button
           type="submit"

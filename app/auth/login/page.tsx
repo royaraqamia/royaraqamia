@@ -1,9 +1,8 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, lazy } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { m } from 'motion/react';
 import { CircleAlert } from 'lucide-react';
 import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
 import { login, signInWithGoogle } from '@/frontend/api/auth';
@@ -12,8 +11,11 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
-import { Turnstile } from '@/frontend/ui/auth/Turnstile';
 import { authLink } from '@/frontend/ui/auth/auth-links';
+
+const Turnstile = lazy(() =>
+  import('@/frontend/ui/auth/Turnstile').then((m) => ({ default: m.Turnstile }))
+);
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -98,12 +100,7 @@ function LoginForm() {
         <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
 
         {message && (
-          <m.div
-            initial={{ opacity: 0, y: -8, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs backdrop-blur-xs select-none"
-          >
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs backdrop-blur-xs select-none animate-fade-in-up">
             <CircleAlert size={18} className="shrink-0 mt-0.5 text-destructive" />
             <p
               id="login-error"
@@ -112,7 +109,7 @@ function LoginForm() {
             >
               {message}
             </p>
-          </m.div>
+          </div>
         )}
 
         <Button
@@ -162,14 +159,9 @@ function LoginForm() {
         </Button>
 
         {googleError && (
-          <m.p
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-            className="text-xs sm:text-sm text-destructive text-center font-medium mt-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20"
-          >
+          <p className="text-xs sm:text-sm text-destructive text-center font-medium mt-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 animate-fade-in">
             {googleError}
-          </m.p>
+          </p>
         )}
       </div>
 

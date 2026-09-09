@@ -1,6 +1,5 @@
 'use client';
 
-import { m } from 'motion/react';
 import { useMemo } from 'react';
 
 interface PasswordStrengthProps {
@@ -16,9 +15,9 @@ function getStrength(password: string): { score: number; label: string; color: s
   if (/[^A-Za-z0-9]/.test(password)) score += 1;
 
   if (score <= 1) return { score, label: 'ضعيفة', color: 'bg-destructive' };
-  if (score <= 2) return { score, label: 'متوسِّطة', color: 'bg-warning' };
-  if (score <= 3) return { score, label: 'جيِّدة', color: 'bg-accent-indigo' };
-  return { score, label: 'قويَّة', color: 'bg-success' };
+  if (score <= 2) return { score, label: 'متوسِّطة', color: 'bg-warning' };
+  if (score <= 3) return { score, label: 'جيِّدة', color: 'bg-accent-indigo' };
+  return { score, label: 'قويَّة', color: 'bg-success' };
 }
 
 export function PasswordStrength({ password }: PasswordStrengthProps) {
@@ -64,18 +63,14 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
   if (!password) return null;
 
   return (
-    <m.div
-      initial={{ opacity: 0, y: -6, scale: 0.98 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -4, scale: 0.98 }}
-      transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-      className="w-full space-y-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/65 p-3.5 dark:border-neutral-800/80 dark:bg-neutral-900/65 sm:p-4 transition-all duration-300 shadow-xs"
+    <div
+      className="w-full space-y-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/65 p-3.5 dark:border-neutral-800/80 dark:bg-neutral-900/65 sm:p-4 transition-all duration-300 shadow-xs animate-fade-in-up"
       dir="rtl"
     >
       {/* Header Info & Dynamic Pill Badge */}
       <div className="flex items-center justify-between gap-2">
         <span className="text-xs font-medium tracking-tight text-neutral-600 dark:text-neutral-400 select-none">
-          قوَّة كلمة المرور:
+          قوَّة كلمة المرور:
         </span>
 
         <div
@@ -83,14 +78,9 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wide transition-all duration-300 ${tierStyle.badgeBg}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${tierStyle.dot} animate-pulse`} />
-          <m.span
-            key={label}
-            initial={{ opacity: 0, y: 2 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2 }}
-          >
+          <span key={label} className="animate-fade-in">
             {label}
-          </m.span>
+          </span>
         </div>
       </div>
 
@@ -100,7 +90,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
         aria-valuenow={score}
         aria-valuemin={0}
         aria-valuemax={5}
-        aria-valuetext={`قوَّة كلمة المرور: ${label}`}
+        aria-valuetext={`قوَّة كلمة المرور: ${label}`}
         className="flex gap-1.5 sm:gap-2 w-full items-center"
       >
         {Array.from({ length: 5 }, (_, i) => {
@@ -110,18 +100,15 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
               key={i}
               className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-200/88 dark:bg-neutral-800/88"
             >
-              <m.div
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: isActive ? 1 : 0 }}
-                transition={{
-                  duration: 0.35,
-                  delay: i * 0.04,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
+              <div
                 className={`h-full w-full rounded-full ${color} ${tierStyle.activeBg} ${
                   isActive ? tierStyle.glow : ''
-                } transition-colors duration-300`}
-                style={{ transformOrigin: 'right' }}
+                } transition-colors duration-300 ${isActive ? 'animate-strength-bar' : ''}`}
+                style={{
+                  transformOrigin: 'right',
+                  transform: isActive ? 'scaleX(1)' : 'scaleX(0)',
+                  animationDelay: `${i * 0.04}s`,
+                }}
               />
             </div>
           );
@@ -130,8 +117,8 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
 
       {/* Screen Reader Accessibility Fallback */}
       <span className="sr-only">
-        قوَّة كلمة المرور: {label} ({score} من 5)
+        قوَّة كلمة المرور: {label} ({score} من 5)
       </span>
-    </m.div>
+    </div>
   );
 }

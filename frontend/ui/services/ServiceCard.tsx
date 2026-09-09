@@ -1,7 +1,6 @@
 'use client';
 
-import { ElementType, MouseEvent } from 'react';
-import { m, useMotionTemplate, useMotionValue } from 'motion/react';
+import { ElementType, MouseEvent, useCallback, useRef } from 'react';
 import { Check, ArrowRight, Code, Lightbulb, MessageCircle } from 'lucide-react';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
@@ -44,44 +43,31 @@ interface Service {
   href: string;
 }
 
-// Framer Motion Entrance Variant
-const cardVariant = {
-  hidden: { opacity: 0, y: 40, scale: 0.95 },
-  show: (index: number) =>
-    ({
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 80,
-        damping: 20,
-        delay: index * 0.1,
-      },
-    }) as const,
-} as const;
-
-export function ServiceCard({ service, index }: { service: Service; index: number }) {
+export function ServiceCard({ service }: { service: Service }) {
   const Icon = iconMap[service.icon]!;
   const colors = colorConfigs[service.colorKey];
 
-  // Elite Detail: Mouse Tracking Spotlight
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
+  // RAF-throttled mouse tracking — updates CSS custom properties on the
+  // compositor thread. The radial-gradient in the JSX uses var(--mx)/var(--my)
+  // so the browser recomposites without JS intervention.
+  const rafId = useRef(0);
+  const cardRef = useRef<HTMLElement>(null);
 
-  function handleMouseMove({ currentTarget, clientX, clientY }: MouseEvent<HTMLDivElement>) {
-    const { left, top } = currentTarget.getBoundingClientRect();
-    mouseX.set(clientX - left);
-    mouseY.set(clientY - top);
-  }
+  const handleMouseMove = useCallback(
+    ({ currentTarget, clientX, clientY }: MouseEvent<HTMLDivElement>) => {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = requestAnimationFrame(() => {
+        const { left, top } = currentTarget.getBoundingClientRect();
+        cardRef.current?.style.setProperty('--mx', String(clientX - left));
+        cardRef.current?.style.setProperty('--my', String(clientY - top));
+      });
+    },
+    []
+  );
 
   return (
-    <m.article
-      custom={index}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: '-50px' }}
-      variants={cardVariant}
+    <article
+      ref={cardRef}
       onMouseMove={handleMouseMove}
       className="group/service relative rounded-4xl p-6 sm:p-8 lg:p-9 h-full flex flex-col overflow-hidden bg-neutral-900/70 border border-white/10 transition-[transform,border-color,box-shadow] duration-500 ease-out hover:border-white/20 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60 z-10"
       style={{
@@ -93,18 +79,13 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
 
       {/* 
         The Magic: Mouse-tracking spotlight background. 
-        It injects the specific service color gradient bound to cursor position. 
+        CSS custom properties --mx/--my drive the gradient position;
+        the browser recomposites on the compositor thread without JS.
       */}
-      <m.div
+      <div
         className="absolute -inset-px z-0 opacity-0 group-hover/service:opacity-100 transition-opacity duration-500 pointer-events-none mix-blend-screen rounded-4xl"
         style={{
-          background: useMotionTemplate`
-            radial-gradient(
-              650px circle at ${mouseX}px ${mouseY}px,
-              ${colors.gradient}25, 
-              transparent 80%
-            )
-          `,
+          background: `radial-gradient(650px circle at var(--mx, 0px) var(--my, 0px), ${colors.gradient}25, transparent 80%)`,
         }}
       />
 
@@ -203,6 +184,6 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
           )}
         </div>
       </div>
-    </m.article>
+    </article>
   );
 }

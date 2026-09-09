@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,7 +25,13 @@ const categorySchema = z.object({
 
 type CategoryFormValues = z.input<typeof categorySchema>;
 
-export function CategoryList({ categories, userId }: { categories: Category[]; userId: string }) {
+export const CategoryList = memo(function CategoryList({
+  categories,
+  userId,
+}: {
+  categories: Category[];
+  userId: string;
+}) {
   if (categories.length === 0) {
     return (
       <div
@@ -78,9 +84,9 @@ export function CategoryList({ categories, userId }: { categories: Category[]; u
       ))}
     </div>
   );
-}
+});
 
-function EditCategoryDialog({ category }: { category: Category }) {
+const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { category: Category }) {
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
 
@@ -193,9 +199,13 @@ function EditCategoryDialog({ category }: { category: Category }) {
       </DialogContent>
     </Dialog>
   );
-}
+});
 
-function DeleteCategoryButton({ categoryId }: { categoryId: string }) {
+const DeleteCategoryButton = memo(function DeleteCategoryButton({
+  categoryId,
+}: {
+  categoryId: string;
+}) {
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -260,4 +270,4 @@ function DeleteCategoryButton({ categoryId }: { categoryId: string }) {
       </Dialog>
     </>
   );
-}
+});

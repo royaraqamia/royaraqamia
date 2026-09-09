@@ -179,7 +179,7 @@ interface TestimonialsCarouselProps {
   headingId?: string;
 }
 
-export function TestimonialsCarousel({
+export const TestimonialsCarousel = memo(function TestimonialsCarousel({
   headingId = 'testimonials-heading',
 }: TestimonialsCarouselProps) {
   const { setIsReviewSheetOpen } = useUI();
@@ -326,4 +326,4 @@ export function TestimonialsCarousel({
       </Sheet>
     </section>
   );
-}
+});

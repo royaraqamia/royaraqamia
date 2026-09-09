@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.3] - 2026-09-09
+
+### Changed
+- format @keyframes shake selectors for readability
+- maximize overlay performance across entire codebase
+- maximize auth pages performance
+- normalize attribute selector quotes in global.css
+- split OpenCode workflows into two-model pipeline (GLM 5.3 plan → DeepSeek V4 Flash implement)
+- unify homepage animations to CSS-based system, remove motion/react from sections
+- move interactive animations to compositor thread
+- add delegate-setup skill
+- add delegate fleet config with plan/implement lanes
+
+### Fixed
+- resolve hono and sharp vulnerabilities via npm audit fix
+
+## [1.19.2] - 2026-09-07
+
+### Changed
+- Reduce spacing between hero social proof badges
+- Remove watermark icons from verify certificate pages
+- Remove plan and review skills, add opencode-delegate
+- scaffold agent skills config (issue tracker + domain docs)
+- remove LinkSnap, BlogPress, SpendTrack, HabitFlow mentions from docs
+- restructure AGENTS.md with progressive disclosure
+- add opencode-delegate skill from amElnagdy/delegate-skills
+
 ## [1.19.1] - 2026-09-03
 
 ### Changed
@@ -167,8 +194,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - force Latin digits on native numeric and temporal inputs
-- remove site footer from HabitFlow, BlogPress, LinkSnap, and SpendTrack
-- render single Navbar on HabitFlow, BlogPress, and LinkSnap app routes
+
 - remove viewport-capped scroll wrapper around calendar grid
 
 ## [1.11.0] - 2026-08-24

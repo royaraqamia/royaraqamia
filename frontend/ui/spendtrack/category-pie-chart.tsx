@@ -31,7 +31,7 @@ function CustomTooltip({
   if (!active || !payload?.length || !payload[0]) return null;
   const item = payload[0];
   return (
-    <div className="z-50 min-w-40 rounded-2xl border border-border/80 bg-background/95 p-3.5 shadow-xl shadow-black/5 backdrop-blur-xl ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in-0 zoom-in-95 duration-150">
+    <div className="z-50 min-w-40 rounded-2xl border border-border/80 bg-background/95 p-3.5 shadow-xl shadow-black/5 backdrop-blur-sm ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in-0 zoom-in-95 duration-150 will-change-[transform,opacity]">
       <div className="flex items-center gap-2.5">
         <span
           className="size-3 shrink-0 rounded-full ring-2 ring-background shadow-sm"

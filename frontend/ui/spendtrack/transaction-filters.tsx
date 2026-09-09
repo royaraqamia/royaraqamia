@@ -95,7 +95,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                   <SelectValue />
                 </div>
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-border/80 shadow-xl backdrop-blur-md bg-popover/95 p-1 animate-in fade-in-80 zoom-in-95">
+              <SelectContent className="rounded-xl border-border/80 shadow-xl bg-popover/95 p-1 animate-in fade-in-80 zoom-in-95">
                 {datePresets.map((preset) => (
                   <SelectItem
                     key={preset.value}
@@ -152,7 +152,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                 </Button>
               </PopoverTrigger>
               <PopoverContent
-                className="w-64 p-2 rounded-2xl border-border/80 shadow-2xl backdrop-blur-xl bg-popover/95"
+                className="w-64 p-2 rounded-2xl border-border/80 shadow-2xl bg-popover/95"
                 align="start"
               >
                 <div className="space-y-0.5 max-h-64 overflow-y-auto p-1 custom-scrollbar">
@@ -206,7 +206,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                   <SelectValue />
                 </div>
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-border/80 shadow-xl backdrop-blur-md bg-popover/95 p-1 animate-in fade-in-80 zoom-in-95">
+              <SelectContent className="rounded-xl border-border/80 shadow-xl bg-popover/95 p-1 animate-in fade-in-80 zoom-in-95">
                 {sortOptions.map((opt) => (
                   <SelectItem
                     key={opt.value}

@@ -80,7 +80,7 @@ export function CurrencySelector({ currency }: { currency?: string | null }) {
           </span>
         )}
       </SelectTrigger>
-      <SelectContent className="min-w-48 overflow-hidden rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-900 shadow-xl backdrop-blur-xl dark:border-neutral-800 dark:bg-neutral-900/95 dark:text-neutral-100">
+      <SelectContent className="min-w-48 overflow-hidden rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-900 shadow-xl dark:border-neutral-800 dark:bg-neutral-900/95 dark:text-neutral-100">
         {SUPPORTED_CURRENCIES.map((currencyItem) => (
           <SelectItem
             key={currencyItem.code}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { X, ChevronDown, type LucideIcon } from 'lucide-react';
@@ -53,7 +53,7 @@ const triggerHaptic = () => {
 // ============================================================================
 // Component
 // ============================================================================
-export function MobileMenu({
+export const MobileMenu = memo(function MobileMenu({
   isOpen,
   setIsOpen,
   navLinks,
@@ -460,4 +460,4 @@ export function MobileMenu({
       )}
     </>
   );
-}
+});

@@ -105,7 +105,7 @@ export function DatePicker({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto p-0 border border-border/80 shadow-2xl rounded-2xl bg-popover/95 backdrop-blur-xl overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 duration-200"
+        className="w-auto p-0 border border-border/80 shadow-2xl rounded-2xl bg-popover/95 backdrop-blur-sm overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 duration-200"
         align="start"
       >
         <Calendar
@@ -175,7 +175,7 @@ export function DateRangePicker({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto p-0 border border-border/80 shadow-2xl rounded-2xl bg-popover/95 backdrop-blur-xl overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 duration-200"
+        className="w-auto p-0 border border-border/80 shadow-2xl rounded-2xl bg-popover/95 backdrop-blur-sm overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 duration-200"
         align="start"
       >
         <Calendar

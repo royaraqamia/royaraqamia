@@ -31,6 +31,7 @@ function AlertDialogOverlay({
         'fixed inset-0 z-10000 bg-black/70',
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0',
+        'will-change-[opacity] contain-strict',
         className
       )}
       {...props}
@@ -59,6 +60,7 @@ function AlertDialogContent({
           'max-md:data-[state=open]:slide-in-from-bottom-6',
           'max-md:data-[state=closed]:slide-out-to-bottom-6',
           'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'will-change-[transform,opacity] contain-layout contain-style',
           className
         )}
         {...props}

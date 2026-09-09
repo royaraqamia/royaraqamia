@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Trash2, AlertCircle, Loader2, Bell, Target } from 'lucide-react';
 import { Habit, HabitTargetPeriod } from '@/shared/contracts/habitflow';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
@@ -28,7 +28,7 @@ interface EditHabitModalProps {
   isSubmitting?: boolean;
 }
 
-export function EditHabitModal({
+export const EditHabitModal = memo(function EditHabitModal({
   isOpen,
   habit,
   habitName,
@@ -272,4 +272,4 @@ export function EditHabitModal({
       </DialogContent>
     </Dialog>
   );
-}
+});

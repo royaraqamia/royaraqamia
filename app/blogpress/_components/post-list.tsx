@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useMemo, useRef, useEffect } from 'react';
+import { useState, useTransition, useMemo, useRef, useEffect, memo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -78,7 +78,12 @@ const filters: { label: string; value: PostStatus | 'all' }[] = [
   { label: 'منشور', value: 'published' },
 ];
 
-export function PostList({ posts, categories, activeCategory, tagsByPost }: PostListProps) {
+export const PostList = memo(function PostList({
+  posts,
+  categories,
+  activeCategory,
+  tagsByPost,
+}: PostListProps) {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<PostStatus | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -340,9 +345,8 @@ export function PostList({ posts, categories, activeCategory, tagsByPost }: Post
       />
     </div>
   );
-}
-
-function PostRow({
+});
+const PostRow = memo(function PostRow({
   post,
   tags,
   isSelected,
@@ -643,7 +647,7 @@ function PostRow({
                   <span>حذف</span>
                 </DropdownMenuItem>
               </DialogTrigger>
-              <DialogContent className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 backdrop-blur-xl max-w-md p-6">
+              <DialogContent className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 backdrop-blur-sm max-w-md p-6">
                 <DialogHeader className="space-y-2 text-start">
                   <DialogTitle className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                     حذف المقال
@@ -715,7 +719,7 @@ function PostRow({
       </div>
     </article>
   );
-}
+});
 
 interface CategoryChipProps {
   label: string;
@@ -758,7 +762,7 @@ interface BulkActionBarProps {
   onApplyCategory: () => void;
 }
 
-function BulkActionBar({
+const BulkActionBar = memo(function BulkActionBar({
   allSelected,
   total,
   selectedCount,
@@ -879,7 +883,7 @@ function BulkActionBar({
       </button>
     </div>
   );
-}
+});
 
 function CategoryChip({ label, slug, active, onSelect }: CategoryChipProps) {
   return (

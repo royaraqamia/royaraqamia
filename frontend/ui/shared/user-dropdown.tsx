@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/frontend/shared/cn';
@@ -18,7 +18,7 @@ const AUTH_PATHS = [
   '/auth/update-password',
 ];
 
-export function UserDropdown() {
+export const UserDropdown = memo(function UserDropdown() {
   const { user, isLoading, signOut } = useSession();
   const { canInstall, promptInstall, isInstalled } = usePWAContext();
   const pathname = usePathname();
@@ -95,7 +95,7 @@ export function UserDropdown() {
             ref={panelRef}
             data-glass-panel
             style={style}
-            className="z-50 rounded-2xl bg-popover/90 backdrop-blur-lg border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto"
+            className="z-50 rounded-2xl bg-popover/90 backdrop-blur-sm border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto will-change-[transform,opacity] contain-layout contain-style"
             role="menu"
             aria-label="قائمة المستخدِم"
             onKeyDown={(e) => {
@@ -206,4 +206,4 @@ export function UserDropdown() {
       />
     </div>
   );
-}
+});

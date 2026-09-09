@@ -29,11 +29,68 @@ interface TurnstileProps {
   theme?: 'light' | 'dark' | 'auto';
 }
 
+// Singleton script loader - only loads once
+let scriptPromise: Promise<boolean> | null = null;
+
+function loadTurnstileScript(): Promise<boolean> {
+  if (scriptPromise) return scriptPromise;
+
+  scriptPromise = new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve(false);
+      return;
+    }
+
+    if (window.turnstile) {
+      resolve(true);
+      return;
+    }
+
+    const scriptId = 'cf-turnstile-script';
+    if (document.getElementById(scriptId)) {
+      // Script tag exists but turnstile not loaded yet - wait for it
+      const checkTurnstile = setInterval(() => {
+        if (window.turnstile) {
+          clearInterval(checkTurnstile);
+          resolve(true);
+        }
+      }, 100);
+      setTimeout(() => {
+        clearInterval(checkTurnstile);
+        resolve(false);
+      }, 10000);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.id = scriptId;
+    script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      const checkTurnstile = setInterval(() => {
+        if (window.turnstile) {
+          clearInterval(checkTurnstile);
+          resolve(true);
+        }
+      }, 100);
+      setTimeout(() => {
+        clearInterval(checkTurnstile);
+        resolve(false);
+      }, 10000);
+    };
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+  });
+
+  return scriptPromise;
+}
+
 export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const pollTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [scale, setScale] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
   const siteKey = TURNSTILE_SITE_KEY;
 
   useEffect(() => {
@@ -54,45 +111,37 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
   useEffect(() => {
     if (!siteKey || !containerRef.current) return;
 
-    const scriptId = 'cf-turnstile-script';
-    if (!document.getElementById(scriptId)) {
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
-      script.async = true;
-      script.defer = true;
-      document.head.appendChild(script);
-    }
+    let cancelled = false;
 
-    function renderTurnstile() {
-      if (!window.turnstile || !containerRef.current) return;
-      if (widgetIdRef.current) {
-        window.turnstile.remove(widgetIdRef.current);
-      }
-      widgetIdRef.current = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey,
-        callback: (token: string) => onToken(token),
-        'expired-callback': () => onToken(null),
-        'error-callback': () => onToken(null),
-        theme,
-      });
-    }
-
-    if (window.turnstile) {
-      renderTurnstile();
-    } else {
-      const checkTurnstile = setInterval(() => {
-        if (window.turnstile) {
-          clearInterval(checkTurnstile);
-          renderTurnstile();
+    async function initTurnstile() {
+      try {
+        const loaded = await loadTurnstileScript();
+        if (cancelled || !loaded || !window.turnstile || !containerRef.current) {
+          setIsLoading(false);
+          return;
         }
-      }, 100);
-      pollTimerRef.current = checkTurnstile;
-      setTimeout(() => clearInterval(checkTurnstile), 10000);
+
+        if (widgetIdRef.current) {
+          window.turnstile.remove(widgetIdRef.current);
+        }
+
+        widgetIdRef.current = window.turnstile.render(containerRef.current!, {
+          sitekey: siteKey,
+          callback: (token: string) => onToken(token),
+          'expired-callback': () => onToken(null),
+          'error-callback': () => onToken(null),
+          theme,
+        });
+        setIsLoading(false);
+      } catch {
+        setIsLoading(false);
+      }
     }
+
+    initTurnstile();
 
     return () => {
-      if (pollTimerRef.current) clearInterval(pollTimerRef.current);
+      cancelled = true;
       if (widgetIdRef.current && window.turnstile) {
         window.turnstile.remove(widgetIdRef.current);
       }
@@ -105,7 +154,7 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
     <div className="my-4 w-full max-w-md mx-auto">
       <div
         role="region"
-        aria-label="فحص الأمان للتَّحقُّق البشري"
+        aria-label="فحص الأمان للتَّحقُّق البشري"
         className="group relative overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/75 p-3.5 sm:p-4 shadow-xs transition-all duration-300 ease-out hover:border-neutral-300 hover:shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/75 dark:hover:border-neutral-700"
       >
         {/* توهج شبكي محيطي خفيف */}
@@ -127,7 +176,7 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
               </svg>
             </div>
             <span className="text-xs font-bold tracking-tight text-neutral-800 dark:text-neutral-200">
-              التَّحقُّق الأمني
+              التَّحقُّق الأمني
             </span>
           </div>
 
@@ -137,7 +186,7 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
             </span>
             <span className="text-[11px] font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
-              مُشفَّر
+              {isLoading ? 'جارِ التحميل...' : 'مُشفَّر'}
             </span>
           </div>
         </div>

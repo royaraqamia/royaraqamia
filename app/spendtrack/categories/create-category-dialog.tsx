@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,7 +25,7 @@ const categorySchema = z.object({
 
 type CategoryFormValues = z.input<typeof categorySchema>;
 
-export function CreateCategoryDialog() {
+export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
   const [showToast, setShowToast] = useState(false);
@@ -149,4 +149,4 @@ export function CreateCategoryDialog() {
       </DialogContent>
     </Dialog>
   );
-}
+});

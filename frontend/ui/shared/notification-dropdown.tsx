@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
 import {
   X,
@@ -31,7 +31,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   system_announcement: <Megaphone size={18} />,
 };
 
-export function NotificationDropdown() {
+export const NotificationDropdown = memo(function NotificationDropdown() {
   const { user } = useSession();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
@@ -113,8 +113,8 @@ export function NotificationDropdown() {
             data-glass-panel
             style={style}
             className={cn(
-              'z-50 overflow-hidden',
-              'bg-popover/90 backdrop-blur-lg border border-border/80 shadow-2xl rounded-2xl',
+              'z-50 overflow-hidden will-change-[transform,opacity] contain-layout contain-style',
+              'bg-popover/90 backdrop-blur-sm border border-border/80 shadow-2xl rounded-2xl',
               'animate-in fade-in-0 zoom-in-95 duration-200 ease-out'
             )}
             onKeyDown={handleKeyDown}
@@ -266,4 +266,4 @@ export function NotificationDropdown() {
         )}
     </div>
   );
-}
+});

@@ -291,7 +291,7 @@ function RecurringDialog({
               <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-all w-full">
                 <SelectValue placeholder="اختر تصنيف" />
               </SelectTrigger>
-              <SelectContent className="rounded-2xl border border-border/80 bg-card/95 backdrop-blur-xl shadow-xl p-1">
+              <SelectContent className="rounded-2xl border border-border/80 bg-card/95 shadow-xl p-1">
                 {categories.map((cat) => (
                   <SelectItem
                     key={cat.id}

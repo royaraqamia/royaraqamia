@@ -1,5 +1,6 @@
 # Interactive OpenCode agent: comment "/oc <task>" or "/opencode <task>"
 # on any issue or PR to trigger it (explain, fix, implement, review...).
+# Two-model pipeline: plan (GLM 5.3) -> implement (DeepSeek V4 Flash).
 # Only collaborators with write access can trigger it (enforced by the action).
 #
 # Setup (repo secrets):
@@ -47,6 +48,12 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          cache-next: 'false'
+
       - name: Configure Supabase MCP (runner-only)
         env:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -69,14 +76,74 @@ jobs:
           }
           EOF
 
-      - name: Run OpenCode
+      - name: Plan — GLM 5.3 (Analyze)
+        id: plan
         uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 250000
         with:
-          model: opencode/x-preview-f-free
+          model: opencode-go/glm-5.3
+          variant: high
           share: 'false'
+          prompt: |
+            You are planning a user-requested task for this repository (Next.js App Router + React 19 + TypeScript strict, Arabic RTL SaaS, Supabase Postgres backend). The user commented: "${{ github.event.comment.body }}"
+
+            Your job is to analyze ONLY what the user asked for — do not scan the entire codebase or suggest unrelated improvements.
+
+            Skills: Before starting, load these skills using the skill tool:
+            - `supabase` — critical guidance if the task involves database, auth, RLS, or migrations
+            - `supabase-postgres-best-practices` — Postgres performance rules for schema design, indexes, RLS, and migrations
+            - `vercel-react-best-practices` — React/Next.js performance optimization patterns
+            - `codebase-design` — shared vocabulary for identifying deepening opportunities in architecture
+            Load `diagnosing-bugs` if the task involves debugging or fixing a reported issue.
+
+            Steps:
+            1. Understand the user's request. If it is ambiguous or unsafe, write "DECISION: CANNOT (reason)" to /tmp/plan.md and stop.
+            2. Read the relevant source files to assess scope and risks. Use supabase MCP tools (list_tables, list_migrations, get_advisors) only if the task touches the database.
+            3. Write a concrete implementation plan to /tmp/plan.md using the Write tool:
+               - "# Implementation Plan"
+               - "## User Request" — quote the original task.
+               - "## Analysis" — scope, risks, approach.
+               - "## Plan" — numbered steps with exact files and changes.
+               - Final line: "DECISION: IMPLEMENT" or "DECISION: CANNOT (reason)".
+
+            Write ONLY to /tmp/plan.md. Do not modify the working tree.
+
+      - name: Implement — DeepSeek V4 Flash (Execute)
+        uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+          NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
+        with:
+          model: opencode-go/deepseek-v4-flash
+          variant: high
+          share: 'false'
+          prompt: |
+            You are executing a user-requested task. The OpenCode infrastructure has already checked out a dedicated branch and will handle committing, pushing, and opening the pull request automatically. Do NOT run any git commands yourself.
+
+            Skills: Before starting, load these skills using the skill tool:
+            - `implement` — structured implementation workflow
+            - `supabase` — required if the task touches database schema, RLS, or migrations
+            - `supabase-postgres-best-practices` — Postgres rules for writing correct migrations, indexes, and RLS policies
+            - `vercel-react-best-practices` — React/Next.js performance patterns for implementing fixes correctly
+            - `tdd` — for writing tests during implementation
+
+            First, read the plan from /tmp/plan.md (use the Read tool). If it says "DECISION: CANNOT", respond with the reason and stop.
+
+            Otherwise, execute the plan step by step. Follow AGENTS.md conventions: layered architecture controller -> service -> repository/client, Zod validation in shared/contracts, structured loggers instead of console logging, RTL-first UI without inline styles. Never upgrade or add dependencies, never edit existing files under supabase/migrations, scripts/compute-version.mjs, scripts/release-tools.mjs, backend/config/generated files, or any env files.
+
+            Database change rules: if the fix needs a schema change, first write the migration as a NEW file in supabase/migrations named <UTC-timestamp>_<snake_name>.sql matching the repo convention, then apply the exact same SQL via the supabase MCP apply_migration tool with the same name. Never run destructive DDL through execute_sql; propose it in the report instead.
+
+            After implementing, review your diff critically for correctness, layering violations, and regressions. Then run: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; npm test ; npm run build . Iterate until all five are green. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and say so.
+
+            Your final response becomes the pull request description, and its first line becomes the pull request title: start with exactly one Conventional Commits line of the form `type(scope): description`, using one of these types (feat fix docs style refactor perf test build ci chore revert) and a scope naming the touched product area. Structure the rest as: (1) what you changed and why, (2) evidence that all five gates passed.
 
       - name: Normalize Agent PR Titles
         # Guardrail: repo-checks rejects non-Conventional-Commit PR titles, and

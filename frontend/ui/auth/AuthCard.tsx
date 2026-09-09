@@ -1,6 +1,5 @@
 'use client';
 
-import { m } from 'motion/react';
 import type { ReactNode } from 'react';
 
 interface AuthCardProps {
@@ -12,44 +11,18 @@ interface AuthCardProps {
 export function AuthCard({ children, title, description }: AuthCardProps) {
   return (
     <div className="relative w-full max-w-md mx-auto px-4 sm:px-0">
-      {/* Dynamic Motion Ambient Background Glowing Orbs */}
-      <m.div
-        animate={{
-          y: [0, -12, 0],
-          scale: [1, 1.05, 1],
-          opacity: [0.4, 0.6, 0.4],
-        }}
-        transition={{
-          duration: 8,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
+      {/* Static Ambient Background Glowing Orbs - No animation for performance */}
+      <div
         className="pointer-events-none absolute -top-20 -right-20 -z-10 h-64 w-64 rounded-full bg-linear-to-br from-indigo-500/25 via-purple-500/20 to-pink-500/10 blur-3xl sm:h-80 sm:w-80"
         aria-hidden="true"
       />
-      <m.div
-        animate={{
-          y: [0, 12, 0],
-          scale: [1, 1.08, 1],
-          opacity: [0.3, 0.5, 0.3],
-        }}
-        transition={{
-          duration: 10,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 1,
-        }}
+      <div
         className="pointer-events-none absolute -bottom-16 -left-16 -z-10 h-56 w-56 rounded-full bg-linear-to-tr from-blue-600/20 via-cyan-500/15 to-indigo-500/20 blur-3xl sm:h-72 sm:w-72"
         aria-hidden="true"
       />
 
       {/* Main Glassmorphic Gradient Border Card Outer Container */}
-      <m.div
-        initial={{ opacity: 0, y: 20, scale: 0.98 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="group relative overflow-hidden rounded-3xl p-px bg-linear-to-b from-zinc-200/80 via-zinc-200/30 to-zinc-200/10 dark:from-zinc-700/60 dark:via-zinc-800/30 dark:to-zinc-900/20 shadow-2xl shadow-zinc-950/5 dark:shadow-black/50 transition-all duration-500 hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/10"
-      >
+      <div className="group relative overflow-hidden rounded-3xl p-px bg-linear-to-b from-zinc-200/80 via-zinc-200/30 to-zinc-200/10 dark:from-zinc-700/60 dark:via-zinc-800/30 dark:to-zinc-900/20 shadow-2xl shadow-zinc-950/5 dark:shadow-black/50 transition-all duration-500 hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/10 animate-card-enter">
         {/* Specular Top Border Edge Highlight */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-indigo-500/50 to-transparent dark:via-indigo-400/60 transition-opacity duration-500"
@@ -65,12 +38,7 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
           />
 
           {/* Header Section */}
-          <m.header
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 text-center mb-8 sm:mb-10"
-          >
+          <header className="relative z-10 text-center mb-8 sm:mb-10 animate-fade-in-up">
             <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-sans">
               {title}
             </h1>
@@ -79,19 +47,12 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
                 {description}
               </div>
             )}
-          </m.header>
+          </header>
 
           {/* Main Content Body */}
-          <m.section
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10"
-          >
-            {children}
-          </m.section>
+          <section className="relative z-10 animate-fade-in-up-delayed">{children}</section>
         </div>
-      </m.div>
+      </div>
     </div>
   );
 }

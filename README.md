@@ -2,7 +2,7 @@
 
 > We build websites and applications with an entrepreneurial vision that benefits people; we also provide students and new graduates with comprehensive professional training for building websites and applications.
 
-**royaraqamia** is a private, production-grade monorepo that powers the company's marketing site and a suite of first-party SaaS products — a public blog, an online blog editor (**BlogPress**), a habit tracker (**HabitFlow**), a URL shortener (**LinkSnap**), an expense tracker (**SpendTrack**), and a certificate-verification service — all unified under a single Next.js application, a shared clean-architecture backend, and one Supabase database.
+**royaraqamia** is a private, production-grade monorepo that powers the company's marketing site and a suite of first-party SaaS products — a public blog and a certificate-verification service — all unified under a single Next.js application, a shared clean-architecture backend, and one Supabase database.
 
 |                    |                                                                 |
 | ------------------ | --------------------------------------------------------------- |
@@ -34,10 +34,7 @@ The application is a single Next.js 16 (App Router) deployment that serves multi
 
 - **Marketing site** — the company's landing page, portfolio, services, and training offerings (`app/page.tsx`).
 - **Blog** — public, SEO-oriented articles rendered from Markdown (`app/blog`).
-- **BlogPress** — a full WYSIWYG blog editor built on TipTap, with post management (`app/blogpress`).
-- **HabitFlow** — habit tracking with calendars, logs, local-first data, and backup (`app/habitflow`).
-- **LinkSnap** — URL shortener with click analytics, admin moderation, and redirects (`app/linksnap`, `app/[code]`).
-- **SpendTrack** — expense tracking with categories and charts (`app/spendtrack`).
+
 - **Certificates** — certificate issuance, admin management, and QR-based public verification (`app/admin/certificates`, `app/verify`).
 - **Auth & Accounts** — OTP-based email authentication, password reset, and admin role management (`app/auth`).
 
@@ -52,7 +49,7 @@ The codebase is split into four concerns: **routes** (`app/`), **backend** (port
 ```
 royaraqamia/
 ├── app/                          # Next.js App Router — pages, layouts, route handlers
-│   ├── [code]/                   #   LinkSnap short-code redirect handler
+
 │   ├── admin/certificates/       #   Certificate CRUD (admin only)
 │   ├── api/version/              #   Version probe endpoint
 │   ├── app-info/                 #   Application information page
@@ -158,7 +155,7 @@ royaraqamia/
 
 ### UI & Utilities
 
-Radix UI primitives + shadcn/ui components · Motion (Framer Motion successor) · Lucide React · TipTap (BlogPress editor) · react-hook-form + Zod · Recharts (charts) · qrcode (certificate QR) · Sonner (toasts) · Vaul · embla-carousel.
+Radix UI primitives + shadcn/ui components · Motion (Framer Motion successor) · Lucide React · react-hook-form + Zod · Recharts (charts) · qrcode (certificate QR) · Sonner (toasts) · Vaul · embla-carousel.
 
 ---
 
