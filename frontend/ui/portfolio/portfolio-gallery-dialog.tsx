@@ -50,6 +50,28 @@ export function PortfolioGalleryDialog({
     setGalleryImageError(false);
   }, [galleryIndex]);
 
+  // Preload adjacent gallery images for instant navigation
+  useEffect(() => {
+    if (selectedProject === null) return;
+    const images = projectImages[selectedProject] ?? [PORTFOLIO_IMAGES[selectedProject]!];
+    const preloadIndices = [galleryIndex - 1, galleryIndex + 1].filter(
+      (i) => i >= 0 && i < images.length
+    );
+    const links = preloadIndices.map((i) => {
+      const link = document.createElement('link');
+      link.rel = 'prefetch';
+      link.href = images[i]!.webp;
+      link.as = 'image';
+      document.head.appendChild(link);
+      return link;
+    });
+    return () => {
+      for (const link of links) {
+        document.head.removeChild(link);
+      }
+    };
+  }, [selectedProject, galleryIndex]);
+
   const setGalleryIndex = onGalleryIndexChange;
 
   return (
@@ -201,7 +223,6 @@ export function PortfolioGalleryDialog({
                       alt={project.title}
                       width={1600}
                       height={1152}
-                      unoptimized
                       className={`rounded-2xl shadow-2xl relative z-10 select-none ${
                         zoomed
                           ? 'max-w-none max-h-none'

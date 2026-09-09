@@ -121,7 +121,7 @@ export function Services() {
               className="landing-reveal-item h-full flex flex-col transition-transform duration-300 ease-out hover:scale-[1.01]"
               style={{ ['--ld' as string]: `${0.15 + index * 0.12}s` } as React.CSSProperties}
             >
-              <ServiceCard service={service} index={index} />
+              <ServiceCard service={service} />
             </div>
           ))}
         </MotionReveal>

@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface ScrollArrowsProps {
@@ -11,6 +10,9 @@ interface ScrollArrowsProps {
   ariaLabelRight?: string;
 }
 
+const arrowBase =
+  'hidden md:flex absolute top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110 bg-black/60 hover:bg-[#7766EE] border-white/15 hover:border-[#7766EE]';
+
 export function HorizontalScrollArrows({
   onScroll,
   canScrollLeft,
@@ -18,26 +20,13 @@ export function HorizontalScrollArrows({
   ariaLabelLeft = 'التالي',
   ariaLabelRight = 'السابق',
 }: ScrollArrowsProps) {
-  const [hoveredArrow, setHoveredArrow] = useState<'left' | 'right' | null>(null);
-
-  const arrowBase =
-    'hidden md:flex absolute top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110';
-
-  const getArrowStyle = (direction: 'left' | 'right') => ({
-    backgroundColor: hoveredArrow === direction ? '#7766EE' : 'rgba(0, 0, 0, 0.6)',
-    borderColor: hoveredArrow === direction ? '#7766EE' : 'rgba(255, 255, 255, 0.15)',
-    backdropFilter: 'blur(8px)',
-  });
-
   return (
     <>
       {canScrollLeft && (
         <button
           onClick={() => onScroll('left')}
           className={`${arrowBase} inset-e-4`}
-          style={getArrowStyle('left')}
-          onMouseEnter={() => setHoveredArrow('left')}
-          onMouseLeave={() => setHoveredArrow(null)}
+          style={{ backdropFilter: 'blur(8px)' }}
           aria-label={ariaLabelLeft}
           type="button"
         >
@@ -49,9 +38,7 @@ export function HorizontalScrollArrows({
         <button
           onClick={() => onScroll('right')}
           className={`${arrowBase} inset-s-4`}
-          style={getArrowStyle('right')}
-          onMouseEnter={() => setHoveredArrow('right')}
-          onMouseLeave={() => setHoveredArrow(null)}
+          style={{ backdropFilter: 'blur(8px)' }}
           aria-label={ariaLabelRight}
           type="button"
         >

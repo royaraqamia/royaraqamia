@@ -1,7 +1,6 @@
 'use client';
 
 import { ElementType, MouseEvent, useCallback, useRef } from 'react';
-import { m } from 'motion/react';
 import { Check, ArrowRight, Code, Lightbulb, MessageCircle } from 'lucide-react';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
@@ -44,24 +43,7 @@ interface Service {
   href: string;
 }
 
-// Framer Motion Entrance Variant
-const cardVariant = {
-  hidden: { opacity: 0, y: 40, scale: 0.95 },
-  show: (index: number) =>
-    ({
-      opacity: 1,
-      y: 0,
-      scale: 1,
-      transition: {
-        type: 'spring',
-        stiffness: 80,
-        damping: 20,
-        delay: index * 0.1,
-      },
-    }) as const,
-} as const;
-
-export function ServiceCard({ service, index }: { service: Service; index: number }) {
+export function ServiceCard({ service }: { service: Service }) {
   const Icon = iconMap[service.icon]!;
   const colors = colorConfigs[service.colorKey];
 
@@ -84,13 +66,8 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
   );
 
   return (
-    <m.article
+    <article
       ref={cardRef}
-      custom={index}
-      initial="hidden"
-      whileInView="show"
-      viewport={{ once: true, margin: '-50px' }}
-      variants={cardVariant}
       onMouseMove={handleMouseMove}
       className="group/service relative rounded-4xl p-6 sm:p-8 lg:p-9 h-full flex flex-col overflow-hidden bg-neutral-900/70 border border-white/10 transition-[transform,border-color,box-shadow] duration-500 ease-out hover:border-white/20 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60 z-10"
       style={{
@@ -207,6 +184,6 @@ export function ServiceCard({ service, index }: { service: Service; index: numbe
           )}
         </div>
       </div>
-    </m.article>
+    </article>
   );
 }
