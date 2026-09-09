@@ -1,0 +1,15 @@
+{
+  "version": "delegate-fleet.v1",
+  "lanes": {
+    "plan": {
+      "implementer": "opencode",
+      "model": "opencode-go/glm-5.3",
+      "variant": "high"
+    },
+    "implement": {
+      "implementer": "opencode",
+      "model": "opencode-go/deepseek-v4-flash",
+      "variant": "high"
+    }
+  }
+}
