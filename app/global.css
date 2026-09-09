@@ -2120,6 +2120,6 @@
 /* Certificate card pressed scale — CSS-only replacement for framer-motion
    animate={{ scale }}. The custom property drives the transform in the
    component's inline style. */
-[role="region"][data-pressed] {
+[role='region'][data-pressed] {
   --card-scale: 1.02;
 }
