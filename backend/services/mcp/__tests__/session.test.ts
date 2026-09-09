@@ -162,7 +162,7 @@ describe('invalidateTokenCache', () => {
     mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
 
     await resolveMcpContext('token');
-    invalidateTokenCache('hash-x');
+    invalidateTokenCache('hash-token');
     await resolveMcpContext('token');
 
     // Should call repo twice since cache was invalidated
