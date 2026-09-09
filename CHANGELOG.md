@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.4] - 2026-09-09
+
+### Changed
+- update package-lock.json
+- bump vitest from 4.1.11 to 5.0.0
+- bump the minor-and-patch group across 1 directory with 27 updates
+- bump @vitest/coverage-v8 from 4.1.11 to 5.0.0
+- bump softprops/action-gh-release in the minor-and-patch group
+
+### Fixed
+- add missing vite dependency, dedupe devDeps, and fix invalidation cache key in test
+- import jest-dom/vitest types instead of jest-dom/jest to fix tsc errors in test files
+
 ## [1.19.3] - 2026-09-09
 
 ### Changed
