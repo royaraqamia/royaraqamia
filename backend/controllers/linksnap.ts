@@ -25,6 +25,7 @@ import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url
 import { getLinkStatus } from '@/backend/services/linksnap/link-status';
 import type { AnalyticsDateRange } from '@/backend/repositories/linksnap/analytics-repository';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import { withBearerUser } from '@/backend/transport/bearer-handler';
 
 function parseDate(value: unknown): Date | undefined {
   if (typeof value !== 'string' || !value.trim()) return undefined;
@@ -82,19 +83,23 @@ function errorResponse(err: unknown, log: string): HttpResult {
   return jsonResult(status, { success: false, error: getErrorMessage(err) });
 }
 
+/** Wrap a handler that requires a bearer token, mapping thrown errors per route. */
+function requireBearer(
+  authorization: string | null,
+  log: string,
+  run: Parameters<typeof withBearerUser>[1]
+): Promise<HttpResult> {
+  return withBearerUser(authorization, run, {
+    whenUnauthenticated: () => jsonResult(401, UNAUTHORIZED_BODY),
+    mapError: (err) => errorResponse(err, log),
+  });
+}
+
 export async function listLinks(authorization: string | null): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, UNAUTHORIZED_BODY);
-    }
-
-    const links = await createListLinksService().execute(user.id);
-
+  return requireBearer(authorization, 'Error in list links API route:', async ({ userId }) => {
+    const links = await createListLinksService().execute(userId);
     return jsonResult(200, { success: true, links: links.map(linkView) });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in list links API route:');
-  }
+  });
 }
 
 export async function updateLink(
@@ -107,13 +112,8 @@ export async function updateLink(
     password?: unknown;
   }
 ): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, UNAUTHORIZED_BODY);
-    }
-
-    const updatedLink = await createUpdateLinkService().execute(body.code as string, user.id, {
+  return requireBearer(authorization, 'Error in update link API route:', async ({ userId }) => {
+    const updatedLink = await createUpdateLinkService().execute(body.code as string, userId, {
       code: body.newCode as string | undefined,
       originalUrl: body.originalUrl as string | undefined,
       expiresAt: parseExpiresAt(body.expiresAt),
@@ -126,27 +126,17 @@ export async function updateLink(
     });
 
     return jsonResult(200, { success: true, link: linkView(updatedLink) });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in update link API route:');
-  }
+  });
 }
 
 export async function deleteLink(
   authorization: string | null,
   code: string | null
 ): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, UNAUTHORIZED_BODY);
-    }
-
-    await createDeleteLinkService().execute(code ?? '', user.id);
-
+  return requireBearer(authorization, 'Error in delete link API route:', async ({ userId }) => {
+    await createDeleteLinkService().execute(code ?? '', userId);
     return jsonResult(200, { success: true, message: 'تم حذف الرابط بنجاح.' });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in delete link API route:');
-  }
+  });
 }
 
 export async function checkCodeAvailability(
@@ -154,12 +144,7 @@ export async function checkCodeAvailability(
   ip: string,
   code: string | null
 ): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, UNAUTHORIZED_BODY);
-    }
-
+  return requireBearer(authorization, 'Error in slug availability API route:', async () => {
     const rateLimitResult = await checkRateLimitApi(slugAvailabilityRateLimitPolicy(ip));
     if (rateLimitResult) return rateLimitResult;
 
@@ -170,9 +155,7 @@ export async function checkCodeAvailability(
     const availability = await createCheckCodeAvailabilityService().execute(code);
 
     return jsonResult(200, { success: true, availability });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in slug availability API route:');
-  }
+  });
 }
 
 export async function shortenUrl(
@@ -217,45 +200,38 @@ export async function moderateLink(
   authorization: string | null,
   body: { code?: unknown; isBlocked?: unknown }
 ): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, UNAUTHORIZED_BODY);
+  return requireBearer(
+    authorization,
+    'Error in administration moderation endpoint:',
+    async ({ userEmail }) => {
+      const updatedLink = await createModerateLinkService().execute(
+        userEmail,
+        body.code as string,
+        body.isBlocked as boolean
+      );
+
+      return jsonResult(200, {
+        success: true,
+        message: `تم ${body.isBlocked ? 'حظر' : 'إلغاء حظر'} الرابط بنجاح.`,
+        link: {
+          code: updatedLink.code,
+          originalUrl: updatedLink.originalUrl,
+          isBlocked: updatedLink.isBlocked,
+        },
+      });
     }
-
-    const updatedLink = await createModerateLinkService().execute(
-      user.email,
-      body.code as string,
-      body.isBlocked as boolean
-    );
-
-    return jsonResult(200, {
-      success: true,
-      message: `تم ${body.isBlocked ? 'حظر' : 'إلغاء حظر'} الرابط بنجاح.`,
-      link: {
-        code: updatedLink.code,
-        originalUrl: updatedLink.originalUrl,
-        isBlocked: updatedLink.isBlocked,
-      },
-    });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in administration moderation endpoint:');
-  }
+  );
 }
 
 export async function getSystemStats(authorization: string | null): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, UNAUTHORIZED_BODY);
+  return requireBearer(
+    authorization,
+    'Error in administrative stats endpoint:',
+    async ({ userEmail }) => {
+      const stats = await createGetSystemStatsService().execute(userEmail);
+      return jsonResult(200, { success: true, stats });
     }
-
-    const stats = await createGetSystemStatsService().execute(user.email);
-
-    return jsonResult(200, { success: true, stats });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in administrative stats endpoint:');
-  }
+  );
 }
 
 export async function getUrlAnalytics(
@@ -263,20 +239,11 @@ export async function getUrlAnalytics(
   code: string,
   search?: URLSearchParams
 ): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, UNAUTHORIZED_BODY);
-    }
-
+  return requireBearer(authorization, 'Error in link analytics API route:', async ({ userId }) => {
     const range = search ? parseDateRange(search) : undefined;
-
-    const analytics = await createGetUrlAnalyticsService().execute(code, user.id, range);
-
+    const analytics = await createGetUrlAnalyticsService().execute(code, userId, range);
     return jsonResult(200, { success: true, analytics });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in link analytics API route:');
-  }
+  });
 }
 
 export async function exportUrlAnalytics(
@@ -284,20 +251,15 @@ export async function exportUrlAnalytics(
   code: string,
   search?: URLSearchParams
 ): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, UNAUTHORIZED_BODY);
+  return requireBearer(
+    authorization,
+    'Error in link analytics export route:',
+    async ({ userId }) => {
+      const range = search ? parseDateRange(search) : undefined;
+      const rows = await createGetUrlAnalyticsService().exportCsv(code, userId, range);
+      return jsonResult(200, { success: true, rows });
     }
-
-    const range = search ? parseDateRange(search) : undefined;
-
-    const rows = await createGetUrlAnalyticsService().exportCsv(code, user.id, range);
-
-    return jsonResult(200, { success: true, rows });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in link analytics export route:');
-  }
+  );
 }
 
 export async function bulkLinkAction(
@@ -308,12 +270,7 @@ export async function bulkLinkAction(
     expiresAt?: unknown;
   }
 ): Promise<HttpResult> {
-  try {
-    const user = await getAuthenticatedUser(authorization);
-    if (!user) {
-      return jsonResult(401, UNAUTHORIZED_BODY);
-    }
-
+  return requireBearer(authorization, 'Error in bulk link action route:', async ({ userId }) => {
     if (body.action !== 'delete' && body.action !== 'setExpiry') {
       throw new AppError("القيمة 'action' يجب أن تكون delete أو setExpiry.", 400);
     }
@@ -328,14 +285,12 @@ export async function bulkLinkAction(
     const result = await createBulkLinkActionService().execute(
       body.action,
       codes,
-      user.id,
+      userId,
       expiresAt
     );
 
     return jsonResult(200, { success: true, affected: result.affected });
-  } catch (err: unknown) {
-    return errorResponse(err, 'Error in bulk link action route:');
-  }
+  });
 }
 
 export async function redirectShortCode(

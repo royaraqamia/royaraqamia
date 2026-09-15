@@ -1,4 +1,3 @@
-import { getAuthUser } from '@/backend/middleware/auth-guard';
 import {
   createBlogpressMediaService,
   createBlogpressPostsService,
@@ -11,8 +10,13 @@ import {
   SchedulePostSchema,
 } from '@/shared/contracts/blog';
 import { RestorePostSnapshotSchema } from '@/shared/contracts/blogpress';
-import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import type { RevalidationHint } from '@/backend/transport/http-result';
+import {
+  jsonResult,
+  type HttpResult,
+  type RevalidationHint,
+} from '@/backend/transport/http-result';
+import { messageError } from '@/backend/transport/authenticated-handler';
+import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { BLOG_MUTATION_TAGS } from '@/backend/shared/blog-cache-tags';
 
 function postRevalidation(slug: string): RevalidationHint[] {
@@ -24,379 +28,305 @@ function publishRevalidation(slug: string): RevalidationHint[] {
 }
 
 export async function createPost(): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
-
-    const { id } = await createBlogpressPostsService(supabase).createPost(user.id);
-    return jsonResult(200, { id });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل إنشاء المقال',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const { id } = await createBlogpressPostsService(supabase).createPost(userId);
+      return jsonResult(200, { id });
+    },
+    { mapError: messageError(500, 'فشل إنشاء المقال') }
+  );
 }
 
 export async function updatePost(id: string, body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const validated = PostSchema.safeParse(body);
 
-    const validated = PostSchema.safeParse(body);
-
-    if (!validated.success) {
-      return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
-    }
-
-    const service = createBlogpressPostsService(supabase);
-    try {
-      await service.updatePost(id, user.id, validated.data);
-    } catch (error) {
-      return jsonResult(500, {
-        message: error instanceof Error ? error.message : 'فشل حفظ المقال',
-      });
-    }
-
-    return jsonResult(
-      200,
-      { message: 'تمَّ حفظ المقال' },
-      {
-        revalidate: [...postRevalidation(validated.data.slug), { path: `/blogpress/editor/${id}` }],
-        tags: BLOG_MUTATION_TAGS,
+      if (!validated.success) {
+        return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
       }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل حفظ المقال',
-    });
-  }
+
+      await createBlogpressPostsService(supabase).updatePost(id, userId, validated.data);
+
+      return jsonResult(
+        200,
+        { message: 'تمَّ حفظ المقال' },
+        {
+          revalidate: [
+            ...postRevalidation(validated.data.slug),
+            { path: `/blogpress/editor/${id}` },
+          ],
+          tags: BLOG_MUTATION_TAGS,
+        }
+      );
+    },
+    { mapError: messageError(500, 'فشل حفظ المقال', 'message') }
+  );
 }
 
 export async function deletePost(id: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const { slug } = await createBlogpressPostsService(supabase).deletePost(id, userId);
 
-    const { slug } = await createBlogpressPostsService(supabase).deletePost(id, user.id);
-
-    return jsonResult(
-      200,
-      { success: true },
-      { revalidate: postRevalidation(slug), tags: BLOG_MUTATION_TAGS }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل حذف المقال',
-    });
-  }
+      return jsonResult(
+        200,
+        { success: true },
+        { revalidate: postRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+      );
+    },
+    { mapError: messageError(500, 'فشل حذف المقال') }
+  );
 }
 
 export async function duplicatePost(id: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
-
-    const { id: newId } = await createBlogpressPostsService(supabase).duplicatePost(id, user.id);
-
-    return jsonResult(200, { success: true, id: newId });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل نسخ المقال',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const { id: newId } = await createBlogpressPostsService(supabase).duplicatePost(id, userId);
+      return jsonResult(200, { success: true, id: newId });
+    },
+    { mapError: messageError(500, 'فشل نسخ المقال') }
+  );
 }
 
 export async function restorePost(body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
-
-    const validated = RestorePostSnapshotSchema.safeParse(body);
-    if (!validated.success) {
-      return jsonResult(400, { error: 'بيانات استرجاع المقال غير صالحة' });
-    }
-
-    const { id } = await createBlogpressPostsService(supabase).restorePost(
-      user.id,
-      validated.data,
-      user.email ?? ''
-    );
-
-    return jsonResult(
-      200,
-      { success: true, id },
-      {
-        revalidate: postRevalidation(validated.data.slug),
-        tags: BLOG_MUTATION_TAGS,
+  return withAuthenticatedUser(
+    async ({ userId, userEmail, supabase }) => {
+      const validated = RestorePostSnapshotSchema.safeParse(body);
+      if (!validated.success) {
+        return jsonResult(400, { error: 'بيانات استرجاع المقال غير صالحة' });
       }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل استرجاع المقال',
-    });
-  }
+
+      const { id } = await createBlogpressPostsService(supabase).restorePost(
+        userId,
+        validated.data,
+        userEmail
+      );
+
+      return jsonResult(
+        200,
+        { success: true, id },
+        {
+          revalidate: postRevalidation(validated.data.slug),
+          tags: BLOG_MUTATION_TAGS,
+        }
+      );
+    },
+    { mapError: messageError(500, 'فشل استرجاع المقال') }
+  );
 }
 
 export async function publishPost(id: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+  return withAuthenticatedUser(
+    async ({ userId, userEmail, supabase }) => {
+      const { slug } = await createBlogpressPostsService(supabase).publishPost(
+        id,
+        userId,
+        userEmail
+      );
 
-    const { slug } = await createBlogpressPostsService(supabase).publishPost(
-      id,
-      user.id,
-      user.email ?? ''
-    );
-
-    return jsonResult(
-      200,
-      { success: true },
-      { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل نشر المقال',
-    });
-  }
+      return jsonResult(
+        200,
+        { success: true },
+        { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+      );
+    },
+    { mapError: messageError(500, 'فشل نشر المقال') }
+  );
 }
 
 export async function unpublishPost(id: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const { slug } = await createBlogpressPostsService(supabase).unpublishPost(id, userId);
 
-    const { slug } = await createBlogpressPostsService(supabase).unpublishPost(id, user.id);
-
-    return jsonResult(
-      200,
-      { success: true },
-      { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل إلغاء النَّشر',
-    });
-  }
+      return jsonResult(
+        200,
+        { success: true },
+        { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+      );
+    },
+    { mapError: messageError(500, 'فشل إلغاء النَّشر') }
+  );
 }
 
 export async function schedulePost(id: string, body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const validated = SchedulePostSchema.safeParse(body);
+      if (!validated.success) return jsonResult(400, { error: 'تاريخ الجدولة غير صالح' });
 
-    const validated = SchedulePostSchema.safeParse(body);
-    if (!validated.success) return jsonResult(400, { error: 'تاريخ الجدولة غير صالح' });
+      const { slug } = await createBlogpressPostsService(supabase).schedulePost(
+        id,
+        userId,
+        validated.data.publish_at
+      );
 
-    const { slug } = await createBlogpressPostsService(supabase).schedulePost(
-      id,
-      user.id,
-      validated.data.publish_at
-    );
-
-    return jsonResult(
-      200,
-      { success: true },
-      {
-        revalidate: [...postRevalidation(slug), { path: '/blogpress/calendar' }],
-        tags: BLOG_MUTATION_TAGS,
-      }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل جدولة المقال',
-    });
-  }
+      return jsonResult(
+        200,
+        { success: true },
+        {
+          revalidate: [...postRevalidation(slug), { path: '/blogpress/calendar' }],
+          tags: BLOG_MUTATION_TAGS,
+        }
+      );
+    },
+    { mapError: messageError(500, 'فشل جدولة المقال') }
+  );
 }
 
 export async function setPostFeatured(id: string, featured: boolean): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
-
-    await createBlogpressPostsService(supabase).setPostFeatured(id, user.id, featured);
-
-    return jsonResult(200, { success: true }, { revalidate: [{ path: '/blogpress' }] });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تحديث تثبيت المقال',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      await createBlogpressPostsService(supabase).setPostFeatured(id, userId, featured);
+      return jsonResult(200, { success: true }, { revalidate: [{ path: '/blogpress' }] });
+    },
+    { mapError: messageError(500, 'فشل تحديث تثبيت المقال') }
+  );
 }
 
 export async function bulkPostsAction(body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+  return withAuthenticatedUser(
+    async ({ userId, userEmail, supabase }) => {
+      const validated = BulkPostsActionSchema.safeParse(body);
+      if (!validated.success) {
+        return jsonResult(400, { error: 'بيانات الإجراء غير صالحة' });
+      }
 
-    const validated = BulkPostsActionSchema.safeParse(body);
-    if (!validated.success) {
-      return jsonResult(400, { error: 'بيانات الإجراء غير صالحة' });
-    }
+      const { action, postIds, categoryId } = validated.data;
+      const service = createBlogpressPostsService(supabase);
 
-    const { action, postIds, categoryId } = validated.data;
-    const service = createBlogpressPostsService(supabase);
+      if (action === 'setCategory') {
+        if (!categoryId) return jsonResult(400, { error: 'اختر تصنيفاً' });
+        await service.bulkSetPostCategories(postIds, userId, categoryId);
+        return jsonResult(
+          200,
+          { success: true, affected: postIds.length },
+          { revalidate: [{ path: '/blogpress' }], tags: BLOG_MUTATION_TAGS }
+        );
+      }
 
-    if (action === 'setCategory') {
-      if (!categoryId) return jsonResult(400, { error: 'اختر تصنيفاً' });
-      await service.bulkSetPostCategories(postIds, user.id, categoryId);
-      return jsonResult(
-        200,
-        { success: true, affected: postIds.length },
-        { revalidate: [{ path: '/blogpress' }], tags: BLOG_MUTATION_TAGS }
-      );
-    }
+      const { affected, slugs } = await service.bulkActionPosts(postIds, userId, action, userEmail);
 
-    const { affected, slugs } = await service.bulkActionPosts(
-      postIds,
-      user.id,
-      action,
-      user.email ?? ''
-    );
+      if (action === 'publish' || action === 'unpublish') {
+        return jsonResult(
+          200,
+          { success: true, affected },
+          {
+            revalidate: slugs.flatMap((slug) => publishRevalidation(slug)),
+            tags: BLOG_MUTATION_TAGS,
+          }
+        );
+      }
 
-    if (action === 'publish' || action === 'unpublish') {
       return jsonResult(
         200,
         { success: true, affected },
-        { revalidate: slugs.flatMap((slug) => publishRevalidation(slug)), tags: BLOG_MUTATION_TAGS }
+        { revalidate: slugs.flatMap((slug) => postRevalidation(slug)), tags: BLOG_MUTATION_TAGS }
       );
-    }
-
-    return jsonResult(
-      200,
-      { success: true, affected },
-      { revalidate: slugs.flatMap((slug) => postRevalidation(slug)), tags: BLOG_MUTATION_TAGS }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تنفيذ الإجراء على المقالات',
-    });
-  }
+    },
+    { mapError: messageError(500, 'فشل تنفيذ الإجراء على المقالات') }
+  );
 }
 
 export async function saveAndPublishPost(
   id: string,
   body: Record<string, unknown>
 ): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+  return withAuthenticatedUser(
+    async ({ userId, userEmail, supabase }) => {
+      const validated = PostSchema.safeParse(body);
 
-    const validated = PostSchema.safeParse(body);
+      if (!validated.success) {
+        return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
+      }
 
-    if (!validated.success) {
-      return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
-    }
+      const { slug } = await createBlogpressPostsService(supabase).saveAndPublishPost(
+        id,
+        userId,
+        validated.data,
+        userEmail
+      );
 
-    const { slug } = await createBlogpressPostsService(supabase).saveAndPublishPost(
-      id,
-      user.id,
-      validated.data,
-      user.email ?? ''
-    );
-
-    return jsonResult(
-      200,
-      { success: true, slug },
-      { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل نشر المقال',
-    });
-  }
+      return jsonResult(
+        200,
+        { success: true, slug },
+        { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+      );
+    },
+    { mapError: messageError(500, 'فشل نشر المقال') }
+  );
 }
 
 export async function uploadMedia(formData: FormData): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
-
-    const result = await createBlogpressMediaService(supabase).uploadImage(formData, user.id);
-
-    return jsonResult(200, result);
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل رفع الصُّورة',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const result = await createBlogpressMediaService(supabase).uploadImage(formData, userId);
+      return jsonResult(200, result);
+    },
+    { mapError: messageError(500, 'فشل رفع الصُّورة') }
+  );
 }
 
 export async function listBlogTags(): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
-
-    const tags = await createBlogpressPostsService(supabase).listTagsByAuthor(user.id);
-    return jsonResult(200, { tags });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل جلب الوسوم',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const tags = await createBlogpressPostsService(supabase).listTagsByAuthor(userId);
+      return jsonResult(200, { tags });
+    },
+    { mapError: messageError(500, 'فشل جلب الوسوم') }
+  );
 }
 
 export async function createBlogTag(body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const validated = TagInputSchema.safeParse(body);
+      if (!validated.success) {
+        return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
+      }
 
-    const validated = TagInputSchema.safeParse(body);
-    if (!validated.success) {
-      return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
-    }
+      const tag = await createBlogpressPostsService(supabase).createTag(
+        userId,
+        validated.data.name,
+        validated.data.slug
+      );
 
-    const tag = await createBlogpressPostsService(supabase).createTag(
-      user.id,
-      validated.data.name,
-      validated.data.slug
-    );
-
-    return jsonResult(200, { tag });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل إنشاء الوسم',
-    });
-  }
+      return jsonResult(200, { tag });
+    },
+    { mapError: messageError(500, 'فشل إنشاء الوسم') }
+  );
 }
 
 export async function deleteBlogTag(id: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
-
-    await createBlogpressPostsService(supabase).deleteTag(id, user.id);
-
-    return jsonResult(200, { success: true });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل حذف الوسم',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      await createBlogpressPostsService(supabase).deleteTag(id, userId);
+      return jsonResult(200, { success: true });
+    },
+    { mapError: messageError(500, 'فشل حذف الوسم') }
+  );
 }
 
 export async function setBlogPostTags(
   id: string,
   body: Record<string, unknown>
 ): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) return jsonResult(401, { error: 'غير مصرح' });
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const validated = PostTagIdsSchema.safeParse(body);
+      if (!validated.success) {
+        return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
+      }
 
-    const validated = PostTagIdsSchema.safeParse(body);
-    if (!validated.success) {
-      return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
-    }
+      await createBlogpressPostsService(supabase).setPostTags(id, userId, validated.data.tagIds);
 
-    await createBlogpressPostsService(supabase).setPostTags(id, user.id, validated.data.tagIds);
-
-    return jsonResult(
-      200,
-      { success: true },
-      { revalidate: [{ path: `/blogpress/editor/${id}` }], tags: BLOG_MUTATION_TAGS }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تحديث وسوم المقال',
-    });
-  }
+      return jsonResult(
+        200,
+        { success: true },
+        { revalidate: [{ path: `/blogpress/editor/${id}` }], tags: BLOG_MUTATION_TAGS }
+      );
+    },
+    { mapError: messageError(500, 'فشل تحديث وسوم المقال') }
+  );
 }

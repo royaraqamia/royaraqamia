@@ -1,7 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import type { z } from 'zod';
-import type { Database } from '@/backend/models/database.types';
 import {
   BookingActionSchema,
   ConsultationSettingsSchema,
@@ -12,7 +10,7 @@ import {
   type ConsultationBookingStatus,
 } from '@/shared/contracts/consultation';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import { getAuthUser } from '@/backend/middleware/auth-guard';
+import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
 import {
   createAdminConsultationService,
@@ -62,30 +60,10 @@ function bookingErrorResponse(error: unknown): HttpResult | null {
   return null;
 }
 
-async function withAuthenticatedUser(
-  run: (
-    userId: string,
-    supabase: SupabaseClient<Database>,
-    userEmail: string
-  ) => Promise<HttpResult>
-): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    const userId = user?.id ?? null;
-    if (!userId) {
-      return jsonResult(401, { success: false, error: 'يجب تسجيل الدخول أولًا.' });
-    }
-    return await run(userId, supabase as unknown as SupabaseClient<Database>, user?.email ?? '');
-  } catch (error) {
-    Sentry.captureException(error);
-    const mapped = bookingErrorResponse(error);
-    if (mapped) return mapped;
-    return jsonResult(500, {
-      success: false,
-      error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
-    });
-  }
-}
+const CONSULTATION_POLICY = {
+  whenUnauthenticated: () => jsonResult(401, { success: false, error: 'يجب تسجيل الدخول أولًا.' }),
+  mapError: (error: unknown) => bookingErrorResponse(error),
+};
 
 // ------------------------------------------------------------
 // Public endpoints (authenticated bookers; payment config is display data)
@@ -102,17 +80,17 @@ export async function listConsultationPackages(): Promise<HttpResult> {
 }
 
 export async function listAvailableSlots(): Promise<HttpResult> {
-  return withAuthenticatedUser(async (_userId, supabase) => {
+  return withAuthenticatedUser(async ({ supabase }) => {
     const slots = await createUserConsultationService(supabase).getAvailableSlots();
     return jsonResult(200, { slots });
-  });
+  }, CONSULTATION_POLICY);
 }
 
 export async function listMyBookings(): Promise<HttpResult> {
-  return withAuthenticatedUser(async (userId, supabase) => {
+  return withAuthenticatedUser(async ({ userId, supabase }) => {
     const bookings = await createUserConsultationService(supabase).getMyBookings(userId);
     return jsonResult(200, { bookings });
-  });
+  }, CONSULTATION_POLICY);
 }
 
 export async function createBooking(body: unknown): Promise<HttpResult> {
@@ -125,28 +103,28 @@ export async function createBooking(body: unknown): Promise<HttpResult> {
     });
   }
 
-  return withAuthenticatedUser(async (userId, supabase, userEmail) => {
+  return withAuthenticatedUser(async ({ userId, userEmail, supabase }) => {
     // Email is no longer collected in the form — the account's email is used.
     const bookingId = await createUserConsultationService(supabase).createBooking(userId, {
       ...parsed.data,
       email: userEmail,
     });
     return jsonResult(200, { success: true, bookingId });
-  });
+  }, CONSULTATION_POLICY);
 }
 
 export async function cancelMyBooking(bookingId: string): Promise<HttpResult> {
-  return withAuthenticatedUser(async (userId, supabase) => {
+  return withAuthenticatedUser(async ({ userId, supabase }) => {
     await createUserConsultationService(supabase).cancelBooking(userId, bookingId);
     return jsonResult(200, { success: true });
-  });
+  }, CONSULTATION_POLICY);
 }
 
 export async function confirmReceiptSent(bookingId: string): Promise<HttpResult> {
-  return withAuthenticatedUser(async (userId, supabase) => {
+  return withAuthenticatedUser(async ({ userId, supabase }) => {
     await createUserConsultationService(supabase).markReceiptSent(userId, bookingId);
     return jsonResult(200, { success: true });
-  });
+  }, CONSULTATION_POLICY);
 }
 
 export async function getPaymentConfig(): Promise<HttpResult> {

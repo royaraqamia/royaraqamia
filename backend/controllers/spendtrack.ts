@@ -1,107 +1,91 @@
-import { getAuthUser } from '@/backend/middleware/auth-guard';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
-import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import {
+  jsonResult,
+  type HttpResult,
+  type RevalidationHint,
+} from '@/backend/transport/http-result';
+import { messageError } from '@/backend/transport/authenticated-handler';
+import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import type {
   SpendtrackCategoryInput,
   SpendtrackExpenseInput,
 } from '@/backend/services/spendtrack/spendtrack-service';
 import type { RecurringExpenseInput } from '@/shared/contracts/spendtrack';
 
-const SPENDTRACK_LAYOUT_REVALIDATION = [{ path: '/spendtrack', type: 'layout' as const }];
+const SPENDTRACK_LAYOUT_REVALIDATION: RevalidationHint[] = [
+  { path: '/spendtrack', type: 'layout' },
+];
 
 export async function getExpenses(query: URLSearchParams): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const offset = Number(query.get('offset') ?? 0);
+      const limit = Number(query.get('limit') ?? 20);
+      const start = query.get('start') ?? '';
+      const end = query.get('end') ?? '';
+      const categories = (query.get('categories') ?? '').split(',').filter(Boolean);
+      const sort = query.get('sort') ?? '';
+      const search = query.get('search') ?? undefined;
 
-    const offset = Number(query.get('offset') ?? 0);
-    const limit = Number(query.get('limit') ?? 20);
-    const start = query.get('start') ?? '';
-    const end = query.get('end') ?? '';
-    const categories = (query.get('categories') ?? '').split(',').filter(Boolean);
-    const sort = query.get('sort') ?? '';
-    const search = query.get('search') ?? undefined;
+      const { expenses } = await createSpendtrackService(supabase).getTransactions({
+        userId,
+        start,
+        end,
+        filterCategories: categories,
+        sort,
+        pageSize: limit,
+        offset,
+        search,
+      });
 
-    const { expenses } = await createSpendtrackService(supabase).getTransactions({
-      userId: user.id,
-      start,
-      end,
-      filterCategories: categories,
-      sort,
-      pageSize: limit,
-      offset,
-      search,
-    });
-
-    return jsonResult(200, { expenses });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تحميل المصروفات',
-    });
-  }
+      return jsonResult(200, { expenses });
+    },
+    { mapError: messageError(500, 'فشل تحميل المصروفات') }
+  );
 }
 
 export async function exportExpenses(query: URLSearchParams): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const start = query.get('start') ?? '';
+      const end = query.get('end') ?? '';
+      const categories = (query.get('categories') ?? '').split(',').filter(Boolean);
+      const catFilter: string[] | null = categories.length > 0 ? categories : null;
 
-    const start = query.get('start') ?? '';
-    const end = query.get('end') ?? '';
-    const categories = (query.get('categories') ?? '').split(',').filter(Boolean);
-    const catFilter: string[] | null = categories.length > 0 ? categories : null;
+      const content = await createSpendtrackService(supabase).getExportCsv(
+        userId,
+        start,
+        end,
+        catFilter
+      );
 
-    const content = await createSpendtrackService(supabase).getExportCsv(
-      user.id,
-      start,
-      end,
-      catFilter
-    );
-
-    return jsonResult(200, { content });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تصدير المصروفات',
-    });
-  }
+      return jsonResult(200, { content });
+    },
+    { mapError: messageError(500, 'فشل تصدير المصروفات') }
+  );
 }
 
 export async function importExpenses(body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const content = String(body.content ?? '');
+      if (!content.trim()) {
+        return jsonResult(400, { error: 'لا يوجد محتوى للاستيراد' });
+      }
 
-    const content = String(body.content ?? '');
-    if (!content.trim()) {
-      return jsonResult(400, { error: 'لا يوجد محتوى للاستيراد' });
-    }
-
-    const result = await createSpendtrackService(supabase).importExpensesCsv(user.id, content);
-    return jsonResult(200, result, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل استيراد المصروفات',
-    });
-  }
+      const result = await createSpendtrackService(supabase).importExpensesCsv(userId, content);
+      return jsonResult(200, result, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+    },
+    { mapError: messageError(500, 'فشل استيراد المصروفات') }
+  );
 }
 
 export async function createExpense(body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const { amount, category_id, date, description, currency, splits } = body;
 
-    const { amount, category_id, date, description, currency, splits } = body;
-
-    try {
-      await createSpendtrackService(supabase).createExpense(user.id, {
+      await createSpendtrackService(supabase).createExpense(userId, {
         amount: amount as SpendtrackExpenseInput['amount'],
         category_id: category_id as SpendtrackExpenseInput['category_id'],
         date: date as SpendtrackExpenseInput['date'],
@@ -109,34 +93,22 @@ export async function createExpense(body: Record<string, unknown>): Promise<Http
         currency: (currency ?? null) as SpendtrackExpenseInput['currency'],
         splits: splits as SpendtrackExpenseInput['splits'],
       });
-    } catch (error) {
-      return jsonResult(400, {
-        error: error instanceof Error ? error.message : 'فشل إنشاء المصروف',
-      });
-    }
 
-    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل إنشاء المصروف',
-    });
-  }
+      return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+    },
+    { mapError: messageError(400, 'فشل إنشاء المصروف') }
+  );
 }
 
 export async function updateExpense(
   id: string,
   body: Record<string, unknown>
 ): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const { amount, category_id, date, description, currency, splits } = body;
 
-    const { amount, category_id, date, description, currency, splits } = body;
-
-    try {
-      await createSpendtrackService(supabase).updateExpense(id, user.id, {
+      await createSpendtrackService(supabase).updateExpense(id, userId, {
         amount: amount as SpendtrackExpenseInput['amount'],
         category_id: category_id as SpendtrackExpenseInput['category_id'],
         date: date as SpendtrackExpenseInput['date'],
@@ -144,110 +116,58 @@ export async function updateExpense(
         currency: (currency ?? null) as SpendtrackExpenseInput['currency'],
         splits: (splits ?? null) as SpendtrackExpenseInput['splits'],
       });
-    } catch (error) {
-      return jsonResult(400, {
-        error: error instanceof Error ? error.message : 'فشل تحديث المصروف',
-      });
-    }
 
-    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تحديث المصروف',
-    });
-  }
+      return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+    },
+    { mapError: messageError(400, 'فشل تحديث المصروف') }
+  );
 }
 
 export async function deleteExpense(id: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
-
-    try {
-      await createSpendtrackService(supabase).deleteExpense(id, user.id);
-    } catch (error) {
-      return jsonResult(400, {
-        error: error instanceof Error ? error.message : 'فشل حذف المصروف',
-      });
-    }
-
-    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل حذف المصروف',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      await createSpendtrackService(supabase).deleteExpense(id, userId);
+      return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+    },
+    { mapError: messageError(400, 'فشل حذف المصروف') }
+  );
 }
 
 export async function getBudget(month: string, categoryId?: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
-
-    const budget = await createSpendtrackService(supabase).getBudget(user.id, month, categoryId);
-    return jsonResult(200, { budget });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تحميل الميزانية',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const budget = await createSpendtrackService(supabase).getBudget(userId, month, categoryId);
+      return jsonResult(200, { budget });
+    },
+    { mapError: messageError(500, 'فشل تحميل الميزانية') }
+  );
 }
 
 export async function setBudget(body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const month = String(body.month ?? '');
+      const amount = Number(body.amount);
+      const categoryId =
+        body.categoryId === undefined || body.categoryId === null
+          ? undefined
+          : String(body.categoryId);
 
-    const month = String(body.month ?? '');
-    const amount = Number(body.amount);
-    const categoryId =
-      body.categoryId === undefined || body.categoryId === null
-        ? undefined
-        : String(body.categoryId);
-
-    try {
-      await createSpendtrackService(supabase).setBudget(user.id, month, amount, categoryId);
-    } catch (error) {
-      return jsonResult(400, {
-        error: error instanceof Error ? error.message : 'فشل حفظ الميزانية',
-      });
-    }
-
-    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل حفظ الميزانية',
-    });
-  }
+      await createSpendtrackService(supabase).setBudget(userId, month, amount, categoryId);
+      return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+    },
+    { mapError: messageError(400, 'فشل حفظ الميزانية') }
+  );
 }
 
 export async function deleteBudget(month: string, categoryId?: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
-
-    try {
-      await createSpendtrackService(supabase).deleteBudget(user.id, month, categoryId);
-    } catch (error) {
-      return jsonResult(400, {
-        error: error instanceof Error ? error.message : 'فشل حذف الميزانية',
-      });
-    }
-
-    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل حذف الميزانية',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      await createSpendtrackService(supabase).deleteBudget(userId, month, categoryId);
+      return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+    },
+    { mapError: messageError(400, 'فشل حذف الميزانية') }
+  );
 }
 
 function parseRecurringInput(body: Record<string, unknown>) {
@@ -261,249 +181,151 @@ function parseRecurringInput(body: Record<string, unknown>) {
 }
 
 export async function getRecurringExpenses(): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
-
-    const recurring = await createSpendtrackService(supabase).getRecurringExpenses(user.id);
-    return jsonResult(200, { recurring });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تحميل المصروفات المتكررة',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const recurring = await createSpendtrackService(supabase).getRecurringExpenses(userId);
+      return jsonResult(200, { recurring });
+    },
+    { mapError: messageError(500, 'فشل تحميل المصروفات المتكررة') }
+  );
 }
 
 export async function createRecurringExpense(body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
-
-    try {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
       const created = await createSpendtrackService(supabase).createRecurringExpense(
-        user.id,
+        userId,
         parseRecurringInput(body)
       );
       return jsonResult(
         200,
         { success: true, recurring: created },
-        {
-          revalidate: SPENDTRACK_LAYOUT_REVALIDATION,
-        }
+        { revalidate: SPENDTRACK_LAYOUT_REVALIDATION }
       );
-    } catch (error) {
-      return jsonResult(400, {
-        error: error instanceof Error ? error.message : 'فشل إنشاء المصروف المتكرر',
-      });
-    }
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل إنشاء المصروف المتكرر',
-    });
-  }
+    },
+    { mapError: messageError(400, 'فشل إنشاء المصروف المتكرر') }
+  );
 }
 
 export async function updateRecurringExpense(
   id: string,
   body: Record<string, unknown>
 ): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
-
-    try {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
       await createSpendtrackService(supabase).updateRecurringExpense(
         id,
-        user.id,
+        userId,
         parseRecurringInput(body)
       );
-    } catch (error) {
-      return jsonResult(400, {
-        error: error instanceof Error ? error.message : 'فشل تحديث المصروف المتكرر',
-      });
-    }
-
-    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تحديث المصروف المتكرر',
-    });
-  }
+      return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+    },
+    { mapError: messageError(400, 'فشل تحديث المصروف المتكرر') }
+  );
 }
 
 export async function deleteRecurringExpense(id: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
-
-    try {
-      await createSpendtrackService(supabase).deleteRecurringExpense(id, user.id);
-    } catch (error) {
-      return jsonResult(400, {
-        error: error instanceof Error ? error.message : 'فشل حذف المصروف المتكرر',
-      });
-    }
-
-    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل حذف المصروف المتكرر',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      await createSpendtrackService(supabase).deleteRecurringExpense(id, userId);
+      return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+    },
+    { mapError: messageError(400, 'فشل حذف المصروف المتكرر') }
+  );
 }
 
 export async function createCategory(body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const name = String(body.name ?? '').trim();
+      const colorHex = String(body.color_hex ?? '').trim();
 
-    const name = String(body.name ?? '').trim();
-    const colorHex = String(body.color_hex ?? '').trim();
-
-    try {
-      await createSpendtrackService(supabase).createCategory(user.id, {
+      await createSpendtrackService(supabase).createCategory(userId, {
         name,
         colorHex,
       } satisfies SpendtrackCategoryInput);
-    } catch (error) {
-      return jsonResult(500, {
-        error: error instanceof Error ? error.message : 'فشل إنشاء التصنيف',
-      });
-    }
 
-    return jsonResult(
-      200,
-      { success: true },
-      {
-        revalidate: [
-          { path: '/spendtrack/categories', type: 'layout' },
-          ...SPENDTRACK_LAYOUT_REVALIDATION,
-        ],
-      }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل إنشاء التصنيف',
-    });
-  }
+      return jsonResult(
+        200,
+        { success: true },
+        {
+          revalidate: [
+            { path: '/spendtrack/categories', type: 'layout' },
+            ...SPENDTRACK_LAYOUT_REVALIDATION,
+          ],
+        }
+      );
+    },
+    { mapError: messageError(500, 'فشل إنشاء التصنيف') }
+  );
 }
 
 export async function updateCategory(
   id: string,
   body: Record<string, unknown>
 ): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const name = String(body.name ?? '').trim();
+      const colorHex = String(body.color_hex ?? '').trim();
 
-    const name = String(body.name ?? '').trim();
-    const colorHex = String(body.color_hex ?? '').trim();
-
-    try {
-      await createSpendtrackService(supabase).updateCategory(id, user.id, {
+      await createSpendtrackService(supabase).updateCategory(id, userId, {
         name,
         colorHex,
       } satisfies SpendtrackCategoryInput);
-    } catch (error) {
-      return jsonResult(500, {
-        error: error instanceof Error ? error.message : 'فشل تحديث التصنيف',
-      });
-    }
 
-    return jsonResult(
-      200,
-      { success: true },
-      {
-        revalidate: [
-          { path: '/spendtrack/categories', type: 'layout' },
-          ...SPENDTRACK_LAYOUT_REVALIDATION,
-        ],
-      }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تحديث التصنيف',
-    });
-  }
+      return jsonResult(
+        200,
+        { success: true },
+        {
+          revalidate: [
+            { path: '/spendtrack/categories', type: 'layout' },
+            ...SPENDTRACK_LAYOUT_REVALIDATION,
+          ],
+        }
+      );
+    },
+    { mapError: messageError(500, 'فشل تحديث التصنيف') }
+  );
 }
 
 export async function deleteCategory(id: string): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      await createSpendtrackService(supabase).deleteCategory(id, userId);
 
-    try {
-      await createSpendtrackService(supabase).deleteCategory(id, user.id);
-    } catch (error) {
-      return jsonResult(500, {
-        error: error instanceof Error ? error.message : 'فشل حذف التصنيف',
-      });
-    }
-
-    return jsonResult(
-      200,
-      { success: true },
-      {
-        revalidate: [
-          { path: '/spendtrack/categories', type: 'layout' },
-          ...SPENDTRACK_LAYOUT_REVALIDATION,
-        ],
-      }
-    );
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل حذف التصنيف',
-    });
-  }
+      return jsonResult(
+        200,
+        { success: true },
+        {
+          revalidate: [
+            { path: '/spendtrack/categories', type: 'layout' },
+            ...SPENDTRACK_LAYOUT_REVALIDATION,
+          ],
+        }
+      );
+    },
+    { mapError: messageError(500, 'فشل حذف التصنيف') }
+  );
 }
 
 export async function getCurrency(): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
-    const currency = await createSpendtrackService(supabase).getCurrency(user.id);
-    return jsonResult(200, { currency });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل تحميل العملة',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const currency = await createSpendtrackService(supabase).getCurrency(userId);
+      return jsonResult(200, { currency });
+    },
+    { mapError: messageError(500, 'فشل تحميل العملة') }
+  );
 }
 
 export async function updateCurrency(body: Record<string, unknown>): Promise<HttpResult> {
-  try {
-    const { user, supabase } = await getAuthUser();
-    if (!user) {
-      return jsonResult(401, { error: 'غير مصرح' });
-    }
-    const code = String(body.currency ?? '');
-    try {
-      await createSpendtrackService(supabase).updateCurrency(user.id, code);
-    } catch (error) {
-      return jsonResult(400, {
-        error: error instanceof Error ? error.message : 'فشل حفظ العملة',
-      });
-    }
-    return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
-  } catch (error) {
-    return jsonResult(500, {
-      error: error instanceof Error ? error.message : 'فشل حفظ العملة',
-    });
-  }
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const code = String(body.currency ?? '');
+      await createSpendtrackService(supabase).updateCurrency(userId, code);
+      return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
+    },
+    { mapError: messageError(400, 'فشل حفظ العملة') }
+  );
 }
