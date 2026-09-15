@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.5] - 2026-09-15
+
+### Changed
+- rewrite code-refactorer skill and add reference guides
+- use GLM 5.3 Flash for plan step in OpenCode workflows
+- bump vite from 6.4.3 to 8.3.0
+- bump the minor-and-patch group with 3 updates
+
+### Fixed
+- bump sharp to >=0.35.4 for libheif CVEs (GHSA-g89c-p67h-r497, GHSA-2jg2-4ch7-h545)
+
 ## [1.19.4] - 2026-09-09
 
 ### Changed
