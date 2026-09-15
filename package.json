@@ -93,7 +93,7 @@
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
     "resend": "^6.26.0",
-    "sharp": ">=0.35.3",
+    "sharp": ">=0.35.4",
     "sonner": "^2.0.8",
     "tailwind-merge": "^3.6.0",
     "turndown": "^7.2.4",
@@ -104,7 +104,7 @@
   },
   "overrides": {
     "postcss": ">=8.5.23",
-    "sharp": ">=0.35.3",
+    "sharp": ">=0.35.4",
     "brace-expansion": ">=1.1.17",
     "undici": "^7.29.0",
     "@radix-ui/react-dismissable-layer": "1.1.19",
