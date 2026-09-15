@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "private": true,
   "engines": {
-    "node": ">=18.x"
+    "node": ">=22.22.2"
   },
   "scripts": {
     "postinstall": "node -e \"const fs=require('fs'),p=require('path');const d=p.join('node_modules','typescript','lib');if(!fs.existsSync(d)){fs.mkdirSync(d,{recursive:true})}const f=p.join(d,'typescript.js');if(!fs.existsSync(f)){fs.writeFileSync(f,\\\"module.exports = require('typescript/unstable/sync');\\\\n\\\")}\"",
@@ -152,6 +152,6 @@
   },
   "allowScripts": {
     "@sentry/cli@2.58.6": true,
-    "esbuild@0.28.1": true
+    "esbuild@0.28.2": true
   }
 }

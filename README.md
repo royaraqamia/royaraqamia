@@ -114,7 +114,7 @@ royaraqamia/
 ├── package.json                  # Scripts, dependencies, engines
 ├── next.config.js                # Security headers, CSP, Sentry & bundle-analyzer wiring
 ├── vercel.json                   # Edge cache-control headers for /, static, and service worker
-├── vitest.config.ts              # Unit/integration test runner config
+├── vitest.config.mts             # Unit/integration test runner config
 ├── playwright.config.ts          # E2E config (5 device projects, auto web server)
 ├── example.env                   # Environment template (safe to commit)
 └── tsconfig.json                 # Strict TypeScript configuration
