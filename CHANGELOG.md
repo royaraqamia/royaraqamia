@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.7] - 2026-09-15
+
+### Changed
+- raise Node engine floor and load vitest config as ESM
+
 ## [1.19.6] - 2026-09-15
 
 ### Changed
