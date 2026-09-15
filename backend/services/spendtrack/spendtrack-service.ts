@@ -232,13 +232,15 @@ export class SpendtrackService {
     }
   }
 
-  async createExpense(userId: string, input: SpendtrackExpenseInput): Promise<void> {
+  async createExpense(userId: string, input: SpendtrackExpenseInput): Promise<string> {
     await this.validateExpenseInput(input, userId);
 
-    await this.repository.createExpense({ user_id: userId, ...input });
+    const id = await this.repository.createExpense({ user_id: userId, ...input });
 
     const month = input.date.slice(0, 7);
     this.onExpenseAlert?.({ userId, month, categoryId: input.category_id });
+
+    return id;
   }
 
   async getBudget(

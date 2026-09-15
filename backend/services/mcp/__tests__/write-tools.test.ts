@@ -124,10 +124,10 @@ describe('linksnap write tools', () => {
 describe('spendtrack write tools', () => {
   beforeEach(() => vi.resetModules());
 
-  it('createExpenseHandler records expense with caller user id', async () => {
+  it('createExpenseHandler routes through the spendtrack module with caller user id', async () => {
     const createExpense = vi.fn().mockResolvedValue('e1');
-    vi.doMock('@/backend/repositories/spendtrack', () => ({
-      createSpendtrackRepository: () => ({ createExpense }),
+    vi.doMock('@/backend/config/spendtrack', () => ({
+      createSpendtrackService: () => ({ createExpense }),
     }));
 
     const { createExpenseHandler } = await import('../tools/spendtrack');
@@ -138,8 +138,43 @@ describe('spendtrack write tools', () => {
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent?.id).toBe('e1');
     expect(createExpense).toHaveBeenCalledWith(
-      expect.objectContaining({ user_id: 'u1', amount: 25.5, category_id: 'c1' })
+      'u1',
+      expect.objectContaining({ amount: 25.5, category_id: 'c1', date: '2026-08-19' })
     );
+  });
+
+  it('createExpenseHandler surfaces a module rejection as a tool error', async () => {
+    vi.doMock('@/backend/config/spendtrack', () => ({
+      createSpendtrackService: () => ({
+        createExpense: vi
+          .fn()
+          .mockRejectedValue(new Error('مجموع التقسيمات يجب أن يساوي المبلغ الإجمالي')),
+      }),
+    }));
+
+    const { createExpenseHandler } = await import('../tools/spendtrack');
+    const result = await createExpenseHandler(
+      { amount: 25.5, category_id: 'c1', date: '2026-08-19', format: 'json' },
+      userCtx
+    );
+
+    expect(result.isError).toBe(true);
+  });
+
+  it('createCategoryHandler routes through the spendtrack module', async () => {
+    const createCategory = vi.fn().mockResolvedValue(undefined);
+    vi.doMock('@/backend/config/spendtrack', () => ({
+      createSpendtrackService: () => ({ createCategory }),
+    }));
+
+    const { createCategoryHandler } = await import('../tools/spendtrack');
+    const result = await createCategoryHandler(
+      { name: 'Food', color_hex: '#aabbcc', format: 'json' },
+      userCtx
+    );
+
+    expect(result.isError).toBeFalsy();
+    expect(createCategory).toHaveBeenCalledWith('u1', { name: 'Food', colorHex: '#aabbcc' });
   });
 
   it('setBudgetHandler requires spendtrack.write scope', async () => {

@@ -5,6 +5,7 @@ import { MCP_SERVER_NAME } from '../constants';
 import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from './tool-utils';
 import { requireAnyScope, requireUserId } from './guards';
 import { createSpendtrackRepository } from '@/backend/repositories/spendtrack';
+import { createSpendtrackService } from '@/backend/config/spendtrack';
 import {
   buildPaginationMeta,
   DEFAULT_PAGE_SIZE,
@@ -458,10 +459,9 @@ export async function createExpenseHandler(
   try {
     requireAnyScope(ctx, ['spendtrack.write']);
     const userId = requireUserId(ctx, 'Creating an expense');
-    const repo = createSpendtrackRepository(ctx.supabase as never);
+    const service = createSpendtrackService(ctx.supabase as never);
 
-    const id = await repo.createExpense({
-      user_id: userId,
+    const id = await service.createExpense(userId, {
       amount: params.amount,
       category_id: params.category_id,
       date: params.date,
@@ -488,9 +488,9 @@ export async function updateExpenseHandler(
   try {
     requireAnyScope(ctx, ['spendtrack.write']);
     const userId = requireUserId(ctx, 'Updating an expense');
-    const repo = createSpendtrackRepository(ctx.supabase as never);
+    const service = createSpendtrackService(ctx.supabase as never);
 
-    await repo.updateExpense(params.id, userId, {
+    await service.updateExpense(params.id, userId, {
       amount: params.amount ?? 0,
       category_id: params.category_id ?? '',
       date: params.date ?? '',
@@ -514,9 +514,9 @@ export async function deleteExpenseHandler(
   try {
     requireAnyScope(ctx, ['spendtrack.write']);
     const userId = requireUserId(ctx, 'Deleting an expense');
-    const repo = createSpendtrackRepository(ctx.supabase as never);
+    const service = createSpendtrackService(ctx.supabase as never);
 
-    await repo.deleteExpense(params.id, userId);
+    await service.deleteExpense(params.id, userId);
     const output = { id: params.id, message: 'Expense deleted.' };
 
     return params.format === 'json'
@@ -534,9 +534,9 @@ export async function setBudgetHandler(
   try {
     requireAnyScope(ctx, ['spendtrack.write']);
     const userId = requireUserId(ctx, 'Setting a budget');
-    const repo = createSpendtrackRepository(ctx.supabase as never);
+    const service = createSpendtrackService(ctx.supabase as never);
 
-    await repo.setBudget(userId, params.month, params.amount, params.category_id ?? null);
+    await service.setBudget(userId, params.month, params.amount, params.category_id ?? null);
     const output = {
       month: params.month,
       category_id: params.category_id ?? null,
@@ -564,9 +564,9 @@ export async function createCategoryHandler(
   try {
     requireAnyScope(ctx, ['spendtrack.write']);
     const userId = requireUserId(ctx, 'Creating a category');
-    const repo = createSpendtrackRepository(ctx.supabase as never);
+    const service = createSpendtrackService(ctx.supabase as never);
 
-    await repo.createCategory({ user_id: userId, name: params.name, colorHex: params.color_hex });
+    await service.createCategory(userId, { name: params.name, colorHex: params.color_hex });
     const output = { name: params.name, colorHex: params.color_hex, message: 'Category created.' };
 
     return params.format === 'json'
