@@ -1,6 +1,6 @@
 # Interactive OpenCode agent: comment "/oc <task>" or "/opencode <task>"
 # on any issue or PR to trigger it (explain, fix, implement, review...).
-# Two-model pipeline: plan (GLM 5.3) -> implement (DeepSeek V4 Flash).
+# Two-model pipeline: plan (GLM 5.3 Flash) -> implement (DeepSeek V4 Flash).
 # Only collaborators with write access can trigger it (enforced by the action).
 #
 # Setup (repo secrets):
@@ -76,7 +76,7 @@ jobs:
           }
           EOF
 
-      - name: Plan — GLM 5.3 (Analyze)
+      - name: Plan — GLM 5.3 Flash (Analyze)
         id: plan
         uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
         env:
@@ -84,7 +84,7 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 250000
         with:
-          model: opencode-go/glm-5.3
+          model: opencode-go/glm-5.3-flash
           variant: high
           share: 'false'
           prompt: |
