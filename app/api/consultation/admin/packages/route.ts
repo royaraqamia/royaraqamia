@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { toNextResponse } from '@/backend/transport/http-result';
+import { revalidateResultPaths } from '@/backend/transport/revalidate';
 import { adminCreatePackage, adminListPackages } from '@/backend/controllers/consultation';
 
 export async function GET() {
@@ -8,5 +9,7 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
-  return toNextResponse(await adminCreatePackage(body));
+  const result = await adminCreatePackage(body);
+  revalidateResultPaths(result);
+  return toNextResponse(result);
 }

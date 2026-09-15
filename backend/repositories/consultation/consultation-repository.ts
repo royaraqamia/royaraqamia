@@ -77,8 +77,6 @@ export interface ConsultationBookingsWriter {
   create(command: CreateBookingCommand): Promise<string>;
   markReceiptSent(userId: string, bookingId: string): Promise<void>;
   cancelByUser(userId: string, bookingId: string): Promise<void>;
-  /** Flips stale pendings to expired; returns affected row count. */
-  expireStale(): Promise<number>;
   confirm(bookingId: string): Promise<void>;
   reject(bookingId: string, reason?: string): Promise<void>;
 }

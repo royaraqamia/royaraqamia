@@ -14,9 +14,13 @@ import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
 import {
   createAdminConsultationService,
-  createSettingsReaderService,
   createUserConsultationService,
 } from '@/backend/config/consultation';
+import {
+  loadActiveConsultationPackages,
+  loadConsultationSettings,
+} from '@/backend/loaders/consultation';
+import { CONSULTATION_TAGS } from '@/backend/shared/consultation-cache-tags';
 import {
   BookingStateError,
   ConsultationValidationError,
@@ -70,13 +74,15 @@ const CONSULTATION_POLICY = {
 // ------------------------------------------------------------
 
 export async function listConsultationPackages(): Promise<HttpResult> {
-  try {
-    const packages = await createSettingsReaderService().getActivePackages();
-    return jsonResult(200, { packages });
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(200, { packages: [] });
-  }
+  const packages = await loadActiveConsultationPackages();
+  return jsonResult(
+    200,
+    { packages },
+    {
+      headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
+      tags: [CONSULTATION_TAGS.packages],
+    }
+  );
 }
 
 export async function listAvailableSlots(): Promise<HttpResult> {
@@ -128,13 +134,10 @@ export async function confirmReceiptSent(bookingId: string): Promise<HttpResult>
 }
 
 export async function getPaymentConfig(): Promise<HttpResult> {
-  try {
-    const settings = await createSettingsReaderService().getSettings();
-    return jsonResult(200, { settings });
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(200, { settings: {} });
-  }
+  const settings = await loadConsultationSettings();
+  // No browser/CDN cache: the admin settings form reads this same endpoint
+  // and must not see stale values right after saving.
+  return jsonResult(200, { settings }, { tags: [CONSULTATION_TAGS.settings] });
 }
 
 // ------------------------------------------------------------
@@ -262,7 +265,7 @@ export async function adminCreatePackage(body: unknown): Promise<HttpResult> {
   try {
     await requireAdminAuth();
     const pkg = await createAdminConsultationService().adminCreatePackage(parsed.data);
-    return jsonResult(200, { success: true, package: pkg });
+    return jsonResult(200, { success: true, package: pkg }, { tags: [CONSULTATION_TAGS.packages] });
   } catch (error) {
     Sentry.captureException(error);
     return jsonResult(500, { success: false, error: 'تعذر إنشاء الباقة.' });
@@ -282,7 +285,7 @@ export async function adminUpdatePackage(packageId: string, body: unknown): Prom
   try {
     await requireAdminAuth();
     const pkg = await createAdminConsultationService().adminUpdatePackage(packageId, parsed.data);
-    return jsonResult(200, { success: true, package: pkg });
+    return jsonResult(200, { success: true, package: pkg }, { tags: [CONSULTATION_TAGS.packages] });
   } catch (error) {
     Sentry.captureException(error);
     return jsonResult(500, { success: false, error: 'تعذر تحديث الباقة.' });
@@ -293,7 +296,7 @@ export async function adminDeletePackage(packageId: string): Promise<HttpResult>
   try {
     await requireAdminAuth();
     await createAdminConsultationService().adminDeletePackage(packageId);
-    return jsonResult(200, { success: true });
+    return jsonResult(200, { success: true }, { tags: [CONSULTATION_TAGS.packages] });
   } catch (error) {
     Sentry.captureException(error);
     const mapped = bookingErrorResponse(error);
@@ -315,7 +318,7 @@ export async function adminSaveSettings(body: unknown): Promise<HttpResult> {
   try {
     await requireAdminAuth();
     await createAdminConsultationService().saveSettings(parsed.data);
-    return jsonResult(200, { success: true });
+    return jsonResult(200, { success: true }, { tags: [CONSULTATION_TAGS.settings] });
   } catch (error) {
     Sentry.captureException(error);
     return jsonResult(500, { success: false, error: 'تعذر حفظ الإعدادات.' });

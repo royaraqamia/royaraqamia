@@ -2,16 +2,28 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { CalendarCheck2, PartyPopper } from 'lucide-react';
-import type { ConsultationBooking, ConsultationSettings } from '@/shared/contracts/consultation';
+import type {
+  ConsultationBooking,
+  ConsultationPackage,
+  ConsultationSettings,
+} from '@/shared/contracts/consultation';
 import { ACTIVE_BOOKING_STATUSES } from '@/shared/contracts/consultation';
-import { fetchMyBookings, fetchPaymentConfig } from '@/frontend/api/consultation';
+import { fetchMyBookings } from '@/frontend/api/consultation';
 import { useBookingFlow } from '@/frontend/state/consultation/use-booking-flow';
 import { BookingWizard } from '@/frontend/ui/consultation/booking-wizard';
 import { BookingSummary } from '@/frontend/ui/consultation/booking-summary';
 
-export function ConsultationBookingPage() {
-  const flow = useBookingFlow();
-  const [settings, setSettings] = useState<Partial<ConsultationSettings>>({});
+interface ConsultationBookingPageProps {
+  /** Server-rendered so the wizard has content on first paint. */
+  initialPackages?: ConsultationPackage[];
+  initialSettings: Partial<ConsultationSettings>;
+}
+
+export function ConsultationBookingPage({
+  initialPackages,
+  initialSettings,
+}: ConsultationBookingPageProps) {
+  const flow = useBookingFlow({ initialPackages });
   const [bookings, setBookings] = useState<ConsultationBooking[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -20,9 +32,9 @@ export function ConsultationBookingPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-    void fetchPaymentConfig().then(setSettings);
-  }, []);
+  const handleBookingChanged = useCallback(() => {
+    void refreshBookings();
+  }, [refreshBookings]);
 
   useEffect(() => {
     void refreshBookings();
@@ -34,7 +46,7 @@ export function ConsultationBookingPage() {
   }, [flow.createdBookingId, refreshBookings]);
 
   const activeBookings = bookings.filter((b) => ACTIVE_BOOKING_STATUSES.includes(b.status));
-  const whatsappUrl = settings.booking_whatsapp_url || 'https://wa.me/963968478904';
+  const whatsappUrl = initialSettings.booking_whatsapp_url || 'https://wa.me/963968478904';
 
   return (
     <div className="space-y-10">
@@ -61,7 +73,7 @@ export function ConsultationBookingPage() {
                 key={booking.id}
                 booking={booking}
                 whatsappUrl={whatsappUrl}
-                onChanged={() => void refreshBookings()}
+                onChanged={handleBookingChanged}
               />
             ))}
           </div>
@@ -72,7 +84,7 @@ export function ConsultationBookingPage() {
       {!flow.createdBookingId ? (
         <section aria-label="حجز جديد">
           <h2 className="text-xl font-bold text-foreground mb-4">حجز جديد</h2>
-          <BookingWizard flow={flow} settings={settings} />
+          <BookingWizard flow={flow} settings={initialSettings} />
         </section>
       ) : (
         <section

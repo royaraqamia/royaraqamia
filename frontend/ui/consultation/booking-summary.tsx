@@ -1,14 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import {
-  BadgeCheck,
-  CalendarX2,
-  CircleDollarSign,
-  Clock3,
-  Hourglass,
-  ShieldQuestion,
-} from 'lucide-react';
+import { memo, useCallback, useState } from 'react';
+import { BadgeCheck, CalendarX2, CircleDollarSign, Hourglass, ShieldQuestion } from 'lucide-react';
 import {
   PAYMENT_METHOD_LABELS,
   REGION_LABELS,
@@ -17,7 +10,7 @@ import {
   type ConsultationBookingStatus,
 } from '@/shared/contracts/consultation';
 import { formatSessionDualLine } from '@/frontend/shared/consultation-time';
-import { useExpiryCountdown } from '@/frontend/state/consultation/use-expiry-countdown';
+import { ExpiryNotice } from '@/frontend/ui/consultation/expiry-notice';
 import { cancelMyBooking } from '@/frontend/api/consultation';
 import { WhatsappReceiptButton } from '@/frontend/ui/consultation/whatsapp-receipt-button';
 import { cn } from '@/frontend/shared/cn';
@@ -55,11 +48,13 @@ const STATUS_META: Record<ConsultationBookingStatus, { label: string; className:
   },
 };
 
-export function BookingSummary({ booking, whatsappUrl, onChanged }: BookingSummaryProps) {
+function BookingSummaryBase({ booking, whatsappUrl, onChanged }: BookingSummaryProps) {
   const [cancelling, setCancelling] = useState(false);
-  const countdown = useExpiryCountdown(
-    booking.status === 'pending_payment' ? booking.expires_at : null
+  const [expired, setExpired] = useState(
+    () =>
+      booking.status === 'pending_payment' && new Date(booking.expires_at).getTime() <= Date.now()
   );
+  const handleExpired = useCallback(() => setExpired(true), []);
   const cancellable = USER_CANCELLABLE_STATUSES.includes(booking.status);
 
   async function handleCancel() {
@@ -115,27 +110,7 @@ export function BookingSummary({ booking, whatsappUrl, onChanged }: BookingSumma
 
       {/* 24h countdown — only meaningful while unpaid */}
       {booking.status === 'pending_payment' && (
-        <p
-          className={cn(
-            'flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-bold',
-            countdown.expired
-              ? 'border-destructive/40 bg-destructive/10 text-destructive'
-              : 'border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400'
-          )}
-          role="timer"
-        >
-          <Clock3 className="size-4 shrink-0" aria-hidden="true" />
-          {countdown.expired ? (
-            <span>انتهت مهلة الدفع وتم تحرير الموعد.</span>
-          ) : (
-            <span>
-              يتبقى لإتمام الدفع وإرسال الإيصال:{' '}
-              <span dir="ltr" className="font-mono font-bold">
-                {countdown.label}
-              </span>
-            </span>
-          )}
-        </p>
+        <ExpiryNotice expiresAt={booking.expires_at} onExpired={handleExpired} />
       )}
 
       {/* Pending approval — clicking the WhatsApp button never self-confirms */}
@@ -168,7 +143,7 @@ export function BookingSummary({ booking, whatsappUrl, onChanged }: BookingSumma
         )}
 
       <footer className="flex flex-col sm:flex-row gap-3 pt-1">
-        {booking.status === 'pending_payment' && !countdown.expired && (
+        {booking.status === 'pending_payment' && !expired && (
           <div className="flex-1">
             <WhatsappReceiptButton
               booking={booking}
@@ -177,7 +152,7 @@ export function BookingSummary({ booking, whatsappUrl, onChanged }: BookingSumma
             />
           </div>
         )}
-        {cancellable && !countdown.expired && (
+        {cancellable && !expired && (
           <button
             type="button"
             onClick={handleCancel}
@@ -192,3 +167,5 @@ export function BookingSummary({ booking, whatsappUrl, onChanged }: BookingSumma
     </article>
   );
 }
+
+export const BookingSummary = memo(BookingSummaryBase);

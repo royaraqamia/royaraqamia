@@ -62,9 +62,13 @@ export interface UseBookingFlowResult {
  * Payment method follows the chosen region by default but stays overridable.
  * Email is not collected — the server uses the authenticated account's email.
  */
-export function useBookingFlow(): UseBookingFlowResult {
+export function useBookingFlow(
+  options: { initialPackages?: ConsultationPackage[] } = {}
+): UseBookingFlowResult {
+  const { initialPackages } = options;
+  const hasInitialPackages = initialPackages !== undefined;
   const [stepIndex, setStepIndex] = useState(0);
-  const [packages, setPackages] = useState<ConsultationPackage[]>([]);
+  const [packages, setPackages] = useState<ConsultationPackage[]>(initialPackages ?? []);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [contact, setContact] = useState<BookingContactDraft>(EMPTY_CONTACT);
   const [region, setRegion] = useState<ConsultationRegion>('syria');
@@ -78,6 +82,8 @@ export function useBookingFlow(): UseBookingFlowResult {
   const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
 
   useEffect(() => {
+    // Packages are server-rendered into the page; only fetch when absent.
+    if (hasInitialPackages) return;
     let cancelled = false;
     fetchConsultationPackages().then((list) => {
       if (!cancelled) setPackages(list);
@@ -85,7 +91,7 @@ export function useBookingFlow(): UseBookingFlowResult {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [hasInitialPackages]);
 
   const loadSlots = useCallback(async () => {
     setSlotsLoading(true);

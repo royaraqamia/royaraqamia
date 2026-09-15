@@ -110,7 +110,9 @@ export function createSupabaseConsultationBookingsRepository(
     },
 
     async listForAdmin(page, pageSize, status?): Promise<BookingListResult> {
-      let query = supabase.from('consultation_bookings').select(baseSelect, { count: 'exact' });
+      // `estimated` avoids a full filtered COUNT on every admin page; the
+      // dashboard shows one page at a time and only displays `data`.
+      let query = supabase.from('consultation_bookings').select(baseSelect, { count: 'estimated' });
 
       if (status) query = query.eq('status', status);
 
@@ -154,12 +156,6 @@ export function createSupabaseConsultationBookingsRepository(
       });
       void userId;
       if (error) throw new Error(extractRpcErrorCode(error.message));
-    },
-
-    async expireStale(): Promise<number> {
-      const { data, error } = await supabase.rpc('expire_stale_consultation_bookings');
-      if (error) throw error;
-      return data ?? 0;
     },
 
     async confirm(bookingId): Promise<void> {

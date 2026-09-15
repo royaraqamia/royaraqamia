@@ -36,7 +36,6 @@ function makeRepositories(overrides: Partial<ConsultationRepositories> = {}) {
       create: vi.fn(),
       markReceiptSent: vi.fn(),
       cancelByUser: vi.fn(),
-      expireStale: vi.fn(),
       confirm: vi.fn(),
       reject: vi.fn(),
     },
@@ -144,46 +143,26 @@ describe('ConsultationService', () => {
     });
   });
 
-  describe('getAvailableSlots (expiry sweep)', () => {
-    it('runs the stale-pending sweep BEFORE listing available slots', async () => {
+  describe('getAvailableSlots', () => {
+    it('lists available slots from the repository at the configured instant', async () => {
       const repositories = makeRepositories();
-      const order: string[] = [];
-      (repositories.bookings.expireStale as ReturnType<typeof vi.fn>).mockImplementation(
-        () => (order.push('expire'), Promise.resolve(0))
-      );
-      (repositories.slots.listAvailable as ReturnType<typeof vi.fn>).mockImplementation(
-        () => (order.push('list'), Promise.resolve([]))
-      );
+      (repositories.slots.listAvailable as ReturnType<typeof vi.fn>).mockResolvedValue([]);
       const service = makeService(repositories);
 
       await service.getAvailableSlots();
 
-      expect(order).toEqual(['expire', 'list']);
       expect(repositories.slots.listAvailable).toHaveBeenCalledWith(NOW);
-    });
-
-    it('propagates sweep failures so callers cannot see half-freed availability', async () => {
-      const repositories = makeRepositories();
-      (repositories.bookings.expireStale as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('boom')
-      );
-      const service = makeService(repositories);
-
-      await expect(service.getAvailableSlots()).rejects.toThrow('boom');
-      expect(repositories.slots.listAvailable).not.toHaveBeenCalled();
     });
   });
 
   describe('getMyBookings', () => {
-    it('returns bookings even when the opportunistic sweep fails', async () => {
+    it('delegates to the bookings repository for the user', async () => {
       const repositories = makeRepositories();
       (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      (repositories.bookings.expireStale as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('boom')
-      );
       const service = makeService(repositories);
 
       await expect(service.getMyBookings('user-1')).resolves.toEqual([]);
+      expect(repositories.bookings.listByUser).toHaveBeenCalledWith('user-1');
     });
   });
 

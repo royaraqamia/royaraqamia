@@ -19,28 +19,18 @@ export function createSupabaseAvailabilitySlotsRepository(
 ): AvailabilitySlotsReader & AvailabilitySlotsWriter {
   return {
     async listAvailable(nowIso): Promise<AvailabilitySlot[]> {
-      const { data: slots, error: slotsError } = await supabase
-        .from('availability_slots')
-        .select('*')
-        .gt('starts_at', nowIso)
-        .order('starts_at', { ascending: true });
+      // One anti-join in the database instead of fetching every future slot
+      // and filtering held ids in application code.
+      const { data, error } = await supabase.rpc('list_available_consultation_slots', {
+        p_now: nowIso,
+      });
 
-      if (slotsError) throw slotsError;
-      if (!slots || slots.length === 0) return [];
-
-      const { data: held, error: heldError } = await supabase
-        .from('consultation_booking_slots')
-        .select('slot_id')
-        .eq('is_active', true)
-        .in(
-          'slot_id',
-          slots.map((s) => s.id)
-        );
-
-      if (heldError) throw heldError;
-
-      const heldIds = new Set((held ?? []).map((row) => row.slot_id));
-      return slots.filter((s) => !heldIds.has(s.id)).map(toSlot);
+      if (error) throw error;
+      return (data ?? []).map((row) => ({
+        id: row.slot_id,
+        starts_at: row.starts_at,
+        ends_at: row.ends_at,
+      }));
     },
 
     async listFrom(fromIso): Promise<AdminAvailabilitySlot[]> {

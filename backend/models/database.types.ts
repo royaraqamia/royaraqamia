@@ -1000,6 +1000,14 @@ export type Database = {
       increment_post_view_count: { Args: { p_post_id: string }; Returns: undefined };
       increment_otp_attempts: { Args: { row_id: string }; Returns: number };
       is_admin: { Args: never; Returns: boolean };
+      list_available_consultation_slots: {
+        Args: { p_now: string };
+        Returns: {
+          slot_id: string;
+          starts_at: string;
+          ends_at: string;
+        }[];
+      };
       mark_consultation_receipt_sent: { Args: { p_booking_id: string }; Returns: undefined };
       recompute_admin_flags: {
         Args: { p_emails: string[] };

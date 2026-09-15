@@ -40,20 +40,14 @@ export interface ConsultationServiceConfig {
 }
 
 /**
- * `adminRepositories` (service-role) is optional and used ONLY for the
- * expiry sweep, whose RPC is executable by service_role alone. When the
- * primary bundle already runs on the admin client it can be omitted.
+ * Stale pending bookings are expired by the `consultation-expiry-sweep`
+ * pg_cron job, so the read paths below stay read-only.
  */
 export class ConsultationService {
   constructor(
     private readonly repositories: ConsultationRepositories,
-    private readonly config: ConsultationServiceConfig = { nowIso: () => new Date().toISOString() },
-    private readonly adminRepositories?: ConsultationRepositories
+    private readonly config: ConsultationServiceConfig = { nowIso: () => new Date().toISOString() }
   ) {}
-
-  private sweepStalePendings(): Promise<number> {
-    return (this.adminRepositories ?? this.repositories).bookings.expireStale();
-  }
 
   // ----------------------------------------------------------
   // Public (authenticated booker)
@@ -63,9 +57,7 @@ export class ConsultationService {
     return this.repositories.packages.listActive();
   }
 
-  /** Always sweeps stale pendings first so freed slots reappear immediately. */
   async getAvailableSlots(): Promise<AvailabilitySlot[]> {
-    await this.sweepStalePendings();
     return this.repositories.slots.listAvailable(this.config.nowIso());
   }
 
@@ -89,10 +81,7 @@ export class ConsultationService {
   }
 
   async getMyBookings(userId: string): Promise<ConsultationBooking[]> {
-    const bookings = await this.repositories.bookings.listByUser(userId);
-    // Self-heal the viewer's own stale pendings before rendering countdowns.
-    await this.sweepStalePendings().catch(() => undefined);
-    return bookings;
+    return this.repositories.bookings.listByUser(userId);
   }
 
   async markReceiptSent(userId: string, bookingId: string): Promise<void> {

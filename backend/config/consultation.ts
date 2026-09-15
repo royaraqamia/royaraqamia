@@ -7,18 +7,14 @@ import { ConsultationService } from '@/backend/services/consultation/consultatio
 /**
  * Service for the authenticated booker. Repositories run on the user's
  * cookie-bound client so RLS and the SECURITY DEFINER RPCs see the real
- * auth.uid(); the sweep bundle runs on the service role.
+ * auth.uid().
  */
 export function createUserConsultationService(
   supabase: SupabaseClient<Database>
 ): ConsultationService {
-  return new ConsultationService(
-    createConsultationRepositories(supabase),
-    {
-      nowIso: () => new Date().toISOString(),
-    },
-    createConsultationRepositories(getAdminSupabase())
-  );
+  return new ConsultationService(createConsultationRepositories(supabase), {
+    nowIso: () => new Date().toISOString(),
+  });
 }
 
 /** Full-privilege service for requireAdminAuth-guarded endpoints. */
