@@ -16,6 +16,14 @@ import { estimateReadingTime } from '@/shared/reading-time';
 const PUBLISHED_POSTS_FILTER =
   'or(status.eq.published,and(status.eq.scheduled,publish_at.lte.now))';
 
+/**
+ * `or()` filters are comma/parenthesis delimited, so a search term containing
+ * those characters would corrupt the filter expression rather than fail loudly.
+ */
+function sanitizeSearch(search: string): string {
+  return search.replace(/[,()]/g, ' ').trim();
+}
+
 /** Light card projection used by the public feed and related posts — no `content`. */
 const POST_SUMMARY_COLUMNS =
   'id, author_id, title, slug, status, cover_image, meta_title, meta_desc, published_at, publish_at, view_count, featured, blog_visible, reading_time_minutes, created_at, updated_at';
@@ -106,8 +114,9 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         queryBuilder = queryBuilder.in('id', postIds);
       }
 
-      if (query) {
-        queryBuilder = queryBuilder.or(`title.ilike.%${query}%,meta_desc.ilike.%${query}%`);
+      const search = sanitizeSearch(query);
+      if (search) {
+        queryBuilder = queryBuilder.or(`title.ilike.%${search}%,meta_desc.ilike.%${search}%`);
       }
 
       const { data: posts, count } = await queryBuilder
