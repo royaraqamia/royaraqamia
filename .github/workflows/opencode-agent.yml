@@ -1,6 +1,9 @@
 # Autonomous maintenance pipeline: plan (GLM 5.3 Flash) -> implement (DeepSeek v4 Flash) -> review/test -> PR.
 # Runs daily at 18:00 Damascus time (UTC+3) and on demand from the Actions tab.
-# Hard time limit per run: 60 minutes (job timeout).
+# Hard time limit per run: 90 minutes (job timeout). The pre-split single-model
+# pipeline needed 39-50 minutes on its own; the plan phase adds ~7 more, so 60
+# left no headroom. The plan step is separately capped at 20 minutes so a wedge
+# cannot silently consume the whole job budget.
 #
 # Setup (repo secrets):
 #   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
@@ -11,8 +14,16 @@
 # are authored by the app identity and DO re-trigger code-quality workflows.
 # Checkout must NOT persist credentials — opencode injects its own app token
 # (persisted credentials cause a duplicate-Authorization failure on push).
-# A runner-only opencode config grants the Supabase MCP server (project-scoped);
-# SUPABASE_ACCESS_TOKEN itself never touches disk ({env:} resolved in-memory).
+# A runner-only opencode config grants the Supabase MCP server (project-scoped)
+# and pre-approves the paths the phases hand off through; SUPABASE_ACCESS_TOKEN
+# itself never touches disk ({env:} resolved in-memory).
+#
+# The permission block is load-bearing: `external_directory` defaults to "ask",
+# and the plan phase writes /tmp/plan.md, which is outside the workspace. In a
+# headless run nobody can answer that prompt, so the job blocks until the
+# timeout cancels it (that is what wedged run #25 for 54 idle minutes). /tmp is
+# therefore allowed explicitly, and `doom_loop` is denied so any other
+# would-be prompt fails fast instead of hanging.
 
 name: 'OpenCode Agent'
 
@@ -35,7 +46,7 @@ concurrency:
 jobs:
   agent:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 90
 
     steps:
       - name: Checkout
@@ -68,6 +79,12 @@ jobs:
                   "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
                 }
               }
+            },
+            "permission": {
+              "external_directory": {
+                "/tmp/*": "allow"
+              },
+              "doom_loop": "deny"
             }
           }
           EOF
@@ -91,6 +108,7 @@ jobs:
 
       - name: Plan — GLM 5.3 Flash (Analyze)
         id: plan
+        timeout-minutes: 20
         uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -124,6 +142,10 @@ jobs:
 
       - name: Implement — DeepSeek v4 Flash (Build, Refactor, Review, Report)
         id: implement
+        # Only build on a plan that actually completed. Without this the implement
+        # phase runs against a missing /tmp/plan.md whenever planning fails or is
+        # cancelled, wasting whatever budget is left.
+        if: steps.plan.outcome == 'success'
         uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}

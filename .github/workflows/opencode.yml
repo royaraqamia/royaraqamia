@@ -12,8 +12,15 @@
 # are authored by the app identity and DO re-trigger code-quality workflows.
 # Checkout must NOT persist credentials — opencode injects its own app token
 # (persisted credentials cause a duplicate-Authorization failure on push).
-# A runner-only opencode config grants the Supabase MCP server (project-scoped);
-# SUPABASE_ACCESS_TOKEN itself never touches disk ({env:} resolved in-memory).
+# A runner-only opencode config grants the Supabase MCP server (project-scoped)
+# and pre-approves the /tmp handoff path; SUPABASE_ACCESS_TOKEN itself never
+# touches disk ({env:} resolved in-memory).
+#
+# The permission block is load-bearing: `external_directory` defaults to "ask",
+# and the phases hand off through /tmp/plan.md, which is outside the workspace.
+# In a headless run nobody can answer that prompt, so the job blocks until it is
+# cancelled. /tmp is allowed explicitly, and `doom_loop` is denied so any other
+# would-be prompt fails fast instead of hanging.
 
 name: 'OpenCode'
 
@@ -72,6 +79,12 @@ jobs:
                   "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
                 }
               }
+            },
+            "permission": {
+              "external_directory": {
+                "/tmp/*": "allow"
+              },
+              "doom_loop": "deny"
             }
           }
           EOF
