@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.2] - 2026-09-16
+
+### Fixed
+- sanitize or() filter terms in every search path (#90)
+
 ## [1.20.1] - 2026-09-16
 
 ### Fixed
