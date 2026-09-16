@@ -109,7 +109,6 @@ export const TrainingApplicationSchema = z.object({
   email: optionalEmail.optional(),
   experience_level: z.enum(TRAINING_EXPERIENCE_LEVELS, 'اختر مستوى خبرتك'),
   goal: z.string().trim().max(1000, 'النصّ طويل جدًّا (1,000 حرف كحد أقصى)').optional(),
-  turnstile_token: z.string().optional(),
 });
 
 export type TrainingApplicationInput = z.infer<typeof TrainingApplicationSchema>;

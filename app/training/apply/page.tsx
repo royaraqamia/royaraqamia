@@ -1,4 +1,4 @@
-import { Clock, GraduationCap, MessageCircle, Trophy, User, Users } from 'lucide-react';
+import { Clock, GraduationCap, MessageCircle, Trophy, User } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { TrainingApplicationForm } from '@/frontend/ui/training/training-application-form';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
@@ -43,21 +43,6 @@ export default function TrainingApplyPage() {
 
   return (
     <div className="space-y-8">
-      <header className="text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-purple-400/30 bg-purple-500/10 px-3 py-1">
-          <Users className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" aria-hidden="true" />
-          <span className="text-xs font-bold tracking-wide text-purple-700 dark:text-purple-300">
-            مقاعد محدودة
-          </span>
-        </div>
-        <h1 className="mt-4 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground">
-          التَّقديم على الدَّورة
-        </h1>
-        <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
-          املأ النَّموذج التَّالي وسنراجع طلبك ونتواصل معك عبر واتساب لتأكيد مقعدك.
-        </p>
-      </header>
-
       {/* Course summary — same source as the homepage card, so copy cannot drift. */}
       <section
         aria-label="تفاصيل الدورة"

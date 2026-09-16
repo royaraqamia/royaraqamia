@@ -3,7 +3,6 @@ import {
   TrainingApplicationClosedError,
   TrainingApplicationRateLimitError,
   TrainingApplicationService,
-  TrainingApplicationVerificationError,
   generateTrainingReferenceCode,
 } from '@/backend/services/training/training-application-service';
 import type {
@@ -67,7 +66,6 @@ function makeService(
   options: {
     repository?: TrainingApplicationsRepository;
     checkRateLimit?: () => Promise<boolean>;
-    verifyTurnstile?: () => Promise<boolean>;
     notifyAdmins?: (application: TrainingApplication) => void;
     generateReferenceCode?: () => string;
     isApplicationOpen?: () => boolean;
@@ -75,20 +73,18 @@ function makeService(
 ) {
   const repository = options.repository ?? makeRepository();
   const checkRateLimit = vi.fn(options.checkRateLimit ?? (() => Promise.resolve(true)));
-  const verifyTurnstile = vi.fn(options.verifyTurnstile ?? (() => Promise.resolve(true)));
   const notifyAdmins = vi.fn(options.notifyAdmins ?? (() => undefined));
 
   const service = new TrainingApplicationService({
     repository,
     checkRateLimit,
-    verifyTurnstile,
     notifyAdmins,
     isApplicationOpen: options.isApplicationOpen ?? (() => true),
     generateReferenceCode: options.generateReferenceCode ?? (() => 'TRN-2026-A7K2M9QX'),
     captureException: vi.fn(),
   });
 
-  return { service, repository, checkRateLimit, verifyTurnstile, notifyAdmins };
+  return { service, repository, checkRateLimit, notifyAdmins };
 }
 
 describe('generateTrainingReferenceCode', () => {
@@ -149,7 +145,7 @@ describe('TrainingApplicationService.submit', () => {
   });
 
   it('rejects the submission when the IP is over the rate limit', async () => {
-    const { service, repository, verifyTurnstile } = makeService({
+    const { service, repository } = makeService({
       checkRateLimit: () => Promise.resolve(false),
     });
 
@@ -157,26 +153,6 @@ describe('TrainingApplicationService.submit', () => {
       TrainingApplicationRateLimitError
     );
     expect(repository.create).not.toHaveBeenCalled();
-    expect(verifyTurnstile).not.toHaveBeenCalled();
-  });
-
-  it('rejects the submission when Turnstile fails', async () => {
-    const { service, repository } = makeService({
-      verifyTurnstile: () => Promise.resolve(false),
-    });
-
-    await expect(service.submit(VALID_INPUT, { ip: '1.1.1.1' })).rejects.toBeInstanceOf(
-      TrainingApplicationVerificationError
-    );
-    expect(repository.create).not.toHaveBeenCalled();
-  });
-
-  it('passes an empty token to the verifier when the widget is absent', async () => {
-    const { service, verifyTurnstile } = makeService();
-
-    await service.submit({ ...VALID_INPUT, turnstile_token: undefined }, { ip: '1.1.1.1' });
-
-    expect(verifyTurnstile).toHaveBeenCalledWith('');
   });
 
   it('notifies admins after the row is committed', async () => {

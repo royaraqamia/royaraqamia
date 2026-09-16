@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, ArrowLeft, CheckCircle2, MessageCircle, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2, MessageCircle } from 'lucide-react';
 import type { z } from 'zod';
 
 import { Button } from '@/frontend/ui/primitives/button';
@@ -18,7 +18,6 @@ import {
 } from '@/frontend/ui/primitives/select';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { CountryPhoneInput } from '@/frontend/ui/shared/country-phone-input';
-import { Turnstile } from '@/frontend/ui/shared/turnstile';
 import { submitTrainingApplication } from '@/frontend/api/training';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import {
@@ -42,9 +41,6 @@ function FieldError({ id, message }: { id: string; message?: string }) {
 }
 
 export function TrainingApplicationForm() {
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  // Cloudflare tokens are single-use, so a rejected submission needs a fresh widget.
-  const [turnstileKey, setTurnstileKey] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [result, setResult] = useState<{ referenceCode: string; fullName: string } | null>(null);
 
@@ -75,7 +71,6 @@ export function TrainingApplicationForm() {
       email: values.email,
       experience_level: values.experience_level,
       goal: values.goal,
-      turnstile_token: turnstileToken ?? undefined,
     });
 
     if (response.success && response.referenceCode) {
@@ -83,8 +78,6 @@ export function TrainingApplicationForm() {
       return;
     }
 
-    setTurnstileToken(null);
-    setTurnstileKey((key) => key + 1);
     setSubmitError(response.error ?? 'حدث خطأ غير متوقَّع. الرَّجاء المحاولة مرَّة أخرى.');
   });
 
@@ -238,8 +231,6 @@ export function TrainingApplicationForm() {
         <FieldError id="goal-error" message={errors.goal?.message} />
       </div>
 
-      <Turnstile key={turnstileKey} onToken={setTurnstileToken} />
-
       {submitError && (
         <div className="form-error rounded-xl border border-destructive/30 bg-destructive/5 p-3.5">
           <AlertCircle className="form-error-icon" aria-hidden="true" />
@@ -260,11 +251,6 @@ export function TrainingApplicationForm() {
           />
         </Button>
       </div>
-
-      <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-        <ShieldCheck className="h-3.5 w-3.5 shrink-0 text-emerald-500" aria-hidden="true" />
-        <span>بياناتك محفوظة ولا تُستخدم إلَّا للتَّواصل معك بخصوص الدورة.</span>
-      </p>
     </form>
   );
 }

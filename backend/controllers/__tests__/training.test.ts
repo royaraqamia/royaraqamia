@@ -33,7 +33,6 @@ import {
   TrainingApplicationClosedError,
   TrainingApplicationNotFoundError,
   TrainingApplicationRateLimitError,
-  TrainingApplicationVerificationError,
 } from '@/backend/services/training/training-application-service';
 
 const VALID_BODY = {
@@ -109,14 +108,6 @@ describe('training controller: submitTrainingApplication', () => {
     const result = await submitTrainingApplication(VALID_BODY, '1.1.1.1');
 
     expect(result).toMatchObject({ status: 429, body: { success: false } });
-  });
-
-  it('maps a Turnstile failure to 400', async () => {
-    mockSubmit.mockRejectedValue(new TrainingApplicationVerificationError());
-
-    const result = await submitTrainingApplication(VALID_BODY, '1.1.1.1');
-
-    expect(result).toMatchObject({ status: 400, body: { success: false } });
   });
 
   it('maps an unexpected failure to 500 without leaking the cause', async () => {

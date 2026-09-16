@@ -3,9 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
-import { createTurnstileVerifier } from '@/backend/config/turnstile';
 import { createAdminNotificationProducer } from '@/backend/config/notifications';
-import { env } from '@/backend/config/env';
 import { createTrainingApplicationsRepository } from '@/backend/repositories/training';
 import {
   createTrainingApplicationService,
@@ -26,7 +24,6 @@ export function createDefaultTrainingApplicationService(
 ): TrainingApplicationService {
   return createTrainingApplicationService({
     repository: createTrainingApplicationsRepository(supabase ?? getAdminSupabase()),
-    verifyTurnstile: createTurnstileVerifier(env.turnstileSecret),
     checkRateLimit,
     generateReferenceCode: generateTrainingReferenceCode,
     isApplicationOpen: () => TRAINING_COURSE.isOpen,

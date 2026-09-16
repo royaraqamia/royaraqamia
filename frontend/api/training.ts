@@ -25,7 +25,6 @@ export async function submitTrainingApplication(input: {
   email?: string;
   experience_level: string;
   goal?: string;
-  turnstile_token?: string;
 }): Promise<SubmitTrainingApplicationResult> {
   try {
     return await request<SubmitTrainingApplicationResult>('/api/training/applications', {

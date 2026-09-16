@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Navbar } from '@/frontend/ui/Navbar';
 
 export const metadata: Metadata = {
-  title: 'التَّقديم على الدَّورة',
+  title: 'التَّسجيل في التَّدريب',
   description:
     'قدّم طلبك للالتحاق بدورة بناء المنتجات الرقميَّة من الصِّفر: املأ النَّموذج وسنتواصل معك عبر واتساب لتأكيد مقعدك.',
 };

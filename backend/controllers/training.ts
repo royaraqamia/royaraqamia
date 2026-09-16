@@ -7,7 +7,6 @@ import {
   TrainingApplicationClosedError,
   TrainingApplicationNotFoundError,
   TrainingApplicationRateLimitError,
-  TrainingApplicationVerificationError,
 } from '@/backend/services/training/training-application-service';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import {
@@ -54,8 +53,8 @@ function normalizePageSize(pageSize: number): number {
 /**
  * Public and unauthenticated by design: prospective students are the coldest
  * audience on the site and requiring an account would cost the lead. Protected
- * by a per-IP rate limit plus Turnstile instead. A signed-in visitor is
- * attributed opportunistically when a session happens to exist.
+ * by a per-IP rate limit. A signed-in visitor is attributed opportunistically
+ * when a session happens to exist.
  */
 export async function submitTrainingApplication(body: unknown, ip: string): Promise<HttpResult> {
   const parsed = TrainingApplicationSchema.safeParse(body);
@@ -89,12 +88,6 @@ export async function submitTrainingApplication(body: unknown, ip: string): Prom
     }
     if (error instanceof TrainingApplicationRateLimitError) {
       return jsonResult(429, {
-        success: false,
-        error: error.message,
-      } satisfies ApplicationActionResult);
-    }
-    if (error instanceof TrainingApplicationVerificationError) {
-      return jsonResult(400, {
         success: false,
         error: error.message,
       } satisfies ApplicationActionResult);

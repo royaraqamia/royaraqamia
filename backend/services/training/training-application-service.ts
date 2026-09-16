@@ -11,8 +11,7 @@ import {
 } from '@/shared/contracts/training';
 
 // 5 submissions per 10 minutes per IP. Deliberately fail-open: if the limiter's
-// store is unreachable, a lead form must keep accepting leads. Turnstile is the
-// real defence against automated abuse.
+// store is unreachable, a lead form must keep accepting leads.
 const IP_LIMIT = 5;
 const WINDOW_MS = 10 * 60_000;
 
@@ -30,13 +29,6 @@ export class TrainingApplicationRateLimitError extends Error {
   constructor() {
     super('تم تجاوز الحد المسموح من المحاولات. الرجاء المحاولة بعد قليل.');
     this.name = 'TrainingApplicationRateLimitError';
-  }
-}
-
-export class TrainingApplicationVerificationError extends Error {
-  constructor() {
-    super('فشل التحقق الأمني. يرجى تحديث الصفحة والمحاولة مرة أخرى.');
-    this.name = 'TrainingApplicationVerificationError';
   }
 }
 
@@ -63,7 +55,6 @@ export interface TrainingApplicationNotifier {
 
 export interface TrainingApplicationServiceDeps {
   repository: TrainingApplicationsRepository;
-  verifyTurnstile: (token: string) => Promise<boolean>;
   checkRateLimit: (key: string, limit: number, windowMs: number) => Promise<boolean>;
   generateReferenceCode: () => string;
   /**
@@ -101,9 +92,6 @@ export class TrainingApplicationService {
       WINDOW_MS
     );
     if (!allowed) throw new TrainingApplicationRateLimitError();
-
-    const human = await this.deps.verifyTurnstile(input.turnstile_token ?? '');
-    if (!human) throw new TrainingApplicationVerificationError();
 
     const application = await this.insertWithUniqueReference(input, context.userId ?? null);
 
