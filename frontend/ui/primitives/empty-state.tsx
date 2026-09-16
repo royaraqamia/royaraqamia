@@ -40,12 +40,6 @@ export function EmptyState({
 
       {/* Floating Glassmorphic Icon Badge Container */}
       <div className="relative mb-5 sm:mb-6 flex items-center justify-center">
-        {/* Soft radial background aura */}
-        <div
-          className="absolute -inset-2 rounded-2xl bg-linear-to-tr from-primary/20 via-primary/10 to-transparent blur-md opacity-70 transition-all duration-500 ease-out group-hover:scale-110 group-hover:opacity-100"
-          aria-hidden="true"
-        />
-
         {/* Icon Container Badge */}
         <div className="relative flex size-14 sm:size-16 items-center justify-center rounded-2xl border border-primary/20 bg-background/80 p-3.5 shadow-xs backdrop-blur-md transition-all duration-300 ease-out group-hover:scale-105 group-hover:border-primary/35 group-hover:bg-background">
           <Icon

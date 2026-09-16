@@ -223,12 +223,6 @@ export function FeaturesBento() {
   return (
     <FeaturesSection
       sectionClassName="relative py-20 sm:py-28 lg:py-36 overflow-hidden bg-slate-950 text-slate-100"
-      decor={
-        <>
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-violet-600/14 glow-blur-xl rounded-full pointer-events-none" />
-          <div className="absolute bottom-10 right-10 w-100 h-100 bg-indigo-600/14 glow-blur-lg rounded-full pointer-events-none" />
-        </>
-      }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-14 sm:mb-20',

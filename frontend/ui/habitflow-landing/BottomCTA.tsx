@@ -11,8 +11,6 @@ export function BottomCTA() {
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none overflow-hidden select-none"
         >
-          <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-150 sm:w-200 lg:w-250 h-125 bg-linear-to-b from-primary/15 via-primary/5 to-transparent rounded-full blur-3xl opacity-80" />
-          <div className="absolute -bottom-20 left-1/2 -translate-x-1/2 w-100 sm:w-150 h-75 bg-primary/14 rounded-full blur-3xl opacity-50" />
           <div className="absolute inset-0 bg-[radial-gradient(var(--border)_1px,transparent_1px)] bg-size-[24px_24px] opacity-30 mask-[radial-gradient(ellipse_at_center,black_40%,transparent_80%)]" />
         </div>
       }

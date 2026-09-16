@@ -115,15 +115,8 @@ export function WhyUs() {
       className="relative py-24 sm:py-32 lg:py-40 overflow-hidden bg-[#080B11] text-slate-100 select-none"
       dir="rtl"
     >
-      {/* Ultra-High-End Ambient Background Layer */}
+      {/* Ultra-High-End Background Layer */}
       <div className="absolute inset-0 z-0 pointer-events-none">
-        {/* Radial Center Highlight Gradient */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-7xl bg-[radial-gradient(ellipse_60%_50%_at_50%_-10%,rgba(99,102,241,0.15),rgba(255,255,255,0))]" />
-
-        {/* Soft Mesh Ambient Glow Orbs */}
-        <div className="absolute top-1/4 left-10 w-96 h-96 text-indigo-600/14 glow-orb rounded-full" />
-        <div className="absolute bottom-1/4 right-10 w-96 h-96 text-purple-600/14 glow-orb rounded-full" />
-
         {/* Micro-Grid Texture Mask */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff05_1px,transparent_1px),linear-gradient(to_bottom,#ffffff05_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
       </div>

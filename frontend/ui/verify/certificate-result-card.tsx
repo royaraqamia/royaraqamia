@@ -71,10 +71,6 @@ export function CertificateResultCard({
 
   return (
     <Card className="group relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-card/90 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-emerald-500/40">
-      {/* Accent Background Glows */}
-      <div className="pointer-events-none absolute -top-24 -inset-e-24 size-96 rounded-full bg-emerald-500/10 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 -inset-s-24 size-80 rounded-full bg-indigo-500/10 blur-3xl" />
-
       {/* Top Banner Header */}
       <m.div
         className="relative flex flex-wrap items-center justify-between gap-4 border-b border-border/50 bg-linear-to-r from-emerald-500/10 via-emerald-500/5 to-transparent px-6 py-5 sm:px-8"

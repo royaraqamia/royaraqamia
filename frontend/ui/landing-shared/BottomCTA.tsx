@@ -7,7 +7,7 @@ interface BottomCTAProps {
   loginRedirect: string;
   sectionClassName: string;
   sectionAria?: { label?: string; labelledby?: string };
-  decor: React.ReactNode;
+  decor?: React.ReactNode;
   containerClassName: string;
   card?: {
     className: string;

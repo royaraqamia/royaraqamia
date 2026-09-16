@@ -85,12 +85,8 @@ export function Services() {
       {/* Modern Architectural Dot/Grid Pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29371a_1px,transparent_1px),linear-gradient(to_bottom,#1f29371a_1px,transparent_1px)] bg-size-[3.5rem_3.5rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_35%,#000_70%,transparent_100%)] pointer-events-none" />
 
-      {/* Dynamic Background Spotlight & Floating Mesh Orbs */}
+      {/* Tactile Noise Overlay */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none mix-blend-screen z-0">
-        <div className="absolute top-1/4 right-1/4 w-80 h-80 sm:w-96 sm:h-96 bg-indigo-600/15 rounded-full glow-blur-lg" />
-        <div className="absolute bottom-1/4 left-1/4 w-80 h-80 sm:w-96 sm:h-96 bg-purple-600/15 rounded-full glow-blur-xl" />
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 w-md h-112 bg-violet-600/12 rounded-full glow-blur-xl" />
-        {/* Tactile Noise Overlay */}
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.025] mix-blend-overlay" />
       </div>
 

@@ -77,17 +77,6 @@ export function MetricCards() {
         {/* Subtle grid pattern background */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
-        {/* Top ambient color glow highlight — horizontal mask replaces a
-            live blur filter: same soft edges, rasterized once */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-80 bg-linear-to-b from-purple-500/10 via-indigo-500/5 to-transparent mask-[linear-gradient(to_right,transparent,black_15%,black_85%,transparent)]" />
-
-        {/* Deep ambient radial glow orb — two offset pre-blurred halos
-            recreate the purple→indigo wash without a live 70px filter */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[min(900px,100vw)] h-[min(900px,100vw)] opacity-60">
-          <div className="absolute inset-0 text-purple-600/10 glow-orb -translate-x-[6%] -translate-y-[4%] rounded-full" />
-          <div className="absolute inset-0 text-indigo-600/10 glow-orb translate-x-[6%] translate-y-[4%] rounded-full" />
-        </div>
-
         {/* Top and bottom subtle section boundaries */}
         <div className="absolute top-0 inset-x-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />
         <div className="absolute bottom-0 inset-x-0 h-px bg-linear-to-r from-transparent via-white/10 to-transparent" />

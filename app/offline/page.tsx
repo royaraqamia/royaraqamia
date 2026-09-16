@@ -11,9 +11,7 @@ export default function OfflinePage() {
       className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-slate-50 p-4 font-sans text-slate-900 antialiased selection:bg-amber-500/20 selection:text-amber-800 sm:p-6 lg:p-8 dark:bg-slate-950 dark:text-slate-100 dark:selection:bg-amber-500/30 dark:selection:text-amber-200"
       dir="rtl"
     >
-      {/* Ambient background lighting effects & modern grid pattern */}
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-amber-500/10 via-slate-50/50 to-slate-50 dark:from-amber-500/10 dark:via-slate-950 dark:to-slate-950" />
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-80 w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-linear-to-tr from-amber-500/20 via-orange-500/10 to-rose-500/20 blur-3xl sm:h-120 sm:w-120" />
+      {/* Modern grid pattern */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
       <main className="w-full max-w-md">

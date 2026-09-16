@@ -86,8 +86,6 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
 
   return (
     <div className="relative flex flex-col min-h-full overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-125 h-75 bg-linear-to-br from-primary/10 to-accent/5 blur-3xl pointer-events-none -z-10" />
-
       <div className="flex-1 flex flex-col justify-center max-w-xl w-full mx-auto space-y-8">
         <RedirectErrorBanner error={redirectError} onDismiss={() => setRedirectError(null)} />
 

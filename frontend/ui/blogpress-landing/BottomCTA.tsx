@@ -8,11 +8,7 @@ export function BottomCTA() {
       sectionClassName="relative overflow-hidden py-20 sm:py-28 lg:py-36 border-t border-border/40 bg-background transition-colors duration-500"
       sectionAria={{ label: 'Call to Action' }}
       decor={
-        <>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] sm:w-150 h-80 sm:h-150 bg-primary/14 rounded-full glow-blur-md sm:glow-blur-xl pointer-events-none -z-10 opacity-70" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
-        </>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
       }
       containerClassName="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8"
       card={{

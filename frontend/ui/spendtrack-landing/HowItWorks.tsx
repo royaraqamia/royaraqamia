@@ -30,21 +30,10 @@ export function HowItWorks() {
     <HowItWorksSection
       sectionClassName="relative py-24 sm:py-32 lg:py-40 overflow-hidden bg-background text-foreground transition-colors duration-300"
       decor={
-        <>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
-          >
-            <div className="h-112.5 w-175 rounded-full bg-primary/14 glow-blur-lg opacity-60" />
-            <div className="absolute top-1/4 -right-24 h-75 w-75 rounded-full bg-emerald-500/14 glow-blur-md" />
-            <div className="absolute bottom-1/4 -left-24 h-75 w-75 rounded-full bg-cyan-500/14 glow-blur-md" />
-          </div>
-
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"
-          />
-        </>
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]"
+        />
       }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{

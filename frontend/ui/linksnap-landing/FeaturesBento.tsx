@@ -127,10 +127,7 @@ export function FeaturesBento() {
     <FeaturesSection
       sectionClassName="relative overflow-hidden py-20 sm:py-28 bg-slate-950 text-slate-100"
       decor={
-        <>
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-linear-to-b from-violet-600/10 via-indigo-500/5 to-transparent blur-3xl pointer-events-none" />
-        </>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none" />
       }
       containerClassName="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       heading={{

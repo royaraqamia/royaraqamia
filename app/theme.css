@@ -53,7 +53,6 @@
 
   --animate-float: float 6s ease-in-out infinite;
   --animate-float-delayed: float-delayed 3.5s ease-in-out infinite;
-  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   --animate-fade-in-up: fadeInUp 1s ease-out forwards;
 }
 
@@ -69,21 +68,9 @@
   }
 }
 
-/* Shared ambient-glow blur tiers. One rule per tier replaces dozens of
-   one-off blur-[Npx] utilities. Radii are kept modest on purpose: a glow
-   halo at 5-15% opacity reads the same to the eye at half the radius, while
-   the Gaussian fill cost drops ~4x per halving. */
-@utility glow-blur-sm {
-  filter: blur(36px);
-}
+/* Shared glow blur tier — only `md` still has a consumer (a hover-only halo). */
 @utility glow-blur-md {
   filter: blur(44px);
-}
-@utility glow-blur-lg {
-  filter: blur(56px);
-}
-@utility glow-blur-xl {
-  filter: blur(70px);
 }
 
 /* Pre-blurred halo orb. Paints the soft glow as a radial gradient so the

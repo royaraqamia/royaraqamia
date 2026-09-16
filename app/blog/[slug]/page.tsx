@@ -361,7 +361,6 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
             {/* Author Bio Card */}
             {author?.name && (
               <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-linear-to-br from-card/80 via-card to-muted/20 p-6 sm:p-8 shadow-lg shadow-foreground/2 backdrop-blur-xl">
-                <div className="absolute -top-24 -right-24 size-48 rounded-full bg-primary/5 blur-3xl pointer-events-none" />
                 <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-5">
                   {author.avatar_url?.trim() ? (
                     <Image

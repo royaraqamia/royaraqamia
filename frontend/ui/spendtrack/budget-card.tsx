@@ -70,12 +70,6 @@ export function BudgetCard({
       className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-xs transition-all duration-300 hover:shadow-xl hover:border-border/80 hover:-translate-y-0.5"
       aria-label="ميزانيَّة الشَّهر"
     >
-      {/* Subtle Ambient Background Glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-16 -inset-e-16 h-40 w-40 rounded-full bg-primary/10 blur-3xl transition-opacity duration-500 group-hover:opacity-100 opacity-50"
-      />
-
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
         <div className="space-y-0.5">
           <CardTitle className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80">

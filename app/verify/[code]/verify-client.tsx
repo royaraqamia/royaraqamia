@@ -86,7 +86,6 @@ function NotFoundState({ code }: { code: string }) {
 
           {/* Glowing Animated Icon */}
           <m.div variants={fadeUp} className="mb-6 relative">
-            <div className="absolute inset-0 rounded-3xl bg-red-500/20 blur-xl transition-all duration-500" />
             <m.div
               className="relative flex size-20 md:size-24 items-center justify-center rounded-3xl bg-linear-to-br from-red-500 to-rose-700 shadow-xl shadow-red-500/25 ring-1 ring-white/20"
               initial={reduce ? false : { scale: 0, rotate: -15 }}
@@ -277,7 +276,6 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
           <div className="mb-10 text-center flex flex-col items-center">
             {/* Glowing Icon Badge */}
             <m.div variants={fadeUp} className="mb-6 relative">
-              <div className="absolute inset-0 rounded-3xl bg-primary/25 blur-xl transition-all duration-500" />
               <m.div
                 className="relative flex size-20 md:size-24 items-center justify-center rounded-3xl bg-linear-to-br from-primary to-accent-purple shadow-xl shadow-primary/25 ring-1 ring-white/20"
                 initial={reduce ? false : { scale: 0, rotate: -180 }}

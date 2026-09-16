@@ -83,7 +83,6 @@ const TestimonialCard = memo(function TestimonialCard({
   isSelected,
   onOpen,
 }: TestimonialCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const { gradient: gradientClass, initials } = getTestimonialMeta(testimonial.name);
 
   return (
@@ -101,9 +100,7 @@ const TestimonialCard = memo(function TestimonialCard({
           e.preventDefault();
           onOpen(index);
         }
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      }      }
       className={`
         group/card relative shrink-0 
         w-[82vw] sm:w-95 md:w-105 
@@ -118,15 +115,6 @@ const TestimonialCard = memo(function TestimonialCard({
         cursor-pointer overflow-hidden
       `}
     >
-      {/* Dynamic Card Internal Glows */}
-      <div
-        className={`
-          absolute -top-24 -right-24 w-48 h-48 rounded-full 
-          bg-linear-to-br from-violet-500/15 via-purple-500/10 to-transparent 
-          blur-2xl pointer-events-none transition-opacity duration-500
-          ${isHovered ? 'opacity-100' : 'opacity-40'}
-        `}
-      />
       <div className="absolute inset-0 bg-linear-to-b from-white/4 to-transparent pointer-events-none" />
 
       {/* Body Content */}
@@ -218,17 +206,6 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
       aria-labelledby={headingId}
       className="relative w-full py-8 md:py-14 overflow-hidden select-none"
     >
-      {/* Background Ambience & Lighting Glow — three overlapping pre-blurred
-          halos recreate the violet→indigo→fuchsia wash without live filters */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 md:w-250 h-87.5 pointer-events-none -z-10"
-        aria-hidden="true"
-      >
-        <div className="absolute inset-y-0 left-0 w-2/3 text-violet-600/10 glow-orb rounded-full" />
-        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-2/3 text-indigo-500/10 glow-orb rounded-full" />
-        <div className="absolute inset-y-0 right-0 w-2/3 text-fuchsia-600/10 glow-orb rounded-full" />
-      </div>
-
       {/* Main Carousel Wrapper with Edge Navigation Controls */}
       <div className="relative w-full group/carousel">
         <HorizontalScrollArrows

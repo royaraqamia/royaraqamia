@@ -53,12 +53,6 @@ function UpdatePasswordForm() {
       dir="rtl"
       className="relative min-h-screen w-full flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary overflow-hidden"
     >
-      {/* Background Ambient Mesh Glow */}
-      <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden select-none">
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-150 h-150 sm:w-225 sm:h-225 rounded-full bg-linear-to-tr from-primary/10 via-primary/5 to-transparent blur-3xl opacity-70" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-10%,rgba(120,119,198,0.1),rgba(255,255,255,0))]" />
-      </div>
-
       <div className="w-full max-w-md mx-auto relative z-10">
         <AuthCard
           title="كلمة مرور جديدة"

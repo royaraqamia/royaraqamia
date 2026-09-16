@@ -9,13 +9,11 @@ import {
   Briefcase,
   User,
   ArrowLeft,
-  MessageCircle,
   ShieldCheck,
   Star,
 } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
-import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
 
 export function TrainingCourses() {
@@ -48,15 +46,8 @@ export function TrainingCourses() {
 
   return (
     <section className="relative py-20 lg:py-28 overflow-hidden bg-background text-foreground">
-      {/* Background Ambient Lights & Pattern Grid */}
+      {/* Background Pattern Grid */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-250 h-125 bg-radial from-purple-600/15 via-violet-600/5 to-transparent blur-3xl opacity-70" />
-        {/* Static ambient orbs — pulsing 320-384px blurred layers would
-            recomposite the whole texture every frame for a barely-visible
-            opacity wobble at 10% fill. */}
-        <div className="absolute top-1/4 -right-20 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl max-md:blur-2xl" />
-        <div className="absolute bottom-10 -left-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl max-md:blur-2xl" />
-
         {/* Modern Micro Dot Pattern Mask */}
         <div
           className="absolute inset-0 opacity-[0.03] dark:opacity-[0.06]"
@@ -85,10 +76,6 @@ export function TrainingCourses() {
             <div className="rounded-[calc(1.5rem-1px)] sm:rounded-[calc(2.5rem-1px)] bg-card text-card-foreground overflow-hidden">
               {/* Card Banner Header */}
               <div className="relative p-6 sm:p-8 lg:p-10 text-white overflow-hidden bg-linear-to-br from-slate-950 via-purple-950/90 to-slate-900 border-b border-white/10">
-                {/* Decorative Visual Background Elements */}
-                <div className="absolute -top-24 -right-24 w-96 h-96 bg-purple-600/30 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute -bottom-24 -left-24 w-80 h-80 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
-
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 lg:gap-8">
                   {/* Course Title & High-level Pitch */}
                   <div className="flex-1 space-y-3">
@@ -176,9 +163,9 @@ export function TrainingCourses() {
 
                 {/* 2. Specs Meta Bar */}
                 <div className="rounded-2xl bg-muted/40 dark:bg-white/3 border border-border/60 p-4 sm:p-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x sm:divide-x-reverse divide-border/40 gap-4 sm:gap-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x sm:divide-x-reverse divide-border/40">
                     {/* Trainer Info */}
-                    <div className="flex items-center gap-3.5 sm:px-4 first:sm:pr-0 last:sm:pl-0 pt-2 sm:pt-0">
+                    <div className="flex items-center gap-3.5 py-4 first:pt-0 last:pb-0 sm:px-4 first:sm:pr-0 last:sm:pl-0 sm:py-0">
                       <div className="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                         <User className="w-5 h-5" />
                       </div>
@@ -193,7 +180,7 @@ export function TrainingCourses() {
                     </div>
 
                     {/* Total Duration */}
-                    <div className="flex items-center gap-3.5 sm:px-4 pt-3 sm:pt-0">
+                    <div className="flex items-center gap-3.5 py-4 first:pt-0 last:pb-0 sm:px-4 sm:py-0">
                       <div className="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                         <Clock className="w-5 h-5" />
                       </div>
@@ -208,7 +195,7 @@ export function TrainingCourses() {
                     </div>
 
                     {/* Sessions Count */}
-                    <div className="flex items-center gap-3.5 sm:px-4 pt-3 sm:pt-0">
+                    <div className="flex items-center gap-3.5 py-4 first:pt-0 last:pb-0 sm:px-4 sm:py-0">
                       <div className="w-11 h-11 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-600 dark:text-purple-400 flex items-center justify-center shrink-0">
                         <Trophy className="w-5 h-5" />
                       </div>
@@ -267,7 +254,7 @@ export function TrainingCourses() {
                         {/* Animated Light Shimmer Beam */}
                         <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-                        <span>قدّم طلبك الآن</span>
+                        <span>قدِّم طلبك الآن</span>
                         <ArrowLeft className="w-5 h-5 shrink-0 transition-transform group-hover:-translate-x-1 duration-300" />
                       </Link>
                     </Button>
@@ -277,19 +264,6 @@ export function TrainingCourses() {
                       الدُّفعة القادمة.
                     </div>
                   )}
-
-                  <p className="text-center text-xs sm:text-sm text-muted-foreground">
-                    عندك سؤال؟{' '}
-                    <a
-                      href={getWhatsAppUrl('السَّلام عليكم، لديّ سؤال عن التَّدريب.')}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 font-bold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 rounded"
-                    >
-                      <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                      اسأل عبر واتساب
-                    </a>
-                  </p>
                 </div>
               </div>
             </div>

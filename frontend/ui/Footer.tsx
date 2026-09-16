@@ -79,14 +79,10 @@ export function Footer() {
       className="relative w-full border-t border-border/50 bg-card/60 transition-colors duration-300 overflow-hidden"
       dir="rtl"
     >
-      {/* Ambient Radial Backdrop Glow & Accent Divider */}
+      {/* Accent Divider */}
       <div
         aria-hidden="true"
         className="pointer-events-none absolute inset-x-0 -top-px h-px bg-linear-to-r from-transparent via-primary/40 to-transparent"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-0 left-1/2 -translate-x-1/2 h-44 w-3/4 max-w-4xl rounded-full bg-primary/5 blur-3xl opacity-70"
       />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16 relative z-10">

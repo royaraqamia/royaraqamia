@@ -1,5 +1,4 @@
 import { FileText, Sparkle, CheckCircle, Code, Eye } from 'lucide-react';
-import { GlowOrb } from '@/frontend/ui/landing-shared/GlowOrb';
 import { HeroSection } from '@/frontend/ui/landing-shared/HeroSection';
 import { LandingCta } from '@/frontend/ui/landing-shared/LandingCta';
 
@@ -9,16 +8,7 @@ export function Hero() {
       sectionAriaLabel="Hero"
       sectionClassName="relative min-h-dvh w-full flex items-center justify-center overflow-hidden bg-background text-foreground pt-24 md:pt-32 pb-12 lg:py-0"
       decor={
-        <>
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] pointer-events-none" />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
-
-          {/* Static glows: pulsing a 500px blurred layer would recomposite the
-              whole texture every frame for an effect barely visible at 25-35%
-              opacity. */}
-          <GlowOrb className="w-125 h-125 bg-primary/35 top-1/4 -right-48 glow-blur-lg" />
-          <GlowOrb className="w-112.5 h-112.5 bg-indigo-500/25 bottom-1/4 -left-40 glow-blur-lg" />
-        </>
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-size-[32px_32px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
       }
       containerClassName="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full"
       gridClassName="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center"
@@ -75,9 +65,6 @@ export function Hero() {
         style={{ ['--ld' as string]: '0.35s' } as React.CSSProperties}
       >
         <div className="relative perspective-3d">
-          {/* Diffused Outer Aura */}
-          <div className="absolute -inset-1 rounded-3xl bg-linear-to-r from-primary/30 via-indigo-500/20 to-primary/30 blur-2xl opacity-50 hover:opacity-100 transition duration-1000" />
-
           <div
             className="landing-float relative rounded-2xl border border-white/20 dark:border-white/10 bg-background/88 dark:bg-neutral-900/88 p-6 shadow-2xl shadow-primary/10 transform-gpu"
             style={

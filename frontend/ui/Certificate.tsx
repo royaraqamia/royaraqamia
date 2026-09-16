@@ -80,16 +80,6 @@ export function Certificate() {
       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
         {/* Modern Radial Masked Grid Pattern */}
         <div className="absolute inset-0 bg-[radial-gradient(#ffffff0d_1px,transparent_1px)] bg-size-[24px_24px] opacity-70 mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-
-        {/* Top Ambient Light Beam — horizontal mask replaces a live blur
-            filter: same soft edges, rasterized once */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-72 bg-linear-to-b from-purple-500/15 via-violet-500/5 to-transparent mask-[linear-gradient(to_right,transparent,black_15%,black_85%,transparent)] pointer-events-none" />
-
-        {/* Parallax Purple Dynamic Light Sphere */}
-        <div className="absolute top-1/4 -right-24 w-96 sm:w-125 h-96 sm:h-125 text-purple-600/25 rounded-full glow-orb pointer-events-none" />
-
-        {/* Indigo Ambient Glow (static — animated blur of this size re-rasterizes every frame) */}
-        <div className="absolute bottom-10 -left-24 w-96 sm:w-130 h-96 sm:h-130 text-indigo-600/15 rounded-full glow-orb pointer-events-none" />
       </div>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">

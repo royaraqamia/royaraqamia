@@ -3,7 +3,6 @@
 import { memo, useRef, useState } from 'react';
 import { useHorizontalScroll } from '../../shared/use-horizontal-scroll';
 import { HorizontalScrollArrows } from '../HorizontalScrollArrows';
-import { SectionBackground } from '../SectionBackground';
 import { CARD_COUNT, projectData, visibleIndices, PORTFOLIO_IMAGES } from './portfolio-data';
 import { PortfolioSectionHeader } from './portfolio-section-header';
 import { PortfolioCard } from './portfolio-card';
@@ -26,35 +25,8 @@ export const Portfolio = memo(function Portfolio() {
       id="portfolio"
       className="py-24 md:py-32 relative overflow-hidden bg-[#050810] text-slate-100 select-none"
     >
-      {/* Ambient Lighting & Background Layer */}
+      {/* Background Layer */}
       <div className="absolute inset-0 z-0 opacity-90 pointer-events-none">
-        <SectionBackground
-          blobs={[
-            {
-              top: '0',
-              left: '0',
-              width: '500px',
-              height: '500px',
-              background: 'rgba(168, 85, 247, 0.08)',
-              filter: 'blur(60px)',
-              transform: 'translate(-25%, -50%)',
-              animation: 'pulse-slow 6s ease-in-out infinite',
-            },
-            {
-              bottom: '0',
-              right: '0',
-              width: '500px',
-              height: '500px',
-              background: 'rgba(59, 130, 246, 0.08)',
-              filter: 'blur(60px)',
-              transform: 'translate(25%, 33%)',
-              animation: 'pulse-slow 6s ease-in-out infinite',
-              animationDelay: '1.5s',
-            },
-          ]}
-        />
-        {/* Radial glow gradient overlay */}
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.12),rgba(255,255,255,0))]" />
         {/* Subtle noise overlay */}
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02] mix-blend-overlay" />
       </div>

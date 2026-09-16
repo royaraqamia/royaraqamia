@@ -30,9 +30,7 @@ export default function PrivacyPage() {
       className="min-h-screen font-sans selection:bg-primary/20 relative overflow-hidden"
       dir="rtl"
     >
-      {/* Subtle Ambient Radial Lighting Effects */}
-      <div className="absolute top-0 right-1/2 translate-x-1/2 w-200 sm:w-300 h-125 bg-linear-to-b from-primary/10 via-fuchsia-500/5 to-transparent blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-1/3 left-0 w-100 h-100 bg-primary/5 glow-blur-lg pointer-events-none -z-10" />
+      {/* Subtle Grid Pattern */}
       <div className="absolute inset-0 bg-[radial-gradient(#262626_1px,transparent_1px)] bg-size-[24px_24px] opacity-30 pointer-events-none -z-10" />
 
       <main className="cv-auto max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20">

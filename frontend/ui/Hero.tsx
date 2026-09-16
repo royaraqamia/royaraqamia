@@ -19,15 +19,10 @@ export function Hero() {
         id="home"
         className="relative min-h-[92vh] flex items-center justify-center overflow-hidden pt-32 md:pt-40 pb-16 lg:pt-20 lg:pb-16 bg-slate-950"
       >
-        {/* Background Layer - High-End SaaS Mesh & Ambient Lighting */}
+        {/* Background Layer - High-End SaaS Mesh Grid */}
         <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-purple-950/40 to-slate-950 z-0 overflow-hidden pointer-events-none">
           {/* Subtle grid pattern overlay */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))]" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29370f_1px,transparent_1px),linear-gradient(to_bottom,#1f29370f_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-
-          {/* Glowing radial ambient lights */}
-          <div className="absolute top-1/4 right-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] text-purple-600/14 glow-orb rounded-full transform translate-x-1/3 -translate-y-1/3" />
-          <div className="absolute bottom-1/4 left-1/4 w-[min(600px,90vw)] h-[min(600px,90vw)] text-indigo-600/14 glow-orb rounded-full transform -translate-x-1/3 translate-y-1/3" />
 
           {/* Floating Particles - Ultra subtle background ambient details.
               Half are hidden below sm: ambient loops cost the most exactly

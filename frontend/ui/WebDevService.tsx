@@ -1,7 +1,6 @@
 import { Button } from './primitives/button';
 import { Code, Rocket, ShieldCheck, Smartphone, Monitor, Globe } from 'lucide-react';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
-import { SectionBackground } from './SectionBackground';
 import { MotionReveal } from './MotionReveal';
 
 // --- Scroll reveal (IO island + CSS animations) ---
@@ -26,34 +25,8 @@ export function WebDevService() {
       aria-labelledby="web-dev-heading"
       className="relative py-16 sm:py-24 lg:py-32 overflow-hidden bg-background"
     >
-      {/* Background with optimized z-index and subtle overlay */}
+      {/* Subtle high-end texture overlay */}
       <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
-        <SectionBackground
-          blobs={[
-            {
-              top: '0',
-              left: '0',
-              width: '500px',
-              height: '500px',
-              background: 'rgba(139, 92, 246, 0.08)',
-              filter: 'blur(60px)',
-              transform: 'translate(-20%, -30%)',
-              animation: 'pulse-slow 8s ease-in-out infinite',
-            },
-            {
-              bottom: '0',
-              right: '0',
-              width: '500px',
-              height: '500px',
-              background: 'rgba(124, 58, 237, 0.08)',
-              filter: 'blur(60px)',
-              transform: 'translate(20%, 20%)',
-              animation: 'pulse-slow 8s ease-in-out infinite',
-              animationDelay: '2s',
-            },
-          ]}
-        />
-        {/* Subtle high-end texture overlay */}
         <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay" />
       </div>
 
@@ -131,7 +104,6 @@ export function WebDevService() {
               className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden"
               style={{ ['--ld' as string]: '0.08s' } as React.CSSProperties}
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/14 rounded-full blur-3xl -z-10 group-hover:bg-purple-600/35 transition-colors duration-500 pointer-events-none" />
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-purple-500/14 border border-purple-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
@@ -162,7 +134,6 @@ export function WebDevService() {
               className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden"
               style={{ ['--ld' as string]: '0.2s' } as React.CSSProperties}
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-purple-600/14 rounded-full blur-3xl -z-10 group-hover:bg-purple-600/35 transition-colors duration-500 pointer-events-none" />
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-purple-500/14 border border-purple-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">

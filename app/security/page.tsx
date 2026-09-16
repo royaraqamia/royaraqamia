@@ -31,11 +31,6 @@ export default function SecurityPage() {
       <Navbar />
 
       <main id="main-content" className="flex-1 pt-24 pb-16 md:pt-32 md:pb-24" dir="rtl">
-        {/* Subtle Ambient Background Gradient Glow */}
-        <div className="absolute inset-x-0 top-0 -z-10 h-96 overflow-hidden pointer-events-none select-none">
-          <div className="absolute left-1/2 top-0 -translate-x-1/2 w-250 h-87.5 bg-linear-to-b from-primary/10 via-primary/5 to-transparent blur-3xl opacity-60 dark:opacity-40" />
-        </div>
-
         <div className="cv-auto mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Hero Header Section */}
           <header className="mb-12 text-start">

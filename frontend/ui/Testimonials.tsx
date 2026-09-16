@@ -4,11 +4,6 @@ import { TestimonialsCarousel } from './TestimonialsCarousel';
 export function Testimonials() {
   return (
     <section className="relative py-16 sm:py-24 lg:py-32 overflow-hidden" id="testimonials">
-      {/* Background Subtle Ambient Glow */}
-      <div className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden">
-        <div className="h-87.5 w-125 sm:h-112.5 sm:w-175 rounded-full text-violet-600/14 glow-orb transform-gpu" />
-      </div>
-
       {/* Section Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-10 sm:mb-14">
         <ScrollAnimation animation="slide-down" duration={0.7}>

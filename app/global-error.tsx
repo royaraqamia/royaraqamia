@@ -23,7 +23,6 @@ export default function GlobalError({
             className="pointer-events-none absolute inset-0 -z-10 overflow-hidden select-none"
             aria-hidden="true"
           >
-            <div className="absolute top-1/2 left-1/2 h-125 w-125 -translate-x-1/2 -translate-y-1/2 rounded-full bg-linear-to-tr from-purple-600/20 via-violet-600/15 to-pink-500/10 glow-blur-lg opacity-70" />
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#27272a15_1px,transparent_1px),linear-gradient(to_bottom,#27272a15_1px,transparent_1px)] bg-size-[3rem_3rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
           </div>
 
@@ -43,7 +42,6 @@ export default function GlobalError({
 
             {/* Glowing Icon Container Badge */}
             <div className="group relative mx-auto mb-6 flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl border border-purple-500/30 bg-linear-to-b from-purple-500/15 via-violet-500/10 to-transparent shadow-[0_0_40px_-5px_rgba(168,85,247,0.3)] transition-all duration-300 hover:scale-105">
-              <div className="absolute inset-0 rounded-2xl bg-purple-500/20 blur-md transition-all duration-500 group-hover:blur-lg" />
               <svg
                 className="relative h-10 w-10 sm:h-12 sm:w-12 text-purple-300 transition-transform duration-300 ease-out group-hover:scale-110"
                 viewBox="0 0 24 24"

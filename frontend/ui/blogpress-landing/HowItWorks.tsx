@@ -29,14 +29,6 @@ export function HowItWorks() {
   return (
     <HowItWorksSection
       sectionClassName="relative py-20 sm:py-28 lg:py-36 overflow-hidden bg-background text-foreground"
-      decor={
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute left-1/2 top-1/4 -z-10 -translate-x-1/2 -translate-y-1/2 transform-gpu blur-3xl"
-        >
-          <div className="h-112 w-200 bg-linear-to-tr from-primary/15 via-primary/5 to-transparent opacity-60 rounded-full" />
-        </div>
-      }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         as: 'header',

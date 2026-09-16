@@ -43,7 +43,6 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
         aria-label="لا توجد بيانات إنفاق يوميَّة"
       >
         <div className="relative flex size-14 items-center justify-center rounded-2xl bg-linear-to-b from-primary/15 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20 transition-all duration-500 group-hover:scale-110 group-hover:ring-primary/30">
-          <div className="absolute inset-0 rounded-2xl bg-primary/10 blur-md transition-opacity duration-500 opacity-50 group-hover:opacity-100" />
           <svg
             className="relative size-7 text-primary transition-transform duration-300"
             viewBox="0 0 24 24"

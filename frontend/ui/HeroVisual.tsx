@@ -31,18 +31,8 @@ export function HeroVisual() {
       onMouseEnter={() => setIsHoveringDashboard(true)}
       onMouseLeave={() => setIsHoveringDashboard(false)}
     >
-      {/* Ambient background glow backdrop */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 bg-linear-to-tr from-purple-600/15 via-violet-500/10 to-indigo-500/15 blur-3xl rounded-full transform -translate-y-4 scale-95 pointer-events-none"
-      />
-
       {/* Floating icon - Top Right (Lightning bolt) */}
       <div className="animate-icon-float absolute -top-4 -right-2 sm:-top-6 sm:-right-4 lg:top-2 lg:right-2 z-30 w-12 h-12 lg:w-16 lg:h-16">
-        {/* Glow blur background — kept static: pulsing would recomposite this
-            blurred layer every 2s for a barely-visible opacity wobble. */}
-        <div className="absolute inset-0 rounded-2xl bg-violet-500 blur-xl opacity-50" />
-
         <div className="relative w-full h-full rounded-2xl bg-linear-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-2xl border border-white/20 transition-transform hover:scale-105 duration-300">
           <Zap
             className="w-6 h-6 lg:w-8 lg:h-8 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
@@ -303,7 +293,6 @@ export function HeroVisual() {
 
       {/* Floating indicator - Bottom Left */}
       <div className="animate-icon-float-delayed absolute -bottom-4 -left-2 sm:-bottom-5 sm:-left-4 lg:bottom-2 lg:left-2 z-30 w-14 h-14 lg:w-18 lg:h-18">
-        <div className="absolute inset-0 rounded-full bg-indigo-500 blur-xl opacity-40" />
         <div className="relative w-full h-full rounded-full bg-linear-to-br from-indigo-500 via-purple-600 to-accent flex items-center justify-center shadow-2xl border border-white/20 transition-transform hover:scale-105 duration-300">
           <div className="w-1/2 h-1/2 border-2 border-white/80 rounded-full flex items-center justify-center shadow-inner">
             <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,1)] animate-ping" />

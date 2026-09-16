@@ -102,8 +102,6 @@ export function CategoryPieChart({
         role="img"
         aria-label="لا توجد بيانات إنفاق حسب التَّصنيف"
       >
-        <div className="pointer-events-none absolute -right-10 -top-10 size-40 rounded-full bg-primary/5 blur-3xl group-hover:bg-primary/10 transition-all duration-500" />
-
         <div className="relative mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 ring-8 ring-primary/5 transition-transform duration-300 group-hover:scale-110">
           <svg
             className="size-7 text-primary transition-transform duration-300 group-hover:rotate-12"
@@ -153,9 +151,6 @@ export function CategoryPieChart({
 
   return (
     <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all duration-300 p-5 sm:p-7">
-      {/* Ambient background glow */}
-      <div className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full bg-primary/5 blur-3xl" />
-
       {/* Header Summary Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>

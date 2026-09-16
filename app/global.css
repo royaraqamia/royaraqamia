@@ -1091,21 +1091,6 @@
   }
 }
 
-/*
- * pulse-slow: animates `scale` instead of `opacity` so blurred layers are
- * composited once and scaled on the GPU — no per-frame Gaussian re-raster.
- */
-@keyframes pulse-slow {
-  0%,
-  100% {
-    scale: 1;
-  }
-
-  50% {
-    scale: 1.08;
-  }
-}
-
 .animate-in {
   animation-duration: 0.5s;
   animation-fill-mode: both;
@@ -1142,10 +1127,6 @@
   animation-delay: 0.5s;
 }
 
-.animate-pulse-slow {
-  animation: pulse-slow 2s ease-in-out infinite;
-}
-
 /* Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1157,8 +1138,7 @@
   }
 
   .animate-float,
-  .animate-float-delayed,
-  .animate-pulse-slow {
+  .animate-float-delayed {
     animation: none !important;
   }
 }
@@ -1673,8 +1653,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pulse,
-  .animate-pulse-slow {
+  .animate-pulse {
     animation: none !important;
   }
 }
@@ -1710,7 +1689,6 @@
   .arrow-bounce,
   .animate-float,
   .animate-float-delayed,
-  .animate-pulse-slow,
   .animate-fade-in-up {
     animation: none !important;
   }

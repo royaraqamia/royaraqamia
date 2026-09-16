@@ -53,14 +53,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           aria-live="assertive"
           className="relative flex min-h-120 w-full items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
         >
-          {/* Subtle Ambient Red Glow Background Accent */}
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 flex items-center justify-center overflow-hidden"
-          >
-            <div className="h-72 w-72 rounded-full bg-destructive/10 blur-3xl sm:h-96 sm:w-96" />
-          </div>
-
           {/* Main Error Glassmorphism Card Container */}
           <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border/60 bg-background/80 p-6 text-center shadow-2xl backdrop-blur-xl transition-all duration-300 sm:p-8">
             {/* Pulsing Icon Badge */}

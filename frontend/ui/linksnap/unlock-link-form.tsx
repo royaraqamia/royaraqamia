@@ -32,9 +32,6 @@ export function UnlockLinkForm({ code }: { code: string }) {
       className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-slate-50 p-4 font-sans text-slate-900 antialiased selection:bg-amber-500/20 selection:text-amber-800 sm:p-6 lg:p-8 dark:bg-slate-950 dark:text-slate-100 dark:selection:bg-amber-500/30 dark:selection:text-amber-200"
       dir="rtl"
     >
-      <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-primary/10 via-slate-50/50 to-slate-50 dark:from-primary/10 dark:via-slate-950 dark:to-slate-950" />
-      <div className="pointer-events-none absolute top-1/2 left-1/2 -z-10 h-80 w-[320px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-linear-to-tr from-primary/20 via-accent/10 to-primary/20 blur-3xl sm:h-120 sm:w-120" />
-
       <main className="w-full max-w-md">
         <article className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl backdrop-blur-xl sm:p-8 lg:p-10 dark:border-slate-800/80 dark:bg-slate-900/80">
           <div className="absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-primary/50 to-transparent" />

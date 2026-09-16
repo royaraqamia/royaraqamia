@@ -279,18 +279,6 @@ export function FeaturesBento() {
   return (
     <FeaturesSection
       sectionClassName="relative overflow-hidden bg-background py-20 sm:py-28"
-      decor={
-        <>
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute left-1/2 top-1/4 h-150 w-150 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/14 opacity-30 blur-3xl"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute bottom-10 right-10 h-96 w-96 rounded-full bg-violet-500/14 opacity-20 blur-3xl"
-          />
-        </>
-      }
       containerClassName="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8"
       heading={{
         as: 'header',

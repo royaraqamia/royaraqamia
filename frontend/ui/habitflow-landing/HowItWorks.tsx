@@ -28,14 +28,6 @@ export function HowItWorks() {
   return (
     <HowItWorksSection
       sectionClassName="relative py-20 sm:py-28 lg:py-36 overflow-hidden section-spacing"
-      decor={
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
-        >
-          <div className="h-112.5 w-150 sm:w-200 rounded-full bg-linear-to-tr from-primary/10 via-primary/5 to-transparent glow-blur-lg opacity-70" />
-        </div>
-      }
       containerClassName="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 container-padding"
       heading={{
         wrapperClassName: 'text-center mb-16 sm:mb-24',

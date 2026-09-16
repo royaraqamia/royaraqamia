@@ -18,12 +18,6 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
       aria-labelledby="habit-onboarding-title"
       className="relative overflow-hidden rounded-3xl border border-border/70 bg-card/80 p-6 sm:p-8 md:p-10 shadow-2xl backdrop-blur-2xl ring-1 ring-foreground/10 max-w-5xl mx-auto"
     >
-      {/* Ambient background glow spotlight */}
-      <div
-        className="pointer-events-none absolute -top-24 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/10 rounded-full blur-3xl opacity-50"
-        aria-hidden="true"
-      />
-
       <div className="relative z-10">
         {/* Header Section */}
         <header className="text-center space-y-3 mb-8 sm:mb-10">

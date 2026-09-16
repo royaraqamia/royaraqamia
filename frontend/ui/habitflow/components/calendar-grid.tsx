@@ -254,16 +254,6 @@ export function CalendarGrid({
       aria-label="تقويم سلسلة الإنجاز"
       className={`@container relative w-full mx-auto space-y-4 @min-[440px]:space-y-5 @min-[560px]:space-y-6 font-sans antialiased text-foreground selection:bg-primary/20 selection:text-primary ${className}`}
     >
-      {/* Dynamic Ambient Background Glows */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -top-16 left-1/2 -translate-x-1/2 w-full max-w-2xl h-48 @min-[560px]:h-56 bg-linear-to-r from-primary/20 via-primary/10 to-transparent blur-3xl opacity-70 rounded-full dark:opacity-40"
-      />
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute -bottom-10 right-10 w-64 h-64 bg-primary/10 blur-3xl rounded-full opacity-50"
-      />
-
       {/* Header Section */}
       <header className="relative flex items-start justify-between gap-3 pb-4 @min-[440px]:pb-5 border-b border-border/40">
         <div className="flex items-center gap-3 min-w-0">

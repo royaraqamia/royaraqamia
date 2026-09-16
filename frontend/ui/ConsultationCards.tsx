@@ -32,31 +32,6 @@ export function ConsultationCards() {
         aria-hidden="true"
       />
 
-      {/* Layered Multi-Color Radial Ambient Glows — the gradients already fade
-          to transparent, so no blur filter (or pulse animation) is needed on
-          top; the filter would re-rasterize a 650px layer for zero visual gain. */}
-      <div
-        className="absolute top-1/4 right-1/4 w-[min(400px,85vw)] sm:w-[min(650px,85vw)] h-[min(400px,85vw)] sm:h-[min(650px,85vw)] rounded-full pointer-events-none opacity-40"
-        style={{
-          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.22) 0%, transparent 70%)',
-        }}
-        aria-hidden="true"
-      />
-      <div
-        className="absolute bottom-10 left-1/4 w-[min(350px,80vw)] sm:w-[min(550px,80vw)] h-[min(350px,80vw)] sm:h-[min(550px,80vw)] rounded-full pointer-events-none opacity-35"
-        style={{
-          background: 'radial-gradient(circle, rgba(168, 85, 247, 0.18) 0%, transparent 70%)',
-        }}
-        aria-hidden="true"
-      />
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-[min(500px,95vw)] sm:w-[min(900px,95vw)] h-[min(250px,80vw)] sm:h-[min(450px,80vw)] rounded-full pointer-events-none opacity-30"
-        style={{
-          background: 'radial-gradient(ellipse, rgba(124, 58, 237, 0.15) 0%, transparent 60%)',
-        }}
-        aria-hidden="true"
-      />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header Section */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
@@ -144,16 +119,6 @@ export function ConsultationCards() {
                 </div>
               </div>
             </div>
-
-            {/* Floating Soft Ambient Glow Background Orbs */}
-            <div
-              className="absolute -top-6 -right-6 w-28 h-28 rounded-full text-violet-500/35 glow-orb pointer-events-none -z-10"
-              aria-hidden="true"
-            />
-            <div
-              className="absolute -bottom-6 -left-6 w-36 h-36 rounded-full text-purple-500/25 glow-orb pointer-events-none -z-10"
-              aria-hidden="true"
-            />
           </div>
         </ScrollAnimation>
       </div>

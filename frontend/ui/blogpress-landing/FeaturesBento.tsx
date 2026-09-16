@@ -53,9 +53,6 @@ function EditorPreview() {
 
   return (
     <div className="rounded-2xl border border-neutral-800/90 bg-neutral-950/88 p-4 sm:p-5 shadow-2xl relative overflow-hidden group/editor">
-      {/* Ambient glowing backdrop circle */}
-      <div className="absolute -top-12 -right-12 w-32 h-32 bg-indigo-500/14 rounded-full blur-2xl pointer-events-none" />
-
       {/* Editor Header Bar */}
       <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-neutral-800/80">
         <div className="flex items-center gap-2">
@@ -286,12 +283,6 @@ export function FeaturesBento() {
   return (
     <FeaturesSection
       sectionClassName="relative py-20 sm:py-28 lg:py-32 bg-neutral-950 text-neutral-100 selection:bg-indigo-500/45 selection:text-indigo-200 overflow-hidden"
-      decor={
-        <>
-          <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-150 h-150 bg-indigo-600/14 rounded-full glow-blur-xl pointer-events-none" />
-          <div className="absolute bottom-10 left-10 w-80 h-80 bg-purple-600/14 rounded-full glow-blur-lg pointer-events-none" />
-        </>
-      }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-20',

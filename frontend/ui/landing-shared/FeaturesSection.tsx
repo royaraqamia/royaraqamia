@@ -2,7 +2,7 @@ import { SectionHeading } from './SectionHeading';
 
 interface FeaturesSectionProps {
   sectionClassName: string;
-  decor: React.ReactNode;
+  decor?: React.ReactNode;
   containerClassName: string;
   heading: React.ComponentProps<typeof SectionHeading>;
   gridClassName: string;

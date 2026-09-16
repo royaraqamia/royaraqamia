@@ -1,7 +1,7 @@
 interface HeroSectionProps {
   sectionClassName: string;
   sectionAriaLabel?: string;
-  decor: React.ReactNode;
+  decor?: React.ReactNode;
   containerClassName: string;
   gridClassName: string;
   children: React.ReactNode;

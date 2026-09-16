@@ -29,9 +29,7 @@ export default function Error({
       className="relative flex min-h-dvh w-full flex-col items-center justify-center overflow-hidden bg-background p-4 sm:p-6 lg:p-8 text-center select-none"
       dir="rtl"
     >
-      {/* Visual Background Lighting & Grid Texture */}
-      <div className="pointer-events-none absolute top-0 left-1/2 -z-10 h-96 w-full max-w-7xl -translate-x-1/2 bg-linear-to-b from-destructive/10 via-destructive/5 to-transparent blur-3xl" />
-      <div className="pointer-events-none absolute -z-10 h-72 w-72 rounded-full bg-destructive/15 glow-blur-lg" />
+      {/* Grid Texture */}
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-size-[24px_24px] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
 
       {/* Modern Glassmorphic Container Card */}
@@ -51,7 +49,6 @@ export default function Error({
 
         {/* Layered Glowing Alert Icon */}
         <div className="group relative mx-auto mb-6 flex h-20 w-20 sm:h-22 sm:w-22 items-center justify-center rounded-2xl border border-destructive/20 bg-linear-to-b from-destructive/15 to-destructive/5 shadow-inner">
-          <div className="absolute -inset-1 rounded-2xl bg-destructive/20 blur-md transition duration-500 group-hover:bg-destructive/30" />
           <svg
             className="relative h-10 w-10 text-destructive transition-transform duration-300 ease-out group-hover:scale-110"
             viewBox="0 0 24 24"

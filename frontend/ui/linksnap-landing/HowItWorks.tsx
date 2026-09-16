@@ -30,14 +30,6 @@ export function HowItWorks() {
   return (
     <HowItWorksSection
       sectionClassName="relative py-20 sm:py-28 lg:py-36 overflow-hidden bg-background text-foreground"
-      decor={
-        <div
-          className="pointer-events-none absolute inset-0 -z-10 flex items-center justify-center overflow-hidden"
-          aria-hidden="true"
-        >
-          <div className="h-95 w-162.5 rounded-full bg-primary/14 glow-blur-lg dark:bg-primary/25" />
-        </div>
-      }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24',

@@ -6,15 +6,6 @@ export function PageLoader() {
       aria-label="جاري تحميل المحتوى"
       className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#050505] font-sans antialiased selection:bg-violet-500/30 selection:text-violet-200"
     >
-      {/* Ambient Deep-Space Radial Glows */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 flex items-center justify-center mix-blend-screen"
-      >
-        <div className="absolute h-120 w-120 rounded-full bg-linear-to-tr from-violet-600/10 via-purple-900/10 to-transparent glow-blur-md transform-gpu sm:h-200 sm:w-200 sm:glow-blur-lg" />
-        <div className="absolute h-60 w-60 rounded-full bg-indigo-500/10 glow-blur-sm transform-gpu sm:h-100 sm:w-100 sm:glow-blur-md" />
-      </div>
-
       {/* Premium Interactive Glassmorphic Card */}
       <div className="group relative z-10 mx-auto flex w-[calc(100%-2rem)] max-w-[320px] flex-col items-center justify-center overflow-hidden rounded-[2.5rem] border border-white/6 bg-white/2 p-8 shadow-[0_24px_48px_-12px_rgba(0,0,0,1)] backdrop-blur-3xl ring-1 ring-white/2 ring-inset transition-all duration-700 ease-out hover:border-white/12 hover:bg-white/3 hover:shadow-[0_32px_64px_-16px_rgba(139,92,246,0.15)] sm:max-w-95 sm:p-12">
         {/* Top-Edge 3D Highlight Overlay */}
