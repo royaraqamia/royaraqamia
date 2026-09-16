@@ -10,28 +10,12 @@ import {
   PushUnsubscribeSchema,
   PushWebhookSchema,
 } from '@/shared/contracts/push';
+import { isSameOrigin } from '@/backend/transport/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
 const SUBSCRIBE_RATE_LIMIT = 20;
 const SUBSCRIBE_RATE_WINDOW_MS = 3600_000;
 const WEBHOOK_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
-
-/**
- * CSRF guard for the subscription endpoints: a cross-site form/JS POST carries
- * the victim's session cookie, so without this an attacker could register
- * their own endpoint under the victim's account and receive the victim's
- * notifications. Only accept requests that are provably same-origin.
- */
-function isSameOrigin(headers: Headers): boolean {
-  if (headers.get('sec-fetch-site') === 'same-origin') return true;
-  const origin = headers.get('origin');
-  if (!origin) return false;
-  try {
-    return new URL(origin).origin === new URL(env.baseUrl).origin;
-  } catch {
-    return false;
-  }
-}
 
 export async function subscribePush(body: unknown, headers: Headers): Promise<HttpResult> {
   try {
