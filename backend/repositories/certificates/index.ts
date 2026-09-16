@@ -6,6 +6,7 @@ import type {
   CertificateUpdateInput,
   CertificatesRepository,
 } from '@/backend/repositories/certificates/certificates-repository';
+import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 
 export function createCertificatesRepository(
   supabase: SupabaseClient<Database>
@@ -44,9 +45,10 @@ export function createCertificatesRepository(
         .select('*', { count: 'exact' })
         .order('created_at', { ascending: false });
 
-      if (search) {
+      const term = sanitizeOrFilterTerm(search);
+      if (term) {
         query = query.or(
-          `student_name.ilike.%${search}%,course_name.ilike.%${search}%,certificate_code.ilike.%${search}%`
+          `student_name.ilike.%${term}%,course_name.ilike.%${term}%,certificate_code.ilike.%${term}%`
         );
       }
 

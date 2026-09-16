@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type { AdminUser } from '@/shared/contracts/users';
+import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 
 export interface RecipientEmail {
   id: string;
@@ -24,7 +25,7 @@ export function createAdminUsersRepository(
         .order('name', { ascending: true, nullsFirst: false })
         .limit(limit);
 
-      const term = query.trim();
+      const term = sanitizeOrFilterTerm(query);
       if (term) {
         builder = builder.or(`name.ilike.%${term}%,email.ilike.%${term}%`);
       }

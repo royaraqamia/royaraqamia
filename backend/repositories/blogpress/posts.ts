@@ -12,6 +12,7 @@ import type {
 import type { PostInput } from '@/shared/contracts/blog';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import { estimateReadingTime } from '@/shared/reading-time';
+import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 
 const PUBLISHED_POSTS_FILTER =
   'or(status.eq.published,and(status.eq.scheduled,publish_at.lte.now))';
@@ -106,8 +107,9 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         queryBuilder = queryBuilder.in('id', postIds);
       }
 
-      if (query) {
-        queryBuilder = queryBuilder.or(`title.ilike.%${query}%,meta_desc.ilike.%${query}%`);
+      const search = sanitizeOrFilterTerm(query);
+      if (search) {
+        queryBuilder = queryBuilder.or(`title.ilike.%${search}%,meta_desc.ilike.%${search}%`);
       }
 
       const { data: posts, count } = await queryBuilder
