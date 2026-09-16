@@ -1,7 +1,6 @@
 'use client';
 
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import type { ConsultationSettings } from '@/shared/contracts/consultation';
+import { ArrowLeft, ArrowRight, Loader2 } from 'lucide-react';
 import {
   BOOKING_STEPS,
   type UseBookingFlowResult,
@@ -9,23 +8,20 @@ import {
 import { PackageStep } from '@/frontend/ui/consultation/steps/package-step';
 import { DetailsStep } from '@/frontend/ui/consultation/steps/details-step';
 import { SlotStep } from '@/frontend/ui/consultation/steps/slot-step';
-import { PaymentStep } from '@/frontend/ui/consultation/steps/payment-step';
 import { cn } from '@/frontend/shared/cn';
 
 const STEP_LABELS: Record<(typeof BOOKING_STEPS)[number], string> = {
   package: 'الباقة',
   details: 'بياناتك',
   slots: 'الموعد',
-  payment: 'الدفع',
 };
 
 interface BookingWizardProps {
   flow: UseBookingFlowResult;
-  settings: Partial<ConsultationSettings>;
 }
 
-export function BookingWizard({ flow, settings }: BookingWizardProps) {
-  const selectedSessions = flow.slots.filter((s) => flow.selectedSlotIds.includes(s.id));
+export function BookingWizard({ flow }: BookingWizardProps) {
+  const isLastStep = flow.stepIndex === BOOKING_STEPS.length - 1;
 
   return (
     <div className="rounded-3xl border border-border bg-card/60 p-5 sm:p-8">
@@ -83,8 +79,6 @@ export function BookingWizard({ flow, settings }: BookingWizardProps) {
         <DetailsStep
           contact={flow.contact}
           onChange={flow.updateContact}
-          region={flow.region}
-          onRegionChange={flow.setRegion}
           fieldErrors={flow.fieldErrors}
         />
       )}
@@ -99,21 +93,7 @@ export function BookingWizard({ flow, settings }: BookingWizardProps) {
         />
       )}
 
-      {flow.step === 'payment' && flow.selectedPackage && (
-        <PaymentStep
-          pkg={flow.selectedPackage}
-          sessions={selectedSessions}
-          region={flow.region}
-          paymentMethod={flow.paymentMethod}
-          onPaymentMethodChange={flow.setPaymentMethod}
-          settings={settings}
-          submitting={flow.submitting}
-          error={flow.error}
-          onConfirm={() => void flow.confirmBooking()}
-        />
-      )}
-
-      {flow.error && flow.step !== 'payment' && (
+      {flow.error && (
         <p
           className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
           role="alert"
@@ -127,14 +107,30 @@ export function BookingWizard({ flow, settings }: BookingWizardProps) {
         <button
           type="button"
           onClick={flow.back}
-          disabled={flow.stepIndex === 0}
+          disabled={flow.stepIndex === 0 || flow.submitting}
           className="inline-flex items-center justify-end gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border"
         >
           <ArrowRight className="size-4" aria-hidden="true" />
           السابق
         </button>
 
-        {flow.step !== 'payment' && (
+        {isLastStep ? (
+          <button
+            type="button"
+            onClick={() => void flow.confirmBooking()}
+            disabled={!flow.canProceed || flow.submitting}
+            className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold text-primary-foreground bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg transition-all duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+          >
+            {flow.submitting ? (
+              <>
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+                جارٍ إرسال الطلب...
+              </>
+            ) : (
+              'تأكيد طلب الحجز'
+            )}
+          </button>
+        ) : (
           <button
             type="button"
             onClick={flow.next}

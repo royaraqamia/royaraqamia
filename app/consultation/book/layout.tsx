@@ -4,7 +4,7 @@ import { Navbar } from '@/frontend/ui/Navbar';
 export const metadata: Metadata = {
   title: 'حجز استشارة',
   description:
-    'احجز استشارتك: اختر الباقة والموعد المناسب، أكمِل الدَّفع عبر ShamCash أو MoneyGram، وأرسل الإيصال عبر واتساب.',
+    'احجز استشارتك: اختر الباقة والموعد المناسب، وأكّد طلبك دون تسجيل دخول ودون دفع. سنتواصل معك عبر واتساب.',
 };
 
 export default function ConsultationBookLayout({ children }: { children: React.ReactNode }) {

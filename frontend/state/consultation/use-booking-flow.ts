@@ -1,25 +1,25 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  type AvailabilitySlot,
-  type ConsultationPackage,
-  type ConsultationPaymentMethod,
-  type ConsultationRegion,
-} from '@/shared/contracts/consultation';
+import type { AvailabilitySlot, ConsultationPackage } from '@/shared/contracts/consultation';
 import {
   fetchAvailableSlots,
   fetchConsultationPackages,
   submitBooking,
 } from '@/frontend/api/consultation';
 
-export const BOOKING_STEPS = ['package', 'details', 'slots', 'payment'] as const;
+export const BOOKING_STEPS = ['package', 'details', 'slots'] as const;
 export type BookingStep = (typeof BOOKING_STEPS)[number];
 
 export interface BookingContactDraft {
   full_name: string;
   phone_whatsapp: string;
   topic_description: string;
+}
+
+export interface CreatedBooking {
+  id: string;
+  referenceCode: string;
 }
 
 const EMPTY_CONTACT: BookingContactDraft = {
@@ -36,10 +36,6 @@ export interface UseBookingFlowResult {
   selectPackage: (packageId: string) => void;
   contact: BookingContactDraft;
   updateContact: (patch: Partial<BookingContactDraft>) => void;
-  region: ConsultationRegion;
-  setRegion: (region: ConsultationRegion) => void;
-  paymentMethod: ConsultationPaymentMethod;
-  setPaymentMethod: (method: ConsultationPaymentMethod) => void;
   slots: AvailabilitySlot[];
   slotsLoading: boolean;
   selectedSlotIds: string[];
@@ -50,7 +46,7 @@ export interface UseBookingFlowResult {
   submitting: boolean;
   error: string | null;
   fieldErrors: Record<string, string>;
-  createdBookingId: string | null;
+  createdBooking: CreatedBooking | null;
   next: () => void;
   back: () => void;
   goTo: (step: BookingStep) => void;
@@ -59,8 +55,8 @@ export interface UseBookingFlowResult {
 
 /**
  * Wizard state machine for /consultation/book.
- * Payment method follows the chosen region by default but stays overridable.
- * Email is not collected — the server uses the authenticated account's email.
+ * Anonymous and unpaid — no account, no payment step. A submitted request is
+ * pending until an operator confirms it.
  */
 export function useBookingFlow(
   options: { initialPackages?: ConsultationPackage[] } = {}
@@ -71,15 +67,13 @@ export function useBookingFlow(
   const [packages, setPackages] = useState<ConsultationPackage[]>(initialPackages ?? []);
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [contact, setContact] = useState<BookingContactDraft>(EMPTY_CONTACT);
-  const [region, setRegion] = useState<ConsultationRegion>('syria');
-  const [paymentOverride, setPaymentOverride] = useState<ConsultationPaymentMethod | null>(null);
   const [slots, setSlots] = useState<AvailabilitySlot[]>([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [createdBookingId, setCreatedBookingId] = useState<string | null>(null);
+  const [createdBooking, setCreatedBooking] = useState<CreatedBooking | null>(null);
 
   useEffect(() => {
     // Packages are server-rendered into the page; only fetch when absent.
@@ -98,7 +92,7 @@ export function useBookingFlow(
     try {
       const fresh = await fetchAvailableSlots();
       setSlots(fresh);
-      // Drop selections that disappeared (freed/expired/deleted) while away.
+      // Drop selections that disappeared (freed/deleted) while away.
       setSelectedSlotIds((ids) => {
         const available = new Set(fresh.map((s) => s.id));
         const kept = ids.filter((id) => available.has(id));
@@ -113,15 +107,6 @@ export function useBookingFlow(
     () => packages.find((p) => p.id === selectedPackageId) ?? null,
     [packages, selectedPackageId]
   );
-
-  // Default payment method tracks the region until the user overrides it.
-  const paymentMethod: ConsultationPaymentMethod =
-    paymentOverride ?? (region === 'syria' ? 'shamcash' : 'moneygram');
-
-  const handleSetRegion = useCallback((next: ConsultationRegion) => {
-    setRegion(next);
-    setPaymentOverride(null); // snap back to the region's default method
-  }, []);
 
   const toggleSlot = useCallback((slotId: string) => {
     setSelectedSlotIds((current) =>
@@ -150,8 +135,6 @@ export function useBookingFlow(
         );
       case 'slots':
         return selectedSlotIds.length === requiredSessions && !slotsLoading;
-      case 'payment':
-        return true;
       default:
         return false;
     }
@@ -200,11 +183,9 @@ export function useBookingFlow(
         full_name: contact.full_name.trim(),
         phone_whatsapp: contact.phone_whatsapp.trim(),
         topic_description: contact.topic_description.trim(),
-        region,
-        payment_method: paymentMethod,
       });
-      if (result.success && result.bookingId) {
-        setCreatedBookingId(result.bookingId);
+      if (result.success && result.bookingId && result.referenceCode) {
+        setCreatedBooking({ id: result.bookingId, referenceCode: result.referenceCode });
       } else {
         setError(result.error ?? 'تعذر إنشاء الحجز.');
         setFieldErrors(result.fieldErrors ?? {});
@@ -214,7 +195,7 @@ export function useBookingFlow(
     } finally {
       setSubmitting(false);
     }
-  }, [selectedPackage, submitting, selectedSlotIds, contact, region, paymentMethod]);
+  }, [selectedPackage, submitting, selectedSlotIds, contact]);
 
   return {
     stepIndex,
@@ -228,10 +209,6 @@ export function useBookingFlow(
     },
     contact,
     updateContact,
-    region,
-    setRegion: handleSetRegion,
-    paymentMethod,
-    setPaymentMethod: setPaymentOverride,
     slots,
     slotsLoading,
     selectedSlotIds,
@@ -242,7 +219,7 @@ export function useBookingFlow(
     submitting,
     error,
     fieldErrors,
-    createdBookingId,
+    createdBooking,
     next,
     back,
     goTo,

@@ -4,8 +4,6 @@ import type {
   AvailabilitySlot,
   ConsultationBooking,
   ConsultationBookingStatus,
-  ConsultationPaymentMethod,
-  ConsultationRegion,
 } from '@/shared/contracts/consultation';
 import type {
   BookingListResult,
@@ -63,6 +61,7 @@ async function loadSessions(
 function toBooking(row: BookingRowWithPackage, sessions: AvailabilitySlot[]): ConsultationBooking {
   return {
     id: row.id,
+    reference_code: row.reference_code,
     user_id: row.user_id,
     package_id: row.package_id,
     package_name: row.consultation_packages?.name ?? null,
@@ -70,12 +69,7 @@ function toBooking(row: BookingRowWithPackage, sessions: AvailabilitySlot[]): Co
     phone_whatsapp: row.phone_whatsapp,
     email: row.email,
     topic_description: row.topic_description,
-    region: row.region as ConsultationRegion,
-    payment_method: row.payment_method as ConsultationPaymentMethod,
-    amount_due_usd: row.amount_due_usd,
     status: row.status as ConsultationBookingStatus,
-    expires_at: row.expires_at,
-    receipt_sent_at: row.receipt_sent_at,
     confirmed_at: row.confirmed_at,
     rejected_reason: row.rejected_reason,
     created_at: row.created_at,
@@ -98,17 +92,6 @@ export function createSupabaseConsultationBookingsRepository(
   }
 
   return {
-    async listByUser(userId): Promise<ConsultationBooking[]> {
-      const { data, error } = await supabase
-        .from('consultation_bookings')
-        .select(baseSelect)
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return fetchMany(data ?? []);
-    },
-
     async listForAdmin(page, pageSize, status?): Promise<BookingListResult> {
       // `estimated` avoids a full filtered COUNT on every admin page; the
       // dashboard shows one page at a time and only displays `data`.
@@ -127,14 +110,14 @@ export function createSupabaseConsultationBookingsRepository(
 
     async create(command: CreateBookingCommand): Promise<string> {
       const { data, error } = await supabase.rpc('create_consultation_booking', {
+        p_user_id: command.userId,
         p_package_id: command.package_id,
         p_slot_ids: command.slot_ids,
         p_full_name: command.full_name,
         p_phone_whatsapp: command.phone_whatsapp,
         p_email: command.email,
         p_topic_description: command.topic_description,
-        p_region: command.region,
-        p_payment_method: command.payment_method,
+        p_reference_code: command.referenceCode,
       });
 
       if (error) throw new Error(extractRpcErrorCode(error.message));
@@ -142,28 +125,12 @@ export function createSupabaseConsultationBookingsRepository(
       return data;
     },
 
-    async markReceiptSent(userId, bookingId): Promise<void> {
-      const { error } = await supabase.rpc('mark_consultation_receipt_sent', {
-        p_booking_id: bookingId,
-      });
-      void userId; // ownership enforced inside the SECURITY DEFINER function
-      if (error) throw new Error(extractRpcErrorCode(error.message));
-    },
-
-    async cancelByUser(userId, bookingId): Promise<void> {
-      const { error } = await supabase.rpc('cancel_consultation_booking', {
-        p_booking_id: bookingId,
-      });
-      void userId;
-      if (error) throw new Error(extractRpcErrorCode(error.message));
-    },
-
     async confirm(bookingId): Promise<void> {
       const { error } = await supabase
         .from('consultation_bookings')
         .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
         .eq('id', bookingId)
-        .in('status', ['pending_payment', 'awaiting_review']);
+        .eq('status', 'pending');
 
       if (error) throw error;
     },
@@ -176,7 +143,7 @@ export function createSupabaseConsultationBookingsRepository(
           rejected_reason: reason?.trim() ? reason.trim() : null,
         })
         .eq('id', bookingId)
-        .in('status', ['pending_payment', 'awaiting_review']);
+        .eq('status', 'pending');
 
       if (error) throw error;
     },

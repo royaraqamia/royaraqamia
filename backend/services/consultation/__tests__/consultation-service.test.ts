@@ -1,18 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   ConsultationService,
+  ConsultationRateLimitError,
   ConsultationValidationError,
   SlotTakenError,
-  BookingStateError,
   PackageInUseError,
   SlotReservedError,
 } from '@/backend/services/consultation/consultation-service';
-import type {
-  ConsultationRepositories,
-  CreateBookingCommand,
-} from '@/backend/repositories/consultation';
+import type { ConsultationRepositories } from '@/backend/repositories/consultation';
 
 const NOW = '2026-08-25T10:00:00.000Z';
+const REFERENCE = 'CONS-2026-ABCDEFGH';
 
 function makeRepositories(overrides: Partial<ConsultationRepositories> = {}) {
   const repositories = {
@@ -31,11 +29,8 @@ function makeRepositories(overrides: Partial<ConsultationRepositories> = {}) {
       remove: vi.fn(),
     },
     bookings: {
-      listByUser: vi.fn(),
       listForAdmin: vi.fn(),
       create: vi.fn(),
-      markReceiptSent: vi.fn(),
-      cancelByUser: vi.fn(),
       confirm: vi.fn(),
       reject: vi.fn(),
     },
@@ -48,20 +43,29 @@ function makeRepositories(overrides: Partial<ConsultationRepositories> = {}) {
   return repositories;
 }
 
-function makeService(repositories: ConsultationRepositories) {
-  return new ConsultationService(repositories, { nowIso: () => NOW });
+function makeService(
+  repositories: ConsultationRepositories,
+  overrides: {
+    checkRateLimit?: (key: string, limit: number, windowMs: number) => Promise<boolean>;
+    generateReferenceCode?: () => string;
+  } = {}
+) {
+  return new ConsultationService(repositories, {
+    nowIso: () => NOW,
+    checkRateLimit: overrides.checkRateLimit ?? vi.fn().mockResolvedValue(true),
+    generateReferenceCode: overrides.generateReferenceCode ?? vi.fn().mockReturnValue(REFERENCE),
+  });
 }
 
-const singleSessionInput: Omit<CreateBookingCommand, 'userId'> = {
+const bookingInput = {
   package_id: 'pkg-1',
   slot_ids: ['slot-1'],
   full_name: 'أحمد محمد',
   phone_whatsapp: '+963968478904',
-  email: 'ahmed@example.com',
   topic_description: 'أرغب باستشارة حول بناء تطبيق ويب كامل',
-  region: 'syria',
-  payment_method: 'shamcash',
 };
+
+const context = { ip: '1.2.3.4', userId: null };
 
 describe('ConsultationService', () => {
   describe('createBooking', () => {
@@ -75,7 +79,7 @@ describe('ConsultationService', () => {
       const service = makeService(repositories);
 
       await expect(
-        service.createBooking('user-1', { ...singleSessionInput, slot_ids: ['a', 'b', 'c'] })
+        service.createBooking({ ...bookingInput, slot_ids: ['a', 'b', 'c'] }, context)
       ).rejects.toBeInstanceOf(ConsultationValidationError);
       expect(repositories.bookings.create).not.toHaveBeenCalled();
     });
@@ -85,13 +89,30 @@ describe('ConsultationService', () => {
       (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
       const service = makeService(repositories);
 
-      await expect(service.createBooking('user-1', singleSessionInput)).rejects.toBeInstanceOf(
+      await expect(service.createBooking(bookingInput, context)).rejects.toBeInstanceOf(
         ConsultationValidationError
       );
       expect(repositories.bookings.create).not.toHaveBeenCalled();
     });
 
-    it('delegates a valid command with the userId attached and returns the booking id', async () => {
+    it('refuses to book once the per-IP rate limit is exhausted', async () => {
+      const repositories = makeRepositories();
+      (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'pkg-1',
+        is_active: true,
+        sessions_count: 1,
+      });
+      const checkRateLimit = vi.fn().mockResolvedValue(false);
+      const service = makeService(repositories, { checkRateLimit });
+
+      await expect(service.createBooking(bookingInput, context)).rejects.toBeInstanceOf(
+        ConsultationRateLimitError
+      );
+      expect(checkRateLimit).toHaveBeenCalledWith('consultation-booking:1.2.3.4', 5, 600_000);
+      expect(repositories.bookings.create).not.toHaveBeenCalled();
+    });
+
+    it('creates an anonymous booking with a generated reference code', async () => {
       const repositories = makeRepositories();
       (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'pkg-1',
@@ -101,11 +122,56 @@ describe('ConsultationService', () => {
       (repositories.bookings.create as ReturnType<typeof vi.fn>).mockResolvedValue('booking-9');
       const service = makeService(repositories);
 
-      await expect(service.createBooking('user-1', singleSessionInput)).resolves.toBe('booking-9');
-      expect(repositories.bookings.create).toHaveBeenCalledWith({
-        ...singleSessionInput,
-        userId: 'user-1',
+      await expect(service.createBooking(bookingInput, context)).resolves.toEqual({
+        id: 'booking-9',
+        referenceCode: REFERENCE,
       });
+      expect(repositories.bookings.create).toHaveBeenCalledWith({
+        ...bookingInput,
+        userId: null,
+        referenceCode: REFERENCE,
+        email: null,
+      });
+    });
+
+    it('attributes a signed-in visitor opportunistically', async () => {
+      const repositories = makeRepositories();
+      (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'pkg-1',
+        is_active: true,
+        sessions_count: 1,
+      });
+      (repositories.bookings.create as ReturnType<typeof vi.fn>).mockResolvedValue('booking-9');
+      const service = makeService(repositories);
+
+      await service.createBooking(bookingInput, { ip: '1.2.3.4', userId: 'user-1' });
+
+      expect(repositories.bookings.create).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'user-1' })
+      );
+    });
+
+    it('retries with a fresh reference code when the column collides', async () => {
+      const repositories = makeRepositories();
+      (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'pkg-1',
+        is_active: true,
+        sessions_count: 1,
+      });
+      (repositories.bookings.create as ReturnType<typeof vi.fn>)
+        .mockRejectedValueOnce(new Error('REFERENCE_TAKEN'))
+        .mockResolvedValueOnce('booking-9');
+      const generateReferenceCode = vi
+        .fn()
+        .mockReturnValueOnce('CONS-2026-AAAAAAAA')
+        .mockReturnValueOnce('CONS-2026-BBBBBBBB');
+      const service = makeService(repositories, { generateReferenceCode });
+
+      await expect(service.createBooking(bookingInput, context)).resolves.toEqual({
+        id: 'booking-9',
+        referenceCode: 'CONS-2026-BBBBBBBB',
+      });
+      expect(repositories.bookings.create).toHaveBeenCalledTimes(2);
     });
 
     it('maps SLOT_TAKEN races to SlotTakenError', async () => {
@@ -120,7 +186,7 @@ describe('ConsultationService', () => {
       );
       const service = makeService(repositories);
 
-      await expect(service.createBooking('user-1', singleSessionInput)).rejects.toBeInstanceOf(
+      await expect(service.createBooking(bookingInput, context)).rejects.toBeInstanceOf(
         SlotTakenError
       );
     });
@@ -137,7 +203,7 @@ describe('ConsultationService', () => {
       );
       const service = makeService(repositories);
 
-      await expect(service.createBooking('user-1', singleSessionInput)).rejects.toBeInstanceOf(
+      await expect(service.createBooking(bookingInput, context)).rejects.toBeInstanceOf(
         ConsultationValidationError
       );
     });
@@ -155,54 +221,6 @@ describe('ConsultationService', () => {
     });
   });
 
-  describe('getMyBookings', () => {
-    it('delegates to the bookings repository for the user', async () => {
-      const repositories = makeRepositories();
-      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([]);
-      const service = makeService(repositories);
-
-      await expect(service.getMyBookings('user-1')).resolves.toEqual([]);
-      expect(repositories.bookings.listByUser).toHaveBeenCalledWith('user-1');
-    });
-  });
-
-  describe('receipt / cancel transitions', () => {
-    it('maps BOOKING_NOT_PENDING to BookingStateError on receipt-sent', async () => {
-      const repositories = makeRepositories();
-      (repositories.bookings.markReceiptSent as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('BOOKING_NOT_PENDING')
-      );
-      const service = makeService(repositories);
-
-      await expect(service.markReceiptSent('user-1', 'b-1')).rejects.toBeInstanceOf(
-        BookingStateError
-      );
-    });
-
-    it('maps BOOKING_NOT_CANCELLABLE to BookingStateError on cancel', async () => {
-      const repositories = makeRepositories();
-      (repositories.bookings.cancelByUser as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('BOOKING_NOT_CANCELLABLE')
-      );
-      const service = makeService(repositories);
-
-      await expect(service.cancelBooking('user-1', 'b-1')).rejects.toBeInstanceOf(
-        BookingStateError
-      );
-    });
-
-    it('delegates markReceiptSent with the owning userId', async () => {
-      const repositories = makeRepositories();
-      (repositories.bookings.markReceiptSent as ReturnType<typeof vi.fn>).mockResolvedValue(
-        undefined
-      );
-      const service = makeService(repositories);
-
-      await expect(service.markReceiptSent('user-1', 'b-1')).resolves.toBeUndefined();
-      expect(repositories.bookings.markReceiptSent).toHaveBeenCalledWith('user-1', 'b-1');
-    });
-  });
-
   describe('admin actions', () => {
     it('confirms and rejects delegate to the bookings repository', async () => {
       const repositories = makeRepositories();
@@ -211,8 +229,8 @@ describe('ConsultationService', () => {
       await service.adminConfirmBooking('b-1');
       expect(repositories.bookings.confirm).toHaveBeenCalledWith('b-1');
 
-      await service.adminRejectBooking('b-2', 'الإيصال غير مطابق');
-      expect(repositories.bookings.reject).toHaveBeenCalledWith('b-2', 'الإيصال غير مطابق');
+      await service.adminRejectBooking('b-2', 'الموعد لم يعد مناسبًا');
+      expect(repositories.bookings.reject).toHaveBeenCalledWith('b-2', 'الموعد لم يعد مناسبًا');
     });
 
     it('surfaces trigger-blocked slot deletions as SlotReservedError', async () => {

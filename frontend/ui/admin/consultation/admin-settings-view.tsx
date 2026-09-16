@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import type { ConsultationSettings } from '@/shared/contracts/consultation';
 import { adminSaveSettings } from '@/frontend/api/consultation-admin';
-import { fetchPaymentConfig } from '@/frontend/api/consultation';
+import { fetchConsultationSettings } from '@/frontend/api/consultation';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Input } from '@/frontend/ui/primitives/input';
 import { cn } from '@/frontend/shared/cn';
@@ -19,28 +19,9 @@ const FIELDS: Array<{
 }> = [
   {
     key: 'booking_whatsapp_url',
-    label: 'رابط واتساب استقبال الإيصالات',
-    hint: 'يُستخدم في زر إرسال الإيصال لدى الحاجزين (wa.me أو chat.whatsapp.com)',
+    label: 'رابط واتساب استقبال طلبات الحجز',
+    hint: 'يُستخدم في زر واتساب الذي يفتحه الحاجز بعد إرسال طلبه (wa.me أو chat.whatsapp.com)',
     dir: 'ltr',
-  },
-  {
-    key: 'payment_shamcash_code',
-    label: 'رمز إيصال ShamCash',
-    hint: 'الرمز الذي ينسخه الدافع ويلصقه في تطبيق ShamCash لإتمام التحويل',
-    dir: 'ltr',
-  },
-  {
-    key: 'payment_moneygram_name',
-    label: 'MoneyGram — اسم المستفيد',
-  },
-  {
-    key: 'payment_moneygram_phone',
-    label: 'MoneyGram — رقم الهاتف',
-    dir: 'ltr',
-  },
-  {
-    key: 'payment_moneygram_branch',
-    label: 'MoneyGram — الفرع المفضّل',
   },
 ];
 
@@ -51,7 +32,7 @@ export function AdminSettingsView() {
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
-    fetchPaymentConfig().then((settings) => {
+    fetchConsultationSettings().then((settings) => {
       setDraft(settings);
       setLoading(false);
     });

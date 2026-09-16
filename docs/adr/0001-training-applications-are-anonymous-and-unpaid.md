@@ -1,5 +1,9 @@
 # Training applications are anonymous and unpaid, unlike consultation bookings
 
+> **Superseded in part by [ADR 0002](0002-consultation-bookings-become-anonymous-and-unpaid.md)
+> (2026-09-16):** consultation bookings are now anonymous and unpaid too. They still
+> differ by holding scarce inventory and by requiring an operator decision.
+
 Training and Consultations are the same shape of request — someone wants time from the
 business — but we deliberately built them as opposites. A `/training/apply` submission is
 open to anonymous visitors, reserves no seat, never expires and takes no payment.

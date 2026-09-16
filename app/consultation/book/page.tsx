@@ -1,4 +1,3 @@
-import { requireAuth } from '@/backend/middleware/auth-guard';
 import {
   loadActiveConsultationPackages,
   loadConsultationSettings,
@@ -8,9 +7,7 @@ import { ConsultationBookingPage } from '@/frontend/ui/consultation/consultation
 export const dynamic = 'force-dynamic';
 
 export default async function ConsultationBookPage() {
-  // The booking flow requires an account; guests are bounced to login and back.
-  await requireAuth('/auth/login?redirect=/consultation/book');
-
+  // Anonymous and unpaid: no account is required to book a consultation.
   const [initialPackages, initialSettings] = await Promise.all([
     loadActiveConsultationPackages(),
     loadConsultationSettings(),

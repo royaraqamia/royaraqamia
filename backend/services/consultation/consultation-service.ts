@@ -1,9 +1,10 @@
+import { randomInt } from 'crypto';
 import type {
   AvailabilitySlot,
-  ConsultationBooking,
   ConsultationBookingStatus,
   ConsultationPackage,
   ConsultationSettings,
+  CreateBookingInput,
   PackageUpsertInput,
   SlotCreateInput,
 } from '@/shared/contracts/consultation';
@@ -16,15 +17,39 @@ import type {
 
 export class ConsultationValidationError extends Error {}
 export class SlotTakenError extends Error {}
-export class BookingStateError extends Error {}
 export class PackageInUseError extends Error {}
 export class SlotReservedError extends Error {}
+
+export class ConsultationRateLimitError extends Error {
+  constructor() {
+    super('تم تجاوز الحد المسموح من الطلبات. الرجاء المحاولة بعد قليل.');
+    this.name = 'ConsultationRateLimitError';
+  }
+}
 
 const RPC_VALIDATION_CODES = new Set([
   'PACKAGE_NOT_FOUND',
   'SLOT_COUNT_MISMATCH',
   'SLOT_UNAVAILABLE',
 ]);
+
+// 5 bookings per 10 minutes per IP. Deliberately fail-open: an anonymous
+// booking form must keep accepting requests when the limiter is unreachable.
+const IP_LIMIT = 5;
+const WINDOW_MS = 10 * 60_000;
+
+const REFERENCE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const MAX_REFERENCE_CODE_ATTEMPTS = 5;
+
+/** `CONS-2026-A7K2M9QX` — quoted in the WhatsApp handoff, so uppercase only. */
+export function generateConsultationReferenceCode(): string {
+  const alphabet = REFERENCE_CODE_ALPHABET.split('');
+  let suffix = '';
+  for (let i = 0; i < 8; i++) {
+    suffix += alphabet[randomInt(alphabet.length)] ?? '';
+  }
+  return `CONS-${new Date().getFullYear()}-${suffix}`;
+}
 
 function isForeignKeyViolation(error: unknown): boolean {
   return (
@@ -35,22 +60,48 @@ function isForeignKeyViolation(error: unknown): boolean {
   );
 }
 
+function errorCode(error: unknown): string {
+  if (error instanceof Error) return error.message.trim();
+  if (
+    typeof error === 'object' &&
+    error !== null &&
+    'message' in error &&
+    typeof (error as { message?: unknown }).message === 'string'
+  ) {
+    return String((error as { message: string }).message).trim();
+  }
+  return '';
+}
+
 export interface ConsultationServiceConfig {
   nowIso: () => string;
+  checkRateLimit: (key: string, limit: number, windowMs: number) => Promise<boolean>;
+  generateReferenceCode: () => string;
+}
+
+export interface CreateBookingContext {
+  ip: string;
+  /** Present when a signed-in visitor books; bookings never require auth. */
+  userId: string | null;
+}
+
+export interface CreatedBooking {
+  id: string;
+  referenceCode: string;
 }
 
 /**
- * Stale pending bookings are expired by the `consultation-expiry-sweep`
- * pg_cron job, so the read paths below stay read-only.
+ * Bookings are anonymous and unpaid: a request holds its slots while an
+ * operator reviews it. Rejecting or cancelling frees them via the DB trigger.
  */
 export class ConsultationService {
   constructor(
     private readonly repositories: ConsultationRepositories,
-    private readonly config: ConsultationServiceConfig = { nowIso: () => new Date().toISOString() }
+    private readonly config: ConsultationServiceConfig
   ) {}
 
   // ----------------------------------------------------------
-  // Public (authenticated booker)
+  // Public
   // ----------------------------------------------------------
 
   async getActivePackages(): Promise<ConsultationPackage[]> {
@@ -61,10 +112,21 @@ export class ConsultationService {
     return this.repositories.slots.listAvailable(this.config.nowIso());
   }
 
+  async getSettings(): Promise<Partial<ConsultationSettings>> {
+    return this.repositories.settings.read();
+  }
+
   async createBooking(
-    userId: string,
-    input: Omit<CreateBookingCommand, 'userId'>
-  ): Promise<string> {
+    input: CreateBookingInput,
+    context: CreateBookingContext
+  ): Promise<CreatedBooking> {
+    const allowed = await this.config.checkRateLimit(
+      `consultation-booking:${context.ip}`,
+      IP_LIMIT,
+      WINDOW_MS
+    );
+    if (!allowed) throw new ConsultationRateLimitError();
+
     const pkg = await this.repositories.packages.getById(input.package_id);
     if (!pkg || !pkg.is_active) {
       throw new ConsultationValidationError('PACKAGE_NOT_FOUND');
@@ -73,31 +135,26 @@ export class ConsultationService {
       throw new ConsultationValidationError('SLOT_COUNT_MISMATCH');
     }
 
-    try {
-      return await this.repositories.bookings.create({ ...input, userId });
-    } catch (error) {
-      throw this.mapBookingError(error);
-    }
-  }
+    const command: Omit<CreateBookingCommand, 'referenceCode'> = {
+      ...input,
+      userId: context.userId,
+      email: null,
+    };
 
-  async getMyBookings(userId: string): Promise<ConsultationBooking[]> {
-    return this.repositories.bookings.listByUser(userId);
-  }
-
-  async markReceiptSent(userId: string, bookingId: string): Promise<void> {
-    try {
-      await this.repositories.bookings.markReceiptSent(userId, bookingId);
-    } catch (error) {
-      throw this.mapBookingError(error);
+    for (let attempt = 0; attempt < MAX_REFERENCE_CODE_ATTEMPTS; attempt++) {
+      const referenceCode = this.config.generateReferenceCode();
+      try {
+        const id = await this.repositories.bookings.create({ ...command, referenceCode });
+        return { id, referenceCode };
+      } catch (error) {
+        // A collision on reference_code is vanishingly rare (32^8), but the
+        // column is UNIQUE — retry with a fresh code rather than fail.
+        if (errorCode(error) === 'REFERENCE_TAKEN') continue;
+        throw this.mapBookingError(error);
+      }
     }
-  }
 
-  async cancelBooking(userId: string, bookingId: string): Promise<void> {
-    try {
-      await this.repositories.bookings.cancelByUser(userId, bookingId);
-    } catch (error) {
-      throw this.mapBookingError(error);
-    }
+    throw new Error('REFERENCE_CODE_EXHAUSTED');
   }
 
   // ----------------------------------------------------------
@@ -135,11 +192,7 @@ export class ConsultationService {
     try {
       await this.repositories.slots.remove(slotId);
     } catch (error) {
-      const message =
-        typeof error === 'object' && error !== null && 'message' in error
-          ? String((error as { message?: string }).message)
-          : '';
-      if (message.includes('SLOT_HAS_ACTIVE_BOOKING')) {
+      if (errorCode(error).includes('SLOT_HAS_ACTIVE_BOOKING')) {
         throw new SlotReservedError(slotId);
       }
       throw error;
@@ -169,10 +222,6 @@ export class ConsultationService {
     }
   }
 
-  async getSettings(): Promise<Partial<ConsultationSettings>> {
-    return this.repositories.settings.read();
-  }
-
   async saveSettings(entries: Partial<ConsultationSettings>): Promise<void> {
     await this.repositories.settings.upsert(entries);
   }
@@ -180,25 +229,9 @@ export class ConsultationService {
   // ----------------------------------------------------------
 
   private mapBookingError(error: unknown): Error {
-    const code =
-      error instanceof Error
-        ? error.message.trim()
-        : typeof error === 'object' &&
-            error !== null &&
-            'message' in error &&
-            typeof (error as { message?: unknown }).message === 'string'
-          ? String((error as { message: string }).message).trim()
-          : '';
-
+    const code = errorCode(error);
     if (code === 'SLOT_TAKEN') return new SlotTakenError(code);
     if (RPC_VALIDATION_CODES.has(code)) return new ConsultationValidationError(code);
-    if (
-      code === 'BOOKING_NOT_PENDING' ||
-      code === 'BOOKING_NOT_CANCELLABLE' ||
-      code === 'NOT_AUTHENTICATED'
-    ) {
-      return new BookingStateError(code);
-    }
     return error instanceof Error ? error : new Error('UNKNOWN');
   }
 }

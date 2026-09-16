@@ -1,32 +1,32 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { getAdminSupabase } from '@/backend/config/supabase';
+import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { createConsultationRepositories } from '@/backend/repositories/consultation';
-import { ConsultationService } from '@/backend/services/consultation/consultation-service';
+import {
+  ConsultationService,
+  generateConsultationReferenceCode,
+} from '@/backend/services/consultation/consultation-service';
 
 /**
- * Service for the authenticated booker. Repositories run on the user's
- * cookie-bound client so RLS and the SECURITY DEFINER RPCs see the real
- * auth.uid().
+ * Bookings are anonymous and unpaid, so the `consultation_bookings` tables
+ * grant nothing to anon/authenticated. Every path — public booking and admin
+ * management alike — runs on the service role for that reason.
  */
-export function createUserConsultationService(
-  supabase: SupabaseClient<Database>
-): ConsultationService {
+function createService(supabase: SupabaseClient<Database>): ConsultationService {
   return new ConsultationService(createConsultationRepositories(supabase), {
     nowIso: () => new Date().toISOString(),
+    checkRateLimit,
+    generateReferenceCode: generateConsultationReferenceCode,
   });
+}
+
+/** Public booking page: create a request, list slots, read packages/settings. */
+export function createPublicConsultationService(): ConsultationService {
+  return createService(getAdminSupabase());
 }
 
 /** Full-privilege service for requireAdminAuth-guarded endpoints. */
 export function createAdminConsultationService(): ConsultationService {
-  return new ConsultationService(createConsultationRepositories(getAdminSupabase()), {
-    nowIso: () => new Date().toISOString(),
-  });
-}
-
-/** Settings/payment display values are read server-side only (RLS denies clients). */
-export function createSettingsReaderService(): ConsultationService {
-  return new ConsultationService(createConsultationRepositories(getAdminSupabase()), {
-    nowIso: () => new Date().toISOString(),
-  });
+  return createService(getAdminSupabase());
 }

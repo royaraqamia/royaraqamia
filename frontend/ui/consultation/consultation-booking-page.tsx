@@ -1,17 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import { CalendarCheck2, PartyPopper } from 'lucide-react';
-import type {
-  ConsultationBooking,
-  ConsultationPackage,
-  ConsultationSettings,
+import { useMemo } from 'react';
+import { MessageCircle, PartyPopper } from 'lucide-react';
+import {
+  buildBookingWhatsappMessage,
+  type ConsultationPackage,
+  type ConsultationSettings,
 } from '@/shared/contracts/consultation';
-import { ACTIVE_BOOKING_STATUSES } from '@/shared/contracts/consultation';
-import { fetchMyBookings } from '@/frontend/api/consultation';
 import { useBookingFlow } from '@/frontend/state/consultation/use-booking-flow';
 import { BookingWizard } from '@/frontend/ui/consultation/booking-wizard';
-import { BookingSummary } from '@/frontend/ui/consultation/booking-summary';
+import { formatSessionDualLine } from '@/frontend/shared/consultation-time';
 
 interface ConsultationBookingPageProps {
   /** Server-rendered so the wizard has content on first paint. */
@@ -24,81 +22,65 @@ export function ConsultationBookingPage({
   initialSettings,
 }: ConsultationBookingPageProps) {
   const flow = useBookingFlow({ initialPackages });
-  const [bookings, setBookings] = useState<ConsultationBooking[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const refreshBookings = useCallback(async () => {
-    setBookings(await fetchMyBookings());
-    setLoading(false);
-  }, []);
-
-  const handleBookingChanged = useCallback(() => {
-    void refreshBookings();
-  }, [refreshBookings]);
-
-  useEffect(() => {
-    void refreshBookings();
-  }, [refreshBookings]);
-
-  // After a booking is created (or its status changes) refresh the list.
-  useEffect(() => {
-    if (flow.createdBookingId) void refreshBookings();
-  }, [flow.createdBookingId, refreshBookings]);
-
-  const activeBookings = bookings.filter((b) => ACTIVE_BOOKING_STATUSES.includes(b.status));
   const whatsappUrl = initialSettings.booking_whatsapp_url || 'https://wa.me/963968478904';
 
-  return (
-    <div className="space-y-10">
-      {/* Active bookings */}
-      <section aria-labelledby="active-bookings-heading" className="space-y-4">
-        <h2
-          id="active-bookings-heading"
-          className="flex items-center gap-2 text-xl font-bold text-foreground"
-        >
-          <CalendarCheck2 className="size-5 text-primary" aria-hidden="true" />
-          حجوزاتي النشطة
-        </h2>
+  const selectedSessions = useMemo(
+    () => flow.slots.filter((s) => flow.selectedSlotIds.includes(s.id)),
+    [flow.slots, flow.selectedSlotIds]
+  );
 
-        {loading ? (
-          <div className="h-24 animate-pulse rounded-2xl bg-muted" aria-hidden="true" />
-        ) : activeBookings.length === 0 && !flow.createdBookingId ? (
-          <p className="rounded-2xl border border-dashed border-border bg-card px-5 py-6 text-sm text-muted-foreground">
-            لا توجد حجوزات نشطة — ابدأ بالخطوات أدناه.
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {activeBookings.map((booking) => (
-              <BookingSummary
-                key={booking.id}
-                booking={booking}
-                whatsappUrl={whatsappUrl}
-                onChanged={handleBookingChanged}
-              />
-            ))}
-          </div>
-        )}
+  const handoffHref = useMemo(() => {
+    if (!flow.createdBooking) return whatsappUrl;
+    const message = buildBookingWhatsappMessage({
+      referenceCode: flow.createdBooking.referenceCode,
+      fullName: flow.contact.full_name.trim(),
+      packageName: flow.selectedPackage?.name ?? '',
+      sessionLines: selectedSessions.map((slot) => formatSessionDualLine(slot).localLine),
+    });
+    const separator = whatsappUrl.includes('?') ? '&' : '?';
+    return `${whatsappUrl}${separator}text=${encodeURIComponent(message)}`;
+  }, [
+    flow.createdBooking,
+    flow.contact.full_name,
+    flow.selectedPackage,
+    selectedSessions,
+    whatsappUrl,
+  ]);
+
+  if (!flow.createdBooking) {
+    return (
+      <section aria-label="حجز جديد">
+        <h2 className="text-xl font-bold text-foreground mb-4">حجز جديد</h2>
+        <BookingWizard flow={flow} />
       </section>
+    );
+  }
 
-      {/* Wizard / success */}
-      {!flow.createdBookingId ? (
-        <section aria-label="حجز جديد">
-          <h2 className="text-xl font-bold text-foreground mb-4">حجز جديد</h2>
-          <BookingWizard flow={flow} settings={initialSettings} />
-        </section>
-      ) : (
-        <section
-          className="rounded-3xl border border-emerald-500/40 bg-emerald-500/5 p-6 sm:p-8 text-center space-y-3"
-          role="status"
-        >
-          <PartyPopper className="size-10 mx-auto text-primary" aria-hidden="true" />
-          <h2 className="text-2xl font-bold text-foreground">تم إنشاء حجزك بنجاح!</h2>
-          <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
-            أكمل الآن خطوة الدفع وفق التعليمات أعلاه، ثم أرسل صورة الإيصال عبر زر واتساب الموجود في
-            بطاقة الحجز. تذكّر: مهلة الدفع 24 ساعة قبل تحرير الموعد تلقائيًا.
-          </p>
-        </section>
-      )}
-    </div>
+  return (
+    <section
+      className="rounded-3xl border border-emerald-500/40 bg-emerald-500/5 p-6 sm:p-8 text-center space-y-4"
+      role="status"
+    >
+      <PartyPopper className="size-10 mx-auto text-primary" aria-hidden="true" />
+      <h2 className="text-2xl font-bold text-foreground">تم استلام طلب حجزك!</h2>
+      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed max-w-xl mx-auto">
+        لا يوجد أي دفع في هذه الخطوة. سيراجع فريقنا طلبك ويتواصل معك عبر واتساب لتأكيد الموعد.
+      </p>
+      <p className="text-sm text-muted-foreground">
+        رقم حجزك:{' '}
+        <span dir="ltr" className="font-mono font-bold text-foreground">
+          {flow.createdBooking.referenceCode}
+        </span>
+      </p>
+      <a
+        href={handoffHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-500 px-8 py-3 text-sm font-bold text-white shadow-lg transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
+      >
+        <MessageCircle className="size-4" aria-hidden="true" />
+        تأكيد الطلب عبر واتساب
+      </a>
+    </section>
   );
 }

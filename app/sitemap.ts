@@ -46,6 +46,11 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
+    path: '/consultation/book',
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  },
+  {
     path: '/privacy',
     changeFrequency: 'yearly',
     priority: 0.3,

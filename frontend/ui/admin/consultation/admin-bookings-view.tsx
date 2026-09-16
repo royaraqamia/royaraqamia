@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Loader2, RefreshCw, X } from 'lucide-react';
-import {
-  REGION_LABELS,
-  PAYMENT_METHOD_LABELS,
-  type ConsultationBooking,
-  type ConsultationBookingStatus,
+import type {
+  ConsultationBooking,
+  ConsultationBookingStatus,
 } from '@/shared/contracts/consultation';
+import { CONSULTATION_BOOKING_STATUS_LABELS } from '@/shared/contracts/consultation';
 import { adminBookingAction, adminListBookings } from '@/frontend/api/consultation-admin';
 import {
   formatSessionDateDamascus,
@@ -17,26 +16,22 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { cn } from '@/frontend/shared/cn';
 
 const STATUS_FILTERS: Array<{ value: string; label: string }> = [
-  { value: 'awaiting_review', label: 'قيد المراجعة' },
-  { value: 'pending_payment', label: 'بانتظار الدفع' },
-  { value: 'confirmed', label: 'مؤكّد' },
-  { value: 'rejected', label: 'مرفوض' },
-  { value: 'cancelled', label: 'ملغى' },
-  { value: 'expired', label: 'منتهي' },
+  { value: 'pending', label: CONSULTATION_BOOKING_STATUS_LABELS.pending },
+  { value: 'confirmed', label: CONSULTATION_BOOKING_STATUS_LABELS.confirmed },
+  { value: 'rejected', label: CONSULTATION_BOOKING_STATUS_LABELS.rejected },
+  { value: 'cancelled', label: CONSULTATION_BOOKING_STATUS_LABELS.cancelled },
   { value: '', label: 'الكل' },
 ];
 
 const STATUS_BADGE: Record<ConsultationBookingStatus, string> = {
-  pending_payment: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40',
-  awaiting_review: 'bg-sky-500/15 text-sky-600 dark:text-sky-400 border-sky-500/40',
+  pending: 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/40',
   confirmed: 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/40',
   rejected: 'bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/40',
   cancelled: 'bg-muted text-muted-foreground border-border',
-  expired: 'bg-muted text-muted-foreground border-border',
 };
 
 export function AdminBookingsView() {
-  const [status, setStatus] = useState('awaiting_review');
+  const [status, setStatus] = useState('pending');
   const [bookings, setBookings] = useState<ConsultationBooking[]>([]);
   const [loading, setLoading] = useState(true);
   const [actingId, setActingId] = useState<string | null>(null);
@@ -67,7 +62,7 @@ export function AdminBookingsView() {
     const result = await adminBookingAction(bookingId, action, reason);
     setActingId(null);
     if (result.success) {
-      setMessage(action === 'confirm' ? 'تم تأكيد الحجز.' : 'تم رفض الحجز وتحرير المواعيد.');
+      setMessage(action === 'confirm' ? 'تم تأكيد الحجز.' : 'تم رفض الطلب وتحرير المواعيد.');
       void refresh();
     } else {
       setMessage(result.error ?? 'فشل تنفيذ الإجراء.');
@@ -135,8 +130,8 @@ export function AdminBookingsView() {
                   >
                     {b.phone_whatsapp}
                   </a>
-                  <span dir="ltr" className="text-xs text-muted-foreground">
-                    {b.email}
+                  <span dir="ltr" className="font-mono text-xs text-muted-foreground">
+                    {b.reference_code}
                   </span>
                 </div>
                 <span
@@ -145,7 +140,7 @@ export function AdminBookingsView() {
                     STATUS_BADGE[b.status]
                   )}
                 >
-                  {STATUS_FILTERS.find((f) => f.value === b.status)?.label ?? b.status}
+                  {CONSULTATION_BOOKING_STATUS_LABELS[b.status]}
                 </span>
               </header>
 
@@ -153,16 +148,6 @@ export function AdminBookingsView() {
                 <div>
                   <dt className="inline text-muted-foreground">الباقة: </dt>
                   <dd className="inline font-bold">{b.package_name ?? b.package_id}</dd>
-                </div>
-                <div>
-                  <dt className="inline text-muted-foreground">المبلغ: </dt>
-                  <dd className="inline font-bold">${b.amount_due_usd}</dd>
-                </div>
-                <div>
-                  <dt className="inline text-muted-foreground">الدفع: </dt>
-                  <dd className="inline font-bold">
-                    {PAYMENT_METHOD_LABELS[b.payment_method]} ({REGION_LABELS[b.region]})
-                  </dd>
                 </div>
               </dl>
 
@@ -184,12 +169,9 @@ export function AdminBookingsView() {
                     </li>
                   ))}
                 </ul>
-                {b.receipt_sent_at && (
-                  <p className="mt-1 text-sky-600 dark:text-sky-400">أرسل الإيصال عبر واتساب ✓</p>
-                )}
               </div>
 
-              {(b.status === 'pending_payment' || b.status === 'awaiting_review') && (
+              {b.status === 'pending' && (
                 <footer className="flex flex-wrap gap-2 pt-1">
                   <button
                     type="button"

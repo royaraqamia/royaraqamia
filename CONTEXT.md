@@ -47,14 +47,19 @@ _Avoid_: Verification ID, serial
 ### Consultations
 
 **Consultation Booking**:
-A paid, authenticated reservation of one or more Availability Slots. Unlike an
-Application it holds scarce inventory, can expire, and is confirmed by a human after
-payment.
+An anonymous, unpaid request for one or more Availability Slots. Unlike an
+Application it holds scarce inventory until an operator confirms or rejects it, but
+it requires no account and takes no payment.
 _Avoid_: Appointment, meeting, session, application
 
 **Availability Slot**:
 A single bookable window of time. Only one active Booking may hold a Slot.
 _Avoid_: Time slot, timeslot, meeting time
+
+**Booking Reference**:
+The short code (`CONS-2026-A7K2M9QX`) a booker quotes on WhatsApp. It plays the same
+role as an Application's Reference Code and is likewise not a secret.
+_Avoid_: Booking ID, ticket, tracking number
 
 ### Shared
 

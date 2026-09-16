@@ -266,61 +266,49 @@ export type Database = {
       };
       consultation_bookings: {
         Row: {
-          amount_due_usd: number;
           confirmed_at: string | null;
           created_at: string;
-          email: string;
-          expires_at: string;
+          email: string | null;
           full_name: string;
           id: string;
           package_id: string;
-          payment_method: string;
           phone_whatsapp: string;
-          receipt_sent_at: string | null;
-          region: string;
+          reference_code: string;
           rejected_reason: string | null;
           status: string;
           topic_description: string;
           updated_at: string;
-          user_id: string;
+          user_id: string | null;
         };
         Insert: {
-          amount_due_usd: number;
           confirmed_at?: string | null;
           created_at?: string;
-          email: string;
-          expires_at: string;
+          email?: string | null;
           full_name: string;
           id?: string;
           package_id: string;
-          payment_method: string;
           phone_whatsapp: string;
-          receipt_sent_at?: string | null;
-          region: string;
+          reference_code: string;
           rejected_reason?: string | null;
           status?: string;
           topic_description: string;
           updated_at?: string;
-          user_id: string;
+          user_id?: string | null;
         };
         Update: {
-          amount_due_usd?: number;
           confirmed_at?: string | null;
           created_at?: string;
-          email?: string;
-          expires_at?: string;
+          email?: string | null;
           full_name?: string;
           id?: string;
           package_id?: string;
-          payment_method?: string;
           phone_whatsapp?: string;
-          receipt_sent_at?: string | null;
-          region?: string;
+          reference_code?: string;
           rejected_reason?: string | null;
           status?: string;
           topic_description?: string;
           updated_at?: string;
-          user_id?: string;
+          user_id?: string | null;
         };
         Relationships: [
           {
@@ -1002,21 +990,19 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
-      cancel_consultation_booking: { Args: { p_booking_id: string }; Returns: undefined };
       create_consultation_booking: {
         Args: {
-          p_email: string;
+          p_email: string | null;
           p_full_name: string;
           p_package_id: string;
-          p_payment_method: string;
           p_phone_whatsapp: string;
-          p_region: string;
+          p_reference_code: string;
           p_slot_ids: string[];
           p_topic_description: string;
+          p_user_id: string | null;
         };
         Returns: string;
       };
-      expire_stale_consultation_bookings: { Args: never; Returns: number };
       generate_certificate_code: { Args: never; Returns: string };
       get_category_breakdown: {
         Args: {
@@ -1064,7 +1050,6 @@ export type Database = {
           ends_at: string;
         }[];
       };
-      mark_consultation_receipt_sent: { Args: { p_booking_id: string }; Returns: undefined };
       recompute_admin_flags: {
         Args: { p_emails: string[] };
         Returns: undefined;

@@ -5,34 +5,29 @@ import { whatsappPhoneRegex } from './phone';
 // Enums & primitives
 // ------------------------------------------------------------
 
-export const CONSULTATION_REGIONS = ['syria', 'global'] as const;
-export type ConsultationRegion = (typeof CONSULTATION_REGIONS)[number];
-
-export const CONSULTATION_PAYMENT_METHODS = ['shamcash', 'moneygram'] as const;
-export type ConsultationPaymentMethod = (typeof CONSULTATION_PAYMENT_METHODS)[number];
-
 export const CONSULTATION_BOOKING_STATUSES = [
-  'pending_payment',
-  'awaiting_review',
+  'pending',
   'confirmed',
   'rejected',
   'cancelled',
-  'expired',
 ] as const;
 export type ConsultationBookingStatus = (typeof CONSULTATION_BOOKING_STATUSES)[number];
 
+export const CONSULTATION_BOOKING_STATUS_LABELS: Record<ConsultationBookingStatus, string> = {
+  pending: 'قيد المراجعة',
+  confirmed: 'مؤكّد',
+  rejected: 'مرفوض',
+  cancelled: 'ملغى',
+};
+
 /** Statuses that hold their slots (mirrored onto `consultation_booking_slots.is_active`). */
 export const ACTIVE_BOOKING_STATUSES: readonly ConsultationBookingStatus[] = [
-  'pending_payment',
-  'awaiting_review',
+  'pending',
   'confirmed',
 ];
 
-/** Statuses the booker may still act on. */
-export const USER_CANCELLABLE_STATUSES: readonly ConsultationBookingStatus[] = [
-  'pending_payment',
-  'awaiting_review',
-];
+/** Reference codes are quoted in the WhatsApp handoff — `CONS-2026-A7K2M9QX`. */
+export const CONSULTATION_REFERENCE_CODE_REGEX = /^CONS-\d{4}-[A-Z0-9]{8}$/;
 
 // ------------------------------------------------------------
 // Entities
@@ -57,19 +52,16 @@ export interface AvailabilitySlot {
 
 export interface ConsultationBooking {
   id: string;
-  user_id: string;
+  reference_code: string;
+  /** Opportunistic attribution; NULL for the anonymous booker, which is the norm. */
+  user_id: string | null;
   package_id: string;
   package_name?: string | null;
   full_name: string;
   phone_whatsapp: string;
-  email: string;
+  email: string | null;
   topic_description: string;
-  region: ConsultationRegion;
-  payment_method: ConsultationPaymentMethod;
-  amount_due_usd: number;
   status: ConsultationBookingStatus;
-  expires_at: string;
-  receipt_sent_at: string | null;
   confirmed_at: string | null;
   rejected_reason: string | null;
   created_at: string;
@@ -99,17 +91,9 @@ export const BookingContactSchema = z.object({
 export const CreateBookingSchema = BookingContactSchema.extend({
   package_id: z.string().uuid('الباقة غير صحيحة'),
   slot_ids: z.array(z.string().uuid()).min(1, 'اختر موعدًا واحدًا على الأقل'),
-  region: z.enum(CONSULTATION_REGIONS),
-  payment_method: z.enum(CONSULTATION_PAYMENT_METHODS),
 });
 
 export type CreateBookingInput = z.infer<typeof CreateBookingSchema>;
-
-export const RegionSelectionSchema = z.object({
-  region: z.enum(CONSULTATION_REGIONS),
-  payment_method: z.enum(CONSULTATION_PAYMENT_METHODS),
-});
-export type RegionSelection = z.infer<typeof RegionSelectionSchema>;
 
 // Admin-facing schemas -------------------------------------------------------
 
@@ -149,33 +133,21 @@ export const ConsultationSettingsSchema = z.object({
       /^https:\/\/(wa\.me|chat\.whatsapp\.com|api\.whatsapp\.com)\//,
       'يجب أن يكون رابط واتساب صالح'
     ),
-  payment_shamcash_code: z.string().trim().min(4, 'رمز ShamCash قصير جدًّا').max(64),
-  payment_moneygram_name: z.string().trim().min(2, 'الاسم مطلوب').max(160),
-  payment_moneygram_phone: z.string().trim().regex(whatsappPhoneRegex, 'رقم هاتف غير صحيح'),
-  payment_moneygram_branch: z.string().trim().min(2, 'الفرع مطلوب').max(200),
 });
 export type ConsultationSettings = z.infer<typeof ConsultationSettingsSchema>;
 
-export const SETTINGS_KEYS = [
-  'booking_whatsapp_url',
-  'payment_shamcash_code',
-  'payment_moneygram_name',
-  'payment_moneygram_phone',
-  'payment_moneygram_branch',
-] as const;
+export const SETTINGS_KEYS = ['booking_whatsapp_url'] as const;
 
 // ------------------------------------------------------------
 // Error mapping (RPC exception codes → Arabic copy)
 // ------------------------------------------------------------
 
 export const BOOKING_ERROR_MESSAGES: Record<string, string> = {
-  NOT_AUTHENTICATED: 'يجب تسجيل الدُّخول أوَّلًا.',
   PACKAGE_NOT_FOUND: 'الباقة المطلوبة غير متوفِّرة حاليًّا.',
   SLOT_COUNT_MISMATCH: 'عدد المواعيد المُختارة لا يُطابق الباقة.',
   SLOT_UNAVAILABLE: 'أحد المواعيد المُختارة لم يعد متاحًا، اختر مواعيد أخرى.',
   SLOT_TAKEN: 'نأسف، سبقك شخص آخر إلى أحد هذه المواعيد. اختر مواعيد جديدة.',
   BOOKING_NOT_PENDING: 'لا يُمكن تنفيذ الطَّلب على هذا الحجز في حالته الحاليَّة.',
-  BOOKING_NOT_CANCELLABLE: 'لا يُمكن إلغاء هذا الحجز في حالته الحاليَّة.',
 };
 
 export function toBookingErrorMessage(code: string): string {
@@ -183,46 +155,29 @@ export function toBookingErrorMessage(code: string): string {
 }
 
 // ------------------------------------------------------------
-// WhatsApp receipt message builder (pure; formatting done by caller)
+// WhatsApp handoff (pure; formatting done by caller)
+//
+// The success screen opens a chat that already carries the reference code,
+// so the operator reads the right row instead of restarting the conversation.
 // ------------------------------------------------------------
 
-export interface ReceiptMessageInput {
-  bookingRef: string;
-  full_name: string;
-  email: string;
-  phone_whatsapp: string;
+export interface BookingWhatsappMessageInput {
+  referenceCode: string;
+  fullName: string;
   packageName: string;
-  amountDueUsd: number;
-  paymentMethodLabel: string;
   /** Preformatted session lines, e.g. "الأحد 13 ربيع الأول 1448 هـ — 5:00 م (دمشق)". */
   sessionLines: string[];
 }
 
-export function buildReceiptWhatsappMessage(input: ReceiptMessageInput): string {
+export function buildBookingWhatsappMessage(input: BookingWhatsappMessageInput): string {
   return [
-    'السَّلام عليكم، أرغب بتأكيد حجز استشارة.',
+    'السَّلام عليكم، أرغب بتأكيد طلب حجز استشارة.',
     '',
-    `🧾 رقم الحجز: ${input.bookingRef}`,
-    `👤 الاسم: ${input.full_name}`,
-    `📧 البريد الإلكتروني: ${input.email}`,
-    `📱 واتساب: ${input.phone_whatsapp}`,
+    `🧾 رقم الحجز: ${input.referenceCode}`,
+    `👤 الاسم: ${input.fullName}`,
     `📦 الباقة: ${input.packageName}`,
-    `💰 المبلغ المدفوع: $${input.amountDueUsd}`,
-    `💳 طريقة الدَّفع: ${input.paymentMethodLabel}`,
     '',
     '🗓️ المواعيد:',
     ...input.sessionLines.map((line) => `• ${line}`),
-    '',
-    'مُرفَق لكم صورة الإيصال 📎',
   ].join('\n');
 }
-
-export const PAYMENT_METHOD_LABELS: Record<ConsultationPaymentMethod, string> = {
-  shamcash: 'ShamCash',
-  moneygram: 'MoneyGram',
-};
-
-export const REGION_LABELS: Record<ConsultationRegion, string> = {
-  syria: 'داخل سوريا',
-  global: 'خارج سوريا',
-};

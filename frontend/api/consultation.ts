@@ -1,6 +1,5 @@
 import type {
   AvailabilitySlot,
-  ConsultationBooking,
   ConsultationPackage,
   ConsultationSettings,
 } from '@/shared/contracts/consultation';
@@ -9,6 +8,7 @@ import { request } from '@/frontend/transport/http';
 export interface BookingActionResult {
   success: boolean;
   bookingId?: string;
+  referenceCode?: string;
   error?: string;
 }
 
@@ -17,6 +17,7 @@ interface FieldErrorResponse {
   error?: string;
   fieldErrors?: Record<string, string>;
   bookingId?: string;
+  referenceCode?: string;
 }
 
 function toActionResult(data: unknown): BookingActionResult & {
@@ -26,6 +27,7 @@ function toActionResult(data: unknown): BookingActionResult & {
   return {
     success: Boolean(payload?.success),
     bookingId: payload?.bookingId,
+    referenceCode: payload?.referenceCode,
     error: payload?.error,
     fieldErrors: payload?.fieldErrors,
   };
@@ -49,16 +51,7 @@ export async function fetchAvailableSlots(): Promise<AvailabilitySlot[]> {
   }
 }
 
-export async function fetchMyBookings(): Promise<ConsultationBooking[]> {
-  try {
-    const data = await request<{ bookings: ConsultationBooking[] }>('/api/consultation/bookings');
-    return data.bookings ?? [];
-  } catch {
-    return [];
-  }
-}
-
-export async function fetchPaymentConfig(): Promise<Partial<ConsultationSettings>> {
+export async function fetchConsultationSettings(): Promise<Partial<ConsultationSettings>> {
   try {
     const data = await request<{ settings: Partial<ConsultationSettings> }>(
       '/api/consultation/settings'
@@ -75,8 +68,6 @@ export async function submitBooking(input: {
   full_name: string;
   phone_whatsapp: string;
   topic_description: string;
-  region: 'syria' | 'global';
-  payment_method: 'shamcash' | 'moneygram';
 }): Promise<BookingActionResult & { fieldErrors?: Record<string, string> }> {
   try {
     return toActionResult(
@@ -89,36 +80,6 @@ export async function submitBooking(input: {
     return {
       success: false,
       error: error instanceof Error ? error.message : 'تعذر إنشاء الحجز، حاول مرة أخرى.',
-    };
-  }
-}
-
-export async function cancelMyBooking(bookingId: string): Promise<BookingActionResult> {
-  try {
-    return toActionResult(
-      await request(`/api/consultation/bookings/${encodeURIComponent(bookingId)}/cancel`, {
-        method: 'POST',
-      })
-    );
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'تعذر إلغاء الحجز.',
-    };
-  }
-}
-
-export async function confirmReceiptSent(bookingId: string): Promise<BookingActionResult> {
-  try {
-    return toActionResult(
-      await request(`/api/consultation/bookings/${encodeURIComponent(bookingId)}/receipt`, {
-        method: 'POST',
-      })
-    );
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'تعذر تأكيد الإرسال.',
     };
   }
 }

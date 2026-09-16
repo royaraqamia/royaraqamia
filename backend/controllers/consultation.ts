@@ -10,11 +10,11 @@ import {
   type ConsultationBookingStatus,
 } from '@/shared/contracts/consultation';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import {
   createAdminConsultationService,
-  createUserConsultationService,
+  createPublicConsultationService,
 } from '@/backend/config/consultation';
 import {
   loadActiveConsultationPackages,
@@ -22,7 +22,7 @@ import {
 } from '@/backend/loaders/consultation';
 import { CONSULTATION_TAGS } from '@/backend/shared/consultation-cache-tags';
 import {
-  BookingStateError,
+  ConsultationRateLimitError,
   ConsultationValidationError,
   PackageInUseError,
   SlotReservedError,
@@ -46,7 +46,7 @@ function bookingErrorResponse(error: unknown): HttpResult | null {
   if (error instanceof ConsultationValidationError) {
     return jsonResult(400, { success: false, error: toBookingErrorMessage(error.message) });
   }
-  if (error instanceof SlotTakenError || error instanceof BookingStateError) {
+  if (error instanceof SlotTakenError) {
     return jsonResult(409, { success: false, error: toBookingErrorMessage(error.message) });
   }
   if (error instanceof PackageInUseError) {
@@ -64,13 +64,8 @@ function bookingErrorResponse(error: unknown): HttpResult | null {
   return null;
 }
 
-const CONSULTATION_POLICY = {
-  whenUnauthenticated: () => jsonResult(401, { success: false, error: 'يجب تسجيل الدخول أولًا.' }),
-  mapError: (error: unknown) => bookingErrorResponse(error),
-};
-
 // ------------------------------------------------------------
-// Public endpoints (authenticated bookers; payment config is display data)
+// Public endpoints (anonymous bookers; no account, no payment)
 // ------------------------------------------------------------
 
 export async function listConsultationPackages(): Promise<HttpResult> {
@@ -86,20 +81,22 @@ export async function listConsultationPackages(): Promise<HttpResult> {
 }
 
 export async function listAvailableSlots(): Promise<HttpResult> {
-  return withAuthenticatedUser(async ({ supabase }) => {
-    const slots = await createUserConsultationService(supabase).getAvailableSlots();
+  try {
+    const slots = await createPublicConsultationService().getAvailableSlots();
     return jsonResult(200, { slots });
-  }, CONSULTATION_POLICY);
+  } catch (error) {
+    Sentry.captureException(error);
+    return jsonResult(200, { slots: [] });
+  }
 }
 
-export async function listMyBookings(): Promise<HttpResult> {
-  return withAuthenticatedUser(async ({ userId, supabase }) => {
-    const bookings = await createUserConsultationService(supabase).getMyBookings(userId);
-    return jsonResult(200, { bookings });
-  }, CONSULTATION_POLICY);
-}
-
-export async function createBooking(body: unknown): Promise<HttpResult> {
+/**
+ * Public and unauthenticated by design, exactly like a training application:
+ * a consultation booking takes no payment and must not put a signup wall in
+ * front of the visitor. Protected by a per-IP rate limit, and attributed to a
+ * signed-in visitor opportunistically when a session happens to exist.
+ */
+export async function createBooking(body: unknown, ip: string): Promise<HttpResult> {
   const parsed = CreateBookingSchema.safeParse(body);
   if (!parsed.success) {
     return jsonResult(400, {
@@ -109,31 +106,29 @@ export async function createBooking(body: unknown): Promise<HttpResult> {
     });
   }
 
-  return withAuthenticatedUser(async ({ userId, userEmail, supabase }) => {
-    // Email is no longer collected in the form — the account's email is used.
-    const bookingId = await createUserConsultationService(supabase).createBooking(userId, {
-      ...parsed.data,
-      email: userEmail,
+  try {
+    const { user } = await getOptionalUser();
+    const booking = await createPublicConsultationService().createBooking(parsed.data, {
+      ip,
+      userId: user?.id ?? null,
     });
-    return jsonResult(200, { success: true, bookingId });
-  }, CONSULTATION_POLICY);
+    return jsonResult(200, {
+      success: true,
+      bookingId: booking.id,
+      referenceCode: booking.referenceCode,
+    });
+  } catch (error) {
+    Sentry.captureException(error);
+    const mapped = bookingErrorResponse(error);
+    if (mapped) return mapped;
+    if (error instanceof ConsultationRateLimitError) {
+      return jsonResult(429, { success: false, error: error.message });
+    }
+    return jsonResult(500, { success: false, error: 'تعذر إنشاء الحجز.' });
+  }
 }
 
-export async function cancelMyBooking(bookingId: string): Promise<HttpResult> {
-  return withAuthenticatedUser(async ({ userId, supabase }) => {
-    await createUserConsultationService(supabase).cancelBooking(userId, bookingId);
-    return jsonResult(200, { success: true });
-  }, CONSULTATION_POLICY);
-}
-
-export async function confirmReceiptSent(bookingId: string): Promise<HttpResult> {
-  return withAuthenticatedUser(async ({ userId, supabase }) => {
-    await createUserConsultationService(supabase).markReceiptSent(userId, bookingId);
-    return jsonResult(200, { success: true });
-  }, CONSULTATION_POLICY);
-}
-
-export async function getPaymentConfig(): Promise<HttpResult> {
+export async function getConsultationSettings(): Promise<HttpResult> {
   const settings = await loadConsultationSettings();
   // No browser/CDN cache: the admin settings form reads this same endpoint
   // and must not see stale values right after saving.
@@ -144,14 +139,7 @@ export async function getPaymentConfig(): Promise<HttpResult> {
 // Admin endpoints
 // ------------------------------------------------------------
 
-const BOOKING_STATUSES = new Set([
-  'pending_payment',
-  'awaiting_review',
-  'confirmed',
-  'rejected',
-  'cancelled',
-  'expired',
-]);
+const BOOKING_STATUSES = new Set(['pending', 'confirmed', 'rejected', 'cancelled']);
 
 export async function adminListBookings(
   page: number,
