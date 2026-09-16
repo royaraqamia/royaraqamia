@@ -107,12 +107,19 @@ describe('TrainingApplicationUpdateSchema', () => {
 
 describe('TRAINING_COURSE', () => {
   it('keeps its slug inside COURSE_SLUGS', () => {
-    expect(TrainingApplicationSchema.safeParse({ ...validApplication, course_slug: TRAINING_COURSE.slug }).success).toBe(true);
+    expect(
+      TrainingApplicationSchema.safeParse({
+        ...validApplication,
+        course_slug: TRAINING_COURSE.slug,
+      }).success
+    ).toBe(true);
   });
 
   it('labels every experience level', () => {
     for (const level of Object.keys(TRAINING_EXPERIENCE_LABELS)) {
-      expect(TRAINING_EXPERIENCE_LABELS[level as keyof typeof TRAINING_EXPERIENCE_LABELS]).toBeTruthy();
+      expect(
+        TRAINING_EXPERIENCE_LABELS[level as keyof typeof TRAINING_EXPERIENCE_LABELS]
+      ).toBeTruthy();
     }
   });
 });
