@@ -14,7 +14,7 @@ import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { authLink } from '@/frontend/ui/auth/auth-links';
 
 const Turnstile = lazy(() =>
-  import('@/frontend/ui/auth/Turnstile').then((m) => ({ default: m.Turnstile }))
+  import('@/frontend/ui/shared/turnstile').then((m) => ({ default: m.Turnstile }))
 );
 
 function LoginForm() {

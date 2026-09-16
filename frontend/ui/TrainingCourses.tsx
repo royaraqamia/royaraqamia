@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import {
   Trophy,
   Clock,
@@ -8,23 +9,17 @@ import {
   Briefcase,
   User,
   ArrowLeft,
+  MessageCircle,
   ShieldCheck,
   Star,
 } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
-import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
+import { getWhatsAppUrl } from '@/frontend/shared/constants';
+import { TRAINING_COURSE } from '@/shared/contracts/training';
 
 export function TrainingCourses() {
-  const course = {
-    title: 'بناء منتجات رقميَّة من الصِّفر',
-    description:
-      'نظام عمل متكامل: استخدم LLM Coding Agents لبناء مواقع وتطبيقات. أنت هنا المدير والأدوات هي فريق العمل.',
-    trainer: 'م. أيْهَم العَلي',
-    duration: '18 ساعة',
-    sessions: '12 جلسة',
-    price: '$50',
-  };
+  const course = TRAINING_COURSE;
 
   const highlights = [
     {
@@ -52,10 +47,7 @@ export function TrainingCourses() {
   ];
 
   return (
-    <section
-      id="training"
-      className="relative py-20 lg:py-28 overflow-hidden bg-background text-foreground"
-    >
+    <section className="relative py-20 lg:py-28 overflow-hidden bg-background text-foreground">
       {/* Background Ambient Lights & Pattern Grid */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-250 h-125 bg-radial from-purple-600/15 via-violet-600/5 to-transparent blur-3xl opacity-70" />
@@ -106,7 +98,7 @@ export function TrainingCourses() {
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
                       <span className="text-xs font-bold text-purple-200 tracking-wide">
-                        التَّسجيل مفتوح حاليًّا
+                        {course.isOpen ? 'التَّقديم مفتوح حاليًّا' : 'التَّقديم متوقِّف حاليًّا'}
                       </span>
                     </div>
 
@@ -262,22 +254,42 @@ export function TrainingCourses() {
                 </div>
 
                 {/* 4. CTA Button & Trust Badges */}
-                <div className="pt-2">
-                  <a
-                    href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('السَّلام عليكم، أرغب في التَّسجيل في التَّدريب.')}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block group"
-                    aria-label={`احجز مقعدك في دورة ${course.title} عبر واتساب`}
-                  >
-                    <Button className="relative overflow-hidden w-full h-14 sm:h-16 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold text-base sm:text-lg shadow-xl shadow-purple-600/25 hover:shadow-purple-600/40 hover:scale-[1.005] active:scale-[0.995] transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 border-0">
-                      {/* Animated Light Shimmer Beam */}
-                      <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
+                <div className="pt-2 space-y-4">
+                  {course.isOpen ? (
+                    <Button
+                      asChild
+                      className="group relative overflow-hidden w-full h-14 sm:h-16 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold text-base sm:text-lg shadow-xl shadow-purple-600/25 hover:shadow-purple-600/40 hover:scale-[1.005] active:scale-[0.995] transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 border-0"
+                    >
+                      <Link
+                        href="/training/apply"
+                        aria-label={`قدّم طلبك للالتحاق بدورة ${course.title}`}
+                      >
+                        {/* Animated Light Shimmer Beam */}
+                        <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
-                      <span>احجز مقعدك الآن</span>
-                      <ArrowLeft className="w-5 h-5 shrink-0 transition-transform group-hover:-translate-x-1 duration-300" />
+                        <span>قدّم طلبك الآن</span>
+                        <ArrowLeft className="w-5 h-5 shrink-0 transition-transform group-hover:-translate-x-1 duration-300" />
+                      </Link>
                     </Button>
-                  </a>
+                  ) : (
+                    <div className="rounded-2xl border border-border/60 bg-muted/40 p-4 text-center text-sm text-muted-foreground leading-relaxed">
+                      التَّقديم على هذه الدَّورة متوقِّف حاليًّا. راسلنا عبر واتساب لتعرف موعد
+                      الدُّفعة القادمة.
+                    </div>
+                  )}
+
+                  <p className="text-center text-xs sm:text-sm text-muted-foreground">
+                    عندك سؤال؟{' '}
+                    <a
+                      href={getWhatsAppUrl('السَّلام عليكم، لديّ سؤال عن التَّدريب.')}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 font-bold text-emerald-600 hover:text-emerald-500 dark:text-emerald-400 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 rounded"
+                    >
+                      <MessageCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                      اسأل عبر واتساب
+                    </a>
+                  </p>
                 </div>
               </div>
             </div>

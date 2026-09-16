@@ -3,17 +3,13 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 
-interface CertificatesPaginationProps {
+interface PaginationProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
 }
 
-export function CertificatesPagination({
-  page,
-  totalPages,
-  onPageChange,
-}: CertificatesPaginationProps) {
+export function Pagination({ page, totalPages, onPageChange }: PaginationProps) {
   if (totalPages <= 1) return null;
 
   return (

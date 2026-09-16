@@ -37,6 +37,7 @@ export const PUSH_URL_BY_TYPE: Record<NotificationType, string> = {
   expense_alert: '/spendtrack',
   link_clicked: '/linksnap',
   system_announcement: '/',
+  training_application: '/admin/training/applications',
 };
 
 export function toPushUrl(type: NotificationType, metadata?: Record<string, unknown>): string {

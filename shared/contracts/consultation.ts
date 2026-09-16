@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { whatsappPhoneRegex } from './phone';
 
 // ------------------------------------------------------------
 // Enums & primitives
@@ -80,8 +81,6 @@ export interface ConsultationBooking {
 // ------------------------------------------------------------
 // Validation schemas
 // ------------------------------------------------------------
-
-const whatsappPhoneRegex = /^[+]?[\d\s-]{7,20}$/;
 
 export const BookingContactSchema = z.object({
   full_name: z

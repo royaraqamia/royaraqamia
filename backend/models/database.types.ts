@@ -885,6 +885,62 @@ export type Database = {
         };
         Relationships: [];
       };
+      training_applications: {
+        Row: {
+          course_slug: string;
+          created_at: string;
+          email: string | null;
+          experience_level: string;
+          full_name: string;
+          goal: string | null;
+          id: string;
+          notes: string | null;
+          phone_whatsapp: string;
+          reference_code: string;
+          status: string;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          course_slug: string;
+          created_at?: string;
+          email?: string | null;
+          experience_level: string;
+          full_name: string;
+          goal?: string | null;
+          id?: string;
+          notes?: string | null;
+          phone_whatsapp: string;
+          reference_code: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          course_slug?: string;
+          created_at?: string;
+          email?: string | null;
+          experience_level?: string;
+          full_name?: string;
+          goal?: string | null;
+          id?: string;
+          notes?: string | null;
+          phone_whatsapp?: string;
+          reference_code?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'training_applications_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       users: {
         Row: {
           avatar_url: string | null;

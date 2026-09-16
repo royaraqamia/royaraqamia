@@ -5,7 +5,7 @@ import { REGION_LABELS, type ConsultationRegion } from '@/shared/contracts/consu
 import { Input } from '@/frontend/ui/primitives/input';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { Label } from '@/frontend/ui/primitives/label';
-import { CountryPhoneInput } from '@/frontend/ui/consultation/country-phone-input';
+import { CountryPhoneInput } from '@/frontend/ui/shared/country-phone-input';
 import type { BookingContactDraft } from '@/frontend/state/consultation/use-booking-flow';
 import { cn } from '@/frontend/shared/cn';
 

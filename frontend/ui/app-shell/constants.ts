@@ -1,6 +1,7 @@
 import {
   CalendarCheck,
   CheckSquare,
+  GraduationCap,
   Link2,
   NotebookPen,
   ScanLine,
@@ -9,7 +10,14 @@ import {
 } from 'lucide-react';
 
 export type AppProduct =
-  'linksnap' | 'blogpress' | 'habitflow' | 'spendtrack' | 'verify' | 'consultation' | 'blog';
+  | 'linksnap'
+  | 'blogpress'
+  | 'habitflow'
+  | 'spendtrack'
+  | 'verify'
+  | 'consultation'
+  | 'training'
+  | 'blog';
 
 export interface AppProductDef {
   id: AppProduct;
@@ -21,6 +29,13 @@ export interface AppProductDef {
 }
 
 export const APP_PRODUCTS: AppProductDef[] = [
+  {
+    id: 'training',
+    label: 'التَّسجيل في التَّدريب',
+    appPath: '/training/apply',
+    landingPath: '/training/apply',
+    icon: GraduationCap,
+  },
   {
     id: 'verify',
     label: 'التَّحقُّق من الشَّهادة',

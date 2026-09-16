@@ -10,7 +10,7 @@ import {
   type StatusFilter,
 } from '@/frontend/ui/admin/certificates-filter-bar';
 import { CertificatesList } from '@/frontend/ui/admin/certificates-list';
-import { CertificatesPagination } from '@/frontend/ui/admin/certificates-pagination';
+import { Pagination } from '@/frontend/ui/shared/pagination';
 
 export default function CertificatesListPage() {
   const [certificates, setCertificates] = useState<AdminCertificate[]>([]);
@@ -128,7 +128,7 @@ export default function CertificatesListPage() {
         onConfirmDelete={handleDelete}
       />
 
-      <CertificatesPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

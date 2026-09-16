@@ -17,7 +17,7 @@ const PasswordStrength = lazy(() =>
   import('@/frontend/ui/auth/PasswordStrength').then((m) => ({ default: m.PasswordStrength }))
 );
 const Turnstile = lazy(() =>
-  import('@/frontend/ui/auth/Turnstile').then((m) => ({ default: m.Turnstile }))
+  import('@/frontend/ui/shared/turnstile').then((m) => ({ default: m.Turnstile }))
 );
 
 function SignupForm() {

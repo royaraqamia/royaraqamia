@@ -13,6 +13,7 @@ import {
   CircleDollarSign,
   Link2,
   Megaphone,
+  GraduationCap,
 } from 'lucide-react';
 import { useNotifications } from '@/frontend/state/NotificationContext';
 import { useSession } from '@/frontend/state/session-provider';
@@ -29,6 +30,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   expense_alert: <CircleDollarSign size={18} />,
   link_clicked: <Link2 size={18} />,
   system_announcement: <Megaphone size={18} />,
+  training_application: <GraduationCap size={18} />,
 };
 
 export const NotificationDropdown = memo(function NotificationDropdown() {

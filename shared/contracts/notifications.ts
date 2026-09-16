@@ -8,7 +8,8 @@ export type NotificationType =
   | 'recovery_nudge'
   | 'expense_alert'
   | 'link_clicked'
-  | 'system_announcement';
+  | 'system_announcement'
+  | 'training_application';
 
 export interface Notification {
   id: string;
