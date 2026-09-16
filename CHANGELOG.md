@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-09-16
+
+### Changed
+- format the training schema test
+- make booking reads cache-friendly and write-free
+- route SpendTrack writes through the product module
+- give authenticated controllers one seam
+
+### Added
+- accept course applications in-app instead of via WhatsApp
+
+### Fixed
+- stop the OpenCode Agent hanging on an unanswered permission prompt (#89)
+
 ## [1.19.7] - 2026-09-15
 
 ### Changed
