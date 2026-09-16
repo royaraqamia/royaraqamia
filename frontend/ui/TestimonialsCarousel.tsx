@@ -100,7 +100,7 @@ const TestimonialCard = memo(function TestimonialCard({
           e.preventDefault();
           onOpen(index);
         }
-      }      }
+      }}
       className={`
         group/card relative shrink-0 
         w-[82vw] sm:w-95 md:w-105 
