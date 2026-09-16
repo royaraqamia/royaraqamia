@@ -6,14 +6,7 @@ import type {
   TrainingApplicationListQuery,
   TrainingApplicationsRepository,
 } from '@/backend/repositories/training/training-applications-repository';
-
-/**
- * `or()` filters are comma/parenthesis delimited, so a search term containing
- * those characters would corrupt the filter expression rather than fail loudly.
- */
-function sanitizeSearch(search: string): string {
-  return search.replace(/[,()]/g, ' ').trim();
-}
+import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 
 export function createTrainingApplicationsRepository(
   supabase: SupabaseClient<Database>
@@ -42,7 +35,7 @@ export function createTrainingApplicationsRepository(
         request = request.eq('status', query.status);
       }
 
-      const search = query.search ? sanitizeSearch(query.search) : '';
+      const search = query.search ? sanitizeOrFilterTerm(query.search) : '';
       if (search) {
         request = request.or(
           `full_name.ilike.%${search}%,phone_whatsapp.ilike.%${search}%,reference_code.ilike.%${search}%,email.ilike.%${search}%`
