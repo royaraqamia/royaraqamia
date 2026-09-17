@@ -50,7 +50,6 @@ export function ConsultationBookingPage({
   if (!flow.createdBooking) {
     return (
       <section aria-label="حجز جديد">
-        <h2 className="text-xl font-bold text-foreground mb-4">حجز جديد</h2>
         <BookingWizard flow={flow} />
       </section>
     );
