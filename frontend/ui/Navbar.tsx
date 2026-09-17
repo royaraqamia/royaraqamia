@@ -117,7 +117,7 @@ export function Navbar() {
     },
     {
       href: '#projects',
-      label: 'منتجاتنا',
+      label: 'خدماتنا',
       icon: Package,
       isRoute: false,
       visible: true,
