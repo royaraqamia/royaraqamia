@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.4] - 2026-09-17
+
+### Changed
+- drop the redundant حجز جديد heading from the consultation booking page
+- remove email and experience level from the apply form
+- rename navbar label منتجاتنا to خدماتنا
+- Fixed MCP consent CSRF; all gates pass.
+
+### Fixed
+- stop the dark theme painting a nav band behind the wizard buttons
+- mirror the drop-columns migration filename to the applied version
+- hide WhatsApp float on training apply and auth pages
+- mirror the consultation migration filename to the applied version
+
 ## [1.20.3] - 2026-09-16
 
 ### Changed
