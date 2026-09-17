@@ -152,7 +152,7 @@ jobs:
 
             Otherwise, execute the plan step by step. Follow AGENTS.md conventions: layered architecture controller -> service -> repository/client, Zod validation in shared/contracts, structured loggers instead of console logging, RTL-first UI without inline styles. Never upgrade or add dependencies, never edit existing files under supabase/migrations, scripts/compute-version.mjs, scripts/release-tools.mjs, backend/config/generated files, or any env files.
 
-            Database change rules: if the fix needs a schema change, first write the migration as a NEW file in supabase/migrations named <UTC-timestamp>_<snake_name>.sql matching the repo convention, then apply the exact same SQL via the supabase MCP apply_migration tool with the same name. Never run destructive DDL through execute_sql; propose it in the report instead.
+            Database change rules: if the fix needs a schema change, first write the migration as a NEW file in supabase/migrations named <UTC-timestamp>_<snake_name>.sql matching the repo convention, then apply that same SQL via the supabase MCP apply_migration tool, which assigns the version timestamp itself, and rename the local file to <recorded-version>_<name>.sql afterwards so the two stay aligned. Never run destructive DDL through execute_sql; propose it in the report instead.
 
             After implementing, review your diff critically for correctness, layering violations, and regressions. Then run: npx prettier --check . ; npm run lint ; npx tsc --noEmit ; npm test ; npm run build . Iterate until all five are green. If a gate fails for a pre-existing reason unrelated to your change, revert your change cleanly and say so.
 
