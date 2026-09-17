@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.0] - 2026-09-17
+
+### Changed
+- use italic markers in the issue-tracker notes
+- make the allowlist sync a trigger so the value lives in one place
+- fix the migration instruction in the agent prompts
+- sync the admin allowlist on a schedule
+- flush gallery dialog image to dialog edges
+- scaffold RLS authorization tests
+- correct the mirror-discipline instruction
+- correct the Admin allowlist prescription
+- document filing issues when gh cannot be installed
+- define Admin Console and record the Admin allowlist decision
+
+### Added
+- record which Admin issued a certificate
+- add the Admin Console and give LinkSnap's admin a real door
+
+### Fixed
+- show the user's real name instead of repeating their email
+- require a lowercase letter, matching the new Auth policy
+- revoke client execute on pg_net's http functions
+- revoke client execute on trigger-only functions
+- base is_admin() on verified identity only
+- drop client write access to public.users
+- tighten social proof strip spacing and link a11y
+- stop the 404 page double-branding its title
+- hide cover placeholders when a post has no image and drop related posts
+
 ## [1.20.4] - 2026-09-17
 
 ### Changed
