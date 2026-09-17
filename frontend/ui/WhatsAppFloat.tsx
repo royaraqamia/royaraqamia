@@ -17,6 +17,8 @@ const HIDDEN_ROUTE_PREFIXES = [
   '/admin',
   '/verify',
   '/consultation/book',
+  '/training/apply',
+  '/auth',
   // Blog post pages (the listing page is matched exactly above)
   '/blog/',
 ];
