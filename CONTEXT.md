@@ -67,3 +67,8 @@ _Avoid_: Booking ID, ticket, tracking number
 A signed-in user whose email is on the server-side allowlist. Admin is a property of a
 person, not a role anyone can be granted from the UI.
 _Avoid_: Moderator, staff, editor
+
+**Admin Console**:
+The area under `/admin` that an Admin signs into to operate across the product family.
+It is the single door to every operator-facing surface.
+_Avoid_: Dashboard, backoffice, admin panel, CMS
