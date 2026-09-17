@@ -3,6 +3,7 @@ import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
 import { encryptSecret } from '@/backend/repositories/mcp/mcp-token-crypto';
+import { isSameOrigin } from '@/backend/transport/http';
 import { parseScopes, effectiveScopes } from '@/backend/services/mcp/scope';
 import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
 
@@ -16,6 +17,17 @@ export const runtime = 'nodejs';
  * and issues an authorization code (redirecting to the client's redirect_uri).
  */
 export async function POST(req: NextRequest) {
+  // CSRF guard: only accept provably same-origin consent submissions. A
+  // cross-site form can otherwise auto-submit `action=approve` with the
+  // victim's session cookies and steal an authorization code (and the
+  // encrypted refresh token it carries) to the attacker's redirect_uri.
+  if (!isSameOrigin(req.headers)) {
+    return NextResponse.json(
+      { error: 'access_denied', error_description: 'Cross-site consent submission is not allowed' },
+      { status: 403, headers: noStore() }
+    );
+  }
+
   const form = await req.formData();
   const action = form.get('action');
   const clientId = (form.get('client_id') as string) ?? '';

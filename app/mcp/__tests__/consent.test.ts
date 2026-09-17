@@ -4,9 +4,21 @@ import type { NextRequest, NextResponse } from 'next/server';
 const mockGetClient = vi.fn();
 const mockGetUser = vi.fn();
 const mockGetSession = vi.fn();
+const mockCreateAuthorizationCode = vi.fn();
+
+vi.mock('@/backend/config/env', () => ({
+  env: {
+    baseUrl: 'https://royaraqamia.com',
+    mcpTokenEncryptionKey: '00'.repeat(32),
+    adminEmails: [],
+  },
+}));
 
 vi.mock('@/backend/services/mcp/oauth-provider', () => ({
-  createMcpOAuthProvider: () => ({ getClient: mockGetClient }),
+  createMcpOAuthProvider: () => ({
+    getClient: mockGetClient,
+    createAuthorizationCode: mockCreateAuthorizationCode,
+  }),
 }));
 
 vi.mock('@/backend/config/supabase', () => ({
@@ -40,7 +52,7 @@ function makeForm(overrides: Record<string, string> = {}): FormData {
     action: 'approve',
     client_id: 'client-1',
     redirect_uri: 'https://client.example/callback',
-    scope: 'tools/read',
+    scope: 'profile.read',
     state: 'state-123',
     code_challenge: 'challenge',
     code_challenge_method: 'S256',
@@ -51,10 +63,14 @@ function makeForm(overrides: Record<string, string> = {}): FormData {
   return form;
 }
 
-function makeReq(form: FormData): NextRequest {
+function makeReq(
+  form: FormData,
+  headers: Headers = new Headers({ 'sec-fetch-site': 'same-origin' })
+): NextRequest {
   const url = new URL('http://localhost/mcp/connect/consent');
   return {
     url: url.toString(),
+    headers,
     formData: async () => form,
   } as unknown as NextRequest;
 }
@@ -62,9 +78,69 @@ function makeReq(form: FormData): NextRequest {
 beforeEach(() => {
   vi.clearAllMocks();
   mockGetClient.mockResolvedValue(client);
+  mockCreateAuthorizationCode.mockResolvedValue({
+    code: 'auth-code-123',
+    redirectUri: 'https://client.example/callback',
+  });
 });
 
 describe('POST /mcp/connect/consent', () => {
+  it('rejects cross-site submissions with 403 and issues no authorization code', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
+    });
+    mockGetSession.mockResolvedValue({
+      data: { session: { refresh_token: 'refresh-token' } },
+    });
+    const res = (await POST(
+      makeReq(
+        makeForm(),
+        new Headers({ 'sec-fetch-site': 'cross-site', origin: 'https://evil.example' })
+      )
+    )) as NextResponse & { headers: Headers; status: number };
+
+    expect(res.status).toBe(403);
+    // No redirect to the client's callback with a code.
+    expect(res.headers.get('location')).toBeNull();
+    expect(mockCreateAuthorizationCode).not.toHaveBeenCalled();
+  });
+
+  it('rejects requests with no origin or sec-fetch-site signal', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
+    });
+    mockGetSession.mockResolvedValue({
+      data: { session: { refresh_token: 'refresh-token' } },
+    });
+    const res = (await POST(makeReq(makeForm(), new Headers()))) as NextResponse & {
+      headers: Headers;
+      status: number;
+    };
+
+    expect(res.status).toBe(403);
+    expect(mockCreateAuthorizationCode).not.toHaveBeenCalled();
+  });
+
+  it('accepts a matching site origin and issues the authorization code', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
+    });
+    mockGetSession.mockResolvedValue({
+      data: { session: { refresh_token: 'refresh-token' } },
+    });
+    const res = (await POST(
+      makeReq(makeForm(), new Headers({ origin: 'https://royaraqamia.com' }))
+    )) as NextResponse & { headers: Headers; status: number };
+
+    expect(res.status).toBe(302);
+    const location = res.headers.get('location') ?? '';
+    expect(location).toContain('code=auth-code-123');
+    expect(location).toContain('state=state-123');
+    expect(mockCreateAuthorizationCode).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 'u-1' })
+    );
+  });
+
   it('redirects to login when the session is missing, preserving the consent query', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
     mockGetSession.mockResolvedValue({ data: { session: null } });

@@ -5,7 +5,11 @@ vi.mock('next/server', () => ({
   NextResponse: {},
 }));
 
-import { getClientIp } from '@/backend/transport/http';
+vi.mock('@/backend/config/env', () => ({
+  env: { baseUrl: 'https://royaraqamia.com' },
+}));
+
+import { getClientIp, isSameOrigin } from '@/backend/transport/http';
 
 function makeReq(headers: Record<string, string>): NextRequest {
   return {
@@ -28,5 +32,28 @@ describe('getClientIp', () => {
 
   it('falls back to 127.0.0.1 when no header is present', () => {
     expect(getClientIp(makeReq({}))).toBe('127.0.0.1');
+  });
+});
+
+describe('isSameOrigin', () => {
+  function makeHeaders(headers: Record<string, string>): Headers {
+    return new Headers(headers);
+  }
+
+  it('accepts sec-fetch-site: same-origin', () => {
+    expect(isSameOrigin(makeHeaders({ 'sec-fetch-site': 'same-origin' }))).toBe(true);
+  });
+
+  it('accepts an origin matching the site URL', () => {
+    expect(isSameOrigin(makeHeaders({ origin: 'https://royaraqamia.com' }))).toBe(true);
+  });
+
+  it('rejects a cross-site origin', () => {
+    expect(isSameOrigin(makeHeaders({ origin: 'https://evil.example' }))).toBe(false);
+    expect(isSameOrigin(makeHeaders({ 'sec-fetch-site': 'cross-site' }))).toBe(false);
+  });
+
+  it('rejects requests with no same-origin signal', () => {
+    expect(isSameOrigin(makeHeaders({}))).toBe(false);
   });
 });
