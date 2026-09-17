@@ -88,9 +88,9 @@ Both cost real debugging time, and neither is obvious from the error you get.
   with `422` and an empty response, and the payload balloons from ~2 KB to ~3.8 MB. Use the
   encoder above instead.
 - **`Get-Content -Raw` reads a BOM-less file as ANSI**, so UTF-8 punctuation becomes
-  mojibake that is then *stored* on GitHub that way (`—` arrives as `â€"`). Always read with
+  mojibake that is then _stored_ on GitHub that way (`—` arrives as `â€"`). Always read with
   `[System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)`.
-- **Responses are decoded as ANSI too**, so a correct body *looks* corrupted when printed.
+- **Responses are decoded as ANSI too**, so a correct body _looks_ corrupted when printed.
   Verify what actually landed by counting bytes in the raw response — an em-dash is
   `E2 80 94`, mojibake is `C3 A2`:
 
