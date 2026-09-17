@@ -128,7 +128,7 @@ textarea::placeholder {
 section {
   background-color: transparent;
 }
-nav:not([data-app-navbar]):not([data-mobile-menu]) {
+nav:not([data-app-navbar]):not([data-mobile-menu]):not([data-flat-nav]) {
   background-color: hsl(var(--background) / 0.95);
 }
 footer:not([data-mobile-menu]) {

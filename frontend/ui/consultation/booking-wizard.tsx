@@ -103,7 +103,7 @@ export function BookingWizard({ flow }: BookingWizardProps) {
       )}
 
       {/* Navigation */}
-      <nav className="mt-8 flex items-center justify-between gap-3">
+      <nav data-flat-nav className="mt-8 flex items-center justify-between gap-3">
         <button
           type="button"
           onClick={flow.back}
