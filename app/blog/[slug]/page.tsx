@@ -123,7 +123,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   if (!loaded) notFound();
 
-  const { post: p, author, relatedPosts, postTags } = loaded;
+  const { post: p, author, postTags } = loaded;
 
   const readingTime = estimateReadingTime(p.content);
   const headings = extractHeadings(p.content ?? '');
@@ -390,54 +390,6 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                       </p>
                     )}
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Related Posts Grid */}
-            {relatedPosts && relatedPosts.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                    مقالات ذات صلة
-                  </h2>
-                </div>
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {relatedPosts.map((rp) => (
-                    <Link
-                      key={rp.id}
-                      href={`/blog/${rp.slug}`}
-                      className="group relative flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card hover:bg-card/90 shadow-2xs transition-all duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:border-primary/40 focus-visible:outline-2 focus-visible:outline-primary"
-                    >
-                      {rp.cover_image ? (
-                        <div className="relative aspect-video overflow-hidden bg-muted/50">
-                          <Image
-                            src={rp.cover_image}
-                            alt={rp.title}
-                            fill
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 33vw, 300px"
-                            className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-                          />
-                          <div className="absolute inset-0 bg-linear-to-t from-background/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                        </div>
-                      ) : (
-                        <div className="aspect-video bg-linear-to-br from-primary/15 via-primary/5 to-muted/40 flex items-center justify-center relative overflow-hidden">
-                          <span className="text-3xl font-black text-primary/25 select-none">
-                            {rp.title[0]}
-                          </span>
-                        </div>
-                      )}
-                      <div className="p-5 flex flex-col flex-1 justify-between">
-                        <h3 className="text-sm sm:text-base font-bold leading-snug line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
-                          {rp.title}
-                        </h3>
-                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-4 pt-3 border-t border-border/40">
-                          <Clock className="size-3.5 text-primary/60" />
-                          <span>{formatReadingTimeLong(rp.reading_time_minutes)}</span>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
                 </div>
               </div>
             )}

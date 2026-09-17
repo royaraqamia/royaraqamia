@@ -151,18 +151,6 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return data ?? null;
     },
 
-    async getRelatedPosts(slug: string): Promise<PostSummary[]> {
-      const { data } = await supabase
-        .from('posts')
-        .select(POST_SUMMARY_COLUMNS)
-        .or(PUBLISHED_POSTS_FILTER)
-        .eq('blog_visible', true)
-        .neq('slug', slug)
-        .order('published_at', { ascending: false, nullsFirst: true })
-        .limit(3);
-      return (data as PostSummary[]) ?? [];
-    },
-
     async getPublishedCategories(): Promise<PostCategory[]> {
       const { data } = await supabase
         .from('post_categories')

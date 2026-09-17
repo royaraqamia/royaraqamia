@@ -34,7 +34,6 @@ function makeRepo(
     getPublishedPostSlugs: vi.fn(),
     getPublishedPostBySlug: vi.fn(),
     getPostAuthor: vi.fn(),
-    getRelatedPosts: vi.fn(),
     getPublishedCategories: vi.fn(),
     getPublishedPostCategories: vi.fn(),
     incrementPostViewCount: vi.fn(),
@@ -104,13 +103,6 @@ describe('BlogpressPostsService (thin delegation)', () => {
     });
     await service.getPostAuthor('u-1');
     expect(repository.getPostAuthor).toHaveBeenCalledWith('u-1');
-  });
-
-  it('delegates getRelatedPosts', async () => {
-    const { repository, service } = makeRepo();
-    (repository.getRelatedPosts as ReturnType<typeof vi.fn>).mockResolvedValue([postFixture]);
-    await expect(service.getRelatedPosts('post-1')).resolves.toEqual([postFixture]);
-    expect(repository.getRelatedPosts).toHaveBeenCalledWith('post-1');
   });
 
   it('delegates listPostsByAuthor', async () => {
