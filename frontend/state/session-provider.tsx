@@ -23,6 +23,8 @@ interface SessionContextType {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
+  /** Display name from the user's profile row, or null when unavailable. */
+  profileName: string | null;
   signOut: () => Promise<void>;
 }
 
@@ -31,6 +33,7 @@ const SessionContext = createContext<SessionContextType>({
   session: null,
   isLoading: true,
   isAdmin: false,
+  profileName: null,
   signOut: async () => {},
 });
 
@@ -51,6 +54,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const prevSessionRef = useRef<Session | null>(null);
@@ -110,24 +114,31 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   // The Admin allowlist never leaves the server; only this boolean crosses to the
   // client. Keyed on the user id so a token refresh doesn't re-probe, and defaulted
-  // to `false` so a failure can only hide the entry — never expose it.
+  // to `false` so a failure can only hide the entry — never expose it. The same
+  // response carries the profile display name, so this costs no extra round-trip.
   const userId = session?.user?.id ?? null;
 
   useEffect(() => {
     if (!userId) {
       setIsAdmin(false);
+      setProfileName(null);
       return;
     }
 
     let active = true;
 
-    void import('@/frontend/api/me').then(({ getMyAdminStatus }) =>
-      getMyAdminStatus()
-        .then((status) => {
-          if (active) setIsAdmin(status.isAdmin);
+    void import('@/frontend/api/me').then(({ getMe }) =>
+      getMe()
+        .then((me) => {
+          if (!active) return;
+          setIsAdmin(me.isAdmin);
+          setProfileName(me.name ?? null);
         })
         .catch(() => {
-          if (active) setIsAdmin(false);
+          if (active) {
+            setIsAdmin(false);
+            setProfileName(null);
+          }
         })
     );
 
@@ -137,8 +148,8 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [userId]);
 
   const value = useMemo(
-    () => ({ user, session, isLoading, isAdmin, signOut }),
-    [user, session, isLoading, isAdmin, signOut]
+    () => ({ user, session, isLoading, isAdmin, profileName, signOut }),
+    [user, session, isLoading, isAdmin, profileName, signOut]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

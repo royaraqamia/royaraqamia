@@ -1,11 +1,12 @@
 import { request } from '@/frontend/transport/http';
 
-export interface MyAdminStatus {
+export interface Me {
   isAdmin: boolean;
+  name: string | null;
 }
 
-export async function getMyAdminStatus(): Promise<MyAdminStatus> {
-  return request<MyAdminStatus>('/api/me', {
+export async function getMe(): Promise<Me> {
+  return request<Me>('/api/me', {
     cache: 'no-store',
   });
 }

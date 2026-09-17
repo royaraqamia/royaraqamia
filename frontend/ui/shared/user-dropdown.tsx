@@ -20,7 +20,7 @@ const AUTH_PATHS = [
 ];
 
 export const UserDropdown = memo(function UserDropdown() {
-  const { user, isLoading, isAdmin, signOut } = useSession();
+  const { user, isLoading, isAdmin, profileName, signOut } = useSession();
   const { canInstall, promptInstall, isInstalled } = usePWAContext();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -56,15 +56,19 @@ export const UserDropdown = memo(function UserDropdown() {
     );
   }
 
-  // Safe extraction of display metadata from the user object if available
-  const userName =
-    typeof user === 'object' && user !== null && 'name' in user && typeof user.name === 'string'
-      ? user.name
-      : null;
-  const userEmail =
-    typeof user === 'object' && user !== null && 'email' in user && typeof user.email === 'string'
-      ? user.email
-      : null;
+  // Prefer the profile name (authoritative, and editable by the user), then fall
+  // back to Supabase `user_metadata` — set at signup and by OAuth providers — so
+  // the name renders instantly while `/api/me` is still in flight and for
+  // accounts whose profile row is missing.
+  const metadata = user?.user_metadata ?? {};
+  const metadataName =
+    typeof metadata.name === 'string' && metadata.name.trim()
+      ? metadata.name
+      : typeof metadata.full_name === 'string' && metadata.full_name.trim()
+        ? metadata.full_name
+        : null;
+  const userName = profileName?.trim() || metadataName;
+  const userEmail = typeof user?.email === 'string' ? user.email : null;
 
   return (
     <div ref={ref} className="relative inline-block text-right">
