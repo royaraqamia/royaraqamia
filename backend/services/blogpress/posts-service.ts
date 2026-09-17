@@ -50,10 +50,6 @@ export class BlogpressPostsService {
     return this.repository.getPublishedPostCategories(postId);
   }
 
-  async incrementPostViewCount(postId: string): Promise<void> {
-    return this.repository.incrementPostViewCount(postId);
-  }
-
   async listPostsByAuthor(authorId: string, categorySlug?: string): Promise<Post[]> {
     return this.repository.listPostsByAuthor(authorId, categorySlug);
   }

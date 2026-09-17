@@ -38,10 +38,6 @@ export const loadPublishedPostCategories = unstable_cache(
   { revalidate: BLOG_CACHE_SECONDS, tags: [BLOG_TAGS.postCategories] }
 );
 
-export async function loadIncrementPostViewCount(postId: string): Promise<void> {
-  return pub().incrementPostViewCount(postId);
-}
-
 export const loadPublishedPostBySlug = unstable_cache(
   (slug: string) => pub().getPublishedPostBySlug(slug),
   ['blog-post-by-slug'],
