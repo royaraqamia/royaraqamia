@@ -1,6 +1,8 @@
 # Issue tracker: GitHub
 
 Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all operations.
+If `gh` cannot be installed on the current network, see
+[When `gh` is unavailable](#when-gh-is-unavailable).
 
 ## Conventions
 
@@ -12,6 +14,92 @@ Issues and specs for this repo live as GitHub issues. Use the `gh` CLI for all o
 - **Close**: `gh issue close <number> --comment "..."`
 
 Infer the repo from `git remote -v`; `gh` does this automatically when run inside a clone.
+
+## When `gh` is unavailable
+
+Some networks block GitHub's release-asset CDN — `release-assets.githubusercontent.com`
+and `objects.githubusercontent.com`, the `185.199.x.x` range — while leaving
+`api.github.com` reachable. That makes `gh` uninstallable, because the MSI, the portable
+zip, winget and choco all download from the blocked range. Check before assuming:
+
+```powershell
+Test-NetConnection release-assets.githubusercontent.com -Port 443
+```
+
+If `api.github.com` answers and that host does not, drive the REST API directly. The
+credential git already uses for this repo (Windows Credential Manager, via
+`git credential fill`) works: it authenticates as the repo owner with `repo` scope. Keep
+it in-process — never print it, never write it to a file.
+
+```powershell
+$env:GIT_TERMINAL_PROMPT = '0'; $env:GCM_INTERACTIVE = 'Never'
+$token = ("protocol=https`nhost=github.com`n`n" | git credential fill 2>$null |
+  Select-String '^password=(.*)$').Matches.Groups[1].Value
+$headers = @{ Authorization = "Bearer $token"; 'User-Agent' = 'opencode-cli'
+              Accept = 'application/vnd.github+json' }
+$repo = 'https://api.github.com/repos/royaraqamia/royaraqamia'
+```
+
+`ConvertTo-Json` cannot be used for the payload (see the traps below), so encode the two
+fields explicitly:
+
+```powershell
+function Encode-JsonString([string]$s) {
+  $sb = New-Object System.Text.StringBuilder
+  [void]$sb.Append([char]34)
+  foreach ($ch in $s.ToCharArray()) {
+    $code = [int]$ch
+    if ($code -eq 34) { [void]$sb.Append('\"') }
+    elseif ($code -eq 92) { [void]$sb.Append('\\') }
+    elseif ($code -eq 13) { [void]$sb.Append('\r') }
+    elseif ($code -eq 10) { [void]$sb.Append('\n') }
+    elseif ($code -eq 9) { [void]$sb.Append('\t') }
+    elseif ($code -lt 32 -or $code -gt 126) { [void]$sb.Append('\u' + $code.ToString('x4')) }
+    else { [void]$sb.Append($ch) }
+  }
+  [void]$sb.Append([char]34)
+  return $sb.ToString()
+}
+```
+
+Then read, create and edit. Check the existing titles before creating, so a retry cannot
+duplicate an issue:
+
+```powershell
+Invoke-RestMethod -Uri "$repo/issues?state=all&per_page=100" -Headers $headers   # read
+
+$body = [System.IO.File]::ReadAllText($bodyPath, [System.Text.Encoding]::UTF8)
+$json = '{"title":' + (Encode-JsonString $title) + ',"body":' + (Encode-JsonString $body) + '}'
+Invoke-RestMethod -Uri "$repo/issues" -Headers $headers -Method Post `
+  -Body ([System.Text.Encoding]::UTF8.GetBytes($json)) `
+  -ContentType 'application/json; charset=utf-8'
+
+# edit an existing body in place
+Invoke-RestMethod -Uri "$repo/issues/<n>" -Headers $headers -Method Patch `
+  -Body ([System.Text.Encoding]::UTF8.GetBytes('{"body":' + (Encode-JsonString $body) + '}')) `
+  -ContentType 'application/json; charset=utf-8'
+```
+
+### PowerShell 5.1 traps
+
+Both cost real debugging time, and neither is obvious from the error you get.
+
+- **`ConvertTo-Json` corrupts a string body** into `{"value": "..."}`. GitHub rejects it
+  with `422` and an empty response, and the payload balloons from ~2 KB to ~3.8 MB. Use the
+  encoder above instead.
+- **`Get-Content -Raw` reads a BOM-less file as ANSI**, so UTF-8 punctuation becomes
+  mojibake that is then *stored* on GitHub that way (`—` arrives as `â€"`). Always read with
+  `[System.IO.File]::ReadAllText($path, [System.Text.Encoding]::UTF8)`.
+- **Responses are decoded as ANSI too**, so a correct body *looks* corrupted when printed.
+  Verify what actually landed by counting bytes in the raw response — an em-dash is
+  `E2 80 94`, mojibake is `C3 A2`:
+
+  ```powershell
+  $wc = New-Object System.Net.WebClient
+  $wc.Headers.Add('Authorization', "Bearer $token")
+  $wc.Headers.Add('User-Agent', 'opencode-cli')
+  $bytes = $wc.DownloadData("$repo/issues/<n>")
+  ```
 
 ## Pull requests as a triage surface
 
