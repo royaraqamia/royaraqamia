@@ -41,15 +41,6 @@ export const TRAINING_COURSE: TrainingCourse = {
 // Enums & labels
 // ------------------------------------------------------------
 
-export const TRAINING_EXPERIENCE_LEVELS = ['beginner', 'basic', 'experienced'] as const;
-export type TrainingExperienceLevel = (typeof TRAINING_EXPERIENCE_LEVELS)[number];
-
-export const TRAINING_EXPERIENCE_LABELS: Record<TrainingExperienceLevel, string> = {
-  beginner: 'مبتدئ تمامًا',
-  basic: 'لديّ خبرة بسيطة',
-  experienced: 'لديّ خبرة جيّدة',
-};
-
 export const TRAINING_APPLICATION_STATUSES = ['new', 'contacted', 'enrolled', 'rejected'] as const;
 export type TrainingApplicationStatus = (typeof TRAINING_APPLICATION_STATUSES)[number];
 
@@ -72,8 +63,6 @@ export interface TrainingApplication {
   course_slug: string;
   full_name: string;
   phone_whatsapp: string;
-  email: string | null;
-  experience_level: TrainingExperienceLevel;
   goal: string | null;
   reference_code: string;
   status: TrainingApplicationStatus;
@@ -93,11 +82,6 @@ export function toNullableText(value: string | null | undefined): string | null 
 // Validation schemas
 // ------------------------------------------------------------
 
-const optionalEmail = z.union([
-  z.literal(''),
-  z.string().trim().max(200, 'البريد الإلكتروني طويل جدًّا').email('البريد الإلكتروني غير صحيح'),
-]);
-
 export const TrainingApplicationSchema = z.object({
   course_slug: z.enum(COURSE_SLUGS, 'الدورة المطلوبة غير متوفِّرة'),
   full_name: z
@@ -106,8 +90,6 @@ export const TrainingApplicationSchema = z.object({
     .min(2, 'الاسم يجب أن يكون حرفين على الأقل')
     .max(120, 'الاسم طويل جدًّا'),
   phone_whatsapp: z.string().trim().regex(whatsappPhoneRegex, 'رقم واتساب غير صحيح'),
-  email: optionalEmail.optional(),
-  experience_level: z.enum(TRAINING_EXPERIENCE_LEVELS, 'اختر مستوى خبرتك'),
   goal: z.string().trim().max(1000, 'النصّ طويل جدًّا (1,000 حرف كحد أقصى)').optional(),
 });
 

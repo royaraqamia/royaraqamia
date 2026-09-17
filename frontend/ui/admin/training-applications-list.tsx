@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Clock, Mail, MessageCircle, Phone, Save, User } from 'lucide-react';
+import { Clock, MessageCircle, Phone, Save, User } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import {
   Select,
@@ -17,7 +17,6 @@ import { formatHijriDate } from '@/frontend/shared/format';
 import {
   TRAINING_APPLICATION_STATUSES,
   TRAINING_APPLICATION_STATUS_LABELS,
-  TRAINING_EXPERIENCE_LABELS,
   type TrainingApplication,
   type TrainingApplicationStatus,
 } from '@/shared/contracts/training';
@@ -145,25 +144,6 @@ export function TrainingApplicationsList({
                     <MessageCircle className="size-3.5 shrink-0" aria-hidden="true" />
                     {application.phone_whatsapp}
                   </a>
-                </dd>
-              </div>
-
-              {application.email && (
-                <div className="flex items-center gap-2">
-                  <dt className="sr-only">البريد الإلكتروني</dt>
-                  <Mail className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-                  <dd dir="ltr" className="truncate text-foreground/90">
-                    <a href={`mailto:${application.email}`} className="hover:underline">
-                      {application.email}
-                    </a>
-                  </dd>
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <dt className="text-xs font-medium text-muted-foreground">مستوى الخبرة</dt>
-                <dd className="font-medium text-foreground/90">
-                  {TRAINING_EXPERIENCE_LABELS[application.experience_level]}
                 </dd>
               </div>
 

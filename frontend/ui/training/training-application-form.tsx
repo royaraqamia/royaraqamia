@@ -9,21 +9,12 @@ import type { z } from 'zod';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/frontend/ui/primitives/select';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { CountryPhoneInput } from '@/frontend/ui/shared/country-phone-input';
 import { submitTrainingApplication } from '@/frontend/api/training';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import {
   TRAINING_COURSE,
-  TRAINING_EXPERIENCE_LABELS,
-  TRAINING_EXPERIENCE_LEVELS,
   TrainingApplicationSchema,
   buildApplicationWhatsappMessage,
 } from '@/shared/contracts/training';
@@ -56,7 +47,6 @@ export function TrainingApplicationForm() {
       course_slug: TRAINING_COURSE.slug,
       full_name: '',
       phone_whatsapp: '',
-      email: '',
       goal: '',
     },
   });
@@ -68,8 +58,6 @@ export function TrainingApplicationForm() {
       course_slug: values.course_slug,
       full_name: values.full_name,
       phone_whatsapp: values.phone_whatsapp,
-      email: values.email,
-      experience_level: values.experience_level,
       goal: values.goal,
     });
 
@@ -166,52 +154,6 @@ export function TrainingApplicationForm() {
           اختر رمز الدولة ثم اكتب رقمك — سنتواصل معك على هذا الرَّقم.
         </p>
         <FieldError id="phone_whatsapp-error" message={errors.phone_whatsapp?.message} />
-      </div>
-
-      <div className="form-field">
-        <Label htmlFor="email" optional>
-          البريد الإلكتروني
-        </Label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          dir="ltr"
-          placeholder="you@example.com"
-          {...register('email')}
-          error={Boolean(errors.email)}
-          aria-describedby={errors.email ? 'email-error' : undefined}
-        />
-        <FieldError id="email-error" message={errors.email?.message} />
-      </div>
-
-      <div className="form-field">
-        <Label htmlFor="experience_level" required>
-          مستوى خبرتك
-        </Label>
-        <Controller
-          name="experience_level"
-          control={control}
-          render={({ field }) => (
-            <Select value={field.value ?? undefined} onValueChange={field.onChange}>
-              <SelectTrigger
-                id="experience_level"
-                aria-invalid={errors.experience_level ? true : undefined}
-                aria-describedby={errors.experience_level ? 'experience_level-error' : undefined}
-              >
-                <SelectValue placeholder="اختر مستوى خبرتك" />
-              </SelectTrigger>
-              <SelectContent>
-                {TRAINING_EXPERIENCE_LEVELS.map((level) => (
-                  <SelectItem key={level} value={level}>
-                    {TRAINING_EXPERIENCE_LABELS[level]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
-        <FieldError id="experience_level-error" message={errors.experience_level?.message} />
       </div>
 
       <div className="form-field">

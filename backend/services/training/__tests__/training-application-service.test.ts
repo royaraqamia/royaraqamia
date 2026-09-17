@@ -19,8 +19,6 @@ const VALID_INPUT: TrainingApplicationInput = {
   course_slug: 'build-digital-products',
   full_name: 'أحمد العلي',
   phone_whatsapp: '+963 968 478 904',
-  email: 'student@example.com',
-  experience_level: 'basic',
   goal: 'أريد بناء متجر إلكتروني.',
 };
 
@@ -30,8 +28,6 @@ function makeApplication(overrides: Partial<TrainingApplication> = {}): Training
     course_slug: 'build-digital-products',
     full_name: 'أحمد العلي',
     phone_whatsapp: '+963 968 478 904',
-    email: 'student@example.com',
-    experience_level: 'basic',
     goal: 'أريد بناء متجر إلكتروني.',
     reference_code: 'TRN-2026-A7K2M9QX',
     status: 'new',
@@ -51,7 +47,6 @@ function makeRepository(overrides: Partial<TrainingApplicationsRepository> = {})
       Promise.resolve(
         makeApplication({
           reference_code: input.reference_code,
-          email: input.email,
           goal: input.goal,
           user_id: input.user_id,
         })
@@ -114,14 +109,12 @@ describe('TrainingApplicationService.submit', () => {
     expect(application.reference_code).toMatch(TRAINING_REFERENCE_CODE_REGEX);
   });
 
-  it('stores blank email and goal as null rather than empty strings', async () => {
+  it('stores a blank goal as null rather than an empty string', async () => {
     const { service, repository } = makeService();
 
-    await service.submit({ ...VALID_INPUT, email: '   ', goal: '' }, { ip: '1.1.1.1' });
+    await service.submit({ ...VALID_INPUT, goal: '' }, { ip: '1.1.1.1' });
 
-    expect(repository.create).toHaveBeenCalledWith(
-      expect.objectContaining({ email: null, goal: null })
-    );
+    expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ goal: null }));
   });
 
   it('attributes the application to a signed-in visitor when one exists', async () => {

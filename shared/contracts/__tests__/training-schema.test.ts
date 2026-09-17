@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   TRAINING_APPLICATION_STATUSES,
   TRAINING_COURSE,
-  TRAINING_EXPERIENCE_LABELS,
   TRAINING_REFERENCE_CODE_REGEX,
   TrainingApplicationSchema,
   TrainingApplicationUpdateSchema,
@@ -14,42 +13,12 @@ const validApplication = {
   course_slug: 'build-digital-products',
   full_name: 'أحمد العلي',
   phone_whatsapp: '+963 968 478 904',
-  experience_level: 'basic',
   goal: 'أريد بناء متجر إلكتروني.',
 };
 
 describe('TrainingApplicationSchema', () => {
   it('accepts a valid application', () => {
     expect(TrainingApplicationSchema.safeParse(validApplication).success).toBe(true);
-  });
-
-  it('accepts an omitted email', () => {
-    expect(TrainingApplicationSchema.safeParse(validApplication).success).toBe(true);
-  });
-
-  it('accepts an empty email string', () => {
-    const result = TrainingApplicationSchema.safeParse({ ...validApplication, email: '' });
-    expect(result.success).toBe(true);
-  });
-
-  it('accepts a valid email', () => {
-    const result = TrainingApplicationSchema.safeParse({
-      ...validApplication,
-      email: 'student@example.com',
-    });
-    expect(result.success).toBe(true);
-  });
-
-  it('rejects a malformed email', () => {
-    const result = TrainingApplicationSchema.safeParse({ ...validApplication, email: 'nope' });
-    expect(result.success).toBe(false);
-    expect(result.error?.issues[0]?.message).toContain('البريد الإلكتروني');
-  });
-
-  it('reports a malformed email against the email field', () => {
-    const result = TrainingApplicationSchema.safeParse({ ...validApplication, email: 'nope' });
-    expect(result.error?.issues[0]?.path).toEqual(['email']);
-    expect(result.error?.issues[0]?.message).toBe('البريد الإلكتروني غير صحيح');
   });
 
   it('rejects a one-character name', () => {
@@ -71,14 +40,6 @@ describe('TrainingApplicationSchema', () => {
     const result = TrainingApplicationSchema.safeParse({
       ...validApplication,
       course_slug: 'some-other-course',
-    });
-    expect(result.success).toBe(false);
-  });
-
-  it('rejects an unknown experience level', () => {
-    const result = TrainingApplicationSchema.safeParse({
-      ...validApplication,
-      experience_level: 'expert',
     });
     expect(result.success).toBe(false);
   });
@@ -113,14 +74,6 @@ describe('TRAINING_COURSE', () => {
         course_slug: TRAINING_COURSE.slug,
       }).success
     ).toBe(true);
-  });
-
-  it('labels every experience level', () => {
-    for (const level of Object.keys(TRAINING_EXPERIENCE_LABELS)) {
-      expect(
-        TRAINING_EXPERIENCE_LABELS[level as keyof typeof TRAINING_EXPERIENCE_LABELS]
-      ).toBeTruthy();
-    }
   });
 });
 

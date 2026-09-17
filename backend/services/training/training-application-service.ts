@@ -129,8 +129,6 @@ export class TrainingApplicationService {
       course_slug: input.course_slug,
       full_name: input.full_name,
       phone_whatsapp: input.phone_whatsapp,
-      email: toNullableText(input.email),
-      experience_level: input.experience_level,
       goal: toNullableText(input.goal),
       user_id: userId,
     };

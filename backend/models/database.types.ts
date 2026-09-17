@@ -877,8 +877,6 @@ export type Database = {
         Row: {
           course_slug: string;
           created_at: string;
-          email: string | null;
-          experience_level: string;
           full_name: string;
           goal: string | null;
           id: string;
@@ -892,8 +890,6 @@ export type Database = {
         Insert: {
           course_slug: string;
           created_at?: string;
-          email?: string | null;
-          experience_level: string;
           full_name: string;
           goal?: string | null;
           id?: string;
@@ -907,8 +903,6 @@ export type Database = {
         Update: {
           course_slug?: string;
           created_at?: string;
-          email?: string | null;
-          experience_level?: string;
           full_name?: string;
           goal?: string | null;
           id?: string;

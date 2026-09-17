@@ -38,7 +38,7 @@ export function createTrainingApplicationsRepository(
       const search = query.search ? sanitizeOrFilterTerm(query.search) : '';
       if (search) {
         request = request.or(
-          `full_name.ilike.%${search}%,phone_whatsapp.ilike.%${search}%,reference_code.ilike.%${search}%,email.ilike.%${search}%`
+          `full_name.ilike.%${search}%,phone_whatsapp.ilike.%${search}%,reference_code.ilike.%${search}%`
         );
       }
 
@@ -55,8 +55,6 @@ export function createTrainingApplicationsRepository(
           course_slug: input.course_slug,
           full_name: input.full_name,
           phone_whatsapp: input.phone_whatsapp,
-          email: input.email,
-          experience_level: input.experience_level,
           goal: input.goal,
           reference_code: input.reference_code,
           user_id: input.user_id,

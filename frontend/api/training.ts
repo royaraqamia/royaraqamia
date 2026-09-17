@@ -22,8 +22,6 @@ export async function submitTrainingApplication(input: {
   course_slug: string;
   full_name: string;
   phone_whatsapp: string;
-  email?: string;
-  experience_level: string;
   goal?: string;
 }): Promise<SubmitTrainingApplicationResult> {
   try {

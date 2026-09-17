@@ -1,15 +1,9 @@
-import type {
-  TrainingApplication,
-  TrainingApplicationStatus,
-  TrainingExperienceLevel,
-} from '@/shared/contracts/training';
+import type { TrainingApplication, TrainingApplicationStatus } from '@/shared/contracts/training';
 
 export interface TrainingApplicationCreateInput {
   course_slug: string;
   full_name: string;
   phone_whatsapp: string;
-  email: string | null;
-  experience_level: TrainingExperienceLevel;
   goal: string | null;
   reference_code: string;
   user_id: string | null;
