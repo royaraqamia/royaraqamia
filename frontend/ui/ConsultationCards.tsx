@@ -56,7 +56,7 @@ export function ConsultationCards() {
             />
 
             {/* Glassmorphic Container Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-linear-to-b from-purple-950/40 via-slate-950/80 to-slate-950/95 border border-purple-500/30 shadow-[0_25px_50px_-12px_rgba(124,58,237,0.25),0_0_80px_-20px_rgba(168,85,247,0.2),inset_0_1px_1px_rgba(255,255,255,0.1)] transition-[border-color] duration-500 hover:border-purple-400/50">
+            <div className="relative rounded-3xl overflow-hidden bg-linear-to-b from-purple-950/40 via-slate-950/80 to-slate-950/95 border border-purple-500/30 shadow-[0_25px_50px_-12px_rgba(124,58,237,0.25),inset_0_1px_1px_rgba(255,255,255,0.1)] transition-[border-color] duration-500 hover:border-purple-400/50">
               {/* Vibrant Accent Top Strip */}
               <div className="h-1 w-full bg-linear-to-r from-transparent via-purple-500 to-transparent opacity-80" />
 
