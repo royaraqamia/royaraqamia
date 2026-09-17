@@ -5,7 +5,6 @@ import {
   TRAINING_REFERENCE_CODE_REGEX,
   TrainingApplicationSchema,
   TrainingApplicationUpdateSchema,
-  buildApplicationWhatsappMessage,
   toNullableText,
 } from '@/shared/contracts/training';
 
@@ -93,18 +92,5 @@ describe('toNullableText', () => {
     expect(toNullableText('   ')).toBeNull();
     expect(toNullableText(undefined)).toBeNull();
     expect(toNullableText('  أحمد  ')).toBe('أحمد');
-  });
-});
-
-describe('buildApplicationWhatsappMessage', () => {
-  it('includes the reference code so the operator can find the row', () => {
-    const message = buildApplicationWhatsappMessage({
-      referenceCode: 'TRN-2026-A7K2M9QX',
-      fullName: 'أحمد العلي',
-      courseTitle: TRAINING_COURSE.title,
-    });
-    expect(message).toContain('TRN-2026-A7K2M9QX');
-    expect(message).toContain('أحمد العلي');
-    expect(message).toContain(TRAINING_COURSE.title);
   });
 });

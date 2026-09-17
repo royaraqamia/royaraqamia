@@ -27,12 +27,20 @@ export interface TrainingCourse {
 
 export const TRAINING_COURSE: TrainingCourse = {
   slug: 'build-digital-products',
-  title: 'بناء منتجات رقميَّة من الصِّفر',
+  title: 'تطوير وإدارة المنتجات الرَّقميَّة',
   description:
-    'نظام عمل متكامل: استخدم LLM Coding Agents لبناء مواقع وتطبيقات. أنت هنا المدير والأدوات هي فريق العمل.',
+    'حوِّل فكرتك إلى تطبيق جاهز للإطلاق والبيع!\n' +
+    '\n' +
+    'برنامج تدريبي متكامل يُرافقك خطوة بخطوة عبر جميع مراحل بناء المنتج: من اكتساب الرُّؤية التَّحليليَّة (Business) والفِكر التَّصميمي (UX)، إلى التَّنفيذ البرمجي بالـ AI (كـ Engineer) باستخدام أحدث الأدوات مثل الـ AI Skills والـ MCPs، وختامًا بقواعد التَّسويق الأساسيَّة لضمان الانتشار.\n' +
+    'اختصِر سنوات من التَّجربة وعشرات الدَّورات في مسار عملي ومُوجَز يُواكب متطلَّبات العصر.\n' +
+    '\n' +
+    'التَّدريب Online من خلال Google Meet\n' +
+    'توزيع الجلسات 3 أسبوعيًّا\n' +
+    'التَّوقيت 9 مساءً\n' +
+    'شروط الانضمام: توفُّر اللابتوب والإنترنت',
   trainer: 'م. أيْهَم العَلي',
-  duration: '18 ساعة',
-  sessions: '12 جلسة',
+  duration: '18-24 ساعة',
+  sessions: '12-16 جلسة',
   price: '$50',
   isOpen: true,
 };
@@ -101,26 +109,3 @@ export const TrainingApplicationUpdateSchema = z.object({
 });
 
 export type TrainingApplicationUpdateInput = z.infer<typeof TrainingApplicationUpdateSchema>;
-
-// ------------------------------------------------------------
-// WhatsApp handoff
-//
-// The success screen opens a chat that already carries the reference code, so the
-// operator reads the right row instead of restarting the conversation.
-// ------------------------------------------------------------
-
-export interface ApplicationWhatsappMessageInput {
-  referenceCode: string;
-  fullName: string;
-  courseTitle: string;
-}
-
-export function buildApplicationWhatsappMessage(input: ApplicationWhatsappMessageInput): string {
-  return [
-    'السَّلام عليكم، قدّمت طلب التحاق بالدورة.',
-    '',
-    `🧾 رقم الطلب: ${input.referenceCode}`,
-    `👤 الاسم: ${input.fullName}`,
-    `🎓 الدورة: ${input.courseTitle}`,
-  ].join('\n');
-}
