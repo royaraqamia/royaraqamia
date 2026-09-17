@@ -14,7 +14,7 @@ When the agent has Supabase MCP access:
 
 - Inspect live project: `list_tables`, `list_migrations`, `get_advisors`, logs
 - Apply schema changes **only** through `apply_migration`
-- **Mirror discipline:** Write the identical SQL as a NEW timestamped file in `supabase/migrations/` FIRST, then apply remotely with the same name
+- **Mirror discipline:** `apply_migration` assigns the version timestamp itself — you cannot choose it, so the `name` you pass is only a suffix. Apply first, read the version back (`list_migrations`, or `select version, name from supabase_migrations.schema_migrations order by version desc limit 1`), then name the local file `<version>_<name>.sql`. The recorded `statements` contain only the SQL you passed, not the file's comment header, so the repo file is deliberately richer than the remote history. Drift here is silent — compare the two lists by version.
 
 ## Migrations convention
 
