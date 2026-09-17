@@ -1,0 +1,46 @@
+name: 'Sync Admin Allowlist'
+
+# public.is_admin() reads public.app_settings.admin_emails, and the only in-app writer of
+# that value is a successful requireAdminAuth() call. Without this job a revocation only
+# reaches the database when an Admin loads /admin, and removing the last Admin never
+# reaches it at all. See issue #92 for the reasoning and ADR 0003 for the decision.
+#
+# Requires the ADMIN_EMAILS repository secret. Until it exists this job fails loudly on
+# purpose: a silent skip would look like a successful sync and give false confidence that
+# a revoked address had been removed.
+
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: sync-admin-allowlist
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync allowlist
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          install-web-deps: 'false'
+          cache-next: 'false'
+
+      - name: Sync ADMIN_EMAILS into the database allowlist
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+        run: node scripts/sync-admin-allowlist.mjs
