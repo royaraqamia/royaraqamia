@@ -1,19 +1,8 @@
 import Link from 'next/link';
-import {
-  Trophy,
-  Clock,
-  Target,
-  Sparkle,
-  Code,
-  HardDrive,
-  Briefcase,
-  User,
-  ArrowLeft,
-  ShieldCheck,
-  Star,
-} from 'lucide-react';
+import { Trophy, Clock, Target, Sparkle, User, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
+import { CollapsibleText } from './shared/collapsible-text';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
 
 export function TrainingCourses() {
@@ -34,14 +23,8 @@ export function TrainingCourses() {
     {
       icon: Trophy,
       label: 'أدوات المستقبل',
-      description: 'إتقان عملي لـ Vercel ،GitHub ،OpenCode، ... .',
+      description: 'إتقان عملي لـ GitHub ،OpenCode، ... .',
     },
-  ];
-
-  const features = [
-    { icon: Code, text: 'احتراف التَّوجيه لبناء التَّطبيقات وربط قواعد البيانات.' },
-    { icon: HardDrive, text: 'رفع المشاريع على سيرفرات حقيقيَّة.' },
-    { icon: Briefcase, text: 'تحويل المهارة إلى دخل: كيف تبيع خدماتك أو تُطلق مشروعك الخاص.' },
   ];
 
   return (
@@ -85,7 +68,7 @@ export function TrainingCourses() {
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                       </span>
                       <span className="text-xs font-bold text-purple-200 tracking-wide">
-                        {course.isOpen ? 'التَّقديم مفتوح حاليًّا' : 'التَّقديم متوقِّف حاليًّا'}
+                        {course.isOpen ? 'التَّقديم مُتاح حاليًّا' : 'التَّقديم مُتوقِّف حاليًّا'}
                       </span>
                     </div>
 
@@ -93,9 +76,13 @@ export function TrainingCourses() {
                       {course.title}
                     </h3>
 
-                    <p className="text-purple-100/80 text-sm sm:text-base leading-relaxed max-w-xl font-normal">
+                    <CollapsibleText
+                      lines={2}
+                      className="text-purple-100/80 text-sm sm:text-base leading-relaxed max-w-xl font-normal"
+                      buttonClassName="text-purple-200 hover:text-white"
+                    >
                       {course.description}
-                    </p>
+                    </CollapsibleText>
                   </div>
 
                   {/* Pricing Badge Box */}
@@ -171,7 +158,7 @@ export function TrainingCourses() {
                       </div>
                       <div className="min-w-0">
                         <span className="block text-xs font-medium text-muted-foreground">
-                          المدرِّب
+                          المُدرِّب
                         </span>
                         <span className="block text-sm sm:text-base font-bold text-foreground truncate">
                           {course.trainer}
@@ -186,7 +173,7 @@ export function TrainingCourses() {
                       </div>
                       <div className="min-w-0">
                         <span className="block text-xs font-medium text-muted-foreground">
-                          المدَّة الكلِّيَّة
+                          عدد السَّاعات
                         </span>
                         <span className="block text-sm sm:text-base font-bold text-foreground truncate">
                           {course.duration}
@@ -211,36 +198,7 @@ export function TrainingCourses() {
                   </div>
                 </div>
 
-                {/* 3. Features & Curriculum Breakdown */}
-                <div>
-                  <div className="flex items-center gap-2 mb-4">
-                    <Star className="w-4 h-4 text-purple-500 fill-purple-500" />
-                    <h4 className="text-sm font-bold text-foreground uppercase tracking-wider">
-                      ماذا ستتعلَّم في هذه الدَّورة؟
-                    </h4>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
-                    {features.map((feature, idx) => {
-                      const IconComponent = feature.icon;
-                      return (
-                        <div
-                          key={idx}
-                          className="group/feat flex items-start gap-3.5 p-4 rounded-xl bg-background border border-border/60 hover:border-purple-500/30 hover:bg-purple-500/3 transition-all duration-200"
-                        >
-                          <div className="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0 text-purple-600 dark:text-purple-400 group-hover/feat:bg-purple-500 group-hover/feat:text-white transition-colors duration-200 mt-0.5">
-                            <IconComponent className="w-4 h-4" />
-                          </div>
-                          <span className="text-xs sm:text-sm font-medium text-foreground/90 leading-relaxed">
-                            {feature.text}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* 4. CTA Button & Trust Badges */}
+                {/* 3. CTA Button & Trust Badges */}
                 <div className="pt-2 space-y-4">
                   {course.isOpen ? (
                     <Button
@@ -249,7 +207,7 @@ export function TrainingCourses() {
                     >
                       <Link
                         href="/training/apply"
-                        aria-label={`قدّم طلبك للالتحاق بدورة ${course.title}`}
+                        aria-label={`قدِّم طلبك للالتحاق بدورة ${course.title}`}
                       >
                         {/* Animated Light Shimmer Beam */}
                         <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
