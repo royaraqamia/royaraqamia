@@ -2,9 +2,10 @@
 
 import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/frontend/shared/cn';
-import { User, LogOut, Download } from 'lucide-react';
+import { User, LogOut, Download, ShieldCheck } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
 import { usePWAContext } from '../PWAProvider';
 import { ConfirmDialog } from './confirm-dialog';
@@ -19,7 +20,7 @@ const AUTH_PATHS = [
 ];
 
 export const UserDropdown = memo(function UserDropdown() {
-  const { user, isLoading, signOut } = useSession();
+  const { user, isLoading, isAdmin, signOut } = useSession();
   const { canInstall, promptInstall, isInstalled } = usePWAContext();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -120,6 +121,23 @@ export const UserDropdown = memo(function UserDropdown() {
                     </p>
                   </div>
                 </div>
+
+                {/* Admin Console (Admins only — the flag defaults to false) */}
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    onClick={() => setIsOpen(false)}
+                    className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    role="menuitem"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+                        <ShieldCheck size={16} />
+                      </div>
+                      <span>الإدارة</span>
+                    </div>
+                  </Link>
+                )}
 
                 {/* Sign Out Item */}
                 <button

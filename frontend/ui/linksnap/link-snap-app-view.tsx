@@ -9,16 +9,10 @@ import { ViewSelector } from '@/frontend/ui/linksnap/view-selector';
 import { useSession } from '@/frontend/state/session-provider';
 import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 
-// Dashboard + admin are separate views of the same page; code-splitting them
-// keeps their JS (charts, tables, admin tooling) out of the initial payload.
-// Neither ever renders during SSR — the session is unresolved then — so
-// `ssr: false` matches real render behavior exactly.
+// The dashboard is a separate view of the same page; code-splitting it keeps its
+// JS (charts, tables) out of the initial payload. It never renders during SSR —
+// the session is unresolved then — so `ssr: false` matches real render behavior.
 const LinkDashboard = dynamic(() => import('./link-dashboard').then((mod) => mod.LinkDashboard), {
-  ssr: false,
-  loading: () => <DashboardSkeleton />,
-});
-
-const AdminPanel = dynamic(() => import('./admin-panel').then((mod) => mod.AdminPanel), {
   ssr: false,
   loading: () => <DashboardSkeleton />,
 });
@@ -28,9 +22,9 @@ interface RedirectError {
   code?: string;
 }
 
-export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
+export function LinkSnapAppView() {
   const { user, session } = useSession();
-  const [selectedView, setSelectedView] = useState<'shorten' | 'dashboard' | 'admin'>('shorten');
+  const [selectedView, setSelectedView] = useState<'shorten' | 'dashboard'>('shorten');
   const [redirectError, setRedirectError] = useState<RedirectError | null>(null);
 
   const parsedParams = useRef(false);
@@ -62,7 +56,7 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
       }
 
       const viewParam = params.get('view');
-      if (viewParam === 'dashboard' || viewParam === 'admin') {
+      if (viewParam === 'dashboard') {
         queueMicrotask(() => {
           setSelectedView(viewParam);
         });
@@ -82,8 +76,6 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
     }
   }, [selectedView]);
 
-  const effectiveView = selectedView === 'admin' && !isAdmin ? 'shorten' : selectedView;
-
   return (
     <div className="relative flex flex-col min-h-full overflow-hidden">
       <div className="flex-1 flex flex-col justify-center max-w-xl w-full mx-auto space-y-8">
@@ -95,16 +87,10 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
           animate={{ opacity: 1 }}
           className="space-y-8"
         >
-          {user && (
-            <ViewSelector
-              selectedView={selectedView}
-              isAdmin={isAdmin}
-              onChange={setSelectedView}
-            />
-          )}
+          {user && <ViewSelector selectedView={selectedView} onChange={setSelectedView} />}
 
           <AnimatePresence mode="wait" aria-live="polite">
-            {effectiveView === 'shorten' ? (
+            {selectedView === 'shorten' ? (
               <m.div
                 key="shorten-form"
                 initial={{ opacity: 0, y: 10 }}
@@ -118,7 +104,7 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
                   }}
                 />
               </m.div>
-            ) : effectiveView === 'dashboard' ? (
+            ) : selectedView === 'dashboard' ? (
               user && (
                 <m.div
                   key="dashboard-view"
@@ -127,17 +113,6 @@ export function LinkSnapAppView({ isAdmin }: { isAdmin: boolean }) {
                   exit={{ opacity: 0, y: -10 }}
                 >
                   <LinkDashboard token={session?.access_token ?? ''} refreshTrigger={0} />
-                </m.div>
-              )
-            ) : effectiveView === 'admin' ? (
-              user && (
-                <m.div
-                  key="admin-view"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                >
-                  <AdminPanel token={session?.access_token ?? ''} />
                 </m.div>
               )
             ) : null}

@@ -1,12 +1,11 @@
 'use client';
 
 interface ViewSelectorProps {
-  selectedView: 'shorten' | 'dashboard' | 'admin';
-  isAdmin: boolean;
-  onChange: (view: 'shorten' | 'dashboard' | 'admin') => void;
+  selectedView: 'shorten' | 'dashboard';
+  onChange: (view: 'shorten' | 'dashboard') => void;
 }
 
-export function ViewSelector({ selectedView, isAdmin, onChange }: ViewSelectorProps) {
+export function ViewSelector({ selectedView, onChange }: ViewSelectorProps) {
   return (
     <div
       className="bg-card p-1 rounded-xl border border-border shadow-sm flex items-center justify-between gap-1 w-full max-w-90 mx-auto"
@@ -25,14 +24,6 @@ export function ViewSelector({ selectedView, isAdmin, onChange }: ViewSelectorPr
         onClick={() => onChange('dashboard')}
         id="tab-dashboard"
       />
-      {isAdmin && (
-        <ViewButton
-          label="الإدارة"
-          active={selectedView === 'admin'}
-          onClick={() => onChange('admin')}
-          id="tab-admin"
-        />
-      )}
     </div>
   );
 }

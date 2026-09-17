@@ -22,6 +22,7 @@ interface SessionContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
+  isAdmin: boolean;
   signOut: () => Promise<void>;
 }
 
@@ -29,6 +30,7 @@ const SessionContext = createContext<SessionContextType>({
   user: null,
   session: null,
   isLoading: true,
+  isAdmin: false,
   signOut: async () => {},
 });
 
@@ -48,6 +50,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const prevSessionRef = useRef<Session | null>(null);
@@ -105,9 +108,37 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     await signOutSession();
   }, []);
 
+  // The Admin allowlist never leaves the server; only this boolean crosses to the
+  // client. Keyed on the user id so a token refresh doesn't re-probe, and defaulted
+  // to `false` so a failure can only hide the entry — never expose it.
+  const userId = session?.user?.id ?? null;
+
+  useEffect(() => {
+    if (!userId) {
+      setIsAdmin(false);
+      return;
+    }
+
+    let active = true;
+
+    void import('@/frontend/api/me').then(({ getMyAdminStatus }) =>
+      getMyAdminStatus()
+        .then((status) => {
+          if (active) setIsAdmin(status.isAdmin);
+        })
+        .catch(() => {
+          if (active) setIsAdmin(false);
+        })
+    );
+
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
   const value = useMemo(
-    () => ({ user, session, isLoading, signOut }),
-    [user, session, isLoading, signOut]
+    () => ({ user, session, isLoading, isAdmin, signOut }),
+    [user, session, isLoading, isAdmin, signOut]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

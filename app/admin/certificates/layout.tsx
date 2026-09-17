@@ -1,52 +1,25 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
-import Link from 'next/link';
-import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
-import { Navbar } from '@/frontend/ui/Navbar';
-import { Plus, ShieldCheck } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'إدارة الشَّهادات',
-  description: 'إصدار وتعديل وحذف شهادات الطُّلاب في رؤية رقمية.',
+  title: 'إدارة الشَّهادات',
+  description: 'إصدار وتعديل وحذف شهادات الطُّلاب في رؤية رقمية.',
 };
 
-export default async function AdminCertificatesLayout({ children }: { children: React.ReactNode }) {
-  try {
-    await requireAdminAuth();
-  } catch (err) {
-    if (err instanceof Error && err.message === 'FORBIDDEN') {
-      redirect('/');
-    }
-    redirect('/auth/login?redirect=/admin/certificates');
-  }
-
+export default function AdminCertificatesLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-dvh bg-background text-foreground flex flex-col">
-      <Navbar />
-      <main id="main-content" className="flex-1 pt-24">
-        <div className="container mx-auto max-w-6xl px-4 pb-8">
-          <div className="mb-8 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/10 shadow-sm">
-                <ShieldCheck className="text-primary size-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">إدارة الشَّهادات</h1>
-                <p className="text-muted-foreground text-sm">إصدار وتعديل وحذف شهادات الطُّلاب</p>
-              </div>
-            </div>
-            <Link
-              href="/admin/certificates/new"
-              className="btn-hover-lift bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-primary-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
-            >
-              <Plus className="size-4" />
-              شهادة جديدة
-            </Link>
-          </div>
-
-          {children}
+    <div className="container mx-auto max-w-6xl px-4 pb-8">
+      <div className="mb-8 flex items-center gap-4">
+        <div className="flex size-12 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/10 shadow-sm">
+          <ShieldCheck className="text-primary size-6" />
         </div>
-      </main>
+        <div>
+          <h1 className="text-2xl font-bold">إدارة الشَّهادات</h1>
+          <p className="text-muted-foreground text-sm">إصدار وتعديل وحذف شهادات الطُّلاب</p>
+        </div>
+      </div>
+
+      {children}
     </div>
   );
 }

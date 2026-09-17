@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Shield, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { AdminSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { AdminStatsCards } from './admin-stats-cards';
@@ -53,20 +53,13 @@ export function AdminPanel({ token }: AdminPanelProps) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-display font-black text-foreground tracking-tight flex items-center gap-2">
-            <Shield className="w-6 h-6 text-primary stroke-[2.5]" />
-            <span>لوحة الإدارة</span>
-          </h2>
-          <p className="text-xs text-muted-foreground font-bold mt-0.5">
-            مؤشرات صحة النظام والمراقبة الآلية للمحتوى
-          </p>
-        </div>
+      {/* The section header in `app/admin/linksnap/layout.tsx` already names this
+          view, so the panel contributes only its refresh control. */}
+      <div className="flex justify-end">
         <button
           onClick={fetchAdminStats}
           disabled={loading}
-          className="self-start md:self-auto px-4 py-2 bg-muted/50 hover:bg-muted text-muted-foreground border border-border font-bold text-xs rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
+          className="px-4 py-2 bg-muted/50 hover:bg-muted text-muted-foreground border border-border font-bold text-xs rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
         >
           <RefreshCw
             className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}

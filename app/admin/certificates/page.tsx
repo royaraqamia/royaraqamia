@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
+import { Plus } from 'lucide-react';
 import { getCertificates, deleteCertificate } from '@/frontend/api/certificates';
 import type { AdminCertificate } from '@/frontend/api/certificates';
 import { isCertificateExpired } from '@/frontend/shared/format';
@@ -90,6 +92,16 @@ export default function CertificatesListPage() {
 
   return (
     <div>
+      <div className="mb-6 flex justify-end">
+        <Link
+          href="/admin/certificates/new"
+          className="btn-hover-lift bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-primary-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
+        >
+          <Plus className="size-4" />
+          شهادة جديدة
+        </Link>
+      </div>
+
       <CertificatesFilterBar
         search={search}
         statusFilter={statusFilter}

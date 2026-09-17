@@ -11,6 +11,7 @@ import {
   ListPlus,
   Receipt,
   Search,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   CommandDialog,
@@ -22,6 +23,7 @@ import {
   CommandSeparator,
 } from '@/frontend/ui/primitives/command';
 import { APP_PRODUCTS } from './constants';
+import { useSession } from '@/frontend/state/session-provider';
 
 const HIDDEN_PRODUCT_PATHS = new Set(
   APP_PRODUCTS.filter((p) => p.hidden).map((p) => p.appPath.split('/')[1])
@@ -79,6 +81,7 @@ export const CommandPalette = memo(function CommandPalette({
   enableHotkey = true,
 }: CommandPaletteProps) {
   const [open, setOpen] = useState(false);
+  const { isAdmin } = useSession();
   const router = useRouter();
 
   useEffect(() => {
@@ -208,6 +211,34 @@ export const CommandPalette = memo(function CommandPalette({
               );
             })}
           </CommandGroup>
+
+          {/* Admin Section (Admins only — the flag defaults to false) */}
+          {isAdmin && (
+            <>
+              <CommandSeparator className="my-1.5 h-px bg-border/40" />
+
+              <CommandGroup
+                heading="الإدارة"
+                className="p-1 **:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[11px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-wider **:[[cmdk-group-heading]]:text-muted-foreground/70"
+              >
+                <CommandItem
+                  value="admin-console"
+                  onSelect={() => run('/admin')}
+                  className="group relative flex min-h-11 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2 text-sm outline-none transition-all duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
+                >
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-all duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+                    <ShieldCheck className="size-4 text-foreground/80 group-data-[selected=true]:text-primary transition-colors" />
+                  </span>
+                  <span className="flex-1 truncate text-sm font-medium tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
+                    مركز الإدارة
+                  </span>
+                  <span className="flex items-center gap-1.5 opacity-0 transition-opacity duration-150 group-hover:opacity-100 group-data-[selected=true]:opacity-100 text-muted-foreground/60 group-data-[selected=true]:text-primary">
+                    <CornerDownLeft className="size-3.5 shrink-0" />
+                  </span>
+                </CommandItem>
+              </CommandGroup>
+            </>
+          )}
 
           <CommandSeparator className="my-1.5 h-px bg-border/40" />
 
