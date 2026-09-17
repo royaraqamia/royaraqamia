@@ -1,6 +1,7 @@
-import { Clock, GraduationCap, MessageCircle, Trophy, User } from 'lucide-react';
+import { Clock, GraduationCap, MessageCircle, Trophy, User, Wallet } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
-import { TrainingApplicationForm } from '@/frontend/ui/training/training-application-form';
+import { TrainingApplyFlow } from '@/frontend/ui/training/training-apply-flow';
+import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
 
@@ -42,48 +43,51 @@ export default function TrainingApplyPage() {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Course summary — same source as the homepage card, so copy cannot drift. */}
-      <section
-        aria-label="تفاصيل الدورة"
-        className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
-      >
-        <h2 className="text-lg sm:text-xl font-extrabold text-foreground">
-          {TRAINING_COURSE.title}
-        </h2>
-        <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-          {TRAINING_COURSE.description}
-        </p>
+    <TrainingApplyFlow
+      summary={
+        /* Course summary — same source as the homepage card, so copy cannot drift. */
+        <section
+          aria-label="تفاصيل الدورة"
+          className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
+        >
+          <h2 className="text-lg sm:text-xl font-extrabold text-foreground">
+            {TRAINING_COURSE.title}
+          </h2>
+          <CollapsibleText
+            lines={2}
+            className="mt-2 text-sm text-muted-foreground leading-relaxed"
+            buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
+          >
+            {TRAINING_COURSE.description}
+          </CollapsibleText>
 
-        <dl className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {SUMMARY_ITEMS.map(({ icon: Icon, label, value }) => (
-            <div key={label} className="flex items-center gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                <Icon className="h-5 w-5" aria-hidden="true" />
+          <dl className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {SUMMARY_ITEMS.map(({ icon: Icon, label, value }) => (
+              <div key={label} className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
+                  <dd className="truncate text-sm font-bold text-foreground">{value}</dd>
+                </div>
               </div>
-              <div className="min-w-0">
-                <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-                <dd className="truncate text-sm font-bold text-foreground">{value}</dd>
-              </div>
-            </div>
-          ))}
-        </dl>
+            ))}
+          </dl>
 
-        <div className="mt-6 flex items-baseline gap-2 border-t border-border/50 pt-5">
-          <span className="text-xs font-medium text-muted-foreground">رسوم الاستثمار</span>
-          <span className="text-2xl font-black tracking-tight text-foreground">
-            {TRAINING_COURSE.price}
-          </span>
-          <span className="text-xs text-muted-foreground">للدَّورة كاملة</span>
-        </div>
-      </section>
-
-      <section
-        aria-label="نموذج التقديم"
-        className="rounded-3xl border border-border/60 bg-card p-6 sm:p-8 shadow-sm"
-      >
-        <TrainingApplicationForm />
-      </section>
-    </div>
+          <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">
+            <span className="text-xs font-medium text-muted-foreground">رسوم الاستثمار</span>
+            <span className="text-2xl font-black tracking-tight text-foreground">
+              {TRAINING_COURSE.price}
+            </span>
+            <span className="text-xs text-muted-foreground">للدَّورة كاملة</span>
+            <span className="inline-flex items-center gap-1 self-center rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+              <Wallet className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              الدَّفع بالتَّقسيط مُتاح
+            </span>
+          </div>
+        </section>
+      }
+    />
   );
 }

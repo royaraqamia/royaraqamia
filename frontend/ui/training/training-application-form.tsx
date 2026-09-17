@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, ArrowLeft, CheckCircle2, MessageCircle } from 'lucide-react';
+import { AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
 import type { z } from 'zod';
 
 import { Button } from '@/frontend/ui/primitives/button';
@@ -12,12 +12,7 @@ import { Label } from '@/frontend/ui/primitives/label';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { CountryPhoneInput } from '@/frontend/ui/shared/country-phone-input';
 import { submitTrainingApplication } from '@/frontend/api/training';
-import { getWhatsAppUrl } from '@/frontend/shared/constants';
-import {
-  TRAINING_COURSE,
-  TrainingApplicationSchema,
-  buildApplicationWhatsappMessage,
-} from '@/shared/contracts/training';
+import { TRAINING_COURSE, TrainingApplicationSchema } from '@/shared/contracts/training';
 
 type FormValues = z.input<typeof TrainingApplicationSchema>;
 
@@ -31,9 +26,14 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-export function TrainingApplicationForm() {
+interface TrainingApplicationFormProps {
+  /** Lets the surrounding page step aside once the student has applied. */
+  onSubmitted?: () => void;
+}
+
+export function TrainingApplicationForm({ onSubmitted }: TrainingApplicationFormProps = {}) {
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [result, setResult] = useState<{ referenceCode: string; fullName: string } | null>(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
   const {
     control,
@@ -61,23 +61,16 @@ export function TrainingApplicationForm() {
       goal: values.goal,
     });
 
-    if (response.success && response.referenceCode) {
-      setResult({ referenceCode: response.referenceCode, fullName: values.full_name });
+    if (response.success) {
+      setIsSubmitted(true);
+      onSubmitted?.();
       return;
     }
 
     setSubmitError(response.error ?? 'حدث خطأ غير متوقَّع. الرَّجاء المحاولة مرَّة أخرى.');
   });
 
-  if (result) {
-    const whatsappUrl = getWhatsAppUrl(
-      buildApplicationWhatsappMessage({
-        referenceCode: result.referenceCode,
-        fullName: result.fullName,
-        courseTitle: TRAINING_COURSE.title,
-      })
-    );
-
+  if (isSubmitted) {
     return (
       <div className="rounded-3xl border border-emerald-500/25 bg-emerald-500/5 p-6 sm:p-10 text-center">
         <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/12 text-emerald-600 dark:text-emerald-400">
@@ -85,33 +78,12 @@ export function TrainingApplicationForm() {
         </div>
 
         <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">
-          تمّ استلام طلبك بنجاح
+          تمَّ استلام طلبك بنجاح!
         </h2>
         <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
-          سنراجع طلبك ونتواصل معك عبر واتساب لتأكيد مقعدك في {TRAINING_COURSE.title}.
+          سنُراجع طلبك ونتواصل معك خلال 48 ساعة عبر واتساب لتأكيد مقعدك في التَّدريب وإتمام الدَّفع
+          إن شاء الله.
         </p>
-
-        <div className="mt-6 inline-flex items-center gap-3 rounded-2xl border border-border/60 bg-background px-5 py-4">
-          <span className="text-xs font-medium text-muted-foreground">رقم طلبك</span>
-          <code
-            dir="ltr"
-            className="font-mono text-base sm:text-lg font-bold tracking-tight text-foreground"
-          >
-            {result.referenceCode}
-          </code>
-        </div>
-
-        <p className="form-help-text mt-3">احتفظ بهذا الرَّقم؛ يُسرّع متابعة طلبك عبر واتساب.</p>
-
-        <Button
-          asChild
-          className="w-full sm:w-auto sm:px-8 h-13 rounded-full bg-linear-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold shadow-xl shadow-emerald-600/20 hover:scale-[1.005] active:scale-[0.995] transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer border-0 mx-auto mt-7"
-        >
-          <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
-            <MessageCircle className="h-5 w-5 shrink-0" aria-hidden="true" />
-            <span>متابعة عبر واتساب</span>
-          </a>
-        </Button>
       </div>
     );
   }
