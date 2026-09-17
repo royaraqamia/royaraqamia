@@ -16,11 +16,10 @@ import sql from 'highlight.js/lib/languages/sql';
 import python from 'highlight.js/lib/languages/python';
 import markdown from 'highlight.js/lib/languages/markdown';
 import { Button } from '@/frontend/ui/primitives/button';
-import { ArrowRight, Clock, Calendar, BookOpen, User, ChevronLeft } from 'lucide-react';
+import { ArrowRight, Calendar, BookOpen, User, ChevronLeft } from 'lucide-react';
 import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
-import { estimateReadingTime, formatReadingTimeLong } from '@/frontend/shared/reading-time';
 import {
   loadPublishedPostBySlug,
   loadBlogPost,
@@ -125,7 +124,6 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   const { post: p, author, postTags } = loaded;
 
-  const readingTime = estimateReadingTime(p.content);
   const headings = extractHeadings(p.content ?? '');
   const postUrl = `${env.siteUrl}/blog/${slug}`;
   const hasHeadings = headings.length > 0;
@@ -237,11 +235,6 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                   </div>
                 )}
 
-                <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-bold text-primary shadow-2xs backdrop-blur-md mb-5 transition-all duration-300 hover:bg-primary/15">
-                  <BookOpen className="size-3.5" />
-                  <span>مقال</span>
-                </div>
-
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-foreground text-balance">
                   {p.title}
                 </h1>
@@ -279,10 +272,6 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                       </span>
                     </div>
                   )}
-                  <div className="flex items-center gap-1.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40">
-                    <Clock className="size-3.5 text-primary/70 shrink-0" />
-                    <span>{formatReadingTimeLong(readingTime)}</span>
-                  </div>
                   {postTags.map((tag) => (
                     <span
                       key={tag.id}
@@ -393,41 +382,6 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                 </div>
               </div>
             )}
-
-            {/* CTA Engagement Banner */}
-            <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-primary/10 via-background to-primary/5 border border-primary/20 p-8 sm:p-12 text-center shadow-xl">
-              <div
-                className="absolute inset-0 opacity-[0.03] pointer-events-none"
-                style={{
-                  backgroundImage:
-                    'radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)',
-                  backgroundSize: '40px 40px',
-                }}
-              />
-              <div className="relative z-10">
-                <div className="size-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-4 shadow-2xs">
-                  <BookOpen className="size-6 text-primary" />
-                </div>
-                <h2 className="text-xl sm:text-2xl font-bold text-foreground tracking-tight">
-                  هل أعجبك المقال؟
-                </h2>
-                <p className="text-xs sm:text-sm text-muted-foreground mt-2 max-w-md mx-auto leading-relaxed">
-                  شاركه مع أصدقائك أو تصفَّح المزيد من المقالات في المدوَّنة
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3 mt-6">
-                  <Link href="/blog">
-                    <Button
-                      variant="outline"
-                      className="rounded-full px-5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-primary/30 hover:bg-primary/10 font-medium"
-                    >
-                      <ArrowRight className="ms-2 size-4 text-primary" />
-                      جميع المقالات
-                    </Button>
-                  </Link>
-                  <SocialShare url={postUrl} title={p.title} />
-                </div>
-              </div>
-            </div>
           </footer>
         </article>
       </div>

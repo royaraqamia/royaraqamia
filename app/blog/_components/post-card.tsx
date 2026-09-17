@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, Calendar, ArrowLeft } from 'lucide-react';
+import { Calendar, ArrowLeft } from 'lucide-react';
 import type { PostSummary } from '@/shared/contracts/blogpress';
-import { formatReadingTime } from '@/frontend/shared/reading-time';
 
 interface PostCardProps {
   post: PostSummary;
@@ -33,22 +32,10 @@ export function PostCard({ post, index }: PostCardProps) {
 
             <div className="absolute inset-0 bg-linear-to-t from-background via-background/20 to-transparent opacity-60 group-hover/blog:opacity-40 transition-opacity duration-500" />
           </Link>
-
-          <div className="absolute top-4 inset-s-4 z-20 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-background/70 border border-border text-xs text-muted-foreground font-medium backdrop-blur-md shadow-lg pointer-events-none">
-            <Clock className="size-3.5 text-primary" />
-            <span>{formatReadingTime(post.reading_time_minutes)}</span>
-          </div>
         </div>
       )}
 
       <div className="flex-1 flex flex-col justify-between p-6 sm:p-7 relative">
-        {!post.cover_image && (
-          <div className="mb-4 inline-flex self-start items-center gap-1.5 px-3 py-1.5 rounded-full bg-muted/40 border border-border text-xs text-muted-foreground font-medium">
-            <Clock className="size-3.5 text-primary" />
-            <span>{formatReadingTime(post.reading_time_minutes)}</span>
-          </div>
-        )}
-
         <div>
           <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground group-hover/blog:text-foreground transition-colors duration-300 leading-snug line-clamp-2">
             <Link
