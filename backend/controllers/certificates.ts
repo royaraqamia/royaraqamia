@@ -60,8 +60,12 @@ export async function createCertificate(body: {
   customCode?: string;
 }): Promise<HttpResult> {
   try {
-    await requireAdminAuth();
-    const data = await createAdminCertificatesService().create(body.formData, body.customCode);
+    const { user } = await requireAdminAuth();
+    const data = await createAdminCertificatesService().create(
+      body.formData,
+      body.customCode,
+      user.id
+    );
     return jsonResult(200, { success: true, data } satisfies AdminActionResult);
   } catch (error) {
     Sentry.captureException(error);

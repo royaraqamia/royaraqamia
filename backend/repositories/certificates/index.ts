@@ -90,6 +90,7 @@ export function createCertificatesRepository(
           grade_or_status: input.grade_or_status,
           recipient_email: input.recipient_email ?? null,
           recipient_user_ids: input.recipient_user_ids,
+          created_by: input.created_by ?? null,
         })
         .select()
         .single();

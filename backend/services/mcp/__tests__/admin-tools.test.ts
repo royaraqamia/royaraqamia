@@ -112,7 +112,8 @@ describe('admin certificate tools', () => {
         course_name: 'برمجة الويب',
         recipient_user_ids: [],
       }),
-      undefined
+      undefined,
+      'u1'
     );
     expect(result.structuredContent?.certificate_code).toBe('COMP-2026-A1B2C3D4');
   });

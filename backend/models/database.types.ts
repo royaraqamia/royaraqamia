@@ -197,6 +197,7 @@ export type Database = {
           certificate_code: string;
           course_name: string;
           created_at: string;
+          created_by: string | null;
           expiration_date: string | null;
           grade_or_status: string | null;
           id: string;
@@ -209,6 +210,7 @@ export type Database = {
           certificate_code: string;
           course_name: string;
           created_at?: string;
+          created_by?: string | null;
           expiration_date?: string | null;
           grade_or_status?: string | null;
           id?: string;
@@ -221,6 +223,7 @@ export type Database = {
           certificate_code?: string;
           course_name?: string;
           created_at?: string;
+          created_by?: string | null;
           expiration_date?: string | null;
           grade_or_status?: string | null;
           id?: string;

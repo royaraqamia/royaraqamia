@@ -129,7 +129,8 @@ export class CertificatesService {
       recipient_email?: string;
       recipient_user_ids?: string[];
     },
-    customCode?: string
+    customCode?: string,
+    createdBy?: string | null
   ): Promise<Certificate> {
     const parsed = parseCertificate(input);
 
@@ -143,6 +144,7 @@ export class CertificatesService {
       certificate = await this.repository.create({
         certificate_code: code,
         ...parsed,
+        created_by: createdBy ?? null,
       });
     } catch (error) {
       if (error && typeof error === 'object' && 'code' in error && error.code === '23505') {

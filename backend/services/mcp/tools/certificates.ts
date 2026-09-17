@@ -265,7 +265,8 @@ export async function createCertificateHandler(
         recipient_email: params.recipient_email ?? undefined,
         recipient_user_ids: params.recipient_user_ids ?? [],
       },
-      params.custom_code
+      params.custom_code,
+      ctx.userId
     );
 
     const output = {

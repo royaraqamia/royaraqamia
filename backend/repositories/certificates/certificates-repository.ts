@@ -9,6 +9,8 @@ export interface CertificateCreateInput {
   grade_or_status: string | null;
   recipient_email?: string | null;
   recipient_user_ids: string[];
+  /** Set by the issuing Admin; the repository stores null when absent. */
+  created_by?: string | null;
 }
 
 export interface CertificateUpdateInput {

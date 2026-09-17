@@ -12,15 +12,21 @@ export interface Certificate {
   grade_or_status: string | null;
   recipient_email: string | null;
   recipient_user_ids: string[];
+  /** The Admin who issued it. Null for certificates predating this column. */
+  created_by: string | null;
   created_at: string;
 }
 
 /**
  * Public-facing certificate shape for the anonymous verify endpoints
  * (`/api/certificates/verify` and `/verify/[code]`). Strips internal recipient
- * info (user ids + recipient email) so it is never exposed to visitors.
+ * info (user ids + recipient email) and the issuing Admin so none of it is
+ * exposed to visitors.
  */
-export type PublicCertificate = Omit<Certificate, 'recipient_email' | 'recipient_user_ids'>;
+export type PublicCertificate = Omit<
+  Certificate,
+  'recipient_email' | 'recipient_user_ids' | 'created_by'
+>;
 
 export function toPublicCertificate(certificate: Certificate): PublicCertificate {
   return {
