@@ -51,4 +51,14 @@ describe('createAdminAllowlistRepository', () => {
     expect(upsert).toHaveBeenCalledWith({ id: true, admin_emails: ['a@x.com'] });
     expect(rpc).toHaveBeenCalledWith('recompute_admin_flags', { p_emails: ['a@x.com'] });
   });
+
+  it('reads the stored allowlist, and an empty list when nothing is stored', async () => {
+    const stored = makeClient(['a@x.com']);
+    await expect(createAdminAllowlistRepository(stored.client).read()).resolves.toEqual([
+      'a@x.com',
+    ]);
+
+    const empty = makeClient(null);
+    await expect(createAdminAllowlistRepository(empty.client).read()).resolves.toEqual([]);
+  });
 });

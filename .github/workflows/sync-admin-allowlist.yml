@@ -1,18 +1,25 @@
 name: 'Sync Admin Allowlist'
 
-# public.is_admin() reads public.app_settings.admin_emails, and the only in-app writer of
-# that value is a successful requireAdminAuth() call. Without this job a revocation only
-# reaches the database when an Admin loads /admin, and removing the last Admin never
-# reaches it at all. See issue #92 for the reasoning and ADR 0003 for the decision.
+# public.is_admin() reads public.app_settings.admin_emails, and that value's only other
+# writer is a successful requireAdminAuth() call. Without this job a revocation waits for
+# an Admin to load /admin, and removing the last Admin never converges at all.
 #
-# Requires the ADMIN_EMAILS repository secret. Until it exists this job fails loudly on
-# purpose: a silent skip would look like a successful sync and give false confidence that
-# a revoked address had been removed.
+# The job is deliberately a trigger rather than a courier: it asks the deployed app to
+# sync, so the allowlist exists in exactly one place - the app's own ADMIN_EMAILS, which
+# /admin already trusts - instead of being mirrored into a second copy of the value here.
+#
+# Authentication reuses the service role key, which this job needs anyway, so there is no
+# additional credential to rotate.
 
 on:
   schedule:
     - cron: '17 */6 * * *'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Report the difference without writing'
+        type: boolean
+        default: false
 
 concurrency:
   group: sync-admin-allowlist
@@ -28,19 +35,23 @@ jobs:
     timeout-minutes: 5
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-
-      - name: Setup Build Environment
-        uses: ./.github/actions/setup-environment
-        with:
-          node-version: '22'
-          install-web-deps: 'false'
-          cache-next: 'false'
-
-      - name: Sync ADMIN_EMAILS into the database allowlist
+      - name: Ask the app to sync its allowlist
         env:
-          NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+          SYNC_URL: 'https://royaraqamia.com/api/admin/sync-allowlist'
+          DRY_RUN: ${{ inputs.dry_run }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
-        run: node scripts/sync-admin-allowlist.mjs
+        run: |
+          set -euo pipefail
+
+          url="${SYNC_URL}"
+          if [ "${DRY_RUN}" = "true" ]; then
+            url="${url}?dryRun=1"
+          fi
+
+          status=$(curl -sS -o body.json -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_ROLE_KEY}" "${url}")
+
+          cat body.json
+          echo "HTTP ${status}"
+
+          test "${status}" = "200"
