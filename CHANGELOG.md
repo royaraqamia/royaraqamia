@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0] - 2026-09-17
+
+### Changed
+- drop the redundant outer glow on the consultation card
+- remove post badge, reading time, and engagement banner
+
+### Added
+- refresh the course copy and drop the unused whatsapp helper
+- rework the apply page after submission and note installment payment
+- clamp the course copy and remove the curriculum breakdown
+- add a collapsible text component
+
 ## [1.21.0] - 2026-09-17
 
 ### Changed
