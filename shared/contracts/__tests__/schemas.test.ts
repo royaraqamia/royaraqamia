@@ -60,6 +60,16 @@ describe('SignupSchema', () => {
     expect(result.error?.issues[0]?.message).toContain('حرف كبير');
   });
 
+  it('rejects password without lowercase letter', () => {
+    const result = SignupSchema.safeParse({
+      name: 'Test User',
+      email: 'test@example.com',
+      password: 'WEAKP@SS1',
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('حرف صغير');
+  });
+
   it('rejects password without number', () => {
     const result = SignupSchema.safeParse({
       name: 'Test User',
@@ -108,6 +118,11 @@ describe('UpdatePasswordSchema', () => {
 
   it('rejects weak password without uppercase', () => {
     const result = UpdatePasswordSchema.safeParse({ password: 'weakp@ss1' });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects weak password without lowercase', () => {
+    const result = UpdatePasswordSchema.safeParse({ password: 'WEAKP@SS1' });
     expect(result.success).toBe(false);
   });
 
