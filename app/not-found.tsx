@@ -1,8 +1,10 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 
+// The root layout's `title.template` appends the site name, so a top-level title
+// must not carry it as well — that double-branded this page's tab and og:title.
 export const metadata: Metadata = {
-  title: '404 - الصَّفحة غير موجودة | رؤية رقمية',
+  title: '404 - الصَّفحة غير موجودة',
   description: 'عذرًا، الصَّفحة التي تبحث عنها غير موجودة أو تمَّ نقلها.',
 };
 
