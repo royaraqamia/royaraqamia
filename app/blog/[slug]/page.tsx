@@ -20,6 +20,7 @@ import { ArrowRight, Calendar, BookOpen, User, ChevronLeft } from 'lucide-react'
 import { ReadingProgress } from '../_components/reading-progress';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
+import { PostViewTracker } from '../_components/post-view-tracker';
 import {
   loadPublishedPostBySlug,
   loadBlogPost,
@@ -167,6 +168,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
   return (
     <>
+      <PostViewTracker slug={p.slug} />
       <ReadingProgress targetId="article-body" />
       <CodeBlockEnhancer />
 

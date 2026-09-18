@@ -16,6 +16,16 @@ export const PostSchema = z.object({
 
 export type PostInput = z.infer<typeof PostSchema>;
 
+/** Public blog post slug, validated before it is used in a view-count request. */
+export const PostSlugSchema = z
+  .string()
+  .trim()
+  .min(1, 'الرابط مطلوب')
+  .max(200, 'الرابط طويل جداً')
+  .regex(/^[\w\u0600-\u06FF-]+$/, 'الرابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط');
+
+export type PostSlug = z.infer<typeof PostSlugSchema>;
+
 export const TagInputSchema = z.object({
   name: z.string().trim().min(1, 'اسم الوسم مطلوب').max(30, 'الاسم طويل جداً'),
   slug: z

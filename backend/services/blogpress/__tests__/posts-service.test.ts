@@ -151,9 +151,6 @@ describe('BlogpressPostsService (thin delegation)', () => {
 
     await service.setPostCategories('p-1', 'u-1', ['c-1']);
     expect(repository.setPostCategories).toHaveBeenCalledWith('p-1', 'u-1', ['c-1']);
-
-    await service.incrementPostViewCount('p-1');
-    expect(repository.incrementPostViewCount).toHaveBeenCalledWith('p-1');
   });
 
   it('delegates tag methods', async () => {

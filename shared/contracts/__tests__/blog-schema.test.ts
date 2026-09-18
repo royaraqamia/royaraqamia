@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PostSchema } from '@/shared/contracts/blog';
+import { PostSchema, PostSlugSchema } from '@/shared/contracts/blog';
 
 const validPost = {
   title: 'مقال جديد',
@@ -71,5 +71,29 @@ describe('PostSchema', () => {
       cover_image: undefined,
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe('PostSlugSchema', () => {
+  it('accepts a valid slug', () => {
+    expect(PostSlugSchema.safeParse('new-post').success).toBe(true);
+    expect(PostSlugSchema.safeParse('مقال-عربي').success).toBe(true);
+    expect(PostSlugSchema.safeParse('my_article-123').success).toBe(true);
+  });
+
+  it('trims surrounding whitespace', () => {
+    expect(PostSlugSchema.safeParse('  new-post  ').success).toBe(true);
+  });
+
+  it('rejects empty, whitespace-only, or oversized slugs', () => {
+    expect(PostSlugSchema.safeParse('').success).toBe(false);
+    expect(PostSlugSchema.safeParse('   ').success).toBe(false);
+    expect(PostSlugSchema.safeParse('أ'.repeat(201)).success).toBe(false);
+  });
+
+  it('rejects slugs with spaces or special characters', () => {
+    for (const slug of ['bad slug', 'bad/slug', 'bad!slug', 'slug?x=1']) {
+      expect(PostSlugSchema.safeParse(slug).success).toBe(false);
+    }
   });
 });
