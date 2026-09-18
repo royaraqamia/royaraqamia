@@ -9,6 +9,7 @@ import { Label } from '@/frontend/ui/primitives/label';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { UserSelect } from '@/frontend/ui/admin/user-select';
 import { ChannelToggle } from '@/frontend/ui/admin/channel-toggle';
+import { cn } from '@/frontend/shared/cn';
 import { BellRing, Loader2, Mail, Send } from 'lucide-react';
 
 export function AnnouncementForm() {
@@ -56,8 +57,8 @@ export function AnnouncementForm() {
 
   return (
     <Card>
-      <CardContent className="pt-6">
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
           <div className="form-field">
             <Label htmlFor="title" className="form-label">
               العنوان{' '}
@@ -120,7 +121,12 @@ export function AnnouncementForm() {
 
           {result && (
             <p
-              className={`text-sm ${result.ok ? 'text-emerald-600' : 'text-destructive'}`}
+              className={cn(
+                'rounded-xl border px-4 py-3 text-sm',
+                result.ok
+                  ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300'
+                  : 'border-destructive/40 bg-destructive/10 text-destructive'
+              )}
               role="status"
             >
               {result.message}
@@ -129,14 +135,10 @@ export function AnnouncementForm() {
 
           <Button
             type="submit"
-            className="btn-lift w-full transition-all duration-200 btn-press focus-ring touch-target"
+            className="btn-lift btn-press focus-ring touch-target w-full gap-2 transition-all duration-200"
             disabled={sending}
           >
-            {sending ? (
-              <Loader2 className="ms-2 size-4 animate-spin" />
-            ) : (
-              <Send className="ms-2 size-4" />
-            )}
+            {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
             {sending ? 'جارٍ الإرسال...' : 'إرسال'}
           </Button>
         </form>

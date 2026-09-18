@@ -89,33 +89,45 @@ export function AdminAvailabilityView() {
     <div className="space-y-6">
       <form
         onSubmit={handleAdd}
-        className="rounded-2xl border border-border bg-card p-5 grid gap-4 sm:grid-cols-[1fr_1fr_auto]"
+        className="border-border bg-card grid gap-4 rounded-2xl border p-4 sm:p-5 md:grid-cols-[1fr_1fr_auto]"
         noValidate
       >
         <div className="form-field space-y-1.5">
           <Label className="form-label">بداية الموعد</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <DatePicker
               value={startDate}
               onChange={setStartDate}
               placeholder="التاريخ"
               aria-label="تاريخ بداية الموعد"
-              className="flex-1 bg-muted border-border rounded-xl"
+              className="bg-muted border-border flex-1 rounded-xl"
             />
-            <TimePicker value={startTime} onChange={setStartTime} aria-label="وقت بداية الموعد" />
+            <TimePicker
+              value={startTime}
+              onChange={setStartTime}
+              aria-label="وقت بداية الموعد"
+              className="w-full sm:w-auto sm:flex-1"
+              triggerClassName="flex-1 min-w-0"
+            />
           </div>
         </div>
         <div className="form-field space-y-1.5">
           <Label className="form-label">نهاية الموعد</Label>
-          <div className="flex gap-2">
+          <div className="flex flex-col gap-2 sm:flex-row">
             <DatePicker
               value={endDate}
               onChange={setEndDate}
               placeholder="التاريخ"
               aria-label="تاريخ نهاية الموعد"
-              className="flex-1 bg-muted border-border rounded-xl"
+              className="bg-muted border-border flex-1 rounded-xl"
             />
-            <TimePicker value={endTime} onChange={setEndTime} aria-label="وقت نهاية الموعد" />
+            <TimePicker
+              value={endTime}
+              onChange={setEndTime}
+              aria-label="وقت نهاية الموعد"
+              className="w-full sm:w-auto sm:flex-1"
+              triggerClassName="flex-1 min-w-0"
+            />
           </div>
         </div>
         <div className="flex items-end">
@@ -157,15 +169,15 @@ export function AdminAvailabilityView() {
           {slots.map((slot) => (
             <li
               key={slot.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
+              className="border-border bg-card flex flex-col gap-3 rounded-xl border px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
-              <span className="text-sm font-bold text-foreground">
+              <span className="text-foreground text-sm font-bold">
                 {formatSessionDateDamascus(slot.starts_at)} —{' '}
                 {formatSessionTimeDamascus(slot.starts_at)}–
                 {formatSessionTimeDamascus(slot.ends_at)}{' '}
                 <span className="text-muted-foreground">(دمشق)</span>
               </span>
-              <span className="flex items-center gap-3">
+              <span className="flex items-center justify-between gap-3 sm:justify-end">
                 {slot.active_booking_id ? (
                   <span className="rounded-full bg-sky-500/15 border border-sky-500/40 px-3 py-1 text-xs font-bold text-sky-600 dark:text-sky-400">
                     محجوز

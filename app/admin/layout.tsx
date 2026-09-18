@@ -15,9 +15,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-dvh bg-background text-foreground flex flex-col">
+    <div className="bg-background text-foreground flex min-h-dvh flex-col">
       <Navbar />
-      <main id="main-content" className="flex-1 pt-24">
+      <main id="main-content" className="flex-1 pt-20 lg:pt-24">
         {children}
       </main>
     </div>

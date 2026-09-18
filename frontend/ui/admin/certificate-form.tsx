@@ -17,6 +17,7 @@ import {
   GraduationCap,
   Trophy,
   Hash,
+  Pencil,
 } from 'lucide-react';
 
 interface CertificateFormProps {
@@ -109,35 +110,27 @@ export function CertificateForm({ mode, initialData, onSubmit }: CertificateForm
         </Button>
       </div>
 
-      <div className="space-y-6">
-        {/* Header Card */}
-        <Card className="glass-card overflow-hidden border-primary/10">
-          <CardHeader className="border-b border-primary/10 bg-linear-to-l from-primary/5 to-transparent">
-            <CardTitle className="flex items-center gap-3 text-lg">
-              {mode === 'create' ? (
-                <>
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-                    <Hash className="text-primary size-4" />
-                  </div>
-                  إصدار شهادة جديدة
-                </>
-              ) : (
-                <>
-                  <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10">
-                    <PencilIcon />
-                  </div>
-                  تعديل الشهادة
-                </>
-              )}
-            </CardTitle>
-            {initialData?.certificate_code && (
-              <p className="text-muted-foreground font-mono text-sm">
-                {initialData.certificate_code}
-              </p>
-            )}
-          </CardHeader>
-        </Card>
+      <div className="mb-5 flex items-center gap-3 sm:mb-6">
+        <div className="bg-primary/10 flex size-10 shrink-0 items-center justify-center rounded-xl">
+          {mode === 'create' ? (
+            <Hash className="text-primary size-5" aria-hidden="true" />
+          ) : (
+            <Pencil className="text-primary size-5" aria-hidden="true" />
+          )}
+        </div>
+        <div className="min-w-0">
+          <h2 className="text-foreground text-lg font-bold tracking-tight">
+            {mode === 'create' ? 'إصدار شهادة جديدة' : 'تعديل الشهادة'}
+          </h2>
+          {initialData?.certificate_code && (
+            <p className="text-muted-foreground font-mono text-xs" dir="ltr">
+              {initialData.certificate_code}
+            </p>
+          )}
+        </div>
+      </div>
 
+      <div className="space-y-5 sm:space-y-6">
         {/* Student Info */}
         <Card className="glass-card">
           <CardHeader>
@@ -245,17 +238,17 @@ export function CertificateForm({ mode, initialData, onSubmit }: CertificateForm
         )}
 
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex flex-col-reverse gap-3 pt-1 sm:flex-row">
+          <Button asChild variant="outline" type="button" className="sm:order-2">
+            <Link href="/admin/certificates">إلغاء</Link>
+          </Button>
           <Button
             type="submit"
             isLoading={loading}
             onClick={handleSubmit}
-            className="btn-hover-lift flex-1"
+            className="btn-hover-lift w-full sm:order-1 sm:flex-1"
           >
             {!loading && (mode === 'create' ? 'إنشاء الشهادة' : 'حفظ التعديلات')}
-          </Button>
-          <Button asChild variant="outline" type="button">
-            <Link href="/admin/certificates">إلغاء</Link>
           </Button>
         </div>
       </div>
@@ -311,24 +304,5 @@ function FormField({
       )}
       {error && <p className="form-error">{error}</p>}
     </div>
-  );
-}
-
-function PencilIcon() {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="text-primary"
-    >
-      <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
-    </svg>
   );
 }

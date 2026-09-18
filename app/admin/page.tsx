@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { CalendarCheck2, GraduationCap, Link2, Megaphone, ShieldCheck } from 'lucide-react';
+import {
+  ArrowLeft,
+  CalendarCheck2,
+  GraduationCap,
+  Link2,
+  Megaphone,
+  ShieldCheck,
+} from 'lucide-react';
+import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 
 export const metadata: Metadata = {
@@ -43,20 +51,14 @@ const SECTIONS = [
 
 export default function AdminConsolePage() {
   return (
-    <div className="container mx-auto max-w-6xl px-4 pb-8">
-      <div className="mb-8 flex items-center gap-4">
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/10 shadow-sm">
-          <ShieldCheck className="text-primary size-6" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold">الإدارة</h1>
-          <p className="text-muted-foreground text-sm">
-            إدارة الشهادات والتَّدريب والاستشارات والرَّوابط
-          </p>
-        </div>
-      </div>
+    <div className="container mx-auto max-w-6xl px-4 pb-10 sm:px-6 sm:pb-12 lg:px-8">
+      <AdminPageHeader
+        icon={ShieldCheck}
+        title="الإدارة"
+        description="إدارة الشهادات والتَّدريب والاستشارات والرَّوابط"
+      />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
         {SECTIONS.map((section) => {
           const Icon = section.icon;
 
@@ -64,19 +66,25 @@ export default function AdminConsolePage() {
             <Link
               key={section.href}
               href={section.href}
-              className="h-full rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              className="group h-full rounded-2xl focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              <Card className="h-full">
-                <CardContent className="flex items-start gap-4">
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/50 bg-muted/60 dark:bg-neutral-800/60">
-                    <Icon className="text-primary size-5" />
+              <Card className="hover:border-primary/25 h-full">
+                <CardContent className="flex items-start gap-3.5 sm:gap-4">
+                  <span className="border-border/50 bg-muted/60 dark:bg-neutral-800/60 flex size-11 shrink-0 items-center justify-center rounded-xl border sm:size-10">
+                    <Icon className="text-primary size-5" aria-hidden="true" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block font-bold text-foreground">{section.label}</span>
-                    <span className="text-muted-foreground mt-1 block text-sm leading-relaxed">
+                    <span className="text-foreground block font-bold text-pretty">
+                      {section.label}
+                    </span>
+                    <span className="text-muted-foreground mt-1 block text-sm leading-relaxed text-pretty">
                       {section.description}
                     </span>
                   </span>
+                  <ArrowLeft
+                    className="text-muted-foreground/40 group-hover:text-primary mt-0.5 size-4 shrink-0 transition-all duration-300 group-hover:-translate-x-1"
+                    aria-hidden="true"
+                  />
                 </CardContent>
               </Card>
             </Link>

@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
+import Link from 'next/link';
+import { FileX } from 'lucide-react';
 import { getCertificateById, updateCertificate } from '@/frontend/api/certificates';
 import type { AdminCertificate } from '@/frontend/api/certificates';
 import { CertificateForm } from '@/frontend/ui/admin/certificate-form';
 import { PageLoader } from '@/frontend/ui/shared/page-loader';
+import { Button } from '@/frontend/ui/primitives/button';
+import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 
 export default function EditCertificatePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -32,9 +36,17 @@ export default function EditCertificatePage({ params }: { params: Promise<{ id: 
 
   if (!cert) {
     return (
-      <div className="py-20 text-center">
-        <p className="text-muted-foreground">الشهادة غير موجودة</p>
-      </div>
+      <EmptyState
+        variant="card"
+        icon={FileX}
+        title="الشهادة غير موجودة"
+        description="ربما تمَّ حذفها أو أنَّ الرَّابط غير صالح."
+        action={
+          <Button asChild className="btn-hover-lift">
+            <Link href="/admin/certificates">العودة للقائمة</Link>
+          </Button>
+        }
+      />
     );
   }
 

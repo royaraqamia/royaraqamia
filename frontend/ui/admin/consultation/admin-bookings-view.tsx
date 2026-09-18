@@ -117,7 +117,10 @@ export function AdminBookingsView() {
       ) : (
         <ul className="space-y-4">
           {bookings.map((b) => (
-            <li key={b.id} className="rounded-2xl border border-border bg-card p-5 space-y-3">
+            <li
+              key={b.id}
+              className="border-border bg-card space-y-3 rounded-2xl border p-4 sm:p-5"
+            >
               <header className="flex flex-wrap items-center justify-between gap-2">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="font-bold text-foreground">{b.full_name}</span>
@@ -172,12 +175,12 @@ export function AdminBookingsView() {
               </div>
 
               {b.status === 'pending' && (
-                <footer className="flex flex-wrap gap-2 pt-1">
+                <footer className="flex flex-col gap-2 pt-1 sm:flex-row sm:flex-wrap">
                   <button
                     type="button"
                     onClick={() => void act(b.id, 'confirm')}
                     disabled={actingId === b.id}
-                    className="inline-flex items-center gap-2 rounded-full bg-emerald-600 hover:bg-emerald-500 px-5 py-2 text-sm font-bold text-white transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-60"
+                    className="focus-visible:outline-ring inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-2 text-sm font-bold text-white transition-colors hover:bg-emerald-500 focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 sm:w-auto"
                   >
                     {actingId === b.id ? (
                       <Loader2 className="size-4 animate-spin" />
@@ -190,7 +193,7 @@ export function AdminBookingsView() {
                     type="button"
                     onClick={() => void act(b.id, 'reject')}
                     disabled={actingId === b.id}
-                    className="inline-flex items-center gap-2 rounded-full border border-destructive/60 text-destructive hover:bg-destructive/10 px-5 py-2 text-sm font-bold transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-60"
+                    className="focus-visible:outline-ring border-destructive/60 text-destructive hover:bg-destructive/10 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border px-5 py-2 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 disabled:opacity-60 sm:w-auto"
                   >
                     <X className="size-4" />
                     رفض

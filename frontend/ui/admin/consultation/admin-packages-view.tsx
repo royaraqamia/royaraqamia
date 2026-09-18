@@ -126,7 +126,7 @@ export function AdminPackagesView() {
           <button
             type="button"
             onClick={startCreate}
-            className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
+            className="focus-visible:outline-ring bg-primary text-primary-foreground hover:bg-primary/90 inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto"
           >
             <Plus className="size-4" />
             باقة جديدة
@@ -135,7 +135,7 @@ export function AdminPackagesView() {
           <button
             type="button"
             onClick={() => setShowForm(false)}
-            className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-bold text-muted-foreground hover:text-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
+            className="focus-visible:outline-ring border-border text-muted-foreground hover:text-foreground inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border px-5 py-2.5 text-sm font-bold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto"
           >
             <X className="size-4" />
             إلغاء
@@ -160,7 +160,7 @@ export function AdminPackagesView() {
       {showForm && (
         <form
           onSubmit={handleSave}
-          className="rounded-2xl border border-border bg-card p-5 space-y-4"
+          className="border-border bg-card space-y-4 rounded-2xl border p-4 sm:p-5"
           noValidate
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -266,7 +266,7 @@ export function AdminPackagesView() {
           {packages.map((pkg) => (
             <li
               key={pkg.id}
-              className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border bg-card px-4 py-3"
+              className="border-border bg-card flex flex-wrap items-center justify-between gap-3 rounded-xl border px-3.5 py-3 sm:px-4"
             >
               <div className="min-w-0">
                 <p className="font-bold text-foreground">

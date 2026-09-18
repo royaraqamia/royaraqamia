@@ -81,7 +81,7 @@ export function TrainingApplicationsList({
         return (
           <li
             key={application.id}
-            className="rounded-2xl border border-border/60 bg-card p-5 shadow-xs"
+            className="border-border/60 bg-card hover:border-primary/20 rounded-2xl border p-4 shadow-xs transition-colors sm:p-5"
           >
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">

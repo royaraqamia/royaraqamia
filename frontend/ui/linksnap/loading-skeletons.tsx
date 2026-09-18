@@ -106,63 +106,44 @@ export function AdminSkeleton() {
     <section
       aria-label="جارٍ تحميل المحتوى"
       aria-busy="true"
-      className="w-full max-w-7xl mx-auto space-y-8 animate-in fade-in-50 duration-500"
+      className="w-full space-y-6 animate-in fade-in-50 duration-500"
     >
-      {/* Header & Primary Action CTA Bar */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-neutral-200/60 dark:border-neutral-800/60">
-        <div className="space-y-2">
-          <Skeleton className="h-7 w-40 sm:w-48 rounded-lg bg-neutral-200/80 dark:bg-neutral-800/80" />
-          <Skeleton className="h-4 w-56 sm:w-72 rounded-md bg-neutral-200/60 dark:bg-neutral-800/60 opacity-75" />
-        </div>
-        <Skeleton className="h-9 w-32 rounded-xl bg-neutral-200/80 dark:bg-neutral-800/80 shadow-xs shrink-0" />
-      </header>
+      {/* Refresh control row (mirrors AdminPanel) */}
+      <div className="flex sm:justify-end">
+        <Skeleton className="h-11 w-full rounded-full sm:w-44" />
+      </div>
 
-      {/* Admin Stat Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Admin stat cards */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <article
             key={i}
-            className="h-28 rounded-3xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/60 dark:bg-neutral-900/60 p-5 backdrop-blur-md shadow-xs flex flex-col justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
+            className={`border-border bg-card flex h-24 items-center gap-4 rounded-2xl border p-4 sm:p-5 ${
+              i === 2 ? 'sm:col-span-2 lg:col-span-1' : ''
+            }`}
           >
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-4 w-28 rounded-md bg-neutral-200/80 dark:bg-neutral-800/80 opacity-75" />
-              <Skeleton className="h-6 w-6 rounded-lg bg-neutral-200/80 dark:bg-neutral-800/80" />
-            </div>
-            <div className="space-y-1.5">
-              <Skeleton className="h-7 w-32 rounded-lg bg-neutral-200/80 dark:bg-neutral-800/80" />
-              <Skeleton className="h-3 w-40 rounded-md bg-neutral-200/60 dark:bg-neutral-800/60 opacity-60" />
+            <Skeleton className="size-11 shrink-0 rounded-xl sm:size-12" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-3.5 w-28" rounded="md" />
+              <Skeleton className="h-7 w-20" rounded="lg" />
             </div>
           </article>
         ))}
       </div>
 
-      {/* Data Table Section Wrapper */}
-      <div className="space-y-1 rounded-3xl overflow-hidden border border-neutral-200/80 dark:border-neutral-800/80 bg-white/40 dark:bg-neutral-900/40 backdrop-blur-md shadow-xs">
-        {/* Table Header Bar */}
-        <div className="h-12 rounded-t-3xl bg-neutral-100/80 dark:bg-neutral-800/80 px-6 flex items-center justify-between border-b border-neutral-200/80 dark:border-neutral-800/80">
-          <Skeleton className="h-4 w-28 rounded-md bg-neutral-300/60 dark:bg-neutral-700/60" />
-          <Skeleton className="h-4 w-20 rounded-md bg-neutral-300/60 dark:bg-neutral-700/60 hidden sm:block" />
-          <Skeleton className="h-4 w-16 rounded-md bg-neutral-300/60 dark:bg-neutral-700/60 hidden md:block" />
-          <Skeleton className="h-4 w-16 rounded-md bg-neutral-300/60 dark:bg-neutral-700/60" />
+      {/* Directory wrapper */}
+      <div className="border-border bg-card overflow-hidden rounded-xl border">
+        <div className="border-border/50 flex flex-col gap-3 border-b p-4 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+          <Skeleton className="h-4 w-40" rounded="md" />
+          <Skeleton className="h-10 w-full sm:w-64" rounded="lg" />
         </div>
-
-        {/* Table Data Rows */}
-        <div className="divide-y divide-neutral-200/40 dark:divide-neutral-800/40">
+        <div className="divide-border/50 divide-y">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-16 px-6 flex items-center justify-between transition-colors hover:bg-neutral-100/30 dark:hover:bg-neutral-800/30"
-            >
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-9 w-9 rounded-full shrink-0 bg-neutral-200/80 dark:bg-neutral-800/80" />
-                <div className="space-y-1.5">
-                  <Skeleton className="h-4 w-28 sm:w-36 rounded-md bg-neutral-200/80 dark:bg-neutral-800/80" />
-                  <Skeleton className="h-3 w-32 sm:w-44 rounded-md bg-neutral-200/60 dark:bg-neutral-800/60 opacity-60" />
-                </div>
-              </div>
-              <Skeleton className="h-6 w-20 rounded-full bg-neutral-200/80 dark:bg-neutral-800/80 hidden sm:block" />
-              <Skeleton className="h-4 w-24 rounded-md bg-neutral-200/80 dark:bg-neutral-800/80 hidden md:block opacity-75" />
-              <Skeleton className="h-8 w-8 rounded-lg shrink-0 bg-neutral-200/80 dark:bg-neutral-800/80" />
+            <div key={i} className="flex h-16 items-center justify-between gap-3 px-4 sm:px-6">
+              <Skeleton className="h-4 w-20" rounded="md" />
+              <Skeleton className="hidden h-4 w-56 sm:block" rounded="md" />
+              <Skeleton className="h-6 w-16" rounded="full" />
+              <Skeleton className="h-11 w-20 sm:h-9 sm:w-24" rounded="full" />
             </div>
           ))}
         </div>

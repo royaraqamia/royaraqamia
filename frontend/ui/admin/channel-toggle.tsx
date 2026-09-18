@@ -20,18 +20,18 @@ export function ChannelToggle({
   icon,
 }: ChannelToggleProps) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-xl border border-border/60 bg-muted/50 p-3.5">
-      <div className="flex items-center gap-3">
+    <div className="border-border/60 bg-muted/50 flex items-center justify-between gap-3 rounded-xl border p-3.5 sm:gap-4">
+      <div className="flex min-w-0 items-center gap-3">
         {icon && (
-          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-lg">
             {icon}
           </span>
         )}
-        <div>
+        <div className="min-w-0">
           <label htmlFor={id} className="block text-sm font-bold">
             {label}
           </label>
-          <p className="text-muted-foreground text-xs">{description}</p>
+          <p className="text-muted-foreground text-xs leading-relaxed text-pretty">{description}</p>
         </div>
       </div>
       <button

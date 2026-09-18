@@ -91,7 +91,7 @@ export function UserSelect({
             type="button"
             id={id}
             aria-expanded={open}
-            className="bg-muted border-border text-foreground flex w-full items-center justify-between gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors duration-200 focus-ring hover:border-primary/40"
+            className="focus-ring hover:border-primary/40 bg-muted border-border text-foreground flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors duration-200"
           >
             <span className="flex items-center gap-2 text-start">
               <UserRound className="text-muted-foreground size-4 shrink-0" />
@@ -105,7 +105,7 @@ export function UserSelect({
 
         <PopoverContent
           align="start"
-          className="w-[--radix-popover-trigger-width] p-0"
+          className="w-[--radix-popover-trigger-width] max-w-[calc(100vw-2rem)] p-0"
           sideOffset={6}
         >
           <Command shouldFilter={false}>

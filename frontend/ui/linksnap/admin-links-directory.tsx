@@ -2,6 +2,7 @@
 
 import { Search, ChevronLeft, ChevronRight, X, AlertTriangle, Unlock, Lock } from 'lucide-react';
 import { Badge } from '@/frontend/ui/primitives/badge';
+import { Input } from '@/frontend/ui/primitives/input';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 
 export interface AdminSystemLink {
@@ -87,18 +88,18 @@ function PaginationControls({
   onPageChange: (page: number) => void;
 }) {
   return (
-    <div className="flex items-center justify-between px-6 py-4 border-t border-border/50">
-      <span className="text-xs text-muted-foreground font-medium">
+    <div className="border-border/50 flex flex-col gap-3 border-t px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <span className="text-muted-foreground text-xs font-medium">
         الصفحة {page + 1} من {totalPages} ({resultCount} نتيجة)
       </span>
-      <div className="flex items-center gap-1">
+      <div className="flex flex-wrap items-center justify-center gap-1">
         <button
           onClick={() => onPageChange(Math.max(0, page - 1))}
           disabled={page === 0}
-          className="p-1.5 text-muted-foreground hover:text-primary disabled:cursor-not-allowed rounded-full hover:bg-muted transition-colors focus-ring touch-target btn-press"
+          className="text-muted-foreground hover:text-primary hover:bg-muted focus-ring btn-press touch-target rounded-full p-1.5 transition-colors disabled:cursor-not-allowed"
           aria-label="الصفحة السابقة"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronRight className="h-4 w-4" />
         </button>
         {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
           const pageNum = Math.max(0, Math.min(page - 2, totalPages - 5)) + i;
@@ -107,7 +108,7 @@ function PaginationControls({
             <button
               key={pageNum}
               onClick={() => onPageChange(pageNum)}
-              className={`w-10 h-10 text-xs font-bold rounded-full transition-colors cursor-pointer focus-ring touch-target btn-press ${
+              className={`focus-ring btn-press touch-target h-10 w-10 cursor-pointer rounded-full text-xs font-bold transition-colors ${
                 pageNum === page
                   ? 'bg-primary text-primary-foreground'
                   : 'text-muted-foreground hover:bg-muted'
@@ -120,10 +121,10 @@ function PaginationControls({
         <button
           onClick={() => onPageChange(Math.min(totalPages - 1, page + 1))}
           disabled={page >= totalPages - 1}
-          className="p-1.5 text-muted-foreground hover:text-primary disabled:cursor-not-allowed rounded-full hover:bg-muted transition-colors focus-ring touch-target btn-press"
+          className="text-muted-foreground hover:text-primary hover:bg-muted focus-ring btn-press touch-target rounded-full p-1.5 transition-colors disabled:cursor-not-allowed"
           aria-label="الصفحة التالية"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="h-4 w-4" />
         </button>
       </div>
     </div>
@@ -150,7 +151,7 @@ export function AdminLinksDirectory({
         <div
           role="alert"
           aria-live="polite"
-          className="mx-6 mt-4 p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg flex items-center gap-2"
+          className="bg-destructive/10 border-destructive/20 text-destructive mx-4 mt-4 flex items-center gap-2 rounded-lg border p-3 text-xs sm:mx-6"
         >
           <AlertTriangle className="w-4 h-4 shrink-0" />
           <span className="flex-1">{moderateError}</span>
@@ -164,27 +165,30 @@ export function AdminLinksDirectory({
         </div>
       )}
 
-      <div className="p-6 border-b border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <h3 className="text-sm font-bold text-foreground">دليل الروابط المختصرة الكامل</h3>
+      <div className="border-border/50 flex flex-col justify-between gap-3 border-b p-4 sm:flex-row sm:items-center sm:p-6">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+          <h3 className="text-foreground text-sm font-bold">دليل الروابط المختصرة الكامل</h3>
           <Badge variant="outline">مزامنة قاعدة البيانات المباشرة</Badge>
         </div>
         <div className="relative w-full sm:w-64">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <input
+          <Search
+            className="text-muted-foreground pointer-events-none absolute top-1/2 inset-s-3 size-4 -translate-y-1/2"
+            aria-hidden="true"
+          />
+          <Input
             id="admin-search"
-            type="text"
+            type="search"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="بحث بالرمز أو الرابط..."
             aria-label="بحث بالرمز أو الرابط"
-            className="w-full pr-9 pl-3 py-2 bg-muted/50 border border-border rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-primary/20 text-foreground placeholder:text-muted-foreground transition-all"
+            className="h-10 ps-9 text-xs"
           />
         </div>
       </div>
 
       {links.length === 0 ? (
-        <div className="py-16 text-center text-muted-foreground text-xs font-bold">
+        <div className="py-12 sm:py-16 text-center text-muted-foreground text-xs font-bold">
           {searchQuery ? 'لا توجد نتائج تطابق بحثك.' : 'لا توجد روابط مختصرة متاحة في الدليل.'}
         </div>
       ) : (
@@ -194,19 +198,19 @@ export function AdminLinksDirectory({
             <table className="w-full border-collapse">
               <thead>
                 <tr className="bg-muted/30 text-muted-foreground font-bold border-b border-border/50">
-                  <th scope="col" className="px-6 py-4 text-right">
+                  <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4 text-right">
                     الرمز
                   </th>
-                  <th scope="col" className="px-6 py-4 text-right">
+                  <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4 text-right">
                     الوجهة المستهدفة
                   </th>
-                  <th scope="col" className="px-6 py-4 text-center">
+                  <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4 text-center">
                     النقرات
                   </th>
-                  <th scope="col" className="px-6 py-4 text-center">
+                  <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4 text-center">
                     الحالة الأمنية
                   </th>
-                  <th scope="col" className="px-6 py-4 text-left">
+                  <th scope="col" className="px-4 py-3 sm:px-6 sm:py-4 text-left">
                     إجراءات المراقبة
                   </th>
                 </tr>
@@ -218,7 +222,7 @@ export function AdminLinksDirectory({
 
                   return (
                     <tr key={link.code} className="hover:bg-muted/20">
-                      <td className="px-6 py-4 font-mono font-bold text-primary">
+                      <td className="px-4 py-3 sm:px-6 sm:py-4 font-mono font-bold text-primary">
                         <a
                           href={fullUrl}
                           target="_blank"
@@ -229,18 +233,18 @@ export function AdminLinksDirectory({
                         </a>
                       </td>
                       <td
-                        className="px-6 py-4 max-w-55 md:max-w-xs truncate text-muted-foreground font-mono"
+                        className="px-4 py-3 sm:px-6 sm:py-4 max-w-55 md:max-w-xs truncate text-muted-foreground font-mono"
                         title={link.originalUrl}
                       >
                         {link.originalUrl}
                       </td>
-                      <td className="px-6 py-4 text-center font-bold text-foreground">
+                      <td className="px-4 py-3 sm:px-6 sm:py-4 text-center font-bold text-foreground">
                         {link.clickCount}
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 py-3 sm:px-6 sm:py-4 text-center">
                         <LinkStatusBadge isBlocked={link.isBlocked} />
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-4 py-3 sm:px-6 sm:py-4 text-right">
                         <LinkRowActions
                           link={link}
                           isModding={isModding}

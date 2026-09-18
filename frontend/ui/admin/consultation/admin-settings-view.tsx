@@ -67,7 +67,7 @@ export function AdminSettingsView() {
   return (
     <form
       onSubmit={handleSave}
-      className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5"
+      className="border-border bg-card mx-auto max-w-2xl space-y-5 rounded-2xl border p-4 sm:p-6"
       noValidate
     >
       {FIELDS.map(({ key, label, hint, dir }) => (

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { Link2 } from 'lucide-react';
+import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
 
 export const metadata: Metadata = {
   title: 'إدارة الرَّوابط',
@@ -8,18 +9,12 @@ export const metadata: Metadata = {
 
 export default function AdminLinkSnapLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="container mx-auto max-w-6xl px-4 pb-8">
-      <div className="mb-8 flex items-center gap-4">
-        <div className="flex size-12 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 to-primary/10 shadow-sm">
-          <Link2 className="text-primary size-6" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold">إدارة الرَّوابط</h1>
-          <p className="text-muted-foreground text-sm">
-            إحصاءات المنصَّة، دليل الرَّوابط الكامل، وحظر الرَّوابط
-          </p>
-        </div>
-      </div>
+    <div className="container mx-auto max-w-6xl px-4 pb-10 sm:px-6 sm:pb-12 lg:px-8">
+      <AdminPageHeader
+        icon={Link2}
+        title="إدارة الرَّوابط"
+        description="إحصاءات المنصَّة، دليل الرَّوابط الكامل، وحظر الرَّوابط"
+      />
 
       {children}
     </div>

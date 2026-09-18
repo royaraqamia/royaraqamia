@@ -9,7 +9,7 @@ interface AdminErrorStateProps {
 
 export function AdminErrorState({ error, onRetry }: AdminErrorStateProps) {
   return (
-    <div className="p-8 bg-destructive/5 border border-destructive/20 rounded-3xl text-center max-w-lg mx-auto space-y-4">
+    <div className="bg-destructive/5 border-destructive/20 mx-auto max-w-lg space-y-4 rounded-3xl border p-6 text-center sm:p-8">
       <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center text-destructive mx-auto">
         <AlertTriangle className="w-6 h-6" />
       </div>

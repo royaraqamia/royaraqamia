@@ -92,7 +92,7 @@ export default function TrainingApplicationsPage() {
   return (
     <div>
       <div className="mb-6 flex flex-col gap-4">
-        <div className="relative max-w-md">
+        <div className="relative w-full sm:max-w-md">
           <Input
             type="search"
             value={search}
@@ -131,7 +131,7 @@ export default function TrainingApplicationsPage() {
         </div>
       </div>
 
-      <div className="mb-4 flex items-center justify-between text-sm">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="text-muted-foreground">
           إجمالي الطَّلبات: <span className="font-bold text-foreground">{total}</span>
         </span>

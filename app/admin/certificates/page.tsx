@@ -92,16 +92,6 @@ export default function CertificatesListPage() {
 
   return (
     <div>
-      <div className="mb-6 flex justify-end">
-        <Link
-          href="/admin/certificates/new"
-          className="btn-hover-lift bg-primary hover:bg-primary/90 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold text-primary-foreground transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11"
-        >
-          <Plus className="size-4" />
-          شهادة جديدة
-        </Link>
-      </div>
-
       <CertificatesFilterBar
         search={search}
         statusFilter={statusFilter}
@@ -111,10 +101,19 @@ export default function CertificatesListPage() {
           setDebouncedSearch(search);
         }}
         onStatusFilterChange={setStatusFilter}
+        action={
+          <Link
+            href="/admin/certificates/new"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground focus-visible:outline-ring btn-hover-lift inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold shadow-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 sm:w-auto"
+          >
+            <Plus className="size-4" aria-hidden="true" />
+            شهادة جديدة
+          </Link>
+        }
       />
 
       {/* Stats */}
-      <div className="mb-4 flex items-center justify-between text-sm">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="text-muted-foreground">
           إجمالي الشهادات: <span className="font-bold text-foreground">{total}</span>
         </span>

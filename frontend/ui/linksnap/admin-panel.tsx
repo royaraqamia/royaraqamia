@@ -55,16 +55,14 @@ export function AdminPanel({ token }: AdminPanelProps) {
     <div className="space-y-8">
       {/* The section header in `app/admin/linksnap/layout.tsx` already names this
           view, so the panel contributes only its refresh control. */}
-      <div className="flex justify-end">
+      <div className="flex sm:justify-end">
         <button
           onClick={fetchAdminStats}
           disabled={loading}
-          className="px-4 py-2 bg-muted/50 hover:bg-muted text-muted-foreground border border-border font-bold text-xs rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
+          aria-busy={loading || undefined}
+          className="bg-muted/50 hover:bg-muted text-muted-foreground border-border focus-ring btn-press touch-target inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-all disabled:opacity-60 sm:w-auto"
         >
-          <RefreshCw
-            className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`}
-            role={loading ? 'status' : undefined}
-          />
+          <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           <span>إعادة تحميل المقاييس</span>
         </button>
       </div>
