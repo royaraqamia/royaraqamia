@@ -88,22 +88,6 @@ export class ApiClient {
     return data.habit;
   }
 
-  static async fetchLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[]; count: number }> {
-    try {
-      return await request('/habitflow/api/local-data');
-    } catch {
-      return { habits: [], logs: [], count: 0 };
-    }
-  }
-
-  static async syncToCloud(data: { habits: Habit[]; logs: HabitLog[] }) {
-    await request('/habitflow/api/backup', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-    return true;
-  }
-
   static async toggleLog(habitId: string, date: string, completed: boolean) {
     return request<{ log: HabitLog; mode: 'supabase' | 'local' }>('/habitflow/api/logs', {
       method: 'POST',
