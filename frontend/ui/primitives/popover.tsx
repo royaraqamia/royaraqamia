@@ -17,7 +17,7 @@ function PopoverTrigger({
     <PopoverPrimitive.Trigger
       data-slot="popover-trigger"
       className={cn(
-        'inline-flex items-center justify-center text-sm font-medium transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        'inline-flex items-center justify-center text-sm font-medium transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
         className
       )}
       {...props}
@@ -38,11 +38,11 @@ function PopoverContent({
         align={align}
         sideOffset={sideOffset}
         className={cn(
-          'bg-popover/95 text-popover-foreground z-11000 w-72 max-w-[calc(100vw-2rem)] origin-(--radix-popover-content-transform-origin) rounded-2xl border border-border/80 p-4 text-sm tracking-tight shadow-2xl shadow-black/10 backdrop-blur-sm outline-none duration-200 ease-out sm:w-80 sm:p-5',
+          'bg-popover text-popover-foreground z-11000 w-72 max-w-[calc(100vw-2rem)] origin-(--radix-popover-content-transform-origin) rounded-2xl border border-border/80 p-4 text-sm tracking-tight shadow-2xl shadow-black/10 outline-none duration-200 ease-out sm:w-80 sm:p-5',
           'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
           'data-[side=bottom]:slide-in-from-top-2.5 data-[side=left]:slide-in-from-right-2.5 data-[side=right]:slide-in-from-left-2.5 data-[side=top]:slide-in-from-bottom-2.5',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-offset-2',
-          'will-change-[transform,opacity] contain-layout contain-style',
+          'focus-visible:outline-none',
+          'contain-layout contain-style',
           className
         )}
         {...props}
@@ -63,7 +63,7 @@ function PopoverClose({
     <PopoverPrimitive.Close
       data-slot="popover-close"
       className={cn(
-        'text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none',
+        'text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:ring-ring/50 focus-visible:ring-offset-background absolute end-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none',
         className
       )}
       {...props}

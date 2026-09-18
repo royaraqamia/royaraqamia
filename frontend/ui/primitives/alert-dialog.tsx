@@ -49,7 +49,7 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          'fixed z-10000 grid w-full max-w-lg gap-6 border border-border/80 bg-background/95 p-6 shadow-2xl outline-none duration-200 sm:rounded-2xl sm:p-7',
+          'fixed z-10000 grid w-full max-w-lg gap-6 border border-border/80 bg-background p-6 shadow-2xl outline-none duration-200 sm:rounded-2xl sm:p-7',
           'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
           'max-h-[85dvh] overflow-y-auto dialog-scrollbar',
           'data-[state=open]:animate-in data-[state=closed]:animate-out',
@@ -59,7 +59,7 @@ function AlertDialogContent({
           'max-md:-translate-x-1/2 max-md:translate-y-0 max-md:rounded-2xl',
           'max-md:data-[state=open]:slide-in-from-bottom-6',
           'max-md:data-[state=closed]:slide-out-to-bottom-6',
-          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           'will-change-[transform,opacity] contain-layout contain-style',
           className
         )}

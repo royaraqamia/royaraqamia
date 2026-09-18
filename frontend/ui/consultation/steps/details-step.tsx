@@ -49,9 +49,12 @@ export function DetailsStep({ contact, onChange, fieldErrors }: DetailsStepProps
           onChange={(phone_whatsapp) => onChange({ phone_whatsapp })}
           placeholder="9XX XXX XXX"
           invalid={Boolean(fieldErrors['phone_whatsapp'])}
+          aria-describedby={fieldErrors['phone_whatsapp'] ? 'booking-phone-error' : undefined}
         />
         {fieldErrors['phone_whatsapp'] && (
-          <p className="text-sm text-destructive mt-1">{fieldErrors['phone_whatsapp']}</p>
+          <p id="booking-phone-error" className="text-sm text-destructive mt-1">
+            {fieldErrors['phone_whatsapp']}
+          </p>
         )}
       </div>
 

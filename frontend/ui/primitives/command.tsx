@@ -18,7 +18,7 @@ function Command({ className, ...props }: React.ComponentProps<typeof CommandPri
     <CommandPrimitive
       data-slot="command"
       className={cn(
-        'bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-2xl border border-border/60 shadow-2xl backdrop-blur-sm transition-transform duration-200 ease-out',
+        'bg-popover text-popover-foreground flex h-full w-full flex-col overflow-hidden rounded-2xl',
         className
       )}
       {...props}
@@ -37,11 +37,11 @@ function CommandDialog({
 }) {
   return (
     <Dialog {...props}>
-      <DialogHeader className="sr-only">
-        <DialogTitle>{title}</DialogTitle>
-        <DialogDescription>{description}</DialogDescription>
-      </DialogHeader>
-      <DialogContent className="overflow-hidden p-0 rounded-2xl border border-border/80 bg-popover/95 shadow-2xl sm:max-w-xl max-w-[calc(100vw-2rem)] mx-auto">
+      <DialogContent className="overflow-hidden p-0 rounded-2xl border border-border/80 bg-popover shadow-2xl sm:max-w-xl max-w-[calc(100vw-2rem)] mx-auto">
+        <DialogHeader className="sr-only">
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
+        </DialogHeader>
         <Command className="**:[[cmdk-group-heading]]:px-3 **:[[cmdk-group-heading]]:py-2 **:[[cmdk-group-heading]]:text-[10px] **:[[cmdk-group-heading]]:font-bold **:[[cmdk-group-heading]]:uppercase **:[[cmdk-group-heading]]:tracking-widest **:[[cmdk-group-heading]]:text-muted-foreground/70 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-2 **:[[cmdk-group]]:px-2.5 [&_[cmdk-input-wrapper]_svg]:size-4.5 **:[[cmdk-input]]:h-13 **:[[cmdk-item]]:px-3 **:[[cmdk-item]]:py-2.5 [&_[cmdk-item]_svg]:size-4.5">
           {children}
         </Command>
@@ -55,10 +55,10 @@ const CommandInput = React.forwardRef<
   React.ComponentPropsWithoutRef<typeof CommandPrimitive.Input>
 >(({ className, ...props }, ref) => (
   <div
-    className="flex items-center border-b border-border/60 px-4 focus-within:border-border/90 transition-colors duration-150"
+    className="group flex items-center border-b border-border/60 px-4 focus-within:border-border/90 transition-colors duration-150"
     cmdk-input-wrapper=""
   >
-    <SearchIcon className="mr-3 size-4.5 shrink-0 text-muted-foreground/60 transition-colors group-focus-within:text-foreground" />
+    <SearchIcon className="me-3 size-4.5 shrink-0 text-muted-foreground/60 transition-colors group-focus-within:text-foreground" />
     <CommandPrimitive.Input
       ref={ref}
       data-slot="command-input"
@@ -80,7 +80,7 @@ const CommandList = React.forwardRef<
     ref={ref}
     data-slot="command-list"
     className={cn(
-      'max-h-85 sm:max-h-105 scroll-py-2 overflow-x-hidden overflow-y-auto p-2 scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent transition-all',
+      'max-h-85 sm:max-h-105 scroll-py-2 overflow-x-hidden overflow-y-auto p-2 dialog-scrollbar',
       className
     )}
     {...props}
@@ -141,7 +141,7 @@ const CommandItem = React.forwardRef<
     ref={ref}
     data-slot="command-item"
     className={cn(
-      'relative flex cursor-pointer select-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none transition-all duration-150 ease-out data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-40 data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground data-[selected=true]:shadow-xs hover:bg-accent/50 active:scale-[0.995] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4 [&_svg]:text-muted-foreground/80 data-[selected=true]:[&_svg]:text-accent-foreground',
+      'relative flex cursor-pointer select-none items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none transition-[background-color,color,box-shadow,transform] duration-150 ease-out data-[disabled=true]:pointer-events-none data-[disabled=true]:opacity-40 data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground data-[selected=true]:shadow-xs hover:bg-accent/50 active:scale-[0.995] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4 [&_svg:not([class*="text-"])]:text-muted-foreground/80 data-[selected=true]:[&_svg:not([class*="text-"])]:text-accent-foreground',
       className
     )}
     {...props}
@@ -154,7 +154,7 @@ const CommandShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanE
     <span
       data-slot="command-shortcut"
       className={cn(
-        'ml-auto text-[11px] tracking-widest text-muted-foreground/70 font-mono font-medium rounded-md bg-muted/70 px-1.5 py-0.5 border border-border/40 select-none shadow-2xs',
+        'ms-auto text-[11px] tracking-widest text-muted-foreground/70 font-mono font-medium rounded-md bg-muted/70 px-1.5 py-0.5 border border-border/40 select-none shadow-2xs',
         className
       )}
       {...props}

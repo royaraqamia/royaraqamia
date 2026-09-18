@@ -3,7 +3,6 @@
 import * as React from 'react';
 import * as SelectPrimitive from '@radix-ui/react-select';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
-import type { ComponentProps } from 'react';
 
 import { cn } from '@/frontend/shared/cn';
 
@@ -34,7 +33,7 @@ function SelectTrigger({
       data-size={size}
       aria-label={ariaLabel ?? 'اختر خيارًا'}
       className={cn(
-        'group flex w-full items-center justify-between border border-input/80 bg-background/80 px-3.5 py-2 text-sm font-medium text-foreground shadow-xs backdrop-blur-sm transition-all duration-200 ease-out',
+        'group flex w-full items-center justify-between border border-input/80 bg-background/80 px-3.5 py-2 text-sm font-medium text-foreground shadow-xs backdrop-blur-sm transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out',
         'hover:border-ring/40 hover:bg-background hover:shadow-sm',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-ring',
         'active:scale-[0.995]',
@@ -67,9 +66,9 @@ function SelectContent({
       <SelectPrimitive.Content
         data-slot="select-content"
         className={cn(
-          'relative z-11000 min-w-32 max-h-[--radix-select-content-available-height] origin-[--radix-select-content-transform-origin] overflow-hidden rounded-2xl border border-border/60 bg-popover/90 p-1 text-popover-foreground shadow-2xl backdrop-blur-sm transition-all',
+          'relative z-11000 min-w-32 max-h-[--radix-select-content-available-height] origin-[--radix-select-content-transform-origin] overflow-hidden rounded-2xl border border-border/60 bg-popover p-1 text-popover-foreground shadow-2xl transition-[opacity,transform]',
           'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 duration-200 ease-out',
-          'will-change-[transform,opacity] contain-layout contain-style',
+          'contain-layout contain-style',
           position === 'popper' &&
             'data-[side=bottom]:translate-y-1.5 data-[side=left]:-translate-x-1.5 data-[side=right]:translate-x-1.5 data-[side=top]:-translate-y-1.5',
           className
@@ -80,21 +79,12 @@ function SelectContent({
         <SelectScrollUpButton />
         <SelectPrimitive.Viewport
           className={cn(
-            'p-1 space-y-0.5',
-            position === 'popper' &&
-              'h-(--radix-select-trigger-height) w-full min-w-(--radix-select-trigger-width) scroll-my-1'
+            'p-1',
+            position === 'popper' && 'w-full min-w-(--radix-select-trigger-width) scroll-my-1'
           )}
         >
           {React.Children.count(children) > 0 ? (
-            React.Children.map(children, (child) => {
-              if (React.isValidElement(child) && child.type === SelectItem) {
-                const itemChild = child as React.ReactElement<ComponentProps<typeof SelectItem>>;
-                return React.cloneElement(itemChild, {
-                  className: cn('rounded-lg mx-0.5 my-0.5', itemChild.props.className),
-                });
-              }
-              return child;
-            })
+            children
           ) : (
             <div className="px-4 py-3 text-center text-xs font-medium text-muted-foreground/80">
               لا توجد خيارات متاحة
@@ -129,7 +119,7 @@ function SelectItem({
     <SelectPrimitive.Item
       data-slot="select-item"
       className={cn(
-        'group relative flex w-full cursor-pointer select-none items-center gap-2 rounded-lg py-2 pr-8 pl-3 text-sm font-medium outline-none transition-colors duration-150 ease-out',
+        'group relative my-0.5 flex w-full cursor-pointer select-none items-center gap-2 rounded-lg py-2 ps-8 pe-3 text-sm font-medium outline-none transition-colors duration-150 ease-out',
         'focus:bg-accent focus:text-accent-foreground',
         'data-[state=checked]:bg-accent/75 data-[state=checked]:text-accent-foreground data-[state=checked]:font-bold',
         'data-disabled:pointer-events-none data-disabled:opacity-40',
@@ -138,7 +128,7 @@ function SelectItem({
       )}
       {...props}
     >
-      <span className="absolute right-2.5 flex size-4 items-center justify-center">
+      <span className="absolute start-2.5 flex size-4 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
           <CheckIcon className="size-4 stroke-[2.5] text-primary transition-transform duration-200 ease-out data-[state=checked]:scale-100" />
         </SelectPrimitive.ItemIndicator>
