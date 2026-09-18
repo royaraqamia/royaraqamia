@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.24.0] - 2026-09-18
+
+### Changed
+- add husky hooks with lint-staged and typecheck
+
+### Added
+- notify admins on new booking requests
+
+### Fixed
+- harden the apply flow for concurrent applicant bursts
+- stop certificate detail values clipping on narrow screens
+
 ## [1.23.0] - 2026-09-18
 
 ### Changed
