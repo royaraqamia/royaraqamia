@@ -6,6 +6,7 @@ import {
   SlotTakenError,
   PackageInUseError,
   SlotReservedError,
+  type ConsultationBookingNotification,
 } from '@/backend/services/consultation/consultation-service';
 import type { ConsultationRepositories } from '@/backend/repositories/consultation';
 
@@ -48,12 +49,15 @@ function makeService(
   overrides: {
     checkRateLimit?: (key: string, limit: number, windowMs: number) => Promise<boolean>;
     generateReferenceCode?: () => string;
+    notifyAdmins?: (booking: ConsultationBookingNotification) => void;
   } = {}
 ) {
   return new ConsultationService(repositories, {
     nowIso: () => NOW,
     checkRateLimit: overrides.checkRateLimit ?? vi.fn().mockResolvedValue(true),
     generateReferenceCode: overrides.generateReferenceCode ?? vi.fn().mockReturnValue(REFERENCE),
+    notifyAdmins: vi.fn(overrides.notifyAdmins),
+    captureException: vi.fn(),
   });
 }
 
@@ -206,6 +210,70 @@ describe('ConsultationService', () => {
       await expect(service.createBooking(bookingInput, context)).rejects.toBeInstanceOf(
         ConsultationValidationError
       );
+    });
+
+    it('notifies admins after the booking is committed', async () => {
+      const repositories = makeRepositories();
+      (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'pkg-1',
+        name: 'باقة الاستشارة الكاملة',
+        is_active: true,
+        sessions_count: 1,
+      });
+      (repositories.bookings.create as ReturnType<typeof vi.fn>).mockResolvedValue('booking-9');
+      const notifyAdmins = vi.fn();
+      const service = makeService(repositories, { notifyAdmins });
+
+      await service.createBooking(bookingInput, context);
+
+      expect(notifyAdmins).toHaveBeenCalledTimes(1);
+      expect(notifyAdmins).toHaveBeenCalledWith({
+        id: 'booking-9',
+        referenceCode: REFERENCE,
+        fullName: bookingInput.full_name,
+        packageName: 'باقة الاستشارة الكاملة',
+      });
+    });
+
+    it('still returns the booking when the admin notification throws', async () => {
+      const repositories = makeRepositories();
+      (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'pkg-1',
+        name: 'باقة',
+        is_active: true,
+        sessions_count: 1,
+      });
+      (repositories.bookings.create as ReturnType<typeof vi.fn>).mockResolvedValue('booking-9');
+      const service = makeService(repositories, {
+        notifyAdmins: () => {
+          throw new Error('push service down');
+        },
+      });
+
+      await expect(service.createBooking(bookingInput, context)).resolves.toEqual({
+        id: 'booking-9',
+        referenceCode: REFERENCE,
+      });
+    });
+
+    it('does not notify admins when the booking fails', async () => {
+      const repositories = makeRepositories();
+      (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'pkg-1',
+        name: 'باقة',
+        is_active: true,
+        sessions_count: 1,
+      });
+      (repositories.bookings.create as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('SLOT_TAKEN')
+      );
+      const notifyAdmins = vi.fn();
+      const service = makeService(repositories, { notifyAdmins });
+
+      await expect(service.createBooking(bookingInput, context)).rejects.toBeInstanceOf(
+        SlotTakenError
+      );
+      expect(notifyAdmins).not.toHaveBeenCalled();
     });
   });
 

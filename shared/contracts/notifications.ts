@@ -9,7 +9,8 @@ export type NotificationType =
   | 'expense_alert'
   | 'link_clicked'
   | 'system_announcement'
-  | 'training_application';
+  | 'training_application'
+  | 'consultation_booking';
 
 export interface Notification {
   id: string;

@@ -77,6 +77,9 @@ export interface ConsultationServiceConfig {
   nowIso: () => string;
   checkRateLimit: (key: string, limit: number, windowMs: number) => Promise<boolean>;
   generateReferenceCode: () => string;
+  /** Fail-safe: called after the booking is committed, never allowed to throw upstream. */
+  notifyAdmins?: ConsultationBookingNotifier;
+  captureException?: (error: unknown, options?: { extra?: Record<string, unknown> }) => void;
 }
 
 export interface CreateBookingContext {
@@ -88,6 +91,18 @@ export interface CreateBookingContext {
 export interface CreatedBooking {
   id: string;
   referenceCode: string;
+}
+
+/** The subset of a booking an admin notification needs, resolved at creation time. */
+export interface ConsultationBookingNotification {
+  id: string;
+  referenceCode: string;
+  fullName: string;
+  packageName: string | null;
+}
+
+export interface ConsultationBookingNotifier {
+  (booking: ConsultationBookingNotification): void;
 }
 
 /**
@@ -143,15 +158,18 @@ export class ConsultationService {
 
     for (let attempt = 0; attempt < MAX_REFERENCE_CODE_ATTEMPTS; attempt++) {
       const referenceCode = this.config.generateReferenceCode();
+      let id: string;
       try {
-        const id = await this.repositories.bookings.create({ ...command, referenceCode });
-        return { id, referenceCode };
+        id = await this.repositories.bookings.create({ ...command, referenceCode });
       } catch (error) {
         // A collision on reference_code is vanishingly rare (32^8), but the
         // column is UNIQUE — retry with a fresh code rather than fail.
         if (errorCode(error) === 'REFERENCE_TAKEN') continue;
         throw this.mapBookingError(error);
       }
+
+      this.notifyAdmins({ id, referenceCode, fullName: input.full_name, packageName: pkg.name });
+      return { id, referenceCode };
     }
 
     throw new Error('REFERENCE_CODE_EXHAUSTED');
@@ -227,6 +245,20 @@ export class ConsultationService {
   }
 
   // ----------------------------------------------------------
+
+  /**
+   * The booking is already committed — a notify failure must never surface to
+   * the visitor as a failed booking, so it is logged rather than rethrown.
+   */
+  private notifyAdmins(booking: ConsultationBookingNotification): void {
+    try {
+      this.config.notifyAdmins?.(booking);
+    } catch (error) {
+      this.config.captureException?.(error, {
+        extra: { source: 'consultation.createBooking.notify', id: booking.id },
+      });
+    }
+  }
 
   private mapBookingError(error: unknown): Error {
     const code = errorCode(error);
