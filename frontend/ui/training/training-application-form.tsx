@@ -72,10 +72,8 @@ export function TrainingApplicationForm({ onSubmitted }: TrainingApplicationForm
 
   if (isSubmitted) {
     return (
-      <div className="rounded-3xl border border-emerald-500/25 bg-emerald-500/5 p-6 sm:p-10 text-center">
-        <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500/12 text-emerald-600">
-          <CheckCircle2 className="h-7 w-7" aria-hidden="true" />
-        </div>
+      <div className="p-6 sm:p-10 text-center">
+        <CheckCircle2 className="mx-auto mb-5 size-12 text-emerald-600" aria-hidden="true" />
 
         <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">
           تمَّ استلام طلبك بنجاح!
