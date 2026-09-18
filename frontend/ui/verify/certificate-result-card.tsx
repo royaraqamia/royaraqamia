@@ -73,7 +73,7 @@ export function CertificateResultCard({
     <Card className="group relative overflow-hidden rounded-3xl border border-emerald-500/30 bg-card/90 shadow-2xl backdrop-blur-xl transition-all duration-300 hover:border-emerald-500/40">
       {/* Top Banner Header */}
       <m.div
-        className="relative flex flex-wrap items-center justify-between gap-4 border-b border-border/50 bg-linear-to-r from-emerald-500/10 via-emerald-500/5 to-transparent px-6 py-5 sm:px-8"
+        className="relative flex flex-wrap items-center justify-between gap-4 border-b border-border/50 bg-linear-to-r from-emerald-500/10 via-emerald-500/5 to-transparent px-5 py-5 sm:px-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
@@ -89,7 +89,7 @@ export function CertificateResultCard({
           </m.div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-bold tracking-tight text-foreground">
+              <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">
                 تمَّ التَّحقُّق بنجاح
               </h2>
             </div>
@@ -127,10 +127,10 @@ export function CertificateResultCard({
         </m.div>
       </m.div>
 
-      <CardContent className="p-6 sm:p-8 space-y-6">
+      <CardContent className="p-5 sm:p-8 space-y-5 sm:space-y-6">
         {/* Main Certificate Showcase Highlight Banner */}
-        <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-linear-to-br from-primary/5 via-primary/2 to-transparent p-5 sm:p-6 backdrop-blur-sm">
-          <div className="grid gap-6 sm:grid-cols-2 relative z-10">
+        <div className="relative overflow-hidden rounded-2xl border border-primary/15 bg-linear-to-br from-primary/5 via-primary/2 to-transparent p-4 backdrop-blur-sm sm:p-6">
+          <div className="relative z-10 grid gap-4 sm:grid-cols-2 sm:gap-6">
             {/* Student Info */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
@@ -164,21 +164,23 @@ export function CertificateResultCard({
               variants={detailVariants}
               initial="hidden"
               animate="visible"
-              className="group/item relative flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-background/60 p-4 transition-all duration-200 hover:border-primary/30 hover:bg-background/90 hover:shadow-xs"
+              className="group/item relative flex min-w-0 items-center justify-between gap-2.5 rounded-2xl border border-border/50 bg-background/60 p-3.5 transition-all duration-200 hover:border-primary/30 hover:bg-background/90 hover:shadow-xs sm:gap-3 sm:p-4"
             >
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted/80 text-muted-foreground transition-colors duration-200 group-hover/item:bg-primary/10 group-hover/item:text-primary">
+              <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-muted/80 text-muted-foreground transition-colors duration-200 group-hover/item:bg-primary/10 group-hover/item:text-primary sm:size-10">
                   {detail.icon}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs text-muted-foreground font-medium">{detail.label}</p>
+                  <p className="text-xs text-muted-foreground font-medium wrap-break-word">
+                    {detail.label}
+                  </p>
                   <p
-                    className={`truncate text-sm font-bold mt-0.5 ${
+                    className={`mt-0.5 text-sm font-bold leading-snug ${
                       'danger' in detail && detail.danger
-                        ? 'text-destructive'
+                        ? 'text-destructive wrap-break-word'
                         : 'highlight' in detail && detail.highlight
-                          ? 'font-mono tracking-wider text-primary'
-                          : 'text-foreground'
+                          ? 'font-mono tracking-wider text-primary wrap-anywhere'
+                          : 'text-foreground wrap-break-word'
                     }`}
                   >
                     {'value' in detail ? detail.value : ''}
@@ -190,7 +192,7 @@ export function CertificateResultCard({
                 <button
                   type="button"
                   onClick={() => onCopy(detail.value ?? '')}
-                  className="relative inline-flex items-center gap-1.5 rounded-xl border border-border/60 bg-muted/50 px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary cursor-pointer active:scale-95 shrink-0"
+                  className="relative inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-border/60 bg-muted/50 px-2 py-1.5 text-xs font-medium text-muted-foreground transition-all duration-200 hover:border-primary/40 hover:bg-primary/10 hover:text-primary cursor-pointer active:scale-95 sm:px-2.5"
                   aria-label="نسخ رمز الشَّهادة"
                 >
                   {copied ? (
