@@ -1,15 +1,24 @@
 import { createRateLimiter, type RateLimiter } from '@/backend/clients/rate-limiter';
 import type { RateLimiterOptions } from '@/backend/clients/rate-limiter';
 import { env } from '@/backend/config/env';
+import { logger } from '@/backend/shared/logger';
 
 let defaultRateLimiter: RateLimiter | null = null;
+let warnedMissingRedis = false;
 
 export function getDefaultRateLimiter(): RateLimiter {
   if (!defaultRateLimiter) {
-    defaultRateLimiter = createRateLimiter({
-      redisUrl: env.upstashRedisUrl,
-      redisToken: env.upstashRedisToken,
-    });
+    const redisUrl = env.upstashRedisUrl;
+    const redisToken = env.upstashRedisToken;
+
+    if ((!redisUrl || !redisToken) && !warnedMissingRedis) {
+      warnedMissingRedis = true;
+      logger.warn(
+        '[rate-limiter] UPSTASH_REDIS_REST_URL/TOKEN not configured — using per-instance in-memory limits, which are NOT shared across serverless instances (a global limit cannot be enforced).'
+      );
+    }
+
+    defaultRateLimiter = createRateLimiter({ redisUrl, redisToken });
   }
   return defaultRateLimiter;
 }

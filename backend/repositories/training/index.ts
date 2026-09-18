@@ -23,6 +23,17 @@ export function createTrainingApplicationsRepository(
       return data as TrainingApplication;
     },
 
+    async getByReferenceCode(referenceCode: string): Promise<TrainingApplication | null> {
+      const { data, error } = await supabase
+        .from('training_applications')
+        .select('*')
+        .eq('reference_code', referenceCode)
+        .maybeSingle();
+
+      if (error || !data) return null;
+      return data as TrainingApplication;
+    },
+
     async list(
       query: TrainingApplicationListQuery
     ): Promise<{ data: TrainingApplication[]; total: number }> {

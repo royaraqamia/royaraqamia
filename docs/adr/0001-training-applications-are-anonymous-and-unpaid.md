@@ -28,11 +28,13 @@ machinery would have meant encoding slot locks and expiry for a course that has 
 
 - An Application generally cannot be attributed to an account. `user_id` is captured
   opportunistically when a session happens to exist, and is normally absent.
-- Protection is a per-IP rate limit instead of authentication, and the rate limit **fails
-  open** — a lead form must keep accepting leads when the limiter's store is unreachable.
-  Cloudflare Turnstile was dropped from this form: the friction sat in front of the coldest
-  audience on the site for a flow that collects no money, leaving the rate limit as the only
-  defence against automated abuse.
+- Protection is a rate limit instead of authentication: a loose per-IP cap
+  (a backstop, sized so a shared classroom/NAT network of 100+ applicants is not
+  throttled) plus a global cap that bounds total submissions, and the limit **fails
+  open** — a lead form must keep accepting leads when the limiter's store is
+  unreachable. Cloudflare Turnstile was dropped from this form: the friction sat
+  in front of the coldest audience on the site for a flow that collects no money,
+  leaving the rate limit as the only defence against automated abuse.
 - Accepting money later means adding it on top of an existing Application, not replacing this
   flow. The Course is referenced by slug rather than by a foreign key so that promoting
   Courses to their own table stays additive.

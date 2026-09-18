@@ -18,11 +18,17 @@ function makeReq(headers: Record<string, string>): NextRequest {
 }
 
 describe('getClientIp', () => {
-  it('uses the first entry of x-forwarded-for', () => {
-    expect(getClientIp(makeReq({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8' }))).toBe('1.2.3.4');
+  it('prefers x-real-ip over x-forwarded-for', () => {
+    expect(
+      getClientIp(makeReq({ 'x-real-ip': '10.0.0.1', 'x-forwarded-for': '1.2.3.4, 5.6.7.8' }))
+    ).toBe('10.0.0.1');
   });
 
-  it('trims the forwarded IP', () => {
+  it('uses the last forwarded hop when x-real-ip is absent', () => {
+    expect(getClientIp(makeReq({ 'x-forwarded-for': '1.2.3.4, 5.6.7.8' }))).toBe('5.6.7.8');
+  });
+
+  it('trims a single forwarded IP', () => {
     expect(getClientIp(makeReq({ 'x-forwarded-for': '  9.9.9.9  ' }))).toBe('9.9.9.9');
   });
 

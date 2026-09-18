@@ -10,13 +10,40 @@ import {
   type TrainingApplicationUpdateInput,
 } from '@/shared/contracts/training';
 
-// 5 submissions per 10 minutes per IP. Deliberately fail-open: if the limiter's
-// store is unreachable, a lead form must keep accepting leads.
-const IP_LIMIT = 5;
+// The per-IP limit is a loose abuse backstop, not the capacity ceiling: 100+
+// students can apply from one shared network (classroom, NAT, campus WiFi), and
+// a tight per-IP cap would 429 almost all of them. The global limit is what
+// actually bounds total load (DB writes + notification fan-out) under a flood.
+// Both are deliberately fail-open: if the limiter's store is unreachable, a lead
+// form must keep accepting leads.
+const IP_LIMIT = 300;
+const GLOBAL_LIMIT = 1_000;
 const WINDOW_MS = 10 * 60_000;
+const GLOBAL_RATE_LIMIT_KEY = 'training-apply:global';
 
 const REFERENCE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const MAX_REFERENCE_CODE_ATTEMPTS = 3;
+
+// A burst of concurrent applications can make the connection pooler reset a
+// socket (ECONNRESET / "fetch failed") or return a transient 5xx. Retrying the
+// SAME reference code is safe: the column is UNIQUE, so if the first attempt
+// actually committed, the retry collides and we return the stored row instead
+// of creating a duplicate.
+const MAX_TRANSIENT_ATTEMPTS = 3;
+const TRANSIENT_BACKOFF_BASE_MS = 100;
+
+const TRANSIENT_ERROR_CODES = new Set([
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'ETIMEDOUT',
+  'EPIPE',
+  'ENOTFOUND',
+  'EAI_AGAIN',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_SOCKET',
+  'UND_ERR_HEADERS_TIMEOUT',
+  'UND_ERR_BODY_TIMEOUT',
+]);
 
 export class TrainingApplicationClosedError extends Error {
   constructor() {
@@ -77,6 +104,43 @@ function isUniqueViolation(error: unknown): boolean {
   return (error as { code?: string } | null)?.code === '23505';
 }
 
+/** Network resets / timeouts / 5xx are worth a bounded retry; validation or
+ *  schema errors are not. */
+function isTransientError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const { code, message, status } = error as {
+    code?: unknown;
+    message?: unknown;
+    status?: unknown;
+  };
+  if (typeof code === 'string' && TRANSIENT_ERROR_CODES.has(code)) return true;
+  if (typeof status === 'number' && (status === 429 || status >= 500)) return true;
+  return (
+    typeof message === 'string' && /fetch failed|socket hang up|network|timeout/i.test(message)
+  );
+}
+
+function matchesPayload(
+  application: TrainingApplication,
+  payload: {
+    course_slug: string;
+    full_name: string;
+    phone_whatsapp: string;
+    user_id: string | null;
+  }
+): boolean {
+  return (
+    application.course_slug === payload.course_slug &&
+    application.full_name === payload.full_name &&
+    application.phone_whatsapp === payload.phone_whatsapp &&
+    application.user_id === payload.user_id
+  );
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export class TrainingApplicationService {
   constructor(private readonly deps: TrainingApplicationServiceDeps) {}
 
@@ -86,12 +150,19 @@ export class TrainingApplicationService {
   ): Promise<TrainingApplication> {
     if (!this.deps.isApplicationOpen()) throw new TrainingApplicationClosedError();
 
-    const allowed = await this.deps.checkRateLimit(
+    const ipAllowed = await this.deps.checkRateLimit(
       `training-apply:${context.ip}`,
       IP_LIMIT,
       WINDOW_MS
     );
-    if (!allowed) throw new TrainingApplicationRateLimitError();
+    if (!ipAllowed) throw new TrainingApplicationRateLimitError();
+
+    const globalAllowed = await this.deps.checkRateLimit(
+      GLOBAL_RATE_LIMIT_KEY,
+      GLOBAL_LIMIT,
+      WINDOW_MS
+    );
+    if (!globalAllowed) throw new TrainingApplicationRateLimitError();
 
     const application = await this.insertWithUniqueReference(input, context.userId ?? null);
 
@@ -133,20 +204,40 @@ export class TrainingApplicationService {
       user_id: userId,
     };
 
-    for (let attempt = 0; attempt < MAX_REFERENCE_CODE_ATTEMPTS; attempt++) {
+    let referenceCode = this.deps.generateReferenceCode();
+    let codeAttempts = 0;
+    let transientAttempts = 0;
+
+    for (;;) {
       try {
-        return await this.deps.repository.create({
-          ...payload,
-          reference_code: this.deps.generateReferenceCode(),
-        });
+        return await this.deps.repository.create({ ...payload, reference_code: referenceCode });
       } catch (error) {
-        // A collision on reference_code is vanishingly rare (32^8), but the
-        // column is UNIQUE — retry with a fresh code rather than 500.
-        if (!isUniqueViolation(error)) throw error;
+        if (isUniqueViolation(error)) {
+          // Either the code genuinely collided (vanishingly rare, 32^8) or our
+          // own earlier attempt committed before the connection dropped. Look
+          // it up: a matching row means the insert already succeeded.
+          const existing = await this.deps.repository.getByReferenceCode(referenceCode);
+          if (existing && matchesPayload(existing, payload)) return existing;
+
+          codeAttempts += 1;
+          if (codeAttempts >= MAX_REFERENCE_CODE_ATTEMPTS) {
+            throw new Error('تعذّر توليد رمز طلب فريد.', { cause: error });
+          }
+          referenceCode = this.deps.generateReferenceCode();
+          continue;
+        }
+
+        if (isTransientError(error) && transientAttempts < MAX_TRANSIENT_ATTEMPTS) {
+          transientAttempts += 1;
+          await sleep(
+            TRANSIENT_BACKOFF_BASE_MS * transientAttempts + Math.floor(Math.random() * 50)
+          );
+          continue; // same code — idempotent if the first attempt committed
+        }
+
+        throw error;
       }
     }
-
-    throw new Error('تعذّر توليد رمز طلب فريد.');
   }
 }
 

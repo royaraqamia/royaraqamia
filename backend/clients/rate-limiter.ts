@@ -50,8 +50,15 @@ export class RateLimiterService implements RateLimiter {
     return this.redis;
   }
 
-  private getLimiter(key: string, limit: number, windowMs: number): Ratelimit {
-    const existing = this.limiters.get(key);
+  /**
+   * One limiter per policy (`limit` + `window`), never per identifier. The
+   * caller passes the identifier to `.limit()`, so this cache stays bounded by
+   * the small, fixed set of policies instead of growing with every unique IP —
+   * a per-key cache leaks a limiter object per caller under a distributed flood.
+   */
+  private getLimiter(limit: number, windowMs: number): Ratelimit {
+    const policyKey = `${limit}:${windowMs}`;
+    const existing = this.limiters.get(policyKey);
     if (existing) return existing;
 
     const redisClient = this.getRedis();
@@ -61,7 +68,7 @@ export class RateLimiterService implements RateLimiter {
         redis: redisClient,
         limiter: Ratelimit.slidingWindow(limit, `${windowMs} ms`),
         analytics: true,
-        prefix: `ratelimit:${key}`,
+        prefix: `ratelimit:${policyKey}`,
       });
     } else {
       const memoryStore = new Map<string, { count: number; resetAt: number }>();
@@ -82,7 +89,7 @@ export class RateLimiterService implements RateLimiter {
       } as Ratelimit;
     }
 
-    this.limiters.set(key, limiter);
+    this.limiters.set(policyKey, limiter);
     return limiter;
   }
 
@@ -93,7 +100,7 @@ export class RateLimiterService implements RateLimiter {
     options: RateLimiterOptions = {}
   ): Promise<boolean> {
     try {
-      const limiter = this.getLimiter(key, limit, windowMs);
+      const limiter = this.getLimiter(limit, windowMs);
       const { success } = await limiter.limit(key);
       return success;
     } catch {
@@ -108,7 +115,7 @@ export class RateLimiterService implements RateLimiter {
     options: RateLimiterOptions = {}
   ): Promise<number> {
     try {
-      const limiter = this.getLimiter(key, limit, windowMs);
+      const limiter = this.getLimiter(limit, windowMs);
       const { remaining } = await limiter.limit(key);
       return remaining;
     } catch {

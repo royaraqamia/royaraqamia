@@ -20,6 +20,10 @@
 - `npm run test:e2e` — Playwright (needs `E2E_TEST_EMAIL` + `E2E_TEST_PASSWORD`)
 - `npx playwright test --grep responsive` — viewport suite
 
+## Load testing
+
+- `npm run load-test -- --url <endpoint> --concurrency 100 --total 200` — concurrency smoke test for `POST /api/training/applications`. Writes real rows and triggers notifications, so target a preview deployment backed by a throwaway database; production is refused unless `--allow-prod` is passed.
+
 ## Deployment
 
 **Primary path:** Push to `main` → CI runs code-quality checks → `.github/workflows/release.yml` (gated: push on `main`) → bump/tag/`chore(release)` commit `[skip ci]` → Vercel auto-deploys.

@@ -30,8 +30,15 @@ export async function getOptionalUser(): Promise<{
   client: SupabaseClient | null;
 }> {
   try {
-    const supabase = await createServerSupabaseClient();
-    if (!supabase) return { user: null, client: null };
+    const cookieStore = await cookies();
+
+    // Anonymous visitors have no Supabase session cookie. Skipping the client
+    // construction and `getUser()` round-trip keeps public POSTs (e.g. a burst
+    // of training applications) from paying auth cost they never use.
+    const hasSessionCookie = cookieStore.getAll().some(({ name }) => name.includes('-auth-token'));
+    if (!hasSessionCookie) return { user: null, client: null };
+
+    const supabase = await createServerSupabaseClient(cookieStore);
     const { data } = await supabase.auth.getUser();
     if (!data?.user) return { user: null, client: null };
     return {

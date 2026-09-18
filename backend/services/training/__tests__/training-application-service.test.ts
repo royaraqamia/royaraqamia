@@ -14,6 +14,7 @@ import {
   type TrainingApplication,
   type TrainingApplicationInput,
 } from '@/shared/contracts/training';
+import { createRateLimiter } from '@/backend/clients/rate-limiter';
 
 const VALID_INPUT: TrainingApplicationInput = {
   course_slug: 'build-digital-products',
@@ -42,6 +43,7 @@ function makeApplication(overrides: Partial<TrainingApplication> = {}): Training
 function makeRepository(overrides: Partial<TrainingApplicationsRepository> = {}) {
   return {
     getById: vi.fn().mockResolvedValue(makeApplication()),
+    getByReferenceCode: vi.fn().mockResolvedValue(null),
     list: vi.fn().mockResolvedValue({ data: [], total: 0 }),
     create: vi.fn().mockImplementation((input: TrainingApplicationCreateInput) =>
       Promise.resolve(
@@ -148,6 +150,76 @@ describe('TrainingApplicationService.submit', () => {
     expect(repository.create).not.toHaveBeenCalled();
   });
 
+  it('checks the per-IP limit before the global limit', async () => {
+    const { service, checkRateLimit } = makeService();
+
+    await service.submit(VALID_INPUT, { ip: '1.1.1.1' });
+
+    expect(checkRateLimit).toHaveBeenNthCalledWith(
+      1,
+      'training-apply:1.1.1.1',
+      expect.any(Number),
+      expect.any(Number)
+    );
+    expect(checkRateLimit).toHaveBeenNthCalledWith(
+      2,
+      'training-apply:global',
+      expect.any(Number),
+      expect.any(Number)
+    );
+  });
+
+  it('does not apply the global check when the IP is already limited', async () => {
+    const { service, checkRateLimit } = makeService({
+      checkRateLimit: () => Promise.resolve(false),
+    });
+
+    await expect(service.submit(VALID_INPUT, { ip: '1.1.1.1' })).rejects.toBeInstanceOf(
+      TrainingApplicationRateLimitError
+    );
+    expect(checkRateLimit).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects when the global limit is exceeded even though the IP is under its cap', async () => {
+    const { service, repository, checkRateLimit } = makeService();
+    checkRateLimit.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+
+    await expect(service.submit(VALID_INPUT, { ip: '1.1.1.1' })).rejects.toBeInstanceOf(
+      TrainingApplicationRateLimitError
+    );
+    expect(repository.create).not.toHaveBeenCalled();
+  });
+
+  it('accepts a burst of 100 applications from one shared IP', async () => {
+    const created: TrainingApplicationCreateInput[] = [];
+    const repository = makeRepository({
+      create: vi.fn().mockImplementation((input: TrainingApplicationCreateInput) => {
+        created.push(input);
+        return Promise.resolve(makeApplication({ reference_code: input.reference_code }));
+      }),
+    } as Partial<TrainingApplicationsRepository>);
+
+    // Real in-memory limiter with the real service: proves the shared-IP
+    // (classroom/NAT) path, not just that the mock says yes.
+    const limiter = createRateLimiter();
+    const service = new TrainingApplicationService({
+      repository,
+      checkRateLimit: (key, limit, windowMs) => limiter.checkRateLimit(key, limit, windowMs),
+      notifyAdmins: vi.fn(),
+      isApplicationOpen: () => true,
+      generateReferenceCode: () => `TRN-2026-BURST${created.length}`,
+      captureException: vi.fn(),
+    });
+
+    const applications = await Promise.all(
+      Array.from({ length: 100 }, () => service.submit(VALID_INPUT, { ip: '203.0.113.7' }))
+    );
+
+    expect(applications).toHaveLength(100);
+    expect(created).toHaveLength(100);
+    expect(new Set(applications.map((app) => app.reference_code)).size).toBe(100);
+  });
+
   it('notifies admins after the row is committed', async () => {
     const { service, notifyAdmins } = makeService();
 
@@ -210,6 +282,58 @@ describe('TrainingApplicationService.submit', () => {
     });
 
     await expect(service.submit(VALID_INPUT, { ip: '1.1.1.1' })).rejects.toThrow('boom');
+  });
+
+  it('retries a transient connection reset with the same reference code', async () => {
+    const create = vi
+      .fn()
+      .mockRejectedValueOnce(Object.assign(new Error('fetch failed'), { code: 'ECONNRESET' }))
+      .mockImplementation((input: TrainingApplicationCreateInput) =>
+        Promise.resolve(makeApplication({ reference_code: input.reference_code }))
+      );
+    const { service } = makeService({
+      repository: makeRepository({ create } as Partial<TrainingApplicationsRepository>),
+    });
+
+    const application = await service.submit(VALID_INPUT, { ip: '1.1.1.1' });
+
+    expect(create).toHaveBeenCalledTimes(2);
+    const firstCode = create.mock.calls[0]?.[0]?.reference_code;
+    const secondCode = create.mock.calls[1]?.[0]?.reference_code;
+    expect(firstCode).toBe(secondCode);
+    expect(application.reference_code).toBe('TRN-2026-A7K2M9QX');
+  });
+
+  it('returns the committed row instead of duplicating after an ambiguous retry', async () => {
+    const existing = makeApplication({ reference_code: 'TRN-2026-A7K2M9QX' });
+    const create = vi
+      .fn()
+      .mockRejectedValueOnce(Object.assign(new Error('fetch failed'), { code: 'ECONNRESET' }))
+      .mockRejectedValueOnce(Object.assign(new Error('duplicate'), { code: '23505' }));
+    const { service, repository } = makeService({
+      repository: makeRepository({
+        create,
+        getByReferenceCode: vi.fn().mockResolvedValue(existing),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    const application = await service.submit(VALID_INPUT, { ip: '1.1.1.1' });
+
+    expect(application).toBe(existing);
+    expect(create).toHaveBeenCalledTimes(2);
+    expect(repository.getByReferenceCode).toHaveBeenCalledWith('TRN-2026-A7K2M9QX');
+  });
+
+  it('gives up after repeated transient failures instead of retrying forever', async () => {
+    const create = vi
+      .fn()
+      .mockRejectedValue(Object.assign(new Error('fetch failed'), { code: 'ECONNRESET' }));
+    const { service } = makeService({
+      repository: makeRepository({ create } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await expect(service.submit(VALID_INPUT, { ip: '1.1.1.1' })).rejects.toThrow('fetch failed');
+    expect(create).toHaveBeenCalledTimes(4);
   });
 });
 

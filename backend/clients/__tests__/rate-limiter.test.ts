@@ -59,6 +59,22 @@ describe('RateLimiterService (in-memory fallback)', () => {
     expect(resultB).toBe(true);
   });
 
+  it('caches one limiter per policy, not per identifier', async () => {
+    const limiter = makeLimiter() as unknown as {
+      limiters: Map<string, unknown>;
+      checkRateLimit: RateLimiterService['checkRateLimit'];
+    };
+
+    for (let i = 0; i < 50; i++) {
+      await limiter.checkRateLimit(`ip-${i}`, 5, 60_000);
+    }
+
+    expect(limiter.limiters.size).toBe(1);
+
+    await limiter.checkRateLimit('same-policy-other-window', 5, 30_000);
+    expect(limiter.limiters.size).toBe(2);
+  });
+
   it('returns true when Redis is configured (fail-open on error)', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Redis unreachable')));
 

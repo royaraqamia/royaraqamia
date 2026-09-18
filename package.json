@@ -23,6 +23,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:e2e": "npx playwright test",
+    "load-test": "node scripts/load-test.mjs",
     "icons": "node scripts/generate-icons.mjs",
     "fonts:subset": "node scripts/subset-fonts.mjs",
     "version:next": "node scripts/release-tools.mjs --next --dry-run",

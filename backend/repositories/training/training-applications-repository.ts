@@ -18,6 +18,7 @@ export interface TrainingApplicationListQuery {
 
 export interface TrainingApplicationsReader {
   getById(id: string): Promise<TrainingApplication | null>;
+  getByReferenceCode(referenceCode: string): Promise<TrainingApplication | null>;
   list(
     query: TrainingApplicationListQuery
   ): Promise<{ data: TrainingApplication[]; total: number }>;
