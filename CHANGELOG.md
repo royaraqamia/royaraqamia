@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.0] - 2026-09-18
+
+### Changed
+- strip card chrome and unify check icon on success screens
+- simplify booking confirmation screen
+
+### Added
+- raise topic floor to 30 and surface it in the booking form
+
 ## [1.22.2] - 2026-09-18
 
 ### Changed
