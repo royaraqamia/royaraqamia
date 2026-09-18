@@ -1,7 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { AvailabilitySlot, ConsultationPackage } from '@/shared/contracts/consultation';
+import {
+  BookingContactSchema,
+  TOPIC_DESCRIPTION_MIN,
+  type AvailabilitySlot,
+  type ConsultationPackage,
+} from '@/shared/contracts/consultation';
 import {
   fetchAvailableSlots,
   fetchConsultationPackages,
@@ -28,6 +33,15 @@ const EMPTY_CONTACT: BookingContactDraft = {
   topic_description: '',
 };
 
+/**
+ * Field-level validation delegated to the shared contract schema, so the
+ * client never invents a rule the server does not enforce.
+ */
+function contactFieldError(field: keyof BookingContactDraft, value: string): string | undefined {
+  const result = BookingContactSchema.shape[field].safeParse(value);
+  return result.success ? undefined : result.error.issues[0]?.message;
+}
+
 export interface UseBookingFlowResult {
   stepIndex: number;
   step: BookingStep;
@@ -36,6 +50,8 @@ export interface UseBookingFlowResult {
   selectPackage: (packageId: string) => void;
   contact: BookingContactDraft;
   updateContact: (patch: Partial<BookingContactDraft>) => void;
+  /** Validate a single field (used on blur) and surface its message inline. */
+  validateField: (field: keyof BookingContactDraft) => void;
   slots: AvailabilitySlot[];
   slotsLoading: boolean;
   selectedSlotIds: string[];
@@ -118,7 +134,34 @@ export function useBookingFlow(
   function updateContact(patch: Partial<BookingContactDraft>) {
     setContact((current) => ({ ...current, ...patch }));
     setError(null);
+    // Clear a stale error as soon as the user fixes the offending field.
+    setFieldErrors((current) => {
+      const touched = (Object.keys(patch) as (keyof BookingContactDraft)[]).filter(
+        (field) => current[field]
+      );
+      if (touched.length === 0) return current;
+      const next = { ...current };
+      for (const field of touched) {
+        if (!contactFieldError(field, patch[field] ?? '')) delete next[field];
+      }
+      return next;
+    });
   }
+
+  const validateField = useCallback(
+    (field: keyof BookingContactDraft) => {
+      const message = contactFieldError(field, contact[field]);
+      setFieldErrors((current) => {
+        const existing = current[field];
+        if (message === existing) return current;
+        const next = { ...current };
+        if (message) next[field] = message;
+        else delete next[field];
+        return next;
+      });
+    },
+    [contact]
+  );
 
   const requiredSessions = selectedPackage?.sessions_count ?? 1;
   const step: BookingStep = BOOKING_STEPS[stepIndex] ?? 'package';
@@ -131,7 +174,7 @@ export function useBookingFlow(
         return (
           contact.full_name.trim().length > 1 &&
           contact.phone_whatsapp.trim().length > 5 &&
-          contact.topic_description.trim().length >= 10
+          contact.topic_description.trim().length >= TOPIC_DESCRIPTION_MIN
         );
       case 'slots':
         return selectedSlotIds.length === requiredSessions && !slotsLoading;
@@ -209,6 +252,7 @@ export function useBookingFlow(
     },
     contact,
     updateContact,
+    validateField,
     slots,
     slotsLoading,
     selectedSlotIds,

@@ -5,12 +5,30 @@ import { cn } from '@/frontend/shared/cn';
 interface TextareaProps extends React.ComponentProps<'textarea'> {
   error?: boolean;
   maxLength?: number;
+  /**
+   * Minimum characters required before the value is considered valid.
+   * Drives the counter's visual state; it does not block input.
+   */
+  minLength?: number;
   showCount?: boolean;
 }
 
+type CountState = 'idle' | 'below-min' | 'met' | 'near-limit' | 'at-limit';
+
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   (
-    { className, error, maxLength, showCount, value, defaultValue, onChange, disabled, ...props },
+    {
+      className,
+      error,
+      maxLength,
+      minLength,
+      showCount,
+      value,
+      defaultValue,
+      onChange,
+      disabled,
+      ...props
+    },
     ref
   ) => {
     const [charCount, setCharCount] = React.useState<number>(() => {
@@ -32,14 +50,29 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       onChange?.(e);
     };
 
-    const isNearLimit = maxLength ? charCount >= maxLength * 0.85 : false;
+    const hasMin = typeof minLength === 'number' && minLength > 0;
     const isAtLimit = maxLength ? charCount >= maxLength : false;
+    const isNearLimit = maxLength ? charCount >= maxLength * 0.85 : false;
+    // Only flag a short value once the user has started typing, so a pristine
+    // field is never nagged.
+    const isBelowMin = hasMin && charCount > 0 && charCount < minLength;
+
+    const countState: CountState = isAtLimit
+      ? 'at-limit'
+      : isNearLimit
+        ? 'near-limit'
+        : isBelowMin
+          ? 'below-min'
+          : hasMin && charCount >= minLength
+            ? 'met'
+            : 'idle';
 
     return (
       <div className="group relative w-full">
         <textarea
           ref={ref}
           data-slot="textarea"
+          minLength={minLength}
           maxLength={maxLength}
           value={value}
           defaultValue={defaultValue}
@@ -103,25 +136,28 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {/* Floating Glassmorphic Character Counter Pill */}
         {showCount && maxLength && (
           <div
+            data-count-state={countState}
             className="absolute bottom-3 left-3.5 pointer-events-none flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-0.5 text-xs font-mono border border-border/50 shadow-2xs backdrop-blur-md transition-all duration-200 select-none"
             aria-live="polite"
           >
             <span
               className={cn(
                 'h-1.5 w-1.5 rounded-full transition-colors duration-200',
-                isAtLimit
+                countState === 'at-limit'
                   ? 'bg-destructive animate-pulse'
-                  : isNearLimit
+                  : countState === 'near-limit' || countState === 'below-min'
                     ? 'bg-amber-500'
-                    : 'bg-muted-foreground/40'
+                    : countState === 'met'
+                      ? 'bg-success'
+                      : 'bg-muted-foreground/40'
               )}
             />
             <span
               className={cn(
                 'transition-colors duration-200 font-medium tabular-nums',
-                isAtLimit
+                countState === 'at-limit'
                   ? 'text-destructive font-bold'
-                  : isNearLimit
+                  : countState === 'near-limit' || countState === 'below-min'
                     ? 'text-amber-500 font-medium'
                     : 'text-muted-foreground'
               )}

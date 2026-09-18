@@ -36,6 +36,7 @@ interface CountryPhoneInputProps {
   name?: string;
   value: string;
   onChange: (next: string) => void;
+  onBlur?: () => void;
   placeholder?: string;
   invalid?: boolean;
   disabled?: boolean;
@@ -76,7 +77,7 @@ function CountryPicker({ selectedIso, onSelect }: CountryPickerProps) {
       defaultValue={selectedIso}
       className="rounded-none border-0 bg-transparent shadow-none backdrop-blur-none"
     >
-      <CommandInput placeholder="ابحث عن الدولة أو رمز الاتصال..." className="h-12" />
+      <CommandInput placeholder="ابحث عن الدَّولة أو رمز الاتِّصال..." className="h-12" />
       <CommandList className={PICKER_LIST_CLASSNAME}>
         <CommandEmpty>لا توجد نتائج مطابقة</CommandEmpty>
         <CommandGroup>
@@ -121,6 +122,7 @@ export function CountryPhoneInput({
   name,
   value,
   onChange,
+  onBlur,
   placeholder,
   invalid,
   disabled,
@@ -172,7 +174,7 @@ export function CountryPhoneInput({
   const handleSelect = (nextCountry: CountryDialCode) => {
     emit(nextCountry, national);
     setOpen(false);
-    setAnnouncement(`تم اختيار ${nextCountry.nameAr} +${nextCountry.dial}`);
+    setAnnouncement(`تمَّ اختيار ${nextCountry.nameAr} +${nextCountry.dial}`);
     // Desktop: hand focus back to the number field so typing continues instantly.
     if (!isMobile) {
       requestAnimationFrame(() => inputRef.current?.focus());
@@ -183,7 +185,7 @@ export function CountryPhoneInput({
     <button
       type="button"
       disabled={disabled}
-      aria-label={`رمز الدولة المحدد: ${country.nameAr} (+${country.dial}). اضغط لتغيير الدولة`}
+      aria-label={`رمز الدَّولة المُحدَّد: ${country.nameAr} (+${country.dial}). اضغط لتغيير الدَّولة`}
       aria-haspopup={isMobile ? 'dialog' : 'listbox'}
       className={cn(
         'flex h-full min-h-11 shrink-0 cursor-pointer select-none items-center gap-1.5 rounded-s-xl ps-3 pe-2.5',
@@ -231,9 +233,9 @@ export function CountryPhoneInput({
             className="gap-0 max-h-[85dvh] rounded-t-2xl p-0 sm:rounded-t-3xl"
           >
             <SheetHeader className="border-b border-border/40 px-5 pe-14 pb-3 pt-5 text-start">
-              <SheetTitle className="text-base">اختر رمز الدولة</SheetTitle>
+              <SheetTitle className="text-base">اختر رمز الدَّولة</SheetTitle>
               <SheetDescription className="sr-only">
-                ابحث عن الدولة بالاسم أو رمز الاتصال ثم اخترها لإتمام رقمك.
+                ابحث عن الدَّولة بالاسم أو رمز الاتِّصال ثمَّ اخترها لإتمام رقمك.
               </SheetDescription>
             </SheetHeader>
             <CountryPicker selectedIso={country.iso} onSelect={handleSelect} />
@@ -273,7 +275,10 @@ export function CountryPhoneInput({
         value={national}
         onChange={(e) => handleNationalChange(e.target.value)}
         onPaste={handlePaste}
-        onBlur={() => setDraftNational(null)}
+        onBlur={() => {
+          setDraftNational(null);
+          onBlur?.();
+        }}
         placeholder={placeholder}
         aria-invalid={invalid ? 'true' : undefined}
         aria-describedby={ariaDescribedBy}

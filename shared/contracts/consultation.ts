@@ -15,9 +15,9 @@ export type ConsultationBookingStatus = (typeof CONSULTATION_BOOKING_STATUSES)[n
 
 export const CONSULTATION_BOOKING_STATUS_LABELS: Record<ConsultationBookingStatus, string> = {
   pending: 'قيد المراجعة',
-  confirmed: 'مؤكّد',
+  confirmed: 'مُؤكَّد',
   rejected: 'مرفوض',
-  cancelled: 'ملغى',
+  cancelled: 'مُلغَى',
 };
 
 /** Statuses that hold their slots (mirrored onto `consultation_booking_slots.is_active`). */
@@ -48,6 +48,31 @@ export interface AvailabilitySlot {
   id: string;
   starts_at: string;
   ends_at: string;
+}
+
+/**
+ * Bounds for the consultation topic description.
+ * Single source of truth for the Zod schema, the client-side gating, and the
+ * form UI (helper hint + character counter), so the three cannot drift.
+ *
+ * The floor is an anti-junk guard, not a quality gate: operator triage happens
+ * on the submitted text. Raised from 10 to 30 after the first real submissions
+ * were keyboard mash ("هلووووووووو", "fsdfsdfsfsdfsf").
+ */
+export const TOPIC_DESCRIPTION_MIN = 30;
+export const TOPIC_DESCRIPTION_MAX = 2000;
+
+/**
+ * Arabic counted-noun agreement ("tamyiz") for a numeral: 3–10 take the plural,
+ * 11–99 the singular accusative, and round hundreds/thousands the singular.
+ * Keeps generated copy grammatical when the bounds above change.
+ */
+export function arabicCharCountNoun(count: number): string {
+  const lastTwo = count % 100;
+  if (count === 2) return 'حرفان';
+  if (lastTwo >= 3 && lastTwo <= 10) return 'أحرف';
+  if (lastTwo >= 11 && lastTwo <= 99) return 'حرفًا';
+  return 'حرف';
 }
 
 export interface ConsultationBooking {
@@ -84,8 +109,18 @@ export const BookingContactSchema = z.object({
   topic_description: z
     .string()
     .trim()
-    .min(10, 'اشرح موضوع الاستشارة بما لا يقل عن 10 أحرف')
-    .max(2000, 'الوصف طويل جدًّا (2,000 حرف كحد أقصى)'),
+    .min(
+      TOPIC_DESCRIPTION_MIN,
+      `اشرح موضوع الاستشارة بما لا يقل عن ${TOPIC_DESCRIPTION_MIN} ${arabicCharCountNoun(
+        TOPIC_DESCRIPTION_MIN
+      )}`
+    )
+    .max(
+      TOPIC_DESCRIPTION_MAX,
+      `الوصف طويل جدًّا (${TOPIC_DESCRIPTION_MAX.toLocaleString('en-US')} ${arabicCharCountNoun(
+        TOPIC_DESCRIPTION_MAX
+      )} كحد أقصى)`
+    ),
 });
 
 export const CreateBookingSchema = BookingContactSchema.extend({

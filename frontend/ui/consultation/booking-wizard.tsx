@@ -79,6 +79,7 @@ export function BookingWizard({ flow }: BookingWizardProps) {
         <DetailsStep
           contact={flow.contact}
           onChange={flow.updateContact}
+          onBlurField={flow.validateField}
           fieldErrors={flow.fieldErrors}
         />
       )}
@@ -111,7 +112,7 @@ export function BookingWizard({ flow }: BookingWizardProps) {
           className="inline-flex items-center justify-end gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border"
         >
           <ArrowRight className="size-4" aria-hidden="true" />
-          السابق
+          السَّابق
         </button>
 
         {isLastStep ? (
@@ -124,7 +125,7 @@ export function BookingWizard({ flow }: BookingWizardProps) {
             {flow.submitting ? (
               <>
                 <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                جارٍ إرسال الطلب...
+                جاري إرسال الطَّلب...
               </>
             ) : (
               'تأكيد طلب الحجز'
@@ -137,7 +138,7 @@ export function BookingWizard({ flow }: BookingWizardProps) {
             disabled={!flow.canProceed}
             className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold text-primary-foreground bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg transition-all duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
           >
-            التالي
+            التَّالي
             <ArrowLeft className="size-4" aria-hidden="true" />
           </button>
         )}
