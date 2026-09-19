@@ -10,7 +10,7 @@ import {
   type ConsultationBookingStatus,
 } from '@/shared/contracts/consultation';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
+import { withAdminUser } from '@/backend/transport/admin-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import {
   createAdminConsultationService,
@@ -146,169 +146,170 @@ export async function adminListBookings(
   pageSize: number,
   status?: string | null
 ): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-    const validStatus =
-      status && BOOKING_STATUSES.has(status) ? (status as ConsultationBookingStatus) : undefined;
-    const result = await createAdminConsultationService().adminListBookings(
-      page,
-      pageSize,
-      validStatus
-    );
-    return jsonResult(200, result);
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(500, { data: [], total: 0 });
-  }
+  return withAdminUser(
+    async () => {
+      const validStatus =
+        status && BOOKING_STATUSES.has(status) ? (status as ConsultationBookingStatus) : undefined;
+      const result = await createAdminConsultationService().adminListBookings(
+        page,
+        pageSize,
+        validStatus
+      );
+      return jsonResult(200, result);
+    },
+    { whenFailed: { success: false, error: 'تعذر تحميل الحجوزات.' } }
+  );
 }
 
 export async function adminBookingAction(bookingId: string, body: unknown): Promise<HttpResult> {
-  const parsed = BookingActionSchema.safeParse(body);
-  if (!parsed.success) {
-    return jsonResult(400, { success: false, error: 'إجراء غير معروف.' });
-  }
+  return withAdminUser(
+    async () => {
+      const parsed = BookingActionSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, { success: false, error: 'إجراء غير معروف.' });
+      }
 
-  try {
-    await requireAdminAuth();
-    const service = createAdminConsultationService();
-    if (parsed.data.action === 'confirm') {
-      await service.adminConfirmBooking(bookingId);
-    } else {
-      await service.adminRejectBooking(bookingId, parsed.data.rejected_reason);
-    }
-    return jsonResult(200, { success: true });
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(500, { success: false, error: 'تعذر تنفيذ الإجراء على الحجز.' });
-  }
+      const service = createAdminConsultationService();
+      if (parsed.data.action === 'confirm') {
+        await service.adminConfirmBooking(bookingId);
+      } else {
+        await service.adminRejectBooking(bookingId, parsed.data.rejected_reason);
+      }
+      return jsonResult(200, { success: true });
+    },
+    { whenFailed: { success: false, error: 'تعذر تنفيذ الإجراء على الحجز.' } }
+  );
 }
 
 export async function adminListSlots(from?: string | null): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-    const slots = await createAdminConsultationService().adminListSlots(from ?? undefined);
-    return jsonResult(200, { slots });
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(200, { slots: [] });
-  }
+  return withAdminUser(
+    async () => {
+      const slots = await createAdminConsultationService().adminListSlots(from ?? undefined);
+      return jsonResult(200, { slots });
+    },
+    { whenFailed: { success: false, error: 'تعذر تحميل المواعيد.' } }
+  );
 }
 
 export async function adminCreateSlot(body: unknown): Promise<HttpResult> {
-  const parsed = SlotCreateSchema.safeParse(body);
-  if (!parsed.success) {
-    return jsonResult(400, {
-      success: false,
-      error: 'توقيت الموعد غير صحيح.',
-      fieldErrors: zodFieldErrors(parsed.error),
-    });
-  }
+  return withAdminUser(
+    async () => {
+      const parsed = SlotCreateSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'توقيت الموعد غير صحيح.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        });
+      }
 
-  try {
-    await requireAdminAuth();
-    const slot = await createAdminConsultationService().adminCreateSlot(parsed.data);
-    return jsonResult(200, { success: true, slot });
-  } catch (error) {
-    Sentry.captureException(error);
-    const mapped = bookingErrorResponse(error);
-    if (mapped) return mapped;
-    return jsonResult(500, { success: false, error: 'تعذر إضافة الموعد.' });
-  }
+      const slot = await createAdminConsultationService().adminCreateSlot(parsed.data);
+      return jsonResult(200, { success: true, slot });
+    },
+    {
+      mapError: bookingErrorResponse,
+      whenFailed: { success: false, error: 'تعذر إضافة الموعد.' },
+    }
+  );
 }
 
 export async function adminDeleteSlot(slotId: string): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-    await createAdminConsultationService().adminDeleteSlot(slotId);
-    return jsonResult(200, { success: true });
-  } catch (error) {
-    Sentry.captureException(error);
-    const mapped = bookingErrorResponse(error);
-    if (mapped) return mapped;
-    return jsonResult(500, { success: false, error: 'تعذر حذف الموعد.' });
-  }
+  return withAdminUser(
+    async () => {
+      await createAdminConsultationService().adminDeleteSlot(slotId);
+      return jsonResult(200, { success: true });
+    },
+    {
+      mapError: bookingErrorResponse,
+      whenFailed: { success: false, error: 'تعذر حذف الموعد.' },
+    }
+  );
 }
 
 export async function adminListPackages(): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-    const packages = await createAdminConsultationService().adminListPackages();
-    return jsonResult(200, { packages });
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(200, { packages: [] });
-  }
+  return withAdminUser(
+    async () => {
+      const packages = await createAdminConsultationService().adminListPackages();
+      return jsonResult(200, { packages });
+    },
+    { whenFailed: { success: false, error: 'تعذر تحميل الباقات.' } }
+  );
 }
 
 export async function adminCreatePackage(body: unknown): Promise<HttpResult> {
-  const parsed = PackageUpsertSchema.safeParse(body);
-  if (!parsed.success) {
-    return jsonResult(400, {
-      success: false,
-      error: 'بيانات الباقة غير مكتملة.',
-      fieldErrors: zodFieldErrors(parsed.error),
-    });
-  }
+  return withAdminUser(
+    async () => {
+      const parsed = PackageUpsertSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'بيانات الباقة غير مكتملة.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        });
+      }
 
-  try {
-    await requireAdminAuth();
-    const pkg = await createAdminConsultationService().adminCreatePackage(parsed.data);
-    return jsonResult(200, { success: true, package: pkg }, { tags: [CONSULTATION_TAGS.packages] });
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(500, { success: false, error: 'تعذر إنشاء الباقة.' });
-  }
+      const pkg = await createAdminConsultationService().adminCreatePackage(parsed.data);
+      return jsonResult(
+        200,
+        { success: true, package: pkg },
+        { tags: [CONSULTATION_TAGS.packages] }
+      );
+    },
+    { whenFailed: { success: false, error: 'تعذر إنشاء الباقة.' } }
+  );
 }
 
 export async function adminUpdatePackage(packageId: string, body: unknown): Promise<HttpResult> {
-  const parsed = PackageUpsertSchema.safeParse(body);
-  if (!parsed.success) {
-    return jsonResult(400, {
-      success: false,
-      error: 'بيانات الباقة غير مكتملة.',
-      fieldErrors: zodFieldErrors(parsed.error),
-    });
-  }
+  return withAdminUser(
+    async () => {
+      const parsed = PackageUpsertSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'بيانات الباقة غير مكتملة.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        });
+      }
 
-  try {
-    await requireAdminAuth();
-    const pkg = await createAdminConsultationService().adminUpdatePackage(packageId, parsed.data);
-    return jsonResult(200, { success: true, package: pkg }, { tags: [CONSULTATION_TAGS.packages] });
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(500, { success: false, error: 'تعذر تحديث الباقة.' });
-  }
+      const pkg = await createAdminConsultationService().adminUpdatePackage(packageId, parsed.data);
+      return jsonResult(
+        200,
+        { success: true, package: pkg },
+        { tags: [CONSULTATION_TAGS.packages] }
+      );
+    },
+    { whenFailed: { success: false, error: 'تعذر تحديث الباقة.' } }
+  );
 }
 
 export async function adminDeletePackage(packageId: string): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-    await createAdminConsultationService().adminDeletePackage(packageId);
-    return jsonResult(200, { success: true }, { tags: [CONSULTATION_TAGS.packages] });
-  } catch (error) {
-    Sentry.captureException(error);
-    const mapped = bookingErrorResponse(error);
-    if (mapped) return mapped;
-    return jsonResult(500, { success: false, error: 'تعذر حذف الباقة.' });
-  }
+  return withAdminUser(
+    async () => {
+      await createAdminConsultationService().adminDeletePackage(packageId);
+      return jsonResult(200, { success: true }, { tags: [CONSULTATION_TAGS.packages] });
+    },
+    {
+      mapError: bookingErrorResponse,
+      whenFailed: { success: false, error: 'تعذر حذف الباقة.' },
+    }
+  );
 }
 
 export async function adminSaveSettings(body: unknown): Promise<HttpResult> {
-  const parsed = ConsultationSettingsSchema.partial().safeParse(body);
-  if (!parsed.success || Object.keys(parsed.data).length === 0) {
-    return jsonResult(400, {
-      success: false,
-      error: 'لا توجد قيم صالحة للحفظ.',
-      fieldErrors: parsed.success ? undefined : zodFieldErrors(parsed.error),
-    });
-  }
+  return withAdminUser(
+    async () => {
+      const parsed = ConsultationSettingsSchema.partial().safeParse(body);
+      if (!parsed.success || Object.keys(parsed.data).length === 0) {
+        return jsonResult(400, {
+          success: false,
+          error: 'لا توجد قيم صالحة للحفظ.',
+          fieldErrors: parsed.success ? undefined : zodFieldErrors(parsed.error),
+        });
+      }
 
-  try {
-    await requireAdminAuth();
-    await createAdminConsultationService().saveSettings(parsed.data);
-    return jsonResult(200, { success: true }, { tags: [CONSULTATION_TAGS.settings] });
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(500, { success: false, error: 'تعذر حفظ الإعدادات.' });
-  }
+      await createAdminConsultationService().saveSettings(parsed.data);
+      return jsonResult(200, { success: true }, { tags: [CONSULTATION_TAGS.settings] });
+    },
+    { whenFailed: { success: false, error: 'تعذر حفظ الإعدادات.' } }
+  );
 }
