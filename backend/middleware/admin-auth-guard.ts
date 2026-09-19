@@ -1,7 +1,8 @@
 import 'server-only';
 
-import { createServerSupabaseClient, getAdminSupabase } from '@/backend/config/supabase';
-import { createAdminAllowlistRepository } from '@/backend/repositories/admin/admin-allowlist-repository';
+import { createServerSupabaseClient } from '@/backend/config/supabase';
+import { syncAdminAllowlistMirror } from '@/backend/config/admin-allowlist';
+import { isAdmin } from '@/backend/shared/admin-validator';
 import { env } from '@/backend/config/env';
 
 export async function requireAdminAuth() {
@@ -15,17 +16,12 @@ export async function requireAdminAuth() {
   }
 
   // RBAC: check if user email is in the admin list (fail closed)
-  const adminEmails = env.adminEmails;
-  const userEmail = user.email?.toLowerCase() ?? '';
-
-  if (adminEmails.length === 0 || !adminEmails.includes(userEmail)) {
+  if (!isAdmin(user.email ?? '', env.adminEmails)) {
     throw new Error('FORBIDDEN');
   }
 
   // Keep the DB admin allowlist (used by RLS) in sync with ADMIN_EMAILS.
-  await createAdminAllowlistRepository(getAdminSupabase())
-    .sync(env.adminEmails)
-    .catch(() => undefined);
+  await syncAdminAllowlistMirror(env.adminEmails);
 
   return { supabase, user };
 }

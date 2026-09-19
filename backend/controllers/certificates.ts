@@ -1,5 +1,3 @@
-import * as Sentry from '@sentry/nextjs';
-import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
 import {
   createAdminCertificatesService,
   verifyCertificateByCode,
@@ -9,6 +7,7 @@ import {
   CertificateDuplicateCodeError,
   CertificateValidationError,
 } from '@/backend/services/certificates/certificates-service';
+import { withAdminUser } from '@/backend/transport/admin-handler';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import type { Certificate } from '@/shared/contracts/certificates';
 
@@ -31,97 +30,85 @@ interface CertificateInput {
   recipient_user_ids?: string[];
 }
 
+/**
+ * The Certificate domain errors an Admin request may surface. Returning `null`
+ * lets the Admin adapter fall back to its own `500` body.
+ */
+function mapCertificateError(error: unknown): HttpResult | null {
+  if (error instanceof CertificateValidationError) {
+    return jsonResult(400, {
+      success: false,
+      error: error.message,
+      fieldErrors: error.fieldErrors,
+    } satisfies AdminActionResult);
+  }
+  if (error instanceof CertificateCodeFormatError) {
+    return jsonResult(400, { success: false, error: error.message } satisfies AdminActionResult);
+  }
+  if (error instanceof CertificateDuplicateCodeError) {
+    return jsonResult(409, { success: false, error: error.message } satisfies AdminActionResult);
+  }
+  return null;
+}
+
 export async function listCertificates(
   page: number,
   pageSize: number,
   search: string
 ): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-    return jsonResult(200, await createAdminCertificatesService().list(page, pageSize, search));
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(200, { data: [], total: 0 });
-  }
+  return withAdminUser(async () =>
+    jsonResult(200, await createAdminCertificatesService().list(page, pageSize, search))
+  );
 }
 
 export async function getCertificateById(id: string): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
+  return withAdminUser(async () => {
     const certificate = await createAdminCertificatesService().getById(id);
     return jsonResult(200, certificate ?? null);
-  } catch {
-    return jsonResult(200, null);
-  }
+  });
 }
 
 export async function createCertificate(body: {
   formData: CertificateInput;
   customCode?: string;
 }): Promise<HttpResult> {
-  try {
-    const { user } = await requireAdminAuth();
-    const data = await createAdminCertificatesService().create(
-      body.formData,
-      body.customCode,
-      user.id
-    );
-    return jsonResult(200, { success: true, data } satisfies AdminActionResult);
-  } catch (error) {
-    Sentry.captureException(error);
-    if (error instanceof CertificateValidationError) {
-      return jsonResult(400, {
-        success: false,
-        error: error.message,
-        fieldErrors: error.fieldErrors,
-      } satisfies AdminActionResult);
+  return withAdminUser(
+    async ({ userId }) => {
+      const data = await createAdminCertificatesService().create(
+        body.formData,
+        body.customCode,
+        userId
+      );
+      return jsonResult(200, { success: true, data } satisfies AdminActionResult);
+    },
+    {
+      mapError: mapCertificateError,
+      whenFailed: { success: false, error: 'حدث خطأ أثناء إنشاء الشهادة' },
     }
-    if (error instanceof CertificateCodeFormatError) {
-      return jsonResult(400, { success: false, error: error.message } satisfies AdminActionResult);
-    }
-    if (error instanceof CertificateDuplicateCodeError) {
-      return jsonResult(409, { success: false, error: error.message } satisfies AdminActionResult);
-    }
-    return jsonResult(500, {
-      success: false,
-      error: 'حدث خطأ أثناء إنشاء الشهادة',
-    } satisfies AdminActionResult);
-  }
+  );
 }
 
 export async function updateCertificate(id: string, body: CertificateInput): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-    const data = await createAdminCertificatesService().update(id, body);
-    return jsonResult(200, { success: true, data } satisfies AdminActionResult);
-  } catch (error) {
-    Sentry.captureException(error);
-    if (error instanceof CertificateValidationError) {
-      return jsonResult(400, {
-        success: false,
-        error: error.message,
-        fieldErrors: error.fieldErrors,
-      } satisfies AdminActionResult);
+  return withAdminUser(
+    async () => {
+      const data = await createAdminCertificatesService().update(id, body);
+      return jsonResult(200, { success: true, data } satisfies AdminActionResult);
+    },
+    {
+      mapError: mapCertificateError,
+      whenFailed: { success: false, error: 'حدث خطأ أثناء تحديث الشهادة' },
     }
-    return jsonResult(500, {
-      success: false,
-      error: 'حدث خطأ أثناء تحديث الشهادة',
-    } satisfies AdminActionResult);
-  }
+  );
 }
 
 export async function deleteCertificate(id: string): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-    await createAdminCertificatesService().delete(id);
-    return jsonResult(200, { success: true } satisfies AdminActionResult);
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(500, {
-      success: false,
-      error: 'حدث خطأ أثناء حذف الشهادة',
-    } satisfies AdminActionResult);
-  }
+  return withAdminUser(
+    async () => {
+      await createAdminCertificatesService().delete(id);
+      return jsonResult(200, { success: true } satisfies AdminActionResult);
+    },
+    { whenFailed: { success: false, error: 'حدث خطأ أثناء حذف الشهادة' } }
+  );
 }
 
 export async function verifyCertificate(code: string, ip: string): Promise<HttpResult> {

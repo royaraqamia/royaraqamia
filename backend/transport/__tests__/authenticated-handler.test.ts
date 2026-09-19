@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockGetAuthUser = vi.fn();
 const mockGetAuthenticatedUser = vi.fn();
 const mockCaptureException = vi.fn();
+const mockSyncAdminAllowlistMirror = vi.fn();
 
 vi.mock('@/backend/middleware/auth-guard', () => ({
   getAuthUser: () => mockGetAuthUser(),
@@ -12,13 +13,27 @@ vi.mock('@/backend/middleware/bearer-auth', () => ({
   getAuthenticatedUser: (authorization: string | null) => mockGetAuthenticatedUser(authorization),
 }));
 
+vi.mock('@/backend/config/admin-allowlist', () => ({
+  syncAdminAllowlistMirror: (emails: string[]) => mockSyncAdminAllowlistMirror(emails),
+}));
+
+vi.mock('@/backend/config/env', () => ({
+  env: { adminEmails: ['admin@example.com'] },
+}));
+
 vi.mock('@sentry/nextjs', () => ({
   captureException: (error: unknown) => mockCaptureException(error),
 }));
 
-import { handleAuthenticated, messageError } from '@/backend/transport/authenticated-handler';
+import {
+  forbidden,
+  handleAuthenticated,
+  messageError,
+  unauthenticated,
+} from '@/backend/transport/authenticated-handler';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { withBearerUser } from '@/backend/transport/bearer-handler';
+import { withAdminUser } from '@/backend/transport/admin-handler';
 import { jsonResult } from '@/backend/transport/http-result';
 
 describe('handleAuthenticated', () => {
@@ -53,6 +68,47 @@ describe('handleAuthenticated', () => {
     );
 
     expect(result).toEqual(expect.objectContaining({ status: 200, body: { notifications: [] } }));
+  });
+
+  it('maps an unauthenticated outcome to the default 401 body', async () => {
+    const run = vi.fn();
+    const result = await handleAuthenticated(async () => unauthenticated(), run);
+
+    expect(result).toEqual(expect.objectContaining({ status: 401, body: { error: 'غير مصرح' } }));
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('maps a forbidden outcome to the default 403 body without string matching', async () => {
+    const run = vi.fn();
+    const result = await handleAuthenticated(async () => forbidden(), run);
+
+    expect(result).toEqual(expect.objectContaining({ status: 403, body: { error: 'غير مصرح' } }));
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('lets the policy distinguish unauthenticated from forbidden', async () => {
+    const policy = {
+      whenUnauthenticated: () => jsonResult(401, { error: 'سجّل الدخول' }),
+      whenForbidden: () => jsonResult(403, { error: 'لست مشرفاً' }),
+    };
+
+    const signedOut = await handleAuthenticated(
+      async () => unauthenticated(),
+      async () => jsonResult(200, {}),
+      policy
+    );
+    const nonAdmin = await handleAuthenticated(
+      async () => forbidden(),
+      async () => jsonResult(200, {}),
+      policy
+    );
+
+    expect(signedOut).toEqual(
+      expect.objectContaining({ status: 401, body: { error: 'سجّل الدخول' } })
+    );
+    expect(nonAdmin).toEqual(
+      expect.objectContaining({ status: 403, body: { error: 'لست مشرفاً' } })
+    );
   });
 
   it('maps a thrown error through the policy', async () => {
@@ -209,5 +265,89 @@ describe('withBearerUser', () => {
       expect.objectContaining({ status: 401, body: { success: false, error: 'غير مصرح.' } })
     );
     expect(run).not.toHaveBeenCalled();
+  });
+});
+
+describe('withAdminUser', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetAuthUser.mockResolvedValue({
+      user: { id: 'admin-1', email: 'admin@example.com' },
+      supabase: { from: vi.fn() },
+    });
+    mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
+  });
+
+  it('passes the admin identity through and syncs the allowlist mirror', async () => {
+    const result = await withAdminUser(async ({ userId, userEmail, supabase }) =>
+      jsonResult(200, { userId, userEmail, hasClient: Boolean(supabase) })
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 200,
+        body: { userId: 'admin-1', userEmail: 'admin@example.com', hasClient: true },
+      })
+    );
+    expect(mockSyncAdminAllowlistMirror).toHaveBeenCalledWith(['admin@example.com']);
+  });
+
+  it('returns 401 when the session has no user, without querying', async () => {
+    mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
+    const run = vi.fn();
+
+    const result = await withAdminUser(run);
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 401,
+        body: { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' },
+      })
+    );
+    expect(run).not.toHaveBeenCalled();
+    expect(mockSyncAdminAllowlistMirror).not.toHaveBeenCalled();
+  });
+
+  it('returns 403 when the session email is not on the allowlist, without querying', async () => {
+    mockGetAuthUser.mockResolvedValue({
+      user: { id: 'u-2', email: 'user@example.com' },
+      supabase: {},
+    });
+    const run = vi.fn();
+
+    const result = await withAdminUser(run);
+
+    expect(result).toEqual(
+      expect.objectContaining({ status: 403, body: { success: false, error: 'غير مصرح' } })
+    );
+    expect(run).not.toHaveBeenCalled();
+    expect(mockSyncAdminAllowlistMirror).not.toHaveBeenCalled();
+  });
+
+  it('lets the caller map a domain error', async () => {
+    const result = await withAdminUser(
+      async () => {
+        throw new Error('بيانات غير صالحة');
+      },
+      { mapError: messageError(400, 'فشل') }
+    );
+
+    expect(result).toEqual(
+      expect.objectContaining({ status: 400, body: { error: 'بيانات غير صالحة' } })
+    );
+  });
+
+  it('owns the default 500 body', async () => {
+    const result = await withAdminUser(async () => {
+      throw new Error('boom');
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        status: 500,
+        body: { success: false, error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.' },
+      })
+    );
+    expect(mockCaptureException).toHaveBeenCalledTimes(1);
   });
 });
