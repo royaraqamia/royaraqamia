@@ -11,7 +11,11 @@ export async function loadHabitflowDashboard(): Promise<{
   user: { id: string; email?: string } | null;
 }> {
   const { user, client } = await getOptionalUser();
-  const { service, mode } = createHabitService(user?.id, client ?? undefined);
+  if (!user || !client) {
+    return { habits: [], logs: [], mode: 'local', user: null };
+  }
+
+  const { service, mode } = createHabitService(user.id, client);
 
   const [habits, logs] = await Promise.all([
     service.getAllHabits(),
