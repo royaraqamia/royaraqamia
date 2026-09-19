@@ -29,6 +29,10 @@ Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Mul
 
 Issues live in GitHub Issues (`royaraqamia/royaraqamia`). See `docs/agents/issue-tracker.md`.
 
+### Triage labels
+
+The five canonical triage roles map to their own names. See `docs/agents/triage-labels.md`.
+
 ### Domain docs
 
 Single-context layout (one `CONTEXT.md` + `docs/adr/` at the repo root). See `docs/agents/domain.md`.
