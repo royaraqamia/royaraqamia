@@ -25,14 +25,27 @@ vi.mock('@/backend/config/env', () => ({
   env: { adminEmails: ['admin@example.com'] },
 }));
 
-vi.mock('@/backend/middleware/auth-guard', () => ({
-  getAuthUser: () => mockGetAuthUser(),
-  getOptionalUser: () => mockGetOptionalUser(),
-}));
-
 vi.mock('@/backend/config/admin-allowlist', () => ({
   syncAdminAllowlistMirror: (emails: string[]) => mockSyncAdminAllowlistMirror(emails),
 }));
+
+vi.mock('@/backend/config/identity', async () => {
+  const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
+  return identityDouble({
+    session: async () => {
+      const { user, supabase } = await mockGetAuthUser();
+      return { user, client: supabase };
+    },
+    optional: () => mockGetOptionalUser(),
+    admin: async () => {
+      const { user, supabase } = await mockGetAuthUser();
+      if (!user) return { kind: 'anonymous' };
+      if (user.email !== 'admin@example.com') return { kind: 'forbidden' };
+      await mockSyncAdminAllowlistMirror(['admin@example.com']);
+      return { kind: 'admin', identity: { user, client: supabase } };
+    },
+  });
+});
 
 vi.mock('@/backend/config/consultation', () => ({
   createAdminConsultationService: () => ({

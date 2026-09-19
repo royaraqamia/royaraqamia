@@ -20,6 +20,9 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(import.meta.dirname, '.'),
+      // Next resolves `server-only` at build time; it is not an installed
+      // package, so tests that load a server module need the empty marker.
+      'server-only': path.resolve(import.meta.dirname, 'vitest.server-only.ts'),
     },
   },
 });

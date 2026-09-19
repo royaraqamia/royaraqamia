@@ -1,40 +1,10 @@
-import { getPublicSupabase } from '@/backend/config/supabase';
-import { logger } from '@/backend/shared/logger';
+import { identity } from '@/backend/config/identity';
+import type { AuthUser } from '@/backend/identity';
 
-interface AuthenticatedUser {
-  id: string;
-  email: string;
-}
-
-export async function getAuthenticatedUser(
-  authorization: string | null
-): Promise<AuthenticatedUser | null> {
-  if (!authorization || !authorization.startsWith('Bearer ')) {
-    return null;
-  }
-
-  const token = authorization.substring(7);
-  if (!token) {
-    return null;
-  }
-
-  try {
-    const supabase = getPublicSupabase();
-    const {
-      data: { user },
-      error,
-    } = await supabase.auth.getUser(token);
-
-    if (error || !user) {
-      return null;
-    }
-
-    return {
-      id: user.id,
-      email: user.email || '',
-    };
-  } catch (err) {
-    logger.error('Error authenticating token', { error: String(err) });
-    return null;
-  }
+/**
+ * The bearer reader is an adapter at the identity seam: same module, different
+ * credential. MCP and LinkSnap clients keep working unchanged.
+ */
+export async function getAuthenticatedUser(authorization: string | null): Promise<AuthUser | null> {
+  return identity.resolveBearer(authorization);
 }

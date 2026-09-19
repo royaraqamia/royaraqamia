@@ -2,18 +2,18 @@ import 'server-only';
 
 import { cache } from 'react';
 import { redirect } from 'next/navigation';
-import { cookies } from 'next/headers';
-import { createServerSupabaseClient } from '@/backend/config/supabase';
+import { identity } from '@/backend/config/identity';
 
+/**
+ * The cached session verifier keeps React's `cache()` so a page render shares
+ * one identity resolution; the resolution itself belongs to the identity module.
+ */
 export const verifySession = cache(async () => {
-  const cookieStore = await cookies();
-  const supabase = await createServerSupabaseClient(cookieStore);
+  const { user } = await identity.resolveSession();
 
-  const { data, error } = await supabase.auth.getUser();
-
-  if (error || !data?.user) {
+  if (!user) {
     redirect('/auth/login?redirect=/blogpress/app');
   }
 
-  return { isAuth: true, userId: data.user.id, user: data.user };
+  return { isAuth: true, userId: user.id, user };
 });

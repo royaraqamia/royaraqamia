@@ -4,33 +4,8 @@ import { getAdminSupabase } from '@/backend/config/supabase';
 import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import { PROTECTED_ROUTES, AUTH_ROUTES } from '@/backend/config/routes';
 import { env } from '@/backend/config/env';
-
-function isSafeRedirect(path: string): boolean {
-  if (!path) return false;
-  try {
-    // Decode repeatedly to neutralize double/triple encoding
-    let decoded = path;
-    let prev: string;
-    do {
-      prev = decoded;
-      decoded = decodeURIComponent(decoded);
-    } while (decoded !== prev);
-
-    if (!decoded.startsWith('/')) return false;
-    if (decoded.startsWith('//') || decoded.startsWith('\\\\')) return false;
-    if (/^(javascript|data|vbscript):/i.test(decoded)) return false;
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-// @supabase/ssr names its auth session cookie `sb-<ref>-auth-token`, splitting
-// oversized (base64url) values into `sb-<ref>-auth-token.0`, `.1`, etc.
-const SESSION_COOKIE_NAME_RE = /^sb-[\w-]+-auth-token(?:\.\d+)?$/;
-function hasAuthSession(request: NextRequest): boolean {
-  return request.cookies.getAll().some((c) => SESSION_COOKIE_NAME_RE.test(c.name));
-}
+import { isSafeRedirect } from '@/shared/safe-redirect';
+import { hasSessionCookie } from '@/shared/session-cookie';
 
 function isProtectedRoute(pathname: string): boolean {
   return Object.keys(PROTECTED_ROUTES).some((path) => pathname.startsWith(path));
@@ -45,7 +20,11 @@ export async function updateSession(request: NextRequest) {
   // skip them to avoid a network round-trip on every page load while
   // development. Protected routes keep their guard; auth-code exchanges keep
   // running regardless of environment.
-  if (!hasAuthCode && !hasAuthSession(request) && !isProtectedRoute(request.nextUrl.pathname)) {
+  if (
+    !hasAuthCode &&
+    !hasSessionCookie(request.cookies.getAll()) &&
+    !isProtectedRoute(request.nextUrl.pathname)
+  ) {
     return NextResponse.next({ request });
   }
 

@@ -8,13 +8,20 @@ const mockRequireAdminAuth = vi.fn();
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
-vi.mock('@/backend/middleware/auth-guard', () => ({
-  getOptionalUser: () => mockGetOptionalUser(),
-}));
-
-vi.mock('@/backend/middleware/admin-auth-guard', () => ({
-  requireAdminAuth: () => mockRequireAdminAuth(),
-}));
+vi.mock('@/backend/config/identity', async () => {
+  const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
+  return identityDouble({
+    session: async () => ({ user: null, client: null }),
+    optional: () => mockGetOptionalUser(),
+    admin: async () => {
+      await mockRequireAdminAuth();
+      return {
+        kind: 'admin',
+        identity: { user: { id: 'admin-1', email: 'admin@example.com' }, client: null },
+      };
+    },
+  });
+});
 
 vi.mock('@/backend/config/training', () => ({
   createDefaultTrainingApplicationService: () => ({

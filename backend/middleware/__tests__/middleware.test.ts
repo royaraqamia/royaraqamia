@@ -297,6 +297,34 @@ describe('proxy', () => {
     expect(result.url).toBe('https://royaraqamia.com/');
   });
 
+  it('rejects the same crafted redirects as the shared safe-redirect helper', async () => {
+    const { isSafeRedirect } = await import('@/shared/safe-redirect');
+    const crafted = [
+      '/spendtrack/app',
+      '//evil.com',
+      '%2F%2Fevil.com',
+      '%252F%252Fevil.com',
+      'https://evil.com',
+      'javascript:alert(1)',
+      'java%0ascript:alert(1)',
+    ];
+
+    for (const redirect of crafted) {
+      mockSessionCookie();
+      mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
+      mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
+      mockNextUrl.pathname = '/auth/login';
+      mockNextUrl.searchParams = new URLSearchParams({ redirect });
+      mockRequest.url = `https://royaraqamia.com/auth/login?redirect=${encodeURIComponent(redirect)}`;
+
+      const { proxy } = await import('@/proxy');
+      const result = await proxy(mockRequest as never);
+
+      const expected = isSafeRedirect(redirect) ? redirect : '/';
+      expect(result.url, `redirect=${redirect}`).toBe(`https://royaraqamia.com${expected}`);
+    }
+  });
+
   it('redirects auth signup page to root when user is logged in', async () => {
     mockSessionCookie();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });

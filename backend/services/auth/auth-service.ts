@@ -5,7 +5,7 @@ import {
   verifyOtp,
 } from '@/backend/shared/otp/generator';
 import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
-import { safeRedirect } from '@/backend/shared/safe-redirect';
+import { safeRedirect } from '@/shared/safe-redirect';
 import type { PendingLoginStore } from '@/backend/shared/auth/pending-login-store';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
 import type { OtpRepository } from '@/backend/repositories/otp/otp-repository';

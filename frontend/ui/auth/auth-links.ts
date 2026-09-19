@@ -1,8 +1,4 @@
-const isSafeRedirect = (to: string): boolean => {
-  if (!to.startsWith('/')) return false;
-  if (to.startsWith('//') || to.startsWith('\\\\')) return false;
-  return !/^(javascript|data|vbscript):/i.test(to);
-};
+import { isSafeRedirect } from '@/shared/safe-redirect';
 
 export function authLink(
   path: string,
