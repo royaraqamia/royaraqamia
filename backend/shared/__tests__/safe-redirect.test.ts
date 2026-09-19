@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { safeRedirect } from '@/backend/shared/safe-redirect';
+import { isSafeRedirect, safeRedirect } from '@/backend/shared/safe-redirect';
 
 describe('safeRedirect', () => {
   it('returns the fallback for null, undefined and empty string', () => {
@@ -56,5 +56,49 @@ describe('safeRedirect', () => {
 
   it('returns the fallback on malformed percent-encoding', () => {
     expect(safeRedirect('%zz%zz')).toBe('/');
+  });
+
+  it('rejects a double-encoded protocol-relative URL', () => {
+    expect(safeRedirect('%252F%252Fevil.com')).toBe('/');
+    expect(safeRedirect('%2F%252Fevil.com')).toBe('/');
+  });
+});
+
+describe('isSafeRedirect', () => {
+  it('is the boolean form of the one rule', () => {
+    expect(isSafeRedirect('/dashboard')).toBe(true);
+    expect(isSafeRedirect('/auth/login?redirect=/spendtrack')).toBe(true);
+    expect(isSafeRedirect('//evil.com')).toBe(false);
+    expect(isSafeRedirect('%252F%252Fevil.com')).toBe(false);
+    expect(isSafeRedirect('https://evil.com')).toBe(false);
+    expect(isSafeRedirect('javascript:alert(1)')).toBe(false);
+    expect(isSafeRedirect('dashboard')).toBe(false);
+    expect(isSafeRedirect(null)).toBe(false);
+    expect(isSafeRedirect('')).toBe(false);
+  });
+
+  it('agrees with safeRedirect on every crafted input', () => {
+    const crafted = [
+      '/ok',
+      '/%D8%A7%D9%84%D8%B1%D8%A6%D9%8A%D8%B3%D9%8A%D8%A9',
+      '//evil.com',
+      '%2F%2Fevil.com',
+      '%252F%252Fevil.com',
+      '\\\\evil.com',
+      '\\evil.com',
+      'https://evil.com',
+      'javascript:alert(1)',
+      'java%0ascript:alert(1)',
+      'data:text/html;base64,PHNjcmlwdD4=',
+      'dashboard',
+      '%zz%zz',
+      '',
+    ];
+
+    for (const input of crafted) {
+      const viaBoolean = isSafeRedirect(input);
+      const viaString = safeRedirect(input, '\u0000unsafe') !== '\u0000unsafe';
+      expect(viaBoolean, `disagreement on ${input}`).toBe(viaString);
+    }
   });
 });

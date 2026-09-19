@@ -11,12 +11,16 @@ const mockService = {
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
-vi.mock('@/backend/middleware/auth-guard', () => ({
-  getAuthUser: () => mockGetAuthUser(),
-}));
-
-vi.mock('@/backend/middleware/bearer-auth', () => ({
-  getAuthenticatedUser: vi.fn(),
+vi.mock('@/backend/identity/server', () => ({
+  identity: {
+    resolveSession: async () => {
+      const { user, supabase } = await mockGetAuthUser();
+      return { user, client: supabase };
+    },
+    resolveOptional: async () => ({ user: null, client: null }),
+    resolveAdmin: async () => ({ kind: 'anonymous' }),
+  },
+  bearerReader: { read: vi.fn() },
 }));
 
 vi.mock('@/backend/config/spendtrack', () => ({

@@ -1,17 +1,22 @@
 import 'server-only';
 
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { createServerSupabaseClient } from '@/backend/config/supabase';
+import type { Database } from '@/backend/models/database.types';
+import { identity } from '@/backend/identity/server';
 
-export async function getAuthUser() {
-  const cookieStore = await cookies();
-  const supabase = await createServerSupabaseClient(cookieStore);
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return { user, supabase };
+/**
+ * The page guards ask the identity module; they no longer resolve identity
+ * themselves. `getAuthUser` and `getOptionalUser` keep their signatures so
+ * existing callers are unchanged.
+ */
+
+export async function getAuthUser(): Promise<{
+  user: { id: string; email?: string } | null;
+  supabase: SupabaseClient<Database>;
+}> {
+  const { user, client } = await identity.resolveSession();
+  return { user, supabase: client as SupabaseClient<Database> };
 }
 
 export async function requireAuth(redirectPath: string) {
@@ -27,28 +32,7 @@ interface AuthenticatedUser {
 
 export async function getOptionalUser(): Promise<{
   user: AuthenticatedUser | null;
-  client: SupabaseClient | null;
+  client: SupabaseClient<Database> | null;
 }> {
-  try {
-    const cookieStore = await cookies();
-
-    // Anonymous visitors have no Supabase session cookie. Skipping the client
-    // construction and `getUser()` round-trip keeps public POSTs (e.g. a burst
-    // of training applications) from paying auth cost they never use.
-    const hasSessionCookie = cookieStore.getAll().some(({ name }) => name.includes('-auth-token'));
-    if (!hasSessionCookie) return { user: null, client: null };
-
-    const supabase = await createServerSupabaseClient(cookieStore);
-    const { data } = await supabase.auth.getUser();
-    if (!data?.user) return { user: null, client: null };
-    return {
-      user: {
-        id: data.user.id,
-        email: data.user.email ?? undefined,
-      },
-      client: supabase,
-    };
-  } catch {
-    return { user: null, client: null };
-  }
+  return identity.resolveOptional();
 }

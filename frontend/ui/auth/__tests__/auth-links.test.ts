@@ -34,4 +34,26 @@ describe('authLink', () => {
     expect(authLink('/auth/signup', 'https://evil.com')).toBe('/auth/signup');
     expect(authLink('/auth/signup', 'javascript:alert(1)')).toBe('/auth/signup');
   });
+
+  it('rejects the same crafted redirects as the shared safe-redirect helper', async () => {
+    const { isSafeRedirect } = await import('@/backend/shared/safe-redirect');
+    const crafted = [
+      '/spendtrack/app',
+      '//evil.com',
+      '%2F%2Fevil.com',
+      '%252F%252Fevil.com',
+      'https://evil.com',
+      'javascript:alert(1)',
+      'java%0ascript:alert(1)',
+      'dashboard',
+    ];
+
+    for (const redirect of crafted) {
+      const result = authLink('/auth/signup', redirect);
+      const expected = isSafeRedirect(redirect)
+        ? `/auth/signup?redirect=${encodeURIComponent(redirect)}`
+        : '/auth/signup';
+      expect(result, `redirect=${redirect}`).toBe(expected);
+    }
+  });
 });

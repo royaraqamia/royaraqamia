@@ -1,16 +1,16 @@
 import { redirect } from 'next/navigation';
-import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
+import { identity } from '@/backend/identity/server';
 import { Navbar } from '@/frontend/ui/Navbar';
 
 // The single guard for the whole Admin Console. Sections below only worry about
 // their own width, header and navigation — never about authentication.
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  try {
-    await requireAdminAuth();
-  } catch (err) {
-    if (err instanceof Error && err.message === 'FORBIDDEN') {
-      redirect('/');
-    }
+  const resolution = await identity.resolveAdmin();
+
+  if (resolution.kind === 'forbidden') {
+    redirect('/');
+  }
+  if (resolution.kind === 'anonymous') {
     redirect('/auth/login?redirect=/admin');
   }
 

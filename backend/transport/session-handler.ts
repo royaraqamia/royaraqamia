@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/backend/middleware/auth-guard';
+import { identity } from '@/backend/identity/server';
 import type { HttpResult } from '@/backend/transport/http-result';
 import {
   handleAuthenticated,
@@ -13,12 +13,12 @@ export function withAuthenticatedUser(
 ): Promise<HttpResult> {
   return handleAuthenticated(
     async () => {
-      const { user, supabase } = await getAuthUser();
+      const { user, client } = await identity.resolveSession();
       if (!user) return null;
       return {
         userId: user.id,
         userEmail: user.email ?? '',
-        supabase: supabase as unknown as SessionIdentity['supabase'],
+        supabase: client as unknown as SessionIdentity['supabase'],
       };
     },
     run,

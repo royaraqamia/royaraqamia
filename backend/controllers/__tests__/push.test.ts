@@ -10,8 +10,16 @@ const mockEnv: { baseUrl: string; pushWebhookToken?: string } = {
   pushWebhookToken: 'webhook-secret',
 };
 
-vi.mock('@/backend/middleware/auth-guard', () => ({
-  getAuthUser: () => mockGetAuthUser(),
+vi.mock('@/backend/identity/server', () => ({
+  identity: {
+    resolveSession: async () => {
+      const { user, supabase } = await mockGetAuthUser();
+      return { user, client: supabase };
+    },
+    resolveOptional: async () => ({ user: null, client: null }),
+    resolveAdmin: async () => ({ kind: 'anonymous' }),
+  },
+  bearerReader: { read: async () => null },
 }));
 
 vi.mock('@/backend/config/rate-limiter', () => ({

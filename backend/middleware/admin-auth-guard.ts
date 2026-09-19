@@ -1,27 +1,23 @@
 import 'server-only';
 
-import { createServerSupabaseClient } from '@/backend/config/supabase';
-import { syncAdminAllowlistMirror } from '@/backend/config/admin-allowlist';
-import { isAdmin } from '@/backend/shared/admin-validator';
-import { env } from '@/backend/config/env';
+import { identity } from '@/backend/identity/server';
 
+/**
+ * The Admin guard is a caller of the identity module, not its own resolver: it
+ * asks for the Admin outcome and throws the bare errors the transport adapters
+ * map to 401/403. The allowlist predicate and the mirror sync live in the
+ * identity module's Admin reader (ADR-0003).
+ */
 export async function requireAdminAuth() {
-  const supabase = await createServerSupabaseClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const resolution = await identity.resolveAdmin();
 
-  if (!user) {
+  if (resolution.kind === 'anonymous') {
     throw new Error('UNAUTHORIZED');
   }
-
-  // RBAC: check if user email is in the admin list (fail closed)
-  if (!isAdmin(user.email ?? '', env.adminEmails)) {
+  if (resolution.kind === 'forbidden') {
     throw new Error('FORBIDDEN');
   }
 
-  // Keep the DB admin allowlist (used by RLS) in sync with ADMIN_EMAILS.
-  await syncAdminAllowlistMirror(env.adminEmails);
-
-  return { supabase, user };
+  const { user, client } = resolution.identity;
+  return { supabase: client, user };
 }

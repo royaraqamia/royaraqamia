@@ -1,24 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockGetAuthUser = vi.fn();
+const mockResolveSession = vi.fn();
+const mockResolveAdmin = vi.fn();
 const mockGetAuthenticatedUser = vi.fn();
 const mockCaptureException = vi.fn();
-const mockSyncAdminAllowlistMirror = vi.fn();
 
-vi.mock('@/backend/middleware/auth-guard', () => ({
-  getAuthUser: () => mockGetAuthUser(),
-}));
-
-vi.mock('@/backend/middleware/bearer-auth', () => ({
-  getAuthenticatedUser: (authorization: string | null) => mockGetAuthenticatedUser(authorization),
-}));
-
-vi.mock('@/backend/config/admin-allowlist', () => ({
-  syncAdminAllowlistMirror: (emails: string[]) => mockSyncAdminAllowlistMirror(emails),
-}));
-
-vi.mock('@/backend/config/env', () => ({
-  env: { adminEmails: ['admin@example.com'] },
+vi.mock('@/backend/identity/server', () => ({
+  identity: {
+    resolveSession: () => mockResolveSession(),
+    resolveAdmin: () => mockResolveAdmin(),
+  },
+  bearerReader: {
+    read: (authorization: string | null) => mockGetAuthenticatedUser(authorization),
+  },
 }));
 
 vi.mock('@sentry/nextjs', () => ({
@@ -207,9 +201,9 @@ describe('withAuthenticatedUser', () => {
   });
 
   it('passes the session identity through', async () => {
-    mockGetAuthUser.mockResolvedValue({
+    mockResolveSession.mockResolvedValue({
       user: { id: 'u-1', email: 'a@b.com' },
-      supabase: { from: vi.fn() },
+      client: { from: vi.fn() },
     });
 
     const result = await withAuthenticatedUser(async ({ userId, userEmail, supabase }) =>
@@ -225,7 +219,7 @@ describe('withAuthenticatedUser', () => {
   });
 
   it('returns 401 when the session has no user', async () => {
-    mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
+    mockResolveSession.mockResolvedValue({ user: null, client: null });
     const run = vi.fn();
 
     const result = await withAuthenticatedUser(run);
@@ -271,14 +265,13 @@ describe('withBearerUser', () => {
 describe('withAdminUser', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockGetAuthUser.mockResolvedValue({
-      user: { id: 'admin-1', email: 'admin@example.com' },
-      supabase: { from: vi.fn() },
+    mockResolveAdmin.mockResolvedValue({
+      kind: 'admin',
+      identity: { user: { id: 'admin-1', email: 'admin@example.com' }, client: { from: vi.fn() } },
     });
-    mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
   });
 
-  it('passes the admin identity through and syncs the allowlist mirror', async () => {
+  it('passes the admin identity through', async () => {
     const result = await withAdminUser(async ({ userId, userEmail, supabase }) =>
       jsonResult(200, { userId, userEmail, hasClient: Boolean(supabase) })
     );
@@ -289,11 +282,10 @@ describe('withAdminUser', () => {
         body: { userId: 'admin-1', userEmail: 'admin@example.com', hasClient: true },
       })
     );
-    expect(mockSyncAdminAllowlistMirror).toHaveBeenCalledWith(['admin@example.com']);
   });
 
-  it('returns 401 when the session has no user, without querying', async () => {
-    mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
+  it('returns 401 when the identity is anonymous, without querying', async () => {
+    mockResolveAdmin.mockResolvedValue({ kind: 'anonymous' });
     const run = vi.fn();
 
     const result = await withAdminUser(run);
@@ -305,14 +297,10 @@ describe('withAdminUser', () => {
       })
     );
     expect(run).not.toHaveBeenCalled();
-    expect(mockSyncAdminAllowlistMirror).not.toHaveBeenCalled();
   });
 
-  it('returns 403 when the session email is not on the allowlist, without querying', async () => {
-    mockGetAuthUser.mockResolvedValue({
-      user: { id: 'u-2', email: 'user@example.com' },
-      supabase: {},
-    });
+  it('returns 403 when the identity is forbidden, without querying', async () => {
+    mockResolveAdmin.mockResolvedValue({ kind: 'forbidden' });
     const run = vi.fn();
 
     const result = await withAdminUser(run);
@@ -321,7 +309,6 @@ describe('withAdminUser', () => {
       expect.objectContaining({ status: 403, body: { success: false, error: 'غير مصرح' } })
     );
     expect(run).not.toHaveBeenCalled();
-    expect(mockSyncAdminAllowlistMirror).not.toHaveBeenCalled();
   });
 
   it('lets the caller map a domain error', async () => {

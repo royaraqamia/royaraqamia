@@ -8,12 +8,19 @@ const mockRequireAdminAuth = vi.fn();
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
-vi.mock('@/backend/middleware/auth-guard', () => ({
-  getOptionalUser: () => mockGetOptionalUser(),
-}));
-
-vi.mock('@/backend/middleware/admin-auth-guard', () => ({
-  requireAdminAuth: () => mockRequireAdminAuth(),
+vi.mock('@/backend/identity/server', () => ({
+  identity: {
+    resolveSession: async () => ({ user: null, client: null }),
+    resolveOptional: () => mockGetOptionalUser(),
+    resolveAdmin: async () => {
+      await mockRequireAdminAuth();
+      return {
+        kind: 'admin',
+        identity: { user: { id: 'admin-1', email: 'admin@example.com' }, client: null },
+      };
+    },
+  },
+  bearerReader: { read: async () => null },
 }));
 
 vi.mock('@/backend/config/training', () => ({
