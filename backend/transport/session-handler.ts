@@ -1,4 +1,4 @@
-import { identity } from '@/backend/identity/server';
+import { identity } from '@/backend/config/identity';
 import type { HttpResult } from '@/backend/transport/http-result';
 import {
   handleAuthenticated,
@@ -18,7 +18,7 @@ export function withAuthenticatedUser(
       return {
         userId: user.id,
         userEmail: user.email ?? '',
-        supabase: client as unknown as SessionIdentity['supabase'],
+        supabase: client,
       };
     },
     run,

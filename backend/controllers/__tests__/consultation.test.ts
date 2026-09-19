@@ -29,23 +29,23 @@ vi.mock('@/backend/config/admin-allowlist', () => ({
   syncAdminAllowlistMirror: (emails: string[]) => mockSyncAdminAllowlistMirror(emails),
 }));
 
-vi.mock('@/backend/identity/server', () => ({
-  identity: {
-    resolveSession: async () => {
+vi.mock('@/backend/config/identity', async () => {
+  const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
+  return identityDouble({
+    session: async () => {
       const { user, supabase } = await mockGetAuthUser();
       return { user, client: supabase };
     },
-    resolveOptional: () => mockGetOptionalUser(),
-    resolveAdmin: async () => {
+    optional: () => mockGetOptionalUser(),
+    admin: async () => {
       const { user, supabase } = await mockGetAuthUser();
       if (!user) return { kind: 'anonymous' };
       if (user.email !== 'admin@example.com') return { kind: 'forbidden' };
       await mockSyncAdminAllowlistMirror(['admin@example.com']);
       return { kind: 'admin', identity: { user, client: supabase } };
     },
-  },
-  bearerReader: { read: async () => null },
-}));
+  });
+});
 
 vi.mock('@/backend/config/consultation', () => ({
   createAdminConsultationService: () => ({

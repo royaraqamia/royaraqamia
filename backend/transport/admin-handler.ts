@@ -1,4 +1,4 @@
-import { identity } from '@/backend/identity/server';
+import { identity } from '@/backend/config/identity';
 import {
   forbidden,
   handleAuthenticated,
@@ -34,7 +34,7 @@ async function resolveAdminIdentity(): Promise<AdminIdentity | AuthFailure> {
   return {
     userId: user.id,
     userEmail: user.email ?? '',
-    supabase: client as unknown as AdminIdentity['supabase'],
+    supabase: client,
   };
 }
 

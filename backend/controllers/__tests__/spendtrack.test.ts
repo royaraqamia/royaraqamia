@@ -11,17 +11,15 @@ const mockService = {
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
-vi.mock('@/backend/identity/server', () => ({
-  identity: {
-    resolveSession: async () => {
+vi.mock('@/backend/config/identity', async () => {
+  const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
+  return identityDouble({
+    session: async () => {
       const { user, supabase } = await mockGetAuthUser();
       return { user, client: supabase };
     },
-    resolveOptional: async () => ({ user: null, client: null }),
-    resolveAdmin: async () => ({ kind: 'anonymous' }),
-  },
-  bearerReader: { read: vi.fn() },
-}));
+  });
+});
 
 vi.mock('@/backend/config/spendtrack', () => ({
   createSpendtrackService: () => mockService,

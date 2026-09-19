@@ -4,8 +4,8 @@ import { getAdminSupabase } from '@/backend/config/supabase';
 import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import { PROTECTED_ROUTES, AUTH_ROUTES } from '@/backend/config/routes';
 import { env } from '@/backend/config/env';
-import { isSafeRedirect } from '@/backend/shared/safe-redirect';
-import { hasSessionCookie } from '@/backend/shared/session-cookie';
+import { isSafeRedirect } from '@/shared/safe-redirect';
+import { hasSessionCookie } from '@/shared/session-cookie';
 
 function isProtectedRoute(pathname: string): boolean {
   return Object.keys(PROTECTED_ROUTES).some((path) => pathname.startsWith(path));

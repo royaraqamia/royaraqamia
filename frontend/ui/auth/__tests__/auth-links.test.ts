@@ -36,7 +36,7 @@ describe('authLink', () => {
   });
 
   it('rejects the same crafted redirects as the shared safe-redirect helper', async () => {
-    const { isSafeRedirect } = await import('@/backend/shared/safe-redirect');
+    const { isSafeRedirect } = await import('@/shared/safe-redirect');
     const crafted = [
       '/spendtrack/app',
       '//evil.com',

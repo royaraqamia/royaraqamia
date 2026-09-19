@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSafeRedirect, safeRedirect } from '@/backend/shared/safe-redirect';
+import { isSafeRedirect, safeRedirect } from '@/shared/safe-redirect';
 
 describe('safeRedirect', () => {
   it('returns the fallback for null, undefined and empty string', () => {

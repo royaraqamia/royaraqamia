@@ -5,15 +5,14 @@ const mockResolveAdmin = vi.fn();
 const mockGetAuthenticatedUser = vi.fn();
 const mockCaptureException = vi.fn();
 
-vi.mock('@/backend/identity/server', () => ({
-  identity: {
-    resolveSession: () => mockResolveSession(),
-    resolveAdmin: () => mockResolveAdmin(),
-  },
-  bearerReader: {
-    read: (authorization: string | null) => mockGetAuthenticatedUser(authorization),
-  },
-}));
+vi.mock('@/backend/config/identity', async () => {
+  const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
+  return identityDouble({
+    session: () => mockResolveSession(),
+    bearer: (authorization) => mockGetAuthenticatedUser(authorization),
+    admin: () => mockResolveAdmin(),
+  });
+});
 
 vi.mock('@sentry/nextjs', () => ({
   captureException: (error: unknown) => mockCaptureException(error),

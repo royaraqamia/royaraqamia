@@ -1,4 +1,4 @@
-import { isSafeRedirect } from '@/backend/shared/safe-redirect';
+import { isSafeRedirect } from '@/shared/safe-redirect';
 
 export function authLink(
   path: string,

@@ -16,7 +16,7 @@ export function withBearerUser(
     async () => {
       const user = await getAuthenticatedUser(authorization);
       if (!user) return null;
-      return { userId: user.id, userEmail: user.email };
+      return { userId: user.id, userEmail: user.email ?? '' };
     },
     run,
     policy

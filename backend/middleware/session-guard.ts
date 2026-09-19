@@ -2,7 +2,7 @@ import 'server-only';
 
 import { cache } from 'react';
 import { redirect } from 'next/navigation';
-import { identity } from '@/backend/identity/server';
+import { identity } from '@/backend/config/identity';
 
 /**
  * The cached session verifier keeps React's `cache()` so a page render shares

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { identity } from '@/backend/identity/server';
+import { identity } from '@/backend/config/identity';
 import { Navbar } from '@/frontend/ui/Navbar';
 
 // The single guard for the whole Admin Console. Sections below only worry about

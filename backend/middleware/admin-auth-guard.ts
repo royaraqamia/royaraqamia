@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { identity } from '@/backend/identity/server';
+import { identity } from '@/backend/config/identity';
 
 /**
  * The Admin guard is a caller of the identity module, not its own resolver: it

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { hasSessionCookie, isSessionCookieName } from '@/backend/shared/session-cookie';
+import { hasSessionCookie, isSessionCookieName } from '@/shared/session-cookie';
 
 describe('isSessionCookieName', () => {
   it('accepts the named session cookie and its chunked parts', () => {

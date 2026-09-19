@@ -25,16 +25,7 @@ const sessionReader = createCookieSessionIdentityReader({
   createClient: (store) => createServerSupabaseClient(store),
 });
 
-const adminReader = createAdminIdentityReader({
-  session: sessionReader,
-  isAdmin: (email) => isAdmin(email, env.adminEmails),
-  // Keep the DB admin allowlist (used by RLS) in sync with ADMIN_EMAILS.
-  onAdmin: () => syncAdminAllowlistMirror(env.adminEmails),
-});
-
-export const identity: IdentityModule = createIdentityModule(sessionReader, adminReader);
-
-export const bearerReader = createBearerIdentityReader({
+const bearerReader = createBearerIdentityReader({
   getUser: async (token) => {
     const { data, error } = await getPublicSupabase().auth.getUser(token);
     if (error || !data.user) return { user: null };
@@ -42,3 +33,16 @@ export const bearerReader = createBearerIdentityReader({
   },
   onError: (error) => logger.error('Error authenticating token', { error: String(error) }),
 });
+
+const adminReader = createAdminIdentityReader({
+  session: sessionReader,
+  isAdmin: (email) => isAdmin(email, env.adminEmails),
+  // Keep the DB admin allowlist (used by RLS) in sync with ADMIN_EMAILS.
+  onAdmin: () => syncAdminAllowlistMirror(env.adminEmails),
+});
+
+export const identity: IdentityModule = createIdentityModule(
+  sessionReader,
+  bearerReader,
+  adminReader
+);

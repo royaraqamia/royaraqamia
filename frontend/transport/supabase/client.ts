@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from '@/frontend/shared/constants';
-import { isSessionCookieName } from '@/backend/shared/session-cookie';
+import { isSessionCookieName } from '@/shared/session-cookie';
 
 let clientPromise: Promise<SupabaseClient> | null = null;
 

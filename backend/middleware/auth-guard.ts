@@ -3,7 +3,8 @@ import 'server-only';
 import { redirect } from 'next/navigation';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
-import { identity } from '@/backend/identity/server';
+import { identity } from '@/backend/config/identity';
+import type { AuthUser } from '@/backend/identity';
 
 /**
  * The page guards ask the identity module; they no longer resolve identity
@@ -12,11 +13,11 @@ import { identity } from '@/backend/identity/server';
  */
 
 export async function getAuthUser(): Promise<{
-  user: { id: string; email?: string } | null;
+  user: AuthUser | null;
   supabase: SupabaseClient<Database>;
 }> {
   const { user, client } = await identity.resolveSession();
-  return { user, supabase: client as SupabaseClient<Database> };
+  return { user, supabase: client };
 }
 
 export async function requireAuth(redirectPath: string) {
@@ -25,13 +26,8 @@ export async function requireAuth(redirectPath: string) {
   return { user, supabase };
 }
 
-interface AuthenticatedUser {
-  id: string;
-  email?: string;
-}
-
 export async function getOptionalUser(): Promise<{
-  user: AuthenticatedUser | null;
+  user: AuthUser | null;
   client: SupabaseClient<Database> | null;
 }> {
   return identity.resolveOptional();

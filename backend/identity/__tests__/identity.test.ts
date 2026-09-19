@@ -148,18 +148,24 @@ describe('admin identity reader', () => {
 });
 
 describe('identity module', () => {
-  it('exposes the three outcomes behind one interface', async () => {
+  it('answers for the session, the optional reader, the bearer and the Admin outcome', async () => {
     const session = sessionReader({
       read: vi.fn().mockResolvedValue({ user: { id: 'u-1', email: 'a@b.com' }, client: null }),
     });
+    const bearer = { read: vi.fn().mockResolvedValue({ id: 'u-9', email: 'b@c.com' }) };
     const admin = { read: vi.fn().mockResolvedValue({ kind: 'forbidden' as const }) };
-    const module = createIdentityModule(session, admin);
+    const module = createIdentityModule(session, bearer, admin);
 
     await expect(module.resolveSession()).resolves.toEqual({
       user: { id: 'u-1', email: 'a@b.com' },
       client: null,
     });
     await expect(module.resolveOptional()).resolves.toEqual({ user: null, client: null });
+    await expect(module.resolveBearer('Bearer token')).resolves.toEqual({
+      id: 'u-9',
+      email: 'b@c.com',
+    });
     await expect(module.resolveAdmin()).resolves.toEqual({ kind: 'forbidden' });
+    expect(bearer.read).toHaveBeenCalledWith('Bearer token');
   });
 });

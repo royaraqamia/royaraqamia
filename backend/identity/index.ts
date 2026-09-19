@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
-import { hasSessionCookie } from '@/backend/shared/session-cookie';
+import { hasSessionCookie } from '@/shared/session-cookie';
 
 /**
  * The identity seam.
@@ -21,16 +21,22 @@ export interface AuthUser {
   email?: string;
 }
 
-/** A resolved request identity: the user (if any) and the client scoped to it. */
-export interface ResolvedIdentity {
+/** A session resolution. `read()` always builds a client; the user may be null. */
+export interface SessionResolution {
+  user: AuthUser | null;
+  client: SupabaseClient<Database>;
+}
+
+/** An optional resolution: no cookie means no client is built at all. */
+export interface OptionalResolution {
   user: AuthUser | null;
   client: SupabaseClient<Database> | null;
 }
 
 /** Reads the session-cookie identity. `readOptional` never throws. */
 export interface SessionIdentityReader {
-  read(): Promise<ResolvedIdentity>;
-  readOptional(): Promise<ResolvedIdentity>;
+  read(): Promise<SessionResolution>;
+  readOptional(): Promise<OptionalResolution>;
 }
 
 /** Reads a bearer-token identity. */
@@ -45,7 +51,7 @@ export interface BearerIdentityReader {
 export type AdminResolution =
   | { kind: 'anonymous' }
   | { kind: 'forbidden' }
-  | { kind: 'admin'; identity: ResolvedIdentity & { user: AuthUser } };
+  | { kind: 'admin'; identity: { user: AuthUser; client: SupabaseClient<Database> } };
 
 export interface AdminIdentityReader {
   read(): Promise<AdminResolution>;
@@ -102,7 +108,10 @@ export interface BearerReaderDeps {
   onError?: (error: unknown) => void;
 }
 
-/** The bearer adapter: the public client plus a token argument, not the cookie path. */
+/**
+ * The bearer adapter: the public client plus a token argument, not the cookie
+ * path. Its contract always yields an email string, so an absent one is `''`.
+ */
 export function createBearerIdentityReader(deps: BearerReaderDeps): BearerIdentityReader {
   return {
     async read(authorization) {
@@ -112,8 +121,7 @@ export function createBearerIdentityReader(deps: BearerReaderDeps): BearerIdenti
 
       try {
         const { user } = await deps.getUser(token);
-        if (!user) return null;
-        return { id: user.id, email: user.email ?? '' };
+        return toAuthUser(user);
       } catch (error) {
         deps.onError?.(error);
         return null;
@@ -151,20 +159,24 @@ export function createAdminIdentityReader(deps: AdminReaderDeps): AdminIdentityR
 /** The identity module the guards ask. */
 export interface IdentityModule {
   /** The current session identity. `user` is null when anonymous. */
-  resolveSession(): Promise<ResolvedIdentity>;
+  resolveSession(): Promise<SessionResolution>;
   /** The session identity for public routes; skips the client when no cookie. */
-  resolveOptional(): Promise<ResolvedIdentity>;
+  resolveOptional(): Promise<OptionalResolution>;
+  /** The identity behind an `Authorization: Bearer` header, or null. */
+  resolveBearer(authorization: string | null): Promise<AuthUser | null>;
   /** The Admin outcome: anonymous, forbidden, or the Admin identity. */
   resolveAdmin(): Promise<AdminResolution>;
 }
 
 export function createIdentityModule(
   session: SessionIdentityReader,
+  bearer: BearerIdentityReader,
   admin: AdminIdentityReader
 ): IdentityModule {
   return {
     resolveSession: () => session.read(),
     resolveOptional: () => session.readOptional(),
+    resolveBearer: (authorization) => bearer.read(authorization),
     resolveAdmin: () => admin.read(),
   };
 }
