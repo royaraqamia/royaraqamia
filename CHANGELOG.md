@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.0] - 2026-09-19
+
+### Changed
+- record the triage label vocabulary
+
+### Added
+- add typed auth-failure outcome and Admin adapter
+
+### Fixed
+- answer 401/403 on admin auth failure
+
 ## [1.24.1] - 2026-09-19
 
 ### Changed
