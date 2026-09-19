@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.24.1] - 2026-09-19
+
+### Changed
+- Require session on habitflow API routes
+
 ## [1.24.0] - 2026-09-18
 
 ### Changed
