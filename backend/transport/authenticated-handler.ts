@@ -43,7 +43,7 @@ export function forbidden(): AuthFailure {
 }
 
 function isAuthFailure(value: unknown): value is AuthFailure {
-  if (typeof value !== 'object' || value === null) return false;
+  if (value === null || typeof value !== 'object') return false;
   const kind = (value as { kind?: unknown }).kind;
   return kind === 'unauthenticated' || kind === 'forbidden';
 }
