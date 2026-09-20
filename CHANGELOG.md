@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.5] - 2026-09-20
+
+### Fixed
+- content-version every icon, favicon and badge URL
+
 ## [1.25.4] - 2026-09-20
 
 ### Changed
