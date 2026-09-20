@@ -4,14 +4,21 @@ const CACHE = self.CACHE_VERSION;
 const STATIC_CACHE = 'royaraqamia-static-' + (self.CACHE_VERSION ? self.CACHE_VERSION.split('-').pop() : 'v1');
 const FALLBACK_URL = '/offline';
 
+// Content hash of the generated PWA/favicon assets (see scripts/generate-icons.mjs).
+// Appending it to every asset URL means a new build publishes new URLs, so a
+// client's HTTP/PWA/favicon cache can never answer with the previous artwork —
+// no "clear site data" needed. Left empty in raw clone/test runs.
+const ASSET_VERSION = self.ASSET_VERSION || '';
+const ASSET_QUERY = ASSET_VERSION ? `?v=${ASSET_VERSION}` : '';
+
 const PRECACHE_URLS = [
   '/',
   FALLBACK_URL,
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/icons/notification-icon-192x192.png',
-  '/icons/badge-icon-96x96.png',
+  `/manifest.json${ASSET_QUERY}`,
+  `/icons/icon-192x192.png${ASSET_QUERY}`,
+  `/icons/icon-512x512.png${ASSET_QUERY}`,
+  `/icons/notification-icon-192x192.png${ASSET_QUERY}`,
+  `/icons/badge-icon-96x96.png${ASSET_QUERY}`,
 ];
 
 self.addEventListener('install', (event) => {
@@ -285,8 +292,8 @@ self.addEventListener('push', (event) => {
 
   const options = {
     body: typeof payload.body === 'string' && payload.body.length > 0 ? payload.body : undefined,
-    icon: '/icons/notification-icon-192x192.png',
-    badge: '/icons/badge-icon-96x96.png',
+    icon: `/icons/notification-icon-192x192.png${ASSET_QUERY}`,
+    badge: `/icons/badge-icon-96x96.png${ASSET_QUERY}`,
     data: {
       url: typeof payload.url === 'string' ? payload.url : '/',
       type: typeof payload.type === 'string' ? payload.type : undefined,

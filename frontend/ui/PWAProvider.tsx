@@ -44,9 +44,18 @@ export function PWAProvider({ children, onUpdateAvailable }: PWAProviderProps) {
     // idle: SW install/bytecode parsing otherwise competes with hydration
     // and first render for CPU/network on low-end devices.
     const register = () => {
-      navigator.serviceWorker.register(SW_PATH, { scope: '/' }).catch(() => {
-        // silent
-      });
+      navigator.serviceWorker
+        .register(SW_PATH, {
+          scope: '/',
+          // Never satisfy the worker script or its imports (`sw-version.js`,
+          // `sw-push-config.js`) from the HTTP cache: a stale version script
+          // would pin the asset version and hand back the previous icons.
+          updateViaCache: 'none',
+        })
+        .then((registration) => registration.update())
+        .catch(() => {
+          // silent
+        });
     };
 
     const registerWhenIdle = () => {

@@ -100,6 +100,13 @@ const nextConfig = {
           { key: 'Cache-Control', value: 'public, s-maxage=3600, stale-while-revalidate=86400' },
         ],
       },
+      // The manifest's icon URLs are content-versioned, but the manifest file
+      // itself must be re-read on every visit so an installed app notices the
+      // new URLs. Never let the browser serve a cached copy.
+      {
+        source: '/manifest.json',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
       // NOTE: /sw.js caching lives in vercel.json (stricter no-store variant).
       // Keep it there only — a second definition here produced conflicting
       // Cache-Control values.

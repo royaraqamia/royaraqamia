@@ -15,6 +15,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
 import { FloatingActions } from '../frontend/ui/FloatingActions';
 import { SITE_NAME } from '@/frontend/shared/metadata';
+import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
 import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
 
@@ -28,6 +29,10 @@ const designTokensCss = (() => {
     return null;
   }
 })();
+
+// Content-hashed cache-buster for the PWA/favicon assets. Same token the
+// manifest and service worker build from, so every surface points at one URL set.
+const ASSET_QUERY = `?v=${ASSET_VERSION}`;
 
 export const metadata: Metadata = {
   title: {
@@ -99,13 +104,21 @@ export const metadata: Metadata = {
     title: 'رؤية رقمية',
   },
   icons: [
-    { rel: 'icon', url: '/favicon.ico' },
-    { rel: 'icon', type: 'image/png', sizes: '192x192', url: '/favicon-192x192.png' },
-    { rel: 'icon', type: 'image/png', sizes: '512x512', url: '/favicon-512x512.png' },
-    { rel: 'apple-touch-icon', sizes: '152x152', url: '/icons/apple-touch-icon-152x152.png' },
-    { rel: 'apple-touch-icon', sizes: '180x180', url: '/icons/apple-touch-icon-180x180.png' },
+    { rel: 'icon', url: `/favicon.ico${ASSET_QUERY}` },
+    { rel: 'icon', type: 'image/png', sizes: '192x192', url: `/favicon-192x192.png${ASSET_QUERY}` },
+    { rel: 'icon', type: 'image/png', sizes: '512x512', url: `/favicon-512x512.png${ASSET_QUERY}` },
+    {
+      rel: 'apple-touch-icon',
+      sizes: '152x152',
+      url: `/icons/apple-touch-icon-152x152.png${ASSET_QUERY}`,
+    },
+    {
+      rel: 'apple-touch-icon',
+      sizes: '180x180',
+      url: `/icons/apple-touch-icon-180x180.png${ASSET_QUERY}`,
+    },
   ],
-  manifest: '/manifest.json',
+  manifest: `/manifest.json${ASSET_QUERY}`,
 };
 
 export const viewport = {
