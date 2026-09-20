@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.7] - 2026-09-20
+
+### Changed
+- Fixed malformed-body 500s across 23 routes; all gates pass.
+
 ## [1.25.6] - 2026-09-20
 
 ### Changed
