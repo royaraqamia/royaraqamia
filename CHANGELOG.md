@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.3] - 2026-09-20
+
+### Changed
+- refresh the site description and positioning copy
+
+### Fixed
+- key dark: variants off a class, not the OS scheme
+- compare null before typeof in isAuthFailure guard
+
 ## [1.25.2] - 2026-09-20
 
 ### Changed
