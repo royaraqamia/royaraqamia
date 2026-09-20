@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.8] - 2026-09-20
+
+### Changed
+- make the Admin adapter the only door for Admin surfaces
+
 ## [1.25.7] - 2026-09-20
 
 ### Changed
