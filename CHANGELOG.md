@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.6] - 2026-09-20
+
+### Changed
+- cover the Admin Console door auth outcomes
+
+### Fixed
+- route broadcast, announcements and user search through the admin seam
+- answer 401/403 on admin auth failure
+
 ## [1.25.5] - 2026-09-20
 
 ### Fixed
