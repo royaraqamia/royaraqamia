@@ -70,7 +70,7 @@ export function createPublicConsultationService(): ConsultationService {
   return createService(getAdminSupabase());
 }
 
-/** Full-privilege service for requireAdminAuth-guarded endpoints. */
+/** Full-privilege service for Admin-adapter-guarded endpoints. */
 export function createAdminConsultationService(): ConsultationService {
   return createService(getAdminSupabase());
 }

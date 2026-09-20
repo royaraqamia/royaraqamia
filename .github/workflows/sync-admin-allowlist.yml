@@ -1,8 +1,9 @@
 name: 'Sync Admin Allowlist'
 
 # public.is_admin() reads public.app_settings.admin_emails, and that value's only other
-# writer is a successful requireAdminAuth() call. Without this job a revocation waits for
-# an Admin to load /admin, and removing the last Admin never converges at all.
+# writer is a successful Admin request (the identity module's `onAdmin` side effect).
+# Without this job a revocation waits for an Admin to load /admin, and removing the last
+# Admin never converges at all.
 #
 # The job is deliberately a trigger rather than a courier: it asks the deployed app to
 # sync, so the allowlist exists in exactly one place - the app's own ADMIN_EMAILS, which

@@ -8,8 +8,8 @@ import { hasSessionCookie } from '@/shared/session-cookie';
  * "Who is the current user?" has exactly one owner: this module. It owns the
  * session-cookie rule, the client construction and the difference between
  * "no session", "a session" and "a session that is not an Admin". The page
- * guard, the optional-user reader, the cached session verifier, the Admin guard
- * and the bearer reader are callers, not resolvers.
+ * guard, the optional-user reader, the cached session verifier, the Admin
+ * adapter and the bearer reader are callers, not resolvers.
  *
  * The readers are injected, so the module is testable without a live session and
  * the bearer path is a declared adapter at the same seam rather than an
