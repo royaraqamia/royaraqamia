@@ -4,7 +4,7 @@ import { verifyCertificate } from '@/backend/controllers/certificates';
 import { getClientIp } from '@/backend/transport/http';
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   const ip = getClientIp(req);
   return toNextResponse(await verifyCertificate(body.code, ip));
 }

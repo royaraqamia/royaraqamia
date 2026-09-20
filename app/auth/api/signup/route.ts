@@ -3,6 +3,6 @@ import { toNextResponse } from '@/backend/transport/http-result';
 import { signup } from '@/backend/controllers/auth';
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   return toNextResponse(await signup(body));
 }
