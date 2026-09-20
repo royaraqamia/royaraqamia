@@ -1,5 +1,5 @@
 import { getAuthUser } from '@/backend/middleware/auth-guard';
-import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
+import { withAdminUser } from '@/backend/transport/admin-handler';
 import {
   createAdminBroadcaster,
   createSupabaseNotificationService,
@@ -68,36 +68,28 @@ export async function broadcastAnnouncement(body: {
   body?: unknown;
   userIds?: unknown;
 }): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-  } catch (error) {
-    if (error instanceof Error && error.message === 'UNAUTHORIZED') {
-      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
-    }
-    return jsonResult(403, { success: false, error: 'غير مصرح' });
-  }
+  return withAdminUser(
+    async () => {
+      const validated = AnnouncementSendSchema.safeParse(body);
+      if (!validated.success) {
+        return jsonResult(400, {
+          success: false,
+          error: validated.error.issues[0]?.message ?? 'بيانات غير صالحة',
+        });
+      }
 
-  try {
-    const validated = AnnouncementSendSchema.safeParse(body);
-    if (!validated.success) {
-      return jsonResult(400, {
-        success: false,
-        error: validated.error.issues[0]?.message ?? 'بيانات غير صالحة',
-      });
-    }
+      const { title, body: content, userIds } = validated.data;
+      const sent = await createAdminBroadcaster()(
+        {
+          type: 'system_announcement',
+          title,
+          body: content || undefined,
+        },
+        userIds
+      );
 
-    const { title, body: content, userIds } = validated.data;
-    const sent = await createAdminBroadcaster()(
-      {
-        type: 'system_announcement',
-        title,
-        body: content || undefined,
-      },
-      userIds
-    );
-
-    return jsonResult(200, { success: true, sent });
-  } catch {
-    return jsonResult(500, { success: false, error: 'فشل إرسال الإعلان' });
-  }
+      return jsonResult(200, { success: true, sent });
+    },
+    { whenFailed: { success: false, error: 'فشل إرسال الإعلان' } }
+  );
 }

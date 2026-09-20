@@ -1,17 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockRequireAdminAuth = vi.fn();
-const mockList = vi.fn();
 const mockGetAuthUser = vi.fn();
+const mockSyncAdminAllowlistMirror = vi.fn();
+const mockList = vi.fn();
 const mockBroadcaster = vi.fn();
 
-vi.mock('@/backend/middleware/admin-auth-guard', () => ({
-  requireAdminAuth: () => mockRequireAdminAuth(),
+vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
+
+vi.mock('@/backend/config/admin-allowlist', () => ({
+  syncAdminAllowlistMirror: (emails: string[]) => mockSyncAdminAllowlistMirror(emails),
 }));
 
-vi.mock('@/backend/middleware/auth-guard', () => ({
-  getAuthUser: () => mockGetAuthUser(),
-}));
+vi.mock('@/backend/config/identity', async () => {
+  const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
+  return identityDouble({
+    session: async () => ({ user: null, client: null }),
+    admin: async () => {
+      const { user, client } = await mockGetAuthUser();
+      if (!user) return { kind: 'anonymous' };
+      if (user.email !== 'admin@example.com') return { kind: 'forbidden' };
+      await mockSyncAdminAllowlistMirror(['admin@example.com']);
+      return { kind: 'admin', identity: { user, client } };
+    },
+  });
+});
 
 vi.mock('@/backend/config/users', () => ({
   createAdminUsersService: () => ({ list: mockList }),
@@ -22,14 +34,14 @@ vi.mock('@/backend/config/notifications', () => ({
   createSupabaseNotificationService: vi.fn(),
 }));
 
-vi.mock('@sentry/nextjs', () => ({
-  captureException: vi.fn(),
-}));
-
 import { listAdminUsers } from '@/backend/controllers/admin-users';
 import { broadcastAnnouncement } from '@/backend/controllers/notifications';
 
 const users = [{ id: 'u-1', name: 'أحمد محمد', email: 'ahmed@example.com', avatar_url: null }];
+
+const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@example.com' }, client: {} };
+const NON_ADMIN_SESSION = { user: { id: 'user-2', email: 'user@example.com' }, client: {} };
+const SIGNED_OUT = { user: null, client: {} };
 
 async function readBody<T>(result: Awaited<ReturnType<typeof listAdminUsers>>): Promise<T> {
   if ('redirect' in result) {
@@ -40,24 +52,25 @@ async function readBody<T>(result: Awaited<ReturnType<typeof listAdminUsers>>): 
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockRequireAdminAuth.mockResolvedValue({});
-  mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
+  mockGetAuthUser.mockResolvedValue(ADMIN_SESSION);
+  mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
   mockList.mockResolvedValue(users);
   mockBroadcaster.mockResolvedValue(0);
 });
 
 describe('listAdminUsers', () => {
-  it('returns 401 when unauthenticated', async () => {
-    mockRequireAdminAuth.mockRejectedValue(new Error('UNAUTHORIZED'));
+  it('answers 401 when signed out and never searches', async () => {
+    mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
 
     const result = await listAdminUsers({ search: '' });
 
     expect(result.status).toBe(401);
     expect(mockList).not.toHaveBeenCalled();
+    expect(mockSyncAdminAllowlistMirror).not.toHaveBeenCalled();
   });
 
-  it('returns 403 when the user is not an admin', async () => {
-    mockRequireAdminAuth.mockRejectedValue(new Error('FORBIDDEN'));
+  it('answers 403 for a signed-in non-admin and never searches', async () => {
+    mockGetAuthUser.mockResolvedValue(NON_ADMIN_SESSION);
 
     const result = await listAdminUsers({ search: '' });
 
@@ -71,6 +84,7 @@ describe('listAdminUsers', () => {
     expect(result.status).toBe(200);
     await expect(readBody<{ users: unknown[] }>(result)).resolves.toEqual({ users });
     expect(mockList).toHaveBeenCalledWith('أحمد', 25);
+    expect(mockSyncAdminAllowlistMirror).toHaveBeenCalledWith(['admin@example.com']);
   });
 
   it('defaults to the schema limit when not provided', async () => {
@@ -86,20 +100,23 @@ describe('listAdminUsers', () => {
     expect(mockList).not.toHaveBeenCalled();
   });
 
-  it('returns an empty list when the service throws', async () => {
+  it('answers a readable 500 when the service throws', async () => {
     mockList.mockRejectedValue(new Error('db down'));
 
     const result = await listAdminUsers({ search: 'x' });
 
-    expect(result.status).toBe(200);
-    await expect(readBody<{ users: unknown[] }>(result)).resolves.toEqual({ users: [] });
+    expect(result).toMatchObject({
+      status: 500,
+      body: { success: false, error: 'تعذر تحميل المستخدمين.' },
+    });
   });
 });
 
 describe('broadcastAnnouncement', () => {
   const userId = '9f0d8b3e-6b2a-4d4c-9f1e-2c3d4e5f6a7b';
-  it('returns 401 when unauthenticated', async () => {
-    mockRequireAdminAuth.mockRejectedValue(new Error('UNAUTHORIZED'));
+
+  it('answers 401 when signed out and never broadcasts', async () => {
+    mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
 
     const result = await broadcastAnnouncement({ title: 'إعلان' });
 
@@ -107,8 +124,8 @@ describe('broadcastAnnouncement', () => {
     expect(mockBroadcaster).not.toHaveBeenCalled();
   });
 
-  it('returns 403 when the user is not an admin', async () => {
-    mockRequireAdminAuth.mockRejectedValue(new Error('FORBIDDEN'));
+  it('answers 403 for a signed-in non-admin and never broadcasts', async () => {
+    mockGetAuthUser.mockResolvedValue(NON_ADMIN_SESSION);
 
     const result = await broadcastAnnouncement({ title: 'إعلان' });
 
@@ -164,6 +181,9 @@ describe('broadcastAnnouncement', () => {
 
     const result = await broadcastAnnouncement({ title: 'إعلان' });
 
-    expect(result.status).toBe(500);
+    expect(result).toMatchObject({
+      status: 500,
+      body: { success: false, error: 'فشل إرسال الإعلان' },
+    });
   });
 });

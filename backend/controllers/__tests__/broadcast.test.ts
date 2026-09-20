@@ -1,13 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockRequireAdminAuth = vi.fn();
+const mockGetAuthUser = vi.fn();
+const mockSyncAdminAllowlistMirror = vi.fn();
 const mockBroadcaster = vi.fn();
 const mockEmailBroadcaster = vi.fn();
 const mockCheckRateLimit = vi.fn();
 
-vi.mock('@/backend/middleware/admin-auth-guard', () => ({
-  requireAdminAuth: () => mockRequireAdminAuth(),
+vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
+
+vi.mock('@/backend/config/admin-allowlist', () => ({
+  syncAdminAllowlistMirror: (emails: string[]) => mockSyncAdminAllowlistMirror(emails),
 }));
+
+vi.mock('@/backend/config/identity', async () => {
+  const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
+  return identityDouble({
+    session: async () => ({ user: null, client: null }),
+    admin: async () => {
+      const { user, client } = await mockGetAuthUser();
+      if (!user) return { kind: 'anonymous' };
+      if (user.email !== 'admin@example.com') return { kind: 'forbidden' };
+      await mockSyncAdminAllowlistMirror(['admin@example.com']);
+      return { kind: 'admin', identity: { user, client } };
+    },
+  });
+});
 
 vi.mock('@/backend/config/notifications', () => ({
   createAdminBroadcaster: () => mockBroadcaster,
@@ -27,13 +44,13 @@ vi.mock('@/backend/config/rate-limiter', () => ({
   }),
 }));
 
-vi.mock('@sentry/nextjs', () => ({
-  captureException: vi.fn(),
-}));
-
 import { broadcastMessage } from '@/backend/controllers/broadcast';
 
 const userId = '9f0d8b3e-6b2a-4d4c-9f1e-2c3d4e5f6a7b';
+
+const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@example.com' }, client: {} };
+const NON_ADMIN_SESSION = { user: { id: 'user-2', email: 'user@example.com' }, client: {} };
+const SIGNED_OUT = { user: null, client: {} };
 
 async function readBody<T>(result: Awaited<ReturnType<typeof broadcastMessage>>): Promise<T> {
   if ('redirect' in result) {
@@ -44,15 +61,16 @@ async function readBody<T>(result: Awaited<ReturnType<typeof broadcastMessage>>)
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockRequireAdminAuth.mockResolvedValue({ user: { email: 'admin@example.com' }, supabase: {} });
+  mockGetAuthUser.mockResolvedValue(ADMIN_SESSION);
+  mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
   mockBroadcaster.mockResolvedValue(0);
   mockEmailBroadcaster.mockResolvedValue(0);
   mockCheckRateLimit.mockResolvedValue(true);
 });
 
 describe('broadcastMessage', () => {
-  it('returns 401 when unauthenticated', async () => {
-    mockRequireAdminAuth.mockRejectedValue(new Error('UNAUTHORIZED'));
+  it('answers 401 when signed out and never broadcasts', async () => {
+    mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
 
     const result = await broadcastMessage({ title: 'إعلان' });
 
@@ -61,13 +79,14 @@ describe('broadcastMessage', () => {
     expect(mockEmailBroadcaster).not.toHaveBeenCalled();
   });
 
-  it('returns 403 when the user is not an admin', async () => {
-    mockRequireAdminAuth.mockRejectedValue(new Error('FORBIDDEN'));
+  it('answers 403 for a signed-in non-admin and never broadcasts', async () => {
+    mockGetAuthUser.mockResolvedValue(NON_ADMIN_SESSION);
 
     const result = await broadcastMessage({ title: 'إعلان' });
 
     expect(result.status).toBe(403);
     expect(mockBroadcaster).not.toHaveBeenCalled();
+    expect(mockEmailBroadcaster).not.toHaveBeenCalled();
   });
 
   it('returns 400 for a missing title', async () => {
