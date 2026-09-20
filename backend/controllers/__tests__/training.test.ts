@@ -4,9 +4,14 @@ const mockSubmit = vi.fn();
 const mockList = vi.fn();
 const mockUpdate = vi.fn();
 const mockGetOptionalUser = vi.fn();
-const mockRequireAdminAuth = vi.fn();
+const mockGetAuthUser = vi.fn();
+const mockSyncAdminAllowlistMirror = vi.fn();
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
+
+vi.mock('@/backend/config/admin-allowlist', () => ({
+  syncAdminAllowlistMirror: (emails: string[]) => mockSyncAdminAllowlistMirror(emails),
+}));
 
 vi.mock('@/backend/config/identity', async () => {
   const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
@@ -14,11 +19,11 @@ vi.mock('@/backend/config/identity', async () => {
     session: async () => ({ user: null, client: null }),
     optional: () => mockGetOptionalUser(),
     admin: async () => {
-      await mockRequireAdminAuth();
-      return {
-        kind: 'admin',
-        identity: { user: { id: 'admin-1', email: 'admin@example.com' }, client: null },
-      };
+      const { user, client } = await mockGetAuthUser();
+      if (!user) return { kind: 'anonymous' };
+      if (user.email !== 'admin@example.com') return { kind: 'forbidden' };
+      await mockSyncAdminAllowlistMirror(['admin@example.com']);
+      return { kind: 'admin', identity: { user, client } };
     },
   });
 });
@@ -54,12 +59,17 @@ const APPLICATION = {
   status: 'new',
 };
 
+const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@example.com' }, client: {} };
+const NON_ADMIN_SESSION = { user: { id: 'user-2', email: 'user@example.com' }, client: {} };
+const SIGNED_OUT = { user: null, client: {} };
+
 describe('training controller: submitTrainingApplication', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetOptionalUser.mockResolvedValue({ user: null, client: null });
     mockSubmit.mockResolvedValue(APPLICATION);
-    mockRequireAdminAuth.mockResolvedValue(undefined);
+    mockGetAuthUser.mockResolvedValue(ADMIN_SESSION);
+    mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
     mockList.mockResolvedValue({ data: [], total: 0 });
     mockUpdate.mockResolvedValue(APPLICATION);
   });
@@ -129,7 +139,8 @@ describe('training controller: submitTrainingApplication', () => {
 describe('training controller: listTrainingApplications', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequireAdminAuth.mockResolvedValue(undefined);
+    mockGetAuthUser.mockResolvedValue(ADMIN_SESSION);
+    mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
     mockList.mockResolvedValue({ data: [APPLICATION], total: 1 });
   });
 
@@ -137,14 +148,25 @@ describe('training controller: listTrainingApplications', () => {
     const result = await listTrainingApplications(1, 20);
 
     expect(result).toMatchObject({ status: 200, body: { total: 1 } });
+    expect(mockSyncAdminAllowlistMirror).toHaveBeenCalledWith(['admin@example.com']);
   });
 
-  it('refuses a non-admin without querying', async () => {
-    mockRequireAdminAuth.mockRejectedValue(new Error('FORBIDDEN'));
+  it('answers 401 when signed out and never reaches the service', async () => {
+    mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
 
     const result = await listTrainingApplications(1, 20);
 
-    expect(result).toMatchObject({ status: 500, body: { data: [], total: 0 } });
+    expect(result).toMatchObject({ status: 401 });
+    expect(mockList).not.toHaveBeenCalled();
+    expect(mockSyncAdminAllowlistMirror).not.toHaveBeenCalled();
+  });
+
+  it('answers 403 for a signed-in non-admin without querying', async () => {
+    mockGetAuthUser.mockResolvedValue(NON_ADMIN_SESSION);
+
+    const result = await listTrainingApplications(1, 20);
+
+    expect(result).toMatchObject({ status: 403, body: { success: false, error: 'غير مصرح' } });
     expect(mockList).not.toHaveBeenCalled();
   });
 
@@ -165,13 +187,43 @@ describe('training controller: listTrainingApplications', () => {
 
     expect(mockList).toHaveBeenCalledWith(expect.objectContaining({ pageSize: 100 }));
   });
+
+  it('answers a readable 500 on a genuine failure', async () => {
+    mockList.mockRejectedValue(new Error('db down'));
+
+    const result = await listTrainingApplications(1, 20);
+
+    expect(result).toMatchObject({
+      status: 500,
+      body: { success: false, error: 'تعذر تحميل الطلبات.' },
+    });
+  });
 });
 
 describe('training controller: updateTrainingApplication', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRequireAdminAuth.mockResolvedValue(undefined);
+    mockGetAuthUser.mockResolvedValue(ADMIN_SESSION);
+    mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
     mockUpdate.mockResolvedValue(APPLICATION);
+  });
+
+  it('answers 401 when signed out before validating the body and never reaches the service', async () => {
+    mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
+
+    const result = await updateTrainingApplication('app-1', { status: 'archived' });
+
+    expect(result).toMatchObject({ status: 401 });
+    expect(mockUpdate).not.toHaveBeenCalled();
+  });
+
+  it('answers 403 for a signed-in non-admin without querying', async () => {
+    mockGetAuthUser.mockResolvedValue(NON_ADMIN_SESSION);
+
+    const result = await updateTrainingApplication('app-1', { status: 'contacted' });
+
+    expect(result).toMatchObject({ status: 403 });
+    expect(mockUpdate).not.toHaveBeenCalled();
   });
 
   it('rejects an unknown status', async () => {
@@ -193,5 +245,16 @@ describe('training controller: updateTrainingApplication', () => {
     const result = await updateTrainingApplication('missing', { status: 'contacted' });
 
     expect(result).toMatchObject({ status: 404, body: { success: false } });
+  });
+
+  it('answers a readable 500 on a genuine failure', async () => {
+    mockUpdate.mockRejectedValue(new Error('db down'));
+
+    const result = await updateTrainingApplication('app-1', { status: 'contacted' });
+
+    expect(result).toMatchObject({
+      status: 500,
+      body: { success: false, error: 'تعذّر تحديث الطلب.' },
+    });
   });
 });

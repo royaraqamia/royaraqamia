@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/nextjs';
 import type { z } from 'zod';
-import { requireAdminAuth } from '@/backend/middleware/admin-auth-guard';
+import { withAdminUser } from '@/backend/transport/admin-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { createDefaultTrainingApplicationService } from '@/backend/config/training';
 import {
@@ -100,54 +100,58 @@ export async function submitTrainingApplication(body: unknown, ip: string): Prom
   }
 }
 
+/**
+ * The Training domain errors an Admin request may surface. Returning `null`
+ * lets the Admin adapter fall back to its own `500` body.
+ */
+function mapTrainingApplicationError(error: unknown): HttpResult | null {
+  if (error instanceof TrainingApplicationNotFoundError) {
+    return jsonResult(404, {
+      success: false,
+      error: error.message,
+    } satisfies ApplicationActionResult);
+  }
+  return null;
+}
+
 export async function listTrainingApplications(
   page: number,
   pageSize: number,
   status?: string | null,
   search?: string | null
 ): Promise<HttpResult> {
-  try {
-    await requireAdminAuth();
-    const result = await createDefaultTrainingApplicationService().list({
-      page: normalizePage(page),
-      pageSize: normalizePageSize(pageSize),
-      status: status && isApplicationStatus(status) ? status : undefined,
-      search: search?.trim() || undefined,
-    });
-    return jsonResult(200, result);
-  } catch (error) {
-    Sentry.captureException(error);
-    return jsonResult(500, { data: [], total: 0 });
-  }
+  return withAdminUser(
+    async () => {
+      const result = await createDefaultTrainingApplicationService().list({
+        page: normalizePage(page),
+        pageSize: normalizePageSize(pageSize),
+        status: status && isApplicationStatus(status) ? status : undefined,
+        search: search?.trim() || undefined,
+      });
+      return jsonResult(200, result);
+    },
+    { whenFailed: { success: false, error: 'تعذر تحميل الطلبات.' } }
+  );
 }
 
 export async function updateTrainingApplication(id: string, body: unknown): Promise<HttpResult> {
-  const parsed = TrainingApplicationUpdateSchema.safeParse(body);
-  if (!parsed.success) {
-    return jsonResult(400, {
-      success: false,
-      error: 'تحقق من الحقول المدخلة.',
-      fieldErrors: zodFieldErrors(parsed.error),
-    } satisfies ApplicationActionResult);
-  }
+  return withAdminUser(
+    async () => {
+      const parsed = TrainingApplicationUpdateSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'تحقق من الحقول المدخلة.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        } satisfies ApplicationActionResult);
+      }
 
-  try {
-    await requireAdminAuth();
-    const data = await createDefaultTrainingApplicationService().update(id, parsed.data);
-    return jsonResult(200, { success: true, data } satisfies ApplicationActionResult);
-  } catch (error) {
-    Sentry.captureException(error);
-
-    if (error instanceof TrainingApplicationNotFoundError) {
-      return jsonResult(404, {
-        success: false,
-        error: error.message,
-      } satisfies ApplicationActionResult);
+      const data = await createDefaultTrainingApplicationService().update(id, parsed.data);
+      return jsonResult(200, { success: true, data } satisfies ApplicationActionResult);
+    },
+    {
+      mapError: mapTrainingApplicationError,
+      whenFailed: { success: false, error: 'تعذّر تحديث الطلب.' },
     }
-
-    return jsonResult(500, {
-      success: false,
-      error: 'تعذّر تحديث الطلب.',
-    } satisfies ApplicationActionResult);
-  }
+  );
 }
