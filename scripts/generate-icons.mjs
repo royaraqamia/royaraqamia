@@ -2,41 +2,39 @@ import sharp from 'sharp';
 import fs from 'fs';
 import { execSync } from 'child_process';
 
-const NAVY = { r: 15, g: 23, b: 42 };
 const PURPLE = { r: 120, g: 104, b: 234 };
 const OUT_DIR = 'public/icons';
 const MASTER = 'public/logo.webp';
 
-// Circle diameter (logo tile) as a fraction of the icon canvas for the "any"
-// and apple-touch icons. These are circle-cropped to transparent corners so
-// they read as a clean purple circle centered on a navy tile.
-const RATIOS = {
-  any: 0.78,
-  appleTouch: 0.8,
-};
-
-// Maskable tile scale: the whole square logo is letterboxed (centered, same
+// Tile scale for every icon tile: the square logo is letterboxed (centered, same
 // purple background) so the glyph sits comfortably inside Android's minimum
-// safe zone (a centered circle with a radius of 40% of the icon width).
-const MASKABLE_TILE = 0.86;
+// maskable safe zone (a centered circle with a radius of 40% of the icon width).
+const TILE_SCALE = 0.86;
 
-// "any" / apple-touch icons: circle-cropped purple logo on a navy tile. Includes
+// "any" icons: full-bleed purple tile carrying the same artwork as the maskable
+// set. Desktop install UIs render these unmasked, so a border or inner circle
+// baked into the file would make desktop read differently from mobile. Includes
 // 192 and 512 so the manifest always exposes a large "any" icon (PWA installability),
 // plus 1024 for high-DPI rendering, and keeps the favicon/service-worker paths resolving.
 const ANY_SIZES = [72, 96, 128, 144, 152, 192, 384, 512, 1024];
+// Apple-touch icons: same full-bleed purple tile, so iOS rounds it into the same
+// squircle the Android launcher and desktop install UI show.
 const APPLE_TOUCH_SIZES = [152, 167, 180];
 // Maskable icons: full-bleed purple square (glyph inside the ~80% safe zone).
 // Android's adaptive mask crops these into a clean circle.
 const MASKABLE_SIZES = [192, 512, 1024];
 const NOTIFICATION_SIZE = 192;
 const BADGE_SIZE = 96;
-// Badge glyph occupies this fraction of the canvas so Android can downscale it
-// into a clean status-bar silhouette without the glyph reading as a solid block.
-const BADGE_SCALE = 0.62;
-// Tab favicons only ever need small raster sizes; larger surfaces resolve to
-// the PNG icons declared in root metadata (`icons.icon-*.png`), so keeping a
-// 256px frame inside the .ico would ship ~30KB of dead weight per visit.
+// Badge mark occupies this fraction of the canvas. Android draws the badge from
+// the alpha channel only, so the mark should fill most of the canvas; the system
+// adds its own padding around it.
+const BADGE_SCALE = 0.86;
+// Tab favicons only ever need small raster sizes, so the .ico stays lean; the
+// crisp HiDPI tab icon comes from the standalone favicon PNGs below.
 const FAVICON_SIZES = [16, 32, 48];
+// Standalone favicon PNGs. Circle-cropped to fully transparent corners (a purple
+// disc) so the tab icon never paints a square behind it, light theme or dark.
+const FAVICON_PNG_SIZES = [192, 512];
 
 if (!fs.existsSync(MASTER)) {
   console.error(
@@ -45,34 +43,12 @@ if (!fs.existsSync(MASTER)) {
   process.exit(1);
 }
 
-// Resize the master on a square canvas, then punch a circular alpha mask so the
-// corners become transparent and only a perfect circle of the logo remains.
-async function circleCroppedLogo(logoSize) {
-  const logo = await sharp(MASTER).resize(logoSize, logoSize, { fit: 'fill' }).toBuffer();
-  const mask = Buffer.from(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${logoSize}" height="${logoSize}">` +
-      `<circle cx="${logoSize / 2}" cy="${logoSize / 2}" r="${logoSize / 2}" fill="#fff"/></svg>`
-  );
-  return sharp(logo)
-    .composite([{ input: mask, blend: 'dest-in' }])
-    .png()
-    .toBuffer();
-}
-
-async function tileOnNavy(file, size, ratio) {
-  const logoSize = Math.round(size * ratio);
-  const logo = await circleCroppedLogo(logoSize);
-  await sharp({ create: { width: size, height: size, channels: 3, background: NAVY } })
-    .composite([{ input: logo, gravity: 'center' }])
-    .png()
-    .toFile(file);
-}
-
-// Maskable icons stay a full-bleed opaque square (no navy border, no circle in
-// the file) so Android's launcher mask does the cropping and shows a clean
-// circle with the glyph safely inside the ~80% safe zone.
-async function tileMaskable(file, size) {
-  const tile = Math.round(size * MASKABLE_TILE);
+// Full-bleed tiles stay an opaque square (no border, no circle baked in) so
+// Android's launcher mask and iOS's squircle can crop them into a clean shape,
+// and desktop install UIs can render them as-is — all showing the same purple
+// tile with the glyph safely inside the ~80% safe zone.
+async function tileFullBleed(file, size) {
+  const tile = Math.round(size * TILE_SCALE);
   const logo = await sharp(MASTER).resize(tile, tile, { fit: 'fill' }).toBuffer();
   await sharp({ create: { width: size, height: size, channels: 3, background: PURPLE } })
     .composite([{ input: logo, gravity: 'center' }])
@@ -87,19 +63,26 @@ async function generateNotificationIcon() {
     .toFile(`${OUT_DIR}/notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}.png`);
 }
 
+// Badge: a white-on-transparent silhouette, because platforms that consume a
+// badge/monochrome icon draw the alpha channel and tint it themselves. The mark
+// itself (the diamond and dot enclosed by the logo's white disc) is lifted rather
+// than the disc, since a disc silhouette collapses into a featureless blob at
+// status-bar size while the mark stays readable.
 async function generateBadge() {
   const { data, info } = await sharp(MASTER).raw().toBuffer({ resolveWithObject: true });
   const w = info.width;
-  const isGlyph = (i) =>
+  const c = info.channels;
+  const isWhite = (i) =>
     data[i] > 180 && data[i + 1] > 180 && data[i + 2] > 180 && data[i + 3] > 128;
 
+  // The white ring's bounding box is the disc that encloses the mark.
   let minx = w,
     miny = w,
     maxx = -1,
     maxy = -1;
   for (let y = 0; y < w; y++) {
     for (let x = 0; x < w; x++) {
-      if (isGlyph((y * w + x) * 4)) {
+      if (isWhite((y * w + x) * c)) {
         if (x < minx) minx = x;
         if (x > maxx) maxx = x;
         if (y < miny) miny = y;
@@ -107,21 +90,48 @@ async function generateBadge() {
       }
     }
   }
+  const cx = (minx + maxx) / 2;
+  const cy = (miny + maxy) / 2;
+  // Inset the disc. Its rim is anti-aliased between the white ring and the purple
+  // background, and those blended pixels are not white, so an un-inset circle would
+  // take that rim itself for part of the mark. The mark sits well inside it.
+  const r = (maxx - minx) / 2 - Math.max(2, Math.round((maxx - minx) * 0.015));
 
-  const pad = Math.round((maxx - minx) * 0.08);
-  const bx0 = Math.max(0, minx - pad),
-    by0 = Math.max(0, miny - pad);
-  const bw = Math.min(w - bx0, maxx - minx + pad * 2),
-    bh = Math.min(w - by0, maxy - miny + pad * 2);
-  const raw = Buffer.alloc(bw * bh * 4);
+  // Mark = everything inside that disc that is not the white ring.
+  const mark = Buffer.alloc(w * w * 4, 0);
+  let mx0 = w,
+    my0 = w,
+    mx1 = -1,
+    my1 = -1;
+  for (let y = 0; y < w; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = (y * w + x) * c;
+      if ((x - cx) ** 2 + (y - cy) ** 2 > r * r || isWhite(i)) continue;
+      mark[i] = 255;
+      mark[i + 1] = 255;
+      mark[i + 2] = 255;
+      mark[i + 3] = 255;
+      if (x < mx0) mx0 = x;
+      if (x > mx1) mx1 = x;
+      if (y < my0) my0 = y;
+      if (y > my1) my1 = y;
+    }
+  }
+
+  const pad = Math.round((mx1 - mx0) * 0.04);
+  const bx0 = Math.max(0, mx0 - pad),
+    by0 = Math.max(0, my0 - pad);
+  const bw = Math.min(w - bx0, mx1 - mx0 + pad * 2 + 1),
+    bh = Math.min(w - by0, my1 - my0 + pad * 2 + 1);
+  const raw = Buffer.alloc(bw * bh * 4, 0);
   for (let y = 0; y < bh; y++) {
     for (let x = 0; x < bw; x++) {
-      const si = ((by0 + y) * w + (bx0 + x)) * 4;
+      const si = ((by0 + y) * w + (bx0 + x)) * c;
       const di = (y * bw + x) * 4;
       raw[di] = 255;
       raw[di + 1] = 255;
       raw[di + 2] = 255;
-      raw[di + 3] = isGlyph(si) ? 255 : 0;
+      raw[di + 3] = mark[si + 3];
     }
   }
   const target = Math.round(BADGE_SIZE * BADGE_SCALE);
@@ -165,24 +175,33 @@ function buildIco(pngs) {
   return Buffer.concat([header, dir, ...pngs.map((p) => p.buf)]);
 }
 
+// Circle-cropped logo: a purple disc with fully transparent corners, so the tab
+// icon sits cleanly on any backdrop (light or dark) with no square behind it.
+async function circleCroppedPng(size) {
+  const mask = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
+      `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/></svg>`
+  );
+  const logo = await sharp(MASTER).resize(size, size, { fit: 'fill' }).toBuffer();
+  return sharp(logo)
+    .composite([{ input: mask, blend: 'dest-in' }])
+    .png()
+    .toBuffer();
+}
+
 async function generateFavicon() {
   const pngs = [];
   for (const size of FAVICON_SIZES) {
-    const circleMask = Buffer.from(
-      `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
-        `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/></svg>`
-    );
-    const logo = await sharp(MASTER).resize(size, size, { fit: 'fill' }).toBuffer();
-    const buf = await sharp(logo)
-      .composite([{ input: circleMask, blend: 'dest-in' }])
-      .png()
-      .toBuffer();
-    pngs.push({ size, buf });
+    pngs.push({ size, buf: await circleCroppedPng(size) });
   }
   fs.writeFileSync('public/favicon.ico', buildIco(pngs));
+
+  for (const size of FAVICON_PNG_SIZES) {
+    fs.writeFileSync(`public/favicon-${size}x${size}.png`, await circleCroppedPng(size));
+  }
 }
 
-const NAVY_PX = (p) => p.r === NAVY.r && p.g === NAVY.g && p.b === NAVY.b && p.a === 255;
+const TRANSPARENT_PX = (p) => p.a === 0;
 const PURPLE_PX = (p) =>
   Math.abs(p.r - PURPLE.r) < 15 && Math.abs(p.g - PURPLE.g) < 15 && Math.abs(p.b - PURPLE.b) < 15;
 
@@ -224,7 +243,7 @@ async function validate() {
     errors += await validateTile(
       `${OUT_DIR}/icon-${size}x${size}.png`,
       size,
-      NAVY_PX,
+      PURPLE_PX,
       `icon-${size}x${size}`
     );
   }
@@ -240,7 +259,7 @@ async function validate() {
     errors += await validateTile(
       `${OUT_DIR}/apple-touch-icon-${size}x${size}.png`,
       size,
-      NAVY_PX,
+      PURPLE_PX,
       `apple-touch-icon-${size}x${size}`
     );
   }
@@ -270,19 +289,67 @@ async function validate() {
   } else {
     const { data, info } = await sharp(badgeFp).raw().toBuffer({ resolveWithObject: true });
     const c = info.channels;
-    const tl = data[3],
-      br = data[(BADGE_SIZE - 1) * BADGE_SIZE * c + 3];
-    let white = 0;
-    for (let i = 0; i < data.length; i += c) if (data[i] > 200 && data[i + 3] > 200) white++;
-    if (tl !== 0 || br !== 0 || white === 0) {
-      console.error(`  ✗ badge: corners must be transparent and glyph must be present`);
+    const corners = await cornerPixels(badgeFp, BADGE_SIZE);
+    let opaque = 0,
+      bx0 = BADGE_SIZE,
+      by0 = BADGE_SIZE,
+      bx1 = -1,
+      by1 = -1;
+    for (let y = 0; y < BADGE_SIZE; y++) {
+      for (let x = 0; x < BADGE_SIZE; x++) {
+        if (data[(y * BADGE_SIZE + x) * c + 3] > 32) {
+          opaque++;
+          if (x < bx0) bx0 = x;
+          if (x > bx1) bx1 = x;
+          if (y < by0) by0 = y;
+          if (y > by1) by1 = y;
+        }
+      }
+    }
+    const fill = Math.max(bx1 - bx0 + 1, by1 - by0 + 1) / BADGE_SIZE;
+    const cornersOpaque = Object.values(corners).some((p) => p.a !== 0);
+    if (cornersOpaque || opaque === 0 || fill < 0.7 || opaque > BADGE_SIZE * BADGE_SIZE * 0.6) {
+      console.error(
+        `  ✗ badge: must be a transparent-cornered mark filling ≥70% of the canvas ` +
+          `(fill ${(fill * 100).toFixed(0)}%, opaque ${opaque}px)`
+      );
       errors++;
     }
   }
 
-  if (!fs.existsSync('public/favicon.ico')) {
+  const icoFp = 'public/favicon.ico';
+  if (!fs.existsSync(icoFp)) {
     console.error('  ✗ Missing: favicon.ico');
     errors++;
+  } else {
+    const ico = fs.readFileSync(icoFp);
+    const count = ico.readUInt16LE(4);
+    for (let i = 0; i < count; i++) {
+      const o = 6 + 16 * i;
+      const size = ico[o] === 0 ? 256 : ico[o];
+      const len = ico.readUInt32LE(o + 8);
+      const off = ico.readUInt32LE(o + 12);
+      const corners = await cornerPixels(ico.subarray(off, off + len), size);
+      for (const [ck, p] of Object.entries(corners)) {
+        if (p.a !== 0) {
+          console.error(`  ✗ favicon.ico ${size}x${size}: ${ck} must be transparent`);
+          errors++;
+        }
+      }
+    }
+  }
+
+  for (const size of FAVICON_PNG_SIZES) {
+    const fp = `public/favicon-${size}x${size}.png`;
+    errors += await validateTile(fp, size, TRANSPARENT_PX, `favicon-${size}x${size}`);
+    if (fs.existsSync(fp)) {
+      const { data, info } = await sharp(fp).raw().toBuffer({ resolveWithObject: true });
+      const centerAlpha = data[((size / 2) * size + size / 2) * info.channels + info.channels - 1];
+      if (centerAlpha !== 255) {
+        console.error(`  ✗ favicon-${size}x${size}: center must be opaque`);
+        errors++;
+      }
+    }
   }
 
   return errors;
@@ -303,16 +370,16 @@ function generateSwVersion() {
 async function main() {
   console.log('Generating icons...');
   for (const size of ANY_SIZES) {
-    await tileOnNavy(`${OUT_DIR}/icon-${size}x${size}.png`, size, RATIOS.any);
-    console.log(`  ✓ icon-${size}x${size} (circle on navy)`);
+    await tileFullBleed(`${OUT_DIR}/icon-${size}x${size}.png`, size);
+    console.log(`  ✓ icon-${size}x${size} (full-bleed purple tile)`);
   }
   for (const size of MASKABLE_SIZES) {
-    await tileMaskable(`${OUT_DIR}/icon-maskable-${size}x${size}.png`, size);
+    await tileFullBleed(`${OUT_DIR}/icon-maskable-${size}x${size}.png`, size);
     console.log(`  ✓ icon-maskable-${size}x${size} (maskable, full-bleed)`);
   }
   for (const size of APPLE_TOUCH_SIZES) {
-    await tileOnNavy(`${OUT_DIR}/apple-touch-icon-${size}x${size}.png`, size, RATIOS.appleTouch);
-    console.log(`  ✓ apple-touch-icon-${size}x${size}`);
+    await tileFullBleed(`${OUT_DIR}/apple-touch-icon-${size}x${size}.png`, size);
+    console.log(`  ✓ apple-touch-icon-${size}x${size} (full-bleed purple tile)`);
   }
   await generateNotificationIcon();
   console.log(`  ✓ notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}`);
@@ -320,6 +387,7 @@ async function main() {
   console.log(`  ✓ badge-icon-${BADGE_SIZE}x${BADGE_SIZE}`);
   await generateFavicon();
   console.log('  ✓ favicon.ico');
+  console.log(`  ✓ ${FAVICON_PNG_SIZES.map((s) => `favicon-${s}x${s}.png`).join(', ')}`);
 
   console.log('\nValidating...');
   const errors = await validate();
