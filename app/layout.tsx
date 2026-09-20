@@ -120,7 +120,11 @@ export const viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="ar" dir="rtl" className={`${ibmPlexSansArabic.variable} ${arefRuqaa.variable}`}>
+    <html
+      lang="ar"
+      dir="rtl"
+      className={`dark ${ibmPlexSansArabic.variable} ${arefRuqaa.variable}`}
+    >
       <head>
         {designTokensCss ? (
           <style dangerouslySetInnerHTML={{ __html: designTokensCss }} />

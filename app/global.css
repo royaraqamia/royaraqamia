@@ -3,6 +3,11 @@
 @plugin "@tailwindcss/typography";
 @import 'tw-animate-css';
 
+/* Class-based dark mode: the site renders its dark theme unconditionally
+   (see :root tokens and dark-theme-override.css), so `dark:` variants must key
+   off an always-present class rather than the OS color scheme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @keyframes float {
   0%,
   100% {
