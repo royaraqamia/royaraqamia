@@ -7,12 +7,12 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   return toNextResponse(await createHabit(body));
 }
 
 export async function PUT(req: NextRequest) {
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   return toNextResponse(await updateHabit(body));
 }
 

@@ -3,6 +3,6 @@ import { toNextResponse } from '@/backend/transport/http-result';
 import { broadcastAnnouncement } from '@/backend/controllers/notifications';
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const body = await req.json().catch(() => null);
   return toNextResponse(await broadcastAnnouncement(body));
 }

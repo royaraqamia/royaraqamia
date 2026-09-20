@@ -165,6 +165,9 @@ export async function shortenUrl(
 ): Promise<HttpResult> {
   try {
     const { originalUrl, customCode } = body;
+    if (typeof originalUrl !== 'string') {
+      throw new AppError('URL cannot be empty.', 400);
+    }
 
     const user = await getAuthenticatedUser(authorization);
     const userId = user ? user.id : null;

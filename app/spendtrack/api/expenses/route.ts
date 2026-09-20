@@ -9,7 +9,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   const result = await createExpense(body);
   revalidateResultPaths(result);
   return toNextResponse(result);

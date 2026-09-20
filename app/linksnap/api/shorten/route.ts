@@ -4,6 +4,6 @@ import { shortenUrl } from '@/backend/controllers/linksnap';
 import { getClientIp } from '@/backend/transport/http';
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const body = await req.json().catch(() => ({}));
   return toNextResponse(await shortenUrl(req.headers.get('Authorization'), getClientIp(req), body));
 }
