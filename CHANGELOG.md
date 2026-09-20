@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.4] - 2026-09-20
+
+### Changed
+- drop the icons from the metric cards
+
+### Fixed
+- unify every icon on the purple tile and fix the badge silhouette
+
 ## [1.25.3] - 2026-09-20
 
 ### Changed
