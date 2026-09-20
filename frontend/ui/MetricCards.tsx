@@ -27,7 +27,7 @@ const metrics = [
     numericValue: 100,
     suffix: '+',
     label: 'مشروع رقمي',
-    description: 'تمَّ إنجازها بين مواقع وتطبيقات',
+    description: 'منتجات رقميَّة أنجزناها',
     colorKey: 'violet' as const,
   },
 ];
