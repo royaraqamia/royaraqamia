@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.2] - 2026-09-20
+
+### Changed
+- MCP OAuth token sweep migration complete.
+
 ## [1.25.1] - 2026-09-19
 
 ### Changed
