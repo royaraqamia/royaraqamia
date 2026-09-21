@@ -1,5 +1,5 @@
 import { withAdminUser } from '@/backend/transport/admin-handler';
-import { createAdminBroadcaster } from '@/backend/config/notifications';
+import { announcementIntent, createNotificationFanout } from '@/backend/config/notifications';
 import { createAdminEmailBroadcaster } from '@/backend/config/emails';
 import { BroadcastSendSchema } from '@/shared/contracts/emails';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
@@ -35,9 +35,9 @@ export async function broadcastMessage(body: {
       }
 
       const sent = withNotification
-        ? await createAdminBroadcaster()(
+        ? await createNotificationFanout()(
             { type: 'system_announcement', title, body: content || undefined },
-            userIds
+            announcementIntent(userIds)
           )
         : 0;
       const emailsSent = withEmail

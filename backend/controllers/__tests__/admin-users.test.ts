@@ -29,10 +29,10 @@ vi.mock('@/backend/config/users', () => ({
   createAdminUsersService: () => ({ list: mockList }),
 }));
 
-vi.mock('@/backend/config/notifications', () => ({
-  createAdminBroadcaster: () => mockBroadcaster,
-  createSupabaseNotificationService: vi.fn(),
-}));
+vi.mock('@/backend/config/notifications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/config/notifications')>();
+  return { ...actual, createNotificationFanout: () => mockBroadcaster };
+});
 
 import { listAdminUsers } from '@/backend/controllers/admin-users';
 import { broadcastAnnouncement } from '@/backend/controllers/notifications';
@@ -163,16 +163,16 @@ describe('broadcastAnnouncement', () => {
     });
     expect(mockBroadcaster).toHaveBeenCalledWith(
       { type: 'system_announcement', title: 'إعلان', body: 'نص' },
-      [userId]
+      { recipientIds: [userId] }
     );
   });
 
-  it('passes an empty selection through (broadcaster fans out to all users)', async () => {
+  it('asks for every user when the selection is empty', async () => {
     await broadcastAnnouncement({ title: 'إعلان', userIds: [] });
 
     expect(mockBroadcaster).toHaveBeenCalledWith(
       { type: 'system_announcement', title: 'إعلان', body: undefined },
-      []
+      { audience: 'all' }
     );
   });
 

@@ -26,9 +26,10 @@ vi.mock('@/backend/config/identity', async () => {
   });
 });
 
-vi.mock('@/backend/config/notifications', () => ({
-  createAdminBroadcaster: () => mockBroadcaster,
-}));
+vi.mock('@/backend/config/notifications', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/backend/config/notifications')>();
+  return { ...actual, createNotificationFanout: () => mockBroadcaster };
+});
 
 vi.mock('@/backend/config/emails', () => ({
   createAdminEmailBroadcaster: () => mockEmailBroadcaster,
@@ -117,7 +118,7 @@ describe('broadcastMessage', () => {
     });
     expect(mockBroadcaster).toHaveBeenCalledWith(
       { type: 'system_announcement', title: 'إعلان', body: 'نص' },
-      undefined
+      { audience: 'all' }
     );
     expect(mockEmailBroadcaster).not.toHaveBeenCalled();
     expect(mockCheckRateLimit).not.toHaveBeenCalled();
@@ -131,7 +132,7 @@ describe('broadcastMessage', () => {
     expect(result.status).toBe(200);
     expect(mockBroadcaster).toHaveBeenCalledWith(
       { type: 'system_announcement', title: 'إعلان', body: undefined },
-      [userId]
+      { recipientIds: [userId] }
     );
   });
 

@@ -4,19 +4,16 @@ import type { Notification, NotificationCreateInput } from '@/shared/contracts/n
 
 export interface NotificationServiceDeps {
   checkRateLimit: (key: string, limit: number, windowMs: number) => Promise<boolean>;
-  findAllUserIds?: () => Promise<string[]>;
 }
 
 export class NotificationService {
   private readonly checkRateLimit: NotificationServiceDeps['checkRateLimit'];
-  private readonly findAllUserIds?: NotificationServiceDeps['findAllUserIds'];
 
   constructor(
     private readonly repo: NotificationRepository,
     deps: NotificationServiceDeps
   ) {
     this.checkRateLimit = deps.checkRateLimit;
-    this.findAllUserIds = deps.findAllUserIds;
   }
 
   async getNotifications(userId: string, limit?: number, offset?: number): Promise<Notification[]> {
@@ -35,15 +32,14 @@ export class NotificationService {
     return this.repo.create(input);
   }
 
-  async getAllUserIds(): Promise<string[]> {
-    if (!this.findAllUserIds) return [];
-    return this.findAllUserIds();
-  }
-
-  async broadcast(input: NotificationBroadcastInput, userIds?: string[]): Promise<number> {
-    const targets = userIds ?? (await this.getAllUserIds());
-    if (targets.length === 0) return 0;
-    return this.repo.broadcast(input, targets);
+  /**
+   * Writes the batched insert for an already-resolved target set. Audience
+   * resolution (Admin vs all users) belongs to the fan-out module, so callers
+   * must pass explicit targets.
+   */
+  async broadcast(input: NotificationBroadcastInput, userIds: string[]): Promise<number> {
+    if (userIds.length === 0) return 0;
+    return this.repo.broadcast(input, userIds);
   }
 
   async markAsRead(id: string, userId: string): Promise<void> {

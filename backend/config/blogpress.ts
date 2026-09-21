@@ -8,8 +8,7 @@ import {
   type PostPublishedNotifier,
 } from '@/backend/services/blogpress/posts-service';
 import { BlogpressMediaService } from '@/backend/services/blogpress/media-service';
-import { createAdminNotificationProducer } from '@/backend/config/notifications';
-import { logger } from '@/backend/shared/logger';
+import { createNotificationFanout, type NotificationFanout } from '@/backend/config/notifications';
 import { env } from '@/backend/config/env';
 
 export function createBlogpressPostsService(
@@ -31,32 +30,23 @@ export function createBlogpressAdminPostsService(): BlogpressPostsService {
 }
 
 /**
- * Fire-and-forget: notifies every admin user (except the publishing author)
+ * Fire-and-forget: notifies the Admin audience (except the publishing author)
  * that a new post went live. No subscriber model exists, so admins are the
- * defined audience for blogpress.
+ * defined audience for blogpress; the author is subtracted as an exclusion.
  */
-export function createPostPublishedNotifier(): PostPublishedNotifier {
-  const notify = createAdminNotificationProducer();
+export function createPostPublishedNotifier(
+  fanOut: NotificationFanout = createNotificationFanout()
+): PostPublishedNotifier {
   return ({ postId, authorId, slug }) => {
-    void (async () => {
-      try {
-        const { data } = await getAdminSupabase().from('users').select('id').eq('is_admin', true);
-        const adminIds = (data ?? []).map((row) => row.id).filter((id) => id !== authorId);
-        await Promise.all(
-          adminIds.map((userId) =>
-            notify({
-              user_id: userId,
-              type: 'post_published',
-              title: 'تم نشر مقال جديد',
-              body: 'تم نشر مقال جديد على المدونة.',
-              metadata: { postId, slug },
-            })
-          )
-        );
-      } catch (err) {
-        logger.error('Failed to notify admins about published post', { error: String(err) });
-      }
-    })();
+    void fanOut(
+      {
+        type: 'post_published',
+        title: 'تم نشر مقال جديد',
+        body: 'تم نشر مقال جديد على المدونة.',
+        metadata: { postId, slug },
+      },
+      { excludeUserIds: [authorId] }
+    );
   };
 }
 

@@ -6,9 +6,9 @@
  * otherwise all hammer Supabase and the push providers simultaneously. The gate
  * is created once per module and therefore spans requests within an instance.
  */
-export function createConcurrencyLimiter(
-  maxConcurrent: number
-): <T>(task: () => Promise<T>) => Promise<T> {
+export type ConcurrencyLimiter = <T>(task: () => Promise<T>) => Promise<T>;
+
+export function createConcurrencyLimiter(maxConcurrent: number): ConcurrencyLimiter {
   if (!Number.isInteger(maxConcurrent) || maxConcurrent < 1) {
     throw new RangeError('maxConcurrent must be a positive integer');
   }

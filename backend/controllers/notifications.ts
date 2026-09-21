@@ -1,7 +1,8 @@
 import { getAuthUser } from '@/backend/middleware/auth-guard';
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import {
-  createAdminBroadcaster,
+  announcementIntent,
+  createNotificationFanout,
   createSupabaseNotificationService,
 } from '@/backend/config/notifications';
 import { AnnouncementSendSchema } from '@/shared/contracts/notifications';
@@ -79,13 +80,13 @@ export async function broadcastAnnouncement(body: {
       }
 
       const { title, body: content, userIds } = validated.data;
-      const sent = await createAdminBroadcaster()(
+      const sent = await createNotificationFanout()(
         {
           type: 'system_announcement',
           title,
           body: content || undefined,
         },
-        userIds
+        announcementIntent(userIds)
       );
 
       return jsonResult(200, { success: true, sent });

@@ -5,6 +5,8 @@ function makeService(recipients: Array<{ id: string; email: string }>, sent = 3)
   const repository = {
     search: vi.fn(),
     findExistingUserIds: vi.fn(),
+    findAdminUserIds: vi.fn(),
+    findAllUserIds: vi.fn(),
     findRecipientEmails: vi.fn().mockResolvedValue(recipients),
   };
   const emailClient = {

@@ -8,8 +8,7 @@ import {
   CertificatesService,
   type CertificateIssuedNotifier,
 } from '@/backend/services/certificates/certificates-service';
-import { createAdminNotificationProducer } from '@/backend/config/notifications';
-import { logger } from '@/backend/shared/logger';
+import { createNotificationFanout, type NotificationFanout } from '@/backend/config/notifications';
 import type { Database } from '@/backend/models/database.types';
 import type { VerifyResult } from '@/shared/contracts/certificates';
 
@@ -46,32 +45,27 @@ export function createCertificatesService(supabase: SupabaseClient<Database>): C
 }
 
 /**
- * Fire-and-forget: when a certificate is issued with selected recipients,
- * notify each user (in-app `certificate_issued` row + web push). Each
- * per-user producer keeps its own 100/hr rate limit and fail-safety, so a
- * stale id fails that one notification only, never the batch.
+ * Fire-and-forget: when a certificate is issued with selected recipients, the
+ * shared fan-out resolves them to existing users and delivers one batched
+ * `certificate_issued` insert plus one push fan-out, never throwing. A stale id
+ * is filtered out rather than failing the batch.
  */
-export function createCertificateIssuedNotifier(): CertificateIssuedNotifier {
-  const notify = createAdminNotificationProducer();
+export function createCertificateIssuedNotifier(
+  fanOut: NotificationFanout = createNotificationFanout()
+): CertificateIssuedNotifier {
   return ({ recipientUserIds, certificate }) => {
-    void (async () => {
-      try {
-        for (const userId of recipientUserIds) {
-          await notify({
-            user_id: userId,
-            type: 'certificate_issued',
-            title: 'تمَّ إصدار شهادة لك',
-            body: `شهادة "${certificate.course_name}" باسم ${certificate.student_name} صادرة عن رؤية رقمية.`,
-            metadata: {
-              certificateId: certificate.id,
-              certificateCode: certificate.certificate_code,
-              courseName: certificate.course_name,
-            },
-          });
-        }
-      } catch (err) {
-        logger.error('Failed to notify certificate recipients', { error: String(err) });
-      }
-    })();
+    void fanOut(
+      {
+        type: 'certificate_issued',
+        title: 'تمَّ إصدار شهادة لك',
+        body: `شهادة "${certificate.course_name}" باسم ${certificate.student_name} صادرة عن رؤية رقمية.`,
+        metadata: {
+          certificateId: certificate.id,
+          certificateCode: certificate.certificate_code,
+          courseName: certificate.course_name,
+        },
+      },
+      { recipientIds: recipientUserIds }
+    );
   };
 }

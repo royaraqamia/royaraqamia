@@ -15,6 +15,14 @@ export class AdminUsersService {
     return this.repository.findExistingUserIds(ids);
   }
 
+  async findAdminUserIds(): Promise<string[]> {
+    return this.repository.findAdminUserIds();
+  }
+
+  async findAllUserIds(): Promise<string[]> {
+    return this.repository.findAllUserIds();
+  }
+
   async findRecipientEmails(ids?: string[]): Promise<RecipientEmail[]> {
     return this.repository.findRecipientEmails(ids);
   }

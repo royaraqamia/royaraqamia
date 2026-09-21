@@ -11,6 +11,8 @@ export interface RecipientEmail {
 export interface AdminUsersRepository {
   search(query: string, limit?: number): Promise<AdminUser[]>;
   findExistingUserIds(ids: string[]): Promise<string[]>;
+  findAdminUserIds(): Promise<string[]>;
+  findAllUserIds(): Promise<string[]>;
   findRecipientEmails(ids?: string[]): Promise<RecipientEmail[]>;
 }
 
@@ -37,6 +39,20 @@ export function createAdminUsersRepository(
     async findExistingUserIds(ids: string[]): Promise<string[]> {
       if (ids.length === 0) return [];
       const { data } = await supabase.from('users').select('id').in('id', ids);
+      return (data ?? []).map((row) => row.id);
+    },
+
+    /**
+     * The Admin audience: read from the derived `users.is_admin` flag, which
+     * ADR-0003 permits for notification targeting (it authorizes nothing).
+     */
+    async findAdminUserIds(): Promise<string[]> {
+      const { data } = await supabase.from('users').select('id').eq('is_admin', true);
+      return (data ?? []).map((row) => row.id);
+    },
+
+    async findAllUserIds(): Promise<string[]> {
+      const { data } = await supabase.from('users').select('id');
       return (data ?? []).map((row) => row.id);
     },
 

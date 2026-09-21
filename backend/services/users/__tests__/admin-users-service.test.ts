@@ -11,6 +11,8 @@ function makeRepo(overrides: Partial<AdminUsersRepository> = {}) {
   const repository: AdminUsersRepository = {
     search: vi.fn(),
     findExistingUserIds: vi.fn(),
+    findAdminUserIds: vi.fn(),
+    findAllUserIds: vi.fn(),
     findRecipientEmails: vi.fn(),
     ...overrides,
   };
@@ -43,6 +45,26 @@ describe('AdminUsersService', () => {
 
       await expect(service.findExistingUserIds(['u-1', 'u-999'])).resolves.toEqual(['u-1']);
       expect(repository.findExistingUserIds).toHaveBeenCalledWith(['u-1', 'u-999']);
+    });
+  });
+
+  describe('findAdminUserIds', () => {
+    it('resolves the Admin audience from the repository', async () => {
+      const { repository, service } = makeRepo();
+      (repository.findAdminUserIds as ReturnType<typeof vi.fn>).mockResolvedValue(['admin-1']);
+
+      await expect(service.findAdminUserIds()).resolves.toEqual(['admin-1']);
+      expect(repository.findAdminUserIds).toHaveBeenCalledWith();
+    });
+  });
+
+  describe('findAllUserIds', () => {
+    it('resolves every user id from the repository', async () => {
+      const { repository, service } = makeRepo();
+      (repository.findAllUserIds as ReturnType<typeof vi.fn>).mockResolvedValue(['u-1', 'u-2']);
+
+      await expect(service.findAllUserIds()).resolves.toEqual(['u-1', 'u-2']);
+      expect(repository.findAllUserIds).toHaveBeenCalledWith();
     });
   });
 });
