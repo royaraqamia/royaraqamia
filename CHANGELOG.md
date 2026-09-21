@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.10] - 2026-09-21
+
+### Changed
+- lock the certificate-issued batched fan-out
+- lock the post-published batched fan-out
+- lock the Consultation Booking batched fan-out
+- diacritize the brand name across the codebase
+- one owner for the Admin notification fan-out
+
 ## [1.25.9] - 2026-09-21
 
 ### Changed
