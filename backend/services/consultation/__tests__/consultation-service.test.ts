@@ -9,6 +9,8 @@ import {
   type ConsultationBookingNotification,
 } from '@/backend/services/consultation/consultation-service';
 import type { ConsultationRepositories } from '@/backend/repositories/consultation';
+import { createNotificationFanout } from '@/backend/config/notifications';
+import { createConsultationBookingNotifier } from '@/backend/config/consultation';
 
 const NOW = '2026-08-25T10:00:00.000Z';
 const REFERENCE = 'CONS-2026-ABCDEFGH';
@@ -254,6 +256,38 @@ describe('ConsultationService', () => {
         id: 'booking-9',
         referenceCode: REFERENCE,
       });
+    });
+
+    it('still returns the booking when the fan-out delivery fails', async () => {
+      const repositories = makeRepositories();
+      (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'pkg-1',
+        name: 'باقة',
+        is_active: true,
+        sessions_count: 1,
+      });
+      (repositories.bookings.create as ReturnType<typeof vi.fn>).mockResolvedValue('booking-9');
+      const broadcast = vi.fn(async () => {
+        throw new Error('notifications down');
+      });
+      const service = makeService(repositories, {
+        notifyAdmins: createConsultationBookingNotifier(
+          createNotificationFanout({
+            deliver: { broadcast },
+            push: { sendToUsers: async () => undefined },
+            resolveAdminIds: async () => ['admin-1'],
+            schedule: (task) => {
+              void task();
+            },
+          })
+        ),
+      });
+
+      await expect(service.createBooking(bookingInput, context)).resolves.toEqual({
+        id: 'booking-9',
+        referenceCode: REFERENCE,
+      });
+      await vi.waitFor(() => expect(broadcast).toHaveBeenCalledTimes(1));
     });
 
     it('does not notify admins when the booking fails', async () => {

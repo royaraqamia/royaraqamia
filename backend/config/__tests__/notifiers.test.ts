@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { NotificationFanout } from '@/backend/config/notifications';
+import {
+  createNotificationFanout,
+  type NotificationDelivery,
+  type NotificationFanout,
+  type PushNotifier,
+} from '@/backend/config/notifications';
 import { createTrainingApplicationNotifier } from '@/backend/config/training';
 import { createConsultationBookingNotifier } from '@/backend/config/consultation';
 import { createPostPublishedNotifier } from '@/backend/config/blogpress';
@@ -132,5 +137,48 @@ describe('notification producer adapters', () => {
     createCertificateIssuedNotifier(fanout)({ recipientUserIds: [], certificate });
 
     expect(fanout.mock.calls[0]?.[1]).toEqual({ recipientIds: [] });
+  });
+});
+
+describe('consultation booking burst', () => {
+  it('produces one broadcast per booking over the whole Admin audience, never one per Admin', async () => {
+    const admins = ['admin-1', 'admin-2', 'admin-3'];
+    const broadcast = vi.fn<NotificationDelivery['broadcast']>(
+      async (_input, userIds) => userIds.length
+    );
+    const sendToUsers = vi.fn<PushNotifier['sendToUsers']>(async () => undefined);
+    const fanout = createNotificationFanout({
+      deliver: { broadcast },
+      push: { sendToUsers },
+      resolveAdminIds: async () => admins,
+      schedule: (task) => {
+        void task();
+      },
+    });
+    const notify = createConsultationBookingNotifier(fanout);
+
+    notify({ id: 'booking-1', referenceCode: 'CONS-2026-A1', fullName: 'سارة', packageName: null });
+    notify({ id: 'booking-2', referenceCode: 'CONS-2026-A2', fullName: 'سارة', packageName: null });
+    notify({ id: 'booking-3', referenceCode: 'CONS-2026-A3', fullName: 'سارة', packageName: null });
+
+    await vi.waitFor(() => expect(broadcast).toHaveBeenCalledTimes(3));
+    await vi.waitFor(() => expect(sendToUsers).toHaveBeenCalledTimes(3));
+
+    // 3 bookings, not 3 bookings × 3 Admins = 9 inserts; each covers everyone.
+    for (const call of broadcast.mock.calls) expect(call[1]).toEqual(admins);
+    for (const call of sendToUsers.mock.calls) {
+      expect(call[0]).toEqual(admins);
+      // The notice's type, title and deep-link are unchanged.
+      expect(call[1]).toMatchObject({
+        type: 'consultation_booking',
+        title: 'طلب حجز استشارة جديد',
+        url: '/admin/consultations/bookings',
+      });
+    }
+    expect(sendToUsers.mock.calls.map((call) => call[1].body).sort()).toEqual([
+      'سارة — استشارة (CONS-2026-A1)',
+      'سارة — استشارة (CONS-2026-A2)',
+      'سارة — استشارة (CONS-2026-A3)',
+    ]);
   });
 });
