@@ -184,6 +184,59 @@ describe('consultation booking burst', () => {
   });
 });
 
+describe('certificate-issued burst', () => {
+  it('produces one broadcast per issuance over the whole recipient set, never one per recipient', async () => {
+    const recipients = ['u-1', 'u-2', 'u-3'];
+    const broadcast = vi.fn<NotificationDelivery['broadcast']>(
+      async (_input, userIds) => userIds.length
+    );
+    const sendToUsers = vi.fn<PushNotifier['sendToUsers']>(async () => undefined);
+    const fanout = createNotificationFanout({
+      deliver: { broadcast },
+      push: { sendToUsers },
+      // A stale id is present on every issuance and must be dropped rather
+      // than failing the batch.
+      filterExistingUserIds: async (ids) => ids.filter((id) => id !== 'u-stale'),
+      schedule: (task) => {
+        void task();
+      },
+    });
+    const notify = createCertificateIssuedNotifier(fanout);
+
+    notify({ recipientUserIds: [...recipients, 'u-stale'], certificate });
+    notify({ recipientUserIds: [...recipients, 'u-stale'], certificate });
+    notify({ recipientUserIds: [...recipients, 'u-stale'], certificate });
+
+    await vi.waitFor(() => expect(broadcast).toHaveBeenCalledTimes(3));
+    await vi.waitFor(() => expect(sendToUsers).toHaveBeenCalledTimes(3));
+
+    // 3 issuances, not 3 issuances × 4 recipients = 12 inserts; each covers the
+    // whole surviving recipient set once.
+    for (const call of broadcast.mock.calls) {
+      expect(call[1]).toEqual(recipients);
+      expect(call[0]).toEqual({
+        type: 'certificate_issued',
+        title: 'تمَّ إصدار شهادة لك',
+        body: 'شهادة "إدارة المتاجر الإلكترونية" باسم سارة العلي صادرة عن رؤيَة رقَميَّة.',
+        metadata: {
+          certificateId: 'cert-1',
+          certificateCode: 'COMP-2026-ABCDEFGH',
+          courseName: 'إدارة المتاجر الإلكترونية',
+        },
+      });
+    }
+    for (const call of sendToUsers.mock.calls) {
+      expect(call[0]).toEqual(recipients);
+      // Type, title and the /verify/<code> deep-link are unchanged.
+      expect(call[1]).toMatchObject({
+        type: 'certificate_issued',
+        title: 'تمَّ إصدار شهادة لك',
+        url: '/verify/COMP-2026-ABCDEFGH',
+      });
+    }
+  });
+});
+
 describe('post-published burst', () => {
   it('produces one broadcast per publish over the whole Admin audience minus the author', async () => {
     const admins = ['author-1', 'admin-2', 'admin-3'];

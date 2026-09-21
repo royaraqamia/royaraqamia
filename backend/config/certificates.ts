@@ -49,6 +49,10 @@ export function createCertificatesService(supabase: SupabaseClient<Database>): C
  * shared fan-out resolves them to existing users and delivers one batched
  * `certificate_issued` insert plus one push fan-out, never throwing. A stale id
  * is filtered out rather than failing the batch.
+ *
+ * Deliberate consequence: batched delivery bypasses the old per-recipient
+ * 100/hr producer limit, consistent with the Training and Consultation
+ * producers — issuance stays fast when a certificate goes to many recipients.
  */
 export function createCertificateIssuedNotifier(
   fanOut: NotificationFanout = createNotificationFanout()

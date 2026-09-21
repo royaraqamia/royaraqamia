@@ -6,6 +6,8 @@ import {
   CertificateDuplicateCodeError,
 } from '@/backend/services/certificates/certificates-service';
 import type { CertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
+import { createNotificationFanout } from '@/backend/config/notifications';
+import { createCertificateIssuedNotifier } from '@/backend/config/certificates';
 import type { Certificate } from '@/shared/contracts/certificates';
 
 const validInput = {
@@ -264,6 +266,29 @@ describe('CertificatesService', () => {
         recipientUserIds: [userId],
         certificate: sampleCertificate,
       });
+    });
+
+    it('still returns the certificate when the fan-out delivery fails', async () => {
+      const broadcast = vi.fn(async () => {
+        throw new Error('notifications down');
+      });
+      const onCertificateIssued = createCertificateIssuedNotifier(
+        createNotificationFanout({
+          deliver: { broadcast },
+          push: { sendToUsers: async () => undefined },
+          filterExistingUserIds: async (ids) => ids,
+          schedule: (task) => {
+            void task();
+          },
+        })
+      );
+      const { repository, service } = makeRepoWithNotifier(onCertificateIssued);
+      (repository.create as ReturnType<typeof vi.fn>).mockResolvedValue(sampleCertificate);
+
+      await expect(service.create({ ...validInput, recipient_user_ids: [userId] })).resolves.toBe(
+        sampleCertificate
+      );
+      await vi.waitFor(() => expect(broadcast).toHaveBeenCalledTimes(1));
     });
 
     it('does not fire the notifier when no recipient ids are provided', async () => {
