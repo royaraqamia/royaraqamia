@@ -40,12 +40,12 @@ function EditorPreview() {
   const mdLines = [
     '# مرحبًا بالعالم',
     '',
-    'مرحبًا بك في **رؤية رقمية** — محرِّر',
+    'مرحبًا بك في **رؤيَة رقَميَّة** — محرِّر',
     'Markdown حديث يجعل الكتابة',
     'متعة. ركِّز على كلماتك، لا',
     'على الأدوات.',
     '',
-    '## لماذا رؤية رقمية؟',
+    '## لماذا رؤيَة رقَميَّة؟',
     '- معاينة فائقة السُّرعة',
     '- إدارة المسودَّات',
     '- محسَّن لمحرِّكات البحث',
@@ -108,7 +108,7 @@ function EditorPreview() {
                   {line.split('**BlogPress**')[0]}
                   <span className="px-1.5 py-0.5 mx-0.5 rounded bg-indigo-500/35 text-indigo-300 font-bold border border-indigo-500/30 text-[11px] shadow-xs inline-flex items-center gap-1">
                     <Sparkle size={10} className="text-indigo-400 animate-pulse" />
-                    رؤية رقمية
+                    رؤيَة رقَميَّة
                   </span>
                   {line.split('**BlogPress**')[1]}
                 </span>

@@ -300,7 +300,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
               variants={fadeUp}
               className="text-neutral-600 dark:text-neutral-400 text-base md:text-lg max-w-md leading-relaxed"
             >
-              هذه الشَّهادة أصيلة ومُوثَّقَة رسميًّا وتخضع لمعايير رؤية رقمية.
+              هذه الشَّهادة أصيلة ومُوثَّقَة رسميًّا وتخضع لمعايير رؤيَة رقَميَّة.
             </m.p>
           </div>
 
@@ -325,7 +325,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                         شهادة مُوثَّقَة
                       </h2>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                        صادرة عن رؤية رقمية
+                        صادرة عن رؤيَة رقَميَّة
                       </p>
                     </div>
                   </div>
@@ -456,7 +456,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
             >
               <Link href="/">
                 <ExternalLink className="size-4" />
-                رؤية رقمية
+                رؤيَة رقَميَّة
               </Link>
             </Button>
           </m.div>

@@ -4,23 +4,24 @@ import { Footer } from '../../frontend/ui/Footer';
 
 export const metadata: Metadata = {
   title: 'سياسة الأمان',
-  description: 'سياسة الأمان في رؤية رقمية – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
+  description:
+    'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
   alternates: { canonical: '/security' },
   openGraph: {
-    title: 'سياسة الأمان | رؤية رقمية',
+    title: 'سياسة الأمان | رؤيَة رقَميَّة',
     description:
-      'سياسة الأمان في رؤية رقمية – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
+      'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
     url: '/security',
-    siteName: 'رؤية رقمية',
+    siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
     type: 'website',
     images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'سياسة الأمان' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'سياسة الأمان | رؤية رقمية',
+    title: 'سياسة الأمان | رؤيَة رقَميَّة',
     description:
-      'سياسة الأمان في رؤية رقمية – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
+      'سياسة الأمان في رؤيَة رقَميَّة – كيفيَّة الإبلاغ عن الثَّغرات الأمنيَّة بطريقة مسؤولة.',
     images: ['/OG Image.webp'],
   },
 };
@@ -129,7 +130,7 @@ export default function SecurityPage() {
 
               <div className="space-y-4 text-muted-foreground leading-relaxed text-sm sm:text-base">
                 <p>
-                  تأخذ <strong className="text-foreground font-bold">رؤية رقمية</strong> أمان
+                  تأخذ <strong className="text-foreground font-bold">رؤيَة رقَميَّة</strong> أمان
                   منصَّتها على محمل الجد. إذا اكتشفت ثغرة أمنيَّة، يُرجَى الإبلاغ عنها{' '}
                   <strong className="text-foreground font-bold">بشكل مسؤول</strong> وعدم نشرها علنًا
                   قبل معالجتها.

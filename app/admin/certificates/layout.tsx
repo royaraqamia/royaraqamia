@@ -4,7 +4,7 @@ import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
 
 export const metadata: Metadata = {
   title: 'إدارة الشَّهادات',
-  description: 'إصدار وتعديل وحذف شهادات الطُّلاب في رؤية رقمية.',
+  description: 'إصدار وتعديل وحذف شهادات الطُّلاب في رؤيَة رقَميَّة.',
 };
 
 export default function AdminCertificatesLayout({ children }: { children: React.ReactNode }) {

@@ -13,7 +13,7 @@ import { Card, CardContent } from '@/frontend/ui/primitives/card';
 
 export const metadata: Metadata = {
   title: 'الإدارة',
-  description: 'إدارة الشَّهادات والتَّدريب والاستشارات والرَّوابط في رؤية رقمية.',
+  description: 'إدارة الشَّهادات والتَّدريب والاستشارات والرَّوابط في رؤيَة رقَميَّة.',
 };
 
 const SECTIONS = [

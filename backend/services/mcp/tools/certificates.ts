@@ -70,7 +70,7 @@ export async function verifyCertificateHandler(
         ? `- **Grade/Status**: ${publicCertificate.grade_or_status}`
         : null,
       '',
-      'This certificate is valid and was issued by رؤية رقمية.',
+      'This certificate is valid and was issued by رؤيَة رقَميَّة.',
     ].filter((line): line is string => line !== null);
 
     return structuredResponse(lines.join('\n'), publicCertificate);

@@ -47,7 +47,7 @@ export function FooterLogoButton() {
       />
 
       <span className="logo-text font-heading font-bold text-3xl sm:text-3xl text-primary tracking-tight transition-opacity duration-300 group-hover:opacity-90">
-        رؤية رقمية
+        رؤيَة رقَميَّة
       </span>
     </button>
   );

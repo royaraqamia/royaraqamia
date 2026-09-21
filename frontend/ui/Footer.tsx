@@ -174,7 +174,7 @@ export function Footer() {
             <span className="mx-2 text-primary/40" aria-hidden="true">
               •
             </span>
-            <span className="text-foreground font-bold">رؤية رقمية</span>
+            <span className="text-foreground font-bold">رؤيَة رقَميَّة</span>
             <span className="mx-2 text-primary/40" aria-hidden="true">
               •
             </span>

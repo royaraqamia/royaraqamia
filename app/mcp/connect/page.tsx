@@ -15,7 +15,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'ربط MCP',
-  description: 'السَّماح لتطبيق خارجي بالوصول إلى بياناتك في رؤية رقمية عبر بروتوكول MCP.',
+  description: 'السَّماح لتطبيق خارجي بالوصول إلى بياناتك في رؤيَة رقَميَّة عبر بروتوكول MCP.',
 };
 
 interface ConnectSearchParams {
@@ -74,7 +74,7 @@ export default async function ConnectPage({
         <CardHeader>
           <CardTitle>السَّماح بالوصول</CardTitle>
           <CardDescription>
-            يطلب تطبيق «{client.client_name ?? 'MCP'}» الوصول إلى بياناتك في رؤية رقمية.
+            يطلب تطبيق «{client.client_name ?? 'MCP'}» الوصول إلى بياناتك في رؤيَة رقَميَّة.
           </CardDescription>
         </CardHeader>
         <CardFooter>

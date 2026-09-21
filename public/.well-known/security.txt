@@ -1,4 +1,4 @@
-# Security Policy for رؤية رقمية
+# Security Policy for رؤيَة رقَميَّة
 # https://royaraqamia.com/.well-known/security.txt
 
 Contact: mailto:contact@royaraqamia.com

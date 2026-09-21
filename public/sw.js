@@ -287,7 +287,7 @@ self.addEventListener('push', (event) => {
     payload = {};
   }
 
-  const title = typeof payload.title === 'string' ? payload.title : 'رؤية رقمية';
+  const title = typeof payload.title === 'string' ? payload.title : 'رؤيَة رقَميَّة';
   const notificationId = typeof payload.notificationId === 'string' ? payload.notificationId : undefined;
 
   const options = {

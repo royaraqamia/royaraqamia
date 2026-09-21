@@ -1,4 +1,4 @@
-# رؤية رقمية (royaraqamia)
+# رؤيَة رقَميَّة (royaraqamia)
 
 The public site and the product family it hosts. This glossary fixes the vocabulary
 shared across the Blog, Certificates, Consultations and Training offerings, so the

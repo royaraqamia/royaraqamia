@@ -25,7 +25,7 @@ function makeResend(): Resend {
 }
 
 function makeSender(): EmailSender {
-  return { fromName: 'رؤية رقمية', fromEmail: 'no-reply@royaraqamia.com' };
+  return { fromName: 'رؤيَة رقَميَّة', fromEmail: 'no-reply@royaraqamia.com' };
 }
 
 function makeValidity(): EmailValidity {
@@ -46,7 +46,7 @@ describe('ResendEmailClient', () => {
     expect(mockSend).toHaveBeenCalledTimes(1);
     const [payload] = mockSend.mock.calls[0] as [Record<string, unknown>];
     expect(payload).toMatchObject({
-      from: 'رؤية رقمية <no-reply@royaraqamia.com>',
+      from: 'رؤيَة رقَميَّة <no-reply@royaraqamia.com>',
       to: 'user@example.com',
       subject: 'رمز التَّحقُّق',
     });
@@ -128,7 +128,7 @@ describe('ResendEmailClient', () => {
     const [payload] = mockBatchSend.mock.calls[0] as [Record<string, unknown>[]];
     expect(payload).toHaveLength(2);
     expect(payload[0]).toMatchObject({
-      from: 'رؤية رقمية <no-reply@royaraqamia.com>',
+      from: 'رؤيَة رقَميَّة <no-reply@royaraqamia.com>',
       to: 'a@example.com',
       subject: 'تحديث جديد',
     });

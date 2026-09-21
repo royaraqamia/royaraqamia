@@ -1,5 +1,5 @@
 /* ============================================================
-   Toasts — «رؤية رقمية» Design Restyle (Sonner override)
+   Toasts — «رؤيَة رقَميَّة» Design Restyle (Sonner override)
    Sonner injects its own stylesheet at runtime (after Next CSS),
    so every override below raises specificity by scoping under
    [data-sonner-theme='dark'] and re-uses the design tokens from

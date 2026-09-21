@@ -366,7 +366,7 @@ export const MobileMenu = memo(function MobileMenu({
                 {logoProp && (
                   <img
                     src={logoProp}
-                    alt="شعار رؤية رقمية"
+                    alt="شعار رؤيَة رقَميَّة"
                     width={40}
                     height={40}
                     loading="eager"
@@ -374,7 +374,7 @@ export const MobileMenu = memo(function MobileMenu({
                   />
                 )}
                 <span className="text-xl font-bold font-heading tracking-tight text-white transition-colors duration-200 group-hover:text-violet-400">
-                  رؤية رقمية
+                  رؤيَة رقَميَّة
                 </span>
               </Link>
 

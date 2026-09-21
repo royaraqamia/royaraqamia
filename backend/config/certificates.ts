@@ -58,7 +58,7 @@ export function createCertificateIssuedNotifier(
       {
         type: 'certificate_issued',
         title: 'تمَّ إصدار شهادة لك',
-        body: `شهادة "${certificate.course_name}" باسم ${certificate.student_name} صادرة عن رؤية رقمية.`,
+        body: `شهادة "${certificate.course_name}" باسم ${certificate.student_name} صادرة عن رؤيَة رقَميَّة.`,
         metadata: {
           certificateId: certificate.id,
           certificateCode: certificate.certificate_code,

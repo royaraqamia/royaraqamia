@@ -670,7 +670,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - add broadcast email contract and batch email client
 
 ### Fixed
-- default sender name to رؤية رقمية when RESEND_FROM_NAME is missing
+- default sender name to رؤيَة رقَميَّة when RESEND_FROM_NAME is missing
 - use permissive batch validation so one bad address can't fail the whole broadcast
 - make Turnstile responsive on narrow screens and match primary theme
 

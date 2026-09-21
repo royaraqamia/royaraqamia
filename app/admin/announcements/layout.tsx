@@ -4,7 +4,7 @@ import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
 
 export const metadata: Metadata = {
   title: 'إرسال إعلان',
-  description: 'إرسال إشعار لمستخدمين محددين أو لجميع المستخدمين في رؤية رقمية.',
+  description: 'إرسال إشعار لمستخدمين محددين أو لجميع المستخدمين في رؤيَة رقَميَّة.',
 };
 
 export default function AdminAnnouncementsLayout({ children }: { children: React.ReactNode }) {

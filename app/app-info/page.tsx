@@ -6,21 +6,21 @@ import { Footer } from '../../frontend/ui/Footer';
 
 export const metadata: Metadata = {
   title: 'معلومات الشَّركة',
-  description: 'معلومات عن رؤية رقمية – وصف الخدمات وغرض استخدام معلومات حساب Google.',
+  description: 'معلومات عن رؤيَة رقَميَّة – وصف الخدمات وغرض استخدام معلومات حساب Google.',
   alternates: { canonical: '/app-info' },
   openGraph: {
-    title: 'معلومات الشَّركة | رؤية رقمية',
-    description: 'معلومات عن رؤية رقمية – وصف الخدمات وغرض استخدام معلومات حساب Google.',
+    title: 'معلومات الشَّركة | رؤيَة رقَميَّة',
+    description: 'معلومات عن رؤيَة رقَميَّة – وصف الخدمات وغرض استخدام معلومات حساب Google.',
     url: '/app-info',
-    siteName: 'رؤية رقمية',
+    siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
     type: 'website',
     images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'معلومات المنصَّة' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'معلومات الشَّركة | رؤية رقمية',
-    description: 'معلومات عن رؤية رقمية – وصف الخدمات وغرض استخدام معلومات حساب Google.',
+    title: 'معلومات الشَّركة | رؤيَة رقَميَّة',
+    description: 'معلومات عن رؤيَة رقَميَّة – وصف الخدمات وغرض استخدام معلومات حساب Google.',
     images: ['/OG Image.webp'],
   },
 };
@@ -36,14 +36,14 @@ export default function AppInfoPage() {
               <div className="h-16 w-16 relative shrink-0">
                 <LazyImage
                   src="/logo.webp"
-                  alt="رؤية رقمية"
+                  alt="رؤيَة رقَميَّة"
                   width={64}
                   height={64}
                   className="h-full w-full object-contain"
                 />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight md:text-4xl">رؤية رقمية</h1>
+                <h1 className="text-3xl font-bold tracking-tight md:text-4xl">رؤيَة رقَميَّة</h1>
                 <p className="text-muted-foreground text-sm">منصَّة التدريب والتطوير الرقمي</p>
               </div>
             </div>
@@ -53,10 +53,10 @@ export default function AppInfoPage() {
             <section>
               <h2 className="mb-3 text-xl font-bold">عن الشَّركة</h2>
               <p>
-                <strong>رؤية رقمية</strong> منصَّة عربيَّة متخصِّصة في التدريب والتطوير الرقمي. نبني
-                منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم للطُّلاب
-                والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء التَّطبيقات. وتشمل خدماتنا
-                المتكاملة:
+                <strong>رؤيَة رقَميَّة</strong> منصَّة عربيَّة متخصِّصة في التدريب والتطوير الرقمي.
+                نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم
+                للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء التَّطبيقات. وتشمل
+                خدماتنا المتكاملة:
               </p>
               <ul className="list-disc space-y-1 pr-6 mt-3">
                 <li>

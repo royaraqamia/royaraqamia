@@ -35,16 +35,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   const title = `التَّحقُّق من شهادة ${certificate.student_name}`;
-  const description = `شهادة ${certificate.course_name} صادرة لـ ${certificate.student_name} في ${formatDateArabic(certificate.issue_date)}. تم التحقق من أصالة هذه الشهادة عبر منصة رؤية رقمية.`;
+  const description = `شهادة ${certificate.course_name} صادرة لـ ${certificate.student_name} في ${formatDateArabic(certificate.issue_date)}. تم التحقق من أصالة هذه الشهادة عبر منصة رؤيَة رقَميَّة.`;
 
   return {
     title,
     description,
     openGraph: {
-      title: `التَّحقُّق من شهادة ${certificate.student_name} | رؤية رقمية`,
+      title: `التَّحقُّق من شهادة ${certificate.student_name} | رؤيَة رقَميَّة`,
       description,
       url: `https://royaraqamia.com/verify/${certificate.certificate_code}`,
-      siteName: 'رؤية رقمية',
+      siteName: 'رؤيَة رقَميَّة',
       locale: 'ar_SY',
       type: 'website',
       images: [
@@ -52,7 +52,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
           url: '/OG Image.webp',
           width: 1200,
           height: 630,
-          alt: `شهادة ${certificate.student_name} - رؤية رقمية`,
+          alt: `شهادة ${certificate.student_name} - رؤيَة رقَميَّة`,
         },
       ],
     },

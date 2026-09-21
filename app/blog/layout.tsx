@@ -4,9 +4,9 @@ import { Navbar } from '@/frontend/ui/Navbar';
 export const metadata: Metadata = {
   title: {
     default: 'المدوَّنة',
-    template: '%s | رؤية رقمية',
+    template: '%s | رؤيَة رقَميَّة',
   },
-  description: 'اقرأ أحدث المقالات من رؤية رقمية.',
+  description: 'اقرأ أحدث المقالات من رؤيَة رقَميَّة.',
 };
 
 export default function BlogLayout({ children }: { children: React.ReactNode }) {

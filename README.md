@@ -244,7 +244,7 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `SUPABASE_SERVICE_ROLE_KEY`            | **Secret.** Server-only service-role key (admin operations, E2E setup) | `eyJhbGciOi...`                                | ✅                       |
 | `RESEND_API_KEY`                       | Resend API key for transactional email                                 | `re_...`                                       | ✅                       |
 | `RESEND_FROM_EMAIL`                    | Sender address for outgoing email                                      | `no-reply@royaraqamia.com`                     | ✅                       |
-| `RESEND_FROM_NAME`                     | Sender display name                                                    | `رؤية رقمية`                                   | ✅                       |
+| `RESEND_FROM_NAME`                     | Sender display name                                                    | `رؤيَة رقَميَّة`                               | ✅                       |
 | `NEXT_PUBLIC_SENTRY_DSN`               | Public Sentry DSN (client SDK)                                         | `https://...@o000000.ingest.sentry.io/0000000` | ✅                       |
 | `SENTRY_DSN`                           | Server-side Sentry DSN                                                 | `https://...@o000000.ingest.sentry.io/0000000` | ✅                       |
 | `SENTRY_ORG`                           | Sentry organization slug (build plugin)                                | `your-org-slug`                                | ✅ (for CI build)        |

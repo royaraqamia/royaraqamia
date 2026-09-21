@@ -4,7 +4,7 @@ import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
 
 export const metadata: Metadata = {
   title: 'إدارة الرَّوابط',
-  description: 'إحصاءات المنصَّة ودليل الرَّوابط الكامل وحظر الرَّوابط في رؤية رقمية.',
+  description: 'إحصاءات المنصَّة ودليل الرَّوابط الكامل وحظر الرَّوابط في رؤيَة رقَميَّة.',
 };
 
 export default function AdminLinkSnapLayout({ children }: { children: React.ReactNode }) {

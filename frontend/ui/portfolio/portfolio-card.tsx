@@ -41,7 +41,7 @@ export function PortfolioCard({
       >
         <Image
           src={imagePath.webp}
-          alt={`${project.title} - رؤية رقمية`}
+          alt={`${project.title} - رؤيَة رقَميَّة`}
           fill
           loading="lazy"
           sizes="(max-width: 640px) 85vw, (max-width: 768px) 380px, (max-width: 1024px) 440px, 480px"

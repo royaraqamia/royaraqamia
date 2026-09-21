@@ -42,7 +42,7 @@ export const metadata: Metadata = {
   description:
     'نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء التَّطبيقات.',
   keywords: [
-    'رؤية رقمية',
+    'رؤيَة رقَميَّة',
     'تدريب إلكتروني',
     'دورات برمجة',
     'دورات تسويق رقمي',
@@ -64,19 +64,19 @@ export const metadata: Metadata = {
     'online certification',
     'Roya Raqamia',
   ],
-  authors: [{ name: 'رؤية رقمية' }],
-  creator: 'رؤية رقمية',
-  publisher: 'رؤية رقمية',
+  authors: [{ name: 'رؤيَة رقَميَّة' }],
+  creator: 'رؤيَة رقَميَّة',
+  publisher: 'رؤيَة رقَميَّة',
   metadataBase: new URL('https://royaraqamia.com'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
-    title: 'رؤية رقمية',
+    title: 'رؤيَة رقَميَّة',
     description:
       'نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء التَّطبيقات.',
     url: '/',
-    siteName: 'رؤية رقمية',
+    siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
     type: 'website',
     images: [
@@ -84,13 +84,13 @@ export const metadata: Metadata = {
         url: '/OG Image.webp',
         width: 1200,
         height: 630,
-        alt: 'رؤية رقمية',
+        alt: 'رؤيَة رقَميَّة',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'رؤية رقمية',
+    title: 'رؤيَة رقَميَّة',
     description:
       'نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء التَّطبيقات.',
     images: ['/OG Image.webp'],
@@ -101,7 +101,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'رؤية رقمية',
+    title: 'رؤيَة رقَميَّة',
   },
   icons: [
     { rel: 'icon', url: `/favicon.ico${ASSET_QUERY}` },
@@ -145,7 +145,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <link rel="stylesheet" href="/design-system/lib/design-tokens.css" />
         )}
         {/* PWA/manifest metas come from `metadata` above — don't duplicate them here. */}
-        <meta name="application-name" content="رؤية رقمية" />
+        <meta name="application-name" content="رؤيَة رقَميَّة" />
       </head>
       <body>
         <ErrorBoundary>

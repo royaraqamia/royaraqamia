@@ -4,9 +4,9 @@ import { Navbar } from '@/frontend/ui/Navbar';
 export const metadata: Metadata = {
   title: {
     default: 'التَّحقُّق من الشَّهادة',
-    template: '%s | رؤية رقمية',
+    template: '%s | رؤيَة رقَميَّة',
   },
-  description: 'التَّحقُّق من صحَّة وأصالة الشَّهادات الصَّادرة عن رؤية رقمية.',
+  description: 'التَّحقُّق من صحَّة وأصالة الشَّهادات الصَّادرة عن رؤيَة رقَميَّة.',
 };
 
 export default function VerifyLayout({ children }: { children: React.ReactNode }) {

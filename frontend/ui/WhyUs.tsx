@@ -128,7 +128,7 @@ export function WhyUs() {
             <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.15]">
               لماذا{' '}
               <span className="bg-linear-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
-                رؤية رقمية
+                رؤيَة رقَميَّة
               </span>
               ؟
             </h2>

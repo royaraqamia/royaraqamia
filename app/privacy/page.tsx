@@ -3,23 +3,23 @@
 export const metadata: Metadata = {
   title: 'سياسة الخصوصيَّة',
   description:
-    'سياسة الخصوصيَّة لـ رؤية رقمية – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
+    'سياسة الخصوصيَّة لـ رؤيَة رقَميَّة – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
   alternates: { canonical: '/privacy' },
   openGraph: {
-    title: 'سياسة الخصوصيَّة | رؤية رقمية',
+    title: 'سياسة الخصوصيَّة | رؤيَة رقَميَّة',
     description:
-      'سياسة الخصوصيَّة لـ رؤية رقمية – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
+      'سياسة الخصوصيَّة لـ رؤيَة رقَميَّة – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
     url: '/privacy',
-    siteName: 'رؤية رقمية',
+    siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
     type: 'website',
     images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'سياسة الخصوصيَّة' }],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'سياسة الخصوصيَّة | رؤية رقمية',
+    title: 'سياسة الخصوصيَّة | رؤيَة رقَميَّة',
     description:
-      'سياسة الخصوصيَّة لـ رؤية رقمية – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
+      'سياسة الخصوصيَّة لـ رؤيَة رقَميَّة – تعرَّف على كيفيَّة جمع واستخدام وحماية معلوماتك الشَّخصيَّة.',
     images: ['/OG Image.webp'],
   },
 };
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
               <h2 className="text-xl sm:text-2xl font-bold text-foreground">. المُقدِّمة</h2>
             </div>
             <p className="text-foreground/80 text-base sm:text-lg leading-relaxed">
-              مرحبًا بك في <strong className="text-foreground font-bold">رؤية رقمية</strong>{' '}
+              مرحبًا بك في <strong className="text-foreground font-bold">رؤيَة رقَميَّة</strong>{' '}
               (&quot;نحن&quot; أو &quot;المُشغِّل&quot;). نُقدِّر ثقتك بنا. تشرح هذه السِّياسة
               كيفيَّة جمع معلوماتك الشَّخصيَّة واستخدامها وحمايتها عند استخدامك لمواقعنا وخدماتنا
               إلكترونيًّا.

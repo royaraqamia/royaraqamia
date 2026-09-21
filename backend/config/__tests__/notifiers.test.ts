@@ -116,7 +116,7 @@ describe('notification producer adapters', () => {
     expect(fanout.mock.calls[0]?.[0]).toEqual({
       type: 'certificate_issued',
       title: 'تمَّ إصدار شهادة لك',
-      body: 'شهادة "إدارة المتاجر الإلكترونية" باسم سارة العلي صادرة عن رؤية رقمية.',
+      body: 'شهادة "إدارة المتاجر الإلكترونية" باسم سارة العلي صادرة عن رؤيَة رقَميَّة.',
       metadata: {
         certificateId: 'cert-1',
         certificateCode: 'COMP-2026-ABCDEFGH',

@@ -4,9 +4,9 @@ import { Navbar } from '@/frontend/ui/Navbar';
 export const metadata: Metadata = {
   title: {
     default: 'المصادقة',
-    template: '%s | رؤية رقمية',
+    template: '%s | رؤيَة رقَميَّة',
   },
-  description: 'تسجيل الدُّخول أو إنشاء حساب جديد في رؤية رقمية للوصول إلى الخدمات والمنتجات.',
+  description: 'تسجيل الدُّخول أو إنشاء حساب جديد في رؤيَة رقَميَّة للوصول إلى الخدمات والمنتجات.',
 };
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {

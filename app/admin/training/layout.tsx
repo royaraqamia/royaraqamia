@@ -4,7 +4,7 @@ import { AdminPageHeader } from '@/frontend/ui/admin/admin-page-header';
 
 export const metadata: Metadata = {
   title: 'طلبات الالتحاق',
-  description: 'طلبات الالتحاق بدورة التَّدريب في رؤية رقمية.',
+  description: 'طلبات الالتحاق بدورة التَّدريب في رؤيَة رقَميَّة.',
 };
 
 export default function AdminTrainingLayout({ children }: { children: React.ReactNode }) {

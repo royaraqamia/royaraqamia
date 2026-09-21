@@ -94,7 +94,7 @@ export function CertificateResultCard({
               </h2>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              هذه الشَّهادة أصيلة ومُوثَّقة رسميًّا في سجلات رؤية رقمية
+              هذه الشَّهادة أصيلة ومُوثَّقة رسميًّا في سجلات رؤيَة رقَميَّة
             </p>
           </div>
         </div>

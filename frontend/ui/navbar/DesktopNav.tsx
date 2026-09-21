@@ -110,13 +110,13 @@ export function DesktopNav({
       <Link
         href={isHomePage ? '#home' : '/'}
         className="group relative flex items-center gap-3 rounded-2xl py-1 px-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 transition-all duration-300 shrink-0 select-none"
-        aria-label="رؤية رقمية - الصفحة الرئيسية"
+        aria-label="رؤيَة رقَميَّة - الصفحة الرئيسية"
         onClick={scrollToHomeNode}
       >
         <div className="relative flex items-center justify-center">
           <NextImage
             src={logoProp ?? ''}
-            alt="شعار رؤية رقمية"
+            alt="شعار رؤيَة رقَميَّة"
             width={48}
             height={48}
             priority
@@ -133,7 +133,7 @@ export function DesktopNav({
             isScrolled ? 'text-lg lg:text-xl' : 'text-xl lg:text-2xl'
           }`}
         >
-          رؤية رقمية
+          رؤيَة رقَميَّة
         </span>
       </Link>
 

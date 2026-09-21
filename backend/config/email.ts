@@ -8,7 +8,7 @@ export const EMAIL_VALIDITY = {
   PASSWORD_RESET_HOURS: 1,
 } as const;
 
-const DEFAULT_FROM_NAME = 'رؤية رقمية';
+const DEFAULT_FROM_NAME = 'رؤيَة رقَميَّة';
 
 let defaultEmailClient: EmailClient | null = null;
 

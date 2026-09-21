@@ -24,7 +24,7 @@ export function BottomCTA() {
       headingPrefix="هل أنت مستعد "
       headingHighlight="لتتبُّع كل نقرة؟"
       headingHighlightClassName="bg-linear-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent gradient-text"
-      subtitle="انضم إلى آلاف مديري الرَّوابط الأذكياء. اختصِر، تتبَّع، وحسِّن روابطك باستخدام منصَّة التَّحليلات القويَّة من رؤية رقمية."
+      subtitle="انضم إلى آلاف مديري الرَّوابط الأذكياء. اختصِر، تتبَّع، وحسِّن روابطك باستخدام منصَّة التَّحليلات القويَّة من رؤيَة رقَميَّة."
       subtitleClassName="text-base sm:text-lg md:text-xl text-muted-foreground/90 max-w-2xl mx-auto mb-10 sm:mb-12 leading-relaxed font-normal text-balance"
       actionsClassName="flex flex-col sm:flex-row items-center justify-center gap-3.5 sm:gap-4"
       actionsMotion={{ initialY: 20, duration: 0.6, useEase: true }}
