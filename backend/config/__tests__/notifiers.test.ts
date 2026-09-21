@@ -101,6 +101,7 @@ describe('notification producer adapters', () => {
 
     createPostPublishedNotifier(fanout)({ postId: 'post-1', authorId: 'author-1', slug: 'hello' });
 
+    expect(fanout).toHaveBeenCalledTimes(1);
     expect(fanout.mock.calls[0]?.[0]).toEqual({
       type: 'post_published',
       title: 'تم نشر مقال جديد',
@@ -179,6 +180,63 @@ describe('consultation booking burst', () => {
       'سارة — استشارة (CONS-2026-A1)',
       'سارة — استشارة (CONS-2026-A2)',
       'سارة — استشارة (CONS-2026-A3)',
+    ]);
+  });
+});
+
+describe('post-published burst', () => {
+  it('produces one broadcast per publish over the whole Admin audience minus the author', async () => {
+    const admins = ['author-1', 'admin-2', 'admin-3'];
+    const audience = ['admin-2', 'admin-3'];
+    const broadcast = vi.fn<NotificationDelivery['broadcast']>(
+      async (_input, userIds) => userIds.length
+    );
+    const sendToUsers = vi.fn<PushNotifier['sendToUsers']>(async () => undefined);
+    const fanout = createNotificationFanout({
+      deliver: { broadcast },
+      push: { sendToUsers },
+      resolveAdminIds: async () => admins,
+      schedule: (task) => {
+        void task();
+      },
+    });
+    const notify = createPostPublishedNotifier(fanout);
+
+    notify({ postId: 'post-1', authorId: 'author-1', slug: 'hello-1' });
+    notify({ postId: 'post-2', authorId: 'author-1', slug: 'hello-2' });
+    notify({ postId: 'post-3', authorId: 'author-1', slug: 'hello-3' });
+
+    await vi.waitFor(() => expect(broadcast).toHaveBeenCalledTimes(3));
+    await vi.waitFor(() => expect(sendToUsers).toHaveBeenCalledTimes(3));
+
+    // 3 publishes, not 3 × 3 Admins = 9 inserts; every broadcast covers the
+    // whole audience with the publishing author subtracted.
+    for (const call of broadcast.mock.calls) {
+      expect(call[1]).toEqual(audience);
+      expect(call[0]).toMatchObject({
+        type: 'post_published',
+        title: 'تم نشر مقال جديد',
+        body: 'تم نشر مقال جديد على المدونة.',
+      });
+    }
+    for (const call of sendToUsers.mock.calls) {
+      expect(call[0]).toEqual(audience);
+      // The notice's type, title and body are unchanged; the deep-link follows.
+      expect(call[1]).toMatchObject({
+        type: 'post_published',
+        title: 'تم نشر مقال جديد',
+        body: 'تم نشر مقال جديد على المدونة.',
+      });
+    }
+    expect(broadcast.mock.calls.map((call) => call[0].metadata?.postId).sort()).toEqual([
+      'post-1',
+      'post-2',
+      'post-3',
+    ]);
+    expect(sendToUsers.mock.calls.map((call) => call[1].url).sort()).toEqual([
+      '/blog/hello-1',
+      '/blog/hello-2',
+      '/blog/hello-3',
     ]);
   });
 });

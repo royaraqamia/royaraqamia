@@ -4,6 +4,8 @@ import {
   type PostPublishedNotifier,
 } from '@/backend/services/blogpress/posts-service';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
+import { createPostPublishedNotifier } from '@/backend/config/blogpress';
+import { createNotificationFanout } from '@/backend/config/notifications';
 import type { Post } from '@/shared/contracts/blogpress';
 
 const postFixture = {
@@ -414,6 +416,29 @@ describe('BlogpressPostsService (thin delegation)', () => {
 
     await expect(service.publishPost('p-1', 'u-1', 'user@example.com')).rejects.toThrow('db down');
     expect(onPostPublished).not.toHaveBeenCalled();
+  });
+
+  it('still returns the published slug when the fan-out delivery fails', async () => {
+    const broadcast = vi.fn(async () => {
+      throw new Error('notifications down');
+    });
+    const onPostPublished = createPostPublishedNotifier(
+      createNotificationFanout({
+        deliver: { broadcast },
+        push: { sendToUsers: async () => undefined },
+        resolveAdminIds: async () => ['admin-1'],
+        schedule: (task) => {
+          void task();
+        },
+      })
+    );
+    const { repository, service } = makeRepo({}, onPostPublished);
+    (repository.publishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
+
+    await expect(service.publishPost('p-1', 'u-1', 'user@example.com')).resolves.toEqual({
+      slug: 'post-1',
+    });
+    await vi.waitFor(() => expect(broadcast).toHaveBeenCalledTimes(1));
   });
 
   it('delegates setPostFeatured', async () => {
