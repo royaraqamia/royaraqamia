@@ -3,6 +3,12 @@
 @plugin "@tailwindcss/typography";
 @import 'tw-animate-css';
 
+/* Scan only application source. The tracked `.agents/` skills ship Tailwind
+   example markup (e.g. `bg-[#bada55]`) that would otherwise be compiled into
+   the shipped stylesheet as dead CSS; `docs/` is excluded as documentation. */
+@source not '../.agents';
+@source not '../docs';
+
 /* Class-based dark mode: the site renders its dark theme unconditionally
    (see :root tokens and dark-theme-override.css), so `dark:` variants must key
    off an always-present class rather than the OS color scheme. */

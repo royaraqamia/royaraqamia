@@ -1,9 +1,9 @@
 {
   "measure": ["/"],
   "default": {
-    "totalGzipKb": 565,
+    "totalGzipKb": 560,
     "jsGzipKb": 260,
-    "cssGzipKb": 75,
+    "cssGzipKb": 70,
     "htmlGzipKb": 63,
     "fontsGzipKb": 170
   },

@@ -52,9 +52,9 @@ values; `legacy` is not part of the total.
 | --------- | --------- | ------------ |
 | `html`    | 432.6 KB  | 59.6 KB      |
 | `js`      | 788.2 KB  | 244.3 KB     |
-| `css`     | 640.8 KB  | 71.4 KB      |
+| `css`     | 610.2 KB  | 67.6 KB      |
 | `fonts`   | 160.5 KB  | 160.5 KB     |
-| **TOTAL** | 2022.1 KB | **535.9 KB** |
+| **TOTAL** | 1991.5 KB | **532.1 KB** |
 | `legacy`  | 110.0 KB  | 38.7 KB      |
 
 `fonts` raw and gzip match because `woff2` is already compressed: `gzip` here means
