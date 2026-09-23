@@ -2,8 +2,11 @@
 # Runs daily at 18:00 Damascus time (UTC+3) and on demand from the Actions tab.
 # Hard time limit per run: 90 minutes (job timeout). The pre-split single-model
 # pipeline needed 39-50 minutes on its own; the plan phase adds ~7 more, so 60
-# left no headroom. The plan step is separately capped at 20 minutes so a wedge
-# cannot silently consume the whole job budget.
+# left no headroom. The plan step is separately capped at 35 minutes so a wedge
+# cannot silently consume the whole job budget; the observed plan range is 9-20
+# minutes, so the previous 20-minute cap had no headroom and killed run #33 at
+# 20.15 min (after /tmp/plan.md had already been written). The plan prompt also
+# bounds the finding list to 8 entries, since runtime tracks list length.
 #
 # Setup (repo secrets):
 #   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
@@ -108,7 +111,7 @@ jobs:
 
       - name: Plan — GLM 5.3 Flash (Analyze)
         id: plan
-        timeout-minutes: 20
+        timeout-minutes: 35
         uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
@@ -132,11 +135,13 @@ jobs:
             1. Scan the codebase for concrete, high-confidence findings: bugs, logic errors, security gaps, performance lags, missing error handling, accessibility gaps, RLS gaps, missing indexes, and small well-scoped feature improvements. Ground database-related analysis in reality by inspecting the connected Supabase project with the supabase MCP tools (list_tables, list_migrations, get_advisors). Ignore speculative or cosmetic nitpicks.
             2. De-duplication context: open agent pull requests already awaiting review are [${{ steps.pending-prs.outputs.result }}]. Exclude any finding already addressed by those pending changes.
             3. Rank findings by impact and confidence. If nothing is worth changing, say so clearly.
-            4. Write the full ranked analysis to /tmp/plan.md using the Write tool. Format:
+            4. Write the ranked analysis to /tmp/plan.md using the Write tool. It is a work list, not a report, so keep it tight:
                - Title: "# Maintenance Analysis"
-               - Section "## Findings" with each finding as a numbered item: title, confidence (high/medium), files affected, brief description.
-               - Section "## De-duplicated" listing which pending PRs were considered.
+               - Section "## Findings" with AT MOST 8 findings, each a single line of the form "<n>. <title> — confidence: high/medium — files: <paths> — <one-sentence impact and fix>". Do not write multi-paragraph descriptions.
+               - Section "## De-duplicated" listing which pending PRs were considered (one line each).
                - Final line: "DECISION: IMPLEMENT <number>" or "DECISION: NONE" (nothing to do).
+
+            Bound your own effort to match: stop scanning as soon as you have 8 high-confidence findings. A short list beats an exhaustive one — runtime scales with list length, and only the single chosen finding gets implemented.
 
             Write ONLY to /tmp/plan.md. Do not touch the working tree.
 
