@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.11] - 2026-09-23
+
+### Changed
+- run weekly on Monday morning on DeepSeek 4.1 Flash
+- give the plan phase headroom and bound its output
+
+### Fixed
+- fix broken log_kind in recovery nudge
+
 ## [1.25.10] - 2026-09-21
 
 ### Changed
