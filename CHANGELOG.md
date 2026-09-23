@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.25.12] - 2026-09-23
+
+### Changed
+- stop Tailwind scanning agent-skill and docs sources
+- add shipped-weight baseline and budget guard
+
 ## [1.25.11] - 2026-09-23
 
 ### Changed
