@@ -92,6 +92,63 @@ so a budget breach fails the pipeline (and therefore blocks a release, which
 gates on Code Quality). To raise a ceiling, change `perf/budget.json` in the
 same PR and justify it there.
 
+## Lite mode
+
+The `lite` contract is a pre-paint capability check: on a device that cannot
+afford glassmorphism, the site renders with **no backdrop filters and no heavy
+glow blur**, using solid translucent fills instead. It is implemented in
+`frontend/shared/lite-mode.ts` and applied by an inline `<script>` in the root
+layout's `<head>` — before `<body>` is parsed, so there is no flash of the
+full-effects version.
+
+### When a device is `lite`
+
+`resolveLiteDevice` marks a device `lite` when **any** of these hold:
+
+- `prefers-reduced-motion: reduce` — a stated preference, honoured however
+  capable the hardware.
+- `navigator.deviceMemory <= 4` GB.
+- `navigator.hardwareConcurrency <= 4`.
+
+Absent signals are ignored, not guessed at: an engine that does not report
+memory is not marked lite just because the number is missing. The tiers are
+`MEMORY_TIERS.lowEndGb` and `CORE_TIERS.lowEnd` in `lite-mode.ts`.
+
+### The contract other tickets may rely on
+
+| Signal                    | Where                | Meaning                                                                                             |
+| ------------------------- | -------------------- | --------------------------------------------------------------------------------------------------- |
+| `html.lite`               | DOM class            | The device is `lite`; the stylesheet keys its overrides off this.                                   |
+| `html[data-lite="true"]`  | DOM attribute        | The same verdict, for selectors a class cannot express.                                             |
+| `localStorage["rr:lite"]` | `"true"` / `"false"` | The verdict, re-written whenever the check runs, so follow-on code can read it without re-deciding. |
+
+Semantics for follow-on tickets:
+
+- The check runs once before first paint, then re-runs on
+  `prefers-reduced-motion` changes. It re-decides from the live signals on every
+  run.
+- `localStorage["rr:lite"]` is **output, not input**: it is a memo for other
+  code. Seeding the decision from what we persisted would freeze the verdict, so
+  a user who later turns on reduced motion would never be marked lite. Do not
+  reintroduce that feedback loop.
+- A manual override is the `override` argument to `resolveLiteDevice` /
+  `installLiteMode`. When a follow-on ticket adds a "force lite / force full"
+  toggle, it passes the choice there — the only thing that outranks the live
+  signals.
+- The class describes the device, not a page state; it is not removed on route
+  change. If a caller ever needs to clear it, call
+  `applyLiteClass(documentElement, false)`.
+- Everything is best-effort: if `localStorage` or `matchMedia` throws, the site
+  falls back to full effects rather than failing to render.
+
+### Why this is not just a media query
+
+`prefers-reduced-transparency` (already handled in `global.css`) covers one axis
+of the preference, but there is no CSS media query for "this phone is slow".
+The `deviceMemory` / `hardwareConcurrency` thresholds are what let us drop the
+blur on a low-end device that has not asked for reduced transparency — which is
+the majority of them.
+
 ## Limitations
 
 - **Prerendered routes only.** `--routes` works for routes Next prerenders to
