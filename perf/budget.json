@@ -1,0 +1,11 @@
+{
+  "measure": ["/"],
+  "default": {
+    "totalGzipKb": 565,
+    "jsGzipKb": 260,
+    "cssGzipKb": 75,
+    "htmlGzipKb": 63,
+    "fontsGzipKb": 170
+  },
+  "routes": {}
+}

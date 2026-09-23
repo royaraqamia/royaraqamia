@@ -21,6 +21,7 @@ Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Mul
 - [Supabase & migrations](docs/supabase.md)
 - [Security & secrets](docs/security.md)
 - [Conventions & style](docs/conventions.md)
+- [Performance baseline & budget](docs/performance.md)
 - [Available skills](docs/skills.md)
 
 ## Agent skills

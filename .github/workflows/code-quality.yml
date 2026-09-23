@@ -100,3 +100,8 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      # Reads the .next output from the build above and fails when a route
+      # exceeds perf/budget.json. See docs/performance.md.
+      - name: Shipped-weight budget
+        run: npm run perf:check

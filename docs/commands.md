@@ -2,18 +2,21 @@
 
 ## Development commands
 
-| Command                                     | Purpose                                                                                |
-| ------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `npm ci`                                    | Install deps (clean install)                                                           |
-| `npx tsc --noEmit`                          | Type check                                                                             |
-| `npm run lint` / `npm run lint:fix`         | ESLint / auto-fix                                                                      |
-| `npx prettier --check .` / `npm run format` | Format check / write                                                                   |
-| `npm test`                                  | Unit tests (Vitest, single run)                                                        |
-| `npm run test:watch`                        | Unit tests (watch mode)                                                                |
-| `npx vitest run <path>`                     | Single test file                                                                       |
-| `npm run build`                             | Full build (icons → version → tsc → next build). Requires `NEXT_PUBLIC_WHATSAPP_PHONE` |
-| `npm run check:env-docs`                    | Env docs check                                                                         |
-| `npm run version:next`                      | Version next rehearsal                                                                 |
+| Command                                     | Purpose                                                                                  |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `npm ci`                                    | Install deps (clean install)                                                             |
+| `npx tsc --noEmit`                          | Type check                                                                               |
+| `npm run lint` / `npm run lint:fix`         | ESLint / auto-fix                                                                        |
+| `npx prettier --check .` / `npm run format` | Format check / write                                                                     |
+| `npm test`                                  | Unit tests (Vitest, single run)                                                          |
+| `npm run test:watch`                        | Unit tests (watch mode)                                                                  |
+| `npx vitest run <path>`                     | Single test file                                                                         |
+| `npm run build`                             | Full build (icons → version → tsc → next build). Requires `NEXT_PUBLIC_WHATSAPP_PHONE`   |
+| `npm run check:env-docs`                    | Env docs check                                                                           |
+| `npm run perf:baseline`                     | Shipped-weight report + budget status (needs `npm run build`; see `docs/performance.md`) |
+| `npm run perf:check`                        | Same, but exits 1 on a budget breach (run in CI)                                         |
+| `npm run perf:baseline:update`              | Re-record `perf/baseline.json` after an intended change                                  |
+| `npm run version:next`                      | Version next rehearsal                                                                   |
 
 ## E2E tests
 
