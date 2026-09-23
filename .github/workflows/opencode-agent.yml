@@ -1,5 +1,5 @@
-# Autonomous maintenance pipeline: plan (GLM 5.3 Flash) -> implement (DeepSeek v4 Flash) -> review/test -> PR.
-# Runs daily at 18:00 Damascus time (UTC+3) and on demand from the Actions tab.
+# Autonomous maintenance pipeline: plan (GLM 5.3 Flash) -> implement (DeepSeek 4.1 Flash) -> review/test -> PR.
+# Runs weekly on Monday at 06:00 Damascus time (UTC+3) and on demand from the Actions tab.
 # Hard time limit per run: 90 minutes (job timeout). The pre-split single-model
 # pipeline needed 39-50 minutes on its own; the plan phase adds ~7 more, so 60
 # left no headroom. The plan step is separately capped at 35 minutes so a wedge
@@ -32,8 +32,8 @@ name: 'OpenCode Agent'
 
 on:
   schedule:
-    # 15:00 UTC = 18:00 Damascus (UTC+3, no DST) — daily
-    - cron: '0 15 * * *'
+    # 03:00 UTC = 06:00 Damascus (UTC+3, no DST) — Mondays
+    - cron: '0 3 * * 1'
   workflow_dispatch:
 
 permissions:
@@ -145,7 +145,7 @@ jobs:
 
             Write ONLY to /tmp/plan.md. Do not touch the working tree.
 
-      - name: Implement — DeepSeek v4 Flash (Build, Refactor, Review, Report)
+      - name: Implement — DeepSeek 4.1 Flash (Build, Refactor, Review, Report)
         id: implement
         # Only build on a plan that actually completed. Without this the implement
         # phase runs against a missing /tmp/plan.md whenever planning fails or is
@@ -161,7 +161,7 @@ jobs:
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 750000
         with:
-          model: opencode-go/deepseek-v4-flash
+          model: opencode-go/deepseek-v4.1-flash
           variant: high
           share: 'false'
           prompt: |
