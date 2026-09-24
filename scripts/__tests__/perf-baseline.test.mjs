@@ -96,7 +96,9 @@ describe('extractAssets', () => {
     const { html } = makeFixture();
     const assets = extractAssets(html);
     expect(assets.scripts.every((u) => u.startsWith('/'))).toBe(true);
-    expect(assets.scripts.some((u) => u.includes('cdn.example.com'))).toBe(false);
+    expect(
+      assets.scripts.some((u) => new URL(u, 'https://app.example').hostname === 'cdn.example.com'),
+    ).toBe(false);
     expect(assets.scripts.some((u) => u.includes('__next_f'))).toBe(false);
   });
 
