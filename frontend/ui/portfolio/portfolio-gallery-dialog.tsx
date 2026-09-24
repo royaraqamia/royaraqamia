@@ -76,7 +76,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
 
   return (
     <Dialog open={selectedProject !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 shadow-2xl shadow-purple-950/50 overflow-y-auto dialog-scrollbar max-md:max-h-[80dvh] max-md:my-auto">
+      <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 overflow-y-auto dialog-scrollbar max-md:max-h-[80dvh] max-md:my-auto">
         {selectedProject !== null &&
           (() => {
             const project = projectData[selectedProject]!;
@@ -189,7 +189,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
               <div className="flex flex-col h-full">
                 <div
                   ref={imageContainerRef}
-                  className={`flex-1 min-h-0 flex items-center justify-center bg-linear-to-b from-purple-900/10 via-black/20 to-black/40 p-0 relative ${
+                  className={`flex-1 min-h-0 flex items-center justify-center bg-black/30 p-0 relative ${
                     zoomed
                       ? 'overflow-auto touch-action-none'
                       : 'overflow-hidden touch-action-manipulation'
@@ -198,7 +198,6 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                   onTouchMove={handleTouchMove}
                   onTouchEnd={handleTouchEnd}
                 >
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(168,85,247,0.08)_0,transparent_70%)] pointer-events-none" />
                   {galleryImageError ? (
                     <div className="flex flex-col items-center justify-center text-slate-500 z-10 gap-3">
                       <svg
@@ -223,7 +222,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                       alt={project.title}
                       width={1600}
                       height={1152}
-                      className={`shadow-2xl relative z-10 select-none ${
+                      className={`relative z-10 select-none ${
                         zoomed
                           ? 'max-w-none max-h-none rounded-2xl'
                           : 'object-contain w-full h-auto'

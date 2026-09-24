@@ -57,7 +57,7 @@ export function Certificate() {
 
             {/* Certificate Credential Features Bar */}
             <div className="w-full max-w-4xl grid grid-cols-1 sm:grid-cols-3 gap-3.5 sm:gap-4 mt-4">
-              <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/9 transition-colors duration-300">
+              <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl">
                 <div className="p-2.5 rounded-xl bg-purple-500/14 border border-purple-500/20 text-purple-400 shrink-0">
                   <BadgeCheck className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
                 </div>
@@ -69,7 +69,7 @@ export function Certificate() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/9 transition-colors duration-300">
+              <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl">
                 <div className="p-2.5 rounded-xl bg-indigo-500/14 border border-indigo-500/20 text-indigo-400 shrink-0">
                   <ShieldCheck className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
                 </div>
@@ -81,7 +81,7 @@ export function Certificate() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/9 transition-colors duration-300">
+              <div className="flex items-center gap-3 p-3.5 sm:p-4 rounded-2xl">
                 <div className="p-2.5 rounded-xl bg-violet-500/14 border border-violet-500/20 text-violet-400 shrink-0">
                   <Share2 className="w-5 h-5 sm:w-6 sm:h-6" fill="currentColor" />
                 </div>

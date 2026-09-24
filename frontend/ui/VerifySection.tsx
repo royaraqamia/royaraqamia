@@ -99,15 +99,6 @@ export function VerifySection() {
                 </div>
               </div>
             </div>
-
-            {/* Device Caption */}
-            <div className="mt-4 flex items-center justify-center gap-3">
-              <div className="h-px flex-1 max-w-20 bg-linear-to-l from-white/10 to-transparent" />
-              <span className="text-xs text-slate-500 font-medium tracking-wide">
-                واجهة التَّحقُّق التَّوضيحيَّة
-              </span>
-              <div className="h-px flex-1 max-w-20 bg-linear-to-r from-white/10 to-transparent" />
-            </div>
           </div>
         </ScrollAnimation>
 
@@ -162,13 +153,13 @@ export function VerifySection() {
           <div className="text-center">
             <Link
               href="/verify"
-              className="relative inline-flex items-center justify-center group overflow-hidden rounded-full p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 hover:scale-[1.02] active:scale-[0.98] transition-safe duration-300 shadow-2xl shadow-indigo-600/30 hover:shadow-indigo-500/50"
+              className="group relative inline-flex items-center justify-center gap-3 overflow-hidden w-full sm:w-auto h-14 sm:h-16 px-8 sm:px-12 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold text-base sm:text-lg shadow-xl shadow-purple-600/25 hover:shadow-purple-600/40 hover:scale-[1.005] active:scale-[0.995] transition-safe duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 border-0"
             >
-              <span className="absolute inset-0 bg-linear-to-r from-[#7766EE] via-[#6366F1] to-[#A78BFA] rounded-full" />
-              <span className="relative inline-flex items-center gap-3.5 px-8 sm:px-12 py-4 sm:py-5 rounded-full bg-slate-950 text-white font-bold text-base sm:text-xl transition-safe duration-300 group-hover:bg-slate-950/88">
-                <span>الانتقال إلى التَّحقُّق</span>
-                <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:-translate-x-1.5" />
-              </span>
+              {/* Animated Light Shimmer Beam */}
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
+
+              <span>الانتقال إلى التَّحقُّق</span>
+              <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 transition-transform duration-300 group-hover:-translate-x-1" />
             </Link>
           </div>
         </ScrollAnimation>

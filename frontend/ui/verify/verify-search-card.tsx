@@ -61,7 +61,7 @@ export function VerifySearchCard({
               size="lg"
               isLoading={loading}
               disabled={loading || !code.trim()}
-              className="h-13 min-h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/3 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-safe duration-200 sm:w-auto w-full gap-2 shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-13 min-h-13 px-8 rounded-2xl bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold shadow-lg shadow-purple-600/25 hover:shadow-xl hover:shadow-purple-600/40 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-safe duration-300 sm:w-auto w-full gap-2 shrink-0 cursor-pointer border-0 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {!loading && <Search className="size-5" />}
               <span>تحقُّق</span>

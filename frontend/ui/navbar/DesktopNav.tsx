@@ -403,7 +403,7 @@ export function DesktopNav({
           className="group/cta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-full"
         >
           <Button
-            className={`relative overflow-hidden font-bold transition-safe duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white cursor-pointer hover:opacity-95 active:scale-[0.98] border border-violet-500/30 ${
+            className={`relative overflow-hidden font-bold transition-safe duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white cursor-pointer active:scale-[0.98] border-0 ${
               isScrolled
                 ? 'h-10 text-xs xl:text-sm px-5 shadow-sm shadow-violet-600/20'
                 : 'h-11 text-sm xl:text-base px-6 shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40'

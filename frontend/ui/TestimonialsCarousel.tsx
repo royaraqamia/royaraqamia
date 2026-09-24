@@ -109,14 +109,12 @@ const TestimonialCard = memo(function TestimonialCard({
         bg-slate-900/95 hover:bg-slate-900
         border border-white/10 hover:border-violet-500/40 
         ring-1 ring-white/5 
-        transition-[transform,box-shadow,border-color,background-color] duration-400 ease-out 
-        hover:-translate-y-1.5 hover:shadow-[0_20px_40px_-15px_rgba(124,58,237,0.25)] 
+        transition-[transform,border-color,background-color] duration-400 ease-out 
+        hover:-translate-y-1.5 
         focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950
         cursor-pointer overflow-hidden
       `}
     >
-      <div className="absolute inset-0 bg-linear-to-b from-white/4 to-transparent pointer-events-none" />
-
       {/* Body Content */}
       <div className="relative z-10 flex-1 flex flex-col justify-between my-1">
         <p className="text-slate-200 text-sm sm:text-base leading-relaxed line-clamp-4 font-normal tracking-wide group-hover/card:text-white transition-colors duration-300">
@@ -140,7 +138,7 @@ const TestimonialCard = memo(function TestimonialCard({
               bg-linear-to-tr ${gradientClass}
               flex items-center justify-center 
               text-white font-bold text-sm sm:text-base 
-              shadow-lg ring-2 ring-white/15 shrink-0
+              ring-2 ring-white/15 shrink-0
             `}
           >
             {initials || <UserRound className="w-5 h-5" />}
@@ -246,12 +244,8 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
         <SheetContent
           id="testimonials-review-sheet"
           side="bottom"
-          className="gap-0 p-0 max-h-[90vh] left-3 right-3 bottom-3 sm:left-6 sm:right-6 sm:bottom-6 rounded-3xl border border-white/15 bg-slate-950/95 text-slate-100 shadow-[0_25px_70px_rgba(0,0,0,0.85)] md:left-1/2 md:right-auto md:-translate-x-1/2 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:w-full md:max-w-xl md:rounded-3xl overflow-hidden focus:outline-none"
+          className="gap-0 p-0 max-h-[90vh] left-3 right-3 bottom-3 sm:left-6 sm:right-6 sm:bottom-6 rounded-3xl border border-white/15 bg-slate-950/95 text-slate-100 md:left-1/2 md:right-auto md:-translate-x-1/2 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:w-full md:max-w-xl md:rounded-3xl overflow-hidden focus:outline-none"
         >
-          {/* Subtle Modal Ambient Accent */}
-          <div className="absolute top-0 right-0 left-0 h-1.5 bg-linear-to-r from-violet-500 via-fuchsia-500 to-indigo-500" />
-          <div className="absolute -top-20 -right-20 w-52 h-52 rounded-full text-violet-600/20 glow-orb pointer-events-none" />
-
           {/* Mobile Handle Indicator */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full md:hidden" />
 
@@ -279,7 +273,7 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
                         bg-linear-to-tr ${getTestimonialMeta(activeReview.name).gradient}
                         flex items-center justify-center 
                         text-white font-bold text-base sm:text-lg 
-                        shadow-xl ring-2 ring-white/20 shrink-0
+                        ring-2 ring-white/20 shrink-0
                       `}
                     >
                       {getTestimonialMeta(activeReview.name).initials || (

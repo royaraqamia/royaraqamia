@@ -26,12 +26,6 @@ export function ConsultationCards() {
       className="relative overflow-hidden py-20 sm:py-28 md:py-36 bg-slate-950 text-slate-100 selection:bg-purple-500/45 selection:text-purple-200"
       aria-label="الاستشارة التقنية الشاملة"
     >
-      {/* Dynamic Grid Overlay & Mesh Ambient Lighting */}
-      <div
-        className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-size-[3.5rem_3.5rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none"
-        aria-hidden="true"
-      />
-
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header Section */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
@@ -51,7 +45,7 @@ export function ConsultationCards() {
             {/* Dynamic Glow Halo on Hover — scale-only transition avoids
                 re-rasterizing the three box-shadows on every opacity frame. */}
             <div
-              className="absolute -inset-1 rounded-3xl pointer-events-none shadow-[0_0_32px_6px_rgba(147,51,234,0.35),0_0_56px_18px_rgba(124,58,237,0.22),0_0_80px_28px_rgba(79,70,229,0.18)] transition-transform duration-700 ease-out scale-90 group-hover:scale-100"
+              className="absolute -inset-0.5 sm:-inset-1 rounded-3xl pointer-events-none shadow-[0_0_32px_6px_rgba(147,51,234,0.35),0_0_56px_18px_rgba(124,58,237,0.22),0_0_80px_28px_rgba(79,70,229,0.18)] transition-transform duration-700 ease-out scale-90 group-hover:scale-100"
               aria-hidden="true"
             />
 
@@ -63,7 +57,7 @@ export function ConsultationCards() {
               {/* Internal Card Canvas */}
               <div className="p-6 sm:p-8 md:p-10 lg:p-12">
                 {/* Header Row: Interactive Pill Badge */}
-                <div className="mb-8 pb-8 border-b border-purple-500/15">
+                <div className="mt-2 mb-8 pb-8 border-b border-purple-500/15">
                   {/* Microphone Feature Badge */}
                   <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-purple-500/25 border border-purple-400/30 shadow-inner shadow-purple-500/10">
                     <Mic className="w-4 h-4 text-purple-300 animate-pulse shrink-0" />
@@ -111,7 +105,7 @@ export function ConsultationCards() {
                     className="block group/btn rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                     aria-label="احجز استشارتك الآن"
                   >
-                    <Button className="w-full h-14 sm:h-16 text-lg sm:text-xl font-bold text-white rounded-full bg-linear-to-r from-purple-600 via-indigo-600 to-purple-600 hover:from-purple-500 hover:via-indigo-500 hover:to-purple-500 transition-transform duration-300 ease-out hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] shadow-xl shadow-purple-900/40 cursor-pointer border border-purple-400/30 active:scale-[0.98] flex items-center justify-center gap-3 min-h-11">
+                    <Button className="w-full h-14 sm:h-16 text-lg sm:text-xl font-bold text-white rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 transition-safe duration-300 ease-out hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] shadow-xl shadow-purple-900/40 cursor-pointer border-0 active:scale-[0.98] flex items-center justify-center gap-3 min-h-11">
                       <span>احجز استشارتك الآن</span>
                       <ArrowLeft className="w-5 h-5 text-purple-200 group-hover/btn:-translate-x-1.5 transition-transform duration-300 shrink-0" />
                     </Button>

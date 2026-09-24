@@ -1,5 +1,5 @@
 import { Button } from './primitives/button';
-import { Code, Rocket, ShieldCheck, Smartphone, Monitor, Globe } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 import { MotionReveal } from './MotionReveal';
 
@@ -7,16 +7,10 @@ import { MotionReveal } from './MotionReveal';
 
 export function WebDevService() {
   const benefits = [
-    { icon: Code, text: 'أفضل ممارسات البرمجة بكود نظيف وقابل للصِّيانة' },
-    { icon: Rocket, text: 'نشر سريع مع أداء مُحسَّن' },
-    { icon: ShieldCheck, text: 'تطوير آمن مع معايير أمان حديثة' },
-    { icon: Smartphone, text: 'تصميم متجاوب لجميع الأجهزة وأحجام الشَّاشات' },
-  ];
-
-  const features = [
-    { title: 'Web', description: 'Next.js' },
-    { title: 'Mobile', description: 'Flutter' },
-    { title: 'Backend', description: 'Supabase' },
+    'أفضل ممارسات البرمجة بكود نظيف وقابل للصِّيانة',
+    'نشر سريع مع أداء مُحسَّن',
+    'تطوير آمن مع معايير أمان حديثة',
+    'تصميم متجاوب لجميع الأجهزة وأحجام الشَّاشات',
   ];
 
   return (
@@ -59,7 +53,7 @@ export function WebDevService() {
                   style={{ ['--ld' as string]: `${0.08 + idx * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-linear-to-br from-purple-600 to-violet-700 flex items-center justify-center shrink-0 shadow-md shadow-purple-600/20 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300">
-                    <benefit.icon
+                    <Check
                       className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                       aria-hidden="true"
                       fill="currentColor"
@@ -67,30 +61,8 @@ export function WebDevService() {
                   </div>
                   <div className="flex flex-1 flex-col justify-center min-w-0">
                     <span className="text-sm sm:text-base font-bold text-foreground/90 group-hover:text-foreground transition-colors text-start leading-snug">
-                      {benefit.text}
+                      {benefit}
                     </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Features Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-              {features.map((feature, idx) => (
-                <div
-                  key={idx}
-                  className=" relative p-5 rounded-2xl bg-purple-950/14 border border-purple-500/15 hover:border-purple-500/40 transition-safe duration-300 group overflow-hidden hover:shadow-md hover:shadow-purple-500/10 hover:-translate-y-0.5 flex flex-col justify-between"
-                  style={{ ['--ld' as string]: `${0.56 + idx * 0.12}s` } as React.CSSProperties}
-                >
-                  {/* Subtle hover glow effect */}
-                  <div className="absolute inset-0 bg-linear-to-br from-purple-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                  <div>
-                    <div className="inline-block px-2.5 py-1 rounded-md bg-purple-500/25 text-purple-300 text-xs font-mono font-bold mb-3 border border-purple-500/20">
-                      {feature.title}
-                    </div>
-                    <p className="relative text-xs sm:text-sm text-foreground/80 leading-relaxed font-medium">
-                      {feature.description}
-                    </p>
                   </div>
                 </div>
               ))}
@@ -106,13 +78,6 @@ export function WebDevService() {
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-purple-500/14 border border-purple-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
-                    <Monitor
-                      className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    />
-                  </div>
                   <div className="text-start min-w-0">
                     <h3 className="text-lg sm:text-xl font-bold text-foreground">موقع Web</h3>
                     <p className="text-xs sm:text-sm text-foreground/60 mt-1">بدون Backend</p>
@@ -136,13 +101,6 @@ export function WebDevService() {
             >
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
-                  <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-purple-500/14 border border-purple-500/20 flex items-center justify-center group-hover:scale-105 transition-transform duration-300 shrink-0">
-                    <Globe
-                      className="w-6 h-6 sm:w-7 sm:h-7 text-purple-400"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    />
-                  </div>
                   <div className="text-start min-w-0">
                     <h3 className="text-lg sm:text-xl font-bold text-foreground">
                       تطبيق Web أو Mobile

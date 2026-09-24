@@ -33,8 +33,6 @@ const DialogOverlay = React.forwardRef<
       'fixed inset-0 z-10000 bg-black/70 transition-opacity duration-300 ease-out',
       'data-[state=open]:animate-in data-[state=open]:fade-in-0',
       'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
-      // GPU-accelerate opacity animation & prevent layout reflow
-      'will-change-[opacity] contain-strict',
       className
     )}
     {...props}
@@ -54,7 +52,7 @@ const DialogContent = React.forwardRef<
       aria-modal="true"
       data-slot="dialog-content"
       className={cn(
-        'fixed z-10000 grid w-[calc(100%-2rem)] gap-5 p-6 text-foreground shadow-2xl duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+        'fixed z-10000 grid w-[calc(100%-2rem)] gap-5 p-6 text-foreground duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
         'border border-border/60 bg-background',
         'rounded-3xl sm:rounded-2xl',
         'max-h-[calc(100dvh-3rem)] overflow-y-auto dialog-scrollbar',
@@ -66,8 +64,6 @@ const DialogContent = React.forwardRef<
         'max-sm:data-[state=open]:slide-in-from-bottom-6 max-sm:data-[state=closed]:slide-out-to-bottom-6',
         'sm:data-[state=open]:slide-in-from-top-[48%]',
         'sm:data-[state=closed]:slide-out-to-top-[48%]',
-        // GPU-accelerate transform+opacity animation & isolate layout
-        'will-change-[transform,opacity] contain-layout contain-style',
         className
       )}
       {...props}

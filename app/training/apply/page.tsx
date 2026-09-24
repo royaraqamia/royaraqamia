@@ -7,7 +7,7 @@ import { TRAINING_COURSE } from '@/shared/contracts/training';
 
 const SUMMARY_ITEMS = [
   { icon: User, label: 'المدرِّب', value: TRAINING_COURSE.trainer },
-  { icon: Clock, label: 'المدَّة الكلِّيَّة', value: TRAINING_COURSE.duration },
+  { icon: Clock, label: 'عدد السَّاعات', value: TRAINING_COURSE.duration },
   { icon: Trophy, label: 'عدد الجلسات', value: TRAINING_COURSE.sessions },
 ];
 
@@ -27,7 +27,7 @@ export default function TrainingApplyPage() {
         </p>
         <Button
           asChild
-          className="h-13 rounded-full px-8 mt-7 bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold shadow-xl shadow-purple-600/20 flex items-center justify-center gap-3 cursor-pointer border-0"
+          className="h-13 rounded-full px-8 mt-7 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold shadow-xl shadow-purple-600/20 flex items-center justify-center gap-3 cursor-pointer border-0"
         >
           <a
             href={getWhatsAppUrl('السَّلام عليكم، أرغب بمعرفة موعد الدُّفعة القادمة من التَّدريب.')}
@@ -50,8 +50,10 @@ export default function TrainingApplyPage() {
           aria-label="تفاصيل الدورة"
           className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
         >
-          <h2 className="text-lg sm:text-xl font-extrabold text-foreground">
-            {TRAINING_COURSE.title}
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
+              {TRAINING_COURSE.title}
+            </span>
           </h2>
           <CollapsibleText
             lines={2}

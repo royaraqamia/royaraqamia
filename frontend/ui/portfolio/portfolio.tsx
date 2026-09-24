@@ -1,20 +1,18 @@
 'use client';
 
-import { memo, useRef, useState } from 'react';
+import { memo, useState } from 'react';
 import { useHorizontalScroll } from '../../shared/use-horizontal-scroll';
 import { HorizontalScrollArrows } from '../HorizontalScrollArrows';
-import { CARD_COUNT, projectData, visibleIndices, PORTFOLIO_IMAGES } from './portfolio-data';
+import { projectData, visibleIndices, PORTFOLIO_IMAGES } from './portfolio-data';
 import { PortfolioSectionHeader } from './portfolio-section-header';
 import { PortfolioCard } from './portfolio-card';
 import { PortfolioGalleryDialog } from './portfolio-gallery-dialog';
-import { ScrollProgressTracker } from './scroll-progress-tracker';
 
 export const Portfolio = memo(function Portfolio() {
   const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(400);
   const [imageError, setImageError] = useState<Set<number>>(new Set());
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
-  const progressBarRef = useRef<HTMLDivElement>(null);
 
   const handleImageError = (index: number) => {
     setImageError((prev) => new Set(prev).add(index));
@@ -38,27 +36,7 @@ export const Portfolio = memo(function Portfolio() {
       {/* Portfolio Horizontal Scroll Area */}
       <div className="relative w-full group/scroll z-10">
         {/* Section Controls Bar: Progress Bar & Navigation Arrows */}
-        <div className="max-w-7xl mx-auto px-6 md:px-12 mb-6 sm:mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
-            <div className="flex items-center gap-2.5">
-              <span className="text-xs font-mono font-medium text-purple-400/90">01</span>
-              <div className="w-28 sm:w-44 h-1.5 bg-white/10 rounded-full overflow-hidden">
-                <div
-                  ref={progressBarRef}
-                  className="h-full bg-linear-to-r from-purple-500 via-violet-400 to-indigo-500 origin-right rounded-full shadow-[0_0_12px_rgba(168,85,247,0.6)]"
-                  style={{ transform: 'scaleX(var(--scroll-progress, 0))' }}
-                />
-              </div>
-              <span className="text-xs font-mono font-medium text-slate-500">
-                {CARD_COUNT.toString().padStart(2, '0')}
-              </span>
-            </div>
-            <span className="text-xs text-slate-400/80 font-medium max-md:hidden">
-              اسحب أو استخدم الأسهم للتَّنقُّل
-            </span>
-            <span className="text-xs text-slate-400/80 font-medium md:hidden">اسحب للتَّنقُّل</span>
-          </div>
-
+        <div className="max-w-7xl mx-auto px-6 md:px-12 mb-6 sm:mb-8 flex flex-col sm:flex-row items-center justify-end gap-4">
           <HorizontalScrollArrows
             onScroll={scroll}
             canScrollLeft={canScrollLeft}
@@ -99,8 +77,6 @@ export const Portfolio = memo(function Portfolio() {
             );
           })}
         </div>
-
-        <ScrollProgressTracker containerRef={scrollContainerRef} targetRef={progressBarRef} />
       </div>
 
       {/* Modal Dialog */}

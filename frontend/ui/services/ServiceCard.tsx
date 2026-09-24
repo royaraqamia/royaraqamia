@@ -54,7 +54,7 @@ export function ServiceCard({ service }: { service: Service }) {
 
       <div className="relative z-10 flex flex-col h-full">
         {/* Minimalist Glass Icon Container */}
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-6 sm:mb-8 bg-white/4 border border-white/10 transition-[transform,border-color] duration-500 ease-out group-hover/service:scale-105 group-hover/service:border-white/25 relative overflow-hidden shrink-0 shadow-inner">
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-6 sm:mb-8 bg-white/4 border border-white/10 transition-[transform,border-color] duration-500 ease-out group-hover/service:scale-105 group-hover/service:border-white/25 relative overflow-hidden shrink-0 shadow-inner self-center">
           <div
             className="absolute inset-0 opacity-0 group-hover/service:opacity-30 transition-opacity duration-500"
             style={{ background: colors.gradient }}
@@ -66,11 +66,11 @@ export function ServiceCard({ service }: { service: Service }) {
         </div>
 
         {/* Typography */}
-        <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight mb-2.5 transition-transform duration-500 group-hover/service:translate-x-1 rtl:group-hover/service:-translate-x-1">
+        <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight mb-2.5 text-center transition-transform duration-500">
           {service.title}
         </h3>
 
-        <p className="text-sm sm:text-base text-neutral-400 leading-relaxed mb-6 sm:mb-8 group-hover/service:text-neutral-300 transition-colors duration-500 font-normal">
+        <p className="text-sm sm:text-base text-neutral-400 leading-relaxed mb-6 sm:mb-8 text-center group-hover/service:text-neutral-300 transition-colors duration-500 font-normal">
           {service.description}
         </p>
 

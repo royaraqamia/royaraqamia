@@ -437,7 +437,7 @@ export const MobileMenu = memo(function MobileMenu({
                 className="
                   group relative flex items-center justify-center
                   w-full h-13 rounded-full
-                  gradient-primary text-white font-bold text-base tracking-tight
+                  bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold text-base tracking-tight
                   shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40
                   transition-safe duration-300 ease-out
                   active:scale-[0.98] overflow-hidden
