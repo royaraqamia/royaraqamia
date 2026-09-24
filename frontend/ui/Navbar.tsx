@@ -123,11 +123,25 @@ export function Navbar() {
       visible: true,
       hasDropdown: true,
       dropdownKey: 'projects',
-      subItems: APP_PRODUCTS.filter((p) => !p.hidden).map((p) => ({
-        href: p.landingPath,
-        label: p.label,
-        isRoute: true,
-      })),
+      subItems: [
+        ...APP_PRODUCTS.filter((p) => !p.hidden).map((p) => ({
+          href: p.landingPath,
+          label: p.label,
+          isRoute: true,
+        })),
+        {
+          href: '#request-project',
+          label: 'طلب بناء مشروع (قريبًا)',
+          isRoute: false,
+          comingSoon: true,
+        },
+        {
+          href: '#raboah-app',
+          label: 'تطبيق رَبْوَة (قريبًا)',
+          isRoute: false,
+          comingSoon: true,
+        },
+      ],
     },
     {
       href: '/blog',

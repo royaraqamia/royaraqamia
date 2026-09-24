@@ -29,6 +29,7 @@ interface NavLink {
   hasDropdown?: boolean;
   dropdownKey?: string;
   icon?: LucideIcon;
+  comingSoon?: boolean;
   subItems?: NavLink[];
 }
 
@@ -288,6 +289,24 @@ export function DesktopNav({
                               ? 'border-b border-neutral-800/60'
                               : ''
                           }`;
+
+                          if (sub.comingSoon) {
+                            return (
+                              <div
+                                key={sub.href}
+                                role="menuitem"
+                                aria-disabled="true"
+                                aria-label={`${sub.label} - غير متاح بعد`}
+                                className={`group/item relative flex items-center justify-between w-full text-start text-sm font-medium rounded-xl px-4 py-3 text-neutral-500 cursor-not-allowed select-none ${
+                                  subIndex < (link.subItems?.length || 0) - 1
+                                    ? 'border-b border-neutral-800/60'
+                                    : ''
+                                }`}
+                              >
+                                <span>{sub.label}</span>
+                              </div>
+                            );
+                          }
 
                           if (sub.isRoute) {
                             return (

@@ -37,6 +37,7 @@ interface SubItem {
   href: string;
   label: string;
   isRoute?: boolean;
+  comingSoon?: boolean;
 }
 
 // ============================================================================
@@ -264,7 +265,18 @@ export const MobileMenu = memo(function MobileMenu({
             <div className="ms-4 ps-3 border-s-2 border-violet-500/30 flex flex-col gap-1 py-1">
               {link.subItems?.map((sub) => (
                 <div key={sub.href} className="w-full">
-                  {sub.isRoute ? (
+                  {sub.comingSoon ? (
+                    <div
+                      aria-disabled="true"
+                      aria-label={`${sub.label} - غير متاح بعد`}
+                      className="
+                        relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl
+                        text-sm font-medium text-neutral-500 cursor-not-allowed select-none
+                      "
+                    >
+                      <span className="truncate">{sub.label}</span>
+                    </div>
+                  ) : sub.isRoute ? (
                     <Link
                       href={sub.href}
                       onClick={(e) => handleSubClick(e, sub)}
