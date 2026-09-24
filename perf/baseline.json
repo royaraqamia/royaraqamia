@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-09-23T13:44:54.626Z",
+  "generatedAt": "2026-09-24T08:47:51.108Z",
   "note": "Program performance baseline. Regenerate with `npm run perf:baseline:update` after `npm run build`.",
   "routes": {
     "/": {
       "html": {
-        "raw": 442974,
-        "gzip": 61068,
+        "raw": 423634,
+        "gzip": 58063,
         "count": 1
       },
       "js": {
-        "raw": 807154,
-        "gzip": 250209,
-        "count": 16
+        "raw": 809207,
+        "gzip": 251761,
+        "count": 17
       },
       "css": {
-        "raw": 624842,
-        "gzip": 69213,
+        "raw": 605810,
+        "gzip": 67012,
         "count": 2
       },
       "fonts": {
@@ -29,9 +29,9 @@
         "count": 1
       },
       "total": {
-        "raw": 2039322,
-        "gzip": 544842,
-        "count": 22
+        "raw": 2003003,
+        "gzip": 541188,
+        "count": 23
       }
     }
   }
