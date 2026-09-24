@@ -1,4 +1,4 @@
-import { ArrowLeft, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { LazySection } from './shared/LazySection';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
@@ -87,10 +87,7 @@ export function Hero() {
                   {/* Sheen effect on hover */}
                   <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
 
-                  <span className="relative z-10 flex items-center gap-3">
-                    تواصل معنا الآن
-                    <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1.5 transition-transform duration-300" />
-                  </span>
+                  <span className="relative z-10 flex items-center gap-3">تواصل معنا الآن</span>
                 </a>
 
                 <a

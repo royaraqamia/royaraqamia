@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Trophy, Clock, Target, Sparkle, User, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Trophy, Clock, Target, Sparkle, User, ShieldCheck } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 import { CollapsibleText } from './shared/collapsible-text';
@@ -158,7 +158,7 @@ export function TrainingCourses() {
                       </div>
                       <div className="min-w-0">
                         <span className="block text-xs font-medium text-muted-foreground">
-                          المُدرِّب
+                          المدرِّب
                         </span>
                         <span className="block text-sm sm:text-base font-bold text-foreground truncate">
                           {course.trainer}
@@ -213,7 +213,6 @@ export function TrainingCourses() {
                         <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
                         <span>قدِّم طلبك الآن</span>
-                        <ArrowLeft className="w-5 h-5 shrink-0 transition-transform group-hover:-translate-x-1 duration-300" />
                       </Link>
                     </Button>
                   ) : (

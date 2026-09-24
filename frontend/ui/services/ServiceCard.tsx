@@ -1,7 +1,7 @@
 'use client';
 
 import { ElementType } from 'react';
-import { Check, ArrowRight, Code, Lightbulb, MessageCircle } from 'lucide-react';
+import { Code, Lightbulb, MessageCircle } from 'lucide-react';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
 // Lucide components cannot cross the RSC boundary, so the server sends a
@@ -80,28 +80,9 @@ export function ServiceCard({ service }: { service: Service }) {
             {service.features.map((feature, idx) => (
               <li
                 key={idx}
-                className="flex items-start gap-3.5 group/item p-1.5 -mx-1.5 rounded-full hover:bg-white/3 transition-colors duration-200"
+                className="flex items-center justify-center group/item p-1.5 -mx-1.5 rounded-full hover:bg-white/3 transition-colors duration-200"
               >
-                <div className="mt-0.5 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center shrink-0 bg-white/5 border border-white/10 transition-[border-color,transform] duration-300 group-hover/item:border-white/30 group-hover/item:scale-110 relative overflow-hidden">
-                  <Check
-                    className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-neutral-400 transition-colors duration-300 group-hover/item:text-white"
-                    aria-hidden="true"
-                  />
-                  {/* Hidden gradient text applied to checkmark via hover effect */}
-                  <div
-                    className="absolute inset-0 opacity-0 group-hover/item:opacity-100 transition-opacity duration-300 flex items-center justify-center"
-                    style={{
-                      color:
-                        colors.gradient
-                          .split(',')[0]
-                          ?.replace('linear-gradient(to right, ', '')
-                          .trim() ?? '#fff',
-                    }}
-                  >
-                    <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5" aria-hidden="true" />
-                  </div>
-                </div>
-                <span className="text-xs sm:text-sm md:text-base text-neutral-300 font-medium leading-relaxed group-hover/item:text-white transition-colors duration-200">
+                <span className="text-xs sm:text-sm md:text-base text-neutral-300 font-medium leading-relaxed text-center group-hover/item:text-white transition-colors duration-200">
                   {feature}
                 </span>
               </li>
@@ -125,17 +106,6 @@ export function ServiceCard({ service }: { service: Service }) {
                 <span className="relative z-10 transition-transform duration-300 group-hover/cta:-translate-x-0.5 rtl:group-hover/cta:translate-x-0.5">
                   {service.pricing.cta}
                 </span>
-
-                <div className="relative z-10 overflow-hidden w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
-                  <ArrowRight
-                    className="absolute w-4 h-4 sm:w-5 sm:h-5 opacity-70 group-hover/cta:opacity-100 transition-safe duration-300 -translate-x-full group-hover/cta:translate-x-0 rtl:rotate-180 rtl:translate-x-full rtl:group-hover/cta:translate-x-0"
-                    aria-hidden="true"
-                  />
-                  <ArrowRight
-                    className="absolute w-4 h-4 sm:w-5 sm:h-5 opacity-70 group-hover/cta:opacity-0 transition-safe duration-300 translate-x-0 group-hover/cta:translate-x-full rtl:rotate-180 rtl:translate-x-0 rtl:group-hover/cta:-translate-x-full"
-                    aria-hidden="true"
-                  />
-                </div>
               </a>
             </div>
           )}

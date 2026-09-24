@@ -35,7 +35,7 @@ export default function TermsPage() {
 
       <div className="relative mx-auto max-w-4xl px-4 py-10 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
         {/* Modern SaaS Header */}
-        <header className="mb-12 border-b border-border/60 pb-8 sm:mb-16 sm:pb-12">
+        <header className="mb-12 pb-8 sm:mb-16 sm:pb-12">
           <h1 className="text-3xl font-black leading-[1.15] tracking-tight text-foreground sm:text-4xl md:text-5xl lg:text-6xl">
             شروط الاستخدام
           </h1>
