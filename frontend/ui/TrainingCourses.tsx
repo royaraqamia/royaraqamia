@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Trophy, Clock, Target, Sparkle, User, ShieldCheck } from 'lucide-react';
+import { Trophy, Clock, Target, Sparkle, User, Wallet } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 import { CollapsibleText } from './shared/collapsible-text';
@@ -97,8 +97,8 @@ export function TrainingCourses() {
                         </span>
                       </div>
                       <div className="text-[11px] text-purple-300/70 mt-1.5 font-medium flex items-center justify-center md:justify-start gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                        <span>للدَّورة كاملة</span>
+                        <Wallet className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>الدَّفع بالتَّقسيط مُتاح</span>
                       </div>
                     </div>
                   </div>
