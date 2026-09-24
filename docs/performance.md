@@ -176,6 +176,10 @@ The win here is runtime — paint, compositing and battery — which this tool d
   references. Chunks pulled in later by client-side navigation or hydration are
   invisible, so it is a faithful proxy for first-load weight, not for everything
   a session eventually downloads.
+- **No module attribution.** It prices chunks, not the packages inside them. When
+  a cut needs to know which dependency the bytes belong to, use
+  `next experimental-analyze` and the method in
+  [landing-client-js-audit.md](landing-client-js-audit.md).
 - **Build artifacts, not the wire.** Sizes are read from disk. `gzip` means
   "gzip when that helps, otherwise raw"; real header/frame overhead and any CDN
   brotli are not modelled.
