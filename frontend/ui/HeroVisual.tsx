@@ -42,9 +42,7 @@ export function HeroVisual() {
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span className="text-[11px] font-medium tracking-wide text-neutral-300 uppercase">
-                  مُحرِّك مباشر
-                </span>
+                <span className="h-2 w-14 rounded-full bg-linear-to-r from-white/25 to-white/10" />
               </div>
             </div>
 
@@ -67,16 +65,12 @@ export function HeroVisual() {
                     <div className="w-8 h-8 rounded-xl bg-purple-500/15 border border-purple-500/20 flex items-center justify-center shadow-xs">
                       <TrendingUp className="w-4 h-4 text-purple-400" />
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-neutral-200 tracking-tight">
-                        اتِّجاه النُّمو
-                      </p>
-                      <p className="text-[10px] text-neutral-400 font-medium">+28.4% هذا الأسبوع</p>
+                    <div className="space-y-1.5">
+                      <div className="h-2.5 w-20 rounded-full bg-white/20" />
+                      <div className="h-1.5 w-24 rounded-full bg-white/10" />
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                    مباشر
-                  </span>
+                  <span className="h-3.5 w-10 rounded-md bg-purple-500/15 border border-purple-500/20" />
                 </div>
 
                 {/* Animated Bar Chart */}
@@ -106,16 +100,12 @@ export function HeroVisual() {
                     <div className="w-8 h-8 rounded-xl bg-violet-500/15 border border-violet-500/20 flex items-center justify-center shadow-xs">
                       <Users className="w-4 h-4 text-violet-400" />
                     </div>
-                    <div>
-                      <p className="text-xs font-bold text-neutral-200 tracking-tight">
-                        مستخدمون نشطون
-                      </p>
-                      <p className="text-[10px] text-neutral-400 font-medium">14.2 ألف نشط الآن</p>
+                    <div className="space-y-1.5">
+                      <div className="h-2.5 w-24 rounded-full bg-white/20" />
+                      <div className="h-1.5 w-20 rounded-full bg-white/10" />
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-violet-500/10 text-violet-300 border border-violet-500/20">
-                    +12%
-                  </span>
+                  <span className="h-3.5 w-10 rounded-md bg-violet-500/15 border border-violet-500/20" />
                 </div>
 
                 {/* SVG Line Chart with Area Fill */}
@@ -163,40 +153,32 @@ export function HeroVisual() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
               {[
                 {
-                  label: 'التَّحويل',
                   icon: ChartColumn,
                   color: 'text-purple-400',
                   bg: 'bg-purple-500/15',
                   border: 'border-purple-500/20',
                   progress: 75,
-                  val: '84.2%',
                 },
                 {
-                  label: 'الذَّكاء',
                   icon: Sparkle,
                   color: 'text-violet-400',
                   bg: 'bg-violet-500/15',
                   border: 'border-violet-500/20',
                   progress: 90,
-                  val: '99.8%',
                 },
                 {
-                  label: 'الاحتفاظ',
                   icon: TrendingUp,
                   color: 'text-indigo-400',
                   bg: 'bg-indigo-500/15',
                   border: 'border-indigo-500/20',
                   progress: 60,
-                  val: '64.5%',
                 },
                 {
-                  label: 'السُّرعة',
                   icon: Zap,
                   color: 'text-fuchsia-400',
                   bg: 'bg-fuchsia-500/15',
                   border: 'border-fuchsia-500/20',
                   progress: 85,
-                  val: '1.2ms',
                 },
               ].map((item, idx) => (
                 <div
@@ -209,15 +191,11 @@ export function HeroVisual() {
                     >
                       <item.icon className={`w-3.5 h-3.5 ${item.color}`} />
                     </div>
-                    <span className="text-[11px] font-bold text-neutral-200 tracking-tight">
-                      {item.val}
-                    </span>
+                    <span className="h-2.5 w-10 rounded-full bg-white/20" />
                   </div>
 
                   <div className="space-y-1.5">
-                    <p className="text-[10px] font-medium text-neutral-400 truncate">
-                      {item.label}
-                    </p>
+                    <div className="h-1.5 w-12 rounded-full bg-white/10" />
                     <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
                       <div
                         className={`h-full ${item.bg.replace('/15', '/80')} rounded-full`}
