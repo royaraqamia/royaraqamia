@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.27.0] - 2026-09-24
+
+### Changed
+- simplify landing sections and unify brand CTAs
+- remove the reading progress bar from post pages
+
+### Added
+- update payment methods and training details
+
 ## [1.26.2] - 2026-09-24
 
 ### Fixed
