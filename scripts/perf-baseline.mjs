@@ -91,6 +91,27 @@ export function extractAssets(html) {
   return { scripts, legacyScripts, styles, fontPreloads };
 }
 
+/**
+ * The legacy polyfill chunk Next injects into every prerendered page. It is
+ * harmless only because it is gated behind `nomodule`: a browser that supports
+ * ES modules — which is every browser in our traffic (ADR 0004) — never fetches
+ * it, so it costs users nothing and is excluded from the budget total. The one
+ * thing that would make it a real download is losing that gate, which is what
+ * `checkLegacyGating` exists to catch.
+ */
+export function polyfillUrls(buildManifest) {
+  return (buildManifest?.polyfillFiles ?? []).map(
+    (file) => `/_next/${String(file).replace(/^\/+/, '')}`
+  );
+}
+
+export function checkLegacyGating(assets, buildManifest) {
+  const polyfills = polyfillUrls(buildManifest);
+  const ungated = polyfills.filter((url) => assets.scripts.includes(url));
+  const gated = polyfills.filter((url) => assets.legacyScripts.includes(url));
+  return { ok: ungated.length === 0, polyfills, gated, ungated };
+}
+
 export function extractCssFontUrls(cssText, cssUrl) {
   const base = new URL(cssUrl, 'https://perf.local');
   const urls = [];
@@ -293,7 +314,7 @@ export function measureRoute(route, { nextDir = '.next', publicDir = 'public' } 
     );
   }
 
-  return { route: normalized, htmlPath, summary: summarizeAssets(entries), entries };
+  return { route: normalized, htmlPath, assets, summary: summarizeAssets(entries), entries };
 }
 
 export function measureRoutes(routes, opts) {
@@ -462,9 +483,37 @@ function run(argv = process.argv.slice(2)) {
     }
   }
 
+  let gatingFailed = false;
+  const buildManifest = readJson(join(args.nextDir, 'build-manifest.json'), null);
+  const polyfills = polyfillUrls(buildManifest);
+  if (polyfills.length > 0) {
+    console.log('\nLegacy polyfill gating');
+    for (const { route, assets } of results) {
+      const { ok, ungated } = checkLegacyGating(assets, buildManifest);
+      if (ok) {
+        console.log(`  ${route}: gated (nomodule) — not downloaded by any modern browser`);
+        continue;
+      }
+      gatingFailed = true;
+      for (const url of ungated) {
+        console.log(
+          `  ${route}: ${url} is loaded WITHOUT nomodule — it is now a blocking download`
+        );
+      }
+    }
+  }
+
   if (failed && args.check) {
     console.log('\nBudget check failed.');
     process.exitCode = 1;
+  }
+
+  if (gatingFailed) {
+    console.log(
+      '\nLegacy polyfill is no longer nomodule-gated. Restore the gate, or accept the cost and ' +
+        'explain it in perf/budget.json.'
+    );
+    if (args.check) process.exitCode = 1;
   }
 }
 

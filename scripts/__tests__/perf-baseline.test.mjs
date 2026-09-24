@@ -13,6 +13,8 @@ import {
   summarizeAssets,
   compareToBaseline,
   checkBudget,
+  polyfillUrls,
+  checkLegacyGating,
   measureRoute,
 } from '../perf-baseline.mjs';
 
@@ -97,7 +99,7 @@ describe('extractAssets', () => {
     const assets = extractAssets(html);
     expect(assets.scripts.every((u) => u.startsWith('/'))).toBe(true);
     expect(
-      assets.scripts.some((u) => new URL(u, 'https://app.example').hostname === 'cdn.example.com'),
+      assets.scripts.some((u) => new URL(u, 'https://app.example').hostname === 'cdn.example.com')
     ).toBe(false);
     expect(assets.scripts.some((u) => u.includes('__next_f'))).toBe(false);
   });
@@ -264,6 +266,33 @@ describe('checkBudget', () => {
   });
 });
 
+describe('checkLegacyGating', () => {
+  const manifest = { polyfillFiles: ['static/chunks/legacy.js'] };
+
+  it('passes when the polyfill is only reachable behind nomodule', () => {
+    const assets = {
+      scripts: ['/_next/static/chunks/app.js'],
+      legacyScripts: ['/_next/static/chunks/legacy.js'],
+    };
+    const result = checkLegacyGating(assets, manifest);
+    expect(result.ok).toBe(true);
+    expect(result.gated).toEqual(['/_next/static/chunks/legacy.js']);
+    expect(result.ungated).toEqual([]);
+  });
+
+  it('fails when the polyfill is loaded as a modern script', () => {
+    const assets = { scripts: ['/_next/static/chunks/legacy.js'], legacyScripts: [] };
+    const result = checkLegacyGating(assets, manifest);
+    expect(result.ok).toBe(false);
+    expect(result.ungated).toEqual(['/_next/static/chunks/legacy.js']);
+  });
+
+  it('has nothing to gate when the manifest lists no polyfills', () => {
+    expect(polyfillUrls(null)).toEqual([]);
+    expect(checkLegacyGating({ scripts: [], legacyScripts: [] }, null).ok).toBe(true);
+  });
+});
+
 describe('measureRoute', () => {
   it('measures HTML, JS, CSS and CSS-referenced fonts for a static route', () => {
     const { nextDir, publicDir, html, bodies } = makeFixture();
@@ -388,5 +417,37 @@ describe('perf-baseline CLI', () => {
     expect(result.status).toBe(1);
     expect(result.stdout).toMatch(/index\.html|never built/i);
     expect(result.stdout).not.toMatch(/\n\s+at /);
+  });
+
+  it('reports the legacy polyfill as gated for a normal build', () => {
+    const { root, nextDir, publicDir } = makeFixture();
+    writeFileSync(
+      join(nextDir, 'build-manifest.json'),
+      JSON.stringify({ polyfillFiles: ['static/chunks/legacy.js'] })
+    );
+    const result = runCli(
+      ['--next-dir', nextDir, '--public-dir', publicDir, '--budget', 'absent.json'],
+      root
+    );
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain('gated (nomodule)');
+  });
+
+  it('fails --check when the legacy polyfill loses its nomodule gate', () => {
+    const { root, nextDir, publicDir, html } = makeFixture();
+    writeFileSync(
+      join(nextDir, 'build-manifest.json'),
+      JSON.stringify({ polyfillFiles: ['static/chunks/legacy.js'] })
+    );
+    writeFileSync(
+      join(nextDir, 'server', 'app', 'index.html'),
+      html.replace('nomodule=""', 'async=""')
+    );
+    const result = runCli(
+      ['--next-dir', nextDir, '--public-dir', publicDir, '--budget', 'absent.json', '--check'],
+      root
+    );
+    expect(result.status).toBe(1);
+    expect(result.stdout).toContain('no longer nomodule-gated');
   });
 });

@@ -22,6 +22,17 @@ devices this program targets) never requests a `nomodule` script, so counting
 the polyfill chunk would overstate what those devices download. It stays visible
 so the chunk cannot grow unnoticed.
 
+**Why the chunk is kept.** Dropping it was considered once real traffic was
+measured: over a 7-day window every visitor was on an ES-module browser — Chrome
+/ Edge / Samsung / Firefox, Mobile Safari, and the Chromium-based Instagram and
+Facebook in-app browsers. No IE11 and no legacy Android, so nothing in the
+audience fetches the polyfill. It also cannot be removed through configuration:
+Next imports it from the client runtime entry, so the only route out is
+post-build surgery on the framework's output for a file no user downloads.
+Instead the gate is guarded — `npm run perf:check` fails if the polyfill is ever
+loaded without `nomodule`, which would turn it into a blocking download for
+everyone.
+
 Images are out of scope here; they are handled by the image-compression ticket
 in the same program. Runtime metrics (INP, long tasks, dropped frames) are a
 separate concern — this tool measures transferred weight only. See
