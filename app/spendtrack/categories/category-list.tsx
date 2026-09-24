@@ -54,13 +54,12 @@ export const CategoryList = memo(function CategoryList({
 
   return (
     <div className="space-y-2" role="list" aria-label="قائمة التصنيفات">
-      {categories.map((category, index) => (
+      {categories.map((category) => (
         <div
           key={category.id}
           role="listitem"
           aria-label={`${category.name}${category.user_id === null ? '، افتراضي' : ''}`}
           className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-safe duration-300 hover:shadow-elevated hover:bg-card card-lift"
-          style={{ animationDelay: `${index * 30}ms` }}
         >
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <div

@@ -69,12 +69,11 @@ export function ExpenseList({
 
   return (
     <div className="w-full space-y-2.5" role="list" aria-label="قائمة المصروفات" aria-live="polite">
-      {expenses.map((expense, index) => (
+      {expenses.map((expense) => (
         <ExpenseRow
           key={expense.id}
           expense={expense}
           categories={categories}
-          index={index}
           currency={currency}
         />
       ))}
@@ -98,12 +97,10 @@ export function ExpenseList({
 function ExpenseRow({
   expense,
   categories,
-  index,
   currency,
 }: {
   expense: ExpenseWithCategory;
   categories: Category[];
-  index: number;
   currency?: string;
 }) {
   const { formAction, pending, error } = useDeleteExpense(expense, expense.description || '');
@@ -126,7 +123,6 @@ function ExpenseRow({
       role="listitem"
       aria-label={rowLabel}
       className="group/row relative flex items-center justify-between gap-3 sm:gap-4 rounded-xl border border-border/50 bg-card/60 p-3 sm:p-3.5 transition-safe duration-200 ease-out hover:border-foreground/15 dark:hover:border-white/15 hover:bg-card hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 hover:scale-[1.003] active:scale-[0.997]"
-      style={{ animationDelay: `${index * 30}ms` }}
     >
       {/* Category Indicator & Info */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
