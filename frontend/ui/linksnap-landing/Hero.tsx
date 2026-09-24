@@ -20,10 +20,10 @@ export function Hero() {
       gridClassName="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center"
     >
       {/* Main Hero Copy Container */}
-      <div className="landing-enter-up lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
+      <div className=" lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* Typography Stack */}
         <h1
-          className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6"
+          className=" text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6"
           style={{ ['--ld' as string]: '0.3s' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -38,7 +38,7 @@ export function Hero() {
         </h1>
 
         <h2
-          className="landing-enter-up-sm text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mb-8 sm:mb-10 font-normal"
+          className=" text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mb-8 sm:mb-10 font-normal"
           style={{ ['--ld' as string]: '0.5s' } as React.CSSProperties}
         >
           حوِّل روابطك الطَّويلة إلى روابط قصيرة قويَّة قابلة للتَّتبُّع. راقب كل نقرة واحصل على رؤى
@@ -47,7 +47,7 @@ export function Hero() {
 
         {/* Action Buttons */}
         <div
-          className="landing-enter-up-sm flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+          className=" flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
           style={{ ['--ld' as string]: '0.7s' } as React.CSSProperties}
         >
           <LandingCta
@@ -66,22 +66,12 @@ export function Hero() {
 
       {/* Dynamic 3D Interactive Card Showcase */}
       <div
-        className="landing-enter-scale lg:col-span-6 xl:col-span-5 relative"
+        className=" lg:col-span-6 xl:col-span-5 relative"
         style={{ ['--ld' as string]: '0.4s' } as React.CSSProperties}
       >
-        <div className="relative" style={{ perspective: '1200px' }}>
+        <div className="relative">
           {/* Main Glass Card */}
-          <div
-            className="landing-float relative bg-card/88 dark:bg-neutral-900/88 border border-border/80 rounded-2xl p-6 xl:p-8 shadow-2xl shadow-primary/10 transform-gpu transition-safe duration-500 hover:border-primary/30"
-            style={
-              {
-                transform: 'rotateY(-6deg) rotateX(4deg)',
-                transformStyle: 'preserve-3d',
-                ['--landing-float-dur' as string]: '7s',
-                ['--landing-float-y' as string]: '-12px',
-              } as React.CSSProperties
-            }
-          >
+          <div className="relative bg-card/88 dark:bg-neutral-900/88 border border-border/80 rounded-2xl p-6 xl:p-8 shadow-2xl shadow-primary/10 transition-safe duration-500 hover:border-primary/30">
             {/* Mock Window Topbar */}
             <div className="flex items-center justify-between pb-6 mb-6 border-b border-border/60">
               <div className="flex items-center gap-2">
@@ -119,7 +109,7 @@ export function Hero() {
               ].map((item, i) => (
                 <div
                   key={i}
-                  className="landing-enter-left group/item relative bg-muted/55 hover:bg-muted/88 border border-border/40 hover:border-primary/30 rounded-xl p-3.5 transition-safe duration-300 shadow-sm"
+                  className=" group/item relative bg-muted/55 hover:bg-muted/88 border border-border/40 hover:border-primary/30 rounded-xl p-3.5 transition-safe duration-300 shadow-sm"
                   style={{ ['--ld' as string]: `${0.8 + i * 0.15}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between gap-3 mb-1.5">
@@ -144,7 +134,7 @@ export function Hero() {
 
             {/* Mock Card Analytics Footer */}
             <div
-              className="landing-enter-fade mt-6 pt-5 border-t border-border/60 flex items-center justify-between"
+              className=" mt-6 pt-5 border-t border-border/60 flex items-center justify-between"
               style={{ ['--ld' as string]: '1.4s' } as React.CSSProperties}
             >
               <div className="flex items-center gap-3">
@@ -165,20 +155,8 @@ export function Hero() {
           </div>
 
           {/* Depth-of-Field Floating Orbiting Icons */}
-          {floatingIcons.map(({ Icon, delay, x, y, size }, i) => (
-            <div
-              key={i}
-              className="landing-float absolute -z-10 pointer-events-none"
-              style={
-                {
-                  left: x,
-                  top: y,
-                  ['--landing-float-dur' as string]: `${4 + i}s`,
-                  ['--landing-float-y' as string]: `${-12 + i * 4}px`,
-                  ['--ld' as string]: `${delay}s`,
-                } as React.CSSProperties
-              }
-            >
+          {floatingIcons.map(({ Icon, x, y, size }, i) => (
+            <div key={i} className="absolute -z-10 pointer-events-none" style={{ left: x, top: y }}>
               <div className=" bg-card/82 border border-border/60 rounded-2xl p-3.5 shadow-xl shadow-black/5">
                 <Icon size={size} className="text-primary/70" />
               </div>

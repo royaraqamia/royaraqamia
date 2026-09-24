@@ -100,7 +100,7 @@ function AnalyticsPreview() {
       {analyticsMetrics.map((metric, i) => (
         <div
           key={metric.label}
-          className="landing-reveal-item flex items-center justify-between p-2.5 rounded-xl bg-slate-900/75 border border-slate-800/60 hover:border-slate-700 hover:bg-slate-900/90 transition-safe"
+          className=" flex items-center justify-between p-2.5 rounded-xl bg-slate-900/75 border border-slate-800/60 hover:border-slate-700 hover:bg-slate-900/90 transition-safe"
           style={{ ['--ld' as string]: `${0.4 + i * 0.1}s` } as React.CSSProperties}
         >
           <span className="text-xs sm:text-sm font-medium text-slate-400">{metric.label}</span>

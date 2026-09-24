@@ -23,7 +23,7 @@ export function PortfolioCard({
 }: PortfolioCardProps) {
   return (
     <div
-      className="shrink-0 w-[85vw] sm:w-95 md:w-110 lg:w-120 min-w-0 snap-center group/card bg-[#050810] rounded-3xl overflow-hidden landing-reveal-item"
+      className="shrink-0 w-[85vw] sm:w-95 md:w-110 lg:w-120 min-w-0 snap-center group/card bg-[#050810] rounded-3xl overflow-hidden"
       style={{ ['--ld' as string]: `${0.2 + displayIdx * 0.1}s` } as React.CSSProperties}
     >
       <div

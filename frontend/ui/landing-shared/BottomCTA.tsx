@@ -66,7 +66,7 @@ export function BottomCTA({
       <p className={subtitleClassName}>{subtitle}</p>
 
       <div
-        className={cn('landing-reveal-item', actionsClassName)}
+        className={cn('', actionsClassName)}
         style={{ ['--ld' as string]: '0.3s' } as React.CSSProperties}
       >
         <LandingCta

@@ -26,20 +26,10 @@ export function SectionHeading({
   titleHighlightClassName,
   subtitle,
   subtitleClassName,
-  initialY = 20,
 }: SectionHeadingProps) {
   const Tag = as === 'header' ? 'header' : 'div';
   return (
-    <Reveal
-      as={Tag}
-      variant="fade"
-      className={wrapperClassName}
-      style={
-        {
-          ['--landing-reveal-from' as string]: `translateY(${initialY}px)`,
-        } as React.CSSProperties
-      }
-    >
+    <Reveal as={Tag} variant="fade" className={wrapperClassName}>
       <h2 id={titleId} className={titleClassName}>
         {titlePrefix}
         <span className={titleHighlightClassName}>{titleHighlight}</span>

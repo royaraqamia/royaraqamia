@@ -3,16 +3,6 @@ import { LazySection } from './shared/LazySection';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 
 export function Hero() {
-  // Floating particles data - deterministic positions to avoid hydration mismatch
-  const particles = Array.from({ length: 12 }, (_, i) => ({
-    id: i,
-    size: ((i * 7 + 3) % 3) + 1,
-    x: (i * 13 + 7) % 100,
-    y: (i * 17 + 11) % 100,
-    duration: ((i * 23 + 5) % 20) + 15,
-    delay: (i * 11 + 3) % 5,
-  }));
-
   return (
     <>
       <section
@@ -23,46 +13,14 @@ export function Hero() {
         <div className="absolute inset-0 bg-linear-to-b from-slate-950 via-purple-950/40 to-slate-950 z-0 overflow-hidden pointer-events-none">
           {/* Subtle grid pattern overlay */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29370f_1px,transparent_1px),linear-gradient(to_bottom,#1f29370f_1px,transparent_1px)] bg-size-[4rem_4rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)]" />
-
-          {/* Floating Particles - Ultra subtle background ambient details.
-              Half are hidden below sm: ambient loops cost the most exactly
-              where devices are weakest, and 6 read identically at this size. */}
-          {particles.map((particle) => (
-            <div
-              key={particle.id}
-              className={`hero-particle absolute rounded-full bg-white/45 ${
-                particle.id >= 6 ? 'max-sm:hidden' : ''
-              }`}
-              style={{
-                width: particle.size,
-                height: particle.size,
-                left: `${particle.x}%`,
-                top: `${particle.y}%`,
-                opacity: 0.15,
-                ['--particle-duration' as string]: `${particle.duration}s`,
-                ['--particle-delay' as string]: `${particle.delay}s`,
-              }}
-            />
-          ))}
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 w-full">
-          {/* Above-the-fold content uses `.css-reveal` (pure CSS entrance) so
-              the headline paints — and becomes LCP — without waiting for
-              hydration; MotionReveal's JS-gated variant would keep it at
-              opacity:0 until React mounts. `--landing-reveal-from: none`
-              preserves the fade-only stagger the items had before. */}
-          <div
-            className="css-reveal grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center"
-            style={{ ['--landing-reveal-from' as string]: 'none' }}
-          >
+          <div className="grid lg:grid-cols-2 gap-10 sm:gap-12 lg:gap-16 items-center">
             {/* Left/Right side - Primary Copy & CTA (RTL Support) */}
             <div className="text-center lg:text-right space-y-3 order-1 min-w-0">
               {/* Main Headline */}
-              <div
-                className="landing-reveal-item space-y-2 -mt-2"
-                style={{ ['--ld' as string]: '0.27s' } as React.CSSProperties}
-              >
+              <div className="space-y-2 -mt-2">
                 <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight font-arabic leading-[1.45] sm:leading-[1.45]">
                   <span className="block bg-linear-to-r from-white via-slate-100 to-purple-200 bg-clip-text text-transparent pb-1.5">
                     شريكك الاستراتيجي
@@ -74,10 +32,7 @@ export function Hero() {
               </div>
 
               {/* Description */}
-              <p
-                className="landing-reveal-item text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal pt-1"
-                style={{ ['--ld' as string]: '0.39s' } as React.CSSProperties}
-              >
+              <p className="text-sm sm:text-base md:text-lg lg:text-lg text-neutral-300 max-w-3xl mx-auto lg:mx-0 leading-relaxed font-normal pt-1">
                 نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛
                 <br />
                 كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء
@@ -87,8 +42,7 @@ export function Hero() {
               {/* Social Proof Strip - Trust Signals */}
               <a
                 href="#testimonials"
-                className="landing-reveal-item inline-flex flex-wrap items-center justify-center lg:justify-start gap-5 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition duration-300 hover:opacity-90 active:scale-[0.99]"
-                style={{ ['--ld' as string]: '0.51s' } as React.CSSProperties}
+                className="inline-flex flex-wrap items-center justify-center lg:justify-start gap-5 pt-2 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 rounded-2xl transition duration-300 hover:opacity-90 active:scale-[0.99]"
               >
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex" aria-hidden="true">
@@ -122,10 +76,7 @@ export function Hero() {
               </a>
 
               {/* CTA Buttons */}
-              <div
-                className="landing-reveal-item flex flex-col sm:flex-row gap-3.5 justify-center lg:justify-start pt-3 items-center w-full sm:w-auto"
-                style={{ ['--ld' as string]: '0.63s' } as React.CSSProperties}
-              >
+              <div className="flex flex-col sm:flex-row gap-3.5 justify-center lg:justify-start pt-3 items-center w-full sm:w-auto">
                 <a
                   href={getWhatsAppUrl()}
                   target="_blank"
@@ -153,10 +104,7 @@ export function Hero() {
             </div>
 
             {/* Right side - Visual Element */}
-            <div
-              className="landing-reveal-item relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0 min-w-0"
-              style={{ ['--ld' as string]: '0.75s' } as React.CSSProperties}
-            >
+            <div className="relative order-2 w-full flex justify-center lg:justify-end mt-4 lg:mt-0 min-w-0">
               {/* Reserve the dashboard's footprint so the lazy HeroVisual mount
                   doesn't grow the hero and trigger CLS. On mobile the stacked
                   cards make the visual tall (h ≈ 1.5w + 275) — the min-height

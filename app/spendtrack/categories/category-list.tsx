@@ -35,7 +35,7 @@ export const CategoryList = memo(function CategoryList({
   if (categories.length === 0) {
     return (
       <div
-        className="flex flex-col items-center gap-4 py-12 text-center animate-fade-in"
+        className="flex flex-col items-center gap-4 py-12 text-center"
         role="status"
         aria-label="لا توجد تصنيفات مخصصة"
       >
@@ -59,7 +59,7 @@ export const CategoryList = memo(function CategoryList({
           key={category.id}
           role="listitem"
           aria-label={`${category.name}${category.user_id === null ? '، افتراضي' : ''}`}
-          className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-safe duration-300 hover:shadow-elevated hover:bg-card animate-slide-up card-lift"
+          className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-safe duration-300 hover:shadow-elevated hover:bg-card card-lift"
           style={{ animationDelay: `${index * 30}ms` }}
         >
           <div className="flex items-center gap-3 min-w-0 flex-1">

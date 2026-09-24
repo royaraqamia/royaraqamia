@@ -14,10 +14,10 @@ export function Hero() {
       gridClassName="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center"
     >
       {/* Main Content Column */}
-      <div className="landing-enter-up lg:col-span-6 xl:col-span-6 text-center lg:text-right flex flex-col items-center lg:items-start">
+      <div className=" lg:col-span-6 xl:col-span-6 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* High-Impact Typography Headline */}
         <h1
-          className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
+          className=" text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
           style={{ ['--ld' as string]: '0.25s' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -33,7 +33,7 @@ export function Hero() {
 
         {/* Supporting Subtitle */}
         <h2
-          className="landing-enter-up-sm text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mb-10 font-normal"
+          className=" text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mb-10 font-normal"
           style={{ ['--ld' as string]: '0.4s' } as React.CSSProperties}
         >
           محرِّر Markdown متكامل مع إدارة المسودَّات وتحسين محرِّكات البحث ونشر احترافي — كل ما
@@ -42,7 +42,7 @@ export function Hero() {
 
         {/* Tactile Action Buttons */}
         <div
-          className="landing-enter-up-sm flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+          className=" flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
           style={{ ['--ld' as string]: '0.55s' } as React.CSSProperties}
         >
           <LandingCta
@@ -61,20 +61,11 @@ export function Hero() {
 
       {/* Interactive Dynamic Editor Preview Mockup */}
       <div
-        className="landing-enter-scale lg:col-span-6 xl:col-span-6 relative"
+        className=" lg:col-span-6 xl:col-span-6 relative"
         style={{ ['--ld' as string]: '0.35s' } as React.CSSProperties}
       >
-        <div className="relative perspective-3d">
-          <div
-            className="landing-float relative rounded-2xl border border-white/20 dark:border-white/10 bg-background/88 dark:bg-neutral-900/88 p-6 shadow-2xl shadow-primary/10 transform-gpu"
-            style={
-              {
-                transform: 'rotateY(-6deg) rotateX(3deg)',
-                ['--landing-float-dur' as string]: '7s',
-                ['--landing-float-y' as string]: '-12px',
-              } as React.CSSProperties
-            }
-          >
+        <div className="relative">
+          <div className="relative rounded-2xl border border-white/20 dark:border-white/10 bg-background/88 dark:bg-neutral-900/88 p-6 shadow-2xl shadow-primary/10">
             {/* Window Control Bar */}
             <div className="flex items-center justify-between border-b border-border/40 pb-4 mb-5">
               <div className="flex items-center gap-2">
@@ -144,7 +135,7 @@ export function Hero() {
 
                 {/* Dynamic SEO Badge Meter */}
                 <div
-                  className="landing-enter-up-sm rounded-xl border border-emerald-500/20 bg-emerald-500/9 dark:bg-emerald-500/14 p-3.5 flex items-center justify-between shadow-xs"
+                  className=" rounded-xl border border-emerald-500/20 bg-emerald-500/9 dark:bg-emerald-500/14 p-3.5 flex items-center justify-between shadow-xs"
                   style={{ ['--ld' as string]: '1.2s' } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-2">
@@ -174,16 +165,11 @@ export function Hero() {
             return (
               <div
                 key={i}
-                className="landing-float absolute -z-10"
-                style={
-                  {
-                    left: i === 0 ? '-8%' : i === 1 ? '82%' : '42%',
-                    top: i === 0 ? '-8%' : i === 1 ? '12%' : '94%',
-                    ['--landing-float-dur' as string]: `${4 + i}s`,
-                    ['--landing-float-y' as string]: `${-10 + i * 4}px`,
-                    ['--ld' as string]: `${item.delay}s`,
-                  } as React.CSSProperties
-                }
+                className="absolute -z-10"
+                style={{
+                  left: i === 0 ? '-8%' : i === 1 ? '82%' : '42%',
+                  top: i === 0 ? '-8%' : i === 1 ? '12%' : '94%',
+                }}
               >
                 <div className="flex items-center gap-2 rounded-xl border border-white/20 dark:border-white/10 bg-background/90 dark:bg-neutral-900/90 px-3.5 py-2 shadow-xl text-xs font-medium text-foreground">
                   <Icon size={18} className="text-primary" />

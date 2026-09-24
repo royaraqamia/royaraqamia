@@ -25,10 +25,10 @@ export function Hero() {
       gridClassName="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center"
     >
       {/* Main Hero Content */}
-      <div className="landing-enter-up lg:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
+      <div className=" lg:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* Typography Heading */}
         <h1
-          className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
+          className=" text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
           style={{ ['--ld' as string]: '0.3s' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -44,7 +44,7 @@ export function Hero() {
 
         {/* Subtitle */}
         <h2
-          className="landing-enter-up-sm text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8 sm:mb-10 font-normal"
+          className=" text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8 sm:mb-10 font-normal"
           style={{ ['--ld' as string]: '0.5s' } as React.CSSProperties}
         >
           سجِّل المصروفات حسب التَّصنيف، وصوِّر أنماط الإنفاق، وتحكَّم في أموالك من خلال تحليلات
@@ -53,17 +53,17 @@ export function Hero() {
 
         {/* CTA Buttons */}
         <div
-          className="landing-enter-up-sm flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+          className=" flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
           style={{ ['--ld' as string]: '0.7s' } as React.CSSProperties}
         >
           <LandingCta
             appPath="/spendtrack/app"
             loginRedirect="/spendtrack/app"
             scrollTarget="features"
-            primaryClassName="group relative w-full sm:w-auto cta-glow text-base px-8 py-6 rounded-full font-bold shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 transition-safe duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            primaryClassName="group relative w-full sm:w-auto text-base px-8 py-6 rounded-full font-bold shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 transition-safe duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
-            arrowClassName="arrow-bounce transition-transform duration-300 group-hover:-translate-x-1"
+            arrowClassName=" transition-transform duration-300 group-hover:-translate-x-1"
             secondaryClassName="w-full sm:w-auto text-base px-8 py-6 rounded-full font-medium border-border/80 bg-background/75 hover:bg-accent hover:text-accent-foreground transition-safe duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             secondaryLabel="اعرف المزيد"
           />
@@ -72,19 +72,11 @@ export function Hero() {
 
       {/* Interactive Dashboard Mockup Column */}
       <div
-        className="landing-enter-scale lg:col-span-5 w-full max-w-md sm:max-w-lg mx-auto lg:max-w-none"
+        className=" lg:col-span-5 w-full max-w-md sm:max-w-lg mx-auto lg:max-w-none"
         style={{ ['--ld' as string]: '0.4s' } as React.CSSProperties}
       >
         <div className="relative">
-          <div
-            className="landing-float glass-card relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/82 border border-white/20 dark:border-white/10 shadow-2xl shadow-primary/10 overflow-hidden transform-gpu"
-            style={
-              {
-                ['--landing-float-dur' as string]: '6s',
-                ['--landing-float-y' as string]: '-12px',
-              } as React.CSSProperties
-            }
-          >
+          <div className="glass-card relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/82 border border-white/20 dark:border-white/10 shadow-2xl shadow-primary/10 overflow-hidden">
             {/* Window Control Header */}
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/40">
               <div className="flex items-center gap-2">
@@ -118,7 +110,7 @@ export function Hero() {
               {transactions.map((tx, i) => (
                 <div
                   key={tx.desc}
-                  className="landing-enter-right glass rounded-xl sm:rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-background/65 hover:bg-background/88 border border-border/30 hover:border-border/60 transition-safe duration-200 group"
+                  className=" glass rounded-xl sm:rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-background/65 hover:bg-background/88 border border-border/30 hover:border-border/60 transition-safe duration-200 group"
                   style={{ ['--ld' as string]: `${0.8 + i * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -143,7 +135,7 @@ export function Hero() {
 
             {/* Monthly Budget Visual Progress */}
             <div
-              className="landing-enter-fade mt-6 pt-4 border-t border-border/50 flex flex-col gap-2.5"
+              className=" mt-6 pt-4 border-t border-border/50 flex flex-col gap-2.5"
               style={{ ['--ld' as string]: '1.4s' } as React.CSSProperties}
             >
               <div className="flex items-center justify-between">

@@ -28,7 +28,7 @@ export const Portfolio = memo(function Portfolio() {
       {/* Background Layer */}
       <div className="absolute inset-0 z-0 opacity-90 pointer-events-none">
         {/* Subtle noise overlay */}
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02] mix-blend-overlay" />
+        <div className="absolute inset-0 bg-linear-to-b from-transparent to-black/20" />
       </div>
 
       <div className="max-w-7xl mx-auto px-6 md:px-12 relative z-10">
@@ -71,7 +71,7 @@ export const Portfolio = memo(function Portfolio() {
         {/* Horizontal Scroll Container */}
         <div
           ref={scrollContainerRef}
-          className="flex snap-x snap-mandatory overflow-x-auto pb-12 pt-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none items-center touch-manipulation landing-reveal is-visible"
+          className="flex snap-x snap-mandatory overflow-x-auto pb-12 pt-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none items-center touch-manipulation is-visible"
           style={{
             paddingLeft: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',
             paddingRight: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',

@@ -157,12 +157,6 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
         aria-label="فحص الأمان للتَّحقُّق البشري"
         className="group relative overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/75 p-3.5 sm:p-4 shadow-xs transition-safe duration-300 ease-out hover:border-neutral-300 hover:shadow-md dark:border-neutral-800/80 dark:bg-neutral-900/75 dark:hover:border-neutral-700"
       >
-        {/* توهج شبكي محيطي خفيف */}
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-12 left-1/2 -z-10 h-28 w-48 -translate-x-1/2 rounded-full bg-linear-to-tr from-violet-500/10 via-purple-500/10 to-indigo-500/10 blur-2xl transition-opacity duration-500 group-hover:opacity-100 dark:from-violet-500/15 dark:via-purple-500/15 dark:to-indigo-500/15"
-        />
-
         {/* رأس البطاقة ومؤشر الحالة */}
         <div className="mb-3 flex items-center justify-between gap-2 px-0.5">
           <div className="flex items-center gap-2">

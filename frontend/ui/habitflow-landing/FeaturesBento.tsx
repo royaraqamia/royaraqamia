@@ -50,7 +50,7 @@ function HabitTracker() {
         {habits.map((habit, i) => (
           <div
             key={habit.name}
-            className={`landing-reveal-item group/item rounded-xl p-3 sm:p-3.5 flex items-center justify-between border transition-safe duration-300 hover:scale-[1.01] ${
+            className={` group/item rounded-xl p-3 sm:p-3.5 flex items-center justify-between border transition-safe duration-300 hover:scale-[1.01] ${
               habit.done
                 ? 'bg-violet-500/14 border-violet-500/30 border-s-4 border-s-violet-500 shadow-xs shadow-violet-500/10'
                 : 'bg-white/5 border-white/10 border-s-4 border-s-slate-600 hover:border-slate-500'
@@ -109,7 +109,7 @@ function StreakCalendar() {
         {weekLabels.map((week, i) => (
           <div
             key={`${week}-${i}`}
-            className="landing-reveal-item space-y-1.5"
+            className=" space-y-1.5"
             style={{ ['--ld' as string]: `${0.2 + i * 0.1}s` } as React.CSSProperties}
           >
             <div className="flex items-center justify-between px-1 text-xs">
@@ -169,7 +169,7 @@ function ProgressAnalytics() {
         {progressStats.map((stat, i) => (
           <div
             key={stat.label}
-            className="landing-reveal-item rounded-xl border border-white/10 bg-white/6 p-3 text-center transition-safe duration-300 hover:border-violet-500/30 hover:bg-white/6"
+            className=" rounded-xl border border-white/10 bg-white/6 p-3 text-center transition-safe duration-300 hover:border-violet-500/30 hover:bg-white/6"
             style={{ ['--ld' as string]: `${0.3 + i * 0.1}s` } as React.CSSProperties}
           >
             <span className="text-base sm:text-xl font-bold bg-linear-to-r from-violet-300 via-purple-200 to-indigo-300 bg-clip-text text-transparent block">

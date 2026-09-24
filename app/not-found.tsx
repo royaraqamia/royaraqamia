@@ -25,7 +25,6 @@ export default function NotFound() {
           <div className="group relative w-full rounded-3xl border border-border/60 bg-card/40 p-8 shadow-2xl shadow-primary/5 transition-safe duration-500 hover:border-border/80 hover:shadow-primary/10 sm:p-12">
             {/* Elevated Icon Badge */}
             <div className="relative mx-auto mb-6 flex items-center justify-center">
-              <div className="absolute -inset-2 rounded-3xl bg-primary/20 blur-xl opacity-60 transition-safe duration-500 group-hover:opacity-90 group-hover:blur-2xl" />
               <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-primary/20 bg-background/80 text-primary shadow-inner transition-transform duration-500 ease-out group-hover:scale-105 sm:h-24 sm:w-24">
                 <svg
                   width="48"

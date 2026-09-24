@@ -14,89 +14,8 @@
    off an always-present class rather than the OS color scheme. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-@keyframes float-delayed {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-15px) rotate(-3deg);
-  }
-}
-
-@keyframes fadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Compositor-only ambient motion (transform/opacity) — replaces main-thread rAF loops */
-@keyframes hero-particle-rise {
-  0%,
-  100% {
-    transform: translateY(0);
-    opacity: 0.15;
-  }
-  50% {
-    transform: translateY(-50px);
-    opacity: 0.35;
-  }
-}
-
-@keyframes icon-float-rotate {
-  0% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-12px) rotate(5deg);
-  }
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-}
-
-@keyframes icon-float-rotate-delayed {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(-5deg);
-  }
-}
-
-@layer components {
-  /* No `will-change` here: pinning ~12 always-on layers costs GPU memory
-     for the whole page lifetime; running animations promote themselves. */
-  .hero-particle {
-    animation: hero-particle-rise var(--particle-duration, 16s) ease-in-out infinite;
-    animation-delay: var(--particle-delay, 0s);
-  }
-
-  .animate-icon-float {
-    animation: icon-float-rotate 5s ease-in-out infinite;
-  }
-
-  .animate-icon-float-delayed {
-    animation: icon-float-rotate-delayed 6s ease-in-out infinite;
-    animation-delay: 1s;
-  }
-}
+/* Decorative ambient keyframes (float, hero particles, icon float, fadeInUp)
+   were removed by ADR 0004. */
 
 .font-aref-ruqaa {
   font-family: var(--font-heading);
@@ -1063,28 +982,6 @@
   }
 }
 
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-
-  50% {
-    transform: translateY(-10px) rotate(3deg);
-  }
-}
-
-@keyframes float-delayed {
-  0%,
-  100% {
-    transform: translateY(0) rotate(0deg);
-  }
-
-  50% {
-    transform: translateY(-15px) rotate(-3deg);
-  }
-}
-
 .animate-in {
   animation-duration: 0.5s;
   animation-fill-mode: both;
@@ -1112,15 +1009,6 @@
   animation-name: slide-in-from-right-8;
 }
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-float-delayed {
-  animation: float-delayed 3.5s ease-in-out infinite;
-  animation-delay: 0.5s;
-}
-
 /* Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
   *,
@@ -1129,11 +1017,6 @@
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
-  }
-
-  .animate-float,
-  .animate-float-delayed {
-    animation: none !important;
   }
 }
 
@@ -1461,32 +1344,8 @@
   }
 }
 
-/* Arrow Bounce Animation */
-@keyframes arrow-bounce {
-  0%,
-  100% {
-    transform: translateX(0);
-  }
-
-  50% {
-    transform: translateX(-4px);
-  }
-}
-
-.arrow-bounce {
-  animation: arrow-bounce 1.5s ease-in-out infinite;
-}
-
-/* Noise Texture Overlay */
-.noise-texture::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-  opacity: 0.03;
-  pointer-events: none;
-  mix-blend-mode: overlay;
-}
+/* Noise Texture Overlay — removed (ADR 0004): the feTurbulence layer is an
+   expensive one-time raster and a per-scroll composite with mix-blend-mode. */
 
 /* Safe Area Insets for Mobile Devices */
 .safe-area-inset {
@@ -1540,9 +1399,6 @@
 /* Consolidated component styles - moved from inline <style> tags */
 
 /* Hero inline styles */
-.perspective-3d {
-  perspective: 1000px;
-}
 
 /* CTA button styles */
 .primary-cta-btn {
@@ -1563,33 +1419,8 @@
   }
 }
 
-@keyframes cta-pulse {
-  0%,
-  50%,
-  100% {
-    box-shadow:
-      0 8px 32px rgba(119, 102, 238, 0.4),
-      0 0 20px rgba(119, 102, 238, 0.2);
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  @keyframes cta-pulse {
-    0%,
-    100% {
-      box-shadow:
-        0 8px 32px rgba(119, 102, 238, 0.4),
-        0 0 20px rgba(119, 102, 238, 0.2);
-    }
-    50% {
-      box-shadow:
-        0 12px 48px rgba(119, 102, 238, 0.6),
-        0 0 40px rgba(119, 102, 238, 0.4);
-    }
-  }
-}
-.cta-glow {
-  animation: cta-pulse 2.5s ease-in-out infinite;
-}
+/* Animated CTA glow (cta-pulse) removed by ADR 0004: animating box-shadow
+   repaints the button every frame. */
 
 /* Testimonials inline styles */
 .custom-review-scrollbar::-webkit-scrollbar {
@@ -1682,27 +1513,11 @@
 
 /* Reduced Motion Overrides */
 @media (prefers-reduced-motion: reduce) {
-  .arrow-bounce,
-  .animate-float,
-  .animate-float-delayed,
-  .animate-fade-in-up {
-    animation: none !important;
-  }
-
   .btn-scale-hover:hover {
     transform: none !important;
   }
 
   .animate-in {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-
-  .animate-slide-up,
-  .animate-fade-in,
-  .css-reveal,
-  .css-reveal .landing-reveal-item {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
@@ -1716,8 +1531,7 @@
     transform: none !important;
   }
 
-  .whatsapp-pulse,
-  .cta-glow {
+  .whatsapp-pulse {
     animation: none !important;
   }
 }
@@ -1806,231 +1620,20 @@
 }
 
 /* ============================================================
-   Landing page CSS animations
-   Replaces framer-motion on public landing sections so they can
-   render as Server Components. All effects are compositor-only
-   (opacity / transform / width / height). Delays are driven by
-   the `--ld` custom property. Scroll reveal is handled by the
-   tiny client `Reveal` island toggling `.is-visible`; the
-   animation itself stays pure CSS.
+   Landing page layout helpers
+   The landing entrance and scroll-reveal animations (landing-enter-*,
+   landing-reveal*, css-reveal, landing-float) were removed by ADR 0004:
+   they gated content behind hydration and pinned a compositor layer per
+   element. `landing-grow-w/h` remain as plain sizing utilities.
    ============================================================ */
 
-@keyframes landing-fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes landing-fade-up-sm {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes landing-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes landing-scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes landing-slide-left {
-  from {
-    opacity: 0;
-    transform: translateX(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes landing-slide-right {
-  from {
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes landing-float {
-  0%,
-  100% {
-    translate: 0 0;
-  }
-  50% {
-    translate: 0 var(--landing-float-y, -12px);
-  }
-}
-
-@keyframes landing-grow-w {
-  from {
-    width: 0;
-  }
-  to {
-    width: var(--landing-target, 100%);
-  }
-}
-
-@keyframes landing-grow-h {
-  from {
-    height: 0;
-  }
-  to {
-    height: var(--landing-target, 100%);
-  }
-}
-
-/* --- Mount entrance (above-the-fold Hero) --- */
-.landing-enter-up {
-  animation: landing-fade-up 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--ld, 0s);
-}
-
-.landing-enter-up-sm {
-  animation: landing-fade-up-sm 0.6s ease-out both;
-  animation-delay: var(--ld, 0s);
-}
-
-.landing-enter-fade {
-  animation: landing-fade-in 0.6s ease-out both;
-  animation-delay: var(--ld, 0s);
-}
-
-.landing-enter-scale {
-  animation: landing-scale-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--ld, 0s);
-}
-
-.landing-enter-left {
-  animation: landing-slide-left 0.5s ease-out both;
-  animation-delay: var(--ld, 0s);
-}
-
-.landing-enter-right {
-  animation: landing-slide-right 0.5s ease-out both;
-  animation-delay: var(--ld, 0s);
-}
-
-/* --- Infinite loops (floating mockups / badges) --- */
-.landing-float {
-  animation: landing-float var(--landing-float-dur, 7s) ease-in-out infinite;
-  animation-delay: var(--ld, 0s);
-}
-
-/* --- Reveal on scroll (Reveal island toggles .is-visible; CSS animations) --- */
-.landing-reveal {
-  opacity: 0;
-  transform: var(--landing-reveal-from, translateY(24px));
-  will-change: opacity, transform;
-}
-
-.landing-reveal-up-sm {
-  --landing-reveal-from: translateY(14px);
-}
-
-.landing-reveal-fade {
-  --landing-reveal-from: none;
-}
-
-.landing-reveal-scale {
-  --landing-reveal-from: scale(0.94);
-}
-
-.landing-reveal-left {
-  --landing-reveal-from: translateX(20px);
-}
-
-.landing-reveal-right {
-  --landing-reveal-from: translateX(-20px);
-}
-
-@keyframes landing-reveal-in {
-  from {
-    opacity: 0;
-    transform: var(--landing-reveal-from, translateY(24px));
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.landing-reveal.is-visible {
-  animation: landing-reveal-in var(--landing-reveal-dur, 0.6s) cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--ld, 0s);
-}
-
-/* Children that stagger in once the parent group becomes visible */
-.landing-reveal-item {
-  opacity: 0;
-  transform: var(--landing-reveal-from, translateY(16px));
-}
-
-@keyframes landing-item-in {
-  from {
-    opacity: 0;
-    transform: var(--landing-reveal-from, translateY(16px));
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-.landing-reveal.is-visible .landing-reveal-item {
-  animation: landing-item-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--ld, 0s);
-}
-
-/*
- * Above-the-fold variant: same entrance, zero JS dependency.
- *
- * `landing-reveal` keeps content at opacity:0 until React hydrates and adds
- * `.is-visible`, so the hero's headline cannot paint before hydration —
- * LCP falls back to whatever static chrome paints first. `.css-reveal`
- * applies the identical keyframes immediately via `fill-mode: both`: the
- * hidden state lives in the animation's from-frame (plus its delay), so
- * content animates in as soon as CSS is parsed — no hydration required.
- */
-.css-reveal {
-  animation: landing-reveal-in var(--landing-reveal-dur, 0.6s) cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.css-reveal .landing-reveal-item {
-  animation: landing-item-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--ld, 0s);
-}
-
-/* Growing bars / meters inside a revealed group */
+/* --- Sizing for bars / meters (no growth animation) --- */
 .landing-grow-w {
-  width: 0;
+  width: var(--landing-target, 100%);
+}
+
+.landing-grow-h {
+  height: var(--landing-target, 100%);
 }
 
 /*
@@ -2048,49 +1651,6 @@
   contain-intrinsic-size: auto 3000px;
 }
 
-.landing-reveal.is-visible .landing-grow-w {
-  animation: landing-grow-w 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--ld, 0s);
-}
-
-.landing-grow-h {
-  height: 0;
-}
-
-.landing-reveal.is-visible .landing-grow-h {
-  animation: landing-grow-h 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-  animation-delay: var(--ld, 0s);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .landing-enter-up,
-  .landing-enter-up-sm,
-  .landing-enter-fade,
-  .landing-enter-scale,
-  .landing-enter-left,
-  .landing-enter-right,
-  .landing-float,
-  .landing-reveal,
-  .landing-reveal-up-sm,
-  .landing-reveal-fade,
-  .landing-reveal-scale,
-  .landing-reveal-left,
-  .landing-reveal-right,
-  .landing-reveal-item {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-
-  .landing-grow-w {
-    width: var(--landing-target, 100%) !important;
-  }
-
-  .landing-grow-h {
-    height: var(--landing-target, 100%) !important;
-  }
-}
-
 /* Certificate card pressed scale — CSS-only replacement for framer-motion
    animate={{ scale }}. The custom property drives the transform in the
    component's inline style. */
@@ -2098,44 +1658,7 @@
   --card-scale: 1.02;
 }
 
-/* Auth Page Performance Optimizations - CSS animations replacing motion/react */
-@keyframes card-enter {
-  from {
-    opacity: 0;
-    transform: translateY(20px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fade-in-up-delayed {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  18% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+/* Auth feedback animations (password strength, error shake, OTP) */
 @keyframes strength-bar-fill {
   from {
     transform: scaleX(0);
@@ -2174,18 +1697,6 @@
   }
 }
 
-.animate-card-enter {
-  animation: card-enter 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.animate-fade-in-up {
-  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
-}
-
-.animate-fade-in-up-delayed {
-  animation: fade-in-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
-}
-
 .animate-strength-bar {
   animation: strength-bar-fill 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
   transform-origin: right;
@@ -2201,9 +1712,6 @@
 
 /* Respect prefers-reduced-motion for auth animations */
 @media (prefers-reduced-motion: reduce) {
-  .animate-card-enter,
-  .animate-fade-in-up,
-  .animate-fade-in-up-delayed,
   .animate-strength-bar,
   .animate-shake,
   .animate-otp-scale {

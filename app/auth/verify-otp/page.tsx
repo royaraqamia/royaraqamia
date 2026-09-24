@@ -138,10 +138,9 @@ function VerifyOtpForm() {
         {isVerified ? (
           <div
             key="verified-state"
-            className="flex flex-col items-center justify-center gap-4 py-8 px-4 text-center animate-card-enter"
+            className="flex flex-col items-center justify-center gap-4 py-8 px-4 text-center"
           >
             <div className="relative flex items-center justify-center">
-              <div className="absolute inset-0 rounded-2xl bg-emerald-500/20 blur-xl animate-pulse" />
               <div className="relative size-16 rounded-2xl bg-linear-to-b from-emerald-500/20 to-emerald-500/5 border border-emerald-500/30 flex items-center justify-center shadow-[0_0_25px_rgba(16,185,129,0.2)]">
                 <CircleCheckBig
                   size={38}
@@ -162,7 +161,7 @@ function VerifyOtpForm() {
             </div>
           </div>
         ) : (
-          <div key="form-state" className="space-y-6 animate-fade-in">
+          <div key="form-state" className="space-y-6">
             <form onSubmit={handleVerify} className="space-y-5">
               <input type="hidden" name="email" value={email} />
               <input type="hidden" name="otp" value={otp} />
@@ -199,7 +198,7 @@ function VerifyOtpForm() {
               )}
 
               {state?.message && (
-                <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-2xs animate-fade-in-up">
+                <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-2xs">
                   <CircleAlert size={18} className="shrink-0 mt-0.5 text-destructive" />
                   <p role="alert" className="text-xs sm:text-sm font-medium leading-relaxed">
                     {state.message}
@@ -211,7 +210,7 @@ function VerifyOtpForm() {
                 type="submit"
                 isLoading={isPending}
                 disabled={otp.length !== 6 || isPending}
-                className="w-full h-11 text-sm font-medium gradient-primary text-white cta-glow rounded-full shadow-xs hover:scale-[1.01] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-safe duration-200 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                className="w-full h-11 text-sm font-medium gradient-primary text-white rounded-full shadow-xs hover:scale-[1.01] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-safe duration-200 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
               >
                 {isPending ? 'جاري التَّحقُّق...' : 'تحقُّق من الرَّمز'}
               </Button>
@@ -237,7 +236,7 @@ function VerifyOtpForm() {
               </form>
 
               {resendMessage && (
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium animate-fade-in">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
                   <CircleCheck size={14} className="shrink-0" />
                   <span>{resendMessage}</span>
                 </div>

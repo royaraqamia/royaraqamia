@@ -81,7 +81,7 @@ function EditorPreview() {
         {mdLines.map((line, i) => (
           <div
             key={i}
-            className="landing-reveal-item flex items-start gap-3 group/line hover:bg-neutral-900/75 rounded px-1.5 py-0.5 transition-colors"
+            className=" flex items-start gap-3 group/line hover:bg-neutral-900/75 rounded px-1.5 py-0.5 transition-colors"
             style={{ ['--ld' as string]: `${0.2 + i * 0.04}s` } as React.CSSProperties}
           >
             <span className="select-none text-neutral-600 font-mono text-[11px] w-5 text-left shrink-0 opacity-60">
@@ -166,7 +166,7 @@ function DraftsOverviewCard() {
         {draftStats.map((stat, i) => (
           <div
             key={stat.label}
-            className="landing-reveal-item p-2.5 rounded-xl hover:bg-neutral-900/75 transition-colors border border-transparent hover:border-neutral-800/60"
+            className=" p-2.5 rounded-xl hover:bg-neutral-900/75 transition-colors border border-transparent hover:border-neutral-800/60"
             style={{ ['--ld' as string]: `${0.3 + i * 0.1}s` } as React.CSSProperties}
           >
             <div className="flex items-center justify-between mb-2">
@@ -229,7 +229,7 @@ function SEOPreview() {
         {seoChecks.map((item, i) => (
           <div
             key={item.label}
-            className="landing-reveal-item flex items-center justify-between p-2 rounded-xl hover:bg-neutral-900/75 transition-colors border border-transparent hover:border-neutral-800/50"
+            className=" flex items-center justify-between p-2 rounded-xl hover:bg-neutral-900/75 transition-colors border border-transparent hover:border-neutral-800/50"
             style={{ ['--ld' as string]: `${0.3 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">

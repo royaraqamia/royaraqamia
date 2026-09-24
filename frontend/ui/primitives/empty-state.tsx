@@ -30,13 +30,7 @@ export function EmptyState({
         className
       )}
     >
-      {/* Dynamic ambient radial hover glow */}
-      <div
-        className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
-        aria-hidden="true"
-      >
-        <div className="absolute -top-20 left-1/2 -translate-x-1/2 size-48 rounded-full bg-primary/10 blur-3xl" />
-      </div>
+      {/* Dynamic ambient radial hover glow removed (ADR 0004) */}
 
       {/* Floating Glassmorphic Icon Badge Container */}
       <div className="relative mb-5 sm:mb-6 flex items-center justify-center">

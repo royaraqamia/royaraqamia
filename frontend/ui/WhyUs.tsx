@@ -28,21 +28,11 @@ function ReasonCard({ reason, index }: ReasonCardProps) {
         style={{ '--glow-color': reason.glowColor } as React.CSSProperties}
       />
 
-      {/* Subtle Corner Ambient Backlight */}
-      <div
-        className="absolute -top-12 -right-12 w-32 h-32 rounded-full opacity-0 group-hover/why:opacity-40 blur-2xl transition-opacity duration-700 pointer-events-none"
-        style={{ backgroundColor: reason.glowColor }}
-      />
-
       {/* Glass Icon Header & Badge */}
       <div className="flex items-center justify-between mb-8 sm:mb-10">
         <div
           className={`relative shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center bg-white/8 border border-white/10 shadow-inner group-hover/why:border-indigo-500/30 group-hover/why:bg-indigo-500/14 transition-[transform,border-color,background-color] duration-500 group-hover/why:scale-110 group-hover/why:-rotate-3 motion-reduce:group-hover/why:scale-100 motion-reduce:group-hover/why:rotate-0`}
         >
-          <div
-            className="absolute inset-0 opacity-0 group-hover/why:opacity-20 transition-opacity duration-500 rounded-2xl blur-sm"
-            style={{ background: reason.glowColor }}
-          />
           <Icon className="w-7 h-7 sm:w-8 sm:h-8 text-indigo-200 group-hover/why:text-white transition-colors duration-300 drop-shadow-md relative z-10" />
         </div>
 

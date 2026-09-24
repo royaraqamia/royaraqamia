@@ -1,9 +1,8 @@
 'use client';
 
-import { cloneElement, isValidElement, useEffect, useState } from 'react';
+import { cloneElement, isValidElement } from 'react';
 import { cn } from '@/frontend/shared/cn';
 import { formatGradientAlpha } from './formatGradientAlpha';
-import { useMouseSpotlight } from './useMouseSpotlight';
 
 export interface SpotlightConfig {
   /** base color, e.g. 'rgba(139,92,246,1)' */
@@ -98,9 +97,7 @@ export function BentoCard({
   description,
   icon,
   className = '',
-  delay = 0,
   as = 'div',
-  initialY = 40,
   cardClassName,
   spotlight,
   topDecor,
@@ -118,29 +115,6 @@ export function BentoCard({
   flatContent = false,
   children,
 }: BentoCardProps) {
-  const { cardRef, mousePos, handleMouseMove, handleMouseLeave } = useMouseSpotlight();
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') {
-      setIsVisible(true);
-      return;
-    }
-    const el = cardRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.1, rootMargin: '0px 0px -8% 0px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [cardRef]);
-
   const header = (
     <div className={headerClassName}>
       <div className={iconBoxClassName}>
@@ -185,10 +159,7 @@ export function BentoCard({
         )}
       </div>
       <div className={hoverOverlayClassName}>
-        <div
-          className={hoverOverlayInnerClassName}
-          style={hoverBackground(mousePos.x, mousePos.y, spotlight)}
-        />
+        <div className={hoverOverlayInnerClassName} style={hoverBackground(50, 50, spotlight)} />
       </div>
     </>
   );
@@ -196,19 +167,7 @@ export function BentoCard({
   const Tag: React.ElementType = as === 'article' ? 'article' : 'div';
 
   return (
-    <Tag
-      ref={cardRef as React.Ref<HTMLDivElement>}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      className={cn('landing-reveal', isVisible && 'is-visible', cardClassName, className)}
-      style={
-        {
-          ...restingBackground(mousePos.x, mousePos.y, spotlight),
-          ['--ld' as string]: `${delay}s`,
-          ['--landing-reveal-from' as string]: `translateY(${initialY}px)`,
-        } as React.CSSProperties
-      }
-    >
+    <Tag className={cn(cardClassName, className)} style={restingBackground(50, 50, spotlight)}>
       {content}
     </Tag>
   );

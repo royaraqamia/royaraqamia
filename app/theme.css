@@ -48,10 +48,6 @@
   --blur-2xl: 20px;
   --blur-3xl: 28px;
   --blur-4xl: 34px;
-
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-float-delayed: float-delayed 3.5s ease-in-out infinite;
-  --animate-fade-in-up: fadeInUp 1s ease-out forwards;
 }
 
 @media (max-width: 640px) {

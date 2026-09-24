@@ -85,10 +85,9 @@ export function HowItWorks() {
 
             {/* Icon Container with Glow Effect */}
             <div
-              className="landing-reveal-item relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 group-hover:border-primary/50 flex items-center justify-center mb-8 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 transition-safe duration-500"
+              className=" relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 group-hover:border-primary/50 flex items-center justify-center mb-8 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 transition-safe duration-500"
               style={{ ['--ld' as string]: `${i * 0.15 + 0.1}s` } as React.CSSProperties}
             >
-              <div className="absolute inset-0 rounded-2xl bg-primary/14 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <StepIcon
                 size={36}
                 className="text-primary relative z-10 transition-transform duration-500 group-hover:scale-110"

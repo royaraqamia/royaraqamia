@@ -27,7 +27,7 @@ export function WebDevService() {
     >
       {/* Subtle high-end texture overlay */}
       <div className="absolute inset-0 z-0 opacity-80 pointer-events-none">
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.03] mix-blend-overlay" />
+        <div className="absolute inset-0 bg-linear-to-br from-purple-500/5 via-transparent to-indigo-500/5" />
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -55,7 +55,7 @@ export function WebDevService() {
               {benefits.map((benefit, idx) => (
                 <div
                   key={idx}
-                  className="landing-reveal-item group relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/6 dark:bg-white/5 border border-white/10 dark:border-white/10 hover:border-purple-500/40 hover:bg-purple-500/8 transition-safe duration-300 ease-out shadow-xs hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5"
+                  className=" group relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/6 dark:bg-white/5 border border-white/10 dark:border-white/10 hover:border-purple-500/40 hover:bg-purple-500/8 transition-safe duration-300 ease-out shadow-xs hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5"
                   style={{ ['--ld' as string]: `${0.08 + idx * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-linear-to-br from-purple-600 to-violet-700 flex items-center justify-center shrink-0 shadow-md shadow-purple-600/20 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300">
@@ -79,7 +79,7 @@ export function WebDevService() {
               {features.map((feature, idx) => (
                 <div
                   key={idx}
-                  className="landing-reveal-item relative p-5 rounded-2xl bg-purple-950/14 border border-purple-500/15 hover:border-purple-500/40 transition-safe duration-300 group overflow-hidden hover:shadow-md hover:shadow-purple-500/10 hover:-translate-y-0.5 flex flex-col justify-between"
+                  className=" relative p-5 rounded-2xl bg-purple-950/14 border border-purple-500/15 hover:border-purple-500/40 transition-safe duration-300 group overflow-hidden hover:shadow-md hover:shadow-purple-500/10 hover:-translate-y-0.5 flex flex-col justify-between"
                   style={{ ['--ld' as string]: `${0.56 + idx * 0.12}s` } as React.CSSProperties}
                 >
                   {/* Subtle hover glow effect */}
@@ -101,7 +101,7 @@ export function WebDevService() {
           <MotionReveal from="none" className="lg:col-span-5 space-y-5 lg:sticky lg:top-28">
             {/* Pricing Card 1 */}
             <article
-              className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-safe duration-300 overflow-hidden"
+              className=" group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-safe duration-300 overflow-hidden"
               style={{ ['--ld' as string]: '0.08s' } as React.CSSProperties}
             >
               <div className="flex items-center justify-between gap-4">
@@ -131,7 +131,7 @@ export function WebDevService() {
 
             {/* Pricing Card 2 */}
             <article
-              className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-safe duration-300 overflow-hidden"
+              className=" group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-safe duration-300 overflow-hidden"
               style={{ ['--ld' as string]: '0.2s' } as React.CSSProperties}
             >
               <div className="flex items-center justify-between gap-4">
@@ -162,10 +162,7 @@ export function WebDevService() {
             </article>
 
             {/* CTA Button Link */}
-            <div
-              className="landing-reveal-item pt-2"
-              style={{ ['--ld' as string]: '0.32s' } as React.CSSProperties}
-            >
+            <div className=" pt-2" style={{ ['--ld' as string]: '0.32s' } as React.CSSProperties}>
               <a
                 href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('السَّلام عليكم، أنا مهتم بخدمة بناء المواقع والتَّطبيقات.')}`}
                 target="_blank"

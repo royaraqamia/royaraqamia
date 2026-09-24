@@ -13,12 +13,6 @@ export function PageLoader() {
 
         {/* High-Precision Kinetic Spinner Assembly */}
         <div className="relative mb-10 flex h-20 w-20 items-center justify-center sm:h-24 sm:w-24">
-          {/* Reactive Core Ambient Aura */}
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 rounded-full bg-violet-500/15 blur-xl transition-safe duration-700 ease-out group-hover:bg-violet-500/25 group-hover:blur-2xl"
-          />
-
           {/* Faint Outer Structural Track */}
           <div className="absolute inset-0 rounded-full border border-white/5 transition-colors duration-700 group-hover:border-white/10" />
 

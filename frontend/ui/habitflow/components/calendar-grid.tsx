@@ -353,7 +353,6 @@ export function CalendarGrid({
           /* High-End Empty State */
           <div className="relative overflow-hidden py-10 @min-[440px]:py-14 px-4 @min-[440px]:px-6 text-center space-y-5 @min-[440px]:space-y-6 flex flex-col items-center justify-center bg-linear-to-b from-muted/20 via-muted/5 to-transparent rounded-2xl border-2 border-dashed border-border/60">
             <div className="relative flex items-center justify-center">
-              <div className="absolute -inset-4 rounded-full bg-primary/20 blur-2xl animate-pulse motion-reduce:animate-none" />
               <div className="relative w-16 h-16 @min-[440px]:w-20 @min-[440px]:h-20 rounded-2xl @min-[440px]:rounded-3xl bg-linear-to-br from-primary/20 via-primary/10 to-background border border-primary/30 flex items-center justify-center text-primary shadow-lg ring-1 ring-primary/20">
                 <CalendarDays
                   className="w-8 h-8 @min-[440px]:w-10 @min-[440px]:h-10 opacity-90"

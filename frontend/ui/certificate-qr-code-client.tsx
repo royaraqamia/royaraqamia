@@ -62,7 +62,6 @@ export function CertificateQRCodeClient({
           className="relative z-10 flex items-center justify-center rounded-2xl border border-white/10 bg-neutral-900/90 p-3 shadow-inner"
           style={{ width: size, height: size }}
         >
-          <div className="absolute inset-0 rounded-2xl bg-linear-to-r from-cyan-500/10 to-indigo-500/10 opacity-50 blur-sm" />
           <Loader2 className="relative z-10 size-7 animate-spin text-cyan-400" />
         </div>
       </div>
@@ -79,9 +78,6 @@ export function CertificateQRCodeClient({
         className
       )}
     >
-      {/* Dynamic Ambient Glow Effect on Hover */}
-      <div className="pointer-events-none absolute -inset-px rounded-3xl bg-linear-to-r from-cyan-500/10 via-indigo-500/10 to-purple-500/10 opacity-0 blur-xl transition-opacity duration-500 group-hover:opacity-100" />
-
       {/* Top Specular Edge Highlight */}
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent" />
 

@@ -69,7 +69,7 @@ export function HowItWorks() {
 
               {/* Step Icon Container */}
               <div
-                className="landing-reveal-item relative z-10 w-20 h-20 rounded-2xl bg-linear-to-b from-primary/15 via-primary/10 to-transparent border border-primary/20 flex items-center justify-center mb-6 shadow-md shadow-primary/5 group-hover:scale-105 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/10 transition-safe duration-300"
+                className=" relative z-10 w-20 h-20 rounded-2xl bg-linear-to-b from-primary/15 via-primary/10 to-transparent border border-primary/20 flex items-center justify-center mb-6 shadow-md shadow-primary/5 group-hover:scale-105 group-hover:border-primary/40 group-hover:shadow-lg group-hover:shadow-primary/10 transition-safe duration-300"
                 style={{ ['--ld' as string]: `${i * 0.15 + 0.15}s` } as React.CSSProperties}
               >
                 <div className="absolute inset-0 rounded-2xl bg-primary/9 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

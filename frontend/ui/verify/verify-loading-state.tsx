@@ -13,7 +13,6 @@ export function VerifyLoadingState() {
       className="my-6 rounded-3xl border border-primary/20 bg-card/60 p-8 sm:p-12 text-center shadow-xl shadow-primary/5"
     >
       <div className="relative mx-auto flex size-20 items-center justify-center">
-        <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
         <div className="relative flex size-16 items-center justify-center rounded-2xl bg-linear-to-br from-primary/20 via-primary/10 to-transparent border border-primary/30 shadow-inner">
           <Loader2 className="size-8 animate-spin text-primary" />
         </div>

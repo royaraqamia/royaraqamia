@@ -145,7 +145,7 @@ function SignupForm() {
 
           {/* Animated Error Alert */}
           {message && (
-            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs animate-fade-in-up">
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs">
               <CircleAlert
                 size={20}
                 className="shrink-0 mt-0.5 text-destructive"
@@ -161,7 +161,7 @@ function SignupForm() {
           <Button
             type="submit"
             isLoading={isPending}
-            className="w-full h-11 sm:h-12 rounded-full font-medium gradient-primary text-white cta-glow shadow-md hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] active:scale-[0.99] transition-safe duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full h-11 sm:h-12 rounded-full font-medium gradient-primary text-white shadow-md hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] active:scale-[0.99] transition-safe duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
           >
             {isPending ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
           </Button>
@@ -197,7 +197,7 @@ function SignupForm() {
           </Button>
 
           {googleError && (
-            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-center animate-fade-in">
+            <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-center">
               <p role="alert" className="text-sm font-medium text-destructive">
                 {googleError}
               </p>

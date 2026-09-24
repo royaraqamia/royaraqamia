@@ -119,7 +119,7 @@ function ExpenseLogger() {
         ].map((item, i) => (
           <div
             key={item.desc + i}
-            className="landing-reveal-item group/item flex items-center justify-between rounded-xl border border-border/30 bg-card/55 px-3.5 py-2.5 transition-safe duration-300 hover:scale-[1.01] hover:border-primary/30 hover:bg-card/88 hover:shadow-md"
+            className=" group/item flex items-center justify-between rounded-xl border border-border/30 bg-card/55 px-3.5 py-2.5 transition-safe duration-300 hover:scale-[1.01] hover:border-primary/30 hover:bg-card/88 hover:shadow-md"
             style={{ ['--ld' as string]: `${0.2 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">
@@ -169,7 +169,7 @@ function CategoryChart() {
         {expenseEntries.map((entry, i) => (
           <div
             key={entry.cat}
-            className="landing-reveal-item group/bar"
+            className=" group/bar"
             style={{ ['--ld' as string]: `${0.2 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="mb-1.5 flex items-center justify-between">
@@ -240,7 +240,7 @@ function MonthlyTrend() {
             return (
               <div
                 key={months[i]}
-                className="landing-reveal-item group/col flex h-full flex-1 flex-col items-center justify-end"
+                className=" group/col flex h-full flex-1 flex-col items-center justify-end"
                 style={{ ['--ld' as string]: `${0.2 + i * 0.06}s` } as React.CSSProperties}
               >
                 {/* Tooltip on hover */}

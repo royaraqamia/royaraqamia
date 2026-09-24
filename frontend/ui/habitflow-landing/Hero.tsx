@@ -24,10 +24,10 @@ export function Hero() {
       gridClassName="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center"
     >
       {/* Main Hero Typography & Action Controls */}
-      <div className="landing-enter-up lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
+      <div className=" lg:col-span-6 xl:col-span-7 text-center lg:text-right flex flex-col items-center lg:items-start">
         {/* High-Contrast Gradient Typography */}
         <h1
-          className="landing-enter-up text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
+          className=" text-4xl xs:text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight font-arabic leading-tight mb-6 text-foreground"
           style={{ ['--ld' as string]: '0.25s' } as React.CSSProperties}
         >
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
@@ -43,7 +43,7 @@ export function Hero() {
 
         {/* Subtitle Description */}
         <h2
-          className="landing-enter-up-sm text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8 sm:mb-10 font-normal text-balance"
+          className=" text-base sm:text-lg md:text-xl text-muted-foreground leading-relaxed max-w-xl mx-auto lg:mx-0 mb-8 sm:mb-10 font-normal text-balance"
           style={{ ['--ld' as string]: '0.4s' } as React.CSSProperties}
         >
           ابنِ العادات اليوميَّة وحافظ عليها مع تتبُّع السَّلاسل والتَّقويمات البصريَّة والتَّحفيز
@@ -52,7 +52,7 @@ export function Hero() {
 
         {/* Micro-Interactive Action Buttons */}
         <div
-          className="landing-enter-up-sm flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
+          className=" flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start"
           style={{ ['--ld' as string]: '0.55s' } as React.CSSProperties}
         >
           <LandingCta
@@ -71,19 +71,11 @@ export function Hero() {
 
       {/* Interactive Dynamic App Preview Card */}
       <div
-        className="landing-enter-scale lg:col-span-6 xl:col-span-5 w-full"
+        className=" lg:col-span-6 xl:col-span-5 w-full"
         style={{ ['--ld' as string]: '0.35s' } as React.CSSProperties}
       >
         <div className="relative w-full max-w-md sm:max-w-lg mx-auto lg:max-w-none group">
-          <div
-            className="landing-float relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/92 border border-border/60 shadow-2xl shadow-primary/5 ring-1 ring-white/10 dark:ring-white/5 overflow-hidden"
-            style={
-              {
-                ['--landing-float-dur' as string]: '6s',
-                ['--landing-float-y' as string]: '-10px',
-              } as React.CSSProperties
-            }
-          >
+          <div className="relative rounded-2xl sm:rounded-3xl p-5 sm:p-7 bg-card/92 border border-border/60 shadow-2xl shadow-primary/5 ring-1 ring-white/10 dark:ring-white/5 overflow-hidden">
             {/* Top Refraction Highlight Line */}
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-foreground/15 to-transparent" />
 
@@ -128,7 +120,7 @@ export function Hero() {
               {habitData.map((habit, i) => (
                 <div
                   key={habit.name}
-                  className="landing-enter-left group/row rounded-xl p-3 bg-muted/35 hover:bg-muted/55 border border-border/40 hover:border-border/80 transition-safe duration-300"
+                  className=" group/row rounded-xl p-3 bg-muted/35 hover:bg-muted/55 border border-border/40 hover:border-border/80 transition-safe duration-300"
                   style={{ ['--ld' as string]: `${0.6 + i * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between mb-2.5">
@@ -169,7 +161,7 @@ export function Hero() {
 
             {/* Best Streak Metrics Footer */}
             <div
-              className="landing-enter-fade mt-5 pt-4 border-t border-border/40 flex items-center justify-between text-xs sm:text-sm"
+              className=" mt-5 pt-4 border-t border-border/40 flex items-center justify-between text-xs sm:text-sm"
               style={{ ['--ld' as string]: '1.1s' } as React.CSSProperties}
             >
               <div className="flex items-center gap-2 text-muted-foreground font-medium">

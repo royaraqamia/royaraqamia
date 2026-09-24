@@ -64,7 +64,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
 
   return (
     <div
-      className="w-full space-y-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/65 p-3.5 dark:border-neutral-800/80 dark:bg-neutral-900/65 sm:p-4 transition-safe duration-300 shadow-xs animate-fade-in-up"
+      className="w-full space-y-2.5 rounded-xl border border-neutral-200/80 bg-neutral-50/65 p-3.5 dark:border-neutral-800/80 dark:bg-neutral-900/65 sm:p-4 transition-safe duration-300 shadow-xs"
       dir="rtl"
     >
       {/* Header Info & Dynamic Pill Badge */}
@@ -78,7 +78,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wide transition-safe duration-300 ${tierStyle.badgeBg}`}
         >
           <span className={`h-1.5 w-1.5 rounded-full ${tierStyle.dot} animate-pulse`} />
-          <span key={label} className="animate-fade-in">
+          <span key={label} className="">
             {label}
           </span>
         </div>

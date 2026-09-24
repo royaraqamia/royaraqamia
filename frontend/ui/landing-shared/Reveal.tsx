@@ -1,69 +1,33 @@
-'use client';
-
-import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/frontend/shared/cn';
-
-const VARIANTS: Record<string, string> = {
-  up: 'landing-reveal',
-  'up-sm': 'landing-reveal landing-reveal-up-sm',
-  fade: 'landing-reveal landing-reveal-fade',
-  scale: 'landing-reveal landing-reveal-scale',
-  left: 'landing-reveal landing-reveal-left',
-  right: 'landing-reveal landing-reveal-right',
-};
 
 export interface RevealProps {
   as?: 'div' | 'li' | 'article' | 'header' | 'section' | 'ol' | 'p' | 'span';
   className?: string;
   delay?: number;
-  variant?: keyof typeof VARIANTS;
+  variant?: 'up' | 'up-sm' | 'fade' | 'scale' | 'left' | 'right';
   children?: React.ReactNode;
   style?: React.CSSProperties;
 }
 
+/**
+ * Content wrapper with no entrance animation (ADR 0004).
+ *
+ * This used to be a client island that kept its children at `opacity: 0` until
+ * an IntersectionObserver added `.is-visible`. That made above-the-fold content
+ * depend on hydration to become visible and pinned a compositor layer per
+ * wrapper. Both are gone: the props are kept for call-site compatibility, but
+ * the markup renders immediately and server-side.
+ */
 export function Reveal({
   as = 'div',
   className,
-  delay = 0,
-  variant = 'up',
   children,
   style,
   ...rest
 }: RevealProps & React.HTMLAttributes<HTMLElement>) {
-  const ref = useRef<HTMLElement>(null);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    if (typeof IntersectionObserver === 'undefined') {
-      setIsVisible(true);
-      return;
-    }
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          setIsVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.12, rootMargin: '0px 0px -10% 0px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
   const Tag = as as React.ElementType;
-
   return (
-    <Tag
-      ref={ref}
-      {...rest}
-      className={cn(VARIANTS[variant], isVisible && 'is-visible', className)}
-      style={
-        delay > 0 ? ({ ...style, ['--ld' as string]: `${delay}s` } as React.CSSProperties) : style
-      }
-    >
+    <Tag {...rest} className={cn(className)} style={style}>
       {children}
     </Tag>
   );

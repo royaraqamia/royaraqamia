@@ -328,7 +328,7 @@ export default async function DashboardPage(props: {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-slide-up">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <CsvActions start={start} end={end} categories={filterCategories} />
           <CurrencySelector currency={currency} />
@@ -342,7 +342,7 @@ export default async function DashboardPage(props: {
         </div>
       </div>
 
-      <div className="animate-slide-up stagger-2">
+      <div className=" stagger-2">
         <div className="grid gap-4 md:grid-cols-2">
           <Suspense fallback={<StatCardSkeleton />}>
             <TotalCard
@@ -363,7 +363,7 @@ export default async function DashboardPage(props: {
         <CategoryBudgetsSection userId={user.id} />
       </Suspense>
 
-      <div className="animate-slide-up stagger-3">
+      <div className=" stagger-3">
         <Suspense fallback={<SectionSkeleton className="h-28" />}>
           <InsightsSection
             userId={user.id}
@@ -379,7 +379,7 @@ export default async function DashboardPage(props: {
         <RecurringExpensesSection userId={user.id} currency={currency} />
       </Suspense>
 
-      <div className="grid gap-4 lg:grid-cols-2 animate-slide-up stagger-3">
+      <div className="grid gap-4 lg:grid-cols-2 stagger-3">
         <Card
           className="group/card card-lift"
           aria-label="رسم بياني يوضح توزيع الإنفاق حسب التصنيف"
@@ -426,7 +426,7 @@ export default async function DashboardPage(props: {
         </Card>
       </div>
 
-      <div className="animate-slide-up stagger-4">
+      <div className=" stagger-4">
         <Card className="group/card card-lift">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">المعاملات</CardTitle>

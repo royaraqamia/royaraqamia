@@ -66,7 +66,7 @@ export function HowItWorks() {
 
             {/* Icon Box with Micro-Interactions */}
             <div
-              className="landing-reveal-item relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-background border border-border/80 shadow-md group-hover:shadow-lg group-hover:border-primary/50 flex items-center justify-center mb-8 transition-safe duration-300"
+              className=" relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-background border border-border/80 shadow-md group-hover:shadow-lg group-hover:border-primary/50 flex items-center justify-center mb-8 transition-safe duration-300"
               style={{ ['--ld' as string]: `${i * 0.15 + 0.2}s` } as React.CSSProperties}
             >
               <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent group-hover:from-primary/20 transition-safe duration-300" />

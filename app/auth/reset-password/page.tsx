@@ -59,7 +59,7 @@ function ResetPasswordForm() {
 
         {message && (
           <div
-            className={`flex items-start gap-3 p-3.5 rounded-xl border transition-safe duration-200 animate-fade-in-up ${
+            className={`flex items-start gap-3 p-3.5 rounded-xl border transition-safe duration-200 ${
               isSuccessMessage(message)
                 ? 'bg-success/10 border-success/20 text-success shadow-sm shadow-success/5'
                 : 'bg-destructive/10 border-destructive/20 text-destructive shadow-sm shadow-destructive/5'
@@ -86,7 +86,7 @@ function ResetPasswordForm() {
           type="submit"
           isLoading={isPending}
           disabled={isPending}
-          className="w-full h-11 sm:h-12 font-bold text-white gradient-primary cta-glow shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-safe duration-200 rounded-full disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
+          className="w-full h-11 sm:h-12 font-bold text-white gradient-primary shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-safe duration-200 rounded-full disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
         >
           {isPending ? 'جاري الإرسال...' : 'إرسال رابط إعادة التَّعيين'}
         </Button>

@@ -75,12 +75,9 @@ export function HowItWorks() {
 
             {/* Icon Badge Container with Micro-Interactions */}
             <div
-              className="landing-reveal-item relative z-10 mb-8"
+              className=" relative z-10 mb-8"
               style={{ ['--ld' as string]: `${i * 0.18 + 0.15}s` } as React.CSSProperties}
             >
-              {/* Outer Glowing Aura on Hover */}
-              <div className="absolute -inset-2 rounded-2xl bg-linear-to-r from-primary/30 to-primary/10 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-
               <div className="relative w-20 h-20 rounded-2xl bg-card border border-border/80 flex items-center justify-center shadow-lg shadow-primary/5 group-hover:scale-110 group-hover:border-primary/50 group-hover:shadow-primary/20 transition-safe duration-500 ease-out">
                 <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-primary/10 via-transparent to-primary/5" />
                 <StepIcon

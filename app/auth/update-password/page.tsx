@@ -102,7 +102,7 @@ function UpdatePasswordForm() {
                   </label>
 
                   {doPasswordsMatch && (
-                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60 animate-fade-in">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-full border border-emerald-200/60 dark:border-emerald-800/60">
                       <CircleCheck
                         size={13}
                         fill="currentColor"
@@ -126,7 +126,7 @@ function UpdatePasswordForm() {
 
                 {showMismatch && (
                   <p
-                    className="text-xs font-medium text-destructive flex items-center gap-1.5 pt-0.5 animate-fade-in"
+                    className="text-xs font-medium text-destructive flex items-center gap-1.5 pt-0.5"
                     role="alert"
                   >
                     <CircleAlert size={14} className="shrink-0" aria-hidden="true" />
@@ -138,7 +138,7 @@ function UpdatePasswordForm() {
 
             {/* Server Error / API Response Message Banner */}
             {message && (
-              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive shadow-sm animate-fade-in-up">
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive shadow-sm">
                 <CircleAlert
                   size={20}
                   className="shrink-0 mt-0.5 text-destructive"
@@ -155,7 +155,7 @@ function UpdatePasswordForm() {
               type="submit"
               isLoading={isPending}
               disabled={showMismatch}
-              className="w-full h-12 text-sm font-bold text-white gradient-primary cta-glow rounded-full shadow-md transition-safe duration-300 ease-out hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
+              className="w-full h-12 text-sm font-bold text-white gradient-primary rounded-full shadow-md transition-safe duration-300 ease-out hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
             >
               {isPending ? 'جاري التَّحديث...' : 'تحديث كلمة المرور'}
             </Button>

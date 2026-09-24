@@ -1,6 +1,6 @@
 'use client';
 
-import { ElementType, MouseEvent, useCallback, useRef } from 'react';
+import { ElementType } from 'react';
 import { Check, ArrowRight, Code, Lightbulb, MessageCircle } from 'lucide-react';
 import { colorConfigs, type ColorKey } from './colorConfigs';
 
@@ -47,47 +47,10 @@ export function ServiceCard({ service }: { service: Service }) {
   const Icon = iconMap[service.icon]!;
   const colors = colorConfigs[service.colorKey];
 
-  // RAF-throttled mouse tracking — updates CSS custom properties on the
-  // compositor thread. The radial-gradient in the JSX uses var(--mx)/var(--my)
-  // so the browser recomposites without JS intervention.
-  const rafId = useRef(0);
-  const cardRef = useRef<HTMLElement>(null);
-
-  const handleMouseMove = useCallback(
-    ({ currentTarget, clientX, clientY }: MouseEvent<HTMLDivElement>) => {
-      cancelAnimationFrame(rafId.current);
-      rafId.current = requestAnimationFrame(() => {
-        const { left, top } = currentTarget.getBoundingClientRect();
-        cardRef.current?.style.setProperty('--mx', String(clientX - left));
-        cardRef.current?.style.setProperty('--my', String(clientY - top));
-      });
-    },
-    []
-  );
-
   return (
-    <article
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      className="group/service relative rounded-4xl p-6 sm:p-8 lg:p-9 h-full flex flex-col overflow-hidden bg-neutral-900/70 border border-white/10 transition-[transform,border-color,box-shadow] duration-500 ease-out hover:border-white/20 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60 z-10"
-      style={{
-        boxShadow: `0 0 0 0 ${service.shadowColor}`, // Fallback
-      }}
-    >
+    <article className="group/service relative rounded-4xl p-6 sm:p-8 lg:p-9 h-full flex flex-col overflow-hidden bg-neutral-900/70 border border-white/10 transition-[transform,border-color,box-shadow] duration-500 ease-out hover:border-white/20 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-black/60 z-10">
       {/* Dynamic Linear/Vercel-style Top Specular Highlight Line */}
       <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/25 to-transparent opacity-70 group-hover/service:via-white/50 transition-safe duration-500 pointer-events-none" />
-
-      {/* 
-        The Magic: Mouse-tracking spotlight background. 
-        CSS custom properties --mx/--my drive the gradient position;
-        the browser recomposites on the compositor thread without JS.
-      */}
-      <div
-        className="absolute -inset-px z-0 opacity-0 group-hover/service:opacity-100 transition-opacity duration-500 pointer-events-none mix-blend-screen rounded-4xl"
-        style={{
-          background: `radial-gradient(650px circle at var(--mx, 0px) var(--my, 0px), ${colors.gradient}25, transparent 80%)`,
-        }}
-      />
 
       <div className="relative z-10 flex flex-col h-full">
         {/* Minimalist Glass Icon Container */}

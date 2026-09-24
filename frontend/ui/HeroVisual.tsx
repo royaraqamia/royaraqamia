@@ -1,38 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { m } from 'motion/react';
 import { Zap, TrendingUp, ChartColumn, Users, Sparkle } from 'lucide-react';
 
 export function HeroVisual() {
-  const [isHoveringDashboard, setIsHoveringDashboard] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    let resizeTimer: ReturnType<typeof setTimeout>;
-    const checkMobile = () => setIsMobile(window.innerWidth < 1024);
-    checkMobile();
-    const debouncedResize = () => {
-      clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(checkMobile, 150);
-    };
-    window.addEventListener('resize', debouncedResize);
-    return () => {
-      window.removeEventListener('resize', debouncedResize);
-      clearTimeout(resizeTimer);
-    };
-  }, []);
-
   return (
     <div
       role="region"
       aria-label="معاينة لوحة التحكم التحليلية التفاعلية"
-      className="relative w-full max-w-xl lg:max-w-3xl xl:max-w-4xl mx-auto perspective-distant select-none p-2 sm:p-4"
-      onMouseEnter={() => setIsHoveringDashboard(true)}
-      onMouseLeave={() => setIsHoveringDashboard(false)}
+      className="relative w-full max-w-xl lg:max-w-3xl xl:max-w-4xl mx-auto select-none p-2 sm:p-4"
     >
       {/* Floating icon - Top Right (Lightning bolt) */}
-      <div className="animate-icon-float absolute -top-4 -right-2 sm:-top-6 sm:-right-4 lg:top-2 lg:right-2 z-30 w-12 h-12 lg:w-16 lg:h-16">
+      <div className=" absolute -top-4 -right-2 sm:-top-6 sm:-right-4 lg:top-2 lg:right-2 z-30 w-12 h-12 lg:w-16 lg:h-16">
         <div className="relative w-full h-full rounded-2xl bg-linear-to-br from-violet-500 via-purple-600 to-indigo-600 flex items-center justify-center shadow-2xl border border-white/20 transition-transform hover:scale-105 duration-300">
           <Zap
             className="w-6 h-6 lg:w-8 lg:h-8 text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.3)]"
@@ -42,25 +20,7 @@ export function HeroVisual() {
       </div>
 
       {/* Main Dashboard mockup */}
-      <m.div
-        className="relative bg-neutral-950/95 rounded-3xl border border-white/10 z-10 overflow-hidden shadow-[0_32px_96px_-16px_rgba(0,0,0,0.8),0_0_1px_1px_rgba(255,255,255,0.05)] group/dashboard"
-        animate={
-          !isMobile
-            ? {
-                rotateX: isHoveringDashboard ? 2.5 : 5,
-                rotateY: isHoveringDashboard ? -1.5 : -5,
-                scale: isHoveringDashboard ? 1.02 : 1,
-              }
-            : {}
-        }
-        transition={{
-          duration: 0.8,
-          ease: 'easeOut',
-        }}
-        style={{
-          transformStyle: 'preserve-3d',
-        }}
-      >
+      <div className="relative bg-neutral-950/95 rounded-3xl border border-white/10 z-10 overflow-hidden shadow-[0_32px_96px_-16px_rgba(0,0,0,0.8),0_0_1px_1px_rgba(255,255,255,0.05)] group/dashboard">
         {/* Glossy sheen overlay */}
         <div className="absolute inset-0 bg-linear-to-tr from-white/2 via-white/8 to-transparent pointer-events-none transition-opacity duration-500 group-hover/dashboard:opacity-100 opacity-60" />
 
@@ -126,25 +86,13 @@ export function HeroVisual() {
                       key={i}
                       className="flex-1 flex flex-col items-center h-full justify-end group/bar"
                     >
-                      <m.div
-                        className="w-full max-w-4.5 rounded-t-md bg-linear-to-t from-purple-600/80 via-violet-500/60 to-purple-400/90 relative origin-bottom shadow-[0_0_12px_rgba(168,85,247,0.2)] group-hover/bar:brightness-125 transition-safe"
-                        initial={{ scaleY: (v / 100) * 0.7 }}
-                        animate={
-                          isHoveringDashboard
-                            ? { scaleY: [(v / 100) * 0.7, v / 100, (v / 100) * 0.7] }
-                            : { scaleY: (v / 100) * 0.7 }
-                        }
-                        transition={{
-                          duration: 2,
-                          repeat: isHoveringDashboard ? Infinity : 0,
-                          delay: i * 0.1,
-                          ease: 'easeInOut',
-                        }}
-                        style={{ height: '100%' }}
+                      <div
+                        className="w-full max-w-4.5 rounded-t-md bg-linear-to-t from-purple-600/80 via-violet-500/60 to-purple-400/90 relative shadow-[0_0_12px_rgba(168,85,247,0.2)] group-hover/bar:brightness-125 transition-safe"
+                        style={{ height: `${v}%` }}
                       >
                         {/* Light cap indicator */}
                         <div className="absolute top-0 inset-x-0 h-0.5 bg-white/60 rounded-t-full" />
-                      </m.div>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -206,11 +154,7 @@ export function HeroVisual() {
                   </svg>
 
                   {/* Interactive animated focal point */}
-                  <m.div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_0_15px_rgba(168,85,247,1)] border-2 border-purple-500"
-                    animate={isHoveringDashboard ? { x: [-24, 24, -24] } : {}}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                  />
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-white rounded-full shadow-[0_0_15px_rgba(168,85,247,1)] border-2 border-purple-500" />
                 </div>
               </div>
             </div>
@@ -275,12 +219,9 @@ export function HeroVisual() {
                       {item.label}
                     </p>
                     <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                      <m.div
-                        className={`h-full ${item.bg.replace('/15', '/80')} rounded-full origin-left`}
-                        initial={{ scaleX: 0 }}
-                        whileInView={{ scaleX: item.progress / 100 }}
-                        viewport={{ once: true }}
-                        transition={{ duration: 1, delay: idx * 0.1, ease: 'easeOut' }}
+                      <div
+                        className={`h-full ${item.bg.replace('/15', '/80')} rounded-full`}
+                        style={{ width: `${item.progress}%` }}
                       />
                     </div>
                   </div>
@@ -289,10 +230,10 @@ export function HeroVisual() {
             </div>
           </div>
         </div>
-      </m.div>
+      </div>
 
       {/* Floating indicator - Bottom Left */}
-      <div className="animate-icon-float-delayed absolute -bottom-4 -left-2 sm:-bottom-5 sm:-left-4 lg:bottom-2 lg:left-2 z-30 w-14 h-14 lg:w-18 lg:h-18">
+      <div className=" absolute -bottom-4 -left-2 sm:-bottom-5 sm:-left-4 lg:bottom-2 lg:left-2 z-30 w-14 h-14 lg:w-18 lg:h-18">
         <div className="relative w-full h-full rounded-full bg-linear-to-br from-indigo-500 via-purple-600 to-accent flex items-center justify-center shadow-2xl border border-white/20 transition-transform hover:scale-105 duration-300">
           <div className="w-1/2 h-1/2 border-2 border-white/80 rounded-full flex items-center justify-center shadow-inner">
             <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,1)] animate-ping" />

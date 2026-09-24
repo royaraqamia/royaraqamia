@@ -165,7 +165,6 @@ export const LinkQrModal = memo(function LinkQrModal({
               ) : (
                 <div className="flex flex-col items-center justify-center gap-3 py-10 animate-in fade-in-50 duration-200">
                   <div className="relative flex items-center justify-center">
-                    <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
                     <Loader2
                       className="relative size-6 animate-spin text-primary"
                       aria-hidden="true"

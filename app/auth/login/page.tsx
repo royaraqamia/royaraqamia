@@ -100,7 +100,7 @@ function LoginForm() {
         <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
 
         {message && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs select-none animate-fade-in-up">
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs select-none">
             <CircleAlert size={18} className="shrink-0 mt-0.5 text-destructive" />
             <p
               id="login-error"
@@ -115,7 +115,7 @@ function LoginForm() {
         <Button
           type="submit"
           isLoading={isPending}
-          className="w-full h-11 sm:h-12 rounded-full font-medium text-sm sm:text-base gradient-primary text-white cta-glow transition-safe duration-300 ease-out hover:scale-[1.01] active:scale-[0.985] shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer select-none"
+          className="w-full h-11 sm:h-12 rounded-full font-medium text-sm sm:text-base gradient-primary text-white transition-safe duration-300 ease-out hover:scale-[1.01] active:scale-[0.985] shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer select-none"
         >
           {isPending ? 'جاري الدُّخول...' : 'تسجيل الدُّخول'}
         </Button>
@@ -159,7 +159,7 @@ function LoginForm() {
         </Button>
 
         {googleError && (
-          <p className="text-xs sm:text-sm text-destructive text-center font-medium mt-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20 animate-fade-in">
+          <p className="text-xs sm:text-sm text-destructive text-center font-medium mt-2 p-2.5 rounded-lg bg-destructive/10 border border-destructive/20">
             {googleError}
           </p>
         )}

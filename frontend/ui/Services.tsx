@@ -85,11 +85,6 @@ export function Services() {
       {/* Modern Architectural Dot/Grid Pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f29371a_1px,transparent_1px),linear-gradient(to_bottom,#1f29371a_1px,transparent_1px)] bg-size-[3.5rem_3.5rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_35%,#000_70%,transparent_100%)] pointer-events-none" />
 
-      {/* Tactile Noise Overlay */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none mix-blend-screen z-0">
-        <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.025] mix-blend-overlay" />
-      </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 relative z-10">
         {/* Section Header */}
         <MotionReveal
@@ -114,7 +109,7 @@ export function Services() {
           {services.map((service, index) => (
             <div
               key={index}
-              className="landing-reveal-item h-full flex flex-col transition-transform duration-300 ease-out hover:scale-[1.01]"
+              className=" h-full flex flex-col transition-transform duration-300 ease-out hover:scale-[1.01]"
               style={{ ['--ld' as string]: `${0.15 + index * 0.12}s` } as React.CSSProperties}
             >
               <ServiceCard service={service} />

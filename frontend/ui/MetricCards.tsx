@@ -83,22 +83,11 @@ export function MetricCards() {
             return (
               <article
                 key={index}
-                className={`landing-reveal-item group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-[transform,border-color] duration-500 ease-out overflow-hidden bg-neutral-900/95 border border-white/10 z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
-                style={
-                  {
-                    ['--ld' as string]: `${index * 0.2}s`,
-                    ['--landing-reveal-from' as string]: 'translateY(50px) scale(0.95)',
-                  } as React.CSSProperties
-                }
+                className={` group/card relative rounded-3xl p-6 sm:p-8 lg:p-10 xl:p-12 transition-[transform,border-color] duration-500 ease-out overflow-hidden bg-neutral-900/95 border border-white/10 z-10 hover:-translate-y-2 hover:shadow-2xl ${colors.borderHover} ${colors.shadow}`}
               >
                 {/* Premium Ambient Background Tint on Hover */}
                 <div
                   className={`absolute inset-0 transition-colors duration-500 -z-10 ${colors.bgHover}`}
-                />
-
-                {/* Soft Corner Glow Spotlight */}
-                <div
-                  className={`absolute -top-24 -right-24 w-48 h-48 rounded-full ${colors.glowBg} blur-3xl opacity-0 group-hover/card:opacity-100 transition-opacity duration-700 pointer-events-none`}
                 />
 
                 <div className="flex flex-col h-full relative z-10">

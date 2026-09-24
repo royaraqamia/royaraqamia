@@ -11,12 +11,6 @@ export default function AuthErrorPage() {
       >
         {/* Visual Error Badge with Multi-Layered Glow Effect */}
         <div className="relative group flex items-center justify-center">
-          {/* Ambient Background Radial Glow */}
-          <div
-            className="absolute -inset-2 rounded-full bg-red-500/15 dark:bg-red-500/25 blur-xl opacity-70 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            aria-hidden="true"
-          />
-
           {/* Glassmorphic Icon Badge */}
           <div className="relative flex items-center justify-center size-20 rounded-2xl bg-red-500/10 dark:bg-red-500/20 border border-red-500/20 dark:border-red-500/30 shadow-xs transition-transform duration-300 ease-out group-hover:scale-105">
             <svg

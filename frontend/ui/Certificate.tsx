@@ -1,77 +1,12 @@
 'use client';
 
-import { useRef, useState, useCallback, MouseEvent, TouchEvent } from 'react';
 import { ShieldCheck, BadgeCheck, Share2 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import { MotionReveal } from './MotionReveal';
 
 export function Certificate() {
-  const sectionRef = useRef<HTMLElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  const [hasInteracted, setHasInteracted] = useState(false);
-  const [isPressed, setIsPressed] = useState(false);
-
-  // RAF-throttled pointer tracking — updates CSS custom properties on the
-  // compositor thread. CSS transitions handle smoothing instead of JS springs.
-  const rafId = useRef(0);
-  const updatePointerPosition = useCallback(
-    (clientX: number, clientY: number, currentTarget: HTMLElement) => {
-      cancelAnimationFrame(rafId.current);
-      rafId.current = requestAnimationFrame(() => {
-        const { left, top, width, height } = currentTarget.getBoundingClientRect();
-        const x = Math.max(0, Math.min(1, (clientX - left) / width));
-        const y = Math.max(0, Math.min(1, (clientY - top) / height));
-        const el = cardRef.current;
-        if (el) {
-          el.style.setProperty('--mx', String(x));
-          el.style.setProperty('--my', String(y));
-        }
-      });
-      if (!hasInteracted) setHasInteracted(true);
-    },
-    [hasInteracted]
-  );
-
-  const handleMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    updatePointerPosition(e.clientX, e.clientY, e.currentTarget);
-  };
-
-  const handleMouseLeave = useCallback(() => {
-    setIsPressed(false);
-    const el = cardRef.current;
-    if (el) {
-      el.style.setProperty('--mx', '0.5');
-      el.style.setProperty('--my', '0.5');
-    }
-  }, []);
-
-  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
-    setIsPressed(true);
-    const touch = e.touches[0];
-    if (touch) {
-      updatePointerPosition(touch.clientX, touch.clientY, e.currentTarget);
-    }
-  };
-
-  const handleTouchMove = (e: TouchEvent<HTMLDivElement>) => {
-    const touch = e.touches[0];
-    if (touch) {
-      updatePointerPosition(touch.clientX, touch.clientY, e.currentTarget);
-    }
-  };
-
-  const handleTouchEnd = useCallback(() => {
-    setIsPressed(false);
-    const el = cardRef.current;
-    if (el) {
-      el.style.setProperty('--mx', '0.5');
-      el.style.setProperty('--my', '0.5');
-    }
-  }, []);
   return (
     <section
-      ref={sectionRef}
       id="certificate"
       aria-labelledby="certificate-heading"
       className="py-20 sm:py-28 lg:py-36 bg-[#040711] relative overflow-hidden select-none"
@@ -101,56 +36,13 @@ export function Certificate() {
 
         {/* 3D Certificate Visual Stage */}
         <MotionReveal from="translateY(50px) scale(0.96)" duration={0.8}>
-          <div className="flex flex-col items-center justify-center perspective-[2000px] gap-6">
+          <div className="flex flex-col items-center justify-center gap-6">
             {/* Outer Glass Frame */}
             <div className="w-full max-w-4xl p-2 sm:p-3 md:p-4 rounded-3xl md:rounded-[2.5rem] bg-slate-900/55 border border-white/10 shadow-[0_30px_100px_-20px_rgba(0,0,0,0.9)] hover:shadow-[0_30px_100px_-10px_rgba(147,51,234,0.25)] transition-shadow duration-700">
-              {/* Interactive 3D Card — CSS custom properties drive rotation and
-                glare. Smoothing is handled by CSS transitions (compositor thread)
-                instead of JS spring physics (main thread). */}
-              <div
-                ref={cardRef}
-                onMouseMove={handleMouseMove}
-                onMouseLeave={handleMouseLeave}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
-                style={
-                  {
-                    // Default to center (0.5, 0.5) — CSS calc maps to 0deg rotation
-                    '--mx': 0.5,
-                    '--my': 0.5,
-                    transformStyle: 'preserve-3d',
-                    transform:
-                      'rotateX(calc((0.5 - var(--my)) * 20deg)) rotateY(calc((var(--mx) - 0.5) * 20deg)) scale(var(--card-scale, 1))',
-                    transition: 'transform 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
-                  } as React.CSSProperties
-                }
-                className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/15 bg-slate-950/88 cursor-grab active:cursor-grabbing group touch-pan-y focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-[#040711]"
-                data-pressed={isPressed || undefined}
-                tabIndex={0}
-                role="region"
-                aria-label="معاينة ثلاثيَّة الأبعاد لشهادة الإتمام"
-              >
-                {/* Dynamic Glare Overlay — gradient position driven by CSS custom
-                  properties, recomposited on compositor thread only. */}
-                <div
-                  className={`absolute inset-0 z-20 pointer-events-none mix-blend-overlay transition-opacity duration-300 ${
-                    isPressed ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                  }`}
-                  style={{
-                    background:
-                      'radial-gradient(circle at calc(var(--mx) * 100%) calc(var(--my) * 100%), rgba(255,255,255,0.45) 0%, transparent 60%)',
-                  }}
-                />
-
-                {/* Glowing Active Ring Border */}
-                <div
-                  className={`absolute inset-0 z-10 pointer-events-none border-2 rounded-2xl md:rounded-3xl transition-[border-color,box-shadow] duration-500 ${
-                    isPressed
-                      ? 'border-purple-400/60 shadow-[inset_0_0_60px_rgba(168,85,247,0.25)]'
-                      : 'border-purple-500/0 group-hover:border-purple-400/40 group-hover:shadow-[inset_0_0_60px_rgba(168,85,247,0.15)]'
-                  }`}
-                />
+              {/* Certificate card */}
+              <div className="relative w-full rounded-2xl md:rounded-3xl overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)] border border-white/15 bg-slate-950/88">
+                {/* Ring Border */}
+                <div className="absolute inset-0 z-10 pointer-events-none border-2 rounded-2xl md:rounded-3xl border-purple-500/0" />
 
                 {/* Certificate Image Component */}
                 <LazyImage
