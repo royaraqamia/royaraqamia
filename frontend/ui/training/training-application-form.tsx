@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import type { z } from 'zod';
 
 import { Button } from '@/frontend/ui/primitives/button';
@@ -157,11 +157,7 @@ export function TrainingApplicationForm({ onSubmitted }: TrainingApplicationForm
           disabled={isSubmitting}
           className="group relative overflow-hidden w-full h-14 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold text-base shadow-xl shadow-purple-600/25 hover:shadow-purple-600/40 hover:scale-[1.005] active:scale-[0.995] transition-safe duration-300 flex items-center justify-center gap-3 cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          <span>{isSubmitting ? 'جارٍ الإرسال...' : 'أرسل الطلب'}</span>
-          <ArrowLeft
-            className="w-5 h-5 shrink-0 transition-transform group-hover:-translate-x-1 duration-300"
-            aria-hidden="true"
-          />
+          <span>{isSubmitting ? 'جاري الإرسال...' : 'أرسِل طلب التَّسجيل'}</span>
         </Button>
       </div>
     </form>
