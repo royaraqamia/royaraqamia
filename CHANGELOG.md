@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.26.1] - 2026-09-24
+
+### Changed
+- guard the legacy polyfill's nomodule gate instead of dropping the chunk
+- audit the landing page client-JS graph (issue #128)
+- re-record the shipped-weight baseline after the flattening
+- establish the runtime budget alongside the weight budget (ADR 0004)
+- remove decorative motion and glow filters (ADR 0004)
+- Potential fix for code scanning alert no. 34: Double escaping or unescaping
+- Potential fix for code scanning alert no. 35: Incomplete URL substring sanitization
+
 ## [1.26.0] - 2026-09-24
 
 ### Changed
