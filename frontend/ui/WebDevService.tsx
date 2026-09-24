@@ -56,7 +56,7 @@ export function WebDevService() {
                     <Check
                       className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                       aria-hidden="true"
-                      fill="currentColor"
+                      strokeWidth={3}
                     />
                   </div>
                   <div className="flex flex-1 flex-col justify-center min-w-0">
@@ -79,16 +79,19 @@ export function WebDevService() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="text-start min-w-0">
-                    <h3 className="text-lg sm:text-xl font-bold text-foreground">موقع Web</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground">Website</h3>
                     <p className="text-xs sm:text-sm text-foreground/60 mt-1">بدون Backend</p>
                   </div>
                 </div>
-                <div className="text-end shrink-0">
+                <div className="text-end shrink-0 flex flex-col items-end">
+                  <span className="text-[11px] sm:text-xs font-medium text-foreground/50">
+                    يبدأ من
+                  </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    $100
+                    300$
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
-                    اشتراك شهري لمدَّة 3-6 أشهر
+                    الدَّفع بالتَّقسيط مُتاح
                   </div>
                 </div>
               </div>
@@ -102,18 +105,47 @@ export function WebDevService() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="text-start min-w-0">
-                    <h3 className="text-lg sm:text-xl font-bold text-foreground">
-                      تطبيق Web أو Mobile
-                    </h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground">Application</h3>
                     <p className="text-xs sm:text-sm text-foreground/60 mt-1">مع Backend</p>
                   </div>
                 </div>
-                <div className="text-end shrink-0">
+                <div className="text-end shrink-0 flex flex-col items-end">
+                  <span className="text-[11px] sm:text-xs font-medium text-foreground/50">
+                    يبدأ من
+                  </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    $200
+                    600$
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
-                    اشتراك شهري لمدَّة 3-6 أشهر
+                    الدَّفع بالتَّقسيط مُتاح
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            {/* Pricing Card 3: Employment / Retainer */}
+            <article
+              className=" group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-safe duration-300 overflow-hidden"
+              style={{ ['--ld' as string]: '0.26s' } as React.CSSProperties}
+            >
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <div className="text-start min-w-0">
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground">
+                      توظيف رؤيَة رقَميَّة
+                    </h3>
+                    <p className="text-xs sm:text-sm text-foreground/60 mt-1">دوام يومي</p>
+                  </div>
+                </div>
+                <div className="text-end shrink-0 flex flex-col items-end">
+                  <span className="text-[11px] sm:text-xs font-medium text-foreground/50">
+                    شهريًّا
+                  </span>
+                  <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
+                    100$
+                  </div>
+                  <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
+                    تطوير وإدارة مشاريعك
                   </div>
                 </div>
               </div>
