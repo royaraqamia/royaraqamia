@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.26.0] - 2026-09-24
+
+### Changed
+- render one flat path for every device; remove per-frame effects
+- v1.25.12 [skip ci]
+- stop Tailwind scanning agent-skill and docs sources
+- add shipped-weight baseline and budget guard
+
+### Added
+- add lite mode for low-end devices
+
 ## [1.25.12] - 2026-09-23
 
 ### Changed
