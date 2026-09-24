@@ -1,7 +1,6 @@
 import { MotionReveal } from './MotionReveal';
-import { AnimatedCounter } from './AnimatedCounter';
 
-// --- Elite Feature: Animated Counter (client island) ---
+// --- Metric data ---
 
 // Separated numeric value and suffix for the animation logic
 const metrics = [
@@ -92,26 +91,28 @@ export function MetricCards() {
 
                 <div className="flex flex-col h-full relative z-10">
                   {/* Data & Editorial Content */}
-                  <div className="mt-auto text-start">
+                  <div className="mt-auto flex flex-col items-center text-center">
                     {/* The Number Container with Dual-Layer Hover Gradient Transition */}
-                    <div className="relative text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-none mb-6 transition-transform duration-500 ease-out group-hover/card:translate-x-1 sm:group-hover/card:translate-x-2 rtl:group-hover/card:-translate-x-1 rtl:sm:group-hover/card:-translate-x-2">
+                    <div className="relative text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-none mb-6 transition-transform duration-500 ease-out group-hover/card:scale-105">
                       {/* Base White Display Number */}
-                      <span className="text-white transition-opacity duration-500 group-hover/card:opacity-0 block">
-                        <AnimatedCounter value={metric.numericValue} suffix={metric.suffix} />
+                      <span className="text-white transition-opacity duration-500 group-hover/card:opacity-0 block tabular-nums">
+                        {metric.numericValue}
+                        {metric.suffix}
                       </span>
 
                       {/* Hover Gradient Text Reveal Layer */}
                       <span
-                        className={`absolute inset-0 bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent opacity-0 transition-opacity duration-500 group-hover/card:opacity-100 pointer-events-none block`}
+                        className={`absolute inset-0 bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent opacity-0 transition-opacity duration-500 group-hover/card:opacity-100 pointer-events-none block tabular-nums`}
                         aria-hidden="true"
                       >
-                        <AnimatedCounter value={metric.numericValue} suffix={metric.suffix} />
+                        {metric.numericValue}
+                        {metric.suffix}
                       </span>
                     </div>
 
                     {/* Dynamic Gradient Accent Divider */}
                     <div
-                      className={`w-12 h-1 rounded-full mb-6 transition-[width] duration-500 ease-out group-hover/card:w-24 bg-linear-to-r ${colors.dividerGradient}`}
+                      className={`w-12 h-1 rounded-full mx-auto mb-6 transition-[width] duration-500 ease-out group-hover/card:w-24 bg-linear-to-r ${colors.dividerGradient}`}
                       aria-hidden="true"
                     />
 
