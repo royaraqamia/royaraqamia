@@ -1,4 +1,4 @@
-import { ArrowLeft, Copy } from 'lucide-react';
+import { Copy } from 'lucide-react';
 import { ScanLine, Lock, QrCode, CheckCircle, FileText } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
 import Link from 'next/link';
@@ -67,7 +67,6 @@ export function VerifySection() {
                   <div className="flex flex-col items-center gap-6">
                     {/* Futuristic QR Display */}
                     <div className="relative group/qr">
-                      <div className="absolute -inset-1.5 bg-linear-to-r from-[#7766EE] to-[#A78BFA] rounded-2xl blur opacity-25 group-hover/qr:opacity-50 transition duration-300" />
                       <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-slate-950/90 border border-indigo-500/30 flex items-center justify-center shadow-lg group-hover/qr:scale-105 transition-transform duration-300">
                         <QrCode className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-400 group-hover/qr:text-indigo-300 transition-colors" />
                       </div>
@@ -159,7 +158,6 @@ export function VerifySection() {
               <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out pointer-events-none" />
 
               <span>الانتقال إلى التَّحقُّق</span>
-              <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 transition-transform duration-300 group-hover:-translate-x-1" />
             </Link>
           </div>
         </ScrollAnimation>

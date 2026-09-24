@@ -38,28 +38,6 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --font-sans: var(--font-arabic);
-  /* Blur budget: the remaining `blur-*` (filter) utilities read this scale, so
-     capping the tokens bounds the fill-rate of the decorative glow orbs that
-     still use them. Backdrop blurs are gone site-wide (ADR 0004). */
-  --blur-sm: 6px;
-  --blur-md: 8px;
-  --blur-lg: 12px;
-  --blur-xl: 14px;
-  --blur-2xl: 20px;
-  --blur-3xl: 28px;
-  --blur-4xl: 34px;
-}
-
-@media (max-width: 640px) {
-  :root {
-    --blur-sm: 3px;
-    --blur-md: 4px;
-    --blur-lg: 6px;
-    --blur-xl: 7px;
-    --blur-2xl: 10px;
-    --blur-3xl: 14px;
-    --blur-4xl: 17px;
-  }
 }
 
 /* Compositor-only transition (ADR 0004). Replaces `transition-all`, which

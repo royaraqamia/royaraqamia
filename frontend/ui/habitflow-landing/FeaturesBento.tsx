@@ -207,7 +207,7 @@ function ProgressAnalytics() {
               } as React.CSSProperties
             }
           >
-            <div className="absolute top-0 right-0 h-full w-2 bg-white/65 blur-[2px] rounded-full" />
+            <div className="absolute top-0 right-0 h-full w-2 bg-white/65 rounded-full" />
           </div>
         </div>
         <div className="flex items-center justify-between text-[11px] text-slate-500 font-medium pt-0.5">

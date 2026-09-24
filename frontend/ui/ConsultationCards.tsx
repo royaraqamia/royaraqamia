@@ -1,4 +1,4 @@
-import { Mic, CheckCircle, Clock, Sparkle, ArrowLeft } from 'lucide-react';
+import { Mic, CheckCircle, Clock, Sparkle } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 
@@ -41,16 +41,9 @@ export function ConsultationCards() {
 
         {/* Main Consultation Card */}
         <ScrollAnimation animation="slide-up" duration={0.8} delay={0.2}>
-          <div className="relative group">
-            {/* Dynamic Glow Halo on Hover — scale-only transition avoids
-                re-rasterizing the three box-shadows on every opacity frame. */}
-            <div
-              className="absolute -inset-0.5 sm:-inset-1 rounded-3xl pointer-events-none shadow-[0_0_32px_6px_rgba(147,51,234,0.35),0_0_56px_18px_rgba(124,58,237,0.22),0_0_80px_28px_rgba(79,70,229,0.18)] transition-transform duration-700 ease-out scale-90 group-hover:scale-100"
-              aria-hidden="true"
-            />
-
+          <div className="relative">
             {/* Glassmorphic Container Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-linear-to-b from-purple-950/40 via-slate-950/80 to-slate-950/95 border border-purple-500/30 shadow-[0_25px_50px_-12px_rgba(124,58,237,0.25),inset_0_1px_1px_rgba(255,255,255,0.1)] transition-[border-color] duration-500 hover:border-purple-400/50">
+            <div className="relative rounded-3xl overflow-hidden bg-linear-to-b from-purple-950/40 via-slate-950/80 to-slate-950/95 border border-purple-500/30 transition-[border-color] duration-500 hover:border-purple-400/50">
               {/* Vibrant Accent Top Strip */}
               <div className="h-1 w-full bg-linear-to-r from-transparent via-purple-500 to-transparent opacity-80" />
 
@@ -107,7 +100,6 @@ export function ConsultationCards() {
                   >
                     <Button className="w-full h-14 sm:h-16 text-lg sm:text-xl font-bold text-white rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 transition-safe duration-300 ease-out hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] shadow-xl shadow-purple-900/40 cursor-pointer border-0 active:scale-[0.98] flex items-center justify-center gap-3 min-h-11">
                       <span>احجز استشارتك الآن</span>
-                      <ArrowLeft className="w-5 h-5 text-purple-200 group-hover/btn:-translate-x-1.5 transition-transform duration-300 shrink-0" />
                     </Button>
                   </a>
                 </div>

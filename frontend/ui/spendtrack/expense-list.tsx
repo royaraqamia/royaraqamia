@@ -133,11 +133,6 @@ function ExpenseRow({
               style={{ backgroundColor: expense.categories.colorHex }}
               aria-hidden="true"
             />
-            <span
-              className="absolute size-3 rounded-full blur-[2px] opacity-40 transition-opacity duration-300 group-hover/row:opacity-80"
-              style={{ backgroundColor: expense.categories.colorHex }}
-              aria-hidden="true"
-            />
           </div>
         ) : (
           <div className="size-3 rounded-full bg-muted shrink-0" aria-hidden="true" />

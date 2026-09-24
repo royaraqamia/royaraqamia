@@ -194,7 +194,6 @@ export function DashboardShell({
                 animate={{
                   opacity: activeDate !== todayDate ? 1 : 0,
                   scale: activeDate !== todayDate ? 1 : 0.8,
-                  filter: activeDate !== todayDate ? 'blur(0px)' : 'blur(4px)',
                 }}
                 transition={{ duration: 0.3, ease: 'easeOut' }}
                 className={activeDate !== todayDate ? '' : 'pointer-events-none'}
