@@ -24,7 +24,8 @@ so the chunk cannot grow unnoticed.
 
 Images are out of scope here; they are handled by the image-compression ticket
 in the same program. Runtime metrics (INP, long tasks, dropped frames) are a
-separate concern — this tool measures transferred weight only.
+separate concern — this tool measures transferred weight only. See
+[Runtime budget](#runtime-budget) for the field measurement that covers them.
 
 ## Commands
 
@@ -85,6 +86,53 @@ so the docs cannot drift from the guard.
 measured values so the win cannot silently leak back. Reductions never trip the
 budget; only growth does, which is the point.
 
+## Runtime budget
+
+Shipped weight is only half the goal: the program exists to make the site _feel_
+instant, and `perf:check` cannot see that axis (ADR 0004). The runtime budget is
+the field measurement that can, taken from real users rather than build
+artifacts.
+
+| Metric | Ceiling | What it covers                                              |
+| ------ | ------- | ----------------------------------------------------------- |
+| INP    | 200 ms  | Interaction responsiveness — the metric this program is for |
+| LCP    | 2500 ms | Largest Contentful Paint — perceived load                   |
+| CLS    | 0.1     | Layout stability                                            |
+| TTFB   | 800 ms  | Server response — a diagnostic when LCP regresses           |
+
+The ceilings are the Web Vitals "good" thresholds. `perf/runtime-budget.json` is
+the single source of truth: it holds the ceilings, the aggregation (`p75`), the
+window (`7d`) and the recorded baseline, so this page cannot drift from it.
+
+**Source.** Vercel Speed Insights, reported by `<SpeedInsights />` in the root
+layout and aggregated as the 75th percentile over a rolling 7-day window. The
+percentile is deliberate: a mean would hide the slow tail this program targets.
+
+**Reading it.** The dashboard is the primary view. For a scripted check the
+Vercel CLI queries the same data:
+
+```bash
+npx vercel metrics vercel.speed_insights.inp_ms  --aggregation p75 --since 7d --project royaraqamia --prod
+npx vercel metrics vercel.speed_insights.lcp_ms  --aggregation p75 --since 7d --project royaraqamia --prod
+npx vercel metrics vercel.speed_insights.cls     --aggregation p75 --since 7d --project royaraqamia --prod
+npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --project royaraqamia --prod
+```
+
+The matching `*_count` metrics show how many datapoints each value rests on;
+treat a value backed by a handful of samples as noise, not a signal.
+
+**Not CI-gated.** Runtime is real-user data, not a build artifact, so it cannot
+fail a pull request. It is a monitoring budget: review it after a change lands
+and treat a p75 regression against a ceiling as a bug, not a style choice.
+
+**Ratchet policy.** When a change lands an improvement, re-record the baseline in
+`perf/runtime-budget.json` so the next change is measured against a new floor.
+The ceilings stay at the Web Vitals thresholds; only the baseline moves.
+
+**Window limit.** The Speed Insights API exposes only the last 7 days on the
+Hobby plan, which is why the window is fixed at `7d`. Longer trends are read from
+the dashboard.
+
 ## CI
 
 The `Code Quality` workflow runs `npm run build` and then `npm run perf:check`,
@@ -133,4 +181,5 @@ The win here is runtime — paint, compositing and battery — which this tool d
   brotli are not modelled.
 - **Weight, not jank.** No INP, long tasks, or frame timing. This measures bytes
   transferred, which is a different axis from the smoothness work in the
-  program.
+  program. The [Runtime budget](#runtime-budget) covers that axis from real-user
+  data instead.

@@ -34,6 +34,7 @@ it is already transform/opacity based and stays.
 - The glass/glow signature is gone for desktop users too, not only phones. This is the
   accepted cost of uniformity.
 - `perf:check` guards transferred bytes only (`docs/performance.md`), so it can neither see
-  this win nor catch its regression. The runtime budget that does is tracked separately.
+  this win nor catch its regression. The runtime budget that does is tracked separately, as
+  field Web Vitals in `perf/runtime-budget.json` (`docs/performance.md#runtime-budget`).
 - A regression guard (lint/CI) must ban the removed utilities — `backdrop-blur-*`,
   `transition-all` and the glow utilities — or the flattening will leak back within a few PRs.

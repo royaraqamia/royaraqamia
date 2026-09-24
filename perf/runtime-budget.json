@@ -1,0 +1,22 @@
+{
+  "note": "Runtime (field) budget. These are Web Vitals ceilings measured from real users via Vercel Speed Insights, not build artifacts, so `perf:check` cannot enforce them. Review them against the dashboard. See docs/performance.md#runtime-budget.",
+  "source": "vercel.speed_insights",
+  "aggregation": "p75",
+  "window": "7d",
+  "scope": "site-wide (all routes)",
+  "targets": {
+    "inp_ms": 200,
+    "lcp_ms": 2500,
+    "cls": 0.1,
+    "ttfb_ms": 800
+  },
+  "baseline": {
+    "recordedAt": "2026-09-24",
+    "note": "Recorded before the ADR 0004 flat render path landed, so it is the pre-flattening floor. ADR 0004 is expected to lower INP and the paint-bound metrics; re-record once the change has traffic.",
+    "inp_ms": 300,
+    "lcp_ms": 2085,
+    "cls": 0.0033,
+    "ttfb_ms": 905,
+    "inpDatapoints7d": 372
+  }
+}
