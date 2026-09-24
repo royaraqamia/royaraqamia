@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.28.0] - 2026-09-24
+
+### Changed
+- polish primary CTAs, feature list, and legal page headers
+- remove the last decorative blur effects (ADR 0004)
+
+### Added
+- revise web-dev pricing and add an employment retainer option
+
 ## [1.27.0] - 2026-09-24
 
 ### Changed
