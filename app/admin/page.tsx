@@ -82,7 +82,7 @@ export default function AdminConsolePage() {
                     </span>
                   </span>
                   <ArrowLeft
-                    className="text-muted-foreground/40 group-hover:text-primary mt-0.5 size-4 shrink-0 transition-all duration-300 group-hover:-translate-x-1"
+                    className="text-muted-foreground/40 group-hover:text-primary mt-0.5 size-4 shrink-0 transition-safe duration-300 group-hover:-translate-x-1"
                     aria-hidden="true"
                   />
                 </CardContent>

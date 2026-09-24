@@ -8,7 +8,7 @@ const bentoCardTheme = {
   viewportMargin: '-60px',
   duration: 0.6,
   cardClassName:
-    'group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/75 p-6 sm:p-8 transition-all duration-500 hover:border-border/80 hover:shadow-2xl hover:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2',
+    'group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/40 bg-card/75 p-6 sm:p-8 transition-safe duration-500 hover:border-border/80 hover:shadow-2xl hover:shadow-primary/10 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2',
   topDecor: (
     <div
       aria-hidden="true"
@@ -80,7 +80,7 @@ const expenseEntries = [
 
 function ExpenseLogger() {
   return (
-    <div className="space-y-4 rounded-2xl border border-border/40 bg-background/65 p-4 shadow-inner transition-all duration-300 sm:p-5">
+    <div className="space-y-4 rounded-2xl border border-border/40 bg-background/65 p-4 shadow-inner transition-safe duration-300 sm:p-5">
       <div className="flex items-center justify-between border-b border-border/30 pb-2">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
@@ -119,7 +119,7 @@ function ExpenseLogger() {
         ].map((item, i) => (
           <div
             key={item.desc + i}
-            className="landing-reveal-item group/item flex items-center justify-between rounded-xl border border-border/30 bg-card/55 px-3.5 py-2.5 transition-all duration-300 hover:scale-[1.01] hover:border-primary/30 hover:bg-card/88 hover:shadow-md"
+            className="landing-reveal-item group/item flex items-center justify-between rounded-xl border border-border/30 bg-card/55 px-3.5 py-2.5 transition-safe duration-300 hover:scale-[1.01] hover:border-primary/30 hover:bg-card/88 hover:shadow-md"
             style={{ ['--ld' as string]: `${0.2 + i * 0.08}s` } as React.CSSProperties}
           >
             <div className="flex items-center gap-3">
@@ -192,7 +192,7 @@ function CategoryChart() {
             </div>
             <div className="h-2 w-full overflow-hidden rounded-full border border-border/10 bg-muted/65 p-0.5">
               <div
-                className={`landing-grow-w h-full rounded-full ${entry.color} shadow-xs transition-all duration-300 group-hover/bar:brightness-110`}
+                className={`landing-grow-w h-full rounded-full ${entry.color} shadow-xs transition-safe duration-300 group-hover/bar:brightness-110`}
                 style={
                   {
                     ['--ld' as string]: `${0.3 + i * 0.08}s`,
@@ -250,7 +250,7 @@ function MonthlyTrend() {
 
                 <div className="flex h-full w-full items-end rounded-t-lg bg-muted/55 p-0.5">
                   <div
-                    className={`landing-grow-h w-full rounded-t-md transition-all duration-300 group-hover/col:brightness-125 ${
+                    className={`landing-grow-h w-full rounded-t-md transition-safe duration-300 group-hover/col:brightness-125 ${
                       isHighest
                         ? 'bg-linear-to-t from-primary via-violet-500 to-indigo-400 shadow-md shadow-primary/20'
                         : 'bg-linear-to-t from-primary/40 to-primary/80'

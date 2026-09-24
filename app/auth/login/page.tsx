@@ -72,7 +72,7 @@ function LoginForm() {
               autoComplete="email"
               placeholder="example@email.com"
               aria-describedby={message ? 'login-error' : undefined}
-              className="w-full h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl border border-border/70 bg-background/50 text-sm transition-all duration-200 placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary hover:border-border"
+              className="w-full h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl border border-border/70 bg-background/50 text-sm transition-safe duration-200 placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary hover:border-border"
             />
           </div>
 
@@ -88,7 +88,7 @@ function LoginForm() {
               name="password"
               autoComplete="current-password"
               aria-describedby={message ? 'login-error' : undefined}
-              className="w-full h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl border border-border/70 bg-background/50 text-sm transition-all duration-200 placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary hover:border-border"
+              className="w-full h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl border border-border/70 bg-background/50 text-sm transition-safe duration-200 placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary hover:border-border"
             />
           </div>
         </div>
@@ -100,7 +100,7 @@ function LoginForm() {
         <input type="hidden" name="cf-turnstile-response" value={turnstileToken ?? ''} />
 
         {message && (
-          <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs backdrop-blur-xs select-none animate-fade-in-up">
+          <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs select-none animate-fade-in-up">
             <CircleAlert size={18} className="shrink-0 mt-0.5 text-destructive" />
             <p
               id="login-error"
@@ -115,7 +115,7 @@ function LoginForm() {
         <Button
           type="submit"
           isLoading={isPending}
-          className="w-full h-11 sm:h-12 rounded-full font-medium text-sm sm:text-base gradient-primary text-white cta-glow transition-all duration-300 ease-out hover:scale-[1.01] active:scale-[0.985] shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer select-none"
+          className="w-full h-11 sm:h-12 rounded-full font-medium text-sm sm:text-base gradient-primary text-white cta-glow transition-safe duration-300 ease-out hover:scale-[1.01] active:scale-[0.985] shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer select-none"
         >
           {isPending ? 'جاري الدُّخول...' : 'تسجيل الدُّخول'}
         </Button>
@@ -152,7 +152,7 @@ function LoginForm() {
               setGoogleLoading(false);
             }
           }}
-          className="w-full h-11 sm:h-12 rounded-full text-sm sm:text-base font-medium border border-border/80 bg-background/50 hover:bg-accent/80 hover:border-border text-foreground transition-all duration-300 ease-out hover:scale-[1.01] active:scale-[0.985] flex items-center justify-center gap-2.5 shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          className="w-full h-11 sm:h-12 rounded-full text-sm sm:text-base font-medium border border-border/80 bg-background/50 hover:bg-accent/80 hover:border-border text-foreground transition-safe duration-300 ease-out hover:scale-[1.01] active:scale-[0.985] flex items-center justify-center gap-2.5 shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           <GoogleLogo size={20} className="shrink-0" />
           <span>{googleLoading ? 'جارٍ الاتِّصال بـ Google...' : 'الدُّخول بحساب Google'}</span>

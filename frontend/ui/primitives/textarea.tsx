@@ -86,9 +86,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             // High-Contrast Typography & Text Selection
             'text-foreground placeholder:text-muted-foreground/50 selection:bg-primary/20 selection:text-primary font-sans antialiased tracking-tight',
             // Surface Styling & Modern Glassmorphism
-            'bg-background/80 backdrop-blur-sm border-border/80 shadow-xs',
+            'bg-background/80 border-border/80 shadow-xs',
             // Interactive Hover & Transition States
-            'hover:border-border hover:bg-background transition-all duration-200 ease-out',
+            'hover:border-border hover:bg-background transition-safe duration-200 ease-out',
             // Custom Focus Ring System (Vercel/Linear Aesthetic)
             'focus-visible:outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20 focus-visible:shadow-md',
             // Contextual Padding & Error State Adjustments (Prevents text overlap)
@@ -113,7 +113,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             className="absolute right-3.5 top-3.5 flex items-center justify-center text-destructive pointer-events-none transition-transform duration-200 ease-out group-hover:scale-105"
             aria-hidden="true"
           >
-            <div className="flex items-center justify-center rounded-full bg-destructive/10 p-1 ring-1 ring-destructive/20 backdrop-blur-xs">
+            <div className="flex items-center justify-center rounded-full bg-destructive/10 p-1 ring-1 ring-destructive/20">
               <svg
                 width="15"
                 height="15"
@@ -137,7 +137,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {showCount && maxLength && (
           <div
             data-count-state={countState}
-            className="absolute bottom-3 left-3.5 pointer-events-none flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-0.5 text-xs font-mono border border-border/50 shadow-2xs backdrop-blur-md transition-all duration-200 select-none"
+            className="absolute bottom-3 left-3.5 pointer-events-none flex items-center gap-1.5 rounded-full bg-background/90 px-2.5 py-0.5 text-xs font-mono border border-border/50 shadow-2xs transition-safe duration-200 select-none"
             aria-live="polite"
           >
             <span

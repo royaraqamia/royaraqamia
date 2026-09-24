@@ -55,7 +55,7 @@ export function WebDevService() {
               {benefits.map((benefit, idx) => (
                 <div
                   key={idx}
-                  className="landing-reveal-item group relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/6 dark:bg-white/5 border border-white/10 dark:border-white/10 hover:border-purple-500/40 hover:bg-purple-500/8 transition-all duration-300 ease-out shadow-xs hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5"
+                  className="landing-reveal-item group relative flex items-center gap-4 p-4 sm:p-5 rounded-2xl bg-white/6 dark:bg-white/5 border border-white/10 dark:border-white/10 hover:border-purple-500/40 hover:bg-purple-500/8 transition-safe duration-300 ease-out shadow-xs hover:shadow-lg hover:shadow-purple-500/5 hover:-translate-y-0.5"
                   style={{ ['--ld' as string]: `${0.08 + idx * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-linear-to-br from-purple-600 to-violet-700 flex items-center justify-center shrink-0 shadow-md shadow-purple-600/20 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300">
@@ -79,7 +79,7 @@ export function WebDevService() {
               {features.map((feature, idx) => (
                 <div
                   key={idx}
-                  className="landing-reveal-item relative p-5 rounded-2xl bg-purple-950/14 border border-purple-500/15 hover:border-purple-500/40 transition-all duration-300 group overflow-hidden hover:shadow-md hover:shadow-purple-500/10 hover:-translate-y-0.5 flex flex-col justify-between"
+                  className="landing-reveal-item relative p-5 rounded-2xl bg-purple-950/14 border border-purple-500/15 hover:border-purple-500/40 transition-safe duration-300 group overflow-hidden hover:shadow-md hover:shadow-purple-500/10 hover:-translate-y-0.5 flex flex-col justify-between"
                   style={{ ['--ld' as string]: `${0.56 + idx * 0.12}s` } as React.CSSProperties}
                 >
                   {/* Subtle hover glow effect */}
@@ -101,7 +101,7 @@ export function WebDevService() {
           <MotionReveal from="none" className="lg:col-span-5 space-y-5 lg:sticky lg:top-28">
             {/* Pricing Card 1 */}
             <article
-              className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden"
+              className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-safe duration-300 overflow-hidden"
               style={{ ['--ld' as string]: '0.08s' } as React.CSSProperties}
             >
               <div className="flex items-center justify-between gap-4">
@@ -131,7 +131,7 @@ export function WebDevService() {
 
             {/* Pricing Card 2 */}
             <article
-              className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden"
+              className="landing-reveal-item group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-safe duration-300 overflow-hidden"
               style={{ ['--ld' as string]: '0.2s' } as React.CSSProperties}
             >
               <div className="flex items-center justify-between gap-4">
@@ -172,7 +172,7 @@ export function WebDevService() {
                 rel="noopener noreferrer"
                 className="block group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl"
               >
-                <Button className="relative w-full h-14 sm:h-16 text-base sm:text-lg font-bold rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white shadow-[0_0_30px_-5px_rgba(147,51,234,0.4)] hover:shadow-[0_0_45px_-5px_rgba(168,85,247,0.6)] active:scale-[0.99] transition-all duration-300 overflow-hidden cursor-pointer">
+                <Button className="relative w-full h-14 sm:h-16 text-base sm:text-lg font-bold rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white shadow-[0_0_30px_-5px_rgba(147,51,234,0.4)] hover:shadow-[0_0_45px_-5px_rgba(168,85,247,0.6)] active:scale-[0.99] transition-safe duration-300 overflow-hidden cursor-pointer">
                   {/* Button hover shimmer animation */}
                   <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-linear-to-r from-transparent via-white/25 to-transparent w-1/2 -skew-x-12 z-0" />
                   <span className="relative z-10 flex items-center justify-center gap-2">

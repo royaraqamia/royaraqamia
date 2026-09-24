@@ -42,7 +42,7 @@ export const Portfolio = memo(function Portfolio() {
           <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-start">
             <div className="flex items-center gap-2.5">
               <span className="text-xs font-mono font-medium text-purple-400/90">01</span>
-              <div className="w-28 sm:w-44 h-1.5 bg-white/10 rounded-full overflow-hidden backdrop-blur-xs">
+              <div className="w-28 sm:w-44 h-1.5 bg-white/10 rounded-full overflow-hidden">
                 <div
                   ref={progressBarRef}
                   className="h-full bg-linear-to-r from-purple-500 via-violet-400 to-indigo-500 origin-right rounded-full shadow-[0_0_12px_rgba(168,85,247,0.6)]"

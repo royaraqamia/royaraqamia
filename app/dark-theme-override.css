@@ -149,10 +149,3 @@ footer:not([data-mobile-menu]) {
   background-color: hsl(var(--card));
   border-color: hsl(var(--border));
 }
-
-/* Backdrop Elements */
-.backdrop-blur-xl:not([data-app-navbar]):not([data-glass-panel]),
-.backdrop-blur-lg:not([data-app-navbar]):not([data-glass-panel]),
-.backdrop-blur-sm:not([data-app-navbar]):not([data-glass-panel]) {
-  background-color: hsl(var(--background) / 0.8);
-}

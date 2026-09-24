@@ -84,7 +84,7 @@ function UpdatePasswordForm() {
                     name="password"
                     autoComplete="new-password"
                     onChange={setPassword}
-                    className="w-full transition-all duration-200 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20"
+                    className="w-full transition-safe duration-200 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20"
                   />
                 </div>
 
@@ -120,7 +120,7 @@ function UpdatePasswordForm() {
                     autoComplete="new-password"
                     error={showMismatch}
                     onChange={setConfirmPassword}
-                    className="w-full transition-all duration-200 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20"
+                    className="w-full transition-safe duration-200 rounded-xl focus-visible:ring-2 focus-visible:ring-primary/20"
                   />
                 </div>
 
@@ -138,7 +138,7 @@ function UpdatePasswordForm() {
 
             {/* Server Error / API Response Message Banner */}
             {message && (
-              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 backdrop-blur-md border border-destructive/25 text-destructive shadow-sm animate-fade-in-up">
+              <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/25 text-destructive shadow-sm animate-fade-in-up">
                 <CircleAlert
                   size={20}
                   className="shrink-0 mt-0.5 text-destructive"
@@ -155,7 +155,7 @@ function UpdatePasswordForm() {
               type="submit"
               isLoading={isPending}
               disabled={showMismatch}
-              className="w-full h-12 text-sm font-bold text-white gradient-primary cta-glow rounded-full shadow-md transition-all duration-300 ease-out hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
+              className="w-full h-12 text-sm font-bold text-white gradient-primary cta-glow rounded-full shadow-md transition-safe duration-300 ease-out hover:scale-[1.01] hover:shadow-lg active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none"
             >
               {isPending ? 'جاري التَّحديث...' : 'تحديث كلمة المرور'}
             </Button>

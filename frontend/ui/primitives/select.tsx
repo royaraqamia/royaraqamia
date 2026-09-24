@@ -33,7 +33,7 @@ function SelectTrigger({
       data-size={size}
       aria-label={ariaLabel ?? 'اختر خيارًا'}
       className={cn(
-        'group flex w-full items-center justify-between border border-input/80 bg-background/80 px-3.5 py-2 text-sm font-medium text-foreground shadow-xs backdrop-blur-sm transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out',
+        'group flex w-full items-center justify-between border border-input/80 bg-background/80 px-3.5 py-2 text-sm font-medium text-foreground shadow-xs transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out',
         'hover:border-ring/40 hover:bg-background hover:shadow-sm',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-ring',
         'active:scale-[0.995]',

@@ -83,7 +83,7 @@ function Skeleton({
           'relative overflow-hidden select-none pointer-events-none',
           'bg-neutral-200/60 dark:bg-neutral-800/60',
           'border border-neutral-300/40 dark:border-neutral-700/40',
-          'backdrop-blur-xs transition-opacity duration-300 ease-out',
+          ' transition-opacity duration-300 ease-out',
           roundedClasses[rounded],
 
           // Pulse animation option
@@ -222,7 +222,7 @@ function SkeletonCard({
     <div
       className={cn(
         'w-full max-w-md rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80',
-        'bg-white/50 dark:bg-neutral-900/50 backdrop-blur-md p-6 shadow-xs dark:shadow-none',
+        'bg-white/50 dark:bg-neutral-900/50 p-6 shadow-xs dark:shadow-none',
         'flex flex-col gap-6',
         className
       )}
@@ -260,7 +260,7 @@ function SkeletonMetric({ className, ...props }: SkeletonMetricProps) {
     <div
       className={cn(
         'w-full rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80',
-        'bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md p-5 shadow-xs dark:shadow-none',
+        'bg-white/60 dark:bg-neutral-900/60 p-5 shadow-xs dark:shadow-none',
         'flex flex-col gap-4',
         className
       )}

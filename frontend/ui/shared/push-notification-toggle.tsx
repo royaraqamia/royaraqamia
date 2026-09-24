@@ -114,7 +114,7 @@ export function PushNotificationToggle() {
       disabled={busy}
       aria-pressed={isEnabled}
       className={cn(
-        'flex w-full items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium transition-all duration-150',
+        'flex w-full items-center justify-center gap-2 px-3 py-2.5 text-xs font-medium transition-safe duration-150',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
         isEnabled
           ? 'bg-primary/8 text-primary hover:bg-primary/[0.14] dark:bg-primary/10'

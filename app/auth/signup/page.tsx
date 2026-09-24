@@ -80,7 +80,7 @@ function SignupForm() {
                 autoComplete="name"
                 placeholder="الاسم الكامل"
                 aria-describedby={message ? 'signup-error' : undefined}
-                className="w-full h-11 px-3.5 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-sm placeholder:text-muted-foreground/50 shadow-xs focus-visible:outline-none"
+                className="w-full h-11 px-3.5 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-safe duration-200 text-sm placeholder:text-muted-foreground/50 shadow-xs focus-visible:outline-none"
               />
             </div>
 
@@ -104,7 +104,7 @@ function SignupForm() {
                 autoComplete="email"
                 placeholder="example@email.com"
                 aria-describedby={message ? 'signup-error' : undefined}
-                className="w-full h-11 px-3.5 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-sm placeholder:text-muted-foreground/50 shadow-xs focus-visible:outline-none"
+                className="w-full h-11 px-3.5 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 focus:bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 transition-safe duration-200 text-sm placeholder:text-muted-foreground/50 shadow-xs focus-visible:outline-none"
               />
             </div>
 
@@ -130,14 +130,14 @@ function SignupForm() {
                 autoComplete="new-password"
                 onChange={setPassword}
                 aria-describedby={message ? 'signup-error' : undefined}
-                className="w-full h-11 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all duration-200 shadow-xs"
+                className="w-full h-11 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-safe duration-200 shadow-xs"
               />
               <PasswordStrength password={password} />
             </div>
           </div>
 
           {/* Styled Turnstile Security Container */}
-          <div className="flex justify-center items-center p-2.5 rounded-xl bg-muted/20 border border-border/40 backdrop-blur-xs min-h-17 overflow-hidden shadow-xs hover:border-border/60 transition-colors duration-200">
+          <div className="flex justify-center items-center p-2.5 rounded-xl bg-muted/20 border border-border/40 min-h-17 overflow-hidden shadow-xs hover:border-border/60 transition-colors duration-200">
             <Turnstile onToken={setTurnstileToken} />
           </div>
 
@@ -145,7 +145,7 @@ function SignupForm() {
 
           {/* Animated Error Alert */}
           {message && (
-            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs backdrop-blur-xs animate-fade-in-up">
+            <div className="flex items-start gap-3 p-3.5 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shadow-xs animate-fade-in-up">
               <CircleAlert
                 size={20}
                 className="shrink-0 mt-0.5 text-destructive"
@@ -161,7 +161,7 @@ function SignupForm() {
           <Button
             type="submit"
             isLoading={isPending}
-            className="w-full h-11 sm:h-12 rounded-full font-medium gradient-primary text-white cta-glow shadow-md hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full h-11 sm:h-12 rounded-full font-medium gradient-primary text-white cta-glow shadow-md hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] active:scale-[0.99] transition-safe duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
           >
             {isPending ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
           </Button>
@@ -190,7 +190,7 @@ function SignupForm() {
                 setGoogleLoading(false);
               }
             }}
-            className="w-full h-11 sm:h-12 rounded-full font-medium border border-border/80 bg-background hover:bg-muted/50 hover:border-border hover:scale-[1.01] active:scale-[0.99] transition-all duration-200 ease-out flex items-center justify-center gap-2.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+            className="w-full h-11 sm:h-12 rounded-full font-medium border border-border/80 bg-background hover:bg-muted/50 hover:border-border hover:scale-[1.01] active:scale-[0.99] transition-safe duration-200 ease-out flex items-center justify-center gap-2.5 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
           >
             <GoogleLogo size={20} className="shrink-0" />
             <span>{googleLoading ? 'جارٍ الاتِّصال بـ Google...' : 'التَّسجيل بحساب Google'}</span>
@@ -210,7 +210,7 @@ function SignupForm() {
           لديك حساب بالفعل؟{' '}
           <Link
             href={authLink('/auth/login', redirectTo)}
-            className="text-primary font-bold hover:text-primary/80 underline-offset-4 hover:underline transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md px-1 py-0.5"
+            className="text-primary font-bold hover:text-primary/80 underline-offset-4 hover:underline transition-safe duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-md px-1 py-0.5"
           >
             تسجيل الدُّخول
           </Link>

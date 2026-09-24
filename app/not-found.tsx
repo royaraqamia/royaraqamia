@@ -22,11 +22,11 @@ export default function NotFound() {
 
         {/* Central Card Container */}
         <main className="relative z-10 mx-auto flex w-full max-w-lg flex-col items-center px-4 py-8 text-center sm:px-6">
-          <div className="group relative w-full rounded-3xl border border-border/60 bg-card/40 p-8 shadow-2xl shadow-primary/5 backdrop-blur-2xl transition-all duration-500 hover:border-border/80 hover:shadow-primary/10 sm:p-12">
+          <div className="group relative w-full rounded-3xl border border-border/60 bg-card/40 p-8 shadow-2xl shadow-primary/5 transition-safe duration-500 hover:border-border/80 hover:shadow-primary/10 sm:p-12">
             {/* Elevated Icon Badge */}
             <div className="relative mx-auto mb-6 flex items-center justify-center">
-              <div className="absolute -inset-2 rounded-3xl bg-primary/20 blur-xl opacity-60 transition-all duration-500 group-hover:opacity-90 group-hover:blur-2xl" />
-              <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-primary/20 bg-background/80 text-primary shadow-inner backdrop-blur-md transition-transform duration-500 ease-out group-hover:scale-105 sm:h-24 sm:w-24">
+              <div className="absolute -inset-2 rounded-3xl bg-primary/20 blur-xl opacity-60 transition-safe duration-500 group-hover:opacity-90 group-hover:blur-2xl" />
+              <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-primary/20 bg-background/80 text-primary shadow-inner transition-transform duration-500 ease-out group-hover:scale-105 sm:h-24 sm:w-24">
                 <svg
                   width="48"
                   height="48"
@@ -62,7 +62,7 @@ export default function NotFound() {
             <div className="flex justify-center">
               <Link
                 href="/"
-                className="group/btn relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-auto"
+                className="group/btn relative inline-flex min-h-12 w-full cursor-pointer items-center justify-center gap-2.5 rounded-2xl bg-primary px-8 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/25 transition-safe duration-300 ease-out hover:scale-[1.02] hover:bg-primary/90 hover:shadow-xl hover:shadow-primary/35 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:w-auto"
               >
                 <span>العودة إلى الرَّئيسيَّة</span>
                 <svg

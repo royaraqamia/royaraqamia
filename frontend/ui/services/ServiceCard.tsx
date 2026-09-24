@@ -75,7 +75,7 @@ export function ServiceCard({ service }: { service: Service }) {
       }}
     >
       {/* Dynamic Linear/Vercel-style Top Specular Highlight Line */}
-      <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/25 to-transparent opacity-70 group-hover/service:via-white/50 transition-all duration-500 pointer-events-none" />
+      <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/25 to-transparent opacity-70 group-hover/service:via-white/50 transition-safe duration-500 pointer-events-none" />
 
       {/* 
         The Magic: Mouse-tracking spotlight background. 
@@ -87,12 +87,6 @@ export function ServiceCard({ service }: { service: Service }) {
         style={{
           background: `radial-gradient(650px circle at var(--mx, 0px) var(--my, 0px), ${colors.gradient}25, transparent 80%)`,
         }}
-      />
-
-      {/* Static ambient background glow */}
-      <div
-        className="absolute -top-12 -left-12 w-64 h-64 opacity-0 group-hover/service:opacity-20 glow-blur-md transition-opacity duration-700 -z-10 pointer-events-none rounded-full"
-        style={{ background: colors.gradient }}
       />
 
       <div className="relative z-10 flex flex-col h-full">
@@ -171,11 +165,11 @@ export function ServiceCard({ service }: { service: Service }) {
 
                 <div className="relative z-10 overflow-hidden w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center">
                   <ArrowRight
-                    className="absolute w-4 h-4 sm:w-5 sm:h-5 opacity-70 group-hover/cta:opacity-100 transition-all duration-300 -translate-x-full group-hover/cta:translate-x-0 rtl:rotate-180 rtl:translate-x-full rtl:group-hover/cta:translate-x-0"
+                    className="absolute w-4 h-4 sm:w-5 sm:h-5 opacity-70 group-hover/cta:opacity-100 transition-safe duration-300 -translate-x-full group-hover/cta:translate-x-0 rtl:rotate-180 rtl:translate-x-full rtl:group-hover/cta:translate-x-0"
                     aria-hidden="true"
                   />
                   <ArrowRight
-                    className="absolute w-4 h-4 sm:w-5 sm:h-5 opacity-70 group-hover/cta:opacity-0 transition-all duration-300 translate-x-0 group-hover/cta:translate-x-full rtl:rotate-180 rtl:translate-x-0 rtl:group-hover/cta:-translate-x-full"
+                    className="absolute w-4 h-4 sm:w-5 sm:h-5 opacity-70 group-hover/cta:opacity-0 transition-safe duration-300 translate-x-0 group-hover/cta:translate-x-full rtl:rotate-180 rtl:translate-x-0 rtl:group-hover/cta:-translate-x-full"
                     aria-hidden="true"
                   />
                 </div>

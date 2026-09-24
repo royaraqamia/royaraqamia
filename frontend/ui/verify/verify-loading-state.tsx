@@ -10,7 +10,7 @@ export function VerifyLoadingState() {
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }}
-      className="my-6 rounded-3xl border border-primary/20 bg-card/60 p-8 sm:p-12 text-center backdrop-blur-xl shadow-xl shadow-primary/5"
+      className="my-6 rounded-3xl border border-primary/20 bg-card/60 p-8 sm:p-12 text-center shadow-xl shadow-primary/5"
     >
       <div className="relative mx-auto flex size-20 items-center justify-center">
         <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />

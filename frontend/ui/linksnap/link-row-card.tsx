@@ -172,7 +172,7 @@ export const LinkRowCard = memo(function LinkRowCard({
   return (
     <article
       className={cn(
-        'group relative flex w-full flex-col rounded-2xl bg-white transition-all duration-300 ease-out dark:bg-neutral-950',
+        'group relative flex w-full flex-col rounded-2xl bg-white transition-safe duration-300 ease-out dark:bg-neutral-950',
         'border border-neutral-200/80 dark:border-neutral-800/80',
         'shadow-xs hover:-translate-y-0.5 hover:border-neutral-300 hover:shadow-lg hover:shadow-neutral-900/5 dark:hover:border-neutral-700 dark:hover:shadow-black/40',
         isSelected &&
@@ -189,7 +189,7 @@ export const LinkRowCard = memo(function LinkRowCard({
               aria-pressed={isSelected}
               aria-label={isSelected ? 'إلغاء تحديد الرابط' : 'تحديد الرابط'}
               className={cn(
-                'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all duration-200 ease-out',
+                'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-safe duration-200 ease-out',
                 'active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
                 isSelected
                   ? 'border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900'
@@ -207,7 +207,7 @@ export const LinkRowCard = memo(function LinkRowCard({
                 type="button"
                 onClick={() => window.open(fullShortUrl, '_blank')}
                 className={cn(
-                  'group/code inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/80 bg-neutral-100/70 px-2.5 py-1 font-mono text-sm font-bold tracking-tight text-neutral-900 transition-all duration-200',
+                  'group/code inline-flex items-center gap-1.5 rounded-lg border border-neutral-200/80 bg-neutral-100/70 px-2.5 py-1 font-mono text-sm font-bold tracking-tight text-neutral-900 transition-safe duration-200',
                   'hover:border-blue-500/40 hover:bg-blue-50/50 hover:text-blue-600 dark:border-neutral-800 dark:bg-neutral-900/80 dark:text-neutral-100 dark:hover:border-blue-500/40 dark:hover:bg-blue-950/30 dark:hover:text-blue-400',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950'
                 )}
@@ -226,7 +226,7 @@ export const LinkRowCard = memo(function LinkRowCard({
                 return (
                   <span
                     className={cn(
-                      'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium backdrop-blur-md transition-all duration-200',
+                      'inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium transition-safe duration-200',
                       meta.className
                     )}
                     title={expiresAt ? `ينتهي في ${expiresAt}` : undefined}
@@ -289,7 +289,7 @@ export const LinkRowCard = memo(function LinkRowCard({
             aria-label="نسخ الرابط"
             title="نسخ الرابط"
             className={cn(
-              'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-all duration-200 ease-out',
+              'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-safe duration-200 ease-out',
               'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
               'dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-100',
@@ -313,7 +313,7 @@ export const LinkRowCard = memo(function LinkRowCard({
             aria-label="مشاركة الرابط"
             title="مشاركة الرابط"
             className={cn(
-              'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-all duration-200 ease-out',
+              'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-safe duration-200 ease-out',
               'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
               'dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'
@@ -328,7 +328,7 @@ export const LinkRowCard = memo(function LinkRowCard({
             aria-expanded={isExpanded}
             aria-controls={`analytics-panel-${code}`}
             className={cn(
-              'inline-flex h-9 items-center gap-2 rounded-xl border px-3.5 text-[13px] font-medium transition-all duration-200 ease-out',
+              'inline-flex h-9 items-center gap-2 rounded-xl border px-3.5 text-[13px] font-medium transition-safe duration-200 ease-out',
               'hover:scale-[1.02] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
               isExpanded
                 ? 'border-neutral-900 bg-neutral-900 text-white shadow-xs dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900'
@@ -357,7 +357,7 @@ export const LinkRowCard = memo(function LinkRowCard({
                 aria-label={`إجراءات الرابط /${code}`}
                 title="مزيد من الإجراءات"
                 className={cn(
-                  'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-all duration-200 ease-out',
+                  'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-safe duration-200 ease-out',
                   'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
                   'dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-700 dark:hover:bg-neutral-800 dark:hover:text-neutral-100'

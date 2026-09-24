@@ -38,11 +38,9 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --font-sans: var(--font-arabic);
-  /* Blur budget: every backdrop-blur/blur utility reads this scale, so capping
-     the tokens bounds GPU fill-rate site-wide. Large radii are the single most
-     expensive paint effect on low-end devices; halving them keeps the frosted
-     look while cutting per-frame rasterization cost roughly 4x (blur cost
-     grows ~quadratically with radius). */
+  /* Blur budget: the remaining `blur-*` (filter) utilities read this scale, so
+     capping the tokens bounds the fill-rate of the decorative glow orbs that
+     still use them. Backdrop blurs are gone site-wide (ADR 0004). */
   --blur-sm: 6px;
   --blur-md: 8px;
   --blur-lg: 12px;
@@ -68,9 +66,15 @@
   }
 }
 
-/* Shared glow blur tier — only `md` still has a consumer (a hover-only halo). */
-@utility glow-blur-md {
-  filter: blur(44px);
+/* Compositor-only transition (ADR 0004). Replaces `transition-all`, which
+   animates every property — including width/height/margin — forcing the browser
+   to watch the whole style delta each frame. This set is paint-cheap and never
+   triggers layout. Duration/easing still come from `duration-*` / `ease-*`. */
+@utility transition-safe {
+  transition-property:
+    color, background-color, border-color, text-decoration-color, fill, stroke, opacity, transform;
+  transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
+  transition-duration: var(--tw-duration, var(--default-transition-duration));
 }
 
 /* Pre-blurred halo orb. Paints the soft glow as a radial gradient so the

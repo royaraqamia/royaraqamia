@@ -23,8 +23,8 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
           spellCheck={type === 'text' || type === 'textarea' ? 'true' : 'false'}
           className={cn(
             // Base Layout & Dimensions (44px WCAG touch target height)
-            'flex h-11 w-full rounded-xl border border-input/80 bg-background/80 backdrop-blur-xs text-sm sm:text-base text-foreground font-normal',
-            'py-2 pe-3.5 transition-all duration-200 ease-out',
+            'flex h-11 w-full rounded-xl border border-input/80 bg-background/80 text-sm sm:text-base text-foreground font-normal',
+            'py-2 pe-3.5 transition-safe duration-200 ease-out',
             // Dynamic Logical Padding (prevents text overlap when error icon is active)
             error ? 'ps-10' : 'ps-3.5',
             // Typography & Text Selection Aesthetics

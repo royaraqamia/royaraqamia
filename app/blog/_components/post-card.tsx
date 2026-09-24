@@ -11,7 +11,7 @@ interface PostCardProps {
 export function PostCard({ post, index }: PostCardProps) {
   return (
     <article
-      className="group/blog relative flex flex-col justify-between rounded-3xl border border-border bg-muted/20 overflow-hidden transition-all duration-500 ease-out hover:border-border hover:bg-muted/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-background/60 opacity-0 animate-fade-in-up focus-within:ring-2 focus-within:ring-primary/50"
+      className="group/blog relative flex flex-col justify-between rounded-3xl border border-border bg-muted/20 overflow-hidden transition-safe duration-500 ease-out hover:border-border hover:bg-muted/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-background/60 opacity-0 animate-fade-in-up focus-within:ring-2 focus-within:ring-primary/50"
       style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'forwards' }}
     >
       {post.cover_image && (

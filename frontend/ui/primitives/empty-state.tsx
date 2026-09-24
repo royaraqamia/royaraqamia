@@ -23,9 +23,9 @@ export function EmptyState({
   return (
     <div
       className={cn(
-        'group relative flex flex-col items-center justify-center text-center transition-all duration-300 ease-out',
+        'group relative flex flex-col items-center justify-center text-center transition-safe duration-300 ease-out',
         isCard
-          ? 'rounded-3xl border border-border/60 bg-linear-to-b from-card/90 via-card/60 to-card/30 p-6 sm:p-10 md:p-12 shadow-xs backdrop-blur-xl hover:border-border/80 hover:shadow-2xl hover:shadow-primary/5 ring-1 ring-foreground/5'
+          ? 'rounded-3xl border border-border/60 bg-linear-to-b from-card/90 via-card/60 to-card/30 p-6 sm:p-10 md:p-12 shadow-xs hover:border-border/80 hover:shadow-2xl hover:shadow-primary/5 ring-1 ring-foreground/5'
           : 'w-full max-w-md mx-auto py-12 sm:py-16 md:py-20 px-4 sm:px-6',
         className
       )}
@@ -41,7 +41,7 @@ export function EmptyState({
       {/* Floating Glassmorphic Icon Badge Container */}
       <div className="relative mb-5 sm:mb-6 flex items-center justify-center">
         {/* Icon Container Badge */}
-        <div className="relative flex size-14 sm:size-16 items-center justify-center rounded-2xl border border-primary/20 bg-background/80 p-3.5 shadow-xs backdrop-blur-md transition-all duration-300 ease-out group-hover:scale-105 group-hover:border-primary/35 group-hover:bg-background">
+        <div className="relative flex size-14 sm:size-16 items-center justify-center rounded-2xl border border-primary/20 bg-background/80 p-3.5 shadow-xs transition-safe duration-300 ease-out group-hover:scale-105 group-hover:border-primary/35 group-hover:bg-background">
           <Icon
             className="size-6 sm:size-7 text-primary transition-transform duration-300 ease-out group-hover:scale-110"
             aria-hidden="true"
@@ -63,7 +63,7 @@ export function EmptyState({
 
       {/* Action Element Container */}
       {action && (
-        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-xs sm:max-w-none transition-all duration-300">
+        <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row items-center justify-center gap-3 w-full max-w-xs sm:max-w-none transition-safe duration-300">
           {action}
         </div>
       )}

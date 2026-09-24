@@ -31,7 +31,7 @@ function CustomTooltip({
   if (!active || !payload?.length || !payload[0]) return null;
   const item = payload[0];
   return (
-    <div className="z-50 min-w-40 rounded-2xl border border-border/80 bg-background/95 p-3.5 shadow-xl shadow-black/5 backdrop-blur-sm ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in-0 zoom-in-95 duration-150 will-change-[transform,opacity]">
+    <div className="z-50 min-w-40 rounded-2xl border border-border/80 bg-background/95 p-3.5 shadow-xl shadow-black/5 ring-1 ring-black/5 dark:ring-white/10 animate-in fade-in-0 zoom-in-95 duration-150 will-change-[transform,opacity]">
       <div className="flex items-center gap-2.5">
         <span
           className="size-3 shrink-0 rounded-full ring-2 ring-background shadow-sm"
@@ -98,7 +98,7 @@ export function CategoryPieChart({
   if (data.length === 0) {
     return (
       <div
-        className="group relative flex flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-border/80 bg-slate-50/50 dark:bg-neutral-900/40 p-8 sm:p-12 text-center transition-all duration-300 hover:border-border hover:bg-slate-50 dark:hover:bg-neutral-900/60"
+        className="group relative flex flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-border/80 bg-slate-50/50 dark:bg-neutral-900/40 p-8 sm:p-12 text-center transition-safe duration-300 hover:border-border hover:bg-slate-50 dark:hover:bg-neutral-900/60"
         role="img"
         aria-label="لا توجد بيانات إنفاق حسب التَّصنيف"
       >
@@ -150,7 +150,7 @@ export function CategoryPieChart({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-card text-card-foreground shadow-sm hover:shadow-md transition-all duration-300 p-5 sm:p-7">
+    <div className="relative overflow-hidden rounded-3xl border border-border/80 bg-card text-card-foreground shadow-sm hover:shadow-md transition-safe duration-300 p-5 sm:p-7">
       {/* Header Summary Row */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
         <div>
@@ -163,7 +163,7 @@ export function CategoryPieChart({
               : 'اضغط على أيِّ تصنيف للتَّصفية والمقارنة'}
           </p>
         </div>
-        <div className="self-start sm:self-auto flex items-center gap-2 rounded-2xl bg-muted/60 px-3 py-1.5 border border-border/40 backdrop-blur-md">
+        <div className="self-start sm:self-auto flex items-center gap-2 rounded-2xl bg-muted/60 px-3 py-1.5 border border-border/40">
           <span className="text-xs font-medium text-muted-foreground">الإجمالي:</span>
           <span className="text-sm font-bold tracking-tight text-foreground">
             {formatMoney(grandTotal, currency)}
@@ -204,7 +204,7 @@ export function CategoryPieChart({
                       onClick={() => handleClick(entry)}
                       stroke={isSelected ? 'var(--foreground, #000000)' : 'transparent'}
                       strokeWidth={isSelected ? 2.5 : 0}
-                      className="transition-all duration-200 hover:opacity-85 focus:outline-none cursor-pointer"
+                      className="transition-safe duration-200 hover:opacity-85 focus:outline-none cursor-pointer"
                       aria-label={`${entry.name}: ${formatMoney(entry.total, currency)}`}
                     />
                   );
@@ -240,7 +240,7 @@ export function CategoryPieChart({
                 key={`legend-${index}`}
                 type="button"
                 onClick={() => handleClick(entry)}
-                className={`group relative flex items-center justify-between gap-3 rounded-2xl p-3 text-right transition-all duration-200 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                className={`group relative flex items-center justify-between gap-3 rounded-2xl p-3 text-right transition-safe duration-200 border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                   isSelected
                     ? 'bg-primary/10 border-primary/40 shadow-sm ring-1 ring-primary/30'
                     : 'bg-muted/40 hover:bg-muted/80 border-border/40 hover:border-border'

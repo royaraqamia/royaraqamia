@@ -172,7 +172,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 placeholder="https://example.com/very-long-url-path"
                 autoFocus
                 aria-describedby="single-url-error"
-                className="w-full pr-12 pl-4 py-3.5 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
+                className="w-full pr-12 pl-4 py-3.5 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
               />
             </div>
           </div>
@@ -190,7 +190,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 رمز مُخصَّص (اختياري)
               </label>
               <div
-                className="flex items-center w-full overflow-hidden bg-muted/50 border border-border rounded-full focus-within:ring-2 focus-within:ring-primary/20 transition-all"
+                className="flex items-center w-full overflow-hidden bg-muted/50 border border-border rounded-full focus-within:ring-2 focus-within:ring-primary/20 transition-safe"
                 dir="ltr"
               >
                 <span className="shrink-0 pr-3 text-sm text-muted-foreground font-bold select-none whitespace-nowrap py-3.5 leading-snug">
@@ -264,7 +264,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="يُطلب من الزائر قبل فتح الرابط"
                     autoComplete="new-password"
-                    className="w-full pr-11 pl-4 py-3 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground"
+                    className="w-full pr-11 pl-4 py-3 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
                   />
                 </div>
                 <p className="text-xs text-muted-foreground font-medium mt-1">
@@ -290,7 +290,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <button
             type="submit"
             disabled={loading || !originalUrl}
-            className="w-full py-4 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-full transition-all shadow-md shadow-primary/20 hover:shadow-primary/30 flex items-center justify-center gap-2 cursor-pointer group btn-lift focus-ring touch-target btn-press"
+            className="w-full py-4 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-full transition-safe shadow-md shadow-primary/20 hover:shadow-primary/30 flex items-center justify-center gap-2 cursor-pointer group btn-lift focus-ring touch-target btn-press"
           >
             {loading ? (
               <>
@@ -359,7 +359,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <div className="grid grid-cols-3 gap-3">
             <button
               onClick={copyToClipboard}
-              className="py-3 px-4 bg-muted/50 hover:bg-muted text-foreground border border-border font-medium text-xs rounded-full transition-all flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
+              className="py-3 px-4 bg-muted/50 hover:bg-muted text-foreground border border-border font-medium text-xs rounded-full transition-safe flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
             >
               {copied ? (
                 <>
@@ -376,7 +376,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
             <button
               onClick={shareUrl}
-              className="py-3 px-4 bg-muted/50 hover:bg-muted text-foreground border border-border font-medium text-xs rounded-full transition-all flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
+              className="py-3 px-4 bg-muted/50 hover:bg-muted text-foreground border border-border font-medium text-xs rounded-full transition-safe flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
             >
               <Share2 aria-hidden="true" className="w-4 h-4 text-muted-foreground" />
               <span>مشاركة الرَّابط</span>
@@ -384,7 +384,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
             <button
               onClick={toggleQr}
-              className={`py-3 px-4 font-medium text-xs rounded-full border transition-all flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press ${
+              className={`py-3 px-4 font-medium text-xs rounded-full border transition-safe flex flex-col items-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press ${
                 showQr
                   ? 'bg-primary/10 border-primary/30 text-primary'
                   : 'bg-muted/50 hover:bg-muted text-foreground border-border'
@@ -424,7 +424,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
           <button
             onClick={resetForm}
-            className="w-full py-3 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-bold rounded-full transition-all flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
+            className="w-full py-3 bg-muted/50 hover:bg-muted border border-border text-muted-foreground text-xs font-bold rounded-full transition-safe flex items-center justify-center gap-1.5 cursor-pointer press-scale focus-ring touch-target btn-press"
           >
             <RotateCcw aria-hidden="true" className="w-3.5 h-3.5" />
             <span>اختصار رابط آخر</span>

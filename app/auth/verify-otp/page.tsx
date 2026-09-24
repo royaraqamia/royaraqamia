@@ -180,7 +180,7 @@ function VerifyOtpForm() {
               {!isExpired && (
                 <div className="flex items-center justify-center" aria-live="polite">
                   <div
-                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border backdrop-blur-md transition-colors duration-300 ${
+                    className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border transition-colors duration-300 ${
                       countdown <= 60
                         ? 'bg-amber-500/10 border-amber-500/30 text-amber-600 dark:text-amber-400'
                         : 'bg-neutral-100/80 border-neutral-200/80 text-muted-foreground dark:bg-neutral-800/80 dark:border-neutral-700/80'
@@ -211,7 +211,7 @@ function VerifyOtpForm() {
                 type="submit"
                 isLoading={isPending}
                 disabled={otp.length !== 6 || isPending}
-                className="w-full h-11 text-sm font-medium gradient-primary text-white cta-glow rounded-full shadow-xs hover:scale-[1.01] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-all duration-200 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                className="w-full h-11 text-sm font-medium gradient-primary text-white cta-glow rounded-full shadow-xs hover:scale-[1.01] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-safe duration-200 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
               >
                 {isPending ? 'جاري التَّحقُّق...' : 'تحقُّق من الرَّمز'}
               </Button>
@@ -247,7 +247,7 @@ function VerifyOtpForm() {
             <div className="pt-4 flex justify-center border-t border-border/40">
               <Link
                 href={authLink('/auth/login', redirectTo)}
-                className="group inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-all duration-200 py-1.5 px-3 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="group inline-flex items-center gap-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-safe duration-200 py-1.5 px-3 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <ArrowLeft
                   size={15}

@@ -4,14 +4,14 @@ import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 
 const bentoCardTheme = {
   cardClassName:
-    'group relative overflow-hidden rounded-3xl border border-neutral-800/80 bg-neutral-900/75 p-6 sm:p-8 transition-all duration-500 hover:border-indigo-500/40 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 focus-within:ring-2 focus-within:ring-indigo-500/50',
+    'group relative overflow-hidden rounded-3xl border border-neutral-800/80 bg-neutral-900/75 p-6 sm:p-8 transition-safe duration-500 hover:border-indigo-500/40 hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1 focus-within:ring-2 focus-within:ring-indigo-500/50',
   topDecor: (
     <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-white/20 to-transparent opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
   ),
   contentClassName: 'relative z-10 h-full flex flex-col justify-between',
   headerClassName: 'flex items-center gap-4 mb-4',
   iconBoxClassName:
-    'w-12 h-12 rounded-2xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 group-hover:border-indigo-500/50 transition-all duration-300',
+    'w-12 h-12 rounded-2xl bg-linear-to-br from-indigo-500/20 to-purple-500/20 border border-indigo-500/30 flex items-center justify-center shrink-0 shadow-inner group-hover:scale-105 group-hover:border-indigo-500/50 transition-safe duration-300',
   iconClassName: 'text-indigo-400 group-hover:text-indigo-300 transition-colors',
   iconSize: 24,
   titleClassName:

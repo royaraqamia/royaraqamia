@@ -31,7 +31,7 @@ export function PackageStep({ packages, selectedId, onSelect }: PackageStepProps
             aria-checked={selected}
             onClick={() => onSelect(pkg.id)}
             className={cn(
-              'text-right rounded-2xl border-2 p-5 transition-all duration-300 cursor-pointer',
+              'text-right rounded-2xl border-2 p-5 transition-safe duration-300 cursor-pointer',
               'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11',
               selected
                 ? 'border-primary bg-primary/10 shadow-lg shadow-primary/10'

@@ -16,13 +16,13 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
   return (
     <section
       aria-labelledby="habit-onboarding-title"
-      className="relative overflow-hidden rounded-3xl border border-border/70 bg-card/80 p-6 sm:p-8 md:p-10 shadow-2xl backdrop-blur-2xl ring-1 ring-foreground/10 max-w-5xl mx-auto"
+      className="relative overflow-hidden rounded-3xl border border-border/70 bg-card/80 p-6 sm:p-8 md:p-10 shadow-2xl ring-1 ring-foreground/10 max-w-5xl mx-auto"
     >
       <div className="relative z-10">
         {/* Header Section */}
         <header className="text-center space-y-3 mb-8 sm:mb-10">
           <div className="inline-flex items-center">
-            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 shadow-xs backdrop-blur-md">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 shadow-xs">
               <Sparkles
                 className="w-3.5 h-3.5 shrink-0 text-primary animate-pulse motion-reduce:animate-none"
                 aria-hidden="true"
@@ -55,7 +55,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 onClick={() => onTemplateSelect(template)}
                 aria-label={`ابدأ عادة ${template.name} (${template.description})`}
-                className={`group relative flex flex-col items-center justify-between text-center min-h-42.5 sm:min-h-47.5 rounded-2xl border p-4 sm:p-5 transition-all duration-300 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                className={`group relative flex flex-col items-center justify-between text-center min-h-42.5 sm:min-h-47.5 rounded-2xl border p-4 sm:p-5 transition-safe duration-300 ease-out cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
                   reduce ? '' : 'will-change-transform'
                 } border-border/60 bg-background/60 hover:bg-background/95 hover:border-primary/40 shadow-xs hover:shadow-xl hover:shadow-primary/5`}
               >
@@ -75,7 +75,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
                 </div>
 
                 <div className="pt-2 z-10">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold text-muted-foreground group-hover:text-primary bg-muted/60 group-hover:bg-primary/10 border border-border/40 group-hover:border-primary/20 transition-all duration-200">
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold text-muted-foreground group-hover:text-primary bg-muted/60 group-hover:bg-primary/10 border border-border/40 group-hover:border-primary/20 transition-safe duration-200">
                     {template.frequency === 'daily' ? 'يومي' : 'أسبوعي'}
                   </span>
                 </div>
@@ -90,7 +90,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
             type="button"
             onClick={onCreateBlank}
             variant="outline"
-            className="w-full sm:w-auto h-11 rounded-xl px-6 text-xs sm:text-sm font-bold border-border/80 hover:border-primary/40 hover:bg-muted/80 transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer inline-flex items-center justify-center gap-2 group"
+            className="w-full sm:w-auto h-11 rounded-xl px-6 text-xs sm:text-sm font-bold border-border/80 hover:border-primary/40 hover:bg-muted/80 transition-safe duration-200 shadow-xs hover:shadow-md cursor-pointer inline-flex items-center justify-center gap-2 group"
           >
             <Plus
               className="w-4 h-4 text-primary group-hover:rotate-90 transition-transform duration-300"
@@ -99,7 +99,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
             <span>إنشاء عادة مُخصَّصة</span>
           </Button>
 
-          <div className="inline-flex items-center gap-2 text-xs text-muted-foreground/90 bg-muted/30 border border-border/30 rounded-xl px-3.5 py-2 backdrop-blur-xs">
+          <div className="inline-flex items-center gap-2 text-xs text-muted-foreground/90 bg-muted/30 border border-border/30 rounded-xl px-3.5 py-2">
             <CheckSquare className="w-4 h-4 text-primary shrink-0" aria-hidden="true" />
             <span>ستظلُّ سجلاتك محفوظة محلِّيًّا حتَّى تُسجِّل دخولك</span>
           </div>

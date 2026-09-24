@@ -45,7 +45,7 @@ export function BlogSearch() {
         onChange={handleChange}
         placeholder="ابحث في المقالات..."
         aria-label="ابحث في المقالات"
-        className="w-full h-11 pr-10 pl-10 rounded-xl bg-background/60 border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-sm placeholder:text-muted-foreground/40 outline-none transition-all"
+        className="w-full h-11 pr-10 pl-10 rounded-xl bg-background/60 border border-border/50 focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-sm placeholder:text-muted-foreground/40 outline-none transition-safe"
       />
       {query && (
         <button

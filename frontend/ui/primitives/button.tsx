@@ -8,7 +8,7 @@ import { cn } from '@/frontend/shared/cn';
 
 const buttonVariants = cva(
   // Core button styles - High-end Linear/Apple/Vercel aesthetic with physics-based transitions
-  "relative inline-flex items-center justify-center whitespace-nowrap rounded-full font-bold tracking-tight transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 active:scale-[0.98] hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none",
+  "relative inline-flex items-center justify-center whitespace-nowrap rounded-full font-bold tracking-tight transition-safe duration-200 ease-[cubic-bezier(0.16,1,0.3,1)] select-none outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 active:scale-[0.98] hover:-translate-y-0.5 active:translate-y-0 disabled:transform-none",
   {
     variants: {
       variant: {
@@ -17,7 +17,7 @@ const buttonVariants = cva(
         destructive:
           'bg-destructive text-destructive-foreground border border-destructive-foreground/15 shadow-[0_1px_2px_rgba(0,0,0,0.08)] hover:bg-destructive/90 hover:shadow-destructive/20 hover:shadow-lg active:shadow-xs',
         outline:
-          'border border-input/80 bg-background/80 backdrop-blur-md text-foreground shadow-xs hover:bg-accent/80 hover:text-accent-foreground hover:border-input hover:shadow-sm active:bg-accent',
+          'border border-input/80 bg-background/80 text-foreground shadow-xs hover:bg-accent/80 hover:text-accent-foreground hover:border-input hover:shadow-sm active:bg-accent',
         secondary:
           'bg-secondary/90 text-secondary-foreground border border-secondary/50 shadow-xs hover:bg-secondary hover:shadow-sm hover:border-secondary-foreground/10 active:bg-secondary/80',
         ghost:

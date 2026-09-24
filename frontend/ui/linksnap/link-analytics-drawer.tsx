@@ -90,7 +90,7 @@ function BreakdownRows({
           </div>
           <div className="h-1.5 w-full rounded-full bg-muted/70 overflow-hidden">
             <div
-              className="h-full rounded-full bg-primary/70 transition-all duration-500 ease-out"
+              className="h-full rounded-full bg-primary/70 transition-safe duration-500 ease-out"
               style={{ width: `${total > 0 ? (row.count / total) * 100 : 0}%` }}
             />
           </div>

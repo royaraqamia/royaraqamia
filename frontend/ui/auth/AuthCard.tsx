@@ -12,7 +12,7 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
   return (
     <div className="relative w-full max-w-md mx-auto px-4 sm:px-0">
       {/* Main Glassmorphic Gradient Border Card Outer Container */}
-      <div className="group relative overflow-hidden rounded-3xl p-px bg-linear-to-b from-zinc-200/80 via-zinc-200/30 to-zinc-200/10 dark:from-zinc-700/60 dark:via-zinc-800/30 dark:to-zinc-900/20 shadow-2xl shadow-zinc-950/5 dark:shadow-black/50 transition-all duration-500 hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/10 animate-card-enter">
+      <div className="group relative overflow-hidden rounded-3xl p-px bg-linear-to-b from-zinc-200/80 via-zinc-200/30 to-zinc-200/10 dark:from-zinc-700/60 dark:via-zinc-800/30 dark:to-zinc-900/20 shadow-2xl shadow-zinc-950/5 dark:shadow-black/50 transition-safe duration-500 hover:shadow-indigo-500/10 dark:hover:shadow-indigo-500/10 animate-card-enter">
         {/* Specular Top Border Edge Highlight */}
         <div
           className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-indigo-500/50 to-transparent dark:via-indigo-400/60 transition-opacity duration-500"
@@ -20,7 +20,7 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
         />
 
         {/* Card Inner Backdrop Surface */}
-        <div className="relative rounded-[calc(1.5rem-1px)] bg-white/85 dark:bg-zinc-900/85 backdrop-blur-2xl p-6 sm:p-8 md:p-10 ring-1 ring-zinc-950/5 dark:ring-white/10 transition-colors duration-300">
+        <div className="relative rounded-[calc(1.5rem-1px)] bg-white/85 dark:bg-zinc-900/85 p-6 sm:p-8 md:p-10 ring-1 ring-zinc-950/5 dark:ring-white/10 transition-colors duration-300">
           {/* Top Radial Highlight Mesh */}
           <div
             className="pointer-events-none absolute inset-x-0 top-0 h-32 bg-linear-to-b from-indigo-500/6 dark:from-indigo-400/8 via-purple-500/2 to-transparent rounded-t-[calc(1.5rem-1px)]"

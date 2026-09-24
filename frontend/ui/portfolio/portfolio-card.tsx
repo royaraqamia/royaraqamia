@@ -28,7 +28,7 @@ export function PortfolioCard({
     >
       <div
         onClick={() => onSelect(actualIndex)}
-        className="relative group/card-inner rounded-3xl overflow-hidden bg-white/6 border border-white/10 transition-all duration-500 motion-reduce:transition-none hover:border-purple-500/40 hover:shadow-[0_0_40px_-10px_rgba(168,85,247,0.3)] w-full aspect-4/3 cursor-pointer active:scale-[0.98] active:opacity-90 focus-visible:outline-2 focus-visible:outline-purple-400/80 focus-visible:outline-offset-4"
+        className="relative group/card-inner rounded-3xl overflow-hidden bg-white/6 border border-white/10 transition-safe duration-500 motion-reduce:transition-none hover:border-purple-500/40 hover:shadow-[0_0_40px_-10px_rgba(168,85,247,0.3)] w-full aspect-4/3 cursor-pointer active:scale-[0.98] active:opacity-90 focus-visible:outline-2 focus-visible:outline-purple-400/80 focus-visible:outline-offset-4"
         role="button"
         tabIndex={0}
         aria-label={`مشروع ${project.title}`}
@@ -60,7 +60,7 @@ export function PortfolioCard({
           </span>
         </div>
 
-        <div className="absolute inset-0 bg-[#050810]/90 opacity-0 group-hover/card-inner:opacity-100 transition-all duration-300 motion-reduce:duration-0 flex flex-col justify-between p-6 sm:p-8 text-right z-20">
+        <div className="absolute inset-0 bg-[#050810]/90 opacity-0 group-hover/card-inner:opacity-100 transition-safe duration-300 motion-reduce:duration-0 flex flex-col justify-between p-6 sm:p-8 text-right z-20">
           <div className="flex items-center justify-between">
             <span className="px-3 py-1 text-xs font-bold rounded-full bg-purple-500/35 text-purple-300 border border-purple-500/30">
               {project.category || 'مشروع رقمي'}
@@ -107,7 +107,7 @@ export function PortfolioCard({
                 />
               </svg>
             </span>
-            <div className="w-8 h-8 rounded-full bg-purple-500/35 border border-purple-500/30 flex items-center justify-center text-purple-300 group-hover/card-inner:bg-purple-500 group-hover/card-inner:text-white transition-all duration-300">
+            <div className="w-8 h-8 rounded-full bg-purple-500/35 border border-purple-500/30 flex items-center justify-center text-purple-300 group-hover/card-inner:bg-purple-500 group-hover/card-inner:text-white transition-safe duration-300">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   strokeLinecap="round"

@@ -176,7 +176,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
         <article aria-label={p.title}>
           {/* Navigation Breadcrumbs */}
           <nav aria-label="مسار التَّنقُّل" className="mb-8 sm:mb-10">
-            <ol className="inline-flex items-center flex-wrap gap-2 px-3.5 py-1.5 rounded-full bg-muted/40 border border-border/40 text-xs sm:text-sm text-muted-foreground backdrop-blur-md transition-all duration-300 hover:border-border/80 shadow-2xs">
+            <ol className="inline-flex items-center flex-wrap gap-2 px-3.5 py-1.5 rounded-full bg-muted/40 border border-border/40 text-xs sm:text-sm text-muted-foreground transition-safe duration-300 hover:border-border/80 shadow-2xs">
               <li className="flex items-center">
                 <Link
                   href="/"
@@ -224,7 +224,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
             >
               <header className="mb-10 sm:mb-12">
                 {p.cover_image && (
-                  <div className="group relative aspect-video overflow-hidden rounded-2xl sm:rounded-3xl mb-8 sm:mb-10 bg-muted/60 border border-border/50 shadow-xl shadow-foreground/3 transition-all duration-500 hover:shadow-2xl hover:border-border/80">
+                  <div className="group relative aspect-video overflow-hidden rounded-2xl sm:rounded-3xl mb-8 sm:mb-10 bg-muted/60 border border-border/50 shadow-xl shadow-foreground/3 transition-safe duration-500 hover:shadow-2xl hover:border-border/80">
                     <Image
                       src={p.cover_image}
                       alt={p.title}
@@ -302,7 +302,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                 className="hidden lg:block lg:col-span-4 self-start sticky top-28"
                 aria-label="فهرس المحتويات"
               >
-                <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xl p-5 shadow-sm transition-all duration-300 hover:border-border/90 hover:shadow-md">
+                <div className="rounded-2xl border border-border/60 bg-card/60 p-5 shadow-sm transition-safe duration-300 hover:border-border/90 hover:shadow-md">
                   <div className="flex items-center gap-2 mb-4 pb-3 border-b border-border/40">
                     <BookOpen className="size-4 text-primary shrink-0" />
                     <h4 className="text-xs font-bold uppercase tracking-wider text-foreground">
@@ -314,7 +314,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                       <a
                         key={i}
                         href={`#${h.id}`}
-                        className={`group flex items-center gap-2 text-xs leading-relaxed rounded-lg px-2.5 py-2 transition-all duration-200 hover:bg-primary/10 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary ${
+                        className={`group flex items-center gap-2 text-xs leading-relaxed rounded-lg px-2.5 py-2 transition-safe duration-200 hover:bg-primary/10 hover:text-primary focus-visible:outline-2 focus-visible:outline-primary ${
                           h.level === 2
                             ? 'font-medium text-foreground/85 hover:text-primary'
                             : 'text-muted-foreground/75 pr-6 hover:text-primary'
@@ -340,7 +340,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
               <Link href="/blog">
                 <Button
                   variant="outline"
-                  className="w-full sm:w-auto rounded-full px-5 py-2.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] border-border/60 hover:bg-muted/80 shadow-2xs font-medium"
+                  className="w-full sm:w-auto rounded-full px-5 py-2.5 transition-safe duration-300 hover:scale-[1.02] active:scale-[0.98] border-border/60 hover:bg-muted/80 shadow-2xs font-medium"
                 >
                   <ArrowRight className="ms-2 size-4 text-primary" />
                   العودة إلى المدوَّنة
@@ -351,7 +351,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
 
             {/* Author Bio Card */}
             {author?.name && (
-              <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-linear-to-br from-card/80 via-card to-muted/20 p-6 sm:p-8 shadow-lg shadow-foreground/2 backdrop-blur-xl">
+              <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-linear-to-br from-card/80 via-card to-muted/20 p-6 sm:p-8 shadow-lg shadow-foreground/2">
                 <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-5">
                   {author.avatar_url?.trim() ? (
                     <Image

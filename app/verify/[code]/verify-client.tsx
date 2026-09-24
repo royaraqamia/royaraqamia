@@ -75,7 +75,7 @@ function NotFoundState({ code }: { code: string }) {
         >
           {/* Top Status Pill */}
           <m.div variants={fadeUp} className="mb-6">
-            <span className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3.5 py-1.5 text-xs font-bold text-red-600 dark:text-red-400 backdrop-blur-md">
+            <span className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3.5 py-1.5 text-xs font-bold text-red-600 dark:text-red-400">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
@@ -119,7 +119,7 @@ function NotFoundState({ code }: { code: string }) {
 
           {/* Information Card */}
           <m.div variants={fadeUp} className="w-full">
-            <Card className="glass-card relative overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-900/70 shadow-2xl shadow-neutral-950/5 backdrop-blur-xl">
+            <Card className="glass-card relative overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/70 dark:bg-neutral-900/70 shadow-2xl shadow-neutral-950/5">
               <CardContent className="flex flex-col items-center p-6 md:p-8 gap-6">
                 <div className="flex items-center gap-3 text-start w-full p-4 rounded-xl bg-red-500/5 border border-red-500/10">
                   <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-600 dark:text-red-400">
@@ -141,7 +141,7 @@ function NotFoundState({ code }: { code: string }) {
                   <Button
                     asChild
                     size="lg"
-                    className="w-full sm:w-auto min-w-45 gap-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-2 focus-visible:ring-neutral-400"
+                    className="w-full sm:w-auto min-w-45 gap-2 rounded-xl bg-neutral-900 text-white hover:bg-neutral-800 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-200 transition-safe duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 focus-visible:ring-2 focus-visible:ring-neutral-400"
                   >
                     <Link href="/verify">
                       <ArrowRight className="size-4" />
@@ -152,7 +152,7 @@ function NotFoundState({ code }: { code: string }) {
                     asChild
                     variant="outline"
                     size="lg"
-                    className="w-full sm:w-auto min-w-40 gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+                    className="w-full sm:w-auto min-w-40 gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-safe duration-300 hover:-translate-y-0.5 active:translate-y-0"
                   >
                     <Link href="/">الصَّفحة الرَّئيسيَّة</Link>
                   </Button>
@@ -307,7 +307,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
           {/* Certificate Main Display Card */}
           <m.div variants={fadeUp}>
             <div className="relative group">
-              <Card className="cert-print-card relative overflow-hidden rounded-3xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-neutral-900/80 shadow-2xl shadow-neutral-950/5 backdrop-blur-2xl transition-all duration-500">
+              <Card className="cert-print-card relative overflow-hidden rounded-3xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/80 dark:bg-neutral-900/80 shadow-2xl shadow-neutral-950/5 transition-safe duration-500">
                 {/* Aesthetic Corner Brackets */}
                 <div className="pointer-events-none absolute top-0 inset-s-0 size-12 md:size-16 border-t-2 border-s-2 border-primary/30 rounded-ss-3xl" />
                 <div className="pointer-events-none absolute top-0 inset-e-0 size-12 md:size-16 border-t-2 border-e-2 border-primary/30 rounded-se-3xl" />
@@ -364,9 +364,9 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                               ? undefined
                               : { delay: 0.15 + i * 0.06, duration: 0.4, ease: easeOut }
                           }
-                          className="group relative flex items-start gap-3.5 p-3.5 rounded-2xl bg-neutral-100/60 dark:bg-neutral-800/40 border border-neutral-200/50 dark:border-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-all duration-300"
+                          className="group relative flex items-start gap-3.5 p-3.5 rounded-2xl bg-neutral-100/60 dark:bg-neutral-800/40 border border-neutral-200/50 dark:border-neutral-800/50 hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-safe duration-300"
                         >
-                          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 shadow-xs border border-neutral-200/60 dark:border-neutral-700/60 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary dark:group-hover:text-primary-foreground transition-all duration-300">
+                          <div className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-xl bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 shadow-xs border border-neutral-200/60 dark:border-neutral-700/60 group-hover:bg-primary group-hover:text-primary-foreground dark:group-hover:bg-primary dark:group-hover:text-primary-foreground transition-safe duration-300">
                             {detail.icon}
                           </div>
                           <div className="min-w-0 flex-1">
@@ -426,7 +426,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
               asChild
               variant="outline"
               size="lg"
-              className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+              className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-safe duration-300 hover:-translate-y-0.5 active:translate-y-0"
             >
               <Link href="/verify">
                 <Search className="size-4" />
@@ -437,7 +437,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
             <Button
               variant="outline"
               size="lg"
-              className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0"
+              className="gap-2 rounded-xl border-neutral-300 dark:border-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-safe duration-300 hover:-translate-y-0.5 active:translate-y-0"
               onClick={copyLink}
             >
               {copied ? (
@@ -452,7 +452,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
               asChild
               variant="ghost"
               size="lg"
-              className="gap-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-all duration-300"
+              className="gap-2 rounded-xl text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-safe duration-300"
             >
               <Link href="/">
                 <ExternalLink className="size-4" />

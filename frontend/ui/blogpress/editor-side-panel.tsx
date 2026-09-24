@@ -249,7 +249,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
         className="sm:max-w-xl w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/50 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.18)]"
       >
         {/* Modal Header & Navigation Bar */}
-        <div className="sticky top-0 z-20 flex flex-col border-b border-border/40 bg-background/90 px-6 sm:px-8 pt-6 pb-4 backdrop-blur-sm">
+        <div className="sticky top-0 z-20 flex flex-col border-b border-border/40 bg-background/90 px-6 sm:px-8 pt-6 pb-4">
           <div className="flex items-center justify-between mb-4">
             <div>
               <DialogTitle className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">
@@ -449,7 +449,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
               </section>
 
               {/* SEO Quality Checklist */}
-              <section className="space-y-2.5 rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xs p-4 shadow-xs">
+              <section className="space-y-2.5 rounded-2xl border border-border/60 bg-card/60 p-4 shadow-xs">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-xs font-bold text-foreground">قائمة جودة تحسين المحتوى</p>
                   <span className="text-[10px] font-mono font-bold text-muted-foreground bg-muted/80 px-2 py-0.5 rounded-md border border-border/40">
@@ -523,7 +523,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
           ) : (
             <>
               {/* Content Statistics Card */}
-              <section className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xs p-4 space-y-2 shadow-xs hover:border-border/80 transition-[border-color,box-shadow] duration-200">
+              <section className="rounded-2xl border border-border/60 bg-card/60 p-4 space-y-2 shadow-xs hover:border-border/80 transition-[border-color,box-shadow] duration-200">
                 <div className="flex items-center gap-2 text-xs font-bold text-foreground border-b border-border/40 pb-2.5">
                   <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
                     <FileText className="size-3.5" />
@@ -542,7 +542,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
               </section>
 
               {/* Heading Structure Card */}
-              <section className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xs p-4 space-y-2 shadow-xs hover:border-border/80 transition-[border-color,box-shadow] duration-200">
+              <section className="rounded-2xl border border-border/60 bg-card/60 p-4 space-y-2 shadow-xs hover:border-border/80 transition-[border-color,box-shadow] duration-200">
                 <div className="flex items-center gap-2 text-xs font-bold text-foreground border-b border-border/40 pb-2.5">
                   <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
                     <HeadingIcon className="size-3.5" />
@@ -559,7 +559,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
               </section>
 
               {/* Media & Links Card */}
-              <section className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xs p-4 space-y-2 shadow-xs hover:border-border/80 transition-[border-color,box-shadow] duration-200">
+              <section className="rounded-2xl border border-border/60 bg-card/60 p-4 space-y-2 shadow-xs hover:border-border/80 transition-[border-color,box-shadow] duration-200">
                 <div className="flex items-center gap-2 text-xs font-bold text-foreground border-b border-border/40 pb-2.5">
                   <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">
                     <ImageIcon className="size-3.5" />
@@ -575,7 +575,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
               </section>
 
               {/* Readability Score Card */}
-              <section className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur-xs p-4 space-y-3 shadow-xs hover:border-border/80 transition-[border-color,box-shadow] duration-200">
+              <section className="rounded-2xl border border-border/60 bg-card/60 p-4 space-y-3 shadow-xs hover:border-border/80 transition-[border-color,box-shadow] duration-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-xs font-bold text-foreground">
                     <div className="p-1.5 rounded-lg bg-primary/10 text-primary border border-primary/20">

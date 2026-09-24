@@ -57,7 +57,7 @@ export function HowItWorks() {
             key={step.number}
             as="li"
             delay={i * 0.18}
-            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/88 dark:bg-neutral-900/82 border border-border/80 dark:border-neutral-800/80 shadow-xl shadow-black/2 hover:border-primary/40 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 outline-none"
+            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/88 dark:bg-neutral-900/82 border border-border/80 dark:border-neutral-800/80 shadow-xl shadow-black/2 hover:border-primary/40 transition-safe duration-500 hover:shadow-2xl hover:shadow-primary/10 hover:-translate-y-2 focus-within:ring-2 focus-within:ring-primary/50 focus-within:ring-offset-2 outline-none"
           >
             {/* Subtle Background Hover Light Glow */}
             <div className="absolute inset-0 rounded-3xl bg-linear-to-b from-primary/4 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
@@ -81,7 +81,7 @@ export function HowItWorks() {
               {/* Outer Glowing Aura on Hover */}
               <div className="absolute -inset-2 rounded-2xl bg-linear-to-r from-primary/30 to-primary/10 blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
-              <div className="relative w-20 h-20 rounded-2xl bg-card border border-border/80 flex items-center justify-center shadow-lg shadow-primary/5 group-hover:scale-110 group-hover:border-primary/50 group-hover:shadow-primary/20 transition-all duration-500 ease-out">
+              <div className="relative w-20 h-20 rounded-2xl bg-card border border-border/80 flex items-center justify-center shadow-lg shadow-primary/5 group-hover:scale-110 group-hover:border-primary/50 group-hover:shadow-primary/20 transition-safe duration-500 ease-out">
                 <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-primary/10 via-transparent to-primary/5" />
                 <StepIcon
                   size={36}

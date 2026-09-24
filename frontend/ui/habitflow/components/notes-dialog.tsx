@@ -76,7 +76,7 @@ export const NotesDialog = memo(function NotesDialog({
         >
           <div className="p-6 sm:p-8 space-y-6">
             {/* Habit Context Card */}
-            <div className="group rounded-2xl border border-border/40 bg-muted/20 p-4 sm:p-5 transition-all duration-300 hover:bg-muted/40 hover:border-border/60 hover:shadow-sm">
+            <div className="group rounded-2xl border border-border/40 bg-muted/20 p-4 sm:p-5 transition-safe duration-300 hover:bg-muted/40 hover:border-border/60 hover:shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
@@ -107,7 +107,7 @@ export const NotesDialog = memo(function NotesDialog({
 
                 {/* Dynamic Character Counter Badge */}
                 <div
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium transition-all duration-300 select-none shadow-sm ${
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-medium transition-safe duration-300 select-none shadow-sm ${
                     isAtLimit
                       ? 'bg-destructive/15 text-destructive border-destructive/30 font-bold scale-[1.02]'
                       : isNearLimit
@@ -133,7 +133,7 @@ export const NotesDialog = memo(function NotesDialog({
                   rows={5}
                   maxLength={maxLength}
                   autoFocus
-                  className="w-full min-h-35 rounded-2xl border-border/50 bg-background/50 p-4 sm:p-5 text-sm sm:text-base font-medium leading-relaxed text-foreground placeholder:text-muted-foreground/50 transition-all duration-300 ease-out resize-none shadow-sm hover:border-border/80 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 focus:shadow-md focus-visible:outline-none"
+                  className="w-full min-h-35 rounded-2xl border-border/50 bg-background/50 p-4 sm:p-5 text-sm sm:text-base font-medium leading-relaxed text-foreground placeholder:text-muted-foreground/50 transition-safe duration-300 ease-out resize-none shadow-sm hover:border-border/80 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 focus:shadow-md focus-visible:outline-none"
                 />
               </div>
             </div>
@@ -145,7 +145,7 @@ export const NotesDialog = memo(function NotesDialog({
               type="button"
               variant="outline"
               onClick={onClose}
-              className="w-full sm:w-auto rounded-xl px-6 py-2.5 text-sm font-bold border-border/50 bg-transparent hover:bg-muted/80 hover:text-foreground active:scale-[0.98] transition-all duration-200 h-11"
+              className="w-full sm:w-auto rounded-xl px-6 py-2.5 text-sm font-bold border-border/50 bg-transparent hover:bg-muted/80 hover:text-foreground active:scale-[0.98] transition-safe duration-200 h-11"
             >
               إلغاء
             </Button>
@@ -153,7 +153,7 @@ export const NotesDialog = memo(function NotesDialog({
               type="submit"
               disabled={isSaving}
               id="btn-save-note"
-              className="w-full sm:w-auto rounded-xl px-8 py-2.5 text-sm font-bold shadow-lg shadow-primary/20 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-primary/30 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:hover:translate-y-0 disabled:scale-100 disabled:cursor-not-allowed h-11 flex items-center justify-center gap-2.5 bg-primary text-primary-foreground hover:bg-primary/95"
+              className="w-full sm:w-auto rounded-xl px-8 py-2.5 text-sm font-bold shadow-lg shadow-primary/20 transition-safe duration-300 hover:-translate-y-0.5 hover:shadow-primary/30 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:hover:translate-y-0 disabled:scale-100 disabled:cursor-not-allowed h-11 flex items-center justify-center gap-2.5 bg-primary text-primary-foreground hover:bg-primary/95"
             >
               {isSaving ? (
                 <>

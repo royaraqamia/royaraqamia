@@ -245,7 +245,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                   {zoomed && (
                     <button
                       onClick={() => setZoom({ scale: 1, x: 0, y: 0 })}
-                      className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full flex items-center justify-center bg-black/60 backdrop-blur-md border border-white/20 text-white hover:bg-purple-600/70 transition-all duration-300"
+                      className="absolute top-4 right-4 z-30 w-9 h-9 rounded-full flex items-center justify-center bg-black/60 border border-white/20 text-white hover:bg-purple-600/70 transition-safe duration-300"
                       aria-label="إعادة تعيين التكبير"
                       type="button"
                     >
@@ -268,7 +268,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                     <>
                       <button
                         onClick={goToPrev}
-                        className="absolute inset-s-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-md border border-white/15 text-white hover:bg-purple-600/70 hover:border-purple-500/50 transition-all duration-300"
+                        className="absolute inset-s-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-black/50 border border-white/15 text-white hover:bg-purple-600/70 hover:border-purple-500/50 transition-safe duration-300"
                         aria-label="السابق"
                         type="button"
                       >
@@ -288,7 +288,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                       </button>
                       <button
                         onClick={goToNext}
-                        className="absolute inset-e-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-md border border-white/15 text-white hover:bg-purple-600/70 hover:border-purple-500/50 transition-all duration-300"
+                        className="absolute inset-e-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center bg-black/50 border border-white/15 text-white hover:bg-purple-600/70 hover:border-purple-500/50 transition-safe duration-300"
                         aria-label="التالي"
                         type="button"
                       >
@@ -311,7 +311,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                           <button
                             key={imgIdx}
                             onClick={() => setGalleryIndex(imgIdx)}
-                            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                            className={`w-2 h-2 rounded-full transition-safe duration-300 ${
                               imgIdx === galleryIndex
                                 ? 'bg-purple-400 w-5'
                                 : 'bg-white/30 hover:bg-white/60'

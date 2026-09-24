@@ -59,7 +59,7 @@ export const CategoryList = memo(function CategoryList({
           key={category.id}
           role="listitem"
           aria-label={`${category.name}${category.user_id === null ? '، افتراضي' : ''}`}
-          className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-all duration-300 hover:shadow-elevated hover:bg-card animate-slide-up card-lift"
+          className="group/row flex items-center justify-between rounded-xl border border-border/60 bg-card/50 p-3 transition-safe duration-300 hover:shadow-elevated hover:bg-card animate-slide-up card-lift"
           style={{ animationDelay: `${index * 30}ms` }}
         >
           <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -190,7 +190,7 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
           )}
           <Button
             type="submit"
-            className="w-full transition-all duration-200 btn-lift btn-press focus-ring touch-target"
+            className="w-full transition-safe duration-200 btn-lift btn-press focus-ring touch-target"
             disabled={pending}
           >
             {pending ? 'جارٍ الحفظ...' : 'حفظ'}

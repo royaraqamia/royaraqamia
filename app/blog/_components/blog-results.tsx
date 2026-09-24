@@ -16,7 +16,7 @@ export function BlogResults({ posts, totalPages, page, query }: BlogResultsProps
   return (
     <>
       {query && (
-        <div className="flex flex-wrap items-center justify-between gap-4 p-4 mb-10 rounded-2xl bg-muted/20 border border-border backdrop-blur-md text-sm text-muted-foreground shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 mb-10 rounded-2xl bg-muted/20 border border-border text-sm text-muted-foreground shadow-sm">
           <div className="flex items-center gap-2.5">
             <Search className="size-4 text-primary shrink-0" />
             <span>نتائج البحث عن:</span>
@@ -35,7 +35,7 @@ export function BlogResults({ posts, totalPages, page, query }: BlogResultsProps
       )}
 
       {posts.length === 0 ? (
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-muted/20 backdrop-blur-xl py-24 px-6 flex flex-col items-center justify-center text-center my-8 shadow-2xl">
+        <div className="relative overflow-hidden rounded-3xl border border-border bg-muted/20 py-24 px-6 flex flex-col items-center justify-center text-center my-8 shadow-2xl">
           <div className="size-16 rounded-2xl bg-muted/50 border border-border flex items-center justify-center mb-6 shadow-inner text-muted-foreground">
             <FileText className="size-8 stroke-[1.5]" />
           </div>
@@ -51,7 +51,7 @@ export function BlogResults({ posts, totalPages, page, query }: BlogResultsProps
             <Link href="/blog">
               <Button
                 variant="outline"
-                className="rounded-full bg-muted/50 border-border text-foreground hover:bg-muted/70 hover:border-border transition-all duration-300 px-6"
+                className="rounded-full bg-muted/50 border-border text-foreground hover:bg-muted/70 hover:border-border transition-safe duration-300 px-6"
               >
                 عرض جميع المقالات
               </Button>

@@ -77,7 +77,7 @@ export const UserDropdown = memo(function UserDropdown() {
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'relative group flex items-center justify-center h-10 w-10 rounded-full border border-border/60 bg-background/80 backdrop-blur-md text-foreground shadow-xs transition-all duration-200 ease-out hover:border-primary/40 hover:bg-muted/80 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          'relative group flex items-center justify-center h-10 w-10 rounded-full border border-border/60 bg-background/80 text-foreground shadow-xs transition-safe duration-200 ease-out hover:border-primary/40 hover:bg-muted/80 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           isOpen && 'bg-muted border-primary/50 ring-2 ring-primary/20 shadow-sm scale-[1.02]'
         )}
         aria-label="قائمة المستخدِم"
@@ -100,7 +100,7 @@ export const UserDropdown = memo(function UserDropdown() {
             ref={panelRef}
             data-glass-panel
             style={style}
-            className="z-50 rounded-2xl bg-popover/90 backdrop-blur-sm border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto will-change-[transform,opacity] contain-layout contain-style"
+            className="z-50 rounded-2xl bg-popover/90 border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto will-change-[transform,opacity] contain-layout contain-style"
             role="menu"
             aria-label="قائمة المستخدِم"
             onKeyDown={(e) => {
@@ -131,7 +131,7 @@ export const UserDropdown = memo(function UserDropdown() {
                   <Link
                     href="/admin"
                     onClick={() => setIsOpen(false)}
-                    className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                    className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     role="menuitem"
                   >
                     <div className="flex items-center gap-2.5">
@@ -150,7 +150,7 @@ export const UserDropdown = memo(function UserDropdown() {
                     setIsOpen(false);
                     setIsLogoutDialogOpen(true);
                   }}
-                  className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-destructive/90 hover:text-destructive hover:bg-destructive/10 active:bg-destructive/15 rounded-xl transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
+                  className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-destructive/90 hover:text-destructive hover:bg-destructive/10 active:bg-destructive/15 rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
                   role="menuitem"
                 >
                   <div className="flex items-center gap-2.5">
@@ -170,7 +170,7 @@ export const UserDropdown = memo(function UserDropdown() {
                     : '/auth/login'
                 }
                 onClick={() => setIsOpen(false)}
-                className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                 role="menuitem"
               >
                 <div className="flex items-center gap-2.5">
@@ -191,7 +191,7 @@ export const UserDropdown = memo(function UserDropdown() {
                     setIsOpen(false);
                     await promptInstall();
                   }}
-                  className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                  className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
                   role="menuitem"
                 >
                   <div className="flex items-center gap-2.5">

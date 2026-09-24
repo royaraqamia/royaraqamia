@@ -42,7 +42,7 @@ function LinkRowActions({
     <button
       onClick={() => onRequestBlock(link.code, link.isBlocked)}
       disabled={isModding}
-      className={`px-3 py-2 font-bold text-xs rounded-full border transition-all inline-flex items-center gap-1 cursor-pointer focus-ring btn-press touch-target ${
+      className={`px-3 py-2 font-bold text-xs rounded-full border transition-safe inline-flex items-center gap-1 cursor-pointer focus-ring btn-press touch-target ${
         link.isBlocked
           ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
           : 'bg-destructive/10 hover:bg-destructive/20 border-destructive/30 text-destructive'
@@ -290,7 +290,7 @@ export function AdminLinksDirectory({
                     <button
                       onClick={() => onRequestBlock(link.code, link.isBlocked)}
                       disabled={isModding}
-                      className={`px-3 py-1.5 font-bold text-xs rounded-full border transition-all inline-flex items-center gap-1 cursor-pointer focus-ring btn-press touch-target ${
+                      className={`px-3 py-1.5 font-bold text-xs rounded-full border transition-safe inline-flex items-center gap-1 cursor-pointer focus-ring btn-press touch-target ${
                         link.isBlocked
                           ? 'bg-primary/10 border-primary/30 text-primary hover:bg-primary/20'
                           : 'bg-destructive/10 hover:bg-destructive/20 border-destructive/30 text-destructive'

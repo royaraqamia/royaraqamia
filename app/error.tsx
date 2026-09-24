@@ -36,7 +36,7 @@ export default function Error({
       <main
         role="alert"
         aria-live="assertive"
-        className="relative z-10 w-full max-w-md rounded-3xl border border-border/50 bg-card/70 p-6 sm:p-10 shadow-2xl shadow-black/10 backdrop-blur-2xl ring-1 ring-white/10 transition-all duration-300 dark:ring-white/5"
+        className="relative z-10 w-full max-w-md rounded-3xl border border-border/50 bg-card/70 p-6 sm:p-10 shadow-2xl shadow-black/10 ring-1 ring-white/10 transition-safe duration-300 dark:ring-white/5"
       >
         {/* Animated System Status Pill Tag */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-destructive/20 bg-destructive/10 px-3.5 py-1 text-xs font-bold text-destructive tracking-wide">
@@ -123,7 +123,7 @@ export default function Error({
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 w-full">
           <button
             onClick={reset}
-            className="group relative inline-flex min-h-11 w-full sm:flex-1 items-center justify-center gap-2.5 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all duration-300 ease-out hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
+            className="group relative inline-flex min-h-11 w-full sm:flex-1 items-center justify-center gap-2.5 rounded-xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-safe duration-300 ease-out hover:scale-[1.02] hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer"
           >
             <svg
               className="h-4 w-4 transition-transform duration-500 ease-out group-hover:rotate-180"
@@ -143,7 +143,7 @@ export default function Error({
 
           <a
             href="/"
-            className="inline-flex min-h-11 w-full sm:flex-1 items-center justify-center gap-2 rounded-xl border border-border/70 bg-background/50 px-6 py-3 text-sm font-bold text-foreground backdrop-blur-md transition-all duration-200 hover:bg-muted hover:border-border active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
+            className="inline-flex min-h-11 w-full sm:flex-1 items-center justify-center gap-2 rounded-xl border border-border/70 bg-background/50 px-6 py-3 text-sm font-bold text-foreground transition-safe duration-200 hover:bg-muted hover:border-border active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
           >
             <span>الرَّئيسيَّة</span>
           </a>

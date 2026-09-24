@@ -55,7 +55,7 @@ export function RecurringExpenses({
 
   return (
     <Card
-      className="group/card relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 backdrop-blur-xl shadow-sm transition-all duration-300 hover:border-border/80 hover:shadow-md"
+      className="group/card relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 shadow-sm transition-safe duration-300 hover:border-border/80 hover:shadow-md"
       aria-label="المصروفات المُتكرِّرة"
     >
       <CardHeader className="flex flex-row items-center justify-between gap-4 p-5 sm:p-6 pb-4 border-b border-border/40">
@@ -80,7 +80,7 @@ export function RecurringExpenses({
             <Button
               variant="default"
               size="sm"
-              className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xs hover:shadow-sm active:scale-[0.98] transition-all duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 shrink-0 cursor-pointer"
+              className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xs hover:shadow-sm active:scale-[0.98] transition-safe duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 shrink-0 cursor-pointer"
             >
               <Plus className="size-3.5" />
               <span>إضافة</span>
@@ -90,7 +90,7 @@ export function RecurringExpenses({
       </CardHeader>
       <CardContent className="p-5 sm:p-6 space-y-3">
         {initialRecurring.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-10 text-center transition-all">
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-10 text-center transition-safe">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-background border border-border/50 text-muted-foreground/80 shadow-2xs mb-3">
               <Repeat className="size-6" />
             </div>
@@ -105,7 +105,7 @@ export function RecurringExpenses({
             return (
               <div
                 key={item.id}
-                className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-border/50 bg-background/60 hover:bg-accent/30 hover:border-border/80 p-3.5 sm:p-4 transition-all duration-200 shadow-2xs hover:shadow-sm"
+                className="group relative flex flex-col sm:flex-row sm:items-center justify-between gap-3.5 rounded-2xl border border-border/50 bg-background/60 hover:bg-accent/30 hover:border-border/80 p-3.5 sm:p-4 transition-safe duration-200 shadow-2xs hover:shadow-sm"
               >
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <span className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-muted/60 px-2.5 py-1.5 text-xs font-bold text-foreground/80 font-mono shadow-2xs me-0.5">
@@ -142,7 +142,7 @@ export function RecurringExpenses({
                           variant="ghost"
                           size="icon"
                           aria-label="تعديل المصروف المُتكرِّر"
-                          className="size-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring transition-all cursor-pointer"
+                          className="size-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring transition-safe cursor-pointer"
                         >
                           <Pencil className="size-3.5" />
                         </Button>
@@ -152,7 +152,7 @@ export function RecurringExpenses({
                       variant="ghost"
                       size="icon"
                       aria-label="حذف المصروف المُتكرِّر"
-                      className="size-8 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive transition-all cursor-pointer"
+                      className="size-8 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 focus-visible:ring-2 focus-visible:ring-destructive transition-safe cursor-pointer"
                       onClick={() => handleDelete(item)}
                     >
                       <Trash2 className="size-3.5" />
@@ -258,7 +258,7 @@ function RecurringDialog({
                 min="0.01"
                 inputMode="decimal"
                 placeholder="0.00"
-                className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-all"
+                className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-safe"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
@@ -277,7 +277,7 @@ function RecurringDialog({
                 min="1"
                 max="31"
                 inputMode="numeric"
-                className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-all font-mono"
+                className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-safe font-mono"
                 value={dayOfMonth}
                 onChange={(e) => setDayOfMonth(e.target.value)}
               />
@@ -288,7 +288,7 @@ function RecurringDialog({
               التَّصنيف
             </Label>
             <Select value={categoryId} onValueChange={setCategoryId}>
-              <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-all w-full">
+              <SelectTrigger className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-safe w-full">
                 <SelectValue placeholder="اختر تصنيف" />
               </SelectTrigger>
               <SelectContent className="rounded-2xl border border-border/80 bg-card/95 shadow-xl p-1">
@@ -320,7 +320,7 @@ function RecurringDialog({
             <Input
               id="rec-desc"
               placeholder="مثال: فاتورة الإنترنت"
-              className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-all"
+              className="h-11 rounded-xl bg-muted/30 border-border/80 focus:border-primary focus:ring-2 focus:ring-primary/20 text-sm transition-safe"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
             />
@@ -336,7 +336,7 @@ function RecurringDialog({
           )}
           <Button
             type="submit"
-            className="w-full h-11 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.99] transition-all duration-200 disabled:opacity-50 cursor-pointer"
+            className="w-full h-11 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.99] transition-safe duration-200 disabled:opacity-50 cursor-pointer"
             disabled={pending}
           >
             {pending && <Loader2 className="me-2 size-4 animate-spin" />}

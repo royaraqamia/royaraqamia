@@ -75,7 +75,7 @@ function CertificateListItem({
       exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.2 } }}
       layout
     >
-      <Card className="card-hover glass-card border-primary/5 hover:border-primary/20 transition-all duration-300">
+      <Card className="card-hover glass-card border-primary/5 hover:border-primary/20 transition-safe duration-300">
         <CardContent className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:gap-4">
           <div className="flex min-w-0 flex-1 items-center gap-3">
             {/* Avatar */}

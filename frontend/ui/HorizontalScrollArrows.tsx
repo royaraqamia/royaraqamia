@@ -11,7 +11,7 @@ interface ScrollArrowsProps {
 }
 
 const arrowBase =
-  'hidden md:flex absolute top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-all duration-300 hover:scale-110 bg-black/60 hover:bg-[#7766EE] border-white/15 hover:border-[#7766EE] scroll-arrow-blur';
+  'hidden md:flex absolute top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full items-center justify-center border cursor-pointer transition-safe duration-300 hover:scale-110 bg-black/60 hover:bg-[#7766EE] border-white/15 hover:border-[#7766EE]';
 
 export function HorizontalScrollArrows({
   onScroll,

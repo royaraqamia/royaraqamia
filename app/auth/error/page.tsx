@@ -18,7 +18,7 @@ export default function AuthErrorPage() {
           />
 
           {/* Glassmorphic Icon Badge */}
-          <div className="relative flex items-center justify-center size-20 rounded-2xl bg-red-500/10 dark:bg-red-500/20 border border-red-500/20 dark:border-red-500/30 backdrop-blur-md shadow-xs transition-transform duration-300 ease-out group-hover:scale-105">
+          <div className="relative flex items-center justify-center size-20 rounded-2xl bg-red-500/10 dark:bg-red-500/20 border border-red-500/20 dark:border-red-500/30 shadow-xs transition-transform duration-300 ease-out group-hover:scale-105">
             <svg
               className="size-8 text-red-600 dark:text-red-400 transition-transform duration-300 group-hover:rotate-6"
               viewBox="0 0 24 24"
@@ -47,7 +47,7 @@ export default function AuthErrorPage() {
         <div className="w-full pt-1">
           <Link
             href="/auth/login"
-            className="group relative inline-flex items-center justify-center w-full h-11 px-6 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-slate-50 dark:text-slate-900 font-medium text-sm transition-all duration-300 ease-out shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 overflow-hidden"
+            className="group relative inline-flex items-center justify-center w-full h-11 px-6 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-slate-50 dark:text-slate-900 font-medium text-sm transition-safe duration-300 ease-out shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 overflow-hidden"
           >
             <span className="relative z-10 flex items-center justify-center gap-2">
               تسجيل الدُّخول

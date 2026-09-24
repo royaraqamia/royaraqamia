@@ -89,7 +89,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
         variant="ghost"
         size="icon"
         onClick={() => setOpen(true)}
-        className="relative text-muted-foreground hover:text-foreground transition-all duration-200 hover:bg-muted/80 rounded-xl active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/40"
+        className="relative text-muted-foreground hover:text-foreground transition-safe duration-200 hover:bg-muted/80 rounded-xl active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/40"
         aria-label="إعدادات المقال"
       >
         <Settings className="size-4.5 transition-transform duration-300 ease-out hover:rotate-45" />
@@ -116,7 +116,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
           {/* Scrollable Form Body */}
           <div className="p-5 sm:p-6 space-y-6">
             {/* Card 1: Permalink / Slug */}
-            <section className="rounded-2xl border border-border/50 bg-card/50 p-4 sm:p-5 space-y-4 shadow-xs hover:border-border/80 transition-all duration-200">
+            <section className="rounded-2xl border border-border/50 bg-card/50 p-4 sm:p-5 space-y-4 shadow-xs hover:border-border/80 transition-safe duration-200">
               <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
                 <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Link2 className="size-4" />
@@ -134,7 +134,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                   value={slug}
                   onChange={(e) => onSlugChange(e.target.value)}
                   placeholder="رابط-المقال"
-                  className="font-mono text-sm transition-all duration-200 min-h-11 rounded-xl bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary"
+                  className="font-mono text-sm transition-safe duration-200 min-h-11 rounded-xl bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary"
                   dir="ltr"
                 />
 
@@ -163,7 +163,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
             </section>
 
             {/* Card 2: Cover Image */}
-            <section className="rounded-2xl border border-border/50 bg-card/50 p-4 sm:p-5 space-y-4 shadow-xs hover:border-border/80 transition-all duration-200">
+            <section className="rounded-2xl border border-border/50 bg-card/50 p-4 sm:p-5 space-y-4 shadow-xs hover:border-border/80 transition-safe duration-200">
               <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
                 <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <ImageIcon className="size-4" />
@@ -180,7 +180,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                   onChange={handleCoverFileSelect}
                 />
                 {coverImage && !coverImageError ? (
-                  <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border/60 bg-muted group/cover shadow-xs transition-all duration-300 hover:shadow-md">
+                  <div className="relative aspect-video w-full overflow-hidden rounded-xl border border-border/60 bg-muted group/cover shadow-xs transition-safe duration-300 hover:shadow-md">
                     <Image
                       src={coverImage}
                       alt="معاينة صورة الغلاف"
@@ -190,12 +190,12 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                       className="object-cover transition-transform duration-500 group-hover/cover:scale-105"
                       onError={() => setCoverImageError(true)}
                     />
-                    <div className="absolute inset-0 bg-neutral-950/60 backdrop-blur-xs opacity-0 group-hover/cover:opacity-100 transition-all duration-300 flex items-center justify-center gap-2.5 p-4">
+                    <div className="absolute inset-0 bg-neutral-950/60 opacity-0 group-hover/cover:opacity-100 transition-safe duration-300 flex items-center justify-center gap-2.5 p-4">
                       <Button
                         type="button"
                         size="sm"
                         variant="secondary"
-                        className="rounded-full shadow-lg bg-background/90 hover:bg-background text-foreground transition-all duration-200 hover:scale-105 active:scale-95"
+                        className="rounded-full shadow-lg bg-background/90 hover:bg-background text-foreground transition-safe duration-200 hover:scale-105 active:scale-95"
                         disabled={isCoverUploading}
                         onClick={() => coverFileInputRef.current?.click()}
                       >
@@ -210,7 +210,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                         type="button"
                         size="sm"
                         variant="destructive"
-                        className="rounded-full shadow-lg transition-all duration-200 hover:scale-105 active:scale-95"
+                        className="rounded-full shadow-lg transition-safe duration-200 hover:scale-105 active:scale-95"
                         onClick={() => {
                           setCoverImage('');
                           setCoverImageError(false);
@@ -226,9 +226,9 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                     type="button"
                     onClick={() => coverFileInputRef.current?.click()}
                     disabled={isCoverUploading}
-                    className="w-full aspect-video rounded-xl border-2 border-dashed border-border/80 hover:border-primary/60 bg-muted/20 hover:bg-primary/2 dark:hover:bg-primary/4 transition-all duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer group/dropzone active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    className="w-full aspect-video rounded-xl border-2 border-dashed border-border/80 hover:border-primary/60 bg-muted/20 hover:bg-primary/2 dark:hover:bg-primary/4 transition-safe duration-300 flex flex-col items-center justify-center p-6 text-center cursor-pointer group/dropzone active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                   >
-                    <div className="size-12 rounded-2xl bg-muted/80 dark:bg-muted/40 border border-border/40 flex items-center justify-center mb-3 group-hover/dropzone:scale-110 group-hover/dropzone:border-primary/30 group-hover/dropzone:bg-primary/10 group-hover/dropzone:text-primary transition-all duration-300">
+                    <div className="size-12 rounded-2xl bg-muted/80 dark:bg-muted/40 border border-border/40 flex items-center justify-center mb-3 group-hover/dropzone:scale-110 group-hover/dropzone:border-primary/30 group-hover/dropzone:bg-primary/10 group-hover/dropzone:text-primary transition-safe duration-300">
                       {isCoverUploading ? (
                         <Loader2 className="size-6 text-primary animate-spin" />
                       ) : (
@@ -247,7 +247,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
             </section>
 
             {/* Card 3: SEO Settings */}
-            <section className="rounded-2xl border border-border/50 bg-card/50 p-4 sm:p-5 space-y-5 shadow-xs hover:border-border/80 transition-all duration-200">
+            <section className="rounded-2xl border border-border/50 bg-card/50 p-4 sm:p-5 space-y-5 shadow-xs hover:border-border/80 transition-safe duration-200">
               <div className="flex items-center gap-2.5 text-sm font-bold text-foreground">
                 <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
                   <Search className="size-4" />
@@ -307,13 +307,13 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                   onChange={(e) => setMetaTitle(e.target.value)}
                   placeholder={title || 'عنوان SEO مُخصَّص'}
                   maxLength={70}
-                  className="text-sm transition-all duration-200 min-h-11 rounded-xl bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary"
+                  className="text-sm transition-safe duration-200 min-h-11 rounded-xl bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary"
                 />
 
                 {/* Character Progress Bar */}
                 <div className="h-1.5 w-full bg-muted/60 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-300 rounded-full ${
+                    className={`h-full transition-safe duration-300 rounded-full ${
                       isTitleOverLimit
                         ? 'bg-rose-500'
                         : isTitleWarning
@@ -369,13 +369,13 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                   placeholder="وصف مختصر يظهر في نتائج البحث"
                   maxLength={160}
                   rows={3}
-                  className="text-sm transition-all duration-200 resize-none min-h-24 rounded-xl bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary leading-relaxed"
+                  className="text-sm transition-safe duration-200 resize-none min-h-24 rounded-xl bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary leading-relaxed"
                 />
 
                 {/* Character Progress Bar */}
                 <div className="h-1.5 w-full bg-muted/60 rounded-full overflow-hidden">
                   <div
-                    className={`h-full transition-all duration-300 rounded-full ${
+                    className={`h-full transition-safe duration-300 rounded-full ${
                       isDescOverLimit
                         ? 'bg-rose-500'
                         : isDescWarning
@@ -395,7 +395,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                     <span>معاينة في نتائج البحث (Google)</span>
                   </div>
 
-                  <div className="rounded-xl border border-border/60 bg-background p-4 space-y-2 shadow-xs transition-all duration-200 hover:border-border">
+                  <div className="rounded-xl border border-border/60 bg-background p-4 space-y-2 shadow-xs transition-safe duration-200 hover:border-border">
                     <div
                       className="flex items-center gap-2 text-xs text-muted-foreground/80 font-sans"
                       dir="ltr"

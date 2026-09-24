@@ -81,7 +81,7 @@ export const UpdatePopup = memo(function UpdatePopup({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: 0.15 } }}
             transition={{ duration: 0.3 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm will-change-[opacity]"
+            className="absolute inset-0 bg-black/40 will-change-[opacity]"
             onClick={handleDismiss}
             aria-hidden="true"
           />
@@ -137,7 +137,7 @@ export const UpdatePopup = memo(function UpdatePopup({
               </button>
               <button
                 onClick={onReload}
-                className="flex-1 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card active:scale-[0.98]"
+                className="flex-1 rounded-full bg-primary px-4 py-2.5 text-sm font-medium text-primary-foreground shadow-sm transition-safe hover:bg-primary/90 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card active:scale-[0.98]"
               >
                 تحديث الآن
               </button>

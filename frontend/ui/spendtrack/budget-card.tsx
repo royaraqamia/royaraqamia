@@ -67,7 +67,7 @@ export function BudgetCard({
 
   return (
     <Card
-      className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/95 backdrop-blur-xl shadow-xs transition-all duration-300 hover:shadow-xl hover:border-border/80 hover:-translate-y-0.5"
+      className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card/95 shadow-xs transition-safe duration-300 hover:shadow-xl hover:border-border/80 hover:-translate-y-0.5"
       aria-label="ميزانيَّة الشَّهر"
     >
       <CardHeader className="flex flex-row items-center justify-between pb-3 pt-6 px-6">
@@ -79,7 +79,7 @@ export function BudgetCard({
             <p className="text-xs font-medium text-muted-foreground/60 capitalize">{month}</p>
           )}
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/15 text-primary shadow-xs transition-all duration-300 group-hover:scale-105 group-hover:bg-primary/20">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/15 text-primary shadow-xs transition-safe duration-300 group-hover:scale-105 group-hover:bg-primary/20">
           <Wallet className="h-5 w-5 transition-transform duration-300 group-hover:rotate-6" />
         </div>
       </CardHeader>
@@ -127,7 +127,7 @@ export function BudgetCard({
                 <div className="space-y-1.5 pt-1">
                   <div className="h-2 w-full overflow-hidden rounded-full bg-muted/80 p-0.5 border border-border/30">
                     <div
-                      className={`h-full rounded-full transition-all duration-500 ease-out ${
+                      className={`h-full rounded-full transition-safe duration-500 ease-out ${
                         exceeded ? 'bg-destructive' : 'bg-primary'
                       }`}
                       style={{ width: `${percentUsed}%` }}
@@ -175,7 +175,7 @@ export function BudgetCard({
                     min="0.01"
                     inputMode="decimal"
                     placeholder="0.00"
-                    className="ps-7 h-10 rounded-xl bg-muted/40 border-border/60 text-sm font-medium transition-all focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:outline-none"
+                    className="ps-7 h-10 rounded-xl bg-muted/40 border-border/60 text-sm font-medium transition-safe focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:outline-none"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                   />
@@ -183,7 +183,7 @@ export function BudgetCard({
                 <Button
                   type="submit"
                   disabled={saving}
-                  className="h-10 px-5 rounded-xl bg-primary text-primary-foreground font-medium text-xs shadow-xs hover:bg-primary/90 hover:shadow transition-all active:scale-[0.98] disabled:opacity-50 shrink-0"
+                  className="h-10 px-5 rounded-xl bg-primary text-primary-foreground font-medium text-xs shadow-xs hover:bg-primary/90 hover:shadow transition-safe active:scale-[0.98] disabled:opacity-50 shrink-0"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ'}
                 </Button>

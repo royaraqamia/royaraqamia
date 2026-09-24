@@ -54,7 +54,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           className="relative flex min-h-120 w-full items-center justify-center px-4 py-12 sm:px-6 lg:px-8"
         >
           {/* Main Error Glassmorphism Card Container */}
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border/60 bg-background/80 p-6 text-center shadow-2xl backdrop-blur-xl transition-all duration-300 sm:p-8">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-border/60 bg-background/80 p-6 text-center shadow-2xl transition-safe duration-300 sm:p-8">
             {/* Pulsing Icon Badge */}
             <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-destructive/10 text-destructive ring-8 ring-destructive/5 sm:h-20 sm:w-20">
               <svg
@@ -86,7 +86,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <div className="mt-6 sm:mt-8">
               <Button
                 onClick={this.handleReset}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-safe duration-200 hover:scale-[1.01] active:scale-[0.99] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <svg
                   className="h-4 w-4 stroke-2"

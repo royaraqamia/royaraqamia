@@ -75,7 +75,7 @@ function CountryPicker({ selectedIso, onSelect }: CountryPickerProps) {
     <Command
       dir="rtl"
       defaultValue={selectedIso}
-      className="rounded-none border-0 bg-transparent shadow-none backdrop-blur-none"
+      className="rounded-none border-0 bg-transparent shadow-none"
     >
       <CommandInput placeholder="ابحث عن الدَّولة أو رمز الاتِّصال..." className="h-12" />
       <CommandList className={PICKER_LIST_CLASSNAME}>
@@ -215,8 +215,8 @@ export function CountryPhoneInput({
     <div
       dir="ltr"
       className={cn(
-        'flex h-11 w-full items-stretch overflow-hidden rounded-xl border bg-background/80 backdrop-blur-xs shadow-2xs',
-        'transition-all duration-200 ease-out',
+        'flex h-11 w-full items-stretch overflow-hidden rounded-xl border bg-background/80 shadow-2xs',
+        'transition-safe duration-200 ease-out',
         'hover:border-ring/40 hover:bg-background hover:shadow-xs',
         'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20 focus-within:bg-background focus-within:shadow-xs',
         invalid

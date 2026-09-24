@@ -75,7 +75,7 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
       }}
     >
       <DialogTrigger asChild>
-        <Button className="transition-all duration-200 btn-press touch-target focus-ring">
+        <Button className="transition-safe duration-200 btn-press touch-target focus-ring">
           <Plus className="ms-1 size-4" />
           إضافة تصنيف
         </Button>
@@ -140,7 +140,7 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
           )}
           <Button
             type="submit"
-            className="btn-lift w-full transition-all duration-200 btn-press focus-ring touch-target"
+            className="btn-lift w-full transition-safe duration-200 btn-press focus-ring touch-target"
             disabled={pending}
           >
             {pending ? 'جارٍ الإنشاء...' : 'إنشاء'}

@@ -62,7 +62,7 @@ export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProp
       }
       className="h-full"
     >
-      <Card className="group relative h-full overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5 lg:p-6 backdrop-blur-xl transition-all duration-300 ease-out hover:border-border hover:bg-card/90 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.99] focus-within:ring-2 focus-within:ring-primary/20">
+      <Card className="group relative h-full overflow-hidden rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5 lg:p-6 transition-safe duration-300 ease-out hover:border-border hover:bg-card/90 hover:shadow-lg hover:shadow-primary/5 active:scale-[0.99] focus-within:ring-2 focus-within:ring-primary/20">
         {/* Ambient Subtle Hover Glow */}
         <div
           aria-hidden="true"
@@ -72,7 +72,7 @@ export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProp
         <div className="relative z-10 flex items-center gap-3.5 sm:gap-4 min-w-0">
           {/* Icon Badge with Ring & Micro-interaction */}
           <div
-            className={`relative flex shrink-0 items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-xs transition-all duration-300 ease-out ${
+            className={`relative flex shrink-0 items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-xs transition-safe duration-300 ease-out ${
               !reduce
                 ? 'group-hover:scale-110 group-hover:rotate-3 group-hover:bg-primary/15 group-hover:shadow-md group-hover:shadow-primary/10'
                 : ''

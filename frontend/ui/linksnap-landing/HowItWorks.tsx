@@ -59,17 +59,17 @@ export function HowItWorks() {
             key={step.number}
             as="li"
             delay={i * 0.15}
-            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/75 dark:bg-card/55 border border-border/60 hover:border-primary/40 shadow-xs hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 ease-out hover:-translate-y-2"
+            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/75 dark:bg-card/55 border border-border/60 hover:border-primary/40 shadow-xs hover:shadow-2xl hover:shadow-primary/10 transition-safe duration-500 ease-out hover:-translate-y-2"
           >
             {/* Subtle inner hover glow gradient */}
             <div className="absolute inset-0 rounded-3xl bg-linear-to-b from-primary/4 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
             {/* Icon Box with Micro-Interactions */}
             <div
-              className="landing-reveal-item relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-background border border-border/80 shadow-md group-hover:shadow-lg group-hover:border-primary/50 flex items-center justify-center mb-8 transition-all duration-300"
+              className="landing-reveal-item relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-background border border-border/80 shadow-md group-hover:shadow-lg group-hover:border-primary/50 flex items-center justify-center mb-8 transition-safe duration-300"
               style={{ ['--ld' as string]: `${i * 0.15 + 0.2}s` } as React.CSSProperties}
             >
-              <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent group-hover:from-primary/20 transition-all duration-300" />
+              <div className="absolute inset-0 rounded-2xl bg-linear-to-br from-primary/10 via-primary/5 to-transparent group-hover:from-primary/20 transition-safe duration-300" />
               <IconComponent
                 size={36}
                 className="text-primary relative z-10 group-hover:scale-110 transition-transform duration-300 ease-out"

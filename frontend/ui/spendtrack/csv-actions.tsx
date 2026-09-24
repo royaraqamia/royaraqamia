@@ -97,7 +97,7 @@ export function CsvActions({
         size="sm"
         type="button"
         onClick={() => setImportOpen(true)}
-        className="h-9 px-3 gap-1.5 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-all"
+        className="h-9 px-3 gap-1.5 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
       >
         <Upload className="size-3.5" />
         استيراد
@@ -108,7 +108,7 @@ export function CsvActions({
         type="button"
         onClick={handleExport}
         disabled={exporting}
-        className="h-9 px-3 gap-1.5 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-all"
+        className="h-9 px-3 gap-1.5 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
       >
         {exporting ? (
           <Loader2 className="size-3.5 animate-spin" />
@@ -169,7 +169,7 @@ export function CsvActions({
                 setFileContent('');
                 setFileName(null);
               }}
-              className="h-9 px-4 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-all"
+              className="h-9 px-4 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
             >
               إلغاء
             </Button>
@@ -177,7 +177,7 @@ export function CsvActions({
               type="button"
               onClick={handleImport}
               disabled={importing || !fileContent.trim()}
-              className="h-9 px-4 text-xs font-medium rounded-xl shadow-sm active:scale-95 transition-all"
+              className="h-9 px-4 text-xs font-medium rounded-xl shadow-sm active:scale-95 transition-safe"
             >
               {importing ? (
                 <span className="flex items-center gap-1.5">

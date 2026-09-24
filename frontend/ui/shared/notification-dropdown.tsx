@@ -92,7 +92,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
         ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         className={cn(
-          'relative group flex items-center justify-center h-10 w-10 rounded-full border border-border/60 bg-background/80 backdrop-blur-md text-foreground shadow-xs transition-all duration-200 ease-out hover:border-primary/40 hover:bg-muted/80 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+          'relative group flex items-center justify-center h-10 w-10 rounded-full border border-border/60 bg-background/80 text-foreground shadow-xs transition-safe duration-200 ease-out hover:border-primary/40 hover:bg-muted/80 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
           isOpen && 'bg-muted border-primary/50 ring-2 ring-primary/20 shadow-sm scale-[1.02]'
         )}
         aria-label={`الإشعارات${unreadCount > 0 ? ` (${unreadCount} غير مقروء)` : ''}`}
@@ -118,7 +118,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
             style={style}
             className={cn(
               'z-50 overflow-hidden will-change-[transform,opacity] contain-layout contain-style',
-              'bg-popover/90 backdrop-blur-sm border border-border/80 shadow-2xl rounded-2xl',
+              'bg-popover/90 border border-border/80 shadow-2xl rounded-2xl',
               'animate-in fade-in-0 zoom-in-95 duration-200 ease-out'
             )}
             onKeyDown={handleKeyDown}
@@ -138,7 +138,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllAsRead()}
-                  className="text-xs font-medium text-primary hover:text-primary/80 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-all duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
+                  className="text-xs font-medium text-primary hover:text-primary/80 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-safe duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
                 >
                   <Check size={14} className="shrink-0" />
                   <span>تحديد الكل كمقروء</span>
@@ -174,7 +174,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                     <li
                       key={notification.id}
                       className={cn(
-                        'px-4 py-3.5 transition-all duration-200 ease-out relative group cursor-pointer select-none',
+                        'px-4 py-3.5 transition-safe duration-200 ease-out relative group cursor-pointer select-none',
                         'focus-visible:bg-accent/80 focus-visible:outline-none',
                         !notification.is_read
                           ? 'bg-primary/4 dark:bg-primary/8 hover:bg-primary/8 dark:hover:bg-primary/[0.14]'
@@ -201,7 +201,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                         className={cn(
                           'absolute top-3 inset-inline-end-3 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
                           'p-1.5 rounded-lg text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10',
-                          'transition-all duration-150 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive'
+                          'transition-safe duration-150 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive'
                         )}
                         aria-label="حذف الإشعار"
                       >

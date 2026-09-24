@@ -58,7 +58,7 @@ export function CategoryBudgets({
 
   return (
     <Card
-      className="group/card relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 backdrop-blur-xl shadow-xs transition-all duration-300 hover:border-border/80 hover:shadow-md"
+      className="group/card relative overflow-hidden rounded-2xl border border-border/50 bg-card/60 shadow-xs transition-safe duration-300 hover:border-border/80 hover:shadow-md"
       aria-label="ميزانيَّات التَّصنيفات"
     >
       <CardHeader className="flex flex-row items-center justify-between gap-4 border-b border-border/30 p-4 pb-3 sm:p-5 sm:pb-3">
@@ -70,7 +70,7 @@ export function CategoryBudgets({
             {initialBudgets.length}
           </span>
         </div>
-        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20 transition-all duration-300 group-hover/card:scale-105 group-hover/card:bg-primary/15 group-hover/card:ring-primary/30 sm:size-9">
+        <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20 transition-safe duration-300 group-hover/card:scale-105 group-hover/card:bg-primary/15 group-hover/card:ring-primary/30 sm:size-9">
           <Wallet className="size-4 text-primary transition-transform duration-300 group-hover/card:rotate-6" />
         </div>
       </CardHeader>
@@ -81,7 +81,7 @@ export function CategoryBudgets({
           return (
             <div
               key={cat.categoryId}
-              className="group/row relative flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 p-2 shadow-2xs transition-all duration-200 hover:border-border/80 hover:bg-background/90 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 sm:gap-3 sm:p-2.5"
+              className="group/row relative flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 p-2 shadow-2xs transition-safe duration-200 hover:border-border/80 hover:bg-background/90 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 sm:gap-3 sm:p-2.5"
             >
               {/* Category Info */}
               <div className="flex min-w-0 flex-1 items-center gap-2.5">
@@ -109,7 +109,7 @@ export function CategoryBudgets({
                   inputMode="decimal"
                   placeholder={cat.budget !== null ? String(cat.budget) : 'غير مُحدَّدَة'}
                   aria-label={`ميزانيَّة تصنيف ${cat.name}`}
-                  className="h-8 w-20 rounded-lg border-border/50 bg-muted/40 text-center font-mono text-xs font-medium transition-all duration-200 hover:bg-muted/70 focus:bg-background focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 xs:w-24 sm:h-9 sm:w-28 sm:text-sm"
+                  className="h-8 w-20 rounded-lg border-border/50 bg-muted/40 text-center font-mono text-xs font-medium transition-safe duration-200 hover:bg-muted/70 focus:bg-background focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/30 xs:w-24 sm:h-9 sm:w-28 sm:text-sm"
                   value={current}
                   onChange={(e) => setDrafts((d) => ({ ...d, [cat.categoryId]: e.target.value }))}
                 />
@@ -120,7 +120,7 @@ export function CategoryBudgets({
                   type="button"
                   aria-label={`حفظ ميزانيَّة ${cat.name}`}
                   disabled={pending === cat.categoryId}
-                  className="h-8 w-8 shrink-0 rounded-lg border border-transparent text-muted-foreground transition-all duration-200 hover:border-primary/20 hover:bg-primary/10 hover:text-primary active:scale-95 disabled:opacity-50 sm:h-9 sm:w-9"
+                  className="h-8 w-8 shrink-0 rounded-lg border border-transparent text-muted-foreground transition-safe duration-200 hover:border-primary/20 hover:bg-primary/10 hover:text-primary active:scale-95 disabled:opacity-50 sm:h-9 sm:w-9"
                   onClick={() => save(cat.categoryId, current ?? '')}
                 >
                   {pending === cat.categoryId ? (
@@ -137,7 +137,7 @@ export function CategoryBudgets({
                     type="button"
                     aria-label={`إزالة ميزانيَّة ${cat.name}`}
                     disabled={pending === cat.categoryId}
-                    className="h-8 w-8 shrink-0 rounded-lg border border-transparent text-muted-foreground transition-all duration-200 hover:border-destructive/20 hover:bg-destructive/10 hover:text-destructive active:scale-95 disabled:opacity-50 sm:h-9 sm:w-9"
+                    className="h-8 w-8 shrink-0 rounded-lg border border-transparent text-muted-foreground transition-safe duration-200 hover:border-destructive/20 hover:bg-destructive/10 hover:text-destructive active:scale-95 disabled:opacity-50 sm:h-9 sm:w-9"
                     onClick={() => remove(cat.categoryId)}
                   >
                     <Trash2 className="size-3.5 sm:size-4" />

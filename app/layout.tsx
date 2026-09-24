@@ -18,7 +18,6 @@ import { SITE_NAME } from '@/frontend/shared/metadata';
 import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
 import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
-import { getLiteModeScript } from '@/frontend/shared/lite-mode';
 
 const designTokensCss = (() => {
   try {
@@ -145,10 +144,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         ) : (
           <link rel="stylesheet" href="/design-system/lib/design-tokens.css" />
         )}
-        {/* Runs before <body> is parsed, so `html.lite` is set for the first
-            paint — no flash of the full-effects rendering on a device that
-            cannot afford the backdrop filters and glow blurs. */}
-        <script dangerouslySetInnerHTML={{ __html: getLiteModeScript() }} />
         {/* PWA/manifest metas come from `metadata` above — don't duplicate them here. */}
         <meta name="application-name" content="رؤيَة رقَميَّة" />
       </head>

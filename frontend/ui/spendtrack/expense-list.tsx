@@ -84,7 +84,7 @@ export function ExpenseList({
             variant="outline"
             onClick={loadMore}
             disabled={loading}
-            className="group relative inline-flex items-center justify-center h-10 px-6 text-xs font-medium tracking-wide transition-all duration-300 ease-out border rounded-full border-border/70 bg-background/80 hover:bg-accent hover:text-accent-foreground backdrop-blur-md hover:border-border hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+            className="group relative inline-flex items-center justify-center h-10 px-6 text-xs font-medium tracking-wide transition-safe duration-300 ease-out border rounded-full border-border/70 bg-background/80 hover:bg-accent hover:text-accent-foreground hover:border-border hover:shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
           >
             {loading ? <Loader2 className="ms-2 size-3.5 animate-spin text-primary" /> : null}
             <span>{loading ? 'جاري التَّحميل...' : 'تحميل المزيد'}</span>
@@ -125,7 +125,7 @@ function ExpenseRow({
     <div
       role="listitem"
       aria-label={rowLabel}
-      className="group/row relative flex items-center justify-between gap-3 sm:gap-4 rounded-xl border border-border/50 bg-card/60 backdrop-blur-xl p-3 sm:p-3.5 transition-all duration-200 ease-out hover:border-foreground/15 dark:hover:border-white/15 hover:bg-card hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 hover:scale-[1.003] active:scale-[0.997] animate-slide-up"
+      className="group/row relative flex items-center justify-between gap-3 sm:gap-4 rounded-xl border border-border/50 bg-card/60 p-3 sm:p-3.5 transition-safe duration-200 ease-out hover:border-foreground/15 dark:hover:border-white/15 hover:bg-card hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 hover:scale-[1.003] active:scale-[0.997] animate-slide-up"
       style={{ animationDelay: `${index * 30}ms` }}
     >
       {/* Category Indicator & Info */}
@@ -204,7 +204,7 @@ function ExpenseRow({
             size="icon"
             type="button"
             aria-label="حذف المصروف"
-            className="size-8 rounded-lg opacity-100 sm:opacity-0 sm:group-hover/row:opacity-100 focus-visible:opacity-100 transition-all duration-200 text-muted-foreground/80 hover:text-destructive hover:bg-destructive/10 active:scale-90 focus-visible:ring-2 focus-visible:ring-destructive/30"
+            className="size-8 rounded-lg opacity-100 sm:opacity-0 sm:group-hover/row:opacity-100 focus-visible:opacity-100 transition-safe duration-200 text-muted-foreground/80 hover:text-destructive hover:bg-destructive/10 active:scale-90 focus-visible:ring-2 focus-visible:ring-destructive/30"
             onClick={() => setConfirmDeleteOpen(true)}
           >
             <Trash2 className="size-3.5" />
@@ -234,7 +234,7 @@ function ExpenseRow({
                   variant="outline"
                   type="button"
                   onClick={() => setConfirmDeleteOpen(false)}
-                  className="h-9 px-4 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-all"
+                  className="h-9 px-4 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
                 >
                   إلغاء
                 </Button>
@@ -243,7 +243,7 @@ function ExpenseRow({
                     type="submit"
                     variant="destructive"
                     disabled={pending}
-                    className="h-9 px-4 text-xs font-medium rounded-xl shadow-sm hover:shadow-destructive/20 active:scale-95 transition-all"
+                    className="h-9 px-4 text-xs font-medium rounded-xl shadow-sm hover:shadow-destructive/20 active:scale-95 transition-safe"
                   >
                     {pending ? (
                       <span className="flex items-center gap-1.5">

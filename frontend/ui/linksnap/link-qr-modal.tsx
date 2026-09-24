@@ -95,7 +95,7 @@ export const LinkQrModal = memo(function LinkQrModal({
               </div>
             </div>
 
-            <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/40 px-3.5 py-2.5 text-xs backdrop-blur-xs">
+            <div className="mt-2 flex items-center justify-between gap-2 rounded-xl border border-border/60 bg-muted/40 px-3.5 py-2.5 text-xs">
               <span className="text-muted-foreground shrink-0 font-medium">الرَّابط:</span>
               <span
                 dir="ltr"
@@ -108,11 +108,11 @@ export const LinkQrModal = memo(function LinkQrModal({
           </DialogHeader>
 
           <div className="flex flex-col items-center justify-center w-full">
-            <div className="relative group w-full flex flex-col items-center justify-center min-h-70 rounded-2xl border border-border/60 bg-linear-to-b from-muted/20 via-muted/40 to-muted/20 p-6 transition-all duration-300">
+            <div className="relative group w-full flex flex-col items-center justify-center min-h-70 rounded-2xl border border-border/60 bg-linear-to-b from-muted/20 via-muted/40 to-muted/20 p-6 transition-safe duration-300">
               {svg ? (
                 <div className="flex flex-col items-center gap-5 w-full animate-in fade-in-50 zoom-in-95 duration-200">
                   <div
-                    className="rounded-2xl border border-border/80 bg-background p-4 shadow-sm transition-all duration-300 group-hover:scale-[1.01] group-hover:shadow-md [&>svg]:w-48 [&>svg]:h-48 [&>svg]:max-w-full [&>svg]:rounded-lg"
+                    className="rounded-2xl border border-border/80 bg-background p-4 shadow-sm transition-safe duration-300 group-hover:scale-[1.01] group-hover:shadow-md [&>svg]:w-48 [&>svg]:h-48 [&>svg]:max-w-full [&>svg]:rounded-lg"
                     dangerouslySetInnerHTML={{ __html: svg }}
                   />
                   <button
@@ -121,7 +121,7 @@ export const LinkQrModal = memo(function LinkQrModal({
                     className={cn(
                       'w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-xs text-primary-foreground',
                       'bg-primary shadow-md shadow-primary/15 hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/25',
-                      'transition-all duration-200 ease-out cursor-pointer active:scale-[0.98]',
+                      'transition-safe duration-200 ease-out cursor-pointer active:scale-[0.98]',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
                     )}
                     aria-label="تحميل الرَّمز بصيغة SVG"
@@ -154,7 +154,7 @@ export const LinkQrModal = memo(function LinkQrModal({
                     className={cn(
                       'mt-1 inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium',
                       'bg-background text-foreground hover:bg-accent border border-border shadow-2xs',
-                      'transition-all duration-200 active:scale-[0.98] cursor-pointer',
+                      'transition-safe duration-200 active:scale-[0.98] cursor-pointer',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
                     )}
                   >

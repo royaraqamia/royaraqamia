@@ -100,7 +100,7 @@ export function HeroVisual() {
             {/* Top row - Two large visual metrics blocks */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               {/* Top-left card - Analytics Chart */}
-              <div className="bg-white/3 hover:bg-white/6 rounded-2xl p-4 sm:p-5 border border-white/5 hover:border-white/15 transition-all duration-300 aspect-4/3 sm:aspect-square flex flex-col justify-between relative overflow-hidden group/card shadow-inner">
+              <div className="bg-white/3 hover:bg-white/6 rounded-2xl p-4 sm:p-5 border border-white/5 hover:border-white/15 transition-safe duration-300 aspect-4/3 sm:aspect-square flex flex-col justify-between relative overflow-hidden group/card shadow-inner">
                 {/* Header info */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
@@ -127,7 +127,7 @@ export function HeroVisual() {
                       className="flex-1 flex flex-col items-center h-full justify-end group/bar"
                     >
                       <m.div
-                        className="w-full max-w-4.5 rounded-t-md bg-linear-to-t from-purple-600/80 via-violet-500/60 to-purple-400/90 relative origin-bottom shadow-[0_0_12px_rgba(168,85,247,0.2)] group-hover/bar:brightness-125 transition-all"
+                        className="w-full max-w-4.5 rounded-t-md bg-linear-to-t from-purple-600/80 via-violet-500/60 to-purple-400/90 relative origin-bottom shadow-[0_0_12px_rgba(168,85,247,0.2)] group-hover/bar:brightness-125 transition-safe"
                         initial={{ scaleY: (v / 100) * 0.7 }}
                         animate={
                           isHoveringDashboard
@@ -151,7 +151,7 @@ export function HeroVisual() {
               </div>
 
               {/* Top-right card - Users Line Chart */}
-              <div className="bg-white/3 hover:bg-white/6 rounded-2xl p-4 sm:p-5 border border-white/5 hover:border-white/15 transition-all duration-300 aspect-4/3 sm:aspect-square flex flex-col justify-between relative overflow-hidden group/card shadow-inner">
+              <div className="bg-white/3 hover:bg-white/6 rounded-2xl p-4 sm:p-5 border border-white/5 hover:border-white/15 transition-safe duration-300 aspect-4/3 sm:aspect-square flex flex-col justify-between relative overflow-hidden group/card shadow-inner">
                 {/* Header info */}
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
@@ -257,7 +257,7 @@ export function HeroVisual() {
               ].map((item, idx) => (
                 <div
                   key={idx}
-                  className="bg-white/3 hover:bg-white/[0.07] rounded-xl p-3 border border-white/5 hover:border-white/15 transition-all duration-300 flex flex-col justify-between gap-2.5 group/kpi"
+                  className="bg-white/3 hover:bg-white/[0.07] rounded-xl p-3 border border-white/5 hover:border-white/15 transition-safe duration-300 flex flex-col justify-between gap-2.5 group/kpi"
                 >
                   <div className="flex items-center justify-between">
                     <div

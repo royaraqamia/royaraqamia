@@ -22,7 +22,7 @@ function CustomTooltip({
   if (!active || !payload?.length || !payload[0]) return null;
   const item = payload[0];
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border/80 bg-popover/95 px-3.5 py-2.5 shadow-2xl backdrop-blur-sm ring-1 ring-black/5 dark:ring-white/10 transition-all duration-200 will-change-[transform,opacity]">
+    <div className="relative overflow-hidden rounded-xl border border-border/80 bg-popover/95 px-3.5 py-2.5 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 transition-safe duration-200 will-change-[transform,opacity]">
       <div className="flex items-center gap-2">
         <span className="size-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
         <p className="text-xs font-medium text-muted-foreground tracking-wide">{label}</p>
@@ -38,11 +38,11 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
   if (data.length === 0) {
     return (
       <div
-        className="group relative flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-border/70 bg-card/40 p-8 sm:p-12 text-center backdrop-blur-md transition-all duration-300 hover:border-border hover:bg-card/60"
+        className="group relative flex flex-col items-center justify-center gap-4 rounded-3xl border border-dashed border-border/70 bg-card/40 p-8 sm:p-12 text-center transition-safe duration-300 hover:border-border hover:bg-card/60"
         role="img"
         aria-label="لا توجد بيانات إنفاق يوميَّة"
       >
-        <div className="relative flex size-14 items-center justify-center rounded-2xl bg-linear-to-b from-primary/15 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20 transition-all duration-500 group-hover:scale-110 group-hover:ring-primary/30">
+        <div className="relative flex size-14 items-center justify-center rounded-2xl bg-linear-to-b from-primary/15 to-primary/5 text-primary shadow-inner ring-1 ring-primary/20 transition-safe duration-500 group-hover:scale-110 group-hover:ring-primary/30">
           <svg
             className="relative size-7 text-primary transition-transform duration-300"
             viewBox="0 0 24 24"
@@ -70,7 +70,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
 
   return (
     <div
-      className="relative w-full overflow-hidden rounded-3xl border border-border/60 bg-linear-to-b from-card/80 to-card/40 p-4 sm:p-6 shadow-xl backdrop-blur-xl transition-all duration-300 hover:border-border/90"
+      className="relative w-full overflow-hidden rounded-3xl border border-border/60 bg-linear-to-b from-card/80 to-card/40 p-4 sm:p-6 shadow-xl transition-safe duration-300 hover:border-border/90"
       role="img"
       aria-label="رسم بياني أعمدة يُوضِّح الإنفاق اليومي"
     >
@@ -116,7 +116,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
               fill="var(--color-primary)"
               radius={[6, 6, 2, 2]}
               maxBarSize={48}
-              className="transition-all duration-300 hover:opacity-90"
+              className="transition-safe duration-300 hover:opacity-90"
             />
           </BarChart>
         </ResponsiveContainer>

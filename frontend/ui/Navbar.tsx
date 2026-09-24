@@ -141,7 +141,7 @@ export function Navbar() {
   // Glassmorphism & elevation generator.
   // Perf note: the two persistent states (scrolled / menu-open) sit above
   // continuously-scrolling content, so they use near-opaque fills instead of
-  // backdrop-blur — a blurred full-width strip would re-rasterize every frame
+  // — a blurred full-width strip would re-rasterize every frame
   // while scrolling. Only the transient top-of-hero state keeps a light frost
   // (and it stops costing anything once the page scrolls past it).
   const getNavbarClass = () => {
@@ -151,7 +151,7 @@ export function Navbar() {
     if (isScrolled) {
       return 'bg-neutral-950/90 border-b border-neutral-800/70 shadow-sm shadow-neutral-950/30';
     }
-    return 'bg-neutral-950/40 backdrop-blur-md border-b border-neutral-800/30 glass-navbar-hero';
+    return 'bg-neutral-950/40 border-b border-neutral-800/30 glass-navbar-hero';
   };
 
   return (
@@ -159,14 +159,14 @@ export function Navbar() {
       {/* Skip Navigation Link for Accessibility */}
       <a
         href="#main-content"
-        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:inset-s-4 focus:z-100 focus:inline-flex focus:items-center focus:gap-2 focus:px-4 focus:py-2.5 focus:rounded-xl focus:bg-violet-600 focus:text-white focus:font-medium focus:text-sm focus:shadow-xl focus:shadow-violet-600/25 focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-neutral-950 focus:outline-none transition-all duration-200"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:inset-s-4 focus:z-100 focus:inline-flex focus:items-center focus:gap-2 focus:px-4 focus:py-2.5 focus:rounded-xl focus:bg-violet-600 focus:text-white focus:font-medium focus:text-sm focus:shadow-xl focus:shadow-violet-600/25 focus:ring-2 focus:ring-violet-400 focus:ring-offset-2 focus:ring-offset-neutral-950 focus:outline-none transition-safe duration-200"
       >
         تخطي إلى المحتوى الرئيسي
       </a>
 
       <nav
         data-app-navbar
-        className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
+        className={`fixed inset-x-0 top-0 z-50 transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-none ${
           isVisible
             ? 'translate-y-0 opacity-100 navbar-visible'
             : '-translate-y-full opacity-0 pointer-events-none navbar-hidden'
@@ -176,7 +176,7 @@ export function Navbar() {
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 container-padding">
           <div
-            className={`flex items-center justify-between transition-all duration-300 ease-in-out motion-reduce:transition-none ${
+            className={`flex items-center justify-between transition-safe duration-300 ease-in-out motion-reduce:transition-none ${
               isScrolled || isMobileMenuOpen ? 'h-16' : 'h-16 lg:h-20'
             }`}
           >
@@ -197,7 +197,7 @@ export function Navbar() {
               <UserDropdown />
               <button
                 type="button"
-                className="relative flex h-11 w-11 items-center justify-center rounded-xl text-neutral-200 transition-all duration-200 ease-out hover:bg-neutral-800/80 active:scale-95 active:bg-neutral-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 motion-reduce:transition-none"
+                className="relative flex h-11 w-11 items-center justify-center rounded-xl text-neutral-200 transition-safe duration-200 ease-out hover:bg-neutral-800/80 active:scale-95 active:bg-neutral-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 motion-reduce:transition-none"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 aria-label={isMobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
                 aria-expanded={isMobileMenuOpen}
@@ -210,12 +210,12 @@ export function Navbar() {
                   {isMobileMenuOpen ? (
                     <X
                       size={22}
-                      className="rotate-0 scale-100 transition-all duration-200 ease-out"
+                      className="rotate-0 scale-100 transition-safe duration-200 ease-out"
                     />
                   ) : (
                     <List
                       size={22}
-                      className="rotate-0 scale-100 transition-all duration-200 ease-out"
+                      className="rotate-0 scale-100 transition-safe duration-200 ease-out"
                     />
                   )}
                 </div>

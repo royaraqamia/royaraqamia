@@ -42,7 +42,7 @@ export function PasswordInput({
         placeholder={placeholder}
         aria-describedby={ariaDescribedby}
         onChange={(e) => onChange?.(e.target.value)}
-        className={`pl-11 transition-all duration-200 ease-out placeholder:text-muted-foreground/50 ${className ?? ''}`.trim()}
+        className={`pl-11 transition-safe duration-200 ease-out placeholder:text-muted-foreground/50 ${className ?? ''}`.trim()}
       />
       <button
         type="button"
@@ -54,7 +54,7 @@ export function PasswordInput({
             setShowPassword((prev) => !prev);
           }
         }}
-        className="absolute left-2.5 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-all duration-200 ease-out hover:bg-neutral-100 hover:text-foreground active:scale-95 disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-neutral-800/80 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
+        className="absolute left-2.5 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-muted-foreground/70 transition-safe duration-200 ease-out hover:bg-neutral-100 hover:text-foreground active:scale-95 disabled:pointer-events-none disabled:opacity-40 dark:hover:bg-neutral-800/80 dark:hover:text-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background"
         tabIndex={disabled ? -1 : 0}
         aria-label={showPassword ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'}
         aria-pressed={showPassword}

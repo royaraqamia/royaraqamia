@@ -244,7 +244,7 @@ function BulkActionBar({
   busy,
 }: BulkActionBarProps) {
   return (
-    <div className="sticky top-3 z-20 bg-card/90 backdrop-blur border border-border rounded-xl p-3 shadow-sm flex items-center gap-3 flex-wrap">
+    <div className="sticky top-3 z-20 bg-card/90 border border-border rounded-xl p-3 shadow-sm flex items-center gap-3 flex-wrap">
       <button
         type="button"
         onClick={onToggleAll}

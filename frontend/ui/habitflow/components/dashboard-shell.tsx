@@ -154,14 +154,14 @@ export function DashboardShell({
           >
             <div className="flex items-center gap-4 self-start md:self-auto flex-wrap sm:flex-nowrap">
               {/* Apple-style Segmented Date Control */}
-              <div className="flex items-center bg-white/70 dark:bg-zinc-900/70 backdrop-blur-2xl border border-zinc-200/80 dark:border-zinc-800/80 rounded-full p-1.5 shadow-sm transition-all hover:border-zinc-300 dark:hover:border-zinc-700">
+              <div className="flex items-center bg-white/70 dark:bg-zinc-900/70 border border-zinc-200/80 dark:border-zinc-800/80 rounded-full p-1.5 shadow-sm transition-safe hover:border-zinc-300 dark:hover:border-zinc-700">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDateShift(-1)}
                   aria-label="اليوم السَّابق"
                   id="btn-prev-day"
-                  className="size-11 sm:size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="size-11 sm:size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-safe duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
@@ -183,7 +183,7 @@ export function DashboardShell({
                   onClick={() => handleDateShift(1)}
                   aria-label="اليوم التَّالي"
                   id="btn-next-day"
-                  className="size-11 sm:size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="size-11 sm:size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-safe duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
@@ -204,7 +204,7 @@ export function DashboardShell({
                   variant="outline"
                   onClick={() => setActiveDate(todayDate)}
                   aria-label="العودة إلى اليوم"
-                  className="h-12 rounded-full px-5 border-zinc-200/80 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 backdrop-blur-md hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-bold shadow-sm transition-all duration-300 active:scale-[0.97] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
+                  className="h-12 rounded-full px-5 border-zinc-200/80 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-bold shadow-sm transition-safe duration-300 active:scale-[0.97] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
                 >
                   اليوم
                 </Button>
@@ -261,7 +261,7 @@ export function DashboardShell({
                     قائمة عادات اليوم
                   </h2>
                   {habits.length > 0 && (
-                    <span className="inline-flex items-center justify-center px-3 py-0.5 text-xs font-bold rounded-full bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300 border border-zinc-300/50 dark:border-zinc-700/50 backdrop-blur-sm">
+                    <span className="inline-flex items-center justify-center px-3 py-0.5 text-xs font-bold rounded-full bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300 border border-zinc-300/50 dark:border-zinc-700/50">
                       {habits.length}
                     </span>
                   )}
@@ -273,7 +273,7 @@ export function DashboardShell({
                     setFormError('');
                   }}
                   id="btn-create-habit"
-                  className="group rounded-full shadow-sm hover:shadow-md hover:shadow-primary/20 transition-all duration-300 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary text-primary-foreground font-bold h-11 px-5 text-sm flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
+                  className="group rounded-full shadow-sm hover:shadow-md hover:shadow-primary/20 transition-safe duration-300 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary text-primary-foreground font-bold h-11 px-5 text-sm flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
                 >
                   <Plus className="w-4 h-4 transition-transform group-hover:rotate-90 duration-300 ease-out" />
                   <span>إضافة عادة</span>
@@ -343,7 +343,7 @@ export function DashboardShell({
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={shouldReduce ? undefined : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-3xl border border-zinc-200/60 dark:border-zinc-800/60 bg-linear-to-r from-zinc-100/50 via-white/50 to-zinc-50/50 dark:from-zinc-900/50 dark:via-zinc-900/30 dark:to-zinc-950/50 backdrop-blur-xl p-6 sm:p-8 shadow-sm transition-all hover:shadow-md hover:border-zinc-300/80 dark:hover:border-zinc-700/80 group"
+            className="rounded-3xl border border-zinc-200/60 dark:border-zinc-800/60 bg-linear-to-r from-zinc-100/50 via-white/50 to-zinc-50/50 dark:from-zinc-900/50 dark:via-zinc-900/30 dark:to-zinc-950/50 p-6 sm:p-8 shadow-sm transition-safe hover:shadow-md hover:border-zinc-300/80 dark:hover:border-zinc-700/80 group"
           >
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
               <div className="flex items-center gap-4">
@@ -377,7 +377,7 @@ export function DashboardShell({
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
                   aria-controls="file-input-ref"
-                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-safe duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <Upload className="w-4 h-4" />
                   <span>استيراد</span>
@@ -385,7 +385,7 @@ export function DashboardShell({
                 <Button
                   variant="outline"
                   onClick={handleDownloadBackup}
-                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-safe duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <Download className="w-4 h-4" />
                   <span>تصدير</span>
@@ -393,7 +393,7 @@ export function DashboardShell({
                 <Button
                   variant="outline"
                   onClick={handleDownloadCsv}
-                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-all duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-safe duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <FileSpreadsheet className="w-4 h-4" />
                   <span>تصدير CSV</span>

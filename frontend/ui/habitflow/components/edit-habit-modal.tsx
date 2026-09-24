@@ -104,7 +104,7 @@ export const EditHabitModal = memo(function EditHabitModal({
               id="input-edit-habit-name"
               autoFocus
               aria-describedby={formError ? 'edit-habit-error' : undefined}
-              className="w-full h-12 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all duration-300 text-[15px] font-medium placeholder:text-muted-foreground/40 shadow-sm"
+              className="w-full h-12 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-safe duration-300 text-[15px] font-medium placeholder:text-muted-foreground/40 shadow-sm"
             />
           </section>
 
@@ -118,7 +118,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                 type="button"
                 onClick={() => onFrequencyChange('daily')}
                 aria-pressed={habitFrequency === 'daily'}
-                className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
+                className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-safe duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                   habitFrequency === 'daily'
                     ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-bold'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -130,7 +130,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                 type="button"
                 onClick={() => onFrequencyChange('weekly')}
                 aria-pressed={habitFrequency === 'weekly'}
-                className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
+                className={`flex-1 flex items-center justify-center py-2 px-4 text-[13px] font-medium rounded-lg transition-safe duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                   habitFrequency === 'weekly'
                     ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-bold'
                     : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -166,7 +166,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                   onChange={(e) => onTargetChange(e.target.value)}
                   placeholder="مثال: 5"
                   id="input-edit-habit-target"
-                  className="w-full h-11 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-all duration-300 text-[14px] font-medium placeholder:text-muted-foreground/40"
+                  className="w-full h-11 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-safe duration-300 text-[14px] font-medium placeholder:text-muted-foreground/40"
                 />
               </div>
               <div className="space-y-2">
@@ -187,7 +187,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                         type="button"
                         onClick={() => onTargetPeriodChange(isSelected ? '' : value)}
                         aria-pressed={isSelected}
-                        className={`flex-1 flex items-center justify-center text-[12px] font-medium rounded-lg transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
+                        className={`flex-1 flex items-center justify-center text-[12px] font-medium rounded-lg transition-safe duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
                           isSelected
                             ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-bold'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -235,7 +235,7 @@ export const EditHabitModal = memo(function EditHabitModal({
               onClick={() => habit && onArchive(habit.id)}
               disabled={!habit}
               variant="ghost"
-              className="w-full sm:w-auto group hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-all duration-300 rounded-xl px-5 py-5 sm:py-2.5 text-[14px] font-medium flex items-center justify-center gap-2"
+              className="w-full sm:w-auto group hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-safe duration-300 rounded-xl px-5 py-5 sm:py-2.5 text-[14px] font-medium flex items-center justify-center gap-2"
               id="btn-archive-habit"
             >
               <Trash2 className="w-4 h-4 transition-transform group-hover:scale-110 text-muted-foreground group-hover:text-destructive" />
@@ -247,7 +247,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="w-full sm:w-auto rounded-xl px-5 py-5 sm:py-2.5 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-all duration-300"
+                className="w-full sm:w-auto rounded-xl px-5 py-5 sm:py-2.5 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-safe duration-300"
               >
                 إلغاء
               </Button>
@@ -255,7 +255,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                 type="submit"
                 disabled={isSubmitting}
                 id="btn-submit-edit-habit"
-                className="w-full sm:w-auto rounded-xl px-7 py-5 sm:py-2.5 text-[14px] font-bold bg-primary text-primary-foreground hover:bg-primary/95 shadow-[0_4px_14px_0] shadow-primary/20 dark:shadow-primary/10 transition-all duration-300 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5"
+                className="w-full sm:w-auto rounded-xl px-7 py-5 sm:py-2.5 text-[14px] font-bold bg-primary text-primary-foreground hover:bg-primary/95 shadow-[0_4px_14px_0] shadow-primary/20 dark:shadow-primary/10 transition-safe duration-300 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5"
               >
                 {isSubmitting ? (
                   <>

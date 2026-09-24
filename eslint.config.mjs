@@ -3,6 +3,7 @@ import babelParser from '@babel/eslint-parser';
 import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import prettierPlugin from 'eslint-plugin-prettier';
+import heavyEffects from './eslint-rules/no-heavy-effects.mjs';
 
 export default [
   {
@@ -13,6 +14,7 @@ export default [
       'playwright-report/',
       'coverage/',
       'scripts/',
+      'eslint-rules/',
       '.agents/',
     ],
   },
@@ -23,6 +25,7 @@ export default [
       react: reactPlugin,
       'react-hooks': reactHooksPlugin,
       prettier: prettierPlugin,
+      local: heavyEffects,
     },
     languageOptions: {
       ecmaVersion: 'latest',
@@ -47,6 +50,7 @@ export default [
       'react-hooks/exhaustive-deps': 'warn',
       'no-unused-vars': 'off',
       'no-undef': 'off',
+      'local/no-heavy-effects': 'error',
     },
   },
   {

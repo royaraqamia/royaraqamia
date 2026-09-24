@@ -19,7 +19,7 @@ export function AdminErrorState({ error, onRetry }: AdminErrorStateProps) {
       </div>
       <button
         onClick={onRetry}
-        className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs rounded-full transition-all inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
+        className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs rounded-full transition-safe inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
       >
         <RefreshCw className="w-3.5 h-3.5" />
         <span>إعادة محاولة التحقق</span>

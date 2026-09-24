@@ -68,7 +68,7 @@ function SheetContent({
         {...props}
       >
         {children}
-        <SheetPrimitive.Close className="absolute top-4 inset-e-4 z-10 flex size-8 items-center justify-center rounded-full border border-border/50 bg-muted/40 text-muted-foreground/80 backdrop-blur-md transition-[background-color,border-color,color,transform] duration-200 ease-out hover:scale-105 hover:bg-muted hover:text-foreground hover:border-border active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
+        <SheetPrimitive.Close className="absolute top-4 inset-e-4 z-10 flex size-8 items-center justify-center rounded-full border border-border/50 bg-muted/40 text-muted-foreground/80 transition-[background-color,border-color,color,transform] duration-200 ease-out hover:scale-105 hover:bg-muted hover:text-foreground hover:border-border active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50">
           <XIcon className="size-4 stroke-[2.25]" />
           <span className="sr-only">إغلاق</span>
         </SheetPrimitive.Close>

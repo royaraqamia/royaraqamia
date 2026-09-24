@@ -4,11 +4,11 @@ import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 
 const bentoCardTheme = {
   cardClassName:
-    'group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/75 p-6 sm:p-8 transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10',
+    'group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-800/80 bg-slate-900/75 p-6 sm:p-8 transition-safe duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10',
   contentClassName: 'relative z-10 flex h-full flex-col justify-between space-y-6',
   headerClassName: 'flex items-center gap-4 mb-4',
   iconBoxClassName:
-    'flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/14 text-violet-400 shadow-inner group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/35 transition-all duration-300',
+    'flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-2xl border border-violet-500/20 bg-violet-500/14 text-violet-400 shadow-inner group-hover:scale-105 group-hover:border-violet-500/40 group-hover:bg-violet-500/35 transition-safe duration-300',
   iconClassName: 'text-violet-400 transition-transform duration-300 group-hover:scale-110',
   iconSize: 26,
   titleClassName:
@@ -60,7 +60,7 @@ function MiniChart() {
         {barData.map((h, i) => (
           <div
             key={i}
-            className="landing-grow-h flex-1 rounded-t-md bg-linear-to-t from-indigo-600/40 via-violet-500/80 to-indigo-400 hover:brightness-125 transition-all shadow-[0_-4px_12px_rgba(139,92,246,0.3)] relative group/bar"
+            className="landing-grow-h flex-1 rounded-t-md bg-linear-to-t from-indigo-600/40 via-violet-500/80 to-indigo-400 hover:brightness-125 transition-safe shadow-[0_-4px_12px_rgba(139,92,246,0.3)] relative group/bar"
             style={
               {
                 ['--ld' as string]: `${0.3 + i * 0.05}s`,
@@ -100,7 +100,7 @@ function AnalyticsPreview() {
       {analyticsMetrics.map((metric, i) => (
         <div
           key={metric.label}
-          className="landing-reveal-item flex items-center justify-between p-2.5 rounded-xl bg-slate-900/75 border border-slate-800/60 hover:border-slate-700 hover:bg-slate-900/90 transition-all"
+          className="landing-reveal-item flex items-center justify-between p-2.5 rounded-xl bg-slate-900/75 border border-slate-800/60 hover:border-slate-700 hover:bg-slate-900/90 transition-safe"
           style={{ ['--ld' as string]: `${0.4 + i * 0.1}s` } as React.CSSProperties}
         >
           <span className="text-xs sm:text-sm font-medium text-slate-400">{metric.label}</span>
@@ -160,7 +160,7 @@ export function FeaturesBento() {
                 https://example.com/very-long-url/with-many/parameters
               </span>
             </div>
-            <div className="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-violet-600/30 group-hover:scale-105 group-hover:bg-violet-500 transition-all">
+            <div className="w-10 h-10 rounded-xl bg-violet-600 text-white flex items-center justify-center shrink-0 shadow-lg shadow-violet-600/30 group-hover:scale-105 group-hover:bg-violet-500 transition-safe">
               <ArrowRight size={20} className="text-white" />
             </div>
           </div>

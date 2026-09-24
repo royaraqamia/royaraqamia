@@ -27,12 +27,12 @@ export default function GlobalError({
           </div>
 
           {/* Elevated Glassmorphic Container Card */}
-          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-900/60 p-6 sm:p-10 text-center backdrop-blur-2xl shadow-2xl shadow-black/80 ring-1 ring-white/10">
+          <div className="relative w-full max-w-md overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-900/60 p-6 sm:p-10 text-center shadow-2xl shadow-black/80 ring-1 ring-white/10">
             {/* Top Edge Gradient Accent Line */}
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-purple-500/50 to-transparent" />
 
             {/* System Status Pill Badge */}
-            <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-rose-500/20 bg-rose-500/10 px-3.5 py-1 text-xs font-medium text-rose-300 backdrop-blur-md">
+            <div className="mx-auto mb-6 inline-flex items-center gap-2 rounded-full border border-rose-500/20 bg-rose-500/10 px-3.5 py-1 text-xs font-medium text-rose-300">
               <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-rose-500" />
@@ -41,7 +41,7 @@ export default function GlobalError({
             </div>
 
             {/* Glowing Icon Container Badge */}
-            <div className="group relative mx-auto mb-6 flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl border border-purple-500/30 bg-linear-to-b from-purple-500/15 via-violet-500/10 to-transparent shadow-[0_0_40px_-5px_rgba(168,85,247,0.3)] transition-all duration-300 hover:scale-105">
+            <div className="group relative mx-auto mb-6 flex h-20 w-20 sm:h-24 sm:w-24 items-center justify-center rounded-2xl border border-purple-500/30 bg-linear-to-b from-purple-500/15 via-violet-500/10 to-transparent shadow-[0_0_40px_-5px_rgba(168,85,247,0.3)] transition-safe duration-300 hover:scale-105">
               <svg
                 className="relative h-10 w-10 sm:h-12 sm:w-12 text-purple-300 transition-transform duration-300 ease-out group-hover:scale-110"
                 viewBox="0 0 24 24"
@@ -82,7 +82,7 @@ export default function GlobalError({
               <button
                 type="button"
                 onClick={() => reset()}
-                className="group relative inline-flex w-full sm:w-auto flex-1 items-center justify-center gap-2.5 rounded-xl bg-linear-to-r from-purple-600 via-purple-500 to-violet-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-all duration-300 ease-out hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 cursor-pointer"
+                className="group relative inline-flex w-full sm:w-auto flex-1 items-center justify-center gap-2.5 rounded-xl bg-linear-to-r from-purple-600 via-purple-500 to-violet-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-purple-500/25 transition-safe duration-300 ease-out hover:shadow-purple-500/40 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 cursor-pointer"
               >
                 <svg
                   className="h-4 w-4 transition-transform duration-500 group-hover:rotate-180"
@@ -104,7 +104,7 @@ export default function GlobalError({
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="inline-flex w-full sm:w-auto flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/80 px-5 py-3.5 text-sm font-medium text-zinc-300 transition-all duration-300 ease-out hover:border-zinc-700 hover:bg-zinc-800 hover:text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 cursor-pointer"
+                className="inline-flex w-full sm:w-auto flex-1 items-center justify-center gap-2 rounded-xl border border-zinc-800 bg-zinc-900/80 px-5 py-3.5 text-sm font-medium text-zinc-300 transition-safe duration-300 ease-out hover:border-zinc-700 hover:bg-zinc-800 hover:text-white active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 cursor-pointer"
               >
                 <svg
                   className="h-4 w-4 text-zinc-400"

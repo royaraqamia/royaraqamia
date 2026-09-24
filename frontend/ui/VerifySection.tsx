@@ -83,7 +83,7 @@ export function VerifySection() {
                         <button
                           type="button"
                           aria-label="نسخ رمز الشَّهادة"
-                          className="h-11 w-11 rounded-xl bg-white/9 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-indigo-500/35 hover:border-indigo-500/40 active:scale-95 transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 group/copy"
+                          className="h-11 w-11 rounded-xl bg-white/9 border border-white/10 flex items-center justify-center text-slate-300 hover:text-white hover:bg-indigo-500/35 hover:border-indigo-500/40 active:scale-95 transition-safe duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 group/copy"
                         >
                           <Copy className="w-4 h-4 group-hover/copy:scale-110 transition-transform" />
                         </button>
@@ -136,10 +136,10 @@ export function VerifySection() {
             ].map((step, i) => (
               <div
                 key={i}
-                className="relative group/step p-6 rounded-2xl bg-linear-to-b from-white/5 to-white/1 border border-white/10 hover:border-indigo-500/40 hover:bg-white/[0.07] transition-all duration-300 shadow-xl shadow-black/20 flex flex-col justify-between"
+                className="relative group/step p-6 rounded-2xl bg-linear-to-b from-white/5 to-white/1 border border-white/10 hover:border-indigo-500/40 hover:bg-white/[0.07] transition-safe duration-300 shadow-xl shadow-black/20 flex flex-col justify-between"
               >
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-500/14 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover/step:scale-110 group-hover/step:bg-indigo-500/35 group-hover/step:text-indigo-300 transition-all duration-300">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-500/14 border border-indigo-500/20 flex items-center justify-center text-indigo-400 group-hover/step:scale-110 group-hover/step:bg-indigo-500/35 group-hover/step:text-indigo-300 transition-safe duration-300">
                     <step.icon className="w-6 h-6" />
                   </div>
                   <span className="text-2xl font-black font-mono text-slate-700 group-hover/step:text-indigo-400/50 transition-colors">
@@ -162,10 +162,10 @@ export function VerifySection() {
           <div className="text-center">
             <Link
               href="/verify"
-              className="relative inline-flex items-center justify-center group overflow-hidden rounded-full p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 shadow-2xl shadow-indigo-600/30 hover:shadow-indigo-500/50"
+              className="relative inline-flex items-center justify-center group overflow-hidden rounded-full p-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 hover:scale-[1.02] active:scale-[0.98] transition-safe duration-300 shadow-2xl shadow-indigo-600/30 hover:shadow-indigo-500/50"
             >
               <span className="absolute inset-0 bg-linear-to-r from-[#7766EE] via-[#6366F1] to-[#A78BFA] rounded-full" />
-              <span className="relative inline-flex items-center gap-3.5 px-8 sm:px-12 py-4 sm:py-5 rounded-full bg-slate-950 text-white font-bold text-base sm:text-xl transition-all duration-300 group-hover:bg-slate-950/88">
+              <span className="relative inline-flex items-center gap-3.5 px-8 sm:px-12 py-4 sm:py-5 rounded-full bg-slate-950 text-white font-bold text-base sm:text-xl transition-safe duration-300 group-hover:bg-slate-950/88">
                 <span>الانتقال إلى التَّحقُّق</span>
                 <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:-translate-x-1.5" />
               </span>

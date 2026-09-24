@@ -109,7 +109,7 @@ export function DesktopNav({
       {/* Brand Identity / Logo */}
       <Link
         href={isHomePage ? '#home' : '/'}
-        className="group relative flex items-center gap-3 rounded-2xl py-1 px-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 transition-all duration-300 shrink-0 select-none"
+        className="group relative flex items-center gap-3 rounded-2xl py-1 px-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 transition-safe duration-300 shrink-0 select-none"
         aria-label="رؤيَة رقَميَّة - الصفحة الرئيسية"
         onClick={scrollToHomeNode}
       >
@@ -120,8 +120,8 @@ export function DesktopNav({
             width={48}
             height={48}
             priority
-            className={`rounded-full transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 ${
-              isScrolled ? 'h-8 w-8 lg:h-9 lg:w-9 logo-glow' : 'h-10 w-10 lg:h-11 lg:w-11'
+            className={`rounded-full transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 ${
+              isScrolled ? 'h-8 w-8 lg:h-9 lg:w-9' : 'h-10 w-10 lg:h-11 lg:w-11'
             }`}
             style={{
               transform: isScrolled ? 'scale(0.95)' : 'scale(1)',
@@ -129,7 +129,7 @@ export function DesktopNav({
           />
         </div>
         <span
-          className={`logo-text font-bold font-heading tracking-tight text-white transition-all duration-300 group-hover:text-violet-400 ${
+          className={`logo-text font-bold font-heading tracking-tight text-white transition-safe duration-300 group-hover:text-violet-400 ${
             isScrolled ? 'text-lg lg:text-xl' : 'text-xl lg:text-2xl'
           }`}
         >
@@ -141,7 +141,7 @@ export function DesktopNav({
       <nav
         data-app-navbar
         aria-label="روابط التنقل الرئيسية"
-        className="hidden lg:flex items-center gap-1 xl:gap-1.5 px-3 py-1.5 transition-all duration-300"
+        className="hidden lg:flex items-center gap-1 xl:gap-1.5 px-3 py-1.5 transition-safe duration-300"
       >
         {navLinks
           .filter((link) => link.visible !== false)
@@ -187,7 +187,7 @@ export function DesktopNav({
                 >
                   <button
                     type="button"
-                    className={`relative inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 ${
+                    className={`relative inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-safe duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 ${
                       isActive
                         ? 'bg-neutral-800 text-violet-300 shadow-sm border border-neutral-700/80 font-bold'
                         : 'text-neutral-300 hover:text-white hover:bg-neutral-800/60'
@@ -236,7 +236,7 @@ export function DesktopNav({
                   {isDropdownOpen && (
                     <div
                       id={link.dropdownKey ? `${link.dropdownKey}-dropdown` : undefined}
-                      className="absolute inset-e-0 top-full mt-2.5 w-60 p-1.5 bg-neutral-900/95 backdrop-blur-sm rounded-2xl border border-neutral-800/80 shadow-2xl shadow-neutral-950/50 z-50 transition-transform duration-200 ease-out animate-in fade-in-0 zoom-in-95 origin-top-right will-change-[transform,opacity] contain-layout contain-style"
+                      className="absolute inset-e-0 top-full mt-2.5 w-60 p-1.5 bg-neutral-900/95 rounded-2xl border border-neutral-800/80 shadow-2xl shadow-neutral-950/50 z-50 transition-transform duration-200 ease-out animate-in fade-in-0 zoom-in-95 origin-top-right will-change-[transform,opacity] contain-layout contain-style"
                       role="menu"
                       aria-orientation="vertical"
                       onMouseEnter={handleMouseEnter}
@@ -283,7 +283,7 @@ export function DesktopNav({
                     >
                       <div className="flex flex-col space-y-0.5">
                         {link.subItems?.map((sub: NavLink, subIndex: number) => {
-                          const itemClasses = `group/item relative flex items-center justify-between w-full text-start text-sm font-medium rounded-xl px-4 py-3 transition-all duration-150 ease-out text-neutral-200 hover:bg-violet-950/40 hover:text-violet-300 focus-visible:bg-violet-950/40 focus-visible:text-violet-300 focus-visible:outline-none select-none ${
+                          const itemClasses = `group/item relative flex items-center justify-between w-full text-start text-sm font-medium rounded-xl px-4 py-3 transition-safe duration-150 ease-out text-neutral-200 hover:bg-violet-950/40 hover:text-violet-300 focus-visible:bg-violet-950/40 focus-visible:text-violet-300 focus-visible:outline-none select-none ${
                             subIndex < (link.subItems?.length || 0) - 1
                               ? 'border-b border-neutral-800/60'
                               : ''
@@ -301,7 +301,7 @@ export function DesktopNav({
                                 }}
                               >
                                 <span>{sub.label}</span>
-                                <span className="text-violet-500 opacity-0 -translate-x-1 transition-all duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
+                                <span className="text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
                                   ←
                                 </span>
                               </Link>
@@ -322,7 +322,7 @@ export function DesktopNav({
                               role="menuitem"
                             >
                               <span>{sub.label}</span>
-                              <span className="text-violet-500 opacity-0 -translate-x-1 transition-all duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
+                              <span className="text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
                                 ←
                               </span>
                             </a>
@@ -335,7 +335,7 @@ export function DesktopNav({
               );
             }
 
-            const navItemClasses = `relative group/link inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-all duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 ${
+            const navItemClasses = `relative group/link inline-flex items-center gap-2 text-sm font-medium rounded-full px-3.5 py-2 min-h-10 transition-safe duration-200 ease-out cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-95 ${
               isActive
                 ? 'bg-neutral-800 text-violet-300 shadow-sm border border-neutral-700/80 font-bold'
                 : 'text-neutral-300 hover:text-white hover:bg-neutral-800/60'
@@ -403,7 +403,7 @@ export function DesktopNav({
           className="group/cta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-full"
         >
           <Button
-            className={`relative overflow-hidden font-bold transition-all duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white cursor-pointer hover:opacity-95 active:scale-[0.98] border border-violet-500/30 ${
+            className={`relative overflow-hidden font-bold transition-safe duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover gradient-primary text-white cursor-pointer hover:opacity-95 active:scale-[0.98] border border-violet-500/30 ${
               isScrolled
                 ? 'h-10 text-xs xl:text-sm px-5 shadow-sm shadow-violet-600/20'
                 : 'h-11 text-sm xl:text-base px-6 shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40'

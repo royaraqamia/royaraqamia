@@ -33,7 +33,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
       dir="rtl"
     >
       <main className="w-full max-w-md">
-        <article className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl backdrop-blur-xl sm:p-8 lg:p-10 dark:border-slate-800/80 dark:bg-slate-900/80">
+        <article className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/80 p-6 shadow-2xl sm:p-8 lg:p-10 dark:border-slate-800/80 dark:bg-slate-900/80">
           <div className="absolute inset-x-8 top-0 h-px bg-linear-to-r from-transparent via-primary/50 to-transparent" />
 
           <div className="mb-6 flex flex-col items-center">
@@ -77,7 +77,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
                 autoComplete="current-password"
                 aria-label="كلمة المرور"
                 aria-invalid={error ? true : undefined}
-                className="w-full h-12 pr-11 pl-4 rounded-xl border border-slate-200/80 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="w-full h-12 pr-11 pl-4 rounded-xl border border-slate-200/80 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
               />
             </div>
 
@@ -94,7 +94,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-safe hover:bg-primary/90 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
             >
               {loading ? (
                 <>

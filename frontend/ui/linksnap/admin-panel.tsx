@@ -60,7 +60,7 @@ export function AdminPanel({ token }: AdminPanelProps) {
           onClick={fetchAdminStats}
           disabled={loading}
           aria-busy={loading || undefined}
-          className="bg-muted/50 hover:bg-muted text-muted-foreground border-border focus-ring btn-press touch-target inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-all disabled:opacity-60 sm:w-auto"
+          className="bg-muted/50 hover:bg-muted text-muted-foreground border-border focus-ring btn-press touch-target inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-safe disabled:opacity-60 sm:w-auto"
         >
           <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
           <span>إعادة تحميل المقاييس</span>

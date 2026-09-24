@@ -110,7 +110,7 @@ export const CommandPalette = memo(function CommandPalette({
         aria-label="البحث السَّريع"
         aria-haspopup="dialog"
         aria-expanded={open}
-        className={`group relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/80 backdrop-blur-md text-foreground shadow-xs transition-all duration-200 ease-out hover:border-primary/40 hover:bg-muted/80 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+        className={`group relative flex h-10 w-10 items-center justify-center rounded-full border border-border/60 bg-background/80 text-foreground shadow-xs transition-safe duration-200 ease-out hover:border-primary/40 hover:bg-muted/80 hover:scale-[1.03] active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
           open ? 'bg-muted border-primary/50 ring-2 ring-primary/20 shadow-sm scale-[1.02]' : ''
         }`}
       >
@@ -160,9 +160,9 @@ export const CommandPalette = memo(function CommandPalette({
                   key={product.id}
                   value={`app-${product.label}`}
                   onSelect={() => run(product.appPath)}
-                  className="group relative flex min-h-12 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2.5 text-sm outline-none transition-all duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
+                  className="group relative flex min-h-12 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2.5 text-sm outline-none transition-safe duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
                 >
-                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-all duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-safe duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
                     <Icon className="size-4 text-foreground/80 group-data-[selected=true]:text-primary transition-colors" />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-bold tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
@@ -196,9 +196,9 @@ export const CommandPalette = memo(function CommandPalette({
                   key={item.id}
                   value={`quick-${item.label}`}
                   onSelect={() => run(item.href)}
-                  className="group relative flex min-h-11 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2 text-sm outline-none transition-all duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
+                  className="group relative flex min-h-11 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2 text-sm outline-none transition-safe duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
                 >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-all duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-safe duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
                     <Icon className="size-4 text-foreground/80 group-data-[selected=true]:text-primary transition-colors" />
                   </span>
                   <span className="flex-1 truncate text-sm font-medium tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
@@ -224,9 +224,9 @@ export const CommandPalette = memo(function CommandPalette({
                 <CommandItem
                   value="admin-console"
                   onSelect={() => run('/admin')}
-                  className="group relative flex min-h-11 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2 text-sm outline-none transition-all duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
+                  className="group relative flex min-h-11 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2 text-sm outline-none transition-safe duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
                 >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-all duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-safe duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
                     <ShieldCheck className="size-4 text-foreground/80 group-data-[selected=true]:text-primary transition-colors" />
                   </span>
                   <span className="flex-1 truncate text-sm font-medium tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
@@ -254,9 +254,9 @@ export const CommandPalette = memo(function CommandPalette({
                   key={item.id}
                   value={`general-${item.id}`}
                   onSelect={() => run(item.href)}
-                  className="group relative flex min-h-11 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2 text-sm outline-none transition-all duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
+                  className="group relative flex min-h-11 cursor-pointer select-none items-center gap-3.5 rounded-xl px-3 py-2 text-sm outline-none transition-safe duration-150 ease-out data-[selected=true]:bg-accent/80 data-[selected=true]:text-accent-foreground hover:bg-accent/60 active:scale-[0.995]"
                 >
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-all duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
+                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg border border-border/50 bg-muted/60 dark:bg-neutral-800/60 shadow-2xs transition-safe duration-200 group-hover:scale-105 group-data-[selected=true]:scale-105 group-data-[selected=true]:border-primary/40 group-data-[selected=true]:bg-primary/10 group-data-[selected=true]:text-primary">
                     <Icon className="size-4 text-foreground/80 group-data-[selected=true]:text-primary transition-colors" />
                   </span>
                   <span className="flex-1 truncate text-sm font-medium tracking-tight text-foreground group-data-[selected=true]:text-accent-foreground">
@@ -272,7 +272,7 @@ export const CommandPalette = memo(function CommandPalette({
         </CommandList>
 
         {/* Keyboard Navigation Footer Bar */}
-        <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-4 py-2 text-[11px] text-muted-foreground/70 backdrop-blur-xs">
+        <div className="flex items-center justify-between border-t border-border/40 bg-muted/20 px-4 py-2 text-[11px] text-muted-foreground/70">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
               <kbd className="rounded border border-border/60 bg-background/80 px-1 py-0.5 font-mono text-[10px] shadow-2xs">

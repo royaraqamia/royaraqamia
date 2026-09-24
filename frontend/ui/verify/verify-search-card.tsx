@@ -29,7 +29,7 @@ export function VerifySearchCard({
 }: VerifySearchCardProps) {
   return (
     <m.div variants={cardVariants}>
-      <Card className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 p-1 shadow-2xl shadow-indigo-500/5 backdrop-blur-xl transition-all duration-300 hover:border-border">
+      <Card className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 p-1 shadow-2xl shadow-indigo-500/5 transition-safe duration-300 hover:border-border">
         <CardContent className="p-5 sm:p-8">
           <form onSubmit={onSubmit} className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
@@ -44,7 +44,7 @@ export function VerifySearchCard({
                 value={code}
                 onChange={(e) => onCodeChange(e.target.value.toUpperCase())}
                 placeholder="COMP-2026-A1B2C3D4"
-                className="h-13 w-full rounded-2xl border-border/70 bg-background/50 ps-11 pe-11 font-mono text-base tracking-wider uppercase shadow-xs backdrop-blur-sm transition-all duration-300 placeholder:font-sans placeholder:tracking-normal placeholder:normal-case focus:border-primary/60 focus:bg-background focus:ring-4 focus:ring-primary/10 dark:bg-neutral-900/60"
+                className="h-13 w-full rounded-2xl border-border/70 bg-background/50 ps-11 pe-11 font-mono text-base tracking-wider uppercase shadow-xs transition-safe duration-300 placeholder:font-sans placeholder:tracking-normal placeholder:normal-case focus:border-primary/60 focus:bg-background focus:ring-4 focus:ring-primary/10 dark:bg-neutral-900/60"
                 maxLength={30}
                 autoFocus
                 required
@@ -61,7 +61,7 @@ export function VerifySearchCard({
               size="lg"
               isLoading={loading}
               disabled={loading || !code.trim()}
-              className="h-13 min-h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/3 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-all duration-200 sm:w-auto w-full gap-2 shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-13 min-h-13 px-8 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/3 hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.98] transition-safe duration-200 sm:w-auto w-full gap-2 shrink-0 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {!loading && <Search className="size-5" />}
               <span>تحقُّق</span>

@@ -62,7 +62,7 @@ export function TrainingCourses() {
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6 lg:gap-8">
                   {/* Course Title & High-level Pitch */}
                   <div className="flex-1 space-y-3">
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30 backdrop-blur-md">
+                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/30">
                       <span className="relative flex h-2 w-2">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
@@ -87,7 +87,7 @@ export function TrainingCourses() {
 
                   {/* Pricing Badge Box */}
                   <div className="shrink-0 self-start md:self-center">
-                    <div className="relative rounded-2xl bg-white/5 border border-white/15 p-5 sm:p-6 backdrop-blur-xl text-center md:text-right shadow-inner min-w-0 sm:min-w-45">
+                    <div className="relative rounded-2xl bg-white/5 border border-white/15 p-5 sm:p-6 text-center md:text-right shadow-inner min-w-0 sm:min-w-45">
                       <div className="text-xs text-purple-200/80 font-medium mb-1">
                         رسوم الاستثمار
                       </div>
@@ -117,7 +117,7 @@ export function TrainingCourses() {
                       return (
                         <div
                           key={idx}
-                          className={`relative rounded-2xl p-5 sm:p-6 transition-all duration-300 flex flex-col justify-between border ${
+                          className={`relative rounded-2xl p-5 sm:p-6 transition-safe duration-300 flex flex-col justify-between border ${
                             isFeatured
                               ? 'bg-purple-500/5 dark:bg-purple-500/10 border-purple-500/30 shadow-lg shadow-purple-500/5'
                               : 'bg-muted/30 dark:bg-white/2 border-border/50 hover:border-purple-500/20 hover:bg-muted/50'
@@ -203,7 +203,7 @@ export function TrainingCourses() {
                   {course.isOpen ? (
                     <Button
                       asChild
-                      className="group relative overflow-hidden w-full h-14 sm:h-16 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold text-base sm:text-lg shadow-xl shadow-purple-600/25 hover:shadow-purple-600/40 hover:scale-[1.005] active:scale-[0.995] transition-all duration-300 flex items-center justify-center gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 border-0"
+                      className="group relative overflow-hidden w-full h-14 sm:h-16 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold text-base sm:text-lg shadow-xl shadow-purple-600/25 hover:shadow-purple-600/40 hover:scale-[1.005] active:scale-[0.995] transition-safe duration-300 flex items-center justify-center gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 border-0"
                     >
                       <Link
                         href="/training/apply"

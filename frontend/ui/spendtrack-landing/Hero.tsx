@@ -60,11 +60,11 @@ export function Hero() {
             appPath="/spendtrack/app"
             loginRedirect="/spendtrack/app"
             scrollTarget="features"
-            primaryClassName="group relative w-full sm:w-auto cta-glow text-base px-8 py-6 rounded-full font-bold shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            primaryClassName="group relative w-full sm:w-auto cta-glow text-base px-8 py-6 rounded-full font-bold shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/35 transition-safe duration-300 hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="arrow-bounce transition-transform duration-300 group-hover:-translate-x-1"
-            secondaryClassName="w-full sm:w-auto text-base px-8 py-6 rounded-full font-medium border-border/80 bg-background/75 hover:bg-accent hover:text-accent-foreground transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            secondaryClassName="w-full sm:w-auto text-base px-8 py-6 rounded-full font-medium border-border/80 bg-background/75 hover:bg-accent hover:text-accent-foreground transition-safe duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             secondaryLabel="اعرف المزيد"
           />
         </div>
@@ -118,11 +118,11 @@ export function Hero() {
               {transactions.map((tx, i) => (
                 <div
                   key={tx.desc}
-                  className="landing-enter-right glass rounded-xl sm:rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-background/65 hover:bg-background/88 border border-border/30 hover:border-border/60 transition-all duration-200 group"
+                  className="landing-enter-right glass rounded-xl sm:rounded-2xl p-3 sm:p-3.5 flex items-center justify-between gap-3 bg-background/65 hover:bg-background/88 border border-border/30 hover:border-border/60 transition-safe duration-200 group"
                   style={{ ['--ld' as string]: `${0.8 + i * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/14 border border-primary/20 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-primary/35 transition-all duration-200">
+                    <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/14 border border-primary/20 flex items-center justify-center shrink-0 group-hover:scale-105 group-hover:bg-primary/35 transition-safe duration-200">
                       <Wallet size={18} className="text-primary" />
                     </div>
                     <div className="min-w-0">
@@ -157,7 +157,7 @@ export function Hero() {
               </div>
 
               <div className="w-full h-2 rounded-full bg-muted/75 overflow-hidden p-0.5 border border-border/20">
-                <div className="h-full rounded-full bg-linear-to-r from-primary to-purple-500 w-[68%] transition-all duration-1000 ease-out" />
+                <div className="h-full rounded-full bg-linear-to-r from-primary to-purple-500 w-[68%] transition-safe duration-1000 ease-out" />
               </div>
             </div>
           </div>

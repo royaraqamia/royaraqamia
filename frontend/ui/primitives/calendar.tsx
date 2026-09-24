@@ -5,21 +5,21 @@ import { cn } from '@/frontend/shared/cn';
 
 const calendarClassNames: Partial<ClassNames> = {
   root: cn(
-    'relative p-4 sm:p-5 rounded-2xl border border-border/80 bg-card/95 backdrop-blur-xl',
-    'shadow-xl shadow-black/5 dark:shadow-black/40 text-card-foreground select-none transition-all duration-300 w-fit'
+    'relative p-4 sm:p-5 rounded-2xl border border-border/80 bg-card/95',
+    'shadow-xl shadow-black/5 dark:shadow-black/40 text-card-foreground select-none transition-safe duration-300 w-fit'
   ),
   months: 'relative flex flex-col sm:flex-row gap-5 sm:gap-7',
   month: 'relative space-y-4 w-full',
   nav: 'flex items-center justify-between absolute inset-x-0 top-0 z-10 h-9 pointer-events-none px-0.5',
   button_previous: cn(
     'pointer-events-auto inline-flex items-center justify-center size-8 rounded-lg bg-background/80 hover:bg-accent hover:text-accent-foreground text-muted-foreground/80',
-    'border border-border/60 hover:border-border shadow-xs hover:shadow-md transition-all duration-200 ease-out hover:scale-105 active:scale-95',
+    'border border-border/60 hover:border-border shadow-xs hover:shadow-md transition-safe duration-200 ease-out hover:scale-105 active:scale-95',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
     'disabled:pointer-events-none disabled:opacity-30 cursor-pointer'
   ),
   button_next: cn(
     'pointer-events-auto inline-flex items-center justify-center size-8 rounded-lg bg-background/80 hover:bg-accent hover:text-accent-foreground text-muted-foreground/80',
-    'border border-border/60 hover:border-border shadow-xs hover:shadow-md transition-all duration-200 ease-out hover:scale-105 active:scale-95',
+    'border border-border/60 hover:border-border shadow-xs hover:shadow-md transition-safe duration-200 ease-out hover:scale-105 active:scale-95',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
     'disabled:pointer-events-none disabled:opacity-30 cursor-pointer'
   ),
@@ -38,7 +38,7 @@ const calendarClassNames: Partial<ClassNames> = {
   ),
   day_button: cn(
     'inline-flex items-center justify-center size-9 rounded-lg p-0 font-medium text-foreground text-sm',
-    'transition-all duration-200 ease-out cursor-pointer select-none',
+    'transition-safe duration-200 ease-out cursor-pointer select-none',
     'hover:bg-accent hover:text-accent-foreground hover:scale-105 active:scale-95',
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
     'disabled:pointer-events-none disabled:opacity-30',

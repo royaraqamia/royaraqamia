@@ -72,7 +72,7 @@ interface MetricCardProps {
 
 function MetricCard({ icon: Icon, iconClassName, label, value, unit }: MetricCardProps) {
   return (
-    <div className="flex items-center gap-2.5 @min-[440px]:gap-3 min-w-0 p-2.5 @min-[440px]:p-3 rounded-xl bg-card/40 border border-border/40 backdrop-blur-xl">
+    <div className="flex items-center gap-2.5 @min-[440px]:gap-3 min-w-0 p-2.5 @min-[440px]:p-3 rounded-xl bg-card/40 border border-border/40">
       <div
         className={`flex items-center justify-center shrink-0 w-8 h-8 @min-[440px]:w-9 @min-[440px]:h-9 rounded-lg border ${iconClassName}`}
       >
@@ -292,7 +292,7 @@ export function CalendarGrid({
             <button
               type="button"
               onClick={() => onDateSelect(todayItem.date)}
-              className="inline-flex items-center gap-1.5 px-2.5 @min-[440px]:px-3 py-1.5 rounded-lg @min-[440px]:rounded-xl text-[11px] @min-[440px]:text-xs font-bold text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border border-border/50 backdrop-blur-md transition-all duration-200 active:scale-95 cursor-pointer motion-reduce:transform-none motion-reduce:transition-none"
+              className="inline-flex items-center gap-1.5 px-2.5 @min-[440px]:px-3 py-1.5 rounded-lg @min-[440px]:rounded-xl text-[11px] @min-[440px]:text-xs font-bold text-muted-foreground hover:text-foreground bg-muted/40 hover:bg-muted/70 border border-border/50 transition-safe duration-200 active:scale-95 cursor-pointer motion-reduce:transform-none motion-reduce:transition-none"
               title="الانتقال إلى تاريخ اليوم"
             >
               <CalendarIcon className="w-3.5 h-3.5 text-primary" />
@@ -301,7 +301,7 @@ export function CalendarGrid({
           )}
 
           {habitsCount > 0 && (
-            <div className="inline-flex items-center gap-1.5 px-2.5 @min-[440px]:px-3.5 py-1.5 rounded-lg @min-[440px]:rounded-xl text-[11px] @min-[440px]:text-xs font-extrabold bg-linear-to-r from-primary/15 via-primary/10 to-primary/5 text-primary border border-primary/30 backdrop-blur-md whitespace-nowrap">
+            <div className="inline-flex items-center gap-1.5 px-2.5 @min-[440px]:px-3.5 py-1.5 rounded-lg @min-[440px]:rounded-xl text-[11px] @min-[440px]:text-xs font-extrabold bg-linear-to-r from-primary/15 via-primary/10 to-primary/5 text-primary border border-primary/30 whitespace-nowrap">
               <Sparkles
                 className="w-3.5 h-3.5 text-primary animate-pulse motion-reduce:animate-none"
                 aria-hidden="true"
@@ -348,7 +348,7 @@ export function CalendarGrid({
       )}
 
       {/* Main Glassmorphic Container Card */}
-      <Card className="relative overflow-hidden p-3 @min-[440px]:p-5 @min-[560px]:p-6 rounded-2xl @min-[440px]:rounded-3xl border border-border/50 bg-card/60 backdrop-blur-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.25)] transition-all duration-300 motion-reduce:transition-none">
+      <Card className="relative overflow-hidden p-3 @min-[440px]:p-5 @min-[560px]:p-6 rounded-2xl @min-[440px]:rounded-3xl border border-border/50 bg-card/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] dark:shadow-[0_8px_30px_rgb(0,0,0,0.25)] transition-safe duration-300 motion-reduce:transition-none">
         {habitsCount === 0 ? (
           /* High-End Empty State */
           <div className="relative overflow-hidden py-10 @min-[440px]:py-14 px-4 @min-[440px]:px-6 text-center space-y-5 @min-[440px]:space-y-6 flex flex-col items-center justify-center bg-linear-to-b from-muted/20 via-muted/5 to-transparent rounded-2xl border-2 border-dashed border-border/60">
@@ -462,7 +462,7 @@ export function CalendarGrid({
                             text-center cursor-pointer select-none outline-none border
                             focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background
                             touch-manipulation overflow-hidden
-                            transition-all duration-200 ease-out hover:scale-[1.04] active:scale-[0.97]
+                            transition-safe duration-200 ease-out hover:scale-[1.04] active:scale-[0.97]
                             motion-reduce:transform-none motion-reduce:transition-none
                             ${cellBackground} ${glowRing}
                           `}
@@ -512,7 +512,7 @@ export function CalendarGrid({
                               className="absolute bottom-1 @min-[440px]:bottom-1.5 inset-x-1.5 @min-[440px]:inset-x-2.5 h-0.5 @min-[440px]:h-1 bg-foreground/10 rounded-full overflow-hidden"
                             >
                               <div
-                                className={`h-full rounded-full transition-all duration-500 motion-reduce:transition-none ${
+                                className={`h-full rounded-full transition-safe duration-500 motion-reduce:transition-none ${
                                   isPerfectDay
                                     ? 'bg-linear-to-r from-primary to-amber-400'
                                     : isFrozenDay
@@ -584,7 +584,7 @@ export function CalendarGrid({
                     <div className="flex items-center gap-2.5 shrink-0 @min-[560px]:w-36">
                       <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden border border-border/50">
                         <div
-                          className={`h-full rounded-full transition-all duration-300 motion-reduce:transition-none ${
+                          className={`h-full rounded-full transition-safe duration-300 motion-reduce:transition-none ${
                             activeDayDetails.isPerfect ? 'bg-amber-400' : 'bg-primary'
                           }`}
                           style={{ width: `${activeDayDetails.pct}%` }}

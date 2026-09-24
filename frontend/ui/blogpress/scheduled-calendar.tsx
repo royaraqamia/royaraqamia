@@ -133,7 +133,7 @@ export function ScheduledCalendar({
         )}
       </div>
 
-      <div className="rounded-2xl border border-border/70 bg-card/80 backdrop-blur-xl shadow-sm overflow-hidden">
+      <div className="rounded-2xl border border-border/70 bg-card/80 shadow-sm overflow-hidden">
         <div className="grid grid-cols-7 border-b border-border/50 bg-muted/30">
           {WEEKDAYS.map((label) => (
             <div

@@ -294,7 +294,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
   return (
     <div className="flex h-dvh flex-col">
       <EditorReadingProgress scrollContainerRef={editorContainerRef} />
-      <div className="flex items-center justify-between border-b border-border/50 px-4 py-2.5 bg-background/80 backdrop-blur-sm">
+      <div className="flex items-center justify-between border-b border-border/50 px-4 py-2.5 bg-background/80">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <Button
             variant="ghost"
@@ -451,7 +451,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
 
       {!distractionFree && (
         <div
-          className="flex items-center justify-between border-t border-border/50 px-4 py-2.5 bg-background/80 backdrop-blur-sm"
+          className="flex items-center justify-between border-t border-border/50 px-4 py-2.5 bg-background/80"
           role="status"
           aria-label="إحصائيَّات المقال"
         >

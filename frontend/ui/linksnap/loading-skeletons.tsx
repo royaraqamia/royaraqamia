@@ -23,7 +23,7 @@ export function DashboardSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <article
             key={i}
-            className="group relative h-32 w-full overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/60 dark:bg-neutral-900/60 p-5 sm:p-6 backdrop-blur-md shadow-xs transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700 flex flex-col justify-between"
+            className="group relative h-32 w-full overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/60 dark:bg-neutral-900/60 p-5 sm:p-6 shadow-xs transition-safe duration-300 hover:border-neutral-300 dark:hover:border-neutral-700 flex flex-col justify-between"
           >
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-center gap-3">
@@ -60,7 +60,7 @@ export function AnalyticsSkeleton() {
         {Array.from({ length: 3 }).map((_, i) => (
           <article
             key={i}
-            className="h-24 p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/60 dark:bg-neutral-900/60 backdrop-blur-md shadow-xs flex flex-col justify-between transition-all duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
+            className="h-24 p-4 rounded-xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/60 dark:bg-neutral-900/60 shadow-xs flex flex-col justify-between transition-safe duration-300 hover:border-neutral-300 dark:hover:border-neutral-700"
           >
             <div className="flex items-center justify-between gap-2">
               <Skeleton className="h-4 w-24 rounded-md bg-neutral-200/80 dark:bg-neutral-800/80 opacity-80" />
@@ -75,7 +75,7 @@ export function AnalyticsSkeleton() {
       </div>
 
       {/* Main Analytics Chart Feature Block */}
-      <div className="h-64 rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/60 dark:bg-neutral-900/60 p-5 sm:p-6 backdrop-blur-md shadow-xs flex flex-col justify-between">
+      <div className="h-64 rounded-2xl border border-neutral-200/80 dark:border-neutral-800/80 bg-white/60 dark:bg-neutral-900/60 p-5 sm:p-6 shadow-xs flex flex-col justify-between">
         <div className="flex items-center justify-between pb-3 border-b border-neutral-200/40 dark:border-neutral-800/40">
           <Skeleton className="h-5 w-36 rounded-md bg-neutral-200/80 dark:bg-neutral-800/80" />
           <div className="flex gap-2">
@@ -89,7 +89,7 @@ export function AnalyticsSkeleton() {
           {[40, 65, 30, 85, 50, 95, 70, 45, 80, 60, 90, 75].map((heightPct, idx) => (
             <div key={idx} className="flex-1 flex justify-center h-full items-end">
               <Skeleton
-                className="w-full max-w-7 rounded-t-md bg-neutral-200/80 dark:bg-neutral-800/80 transition-all duration-300"
+                className="w-full max-w-7 rounded-t-md bg-neutral-200/80 dark:bg-neutral-800/80 transition-safe duration-300"
                 style={{ height: `${heightPct}%` }}
               />
             </div>

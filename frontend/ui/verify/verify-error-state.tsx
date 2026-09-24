@@ -25,7 +25,7 @@ export function VerifyErrorState({
       exit={{ opacity: 0, y: -20, transition: { duration: 0.15 } }}
       className="my-6"
     >
-      <Card className="overflow-hidden rounded-3xl border-destructive/30 bg-card/90 shadow-2xl backdrop-blur-xl">
+      <Card className="overflow-hidden rounded-3xl border-destructive/30 bg-card/90 shadow-2xl">
         <div className="bg-destructive/10 border-b border-destructive/15 px-6 py-5 flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-destructive/15 border border-destructive/30 text-destructive shadow-xs">
@@ -56,7 +56,7 @@ export function VerifyErrorState({
               variant="outline"
               size="sm"
               onClick={onRetry}
-              className="gap-2 rounded-xl border-border hover:bg-muted cursor-pointer transition-all"
+              className="gap-2 rounded-xl border-border hover:bg-muted cursor-pointer transition-safe"
             >
               <RotateCcw className="size-4" />
               <span>المحاولة مرَّة أخرى</span>

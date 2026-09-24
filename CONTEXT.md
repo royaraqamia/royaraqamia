@@ -72,3 +72,20 @@ _Avoid_: Moderator, staff, editor
 The area under `/admin` that an Admin signs into to operate across the product family.
 It is the single door to every operator-facing surface.
 _Avoid_: Dashboard, backoffice, admin panel, CMS
+
+### Rendering
+
+**Heavy effect**:
+A visual effect whose cost is paid on every frame or every scroll frame — blur, glow, motion,
+3D transforms. Distinct from a static style, which is paid once when it is first rastered.
+_Avoid_: Expensive style, fancy effect, glass effect
+
+**Decorative effect**:
+A Heavy effect that a non-per-frame alternative can replace without losing its function — a
+backdrop blur that an opaque fill serves just as well.
+_Avoid_: Cosmetic effect, eye candy
+
+**Functional effect**:
+An effect whose job — feedback, legibility or accessibility — cannot be delivered without it,
+such as a loading shimmer, a focus ring or a dialog's enter/exit.
+_Avoid_: Necessary animation, real effect

@@ -122,7 +122,7 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-all duration-200 ease-out hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:focus-visible:ring-neutral-100 cursor-pointer">
+        <Button className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-safe duration-200 ease-out hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:focus-visible:ring-neutral-100 cursor-pointer">
           <Plus className="size-4 transition-transform duration-200 group-hover:rotate-90" />
           <span>إضافة مصروف</span>
         </Button>
@@ -213,7 +213,7 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
           variant="ghost"
           size="icon"
           aria-label="تعديل المصروف"
-          className="group relative inline-flex size-9 items-center justify-center rounded-xl text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800 transition-all duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 cursor-pointer"
+          className="group relative inline-flex size-9 items-center justify-center rounded-xl text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800 transition-safe duration-200 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 cursor-pointer"
         >
           <Pencil className="size-4 transition-transform duration-200 group-hover:scale-110" />
         </Button>
@@ -327,7 +327,7 @@ function ExpenseForm({
             inputMode="decimal"
             placeholder="0.00"
             autoComplete="off"
-            className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-all duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-900 dark:focus:border-neutral-100 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus-visible:outline-none aria-invalid:border-rose-500 aria-invalid:focus:ring-rose-500/10"
+            className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-900 dark:focus:border-neutral-100 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus-visible:outline-none aria-invalid:border-rose-500 aria-invalid:focus:ring-rose-500/10"
             {...register('amount')}
             aria-invalid={errors.amount ? true : undefined}
             aria-describedby={errors.amount ? 'amount-error' : undefined}
@@ -363,7 +363,7 @@ function ExpenseForm({
           render={({ field }) => (
             <Select onValueChange={field.onChange} value={field.value}>
               <SelectTrigger
-                className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-all duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none aria-invalid:border-rose-500"
+                className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none aria-invalid:border-rose-500"
                 aria-describedby={errors.category_id ? 'category-error' : undefined}
               >
                 <SelectValue placeholder="اختر تصنيف" />
@@ -417,7 +417,7 @@ function ExpenseForm({
               value={field.value}
               onChange={field.onChange}
               placeholder="اختر التَّاريخ"
-              className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-all duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none"
+              className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none"
               aria-invalid={errors.date ? true : undefined}
               aria-describedby={errors.date ? 'date-error' : undefined}
             />
@@ -452,7 +452,7 @@ function ExpenseForm({
         <Input
           id="description"
           placeholder="مثال: غداء في المطعم"
-          className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-all duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-900 dark:focus:border-neutral-100 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus-visible:outline-none"
+          className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-900 dark:focus:border-neutral-100 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus-visible:outline-none"
           {...register('description')}
         />
       </div>
@@ -481,7 +481,7 @@ function ExpenseForm({
               }
               value={field.value || INHERIT_CURRENCY_VALUE}
             >
-              <SelectTrigger className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-all duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
+              <SelectTrigger className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
                 <SelectValue placeholder="العملة الأساسية" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 shadow-xl p-1 max-h-60">
@@ -543,7 +543,7 @@ function ExpenseForm({
                   control={control}
                   render={({ field: splitCatField }) => (
                     <Select onValueChange={splitCatField.onChange} value={splitCatField.value}>
-                      <SelectTrigger className="flex-1 h-10 px-3 bg-white/80 dark:bg-neutral-900/60 border border-neutral-200/90 dark:border-neutral-800 rounded-lg text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-all duration-200 hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
+                      <SelectTrigger className="flex-1 h-10 px-3 bg-white/80 dark:bg-neutral-900/60 border border-neutral-200/90 dark:border-neutral-800 rounded-lg text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
                         <SelectValue placeholder="اختر تصنيف" />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 shadow-xl p-1 max-h-48">
@@ -567,7 +567,7 @@ function ExpenseForm({
                   inputMode="decimal"
                   placeholder="0.00"
                   aria-label={`مبلغ تقسيم ${index + 1}`}
-                  className="w-28 shrink-0 h-10 px-3 bg-white/80 dark:bg-neutral-900/60 border border-neutral-200/90 dark:border-neutral-800 rounded-lg text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-all duration-200 hover:border-neutral-300 dark:hover:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-900 dark:focus:border-neutral-100 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus-visible:outline-none"
+                  className="w-28 shrink-0 h-10 px-3 bg-white/80 dark:bg-neutral-900/60 border border-neutral-200/90 dark:border-neutral-800 rounded-lg text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-safe duration-200 hover:border-neutral-300 dark:hover:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-900 dark:focus:border-neutral-100 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus-visible:outline-none"
                   {...register(`splits.${index}.amount`)}
                 />
                 <Button
@@ -576,7 +576,7 @@ function ExpenseForm({
                   size="icon"
                   aria-label="حذف التقسيم"
                   onClick={() => remove(index)}
-                  className="shrink-0 size-9 rounded-lg text-neutral-400 hover:text-rose-500 hover:bg-rose-500/10 transition-all duration-200 active:scale-95"
+                  className="shrink-0 size-9 rounded-lg text-neutral-400 hover:text-rose-500 hover:bg-rose-500/10 transition-safe duration-200 active:scale-95"
                 >
                   <Trash2 className="size-4" />
                 </Button>
@@ -602,7 +602,7 @@ function ExpenseForm({
           variant="outline"
           size="sm"
           onClick={handleAppendSplit}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-bold border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all duration-200 active:scale-95"
+          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-bold border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-safe duration-200 active:scale-95"
         >
           <Plus className="size-3.5" />
           إضافة تقسيم
@@ -626,7 +626,7 @@ function ExpenseForm({
       {/* SUBMIT BUTTON */}
       <Button
         type="submit"
-        className="w-full h-11 mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 text-neutral-50 font-bold text-sm shadow-md transition-all duration-200 ease-out hover:bg-neutral-800 hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none disabled:transform-none dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 focus-visible:ring-offset-2 cursor-pointer"
+        className="w-full h-11 mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 text-neutral-50 font-bold text-sm shadow-md transition-safe duration-200 ease-out hover:bg-neutral-800 hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none disabled:transform-none dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 focus-visible:ring-offset-2 cursor-pointer"
         disabled={pending}
       >
         {pending ? <Loader2 className="size-4 animate-spin shrink-0" /> : null}

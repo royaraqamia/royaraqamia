@@ -98,7 +98,7 @@ export function SlotStep({ slots, loading, selectedIds, requiredCount, onToggle 
                         : `${group.label} • ${range}`
                     }
                     className={cn(
-                      'rounded-xl border p-3 text-right transition-all duration-200',
+                      'rounded-xl border p-3 text-right transition-safe duration-200',
                       'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11',
                       selected
                         ? 'border-primary bg-primary text-primary-foreground shadow-md shadow-primary/20'

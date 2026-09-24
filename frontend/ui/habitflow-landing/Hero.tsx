@@ -59,11 +59,11 @@ export function Hero() {
             appPath="/habitflow/app"
             loginRedirect="/habitflow/app"
             scrollTarget="features"
-            primaryClassName="group relative h-13 px-8 text-base font-bold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"
+            primaryClassName="group relative h-13 px-8 text-base font-bold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-safe duration-300 ease-out flex items-center justify-center gap-3 w-full sm:w-auto cursor-pointer"
             loggedOutLabel="ابدأ التَّتبُّع مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="transition-transform duration-300 group-hover:-translate-x-1.5"
-            secondaryClassName="h-13 px-8 text-base font-medium rounded-full border-border/80 bg-background/75 hover:bg-muted/88 hover:border-border hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-all duration-300 ease-out w-full sm:w-auto cursor-pointer"
+            secondaryClassName="h-13 px-8 text-base font-medium rounded-full border-border/80 bg-background/75 hover:bg-muted/88 hover:border-border hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-safe duration-300 ease-out w-full sm:w-auto cursor-pointer"
             secondaryLabel="اعرف المزيد"
           />
         </div>
@@ -128,7 +128,7 @@ export function Hero() {
               {habitData.map((habit, i) => (
                 <div
                   key={habit.name}
-                  className="landing-enter-left group/row rounded-xl p-3 bg-muted/35 hover:bg-muted/55 border border-border/40 hover:border-border/80 transition-all duration-300"
+                  className="landing-enter-left group/row rounded-xl p-3 bg-muted/35 hover:bg-muted/55 border border-border/40 hover:border-border/80 transition-safe duration-300"
                   style={{ ['--ld' as string]: `${0.6 + i * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between mb-2.5">
@@ -145,7 +145,7 @@ export function Hero() {
                     {habit.done.map((done, j) => (
                       <div
                         key={j}
-                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all duration-300 ${
+                        className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-safe duration-300 ${
                           done
                             ? `${habit.color} text-white shadow-xs scale-100 ring-1 ring-white/20`
                             : 'bg-muted/65 text-muted-foreground/40 hover:bg-muted/88'

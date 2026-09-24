@@ -213,7 +213,7 @@ export function EditorToolbar({
           <button
             key={btn.action}
             onClick={onOpenShortcuts}
-            className="relative inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-all duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+            className="relative inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-safe duration-150 ease-out hover:bg-muted hover:text-foreground active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
             aria-label={btn.label}
             title={btn.label}
           >
@@ -227,7 +227,7 @@ export function EditorToolbar({
         <button
           key={btn.action}
           onClick={() => run(btn.action)}
-          className={`relative inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-all duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
+          className={`relative inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 ${
             active
               ? 'bg-primary text-primary-foreground font-bold shadow-xs scale-[1.02]'
               : 'text-muted-foreground hover:bg-muted/80 hover:text-foreground active:scale-95'
@@ -249,7 +249,7 @@ export function EditorToolbar({
         <DropdownMenu key="code-lang">
           <DropdownMenuTrigger asChild>
             <button
-              className="mx-1 inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 text-xs font-medium text-primary transition-all duration-150 ease-out hover:bg-primary/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
+              className="mx-1 inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-lg border border-primary/20 bg-primary/10 px-2.5 text-xs font-medium text-primary transition-safe duration-150 ease-out hover:bg-primary/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
               aria-label="لغة كتلة الكود"
               title="لغة كتلة الكود"
             >
@@ -262,7 +262,7 @@ export function EditorToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="max-h-64 min-w-40 overflow-y-auto rounded-xl border border-border/80 bg-background/95 p-1 shadow-lg backdrop-blur-md"
+            className="max-h-64 min-w-40 overflow-y-auto rounded-xl border border-border/80 bg-background/95 p-1 shadow-lg"
           >
             {CODE_LANGUAGES.map((lang) => (
               <DropdownMenuItem
@@ -295,7 +295,7 @@ export function EditorToolbar({
   return (
     <nav
       aria-label="شريط أدوات المُحرِّر"
-      className="sticky top-0 z-20 flex w-full items-center justify-between gap-2 border-b border-border/60 bg-background/80 px-2.5 py-1.5 backdrop-blur-xl transition-colors sm:px-3.5"
+      className="sticky top-0 z-20 flex w-full items-center justify-between gap-2 border-b border-border/60 bg-background/80 px-2.5 py-1.5 transition-colors sm:px-3.5"
     >
       <div className="flex items-center gap-0.5 overflow-x-auto py-0.5 scrollbar-none touch-pan-x select-none">
         {render()}

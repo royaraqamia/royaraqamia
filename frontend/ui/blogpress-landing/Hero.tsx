@@ -49,11 +49,11 @@ export function Hero() {
             appPath="/blogpress/app"
             loginRedirect="/blogpress/app"
             scrollTarget="features"
-            primaryClassName="group relative w-full sm:w-auto text-base font-bold px-8 py-6 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            primaryClassName="group relative w-full sm:w-auto text-base font-bold px-8 py-6 rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-safe duration-300 ease-out hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ الكتابة مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="transition-transform duration-300 ease-out group-hover:-translate-x-1.5"
-            secondaryClassName="w-full sm:w-auto text-base font-medium px-8 py-6 rounded-full border-border/80 bg-background/65 hover:bg-accent/88 hover:border-border transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            secondaryClassName="w-full sm:w-auto text-base font-medium px-8 py-6 rounded-full border-border/80 bg-background/65 hover:bg-accent/88 hover:border-border transition-safe duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             secondaryLabel="اعرف المزيد"
           />
         </div>

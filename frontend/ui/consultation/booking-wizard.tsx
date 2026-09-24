@@ -120,7 +120,7 @@ export function BookingWizard({ flow }: BookingWizardProps) {
             type="button"
             onClick={() => void flow.confirmBooking()}
             disabled={!flow.canProceed || flow.submitting}
-            className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold text-primary-foreground bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg transition-all duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+            className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold text-primary-foreground bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg transition-safe duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             {flow.submitting ? (
               <>
@@ -136,7 +136,7 @@ export function BookingWizard({ flow }: BookingWizardProps) {
             type="button"
             onClick={flow.next}
             disabled={!flow.canProceed}
-            className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold text-primary-foreground bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg transition-all duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+            className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold text-primary-foreground bg-linear-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 shadow-lg transition-safe duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             التَّالي
             <ArrowLeft className="size-4" aria-hidden="true" />

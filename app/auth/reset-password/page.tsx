@@ -53,13 +53,13 @@ function ResetPasswordForm() {
             placeholder="example@email.com"
             disabled={isPending}
             aria-describedby={message ? 'reset-message' : undefined}
-            className="w-full h-11 px-3.5 text-sm bg-background/50 border-border/70 hover:border-border focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-all duration-200 rounded-xl placeholder:text-muted-foreground/50 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full h-11 px-3.5 text-sm bg-background/50 border-border/70 hover:border-border focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 transition-safe duration-200 rounded-xl placeholder:text-muted-foreground/50 disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </div>
 
         {message && (
           <div
-            className={`flex items-start gap-3 p-3.5 rounded-xl border backdrop-blur-sm transition-all duration-200 animate-fade-in-up ${
+            className={`flex items-start gap-3 p-3.5 rounded-xl border transition-safe duration-200 animate-fade-in-up ${
               isSuccessMessage(message)
                 ? 'bg-success/10 border-success/20 text-success shadow-sm shadow-success/5'
                 : 'bg-destructive/10 border-destructive/20 text-destructive shadow-sm shadow-destructive/5'
@@ -86,7 +86,7 @@ function ResetPasswordForm() {
           type="submit"
           isLoading={isPending}
           disabled={isPending}
-          className="w-full h-11 sm:h-12 font-bold text-white gradient-primary cta-glow shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-all duration-200 rounded-full disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
+          className="w-full h-11 sm:h-12 font-bold text-white gradient-primary cta-glow shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-safe duration-200 rounded-full disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
         >
           {isPending ? 'جاري الإرسال...' : 'إرسال رابط إعادة التَّعيين'}
         </Button>
@@ -95,7 +95,7 @@ function ResetPasswordForm() {
       <div className="flex justify-center mt-6 pt-2 border-t border-border/40">
         <Link
           href={authLink('/auth/login', redirectTo)}
-          className="group inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-all duration-200 ease-out py-1.5 px-3 rounded-lg hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.98]"
+          className="group inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-safe duration-200 ease-out py-1.5 px-3 rounded-lg hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 active:scale-[0.98]"
         >
           <ArrowLeft
             size={16}

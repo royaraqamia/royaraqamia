@@ -160,7 +160,7 @@ export const MobileMenu = memo(function MobileMenu({
     const baseClasses = `
       group relative flex items-center justify-between w-full min-h-[52px] px-4 py-3.5 rounded-2xl
       font-bold text-base leading-snug tracking-tight
-      transition-all duration-200 ease-out select-none cursor-pointer
+      transition-safe duration-200 ease-out select-none cursor-pointer
       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
       active:scale-[0.98]
     `;
@@ -232,7 +232,7 @@ export const MobileMenu = memo(function MobileMenu({
           className={`
             group flex items-center justify-between w-full min-h-13 px-4 py-3.5 rounded-2xl
             font-bold text-base leading-snug tracking-tight
-            transition-all duration-200 ease-out select-none cursor-pointer
+            transition-safe duration-200 ease-out select-none cursor-pointer
             focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
             active:scale-[0.98]
             ${
@@ -254,7 +254,7 @@ export const MobileMenu = memo(function MobileMenu({
         </button>
 
         <div
-          className={`grid transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          className={`grid transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
             isExpanded
               ? 'grid-rows-[1fr] opacity-100 my-1.5'
               : 'grid-rows-[0fr] opacity-0 pointer-events-none'
@@ -272,14 +272,14 @@ export const MobileMenu = memo(function MobileMenu({
                       className="
                         group/sub relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl
                         text-sm font-medium text-neutral-400
-                        transition-all duration-150 ease-out
+                        transition-safe duration-150 ease-out
                         hover:bg-violet-950/40 hover:text-violet-300
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
                         active:scale-[0.98]
                       "
                     >
                       <span className="truncate">{sub.label}</span>
-                      <span className="text-xs text-violet-500 opacity-0 -translate-x-1 transition-all duration-150 group-hover/sub:opacity-100 group-hover/sub:translate-x-0">
+                      <span className="text-xs text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 group-hover/sub:opacity-100 group-hover/sub:translate-x-0">
                         ←
                       </span>
                     </Link>
@@ -291,14 +291,14 @@ export const MobileMenu = memo(function MobileMenu({
                       className="
                         group/sub relative flex items-center justify-between w-full px-4 py-2.5 rounded-xl
                         text-sm font-medium text-neutral-400
-                        transition-all duration-150 ease-out
+                        transition-safe duration-150 ease-out
                         hover:bg-violet-950/40 hover:text-violet-300
                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500
                         active:scale-[0.98]
                       "
                     >
                       <span className="truncate">{sub.label}</span>
-                      <span className="text-xs text-violet-500 opacity-0 -translate-x-1 transition-all duration-150 group-hover/sub:opacity-100 group-hover/sub:translate-x-0">
+                      <span className="text-xs text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 group-hover/sub:opacity-100 group-hover/sub:translate-x-0">
                         ←
                       </span>
                     </a>
@@ -344,7 +344,7 @@ export const MobileMenu = memo(function MobileMenu({
               fixed inset-0 w-full h-full
               bg-neutral-950
               text-neutral-100
-              transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+              transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
               will-change-transform flex flex-col
               ${
                 isVisible
@@ -370,7 +370,7 @@ export const MobileMenu = memo(function MobileMenu({
                     width={40}
                     height={40}
                     loading="eager"
-                    className="h-10 w-10 rounded-full logo-glow transition-transform duration-300 ease-out group-hover:scale-105"
+                    className="h-10 w-10 rounded-full transition-transform duration-300 ease-out group-hover:scale-105"
                   />
                 )}
                 <span className="text-xl font-bold font-heading tracking-tight text-white transition-colors duration-200 group-hover:text-violet-400">
@@ -391,7 +391,7 @@ export const MobileMenu = memo(function MobileMenu({
                   bg-neutral-900
                   border border-neutral-800/80
                   text-neutral-300
-                  transition-all duration-200 ease-out
+                  transition-safe duration-200 ease-out
                   hover:bg-neutral-800/80 hover:text-white
                   active:scale-90
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
@@ -439,7 +439,7 @@ export const MobileMenu = memo(function MobileMenu({
                   w-full h-13 rounded-full
                   gradient-primary text-white font-bold text-base tracking-tight
                   shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40
-                  transition-all duration-300 ease-out
+                  transition-safe duration-300 ease-out
                   active:scale-[0.98] overflow-hidden
                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950
                 "

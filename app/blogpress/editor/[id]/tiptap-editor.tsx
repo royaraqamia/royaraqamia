@@ -365,7 +365,7 @@ const TiptapEditor = forwardRef<TiptapEditorRef, TiptapEditorProps>(
           <div
             role="listbox"
             aria-label="قائمة الأوامر"
-            className="fixed z-50 w-60 rounded-xl border border-border/50 bg-popover shadow-lg shadow-black/5 backdrop-blur-sm overflow-hidden"
+            className="fixed z-50 w-60 rounded-xl border border-border/50 bg-popover shadow-lg shadow-black/5 overflow-hidden"
             style={{ left: slashMenuX, top: slashMenuY }}
           >
             {filteredCommands.length === 0 ? (

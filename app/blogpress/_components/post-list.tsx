@@ -195,7 +195,7 @@ export const PostList = memo(function PostList({
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div
-          className="inline-flex items-center p-1 rounded-2xl bg-neutral-100/80 dark:bg-neutral-900/80 border border-neutral-200/60 dark:border-neutral-800/60 backdrop-blur-md shadow-2xs overflow-x-auto no-scrollbar max-w-full"
+          className="inline-flex items-center p-1 rounded-2xl bg-neutral-100/80 dark:bg-neutral-900/80 border border-neutral-200/60 dark:border-neutral-800/60 shadow-2xs overflow-x-auto no-scrollbar max-w-full"
           role="tablist"
           aria-label="تصفية المقالات"
         >
@@ -208,7 +208,7 @@ export const PostList = memo(function PostList({
               id={`tab-${f.value}`}
               onClick={() => setActiveFilter(f.value)}
               className={cn(
-                'relative inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-xl transition-all duration-200 ease-out shrink-0 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+                'relative inline-flex items-center gap-2 px-3.5 py-1.5 text-xs font-medium rounded-xl transition-safe duration-200 ease-out shrink-0 cursor-pointer select-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
                 activeFilter === f.value
                   ? 'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 shadow-2xs font-bold'
                   : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-200/40 dark:hover:bg-neutral-800/40'
@@ -218,7 +218,7 @@ export const PostList = memo(function PostList({
               {f.value !== 'all' && (
                 <span
                   className={cn(
-                    'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-bold rounded-full transition-all duration-200',
+                    'inline-flex items-center justify-center min-w-5 h-5 px-1.5 text-[10px] font-bold rounded-full transition-safe duration-200',
                     activeFilter === f.value
                       ? 'bg-primary/10 text-primary dark:bg-primary/20'
                       : 'bg-neutral-200/70 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
@@ -240,7 +240,7 @@ export const PostList = memo(function PostList({
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="بحث في المقالات..."
             aria-label="بحث في المقالات"
-            className="w-full h-9 ps-9 pe-9 rounded-xl bg-neutral-100/60 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800/80 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 outline-none transition-all duration-200"
+            className="w-full h-9 ps-9 pe-9 rounded-xl bg-neutral-100/60 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800/80 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 outline-none transition-safe duration-200"
           />
           {searchQuery ? (
             <button
@@ -248,7 +248,7 @@ export const PostList = memo(function PostList({
                 setSearchQuery('');
                 searchRef.current?.focus();
               }}
-              className="absolute inset-e-2 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-all cursor-pointer"
+              className="absolute inset-e-2 top-1/2 -translate-y-1/2 size-5 flex items-center justify-center rounded-full text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-200/60 dark:hover:bg-neutral-800 transition-safe cursor-pointer"
               aria-label="مسح البحث"
             >
               <X className="size-3" />
@@ -278,7 +278,7 @@ export const PostList = memo(function PostList({
         aria-labelledby={`tab-${activeFilter}`}
       >
         {filteredPosts.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/20 p-8 text-center transition-all">
+          <div className="rounded-2xl border border-dashed border-neutral-200 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-900/20 p-8 text-center transition-safe">
             <EmptyState
               icon={FileText}
               className="py-12"
@@ -293,7 +293,7 @@ export const PostList = memo(function PostList({
               action={
                 !searchQuery && activeFilter === 'all' ? (
                   <Button
-                    className="transition-all duration-200 shadow-sm hover:shadow-md rounded-xl active:scale-[0.98] font-medium"
+                    className="transition-safe duration-200 shadow-sm hover:shadow-md rounded-xl active:scale-[0.98] font-medium"
                     disabled={pending}
                     onClick={() =>
                       startTransition(async () => {
@@ -364,7 +364,7 @@ const PostRow = memo(function PostRow({
   return (
     <article
       className={cn(
-        'group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-neutral-900/50 border transition-all duration-300 ease-out',
+        'group relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-neutral-900/50 border transition-safe duration-300 ease-out',
         isSelected
           ? 'border-primary/50 ring-1 ring-primary/20 bg-primary/[0.03] dark:bg-primary/[0.04]'
           : 'border-neutral-200/70 dark:border-neutral-800/80 hover:border-neutral-300 dark:hover:border-neutral-700/80 hover:shadow-md dark:hover:shadow-neutral-950/50'
@@ -376,7 +376,7 @@ const PostRow = memo(function PostRow({
           onClick={() => onToggleSelect(post.id)}
           aria-pressed={isSelected}
           aria-label={isSelected ? 'إلغاء تحديد المقال' : 'تحديد المقال'}
-          className="shrink-0 size-5 rounded-md border flex items-center justify-center transition-all duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="shrink-0 size-5 rounded-md border flex items-center justify-center transition-safe duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <span
             className={cn(
@@ -647,7 +647,7 @@ const PostRow = memo(function PostRow({
                   <span>حذف</span>
                 </DropdownMenuItem>
               </DialogTrigger>
-              <DialogContent className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 backdrop-blur-sm max-w-md p-6">
+              <DialogContent className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 max-w-md p-6">
                 <DialogHeader className="space-y-2 text-start">
                   <DialogTitle className="text-base font-bold text-neutral-900 dark:text-neutral-100">
                     حذف المقال
@@ -781,7 +781,7 @@ const BulkActionBar = memo(function BulkActionBar({
 }: BulkActionBarProps) {
   const hasSelection = selectedCount > 0;
   return (
-    <div className="sticky top-3 z-20 bg-card/90 backdrop-blur border border-border rounded-2xl p-3 shadow-sm flex items-center gap-3 flex-wrap">
+    <div className="sticky top-3 z-20 bg-card/90 border border-border rounded-2xl p-3 shadow-sm flex items-center gap-3 flex-wrap">
       <button
         type="button"
         onClick={onToggleAll}
@@ -891,7 +891,7 @@ function CategoryChip({ label, slug, active, onSelect }: CategoryChipProps) {
       onClick={() => onSelect(slug)}
       aria-pressed={active}
       className={cn(
-        'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-medium transition-all duration-200 ease-out shrink-0 cursor-pointer select-none border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
+        'inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-xl font-medium transition-safe duration-200 ease-out shrink-0 cursor-pointer select-none border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1',
         active
           ? 'bg-primary/10 text-primary border-primary/30 dark:bg-primary/20 shadow-2xs font-bold'
           : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 border-neutral-200/80 dark:border-neutral-800 hover:text-neutral-900 dark:hover:text-neutral-200 hover:bg-neutral-50 dark:hover:bg-neutral-800/50'

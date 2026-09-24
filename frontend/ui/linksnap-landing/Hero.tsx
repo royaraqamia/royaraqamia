@@ -54,11 +54,11 @@ export function Hero() {
             appPath="/linksnap/app"
             loginRedirect="/linksnap/app"
             scrollTarget="features"
-            primaryClassName="group relative w-full sm:w-auto min-w-45 h-13 px-8 text-base font-bold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            primaryClassName="group relative w-full sm:w-auto min-w-45 h-13 px-8 text-base font-bold rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/35 hover:scale-[1.02] active:scale-[0.98] transition-safe duration-300 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             loggedOutLabel="ابدأ مجَّانًا"
             loggedInLabel="لوحة التَّحكُّم"
             arrowClassName="transition-transform duration-300 group-hover:-translate-x-1.5"
-            secondaryClassName="w-full sm:w-auto min-w-40 h-13 px-8 text-base font-medium rounded-full border-border/80 hover:bg-accent/65 hover:border-border hover:scale-[1.02] active:scale-[0.98] transition-all duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            secondaryClassName="w-full sm:w-auto min-w-40 h-13 px-8 text-base font-medium rounded-full border-border/80 hover:bg-accent/65 hover:border-border hover:scale-[1.02] active:scale-[0.98] transition-safe duration-300 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             secondaryLabel="اعرف المزيد"
           />
         </div>
@@ -72,7 +72,7 @@ export function Hero() {
         <div className="relative" style={{ perspective: '1200px' }}>
           {/* Main Glass Card */}
           <div
-            className="landing-float relative bg-card/88 dark:bg-neutral-900/88 border border-border/80 rounded-2xl p-6 xl:p-8 shadow-2xl shadow-primary/10 transform-gpu transition-all duration-500 hover:border-primary/30"
+            className="landing-float relative bg-card/88 dark:bg-neutral-900/88 border border-border/80 rounded-2xl p-6 xl:p-8 shadow-2xl shadow-primary/10 transform-gpu transition-safe duration-500 hover:border-primary/30"
             style={
               {
                 transform: 'rotateY(-6deg) rotateX(4deg)',
@@ -119,7 +119,7 @@ export function Hero() {
               ].map((item, i) => (
                 <div
                   key={i}
-                  className="landing-enter-left group/item relative bg-muted/55 hover:bg-muted/88 border border-border/40 hover:border-primary/30 rounded-xl p-3.5 transition-all duration-300 shadow-sm"
+                  className="landing-enter-left group/item relative bg-muted/55 hover:bg-muted/88 border border-border/40 hover:border-primary/30 rounded-xl p-3.5 transition-safe duration-300 shadow-sm"
                   style={{ ['--ld' as string]: `${0.8 + i * 0.15}s` } as React.CSSProperties}
                 >
                   <div className="flex items-center justify-between gap-3 mb-1.5">

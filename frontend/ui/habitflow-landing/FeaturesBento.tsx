@@ -4,11 +4,11 @@ import { FeaturesSection } from '@/frontend/ui/landing-shared/FeaturesSection';
 
 const bentoCardTheme = {
   cardClassName:
-    'group relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/75 dark:bg-zinc-950/82 p-6 sm:p-8 transition-all duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/50',
+    'group relative overflow-hidden rounded-3xl border border-white/10 bg-slate-900/75 dark:bg-zinc-950/82 p-6 sm:p-8 transition-safe duration-500 hover:border-violet-500/40 hover:shadow-2xl hover:shadow-violet-500/10 focus-within:ring-2 focus-within:ring-violet-500/50',
   contentClassName: 'relative z-10 h-full flex flex-col justify-between',
   headerClassName: 'flex items-center gap-3.5 mb-4',
   iconBoxClassName:
-    'w-12 h-12 rounded-2xl bg-violet-500/14 border border-violet-500/20 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-violet-500/35 group-hover:scale-105 transition-all duration-300',
+    'w-12 h-12 rounded-2xl bg-violet-500/14 border border-violet-500/20 flex items-center justify-center shrink-0 shadow-inner group-hover:bg-violet-500/35 group-hover:scale-105 transition-safe duration-300',
   iconClassName: 'text-violet-400 group-hover:text-violet-300 transition-colors duration-300',
   iconSize: 24,
   titleClassName: 'text-xl sm:text-2xl font-bold tracking-tight text-slate-100',
@@ -50,7 +50,7 @@ function HabitTracker() {
         {habits.map((habit, i) => (
           <div
             key={habit.name}
-            className={`landing-reveal-item group/item rounded-xl p-3 sm:p-3.5 flex items-center justify-between border transition-all duration-300 hover:scale-[1.01] ${
+            className={`landing-reveal-item group/item rounded-xl p-3 sm:p-3.5 flex items-center justify-between border transition-safe duration-300 hover:scale-[1.01] ${
               habit.done
                 ? 'bg-violet-500/14 border-violet-500/30 border-s-4 border-s-violet-500 shadow-xs shadow-violet-500/10'
                 : 'bg-white/5 border-white/10 border-s-4 border-s-slate-600 hover:border-slate-500'
@@ -127,7 +127,7 @@ function StreakCalendar() {
                 return (
                   <div
                     key={j}
-                    className={`flex-1 h-8 sm:h-9 rounded-lg flex items-center justify-center text-xs transition-all duration-300 ${
+                    className={`flex-1 h-8 sm:h-9 rounded-lg flex items-center justify-center text-xs transition-safe duration-300 ${
                       isChecked
                         ? 'bg-linear-to-b from-violet-500/40 to-indigo-600/30 border border-violet-500/40 text-violet-200 shadow-xs shadow-violet-500/20 font-bold'
                         : 'bg-white/6 border border-white/5 text-slate-600'
@@ -169,7 +169,7 @@ function ProgressAnalytics() {
         {progressStats.map((stat, i) => (
           <div
             key={stat.label}
-            className="landing-reveal-item rounded-xl border border-white/10 bg-white/6 p-3 text-center transition-all duration-300 hover:border-violet-500/30 hover:bg-white/6"
+            className="landing-reveal-item rounded-xl border border-white/10 bg-white/6 p-3 text-center transition-safe duration-300 hover:border-violet-500/30 hover:bg-white/6"
             style={{ ['--ld' as string]: `${0.3 + i * 0.1}s` } as React.CSSProperties}
           >
             <span className="text-base sm:text-xl font-bold bg-linear-to-r from-violet-300 via-purple-200 to-indigo-300 bg-clip-text text-transparent block">

@@ -136,7 +136,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                   : `M ${points[0]?.x ?? 0} ${paddingTop + chartHeight} L ${points[points.length - 1]?.x ?? 0} ${paddingTop + chartHeight} Z`
               }
               fill="url(#chart-grad)"
-              className="transition-all duration-700 ease-out-cubic"
+              className="transition-safe duration-700 ease-out-cubic"
               style={{ transitionTimingFunction: 'var(--ease-out-cubic)' }}
             />
           )}
@@ -150,7 +150,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
               strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
-              className="transition-all duration-700 ease-out-cubic"
+              className="transition-safe duration-700 ease-out-cubic"
               style={{ transitionTimingFunction: 'var(--ease-out-cubic)' }}
             />
           )}
@@ -165,7 +165,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
                 fill="hsl(var(--primary))"
                 stroke="hsl(var(--background))"
                 strokeWidth="2"
-                className="transition-all duration-200"
+                className="transition-safe duration-200"
               />
               {/* Invisible touch target */}
               <circle cx={p.x} cy={p.y} r="12" fill="transparent" />

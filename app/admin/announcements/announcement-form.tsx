@@ -135,7 +135,7 @@ export function AnnouncementForm() {
 
           <Button
             type="submit"
-            className="btn-lift btn-press focus-ring touch-target w-full gap-2 transition-all duration-200"
+            className="btn-lift btn-press focus-ring touch-target w-full gap-2 transition-safe duration-200"
             disabled={sending}
           >
             {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}

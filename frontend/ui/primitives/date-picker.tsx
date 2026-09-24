@@ -43,8 +43,8 @@ function formatDate(iso?: string | null): string {
 }
 
 const triggerClassNames = cn(
-  'group relative flex h-11 w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-input/80 bg-background/80 px-3.5 text-sm font-medium text-foreground shadow-xs backdrop-blur-md',
-  'transition-all duration-200 ease-out',
+  'group relative flex h-11 w-full min-w-0 items-center justify-between gap-3 rounded-xl border border-input/80 bg-background/80 px-3.5 text-sm font-medium text-foreground shadow-xs',
+  'transition-safe duration-200 ease-out',
   'hover:border-ring/50 hover:bg-background hover:shadow-md hover:scale-[1.005]',
   'focus-visible:outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/25 focus-visible:ring-offset-2 focus-visible:ring-offset-background',
   'data-[state=open]:border-ring data-[state=open]:ring-2 data-[state=open]:ring-ring/20 data-[state=open]:bg-background/95 data-[state=open]:shadow-md',
@@ -105,7 +105,7 @@ export function DatePicker({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto p-0 border border-border/80 shadow-2xl rounded-2xl bg-popover/95 backdrop-blur-sm overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 duration-200"
+        className="w-auto p-0 border border-border/80 shadow-2xl rounded-2xl bg-popover/95 overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 duration-200"
         align="start"
       >
         <Calendar
@@ -175,7 +175,7 @@ export function DateRangePicker({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-auto p-0 border border-border/80 shadow-2xl rounded-2xl bg-popover/95 backdrop-blur-sm overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 duration-200"
+        className="w-auto p-0 border border-border/80 shadow-2xl rounded-2xl bg-popover/95 overflow-hidden animate-in fade-in-0 zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=top]:slide-in-from-bottom-2 duration-200"
         align="start"
       >
         <Calendar
@@ -192,7 +192,7 @@ export function DateRangePicker({
               variant="ghost"
               size="sm"
               onClick={() => onChange('', '')}
-              className="h-7 gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-all duration-150"
+              className="h-7 gap-1.5 rounded-lg px-2 text-xs font-medium text-muted-foreground hover:bg-destructive/10 hover:text-destructive active:scale-95 transition-safe duration-150"
             >
               <X className="size-3.5" />
               مسح

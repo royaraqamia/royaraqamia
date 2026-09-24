@@ -42,7 +42,7 @@ export function CurrencySelector({ currency }: { currency?: string | null }) {
       <SelectTrigger
         aria-label="العملة"
         title={`العملة الحاليَّة: ${getCurrencyName(value)}`}
-        className="group relative inline-flex h-10 w-full sm:w-auto min-w-37.5 max-w-60 items-center justify-between gap-2.5 rounded-xl border border-neutral-200/80 bg-white/80 px-3 py-2 text-xs sm:text-sm font-medium text-neutral-800 shadow-xs backdrop-blur-md transition-all duration-200 hover:border-neutral-300 hover:bg-neutral-50/90 hover:shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20 focus-visible:ring-offset-1 focus-visible:border-indigo-500 disabled:pointer-events-none disabled:opacity-60 dark:border-neutral-800 dark:bg-neutral-900/80 dark:text-neutral-200 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/80 dark:focus-visible:ring-indigo-400/20"
+        className="group relative inline-flex h-10 w-full sm:w-auto min-w-37.5 max-w-60 items-center justify-between gap-2.5 rounded-xl border border-neutral-200/80 bg-white/80 px-3 py-2 text-xs sm:text-sm font-medium text-neutral-800 shadow-xs transition-safe duration-200 hover:border-neutral-300 hover:bg-neutral-50/90 hover:shadow-sm active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/20 focus-visible:ring-offset-1 focus-visible:border-indigo-500 disabled:pointer-events-none disabled:opacity-60 dark:border-neutral-800 dark:bg-neutral-900/80 dark:text-neutral-200 dark:hover:border-neutral-700 dark:hover:bg-neutral-800/80 dark:focus-visible:ring-indigo-400/20"
       >
         <SelectValue>
           <span className="flex items-center gap-2 min-w-0">

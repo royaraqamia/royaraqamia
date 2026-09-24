@@ -77,7 +77,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
 
   return (
     <section className="w-full" aria-label="فلاتر المعاملات">
-      <div className="w-full bg-card/70 backdrop-blur-xl border border-border/60 rounded-2xl p-2.5 sm:p-3.5 shadow-xs transition-all duration-300 hover:border-border/80">
+      <div className="w-full bg-card/70 border border-border/60 rounded-2xl p-2.5 sm:p-3.5 shadow-xs transition-safe duration-300 hover:border-border/80">
         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 sm:gap-3">
           {/* Search bar input */}
           <DebouncedSearch value={searchTerm} onChange={(v) => updateParam('search', v)} />
@@ -87,7 +87,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
             {/* Date preset selector */}
             <Select value={currentRange} onValueChange={(v) => updateParam('range', v)}>
               <SelectTrigger
-                className="h-10 sm:h-11 w-full sm:w-auto min-w-32.5 flex-1 sm:flex-none px-3.5 bg-background/80 hover:bg-accent/40 border-border/60 hover:border-border focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-xs flex items-center justify-between gap-2"
+                className="h-10 sm:h-11 w-full sm:w-auto min-w-32.5 flex-1 sm:flex-none px-3.5 bg-background/80 hover:bg-accent/40 border-border/60 hover:border-border focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 rounded-xl text-xs sm:text-sm font-medium transition-safe duration-200 shadow-xs flex items-center justify-between gap-2"
                 aria-label="نطاق التَّاريخ"
               >
                 <div className="flex items-center gap-2 truncate">
@@ -110,7 +110,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
 
             {/* Custom date range picker if 'all' is selected */}
             {currentRange === 'all' && (
-              <div className="w-full sm:w-auto flex-1 sm:flex-none transition-all duration-200">
+              <div className="w-full sm:w-auto flex-1 sm:flex-none transition-safe duration-200">
                 <DateRangePicker
                   from={customStart}
                   to={customEnd}
@@ -133,7 +133,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
               <PopoverTrigger asChild>
                 <Button
                   variant="outline"
-                  className={`h-10 sm:h-11 px-3.5 w-full sm:w-auto min-w-35 flex-1 sm:flex-none justify-between rounded-xl border-border/60 hover:border-border text-xs sm:text-sm font-medium transition-all duration-200 shadow-xs active:scale-[0.98] ${
+                  className={`h-10 sm:h-11 px-3.5 w-full sm:w-auto min-w-35 flex-1 sm:flex-none justify-between rounded-xl border-border/60 hover:border-border text-xs sm:text-sm font-medium transition-safe duration-200 shadow-xs active:scale-[0.98] ${
                     selectedCount > 0
                       ? 'bg-primary/10 border-primary/40 text-primary hover:bg-primary/15'
                       : 'bg-background/80 hover:bg-accent/40 text-foreground'
@@ -161,14 +161,14 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                     return (
                       <label
                         key={cat.id}
-                        className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium cursor-pointer transition-all duration-150 select-none ${
+                        className={`flex items-center gap-2.5 rounded-xl px-3 py-2 text-xs sm:text-sm font-medium cursor-pointer transition-safe duration-150 select-none ${
                           isSelected
                             ? 'bg-primary/10 text-primary hover:bg-primary/15'
                             : 'hover:bg-muted/70 text-foreground/80 hover:text-foreground'
                         }`}
                       >
                         <span
-                          className={`flex size-4.5 shrink-0 items-center justify-center rounded-md border transition-all duration-200 ${
+                          className={`flex size-4.5 shrink-0 items-center justify-center rounded-md border transition-safe duration-200 ${
                             isSelected
                               ? 'bg-primary border-primary text-primary-foreground shadow-2xs scale-100'
                               : 'border-muted-foreground/30 bg-background hover:border-primary/50'
@@ -198,7 +198,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
             {/* Sort order select */}
             <Select value={currentSort} onValueChange={(v) => updateParam('sort', v)}>
               <SelectTrigger
-                className="h-10 sm:h-11 w-full sm:w-auto min-w-35 flex-1 sm:flex-none px-3.5 bg-background/80 hover:bg-accent/40 border-border/60 hover:border-border focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 rounded-xl text-xs sm:text-sm font-medium transition-all duration-200 shadow-xs flex items-center justify-between gap-2"
+                className="h-10 sm:h-11 w-full sm:w-auto min-w-35 flex-1 sm:flex-none px-3.5 bg-background/80 hover:bg-accent/40 border-border/60 hover:border-border focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 rounded-xl text-xs sm:text-sm font-medium transition-safe duration-200 shadow-xs flex items-center justify-between gap-2"
                 aria-label="ترتيب المعاملات"
               >
                 <div className="flex items-center gap-2 truncate">
@@ -225,7 +225,7 @@ export function TransactionFilters({ categories }: { categories: Category[] }) {
                 variant="ghost"
                 size="sm"
                 onClick={() => router.push(pathname)}
-                className="h-10 sm:h-11 px-3.5 w-full sm:w-auto gap-1.5 rounded-xl text-xs sm:text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition-all duration-200 shrink-0 active:scale-95"
+                className="h-10 sm:h-11 px-3.5 w-full sm:w-auto gap-1.5 rounded-xl text-xs sm:text-sm font-medium text-muted-foreground hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition-safe duration-200 shrink-0 active:scale-95"
                 aria-label="مسح الفلاتر"
               >
                 <RotateCcw className="size-3.5 transition-transform duration-300 hover:-rotate-90" />
@@ -269,7 +269,7 @@ function DebouncedSearch({ value, onChange }: { value: string; onChange: (v: str
         value={input}
         placeholder="ابحث في الوصف..."
         aria-label="البحث في المصروفات"
-        className="w-full h-10 sm:h-11 ps-10 pe-9 bg-background/80 hover:bg-accent/40 focus:bg-background border-border/60 hover:border-border focus:border-primary/50 rounded-xl transition-all duration-200 text-xs sm:text-sm placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 focus-visible:outline-none shadow-xs"
+        className="w-full h-10 sm:h-11 ps-10 pe-9 bg-background/80 hover:bg-accent/40 focus:bg-background border-border/60 hover:border-border focus:border-primary/50 rounded-xl transition-safe duration-200 text-xs sm:text-sm placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 focus-visible:outline-none shadow-xs"
         onChange={(e) => {
           const next = e.target.value;
           setInput(next);
@@ -285,7 +285,7 @@ function DebouncedSearch({ value, onChange }: { value: string; onChange: (v: str
             if (timer.current) clearTimeout(timer.current);
             onChange('');
           }}
-          className="absolute inset-e-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground hover:bg-muted/80 p-1 rounded-md transition-all active:scale-90"
+          className="absolute inset-e-2.5 top-1/2 -translate-y-1/2 text-muted-foreground/50 hover:text-foreground hover:bg-muted/80 p-1 rounded-md transition-safe active:scale-90"
           aria-label="مسح البحث"
         >
           <X className="size-3.5" />

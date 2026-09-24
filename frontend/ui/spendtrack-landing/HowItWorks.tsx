@@ -70,7 +70,7 @@ export function HowItWorks() {
             as="li"
             delay={i * 0.15}
             tabIndex={0}
-            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/75 hover:bg-card/95 border border-border/60 hover:border-primary/40 shadow-lg hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 ease-out hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            className="group relative flex flex-col items-center text-center p-8 sm:p-10 rounded-3xl bg-card/75 hover:bg-card/95 border border-border/60 hover:border-primary/40 shadow-lg hover:shadow-2xl hover:shadow-primary/10 transition-safe duration-500 ease-out hover:-translate-y-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             {/* Subtle Inner Card Lighting Effect */}
             <div className="absolute inset-x-0 top-0 h-px rounded-t-3xl bg-linear-to-r from-transparent via-primary/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -85,7 +85,7 @@ export function HowItWorks() {
 
             {/* Icon Container with Glow Effect */}
             <div
-              className="landing-reveal-item relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 group-hover:border-primary/50 flex items-center justify-center mb-8 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 transition-all duration-500"
+              className="landing-reveal-item relative z-10 w-20 h-20 sm:w-22 sm:h-22 rounded-2xl bg-linear-to-br from-primary/15 via-primary/5 to-transparent border border-primary/20 group-hover:border-primary/50 flex items-center justify-center mb-8 shadow-md group-hover:shadow-xl group-hover:shadow-primary/20 transition-safe duration-500"
               style={{ ['--ld' as string]: `${i * 0.15 + 0.1}s` } as React.CSSProperties}
             >
               <div className="absolute inset-0 rounded-2xl bg-primary/14 blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

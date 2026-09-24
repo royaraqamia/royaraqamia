@@ -436,11 +436,6 @@
     transition-timing-function: var(--ease-bounce);
   }
 
-  /* Combined transition utilities */
-  .transition-all-smooth {
-    transition: all var(--duration-normal) var(--ease-smooth);
-  }
-
   .transition-transform-smooth {
     transition: transform var(--duration-normal) var(--ease-out-expo);
   }
@@ -824,34 +819,29 @@
     margin-bottom: clamp(1rem, 2vw, 1.5rem);
   }
 
-  /* Glassmorphism Effects (radii read the --blur-* budget in theme.css) */
+  /* Flat surfaces (ADR 0004). These were frosted-glass classes; backdrop
+     filters are removed site-wide, so each is now an opaque fill sampled from
+     the same tokens. The class names are kept because every call site already
+     references them. */
   .glass {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(var(--blur-2xl)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--blur-2xl)) saturate(180%);
+    background: hsl(var(--card) / 0.96);
     border: 1px solid rgba(255, 255, 255, 0.1);
   }
 
   .glass-card {
-    background: rgba(255, 255, 255, 0.03);
-    backdrop-filter: blur(var(--blur-3xl)) saturate(180%);
-    -webkit-backdrop-filter: blur(var(--blur-3xl)) saturate(180%);
+    background: hsl(var(--card));
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 8px 32px 0 rgba(119, 102, 238, 0.1);
+    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.25);
   }
 
   .glass-strong {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(var(--blur-4xl)) saturate(200%);
-    -webkit-backdrop-filter: blur(var(--blur-4xl)) saturate(200%);
+    background: hsl(var(--card));
     border: 1px solid rgba(255, 255, 255, 0.15);
-    box-shadow: 0 8px 32px 0 rgba(119, 102, 238, 0.15);
+    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.3);
   }
 
   .glass-navbar {
-    background: rgba(20, 20, 30, 0.5);
-    backdrop-filter: blur(8px) saturate(200%);
-    -webkit-backdrop-filter: blur(40px) saturate(200%);
+    background: rgba(20, 20, 30, 0.92);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     transition:
       background 0.5s ease,
@@ -860,8 +850,6 @@
 
   .glass-navbar-hero {
     background: transparent !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
     border-bottom: none !important;
     box-shadow: none !important;
     transition:
@@ -870,106 +858,19 @@
   }
 
   .glass-navbar-cta {
-    background: rgba(20, 20, 30, 0.6);
-    backdrop-filter: blur(16px) saturate(180%);
-    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(20, 20, 30, 0.94);
     border-bottom: 1px solid rgba(167, 139, 250, 0.22);
-    box-shadow: 0 8px 32px 0 rgba(119, 102, 238, 0.1);
     transition:
       background 0.5s ease,
       border-color 0.5s ease;
   }
 
   .glass-navbar-enhanced {
-    background: rgba(20, 20, 30, 0.75);
-    backdrop-filter: blur(28px) saturate(200%);
-    -webkit-backdrop-filter: blur(28px) saturate(200%);
+    background: rgba(20, 20, 30, 0.97);
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     transition:
       background 0.5s ease,
       border-color 0.5s ease;
-  }
-
-  /* ------------------------------------------------------------------
-     Lite mode (see `frontend/shared/lite-mode.ts`).
-     
-     On low-end or reduced-motion devices the pre-paint script puts `lite`
-     on <html>. Backdrop filters must never run there: every blur means
-     reading back the backdrop and re-rasterizing the whole layer on every
-     frame, which is the cost this mode exists to delete. The frosted look
-     is replaced with solid translucent fills sampled from the same tokens,
-     so a lite page stays legible and on-brand — just opaque.
-
-     Selectors are repeated with `html.lite` to outrank the component
-     classes' own `backdrop-filter` declarations without `!important`.
-     ------------------------------------------------------------------ */
-  html.lite .glass,
-  html.lite .glass-card,
-  html.lite .glass-strong,
-  html.lite .glass-navbar,
-  html.lite .glass-navbar-cta,
-  html.lite .glass-navbar-enhanced,
-  html.lite [class*='backdrop-blur'],
-  html.lite .scroll-arrow-blur,
-  html.lite .go-up-btn {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-
-  /* Solid fills. Glass surfaces read the card token; navbar surfaces keep the
-     fixed dark composite they already used, just at a near-opaque alpha. */
-  html.lite .glass {
-    background: hsl(var(--card) / 0.96);
-  }
-
-  html.lite .glass-card {
-    background: hsl(var(--card));
-    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.25);
-  }
-
-  html.lite .glass-strong {
-    background: hsl(var(--card));
-    box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.3);
-  }
-
-  html.lite .glass-navbar {
-    background: rgba(20, 20, 30, 0.92);
-  }
-
-  html.lite .glass-navbar-cta {
-    background: rgba(20, 20, 30, 0.94);
-    box-shadow: none;
-  }
-
-  html.lite .glass-navbar-enhanced {
-    background: rgba(20, 20, 30, 0.97);
-  }
-
-  html.lite .scroll-arrow-blur {
-    background: rgba(0, 0, 0, 0.72);
-  }
-
-  /* Heavy glow blur is the other live Gaussian filter. `glow-orb` already
-     paints its halo as a radial gradient (no filter), so only the blur tiers
-     need deleting: the custom `glow-blur-*` utility, the logo drop-shadow, and
-     the decorative Tailwind `blur-*` utilities the product surfaces use for
-     their glow orbs. Blurring a decorative 192–288px orb is exactly the
-     fill-rate cost this mode removes; the orb is hidden outright rather than
-     left as a hard-edged shape that would read as a design bug. */
-  html.lite .glow-blur-md,
-  html.lite .logo-glow {
-    filter: none;
-  }
-
-  html.lite .blur-sm,
-  html.lite .blur,
-  html.lite .blur-md,
-  html.lite .blur-lg,
-  html.lite .blur-xl,
-  html.lite .blur-2xl,
-  html.lite .blur-3xl,
-  html.lite .group-hover\:blur-2xl {
-    filter: none !important;
   }
 
   /* Responsive text sizing */
@@ -1247,12 +1148,7 @@
 }
 
 /* Horizontal-scroll arrow buttons (see `frontend/ui/HorizontalScrollArrows.tsx`).
-   The backdrop blur lives here rather than in an inline style so lite mode can
-   switch it off with a class, and so the effect reads the --blur-* budget. */
-.scroll-arrow-blur {
-  backdrop-filter: blur(var(--blur-md));
-  -webkit-backdrop-filter: blur(var(--blur-md));
-}
+   Opaque by default: the class no longer carries a backdrop blur (ADR 0004). */
 
 /* WhatsApp floating button — white icon on green background (accessible + performant) */
 :root {
@@ -1429,12 +1325,16 @@
   color: hsl(var(--foreground));
   z-index: 9998;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   opacity: 0;
   transform: scale(0.8) translateY(20px);
   pointer-events: none;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 4px 12px hsl(var(--foreground) / 0.1);
 }
 
@@ -1586,11 +1486,6 @@
   opacity: 0.03;
   pointer-events: none;
   mix-blend-mode: overlay;
-}
-
-/* Logo Glow Effect */
-.logo-glow {
-  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
 }
 
 /* Safe Area Insets for Mobile Devices */

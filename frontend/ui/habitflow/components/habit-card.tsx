@@ -49,7 +49,7 @@ export function HabitCard({
 
   return (
     <Card
-      className={`group relative flex w-full flex-row items-center justify-between p-3.5 sm:p-5 gap-3 sm:gap-5 rounded-3xl border backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+      className={`group relative flex w-full flex-row items-center justify-between p-3.5 sm:p-5 gap-3 sm:gap-5 rounded-3xl border transition-safe duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         isCompleted
           ? 'border-emerald-500/20 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-[0_8px_24px_-6px_rgba(16,185,129,0.12)]'
           : isSkipped
@@ -64,7 +64,7 @@ export function HabitCard({
           onClick={() => onToggle(habit.id)}
           whileTap={reduce ? undefined : { scale: 0.92 }}
           transition={reduce ? undefined : { type: 'spring', stiffness: 500, damping: 25 }}
-          className={`relative flex items-center justify-center shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-[1.5px] outline-none transition-all duration-300 ease-out focus-visible:ring-4 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 cursor-pointer ${
+          className={`relative flex items-center justify-center shrink-0 w-11 h-11 sm:w-12 sm:h-12 rounded-full border-[1.5px] outline-none transition-safe duration-300 ease-out focus-visible:ring-4 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 cursor-pointer ${
             isCompleted
               ? 'bg-emerald-500 border-emerald-500 text-white shadow-[0_2px_16px_rgba(16,185,129,0.35)] ring-emerald-500/20 focus-visible:ring-emerald-500'
               : 'border-zinc-300 dark:border-zinc-700 bg-transparent hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900 focus-visible:ring-zinc-400'
@@ -89,7 +89,7 @@ export function HabitCard({
         {/* Text & Metadata Grid */}
         <div className="min-w-0 flex-1 flex flex-col justify-center space-y-1 sm:space-y-1.5">
           <h4
-            className={`text-[15px] sm:text-[17px] font-bold leading-tight truncate transition-all duration-300 ${
+            className={`text-[15px] sm:text-[17px] font-bold leading-tight truncate transition-safe duration-300 ${
               isCompleted
                 ? 'line-through decoration-zinc-400 dark:decoration-zinc-600 text-zinc-500 dark:text-zinc-500'
                 : isSkipped
@@ -170,7 +170,7 @@ export function HabitCard({
               variant="ghost"
               size="icon"
               aria-label={`إجراءات عادة ${habit.name}`}
-              className="shrink-0 flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 border border-transparent outline-none transition-all duration-300 ease-out active:scale-95 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 opacity-100 group-hover:opacity-100 sm:[@media(hover:hover)_and_(pointer:fine)]:opacity-0 sm:[@media(hover:hover)_and_(pointer:fine)]:focus-visible:opacity-100 cursor-pointer group/btn"
+              className="shrink-0 flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:border-zinc-200 dark:hover:border-zinc-700 border border-transparent outline-none transition-safe duration-300 ease-out active:scale-95 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950 opacity-100 group-hover:opacity-100 sm:[@media(hover:hover)_and_(pointer:fine)]:opacity-0 sm:[@media(hover:hover)_and_(pointer:fine)]:focus-visible:opacity-100 cursor-pointer group/btn"
             >
               <MoreHorizontal className="w-5 h-5 transition-transform duration-300 group-hover/btn:rotate-90" />
             </Button>
@@ -178,7 +178,7 @@ export function HabitCard({
           <DropdownMenuContent
             align="end"
             sideOffset={8}
-            className="min-w-48 rounded-xl shadow-lg border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md p-1.5"
+            className="min-w-48 rounded-xl shadow-lg border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 p-1.5"
           >
             <DropdownMenuItem
               onClick={() => onSkip(habit.id)}
