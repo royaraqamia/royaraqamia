@@ -1,5 +1,5 @@
 import { Button } from './primitives/button';
-import { Check } from 'lucide-react';
+import { CircleCheck } from 'lucide-react';
 import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
 import { MotionReveal } from './MotionReveal';
 
@@ -7,10 +7,11 @@ import { MotionReveal } from './MotionReveal';
 
 export function WebDevService() {
   const benefits = [
-    'أفضل ممارسات البرمجة بكود نظيف وقابل للصِّيانة',
-    'نشر سريع مع أداء مُحسَّن',
-    'تطوير آمن مع معايير أمان حديثة',
-    'تصميم متجاوب لجميع الأجهزة وأحجام الشَّاشات',
+    'مشروع يَظهر في Google ومُحرِّكات الـ AI.',
+    'تجربة مُريحة تُحوِّل الزَّائر إلى زبون.',
+    'نبني ما تحتاجه بالضَّبط: من صفحة واحدة إلى منصَّة كاملة.',
+    'تسليم في أسابيع، وكود تملكه بالكامل.',
+    'لوحة تحكُّم عربيَّة تُدير بها محتواك بنفسك.',
   ];
 
   return (
@@ -53,10 +54,10 @@ export function WebDevService() {
                   style={{ ['--ld' as string]: `${0.08 + idx * 0.12}s` } as React.CSSProperties}
                 >
                   <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-linear-to-br from-purple-600 to-violet-700 flex items-center justify-center shrink-0 shadow-md shadow-purple-600/20 group-hover:scale-105 group-hover:rotate-3 transition-transform duration-300">
-                    <Check
+                    <CircleCheck
                       className="w-5 h-5 sm:w-6 sm:h-6 text-white"
                       aria-hidden="true"
-                      strokeWidth={3}
+                      strokeWidth={2.5}
                     />
                   </div>
                   <div className="flex flex-1 flex-col justify-center min-w-0">
@@ -79,7 +80,7 @@ export function WebDevService() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="text-start min-w-0">
-                    <h3 className="text-lg sm:text-xl font-bold text-foreground">Website</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground">مشروع موقع</h3>
                     <p className="text-xs sm:text-sm text-foreground/60 mt-1">بدون Backend</p>
                   </div>
                 </div>
@@ -88,7 +89,7 @@ export function WebDevService() {
                     يبدأ من
                   </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    300$
+                    $300
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     الدَّفع بالتَّقسيط مُتاح
@@ -105,7 +106,7 @@ export function WebDevService() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="text-start min-w-0">
-                    <h3 className="text-lg sm:text-xl font-bold text-foreground">Application</h3>
+                    <h3 className="text-lg sm:text-xl font-bold text-foreground">مشروع تطبيق</h3>
                     <p className="text-xs sm:text-sm text-foreground/60 mt-1">مع Backend</p>
                   </div>
                 </div>
@@ -114,7 +115,7 @@ export function WebDevService() {
                     يبدأ من
                   </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    600$
+                    $600
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     الدَّفع بالتَّقسيط مُتاح
@@ -139,13 +140,13 @@ export function WebDevService() {
                 </div>
                 <div className="text-end shrink-0 flex flex-col items-end">
                   <span className="text-[11px] sm:text-xs font-medium text-foreground/50">
-                    شهريًّا
+                    فقط شهريًّا
                   </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    100$
+                    $100
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
-                    تطوير وإدارة مشاريعك
+                    لتطوير وإدارة مشاريعك
                   </div>
                 </div>
               </div>
