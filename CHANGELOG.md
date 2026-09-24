@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.29.0] - 2026-09-24
+
+### Changed
+- center metric cards and drop counter animation
+- replace hero visual text with shape placeholders
+
+### Added
+- add coming-soon entries to the services dropdown
+- advertise installment payment on the training card
+- rewrite the web-dev benefits and refine pricing labels
+
 ## [1.28.0] - 2026-09-24
 
 ### Changed
