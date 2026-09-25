@@ -69,6 +69,31 @@ function isIsoDate(value: string): boolean {
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
 }
 
+/**
+ * Today as an ISO date (`YYYY-MM-DD`), read in UTC — the same frame `isIsoDate`
+ * validates in, and deterministic server-side, where the request is finally
+ * accepted or rejected.
+ *
+ * The form shares it so the `min` hint and the schema agree; the schema remains
+ * the authority because a browser attribute is trivially bypassed.
+ */
+export function todayIsoDate(): string {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Whether an ISO date is today or later. Date-only strings compare
+ * lexicographically, so this needs no parsing.
+ *
+ * The floor applies to `preferred_start` alone: a retainer begins on a real day
+ * the Admin schedules against, and the request is written at submit time, so a
+ * past start is never meaningful. `paid_through` stays unbounded because it
+ * records money already collected.
+ */
+function isTodayOrLater(value: string): boolean {
+  return value >= todayIsoDate();
+}
+
 function hasAtMostTwoDecimals(value: number): boolean {
   return Math.round(value * 100) / 100 === value;
 }
@@ -142,7 +167,8 @@ export const RetainerSchema = z.object({
     .string()
     .trim()
     .optional()
-    .refine((value) => !value || isIsoDate(value), 'تاريخ غير صحيح'),
+    .refine((value) => !value || isIsoDate(value), 'تاريخ غير صحيح')
+    .refine((value) => !value || isTodayOrLater(value), 'تاريخ البدء يجب أن يكون اليوم أو بعده'),
 });
 
 export type RetainerInput = z.infer<typeof RetainerSchema>;

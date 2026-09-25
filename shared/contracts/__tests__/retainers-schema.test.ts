@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   RETAINER_COMPANY_MAX,
   RETAINER_CURRENT_PROJECTS_MAX,
@@ -10,7 +10,21 @@ import {
   RETAINER_STATUSES,
   RetainerSchema,
   RetainerUpdateSchema,
+  todayIsoDate,
 } from '@/shared/contracts/retainers';
+
+// `preferred_start` is bounded to today, so these tests pin "today" rather than
+// let a future-dated fixture rot into the past.
+const TODAY = '2026-09-25';
+
+beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(`${TODAY}T12:00:00Z`));
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 const validRetainer = {
   full_name: 'أحمد العلي',
@@ -119,6 +133,31 @@ describe('RetainerSchema', () => {
     expect(
       RetainerSchema.safeParse({ ...validRetainer, preferred_start: '2026-13-45' }).success
     ).toBe(false);
+  });
+
+  it('accepts a preferred start of today, because an immediate start is meaningful', () => {
+    expect(RetainerSchema.safeParse({ ...validRetainer, preferred_start: TODAY }).success).toBe(
+      true
+    );
+  });
+
+  it('accepts a preferred start in the future', () => {
+    expect(
+      RetainerSchema.safeParse({ ...validRetainer, preferred_start: '2026-11-01' }).success
+    ).toBe(true);
+  });
+
+  it('rejects a preferred start in the past, which the request cannot mean', () => {
+    const result = RetainerSchema.safeParse({ ...validRetainer, preferred_start: '1990-01-01' });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('اليوم أو بعده');
+  });
+});
+
+describe('todayIsoDate', () => {
+  it('reads the calendar day in UTC, the frame the schema validates in', () => {
+    expect(todayIsoDate()).toBe(TODAY);
   });
 });
 

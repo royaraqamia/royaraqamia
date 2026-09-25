@@ -17,6 +17,7 @@ import {
   RETAINER_DEFAULT_MONTHLY_FEE_USD,
   RETAINER_NEEDS_MAX,
   RetainerSchema,
+  todayIsoDate,
 } from '@/shared/contracts/retainers';
 
 type FormValues = z.input<typeof RetainerSchema>;
@@ -251,6 +252,7 @@ export function RetainerRequestForm() {
           id="preferred_start"
           type="date"
           dir="ltr"
+          min={todayIsoDate()}
           {...register('preferred_start')}
           error={Boolean(errors.preferred_start)}
           aria-describedby={errors.preferred_start ? 'preferred_start-error' : undefined}
