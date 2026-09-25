@@ -10,7 +10,8 @@ export type NotificationType =
   | 'link_clicked'
   | 'system_announcement'
   | 'training_application'
-  | 'consultation_booking';
+  | 'consultation_booking'
+  | 'project_request';
 
 export interface Notification {
   id: string;

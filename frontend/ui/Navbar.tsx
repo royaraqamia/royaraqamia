@@ -130,10 +130,9 @@ export function Navbar() {
           isRoute: true,
         })),
         {
-          href: '#request-project',
-          label: 'طلب بناء مشروع (قريبًا)',
-          isRoute: false,
-          comingSoon: true,
+          href: '/request-project',
+          label: 'طلب بناء مشروع',
+          isRoute: true,
         },
         {
           href: '#raboah-app',

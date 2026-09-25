@@ -78,12 +78,6 @@ export interface TrainingApplication {
   updated_at: string;
 }
 
-/** Trimmed inputs are stored as NULL rather than empty strings. */
-export function toNullableText(value: string | null | undefined): string | null {
-  const trimmed = value?.trim();
-  return trimmed ? trimmed : null;
-}
-
 // ------------------------------------------------------------
 // Validation schemas
 // ------------------------------------------------------------

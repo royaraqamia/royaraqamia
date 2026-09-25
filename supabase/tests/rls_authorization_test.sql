@@ -8,7 +8,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(6);
+select plan(9);
 
 -- is_admin(): identity from the verified JWT, allowlist from app_settings, and no
 -- dependence on the non-authoritative users.is_admin column.
@@ -71,7 +71,38 @@ select throws_ok(
   'a user cannot rewrite their own users.email'
 );
 
+-- project_requests holds anonymous leads, so it is service-role only: neither
+-- anon nor authenticated has any access, exactly like training_applications.
+-- See 20260925120000_create_project_requests.sql.
+--
+-- Still `authenticated` from the assertions above.
+
+select throws_ok(
+  $$insert into public.project_requests
+      (full_name, phone_whatsapp, project_type, description, reference_code)
+    values ('test', '+963111111111', 'website', 'test', 'RLSTEST-PRJ-1')$$,
+  '42501',
+  null,
+  'an authenticated user cannot insert a project request'
+);
+
+set local role anon;
+
+select throws_ok(
+  $$select * from public.project_requests limit 1$$,
+  '42501',
+  null,
+  'anon cannot read project_requests'
+);
+
 reset role;
+
+-- Asserted through the privilege catalogue rather than a write, so this file
+-- keeps its "no write can succeed here" invariant.
+select ok(
+  has_table_privilege('service_role', 'public.project_requests', 'insert'),
+  'service_role can insert project_requests'
+);
 
 select * from finish();
 

@@ -2,12 +2,12 @@
 
 import { type Key } from 'react';
 import Image from 'next/image';
-import { type ProjectData } from './portfolio-data';
+import { type PortfolioItem } from './portfolio-data';
 
 interface PortfolioCardProps {
   actualIndex: number;
   displayIdx: number;
-  project: ProjectData;
+  item: PortfolioItem;
   imagePath: { webp: string };
   onSelect: (index: number) => void;
   onImageError: (index: number) => void;
@@ -16,7 +16,7 @@ interface PortfolioCardProps {
 export function PortfolioCard({
   actualIndex,
   displayIdx,
-  project,
+  item,
   imagePath,
   onSelect,
   onImageError,
@@ -31,7 +31,7 @@ export function PortfolioCard({
         className="relative group/card-inner rounded-3xl overflow-hidden bg-white/6 border border-white/10 transition-safe duration-500 motion-reduce:transition-none hover:border-purple-500/40 hover:shadow-[0_0_40px_-10px_rgba(168,85,247,0.3)] w-full aspect-4/3 cursor-pointer active:scale-[0.98] active:opacity-90 focus-visible:outline-2 focus-visible:outline-purple-400/80 focus-visible:outline-offset-4"
         role="button"
         tabIndex={0}
-        aria-label={`مشروع ${project.title}`}
+        aria-label={`مشروع ${item.title}`}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
@@ -41,7 +41,7 @@ export function PortfolioCard({
       >
         <Image
           src={imagePath.webp}
-          alt={`${project.title} - رؤيَة رقَميَّة`}
+          alt={`${item.title} - رؤيَة رقَميَّة`}
           fill
           loading="lazy"
           sizes="(max-width: 640px) 85vw, (max-width: 768px) 380px, (max-width: 1024px) 440px, 480px"
@@ -53,7 +53,7 @@ export function PortfolioCard({
 
         <div className="absolute top-4 inset-x-4 flex items-center justify-between z-10 pointer-events-none">
           <span className="px-3 py-1 text-xs font-medium rounded-full bg-[#050810]/70 text-purple-300 border border-white/10 shadow-lg">
-            {project.category || 'مشروع رقمي'}
+            {item.category || 'مشروع رقمي'}
           </span>
           <span className="text-xs font-mono font-medium text-white/50 bg-[#050810]/60 px-2.5 py-1 rounded-full border border-white/5">
             #{(displayIdx + 1).toString().padStart(2, '0')}
@@ -63,7 +63,7 @@ export function PortfolioCard({
         <div className="absolute inset-0 bg-[#050810]/90 opacity-0 group-hover/card-inner:opacity-100 transition-safe duration-300 motion-reduce:duration-0 flex flex-col justify-between p-6 sm:p-8 text-right z-20">
           <div className="flex items-center justify-between">
             <span className="px-3 py-1 text-xs font-bold rounded-full bg-purple-500/35 text-purple-300 border border-purple-500/30">
-              {project.category || 'مشروع رقمي'}
+              {item.category || 'مشروع رقمي'}
             </span>
             <span className="text-xs font-mono text-slate-400">
               #{(displayIdx + 1).toString().padStart(2, '0')}
@@ -72,16 +72,16 @@ export function PortfolioCard({
 
           <div className="my-auto py-2">
             <h3 className="text-white font-bold text-2xl sm:text-3xl mb-2.5 bg-linear-to-r from-white via-slate-100 to-purple-200 bg-clip-text">
-              {project.title}
+              {item.title}
             </h3>
-            {project.description && (
+            {item.description && (
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed line-clamp-2">
-                {project.description}
+                {item.description}
               </p>
             )}
 
             <div className="flex flex-wrap gap-2 mt-4">
-              {(project.metrics ?? []).map((_metric: string, mi: Key | null | undefined) => (
+              {(item.metrics ?? []).map((_metric: string, mi: Key | null | undefined) => (
                 <div
                   key={mi}
                   className="bg-white/14 rounded-xl px-4 py-2 min-w-20 border border-white/10 text-xs text-purple-200"
@@ -127,7 +127,7 @@ export function PortfolioCard({
         </div>
       </div>
       <h3 className="text-white font-bold text-xl sm:text-2xl mt-4 mb-4 text-center leading-snug">
-        {project.title}
+        {item.title}
       </h3>
     </div>
   );

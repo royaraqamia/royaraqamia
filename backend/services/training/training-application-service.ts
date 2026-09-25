@@ -4,11 +4,11 @@ import type {
   TrainingApplicationListQuery,
 } from '@/backend/repositories/training/training-applications-repository';
 import {
-  toNullableText,
   type TrainingApplication,
   type TrainingApplicationInput,
   type TrainingApplicationUpdateInput,
 } from '@/shared/contracts/training';
+import { toNullableText } from '@/shared/contracts/text';
 import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 
 // The per-IP limit is a loose abuse backstop, not the capacity ceiling: 100+

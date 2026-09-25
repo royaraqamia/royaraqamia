@@ -115,6 +115,7 @@ describe('toPushUrl', () => {
     expect(PUSH_URL_BY_TYPE.system_announcement).toBe('/');
     expect(PUSH_URL_BY_TYPE.training_application).toBe('/admin/training/applications');
     expect(PUSH_URL_BY_TYPE.consultation_booking).toBe('/admin/consultations/bookings');
+    expect(PUSH_URL_BY_TYPE.project_request).toBe('/admin/clients/project-requests');
   });
 
   it('returns the base route when no metadata is provided', () => {

@@ -802,6 +802,68 @@ export type Database = {
           },
         ];
       };
+      project_requests: {
+        Row: {
+          budget_range: string | null;
+          created_at: string;
+          description: string;
+          email: string | null;
+          existing_url: string | null;
+          full_name: string;
+          id: string;
+          notes: string | null;
+          phone_whatsapp: string;
+          project_type: string;
+          reference_code: string;
+          status: string;
+          timeline: string | null;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          budget_range?: string | null;
+          created_at?: string;
+          description: string;
+          email?: string | null;
+          existing_url?: string | null;
+          full_name: string;
+          id?: string;
+          notes?: string | null;
+          phone_whatsapp: string;
+          project_type: string;
+          reference_code: string;
+          status?: string;
+          timeline?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          budget_range?: string | null;
+          created_at?: string;
+          description?: string;
+          email?: string | null;
+          existing_url?: string | null;
+          full_name?: string;
+          id?: string;
+          notes?: string | null;
+          phone_whatsapp?: string;
+          project_type?: string;
+          reference_code?: string;
+          status?: string;
+          timeline?: string | null;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'project_requests_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       push_subscriptions: {
         Row: {
           auth: string;

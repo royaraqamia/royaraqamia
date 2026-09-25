@@ -8,19 +8,24 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/frontend/ui/primitives/dialog';
-import { projectImages, projectData, visibleIndices, PORTFOLIO_IMAGES } from './portfolio-data';
+import {
+  portfolioImages,
+  portfolioItems,
+  visibleIndices,
+  PORTFOLIO_IMAGES,
+} from './portfolio-data';
 
 type GalleryIndexUpdater = React.Dispatch<React.SetStateAction<number>>;
 
 interface PortfolioGalleryDialogProps {
-  selectedProject: number | null;
+  selectedItem: number | null;
   galleryIndex: number;
   onGalleryIndexChange: GalleryIndexUpdater;
   onClose: () => void;
 }
 
 export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
-  selectedProject,
+  selectedItem,
   galleryIndex,
   onGalleryIndexChange,
   onClose,
@@ -43,7 +48,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
   useEffect(() => {
     setZoom({ scale: 1, x: 0, y: 0 });
     setGalleryImageError(false);
-  }, [selectedProject]);
+  }, [selectedItem]);
 
   useEffect(() => {
     setZoom({ scale: 1, x: 0, y: 0 });
@@ -52,8 +57,8 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
 
   // Preload adjacent gallery images for instant navigation
   useEffect(() => {
-    if (selectedProject === null) return;
-    const images = projectImages[selectedProject] ?? [PORTFOLIO_IMAGES[selectedProject]!];
+    if (selectedItem === null) return;
+    const images = portfolioImages[selectedItem] ?? [PORTFOLIO_IMAGES[selectedItem]!];
     const preloadIndices = [galleryIndex - 1, galleryIndex + 1].filter(
       (i) => i >= 0 && i < images.length
     );
@@ -70,17 +75,17 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
         document.head.removeChild(link);
       }
     };
-  }, [selectedProject, galleryIndex]);
+  }, [selectedItem, galleryIndex]);
 
   const setGalleryIndex = onGalleryIndexChange;
 
   return (
-    <Dialog open={selectedProject !== null} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={selectedItem !== null} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 overflow-y-auto dialog-scrollbar max-md:max-h-[80dvh] max-md:my-auto">
-        {selectedProject !== null &&
+        {selectedItem !== null &&
           (() => {
-            const project = projectData[selectedProject]!;
-            const images = projectImages[selectedProject] ?? [PORTFOLIO_IMAGES[selectedProject]!];
+            const item = portfolioItems[selectedItem]!;
+            const images = portfolioImages[selectedItem] ?? [PORTFOLIO_IMAGES[selectedItem]!];
             const currentImage = images[galleryIndex]!;
             const hasMultipleImages = images.length > 1;
 
@@ -219,7 +224,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                     <Image
                       key={galleryIndex}
                       src={currentImage.webp}
-                      alt={project.title}
+                      alt={item.title}
                       width={1600}
                       height={1152}
                       className={`relative z-10 select-none ${
@@ -326,18 +331,18 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                 <div className="p-6 sm:p-8 pt-5 sm:pt-6 shrink-0 bg-[#080c16] border-t border-white/10">
                   <div className="flex items-center gap-3 mb-3">
                     <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20">
-                      {project.category || 'مشروع رقمي'}
+                      {item.category || 'مشروع رقمي'}
                     </span>
                     <span className="text-xs font-mono text-slate-500">
-                      #{(visibleIndices.indexOf(selectedProject) + 1).toString().padStart(2, '0')}
+                      #{(visibleIndices.indexOf(selectedItem) + 1).toString().padStart(2, '0')}
                     </span>
                   </div>
                   <DialogTitle className="text-2xl sm:text-3xl font-black text-white mb-3 tracking-tight">
-                    {project.title}
+                    {item.title}
                   </DialogTitle>
-                  {project.description && (
+                  {item.description && (
                     <DialogDescription className="text-slate-300 text-sm sm:text-base leading-relaxed max-w-3xl">
-                      {project.description}
+                      {item.description}
                     </DialogDescription>
                   )}
                 </div>

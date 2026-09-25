@@ -1,6 +1,6 @@
-import { Button } from './primitives/button';
 import { CircleCheck } from 'lucide-react';
-import { WHATSAPP_PHONE } from '@/frontend/shared/constants';
+import Link from 'next/link';
+import { Button } from './primitives/button';
 import { MotionReveal } from './MotionReveal';
 
 // --- Scroll reveal (IO island + CSS animations) ---
@@ -154,10 +154,8 @@ export function WebDevService() {
 
             {/* CTA Button Link */}
             <div className=" pt-2" style={{ ['--ld' as string]: '0.32s' } as React.CSSProperties}>
-              <a
-                href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent('السَّلام عليكم، أنا مهتم بخدمة بناء المواقع والتَّطبيقات.')}`}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href="/request-project"
                 className="block group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl"
               >
                 <Button className="relative w-full h-14 sm:h-16 text-base sm:text-lg font-bold rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white shadow-[0_0_30px_-5px_rgba(147,51,234,0.4)] hover:shadow-[0_0_45px_-5px_rgba(168,85,247,0.6)] active:scale-[0.99] transition-safe duration-300 overflow-hidden cursor-pointer">
@@ -167,7 +165,7 @@ export function WebDevService() {
                     ابدأ البناء الآن
                   </span>
                 </Button>
-              </a>
+              </Link>
             </div>
           </MotionReveal>
         </div>

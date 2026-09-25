@@ -3,7 +3,7 @@
 import { memo, useState } from 'react';
 import { useHorizontalScroll } from '../../shared/use-horizontal-scroll';
 import { HorizontalScrollArrows } from '../HorizontalScrollArrows';
-import { projectData, visibleIndices, PORTFOLIO_IMAGES } from './portfolio-data';
+import { portfolioItems, visibleIndices, PORTFOLIO_IMAGES } from './portfolio-data';
 import { PortfolioSectionHeader } from './portfolio-section-header';
 import { PortfolioCard } from './portfolio-card';
 import { PortfolioGalleryDialog } from './portfolio-gallery-dialog';
@@ -11,7 +11,7 @@ import { PortfolioGalleryDialog } from './portfolio-gallery-dialog';
 export const Portfolio = memo(function Portfolio() {
   const { scrollContainerRef, canScrollLeft, canScrollRight, scroll } = useHorizontalScroll(400);
   const [imageError, setImageError] = useState<Set<number>>(new Set());
-  const [selectedProject, setSelectedProject] = useState<number | null>(null);
+  const [selectedItem, setSelectedItem] = useState<number | null>(null);
   const [galleryIndex, setGalleryIndex] = useState(0);
 
   const handleImageError = (index: number) => {
@@ -61,7 +61,7 @@ export const Portfolio = memo(function Portfolio() {
         >
           {visibleIndices.map((actualIndex, displayIdx) => {
             if (imageError.has(actualIndex)) return null;
-            const project = projectData[actualIndex]!;
+            const item = portfolioItems[actualIndex]!;
             const imagePath = PORTFOLIO_IMAGES[actualIndex]!;
 
             return (
@@ -69,9 +69,9 @@ export const Portfolio = memo(function Portfolio() {
                 key={actualIndex}
                 actualIndex={actualIndex}
                 displayIdx={displayIdx}
-                project={project}
+                item={item}
                 imagePath={imagePath}
-                onSelect={setSelectedProject}
+                onSelect={setSelectedItem}
                 onImageError={handleImageError}
               />
             );
@@ -81,10 +81,10 @@ export const Portfolio = memo(function Portfolio() {
 
       {/* Modal Dialog */}
       <PortfolioGalleryDialog
-        selectedProject={selectedProject}
+        selectedItem={selectedItem}
         galleryIndex={galleryIndex}
         onGalleryIndexChange={setGalleryIndex}
-        onClose={() => setSelectedProject(null)}
+        onClose={() => setSelectedItem(null)}
       />
     </section>
   );

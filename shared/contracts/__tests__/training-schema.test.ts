@@ -5,7 +5,6 @@ import {
   TRAINING_REFERENCE_CODE_REGEX,
   TrainingApplicationSchema,
   TrainingApplicationUpdateSchema,
-  toNullableText,
 } from '@/shared/contracts/training';
 
 const validApplication = {
@@ -84,13 +83,5 @@ describe('TRAINING_REFERENCE_CODE_REGEX', () => {
   it('rejects a lowercase or short code', () => {
     expect(TRAINING_REFERENCE_CODE_REGEX.test('trn-2026-a7k2m9qx')).toBe(false);
     expect(TRAINING_REFERENCE_CODE_REGEX.test('TRN-2026-A7K2')).toBe(false);
-  });
-});
-
-describe('toNullableText', () => {
-  it('collapses blanks to null', () => {
-    expect(toNullableText('   ')).toBeNull();
-    expect(toNullableText(undefined)).toBeNull();
-    expect(toNullableText('  أحمد  ')).toBe('أحمد');
   });
 });
