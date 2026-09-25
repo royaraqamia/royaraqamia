@@ -14,6 +14,7 @@ import type {
   ConsultationRepositories,
   CreateBookingCommand,
 } from '@/backend/repositories/consultation';
+import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 
 export class ConsultationValidationError extends Error {}
 export class SlotTakenError extends Error {}
@@ -38,17 +39,13 @@ const RPC_VALIDATION_CODES = new Set([
 const IP_LIMIT = 5;
 const WINDOW_MS = 10 * 60_000;
 
-const REFERENCE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const CONSULTATION_REFERENCE_CODE_PREFIX = 'CONS';
 const MAX_REFERENCE_CODE_ATTEMPTS = 5;
 
-/** `CONS-2026-A7K2M9QX` — quoted in the WhatsApp handoff, so uppercase only. */
 export function generateConsultationReferenceCode(): string {
-  const alphabet = REFERENCE_CODE_ALPHABET.split('');
-  let suffix = '';
-  for (let i = 0; i < 8; i++) {
-    suffix += alphabet[randomInt(alphabet.length)] ?? '';
-  }
-  return `CONS-${new Date().getFullYear()}-${suffix}`;
+  return mintReferenceCode(CONSULTATION_REFERENCE_CODE_PREFIX, (maxExclusive) =>
+    randomInt(maxExclusive)
+  );
 }
 
 function isForeignKeyViolation(error: unknown): boolean {
@@ -156,23 +153,25 @@ export class ConsultationService {
       email: null,
     };
 
-    for (let attempt = 0; attempt < MAX_REFERENCE_CODE_ATTEMPTS; attempt++) {
-      const referenceCode = this.config.generateReferenceCode();
-      let id: string;
-      try {
-        id = await this.repositories.bookings.create({ ...command, referenceCode });
-      } catch (error) {
-        // A collision on reference_code is vanishingly rare (32^8), but the
-        // column is UNIQUE — retry with a fresh code rather than fail.
-        if (errorCode(error) === 'REFERENCE_TAKEN') continue;
-        throw this.mapBookingError(error);
-      }
+    const { code: referenceCode, result: id } = await mintWithUniqueCode({
+      attempts: MAX_REFERENCE_CODE_ATTEMPTS,
+      mint: () => this.config.generateReferenceCode(),
+      isCollision: (error) => errorCode(error) === 'REFERENCE_TAKEN',
+      onExhausted: () => new Error('REFERENCE_CODE_EXHAUSTED'),
+      attempt: async (code) => {
+        try {
+          return await this.repositories.bookings.create({ ...command, referenceCode: code });
+        } catch (error) {
+          // A collision on reference_code is vanishingly rare (32^8), but the
+          // column is UNIQUE — the mint retries with a fresh code rather than fail.
+          if (errorCode(error) === 'REFERENCE_TAKEN') throw error;
+          throw this.mapBookingError(error);
+        }
+      },
+    });
 
-      this.notifyAdmins({ id, referenceCode, fullName: input.full_name, packageName: pkg.name });
-      return { id, referenceCode };
-    }
-
-    throw new Error('REFERENCE_CODE_EXHAUSTED');
+    this.notifyAdmins({ id, referenceCode, fullName: input.full_name, packageName: pkg.name });
+    return { id, referenceCode };
   }
 
   // ----------------------------------------------------------

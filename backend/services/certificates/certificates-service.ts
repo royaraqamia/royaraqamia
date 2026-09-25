@@ -3,6 +3,7 @@ import { z } from 'zod';
 import type { CertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
 import { CERT_CODE_REGEX, type Certificate } from '@/shared/contracts/certificates';
 import { UserIdsSchema } from '@/shared/contracts/users';
+import { mintReferenceCode } from '@/shared/reference-code';
 
 export class CertificateValidationError extends Error {
   readonly fieldErrors: Record<string, string>;
@@ -85,16 +86,10 @@ function parseCertificate(data: {
   };
 }
 
+const CERTIFICATE_CODE_PREFIX = 'COMP';
+
 function generateCode(): string {
-  const year = new Date().getFullYear();
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  const charsArr = chars.split('');
-  let random = '';
-  for (let i = 0; i < 8; i++) {
-    const idx = randomInt(charsArr.length);
-    random += charsArr[idx] ?? '';
-  }
-  return `COMP-${year}-${random}`;
+  return mintReferenceCode(CERTIFICATE_CODE_PREFIX, (maxExclusive) => randomInt(maxExclusive));
 }
 
 export interface CertificateIssuedNotifier {

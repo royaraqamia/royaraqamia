@@ -9,6 +9,7 @@ import {
   type TrainingApplicationInput,
   type TrainingApplicationUpdateInput,
 } from '@/shared/contracts/training';
+import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 
 // The per-IP limit is a loose abuse backstop, not the capacity ceiling: 100+
 // students can apply from one shared network (classroom, NAT, campus WiFi), and
@@ -21,7 +22,7 @@ const GLOBAL_LIMIT = 1_000;
 const WINDOW_MS = 10 * 60_000;
 const GLOBAL_RATE_LIMIT_KEY = 'training-apply:global';
 
-const REFERENCE_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const TRAINING_REFERENCE_CODE_PREFIX = 'TRN';
 const MAX_REFERENCE_CODE_ATTEMPTS = 3;
 
 // A burst of concurrent applications can make the connection pooler reset a
@@ -66,14 +67,10 @@ export class TrainingApplicationNotFoundError extends Error {
   }
 }
 
-/** `TRN-2026-A7K2M9QX` — quoted in the WhatsApp handoff, so uppercase only. */
 export function generateTrainingReferenceCode(): string {
-  const alphabet = REFERENCE_CODE_ALPHABET.split('');
-  let suffix = '';
-  for (let i = 0; i < 8; i++) {
-    suffix += alphabet[randomInt(alphabet.length)] ?? '';
-  }
-  return `TRN-${new Date().getFullYear()}-${suffix}`;
+  return mintReferenceCode(TRAINING_REFERENCE_CODE_PREFIX, (maxExclusive) =>
+    randomInt(maxExclusive)
+  );
 }
 
 export interface TrainingApplicationNotifier {
@@ -204,40 +201,43 @@ export class TrainingApplicationService {
       user_id: userId,
     };
 
-    let referenceCode = this.deps.generateReferenceCode();
-    let codeAttempts = 0;
-    let transientAttempts = 0;
+    const { result } = await mintWithUniqueCode({
+      attempts: MAX_REFERENCE_CODE_ATTEMPTS,
+      mint: () => this.deps.generateReferenceCode(),
+      isCollision: isUniqueViolation,
+      onExhausted: (lastError) => new Error('تعذّر توليد رمز طلب فريد.', { cause: lastError }),
+      attempt: async (referenceCode) => {
+        let transientAttempts = 0;
 
-    for (;;) {
-      try {
-        return await this.deps.repository.create({ ...payload, reference_code: referenceCode });
-      } catch (error) {
-        if (isUniqueViolation(error)) {
-          // Either the code genuinely collided (vanishingly rare, 32^8) or our
-          // own earlier attempt committed before the connection dropped. Look
-          // it up: a matching row means the insert already succeeded.
-          const existing = await this.deps.repository.getByReferenceCode(referenceCode);
-          if (existing && matchesPayload(existing, payload)) return existing;
+        for (;;) {
+          try {
+            return await this.deps.repository.create({ ...payload, reference_code: referenceCode });
+          } catch (error) {
+            if (isUniqueViolation(error)) {
+              // Either the code genuinely collided (vanishingly rare, 32^8) or our
+              // own earlier attempt committed before the connection dropped. Look
+              // it up: a matching row means the insert already succeeded.
+              const existing = await this.deps.repository.getByReferenceCode(referenceCode);
+              if (existing && matchesPayload(existing, payload)) return existing;
 
-          codeAttempts += 1;
-          if (codeAttempts >= MAX_REFERENCE_CODE_ATTEMPTS) {
-            throw new Error('تعذّر توليد رمز طلب فريد.', { cause: error });
+              throw error; // genuinely taken — the mint retries with a fresh code
+            }
+
+            if (isTransientError(error) && transientAttempts < MAX_TRANSIENT_ATTEMPTS) {
+              transientAttempts += 1;
+              await sleep(
+                TRANSIENT_BACKOFF_BASE_MS * transientAttempts + Math.floor(Math.random() * 50)
+              );
+              continue; // same code — idempotent if the first attempt committed
+            }
+
+            throw error;
           }
-          referenceCode = this.deps.generateReferenceCode();
-          continue;
         }
+      },
+    });
 
-        if (isTransientError(error) && transientAttempts < MAX_TRANSIENT_ATTEMPTS) {
-          transientAttempts += 1;
-          await sleep(
-            TRANSIENT_BACKOFF_BASE_MS * transientAttempts + Math.floor(Math.random() * 50)
-          );
-          continue; // same code — idempotent if the first attempt committed
-        }
-
-        throw error;
-      }
-    }
+    return result;
   }
 }
 

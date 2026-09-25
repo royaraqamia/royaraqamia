@@ -180,6 +180,24 @@ describe('ConsultationService', () => {
       expect(repositories.bookings.create).toHaveBeenCalledTimes(2);
     });
 
+    it('gives up after five collisions with REFERENCE_CODE_EXHAUSTED', async () => {
+      const repositories = makeRepositories();
+      (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'pkg-1',
+        is_active: true,
+        sessions_count: 1,
+      });
+      (repositories.bookings.create as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('REFERENCE_TAKEN')
+      );
+      const service = makeService(repositories);
+
+      await expect(service.createBooking(bookingInput, context)).rejects.toThrow(
+        'REFERENCE_CODE_EXHAUSTED'
+      );
+      expect(repositories.bookings.create).toHaveBeenCalledTimes(5);
+    });
+
     it('maps SLOT_TAKEN races to SlotTakenError', async () => {
       const repositories = makeRepositories();
       (repositories.packages.getById as ReturnType<typeof vi.fn>).mockResolvedValue({
