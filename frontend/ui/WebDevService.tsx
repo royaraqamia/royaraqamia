@@ -133,9 +133,9 @@ export function WebDevService() {
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="text-start min-w-0">
                     <h3 className="text-lg sm:text-xl font-bold text-foreground">
-                      توظيف رؤيَة رقَميَّة
+                      التَّوظيف الشَّهريّ
                     </h3>
-                    <p className="text-xs sm:text-sm text-foreground/60 mt-1">دوام يومي</p>
+                    <p className="text-xs sm:text-sm text-foreground/60 mt-1">صيانة وتطوير مستمر</p>
                   </div>
                 </div>
                 <div className="text-end shrink-0 flex flex-col items-end">
