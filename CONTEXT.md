@@ -1,8 +1,8 @@
 # رؤيَة رقَميَّة (royaraqamia)
 
 The public site and the product family it hosts. This glossary fixes the vocabulary
-shared across the Blog, Certificates, Consultations and Training offerings, so the
-same concept is not named three different ways in code, copy and the admin UI.
+shared across the Blog, Certificates, Consultations, Training and Client Work offerings,
+so the same concept is not named three different ways in code, copy and the admin UI.
 
 ## Language
 
@@ -60,6 +60,32 @@ _Avoid_: Time slot, timeslot, meeting time
 The short code (`CONS-2026-A7K2M9QX`) a booker quotes on WhatsApp. It plays the same
 role as an Application's Reference Code and is likewise not a secret.
 _Avoid_: Booking ID, ticket, tracking number
+
+### Client Work
+
+**Client**:
+The person or company on the other side of a Project Request or a Retainer. Distinct from
+a User: a Client needs no account.
+_Avoid_: Customer, buyer, account
+
+**Project Request**:
+A prospective Client's request to have a project built — a lead with its own reference
+code and no payment.
+_Sold as_: طلب بناء مشروع
+_Avoid_: Project inquiry, build application, order
+
+**Retainer**:
+A monthly arrangement in which royaraqamia maintains, fixes, improves or manages a
+Client's own projects for a fixed monthly fee. It begins as a lead and becomes an
+arrangement only when an operator activates it.
+_Sold as_: التَّوظيف الشَّهري
+_Avoid_: Employment, employee, salary, subscription, maintenance contract
+
+### Showcase
+
+**Portfolio Item**:
+A published sample of royaraqamia's work, shown on the site as a showcase.
+_Avoid_: Project, case study, work sample
 
 ### Shared
 
