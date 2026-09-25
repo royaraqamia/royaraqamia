@@ -1,6 +1,13 @@
 import { randomInt } from 'crypto';
-import type { RetainersRepository } from '@/backend/repositories/retainers/retainers-repository';
-import { type Retainer, type RetainerInput } from '@/shared/contracts/retainers';
+import type {
+  RetainerListQuery,
+  RetainersRepository,
+} from '@/backend/repositories/retainers/retainers-repository';
+import {
+  type Retainer,
+  type RetainerInput,
+  type RetainerUpdateInput,
+} from '@/shared/contracts/retainers';
 import { toNullableText } from '@/shared/contracts/text';
 import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 
@@ -17,6 +24,13 @@ export class RetainerRateLimitError extends Error {
   constructor() {
     super('تم تجاوز الحد المسموح من المحاولات. الرجاء المحاولة بعد قليل.');
     this.name = 'RetainerRateLimitError';
+  }
+}
+
+export class RetainerNotFoundError extends Error {
+  constructor() {
+    super('العقد غير موجود.');
+    this.name = 'RetainerNotFoundError';
   }
 }
 
@@ -69,6 +83,32 @@ export class RetainerService {
     }
 
     return retainer;
+  }
+
+  async list(query: RetainerListQuery): Promise<{ data: Retainer[]; total: number }> {
+    return this.deps.repository.list(query);
+  }
+
+  /**
+   * The Admin's edit of an existing retainer, carrying only the fields that
+   * changed. Absent fields keep their stored value rather than clearing: the fee
+   * is an agreement (falling back to the advertised figure would lose it) and
+   * `paid_through` records money already collected. An explicit `null` clears
+   * `notes` or `paid_through`.
+   */
+  async update(id: string, input: RetainerUpdateInput): Promise<Retainer> {
+    const existing = await this.deps.repository.getById(id);
+    if (!existing) throw new RetainerNotFoundError();
+
+    return this.deps.repository.update(id, {
+      status: input.status ?? existing.status,
+      notes: input.notes === undefined ? existing.notes : toNullableText(input.notes),
+      monthly_fee_usd: input.monthly_fee_usd ?? existing.monthly_fee_usd,
+      paid_through:
+        input.paid_through === undefined
+          ? existing.paid_through
+          : toNullableText(input.paid_through),
+    });
   }
 
   private async insertWithUniqueReference(

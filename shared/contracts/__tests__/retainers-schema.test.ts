@@ -3,10 +3,13 @@ import {
   RETAINER_COMPANY_MAX,
   RETAINER_CURRENT_PROJECTS_MAX,
   RETAINER_DEFAULT_MONTHLY_FEE_USD,
+  RETAINER_MONTHLY_FEE_MAX,
   RETAINER_NEEDS_MAX,
+  RETAINER_NOTES_MAX,
   RETAINER_REFERENCE_CODE_REGEX,
   RETAINER_STATUSES,
   RetainerSchema,
+  RetainerUpdateSchema,
 } from '@/shared/contracts/retainers';
 
 const validRetainer = {
@@ -140,5 +143,114 @@ describe('RETAINER_REFERENCE_CODE_REGEX', () => {
     expect(RETAINER_REFERENCE_CODE_REGEX.test('ret-2026-a7k2m9qx')).toBe(false);
     expect(RETAINER_REFERENCE_CODE_REGEX.test('RET-2026-A7K2')).toBe(false);
     expect(RETAINER_REFERENCE_CODE_REGEX.test('PRJ-2026-A7K2M9QX')).toBe(false);
+  });
+});
+
+describe('RetainerUpdateSchema', () => {
+  it('accepts every documented status', () => {
+    for (const status of RETAINER_STATUSES) {
+      expect(RetainerUpdateSchema.safeParse({ status }).success).toBe(true);
+    }
+  });
+
+  it('rejects an unknown status', () => {
+    const result = RetainerUpdateSchema.safeParse({ status: 'archived' });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('حالة');
+  });
+
+  it('accepts an edit that omits the status entirely, because the UI sends only what changed', () => {
+    expect(RetainerUpdateSchema.safeParse({ monthly_fee_usd: 250 }).success).toBe(true);
+    expect(RetainerUpdateSchema.safeParse({ notes: 'ملاحظة' }).success).toBe(true);
+  });
+
+  it('accepts present, null and absent notes', () => {
+    expect(RetainerUpdateSchema.safeParse({ status: 'active', notes: 'اتُّفق' }).success).toBe(
+      true
+    );
+    expect(RetainerUpdateSchema.safeParse({ status: 'active', notes: null }).success).toBe(true);
+    expect(RetainerUpdateSchema.safeParse({ status: 'active' }).success).toBe(true);
+  });
+
+  it('rejects notes past the maximum', () => {
+    const result = RetainerUpdateSchema.safeParse({
+      status: 'active',
+      notes: 'ا'.repeat(RETAINER_NOTES_MAX + 1),
+    });
+
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts an agreed fee and accepts its absence', () => {
+    expect(RetainerUpdateSchema.safeParse({ status: 'active', monthly_fee_usd: 250 }).success).toBe(
+      true
+    );
+    expect(RetainerUpdateSchema.safeParse({ status: 'active' }).success).toBe(true);
+  });
+
+  it('rejects a fee that is not a positive number', () => {
+    for (const monthly_fee_usd of [0, -50, Number.NaN]) {
+      const result = RetainerUpdateSchema.safeParse({ status: 'active', monthly_fee_usd });
+      expect(result.success).toBe(false);
+      expect(result.error?.issues[0]?.message).toContain('الرَّسم');
+    }
+  });
+
+  it('rejects a fee with sub-cent precision rather than letting the column round it', () => {
+    const result = RetainerUpdateSchema.safeParse({ status: 'active', monthly_fee_usd: 100.999 });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('منزلتين');
+  });
+
+  it('accepts a fee with exactly two decimals', () => {
+    expect(
+      RetainerUpdateSchema.safeParse({ status: 'active', monthly_fee_usd: 149.99 }).success
+    ).toBe(true);
+  });
+
+  it('rejects a fee past what the column can hold', () => {
+    expect(
+      RetainerUpdateSchema.safeParse({ status: 'active', monthly_fee_usd: 100_000_000 }).success
+    ).toBe(false);
+    expect(
+      RetainerUpdateSchema.safeParse({
+        status: 'active',
+        monthly_fee_usd: RETAINER_MONTHLY_FEE_MAX,
+      }).success
+    ).toBe(true);
+  });
+
+  it('accepts a past paid-through date, because it records money already collected', () => {
+    expect(
+      RetainerUpdateSchema.safeParse({ status: 'ended', paid_through: '2020-01-01' }).success
+    ).toBe(true);
+  });
+
+  it('accepts null and absent paid-through, so it can be cleared or left alone', () => {
+    expect(RetainerUpdateSchema.safeParse({ status: 'paused', paid_through: null }).success).toBe(
+      true
+    );
+    expect(RetainerUpdateSchema.safeParse({ status: 'paused' }).success).toBe(true);
+  });
+
+  it('rejects a paid-through that is not an ISO date', () => {
+    for (const paid_through of ['next week', '01/11/2026', '2026-13-45']) {
+      expect(RetainerUpdateSchema.safeParse({ status: 'active', paid_through }).success).toBe(
+        false
+      );
+    }
+  });
+
+  it('rejects a calendar day that does not exist, which Date.parse would silently roll over', () => {
+    for (const paid_through of ['2026-02-30', '2026-04-31', '2026-11-31']) {
+      expect(RetainerUpdateSchema.safeParse({ paid_through }).success).toBe(false);
+    }
+  });
+
+  it('accepts a real leap day and rejects a fake one', () => {
+    expect(RetainerUpdateSchema.safeParse({ paid_through: '2028-02-29' }).success).toBe(true);
+    expect(RetainerUpdateSchema.safeParse({ paid_through: '2026-02-29' }).success).toBe(false);
   });
 });

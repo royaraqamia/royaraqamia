@@ -47,7 +47,31 @@ export const RETAINER_NEEDS_MAX = 2000;
 /** Optional, so it only carries a ceiling — the floor would reject a one-word name. */
 export const RETAINER_COMPANY_MAX = 120;
 
+export const RETAINER_NOTES_MAX = 2000;
+
+/**
+ * The ceiling the `retainers.monthly_fee_usd` column can actually hold: it is
+ * `numeric(10, 2)`, so eight digits before the point. The agreement is money, so
+ * the schema agrees with the column rather than inventing a product ceiling —
+ * and it rejects sub-cent precision instead of letting Postgres round silently.
+ */
+export const RETAINER_MONTHLY_FEE_MAX = 99_999_999.99;
+
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Shape and calendar validity, but no window: `paid_through` is legitimately in the past. */
+function isIsoDate(value: string): boolean {
+  if (!ISO_DATE_PATTERN.test(value)) return false;
+  // `Date.parse` rolls out-of-range days over (2026-02-30 becomes March 2), so the
+  // only trustworthy check is whether the date survives a round trip. Postgres
+  // would otherwise reject the value and the Admin would see a 500, not a 400.
+  const parsed = new Date(`${value}T00:00:00Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function hasAtMostTwoDecimals(value: number): boolean {
+  return Math.round(value * 100) / 100 === value;
+}
 
 // ------------------------------------------------------------
 // Entity
@@ -118,10 +142,43 @@ export const RetainerSchema = z.object({
     .string()
     .trim()
     .optional()
-    .refine(
-      (value) => !value || (ISO_DATE_PATTERN.test(value) && !Number.isNaN(Date.parse(value))),
-      'تاريخ غير صحيح'
-    ),
+    .refine((value) => !value || isIsoDate(value), 'تاريخ غير صحيح'),
 });
 
 export type RetainerInput = z.infer<typeof RetainerSchema>;
+
+// ------------------------------------------------------------
+// Admin record
+// ------------------------------------------------------------
+
+/**
+ * What an Admin may change on a retainer: the lifecycle state, the agreed terms
+ * and the offline-collection bookkeeping. The visitor's own answers are never
+ * editable — a retainer is a record of what was submitted.
+ *
+ * Every field is optional, and **absence means "leave the stored value alone"**
+ * rather than "clear it". Two reasons: the fee is `not null`, so clearing it
+ * would fall back to the advertised figure and lose the agreement; and
+ * `paid_through` records money already collected. The Admin UI sends only the
+ * fields it actually changed, which is what makes a stale screen harmless — it
+ * cannot revert a colleague's agreed fee or recorded payment. Pass an explicit
+ * `null` to clear `notes` or `paid_through`.
+ */
+export const RetainerUpdateSchema = z.object({
+  status: z.enum(RETAINER_STATUSES, 'حالة غير معروفة').optional(),
+  notes: z.string().trim().max(RETAINER_NOTES_MAX, 'الملاحظات طويلة جدًّا').optional().nullable(),
+  monthly_fee_usd: z.coerce
+    .number('الرَّسم الشَّهريّ غير صحيح')
+    .positive('الرَّسم الشَّهريّ يجب أن يكون أكبر من صفر')
+    .max(RETAINER_MONTHLY_FEE_MAX, 'الرَّسم الشَّهريّ كبير جدًّا')
+    .refine(hasAtMostTwoDecimals, 'الرَّسم الشَّهريّ لا يقبل أكثر من منزلتين عشريّتين')
+    .optional(),
+  paid_through: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .refine((value) => !value || isIsoDate(value), 'تاريخ غير صحيح'),
+});
+
+export type RetainerUpdateInput = z.infer<typeof RetainerUpdateSchema>;

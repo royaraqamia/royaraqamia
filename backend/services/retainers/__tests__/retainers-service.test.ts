@@ -1,6 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { RetainerCreateInput } from '@/backend/repositories/retainers/retainers-repository';
+import type {
+  RetainerCreateInput,
+  RetainerUpdate,
+} from '@/backend/repositories/retainers/retainers-repository';
 import {
+  RetainerNotFoundError,
   RetainerRateLimitError,
   RetainerService,
   type RetainerServiceDeps,
@@ -19,9 +23,30 @@ const VALID_INPUT: RetainerInput = {
   preferred_start: '2026-11-01',
 };
 
-function toRow(input: RetainerCreateInput): Retainer {
+function makeRow(overrides: Partial<Retainer> = {}): Retainer {
   return {
     id: 'ret-1',
+    full_name: VALID_INPUT.full_name,
+    phone_whatsapp: VALID_INPUT.phone_whatsapp,
+    email: VALID_INPUT.email ?? null,
+    company: VALID_INPUT.company ?? null,
+    current_projects: VALID_INPUT.current_projects,
+    needs: VALID_INPUT.needs,
+    preferred_start: VALID_INPUT.preferred_start ?? null,
+    monthly_fee_usd: 100,
+    paid_through: null,
+    reference_code: REFERENCE,
+    status: 'new',
+    notes: null,
+    user_id: null,
+    created_at: '2026-09-25T00:00:00.000Z',
+    updated_at: '2026-09-25T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function toRow(input: RetainerCreateInput): Retainer {
+  return makeRow({
     full_name: input.full_name,
     phone_whatsapp: input.phone_whatsapp,
     email: input.email,
@@ -29,19 +54,18 @@ function toRow(input: RetainerCreateInput): Retainer {
     current_projects: input.current_projects,
     needs: input.needs,
     preferred_start: input.preferred_start,
-    monthly_fee_usd: 100,
-    paid_through: null,
     reference_code: input.reference_code,
-    status: 'new',
-    notes: null,
     user_id: input.user_id,
-    created_at: '2026-09-25T00:00:00.000Z',
-    updated_at: '2026-09-25T00:00:00.000Z',
-  };
+  });
 }
 
 function makeService(overrides: Partial<RetainerServiceDeps> = {}) {
-  const repository = { create: vi.fn(async (input: RetainerCreateInput) => toRow(input)) };
+  const repository = {
+    create: vi.fn(async (input: RetainerCreateInput) => toRow(input)),
+    getById: vi.fn(async (): Promise<Retainer | null> => makeRow()),
+    list: vi.fn(async () => ({ data: [makeRow()], total: 1 })),
+    update: vi.fn(async (id: string, input: RetainerUpdate) => makeRow({ id, ...input })),
+  };
   const checkRateLimit = vi.fn(async () => true);
   const notifyAdmins = vi.fn();
   const captureException = vi.fn();
@@ -175,5 +199,145 @@ describe('RetainerService.submit', () => {
 
     await expect(service.submit(VALID_INPUT, { ip: '1.1.1.1' })).rejects.toThrow('db down');
     expect(repository.create).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('RetainerService.list', () => {
+  it('delegates the query to the repository unchanged', async () => {
+    const { service, repository } = makeService();
+    const query = { page: 2, pageSize: 20, status: 'active' as const, search: 'أحمد' };
+
+    const result = await service.list(query);
+
+    expect(repository.list).toHaveBeenCalledWith(query);
+    expect(result.total).toBe(1);
+  });
+});
+
+describe('RetainerService.update', () => {
+  it('moves the retainer and returns the updated row', async () => {
+    const { service, repository } = makeService();
+
+    const updated = await service.update('ret-1', { status: 'contacted' });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ status: 'contacted' })
+    );
+    expect(updated.status).toBe('contacted');
+  });
+
+  it('records an agreed fee', async () => {
+    const { service, repository } = makeService();
+
+    await service.update('ret-1', { status: 'active', monthly_fee_usd: 250 });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ monthly_fee_usd: 250 })
+    );
+  });
+
+  it('keeps the stored status when the edit only touches the terms', async () => {
+    const { service, repository } = makeService();
+    repository.getById.mockResolvedValue(makeRow({ status: 'active' }));
+
+    await service.update('ret-1', { monthly_fee_usd: 300 });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ status: 'active', monthly_fee_usd: 300 })
+    );
+  });
+
+  it('keeps the stored fee when the edit omits it, rather than falling back to the advert', async () => {
+    const { service, repository } = makeService();
+    repository.getById.mockResolvedValue(makeRow({ monthly_fee_usd: 375 }));
+
+    await service.update('ret-1', { status: 'paused' });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ monthly_fee_usd: 375 })
+    );
+  });
+
+  it('records a paid-through date', async () => {
+    const { service, repository } = makeService();
+
+    await service.update('ret-1', { status: 'active', paid_through: '2026-10-01' });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ paid_through: '2026-10-01' })
+    );
+  });
+
+  it('keeps the stored paid-through date when the edit omits it', async () => {
+    const { service, repository } = makeService();
+    repository.getById.mockResolvedValue(makeRow({ paid_through: '2026-09-01' }));
+
+    await service.update('ret-1', { status: 'paused' });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ paid_through: '2026-09-01' })
+    );
+  });
+
+  it('clears the paid-through date on an explicit null', async () => {
+    const { service, repository } = makeService();
+    repository.getById.mockResolvedValue(makeRow({ paid_through: '2026-09-01' }));
+
+    await service.update('ret-1', { status: 'ended', paid_through: null });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ paid_through: null })
+    );
+  });
+
+  it('keeps the stored notes when the edit omits them', async () => {
+    const { service, repository } = makeService();
+    repository.getById.mockResolvedValue(makeRow({ notes: 'عميل قديم' }));
+
+    await service.update('ret-1', { status: 'active' });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ notes: 'عميل قديم' })
+    );
+  });
+
+  it('stores blank notes as NULL rather than an empty string', async () => {
+    const { service, repository } = makeService();
+
+    await service.update('ret-1', { status: 'active', notes: '   ' });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ notes: null })
+    );
+  });
+
+  it('trims notes before storing them', async () => {
+    const { service, repository } = makeService();
+
+    await service.update('ret-1', { status: 'active', notes: '  ملاحظة  ' });
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'ret-1',
+      expect.objectContaining({ notes: 'ملاحظة' })
+    );
+  });
+
+  it('refuses to update a retainer that does not exist', async () => {
+    const { service, repository } = makeService();
+    repository.getById.mockResolvedValue(null);
+
+    await expect(service.update('missing', { status: 'active' })).rejects.toBeInstanceOf(
+      RetainerNotFoundError
+    );
+    expect(repository.update).not.toHaveBeenCalled();
   });
 });

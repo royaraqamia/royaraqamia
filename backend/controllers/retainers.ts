@@ -1,13 +1,27 @@
 import * as Sentry from '@sentry/nextjs';
 import type { z } from 'zod';
+import { withAdminUser } from '@/backend/transport/admin-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { createDefaultRetainerService } from '@/backend/config/retainers';
-import { RetainerRateLimitError } from '@/backend/services/retainers/retainers-service';
+import {
+  RetainerNotFoundError,
+  RetainerRateLimitError,
+} from '@/backend/services/retainers/retainers-service';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import { RetainerSchema } from '@/shared/contracts/retainers';
+import {
+  RETAINER_STATUSES,
+  RetainerSchema,
+  RetainerUpdateSchema,
+  type Retainer,
+  type RetainerStatus,
+} from '@/shared/contracts/retainers';
+
+const DEFAULT_PAGE_SIZE = 20;
+const MAX_PAGE_SIZE = 100;
 
 interface RetainerActionResult {
   success: boolean;
+  data?: Retainer;
   referenceCode?: string;
   error?: string;
   fieldErrors?: Record<string, string>;
@@ -20,6 +34,19 @@ function zodFieldErrors(error: z.ZodError): Record<string, string> {
     if (!fieldErrors[key]) fieldErrors[key] = issue.message;
   }
   return fieldErrors;
+}
+
+function isRetainerStatus(value: string): value is RetainerStatus {
+  return (RETAINER_STATUSES as readonly string[]).includes(value);
+}
+
+function normalizePage(page: number): number {
+  return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
+}
+
+function normalizePageSize(pageSize: number): number {
+  if (!Number.isFinite(pageSize) || pageSize < 1) return DEFAULT_PAGE_SIZE;
+  return Math.min(Math.floor(pageSize), MAX_PAGE_SIZE);
 }
 
 /**
@@ -64,4 +91,60 @@ export async function submitRetainer(body: unknown, ip: string): Promise<HttpRes
       error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',
     } satisfies RetainerActionResult);
   }
+}
+
+/**
+ * The Retainer domain errors an Admin request may surface. Returning `null` lets
+ * the Admin adapter fall back to its own `500` body.
+ */
+function mapRetainerError(error: unknown): HttpResult | null {
+  if (error instanceof RetainerNotFoundError) {
+    return jsonResult(404, {
+      success: false,
+      error: error.message,
+    } satisfies RetainerActionResult);
+  }
+  return null;
+}
+
+export async function listRetainers(
+  page: number,
+  pageSize: number,
+  status?: string | null,
+  search?: string | null
+): Promise<HttpResult> {
+  return withAdminUser(
+    async () => {
+      const result = await createDefaultRetainerService().list({
+        page: normalizePage(page),
+        pageSize: normalizePageSize(pageSize),
+        status: status && isRetainerStatus(status) ? status : undefined,
+        search: search?.trim() || undefined,
+      });
+      return jsonResult(200, result);
+    },
+    { whenFailed: { success: false, error: 'تعذر تحميل العقود.' } }
+  );
+}
+
+export async function updateRetainer(id: string, body: unknown): Promise<HttpResult> {
+  return withAdminUser(
+    async () => {
+      const parsed = RetainerUpdateSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'تحقق من الحقول المدخلة.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        } satisfies RetainerActionResult);
+      }
+
+      const data = await createDefaultRetainerService().update(id, parsed.data);
+      return jsonResult(200, { success: true, data } satisfies RetainerActionResult);
+    },
+    {
+      mapError: mapRetainerError,
+      whenFailed: { success: false, error: 'تعذّر تحديث العقد.' },
+    }
+  );
 }

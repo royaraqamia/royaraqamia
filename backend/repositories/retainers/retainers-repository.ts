@@ -1,4 +1,4 @@
-import type { Retainer } from '@/shared/contracts/retainers';
+import type { Retainer, RetainerStatus } from '@/shared/contracts/retainers';
 
 export interface RetainerCreateInput {
   full_name: string;
@@ -12,14 +12,42 @@ export interface RetainerCreateInput {
   user_id: string | null;
 }
 
-/**
- * Only what the intake flow needs: a submission is written and never read back
- * by a client. The Admin list, the status transitions and the agreed terms
- * arrive with the Admin Console, and widen this interface then.
- *
- * `monthly_fee_usd` is deliberately absent: the table defaults it to the
- * advertised figure, and only the Admin records the terms actually agreed.
- */
-export interface RetainersRepository {
-  create(input: RetainerCreateInput): Promise<Retainer>;
+export interface RetainerListQuery {
+  page: number;
+  pageSize: number;
+  status?: RetainerStatus;
+  search?: string;
 }
+
+/**
+ * The Admin's edit of a retainer: the lifecycle state, the agreed terms and the
+ * offline-collection bookkeeping. The visitor's own answers are never editable —
+ * a retainer is a record of what was submitted.
+ */
+export interface RetainerUpdate {
+  status: RetainerStatus;
+  notes: string | null;
+  monthly_fee_usd: number;
+  paid_through: string | null;
+}
+
+export interface RetainersReader {
+  getById(id: string): Promise<Retainer | null>;
+  list(query: RetainerListQuery): Promise<{ data: Retainer[]; total: number }>;
+}
+
+export interface RetainersWriter {
+  create(input: RetainerCreateInput): Promise<Retainer>;
+  update(id: string, input: RetainerUpdate): Promise<Retainer>;
+}
+
+/**
+ * The intake flow only ever writes; the Admin Console reads the book back, moves
+ * each retainer through its life and records the agreed terms. Both sit behind
+ * the service role, since the table has no anon/authenticated access at all.
+ *
+ * `create` stays deliberately narrow: `monthly_fee_usd` is absent because the
+ * table defaults it to the advertised figure, and only the Admin records the
+ * terms actually agreed.
+ */
+export interface RetainersRepository extends RetainersReader, RetainersWriter {}
