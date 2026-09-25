@@ -1,4 +1,5 @@
 import type { Retainer, RetainerInput, RetainerStatus } from '@/shared/contracts/retainers';
+import type { Paginated } from '@/shared/pagination';
 import { request } from '@/frontend/transport/http';
 
 export interface SubmitRetainerResult {
@@ -34,15 +35,13 @@ export async function getRetainers(
   pageSize = 20,
   status?: RetainerStatus,
   search = ''
-): Promise<{ data: Retainer[]; total: number }> {
+): Promise<Paginated<Retainer>> {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (status) params.set('status', status);
   if (search) params.set('search', search);
 
   try {
-    return await request<{ data: Retainer[]; total: number }>(
-      `/api/retainers?${params.toString()}`
-    );
+    return await request<Paginated<Retainer>>(`/api/retainers?${params.toString()}`);
   } catch {
     return { data: [], total: 0 };
   }

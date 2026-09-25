@@ -9,6 +9,7 @@ import {
   type TrainingApplicationUpdateInput,
 } from '@/shared/contracts/training';
 import { toNullableText } from '@/shared/contracts/text';
+import type { Paginated } from '@/shared/pagination';
 import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 
 // The per-IP limit is a loose abuse backstop, not the capacity ceiling: 100+
@@ -176,9 +177,7 @@ export class TrainingApplicationService {
     return application;
   }
 
-  async list(
-    query: TrainingApplicationListQuery
-  ): Promise<{ data: TrainingApplication[]; total: number }> {
+  async list(query: TrainingApplicationListQuery): Promise<Paginated<TrainingApplication>> {
     return this.deps.repository.list(query);
   }
 

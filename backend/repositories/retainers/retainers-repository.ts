@@ -1,4 +1,5 @@
 import type { Retainer, RetainerStatus } from '@/shared/contracts/retainers';
+import type { Paginated } from '@/shared/pagination';
 
 export interface RetainerCreateInput {
   full_name: string;
@@ -33,7 +34,7 @@ export interface RetainerUpdate {
 
 export interface RetainersReader {
   getById(id: string): Promise<Retainer | null>;
-  list(query: RetainerListQuery): Promise<{ data: Retainer[]; total: number }>;
+  list(query: RetainerListQuery): Promise<Paginated<Retainer>>;
 }
 
 export interface RetainersWriter {

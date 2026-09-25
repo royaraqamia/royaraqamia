@@ -1,4 +1,5 @@
 import type { TrainingApplication, TrainingApplicationStatus } from '@/shared/contracts/training';
+import type { Paginated } from '@/shared/pagination';
 
 export interface TrainingApplicationCreateInput {
   course_slug: string;
@@ -19,9 +20,7 @@ export interface TrainingApplicationListQuery {
 export interface TrainingApplicationsReader {
   getById(id: string): Promise<TrainingApplication | null>;
   getByReferenceCode(referenceCode: string): Promise<TrainingApplication | null>;
-  list(
-    query: TrainingApplicationListQuery
-  ): Promise<{ data: TrainingApplication[]; total: number }>;
+  list(query: TrainingApplicationListQuery): Promise<Paginated<TrainingApplication>>;
 }
 
 export interface TrainingApplicationsWriter {

@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type { TrainingApplication } from '@/shared/contracts/training';
+import type { Paginated } from '@/shared/pagination';
 import type {
   TrainingApplicationCreateInput,
   TrainingApplicationListQuery,
@@ -34,9 +35,7 @@ export function createTrainingApplicationsRepository(
       return data as TrainingApplication;
     },
 
-    async list(
-      query: TrainingApplicationListQuery
-    ): Promise<{ data: TrainingApplication[]; total: number }> {
+    async list(query: TrainingApplicationListQuery): Promise<Paginated<TrainingApplication>> {
       let request = supabase
         .from('training_applications')
         .select('*', { count: 'exact' })

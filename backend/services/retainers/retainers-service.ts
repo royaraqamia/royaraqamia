@@ -9,6 +9,7 @@ import {
   type RetainerUpdateInput,
 } from '@/shared/contracts/retainers';
 import { toNullableText } from '@/shared/contracts/text';
+import type { Paginated } from '@/shared/pagination';
 import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 
 // A loose per-IP abuse backstop, deliberately fail-open: if the limiter's store
@@ -85,7 +86,7 @@ export class RetainerService {
     return retainer;
   }
 
-  async list(query: RetainerListQuery): Promise<{ data: Retainer[]; total: number }> {
+  async list(query: RetainerListQuery): Promise<Paginated<Retainer>> {
     return this.deps.repository.list(query);
   }
 

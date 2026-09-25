@@ -3,6 +3,7 @@ import type {
   ProjectRequestInput,
   ProjectRequestStatus,
 } from '@/shared/contracts/project-requests';
+import type { Paginated } from '@/shared/pagination';
 import { request } from '@/frontend/transport/http';
 
 export interface SubmitProjectRequestResult {
@@ -40,15 +41,13 @@ export async function getProjectRequests(
   pageSize = 20,
   status?: ProjectRequestStatus,
   search = ''
-): Promise<{ data: ProjectRequest[]; total: number }> {
+): Promise<Paginated<ProjectRequest>> {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (status) params.set('status', status);
   if (search) params.set('search', search);
 
   try {
-    return await request<{ data: ProjectRequest[]; total: number }>(
-      `/api/project-requests?${params.toString()}`
-    );
+    return await request<Paginated<ProjectRequest>>(`/api/project-requests?${params.toString()}`);
   } catch {
     return { data: [], total: 0 };
   }

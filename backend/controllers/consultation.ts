@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/nextjs';
-import type { z } from 'zod';
 import {
   BookingActionSchema,
   ConsultationSettingsSchema,
@@ -21,6 +20,7 @@ import {
   loadConsultationSettings,
 } from '@/backend/loaders/consultation';
 import { CONSULTATION_TAGS } from '@/backend/shared/consultation-cache-tags';
+import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import {
   ConsultationRateLimitError,
   ConsultationValidationError,
@@ -32,15 +32,6 @@ import {
 // ------------------------------------------------------------
 // Helpers
 // ------------------------------------------------------------
-
-function zodFieldErrors(error: z.ZodError): Record<string, string> {
-  const fieldErrors: Record<string, string> = {};
-  for (const issue of error.issues) {
-    const key = issue.path.join('.') || 'form';
-    if (!fieldErrors[key]) fieldErrors[key] = issue.message;
-  }
-  return fieldErrors;
-}
 
 function bookingErrorResponse(error: unknown): HttpResult | null {
   if (error instanceof ConsultationValidationError) {

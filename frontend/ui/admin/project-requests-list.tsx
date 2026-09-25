@@ -23,6 +23,7 @@ import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { formatHijriDate } from '@/frontend/shared/format';
+import { whatsappHref } from '@/frontend/shared/whatsapp';
 import {
   PROJECT_REQUEST_BUDGET_RANGE_LABELS,
   PROJECT_REQUEST_STATUSES,
@@ -46,15 +47,6 @@ interface ProjectRequestsListProps {
   loading: boolean;
   savingId: string | null;
   onSave: (id: string, input: { status: ProjectRequestStatus; notes: string | null }) => void;
-}
-
-/**
- * The row's reply affordance. The Reference Code is the token the Client quotes
- * and the handoff is WhatsApp, so the code travels in the prefilled message
- * rather than leaving the Admin to retype it.
- */
-function whatsappHref(phone: string, message: string): string {
-  return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
 }
 
 /**

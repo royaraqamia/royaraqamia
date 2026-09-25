@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
-import type { z } from 'zod';
+import { createStatusGuard, parseAdminListQuery } from '@/backend/controllers/admin-list';
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { createDefaultRetainerService } from '@/backend/config/retainers';
@@ -8,16 +8,13 @@ import {
   RetainerRateLimitError,
 } from '@/backend/services/retainers/retainers-service';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import {
   RETAINER_STATUSES,
   RetainerSchema,
   RetainerUpdateSchema,
   type Retainer,
-  type RetainerStatus,
 } from '@/shared/contracts/retainers';
-
-const DEFAULT_PAGE_SIZE = 20;
-const MAX_PAGE_SIZE = 100;
 
 interface RetainerActionResult {
   success: boolean;
@@ -27,27 +24,7 @@ interface RetainerActionResult {
   fieldErrors?: Record<string, string>;
 }
 
-function zodFieldErrors(error: z.ZodError): Record<string, string> {
-  const fieldErrors: Record<string, string> = {};
-  for (const issue of error.issues) {
-    const key = issue.path.join('.') || 'form';
-    if (!fieldErrors[key]) fieldErrors[key] = issue.message;
-  }
-  return fieldErrors;
-}
-
-function isRetainerStatus(value: string): value is RetainerStatus {
-  return (RETAINER_STATUSES as readonly string[]).includes(value);
-}
-
-function normalizePage(page: number): number {
-  return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-}
-
-function normalizePageSize(pageSize: number): number {
-  if (!Number.isFinite(pageSize) || pageSize < 1) return DEFAULT_PAGE_SIZE;
-  return Math.min(Math.floor(pageSize), MAX_PAGE_SIZE);
-}
+const isRetainerStatus = createStatusGuard(RETAINER_STATUSES);
 
 /**
  * Public and unauthenticated by design: a prospective Client is the coldest
@@ -115,12 +92,9 @@ export async function listRetainers(
 ): Promise<HttpResult> {
   return withAdminUser(
     async () => {
-      const result = await createDefaultRetainerService().list({
-        page: normalizePage(page),
-        pageSize: normalizePageSize(pageSize),
-        status: status && isRetainerStatus(status) ? status : undefined,
-        search: search?.trim() || undefined,
-      });
+      const result = await createDefaultRetainerService().list(
+        parseAdminListQuery(page, pageSize, status, search, isRetainerStatus)
+      );
       return jsonResult(200, result);
     },
     { whenFailed: { success: false, error: 'تعذر تحميل العقود.' } }

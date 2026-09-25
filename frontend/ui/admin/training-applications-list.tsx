@@ -14,6 +14,7 @@ import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { formatHijriDate } from '@/frontend/shared/format';
+import { whatsappHref } from '@/frontend/shared/whatsapp';
 import {
   TRAINING_APPLICATION_STATUSES,
   TRAINING_APPLICATION_STATUS_LABELS,
@@ -33,10 +34,6 @@ interface TrainingApplicationsListProps {
   loading: boolean;
   savingId: string | null;
   onSave: (id: string, input: { status: TrainingApplicationStatus; notes: string | null }) => void;
-}
-
-function whatsappHref(phone: string): string {
-  return `https://wa.me/${phone.replace(/\D/g, '')}`;
 }
 
 export function TrainingApplicationsList({

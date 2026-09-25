@@ -9,6 +9,7 @@ import {
   type ProjectRequestUpdateInput,
 } from '@/shared/contracts/project-requests';
 import { toNullableText } from '@/shared/contracts/text';
+import type { Paginated } from '@/shared/pagination';
 import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 
 // A loose per-IP abuse backstop, deliberately fail-open: if the limiter's store
@@ -92,7 +93,7 @@ export class ProjectRequestService {
     return request;
   }
 
-  async list(query: ProjectRequestListQuery): Promise<{ data: ProjectRequest[]; total: number }> {
+  async list(query: ProjectRequestListQuery): Promise<Paginated<ProjectRequest>> {
     return this.deps.repository.list(query);
   }
 

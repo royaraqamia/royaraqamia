@@ -3,6 +3,7 @@ import type {
   ProjectRequestStatus,
   ProjectRequestType,
 } from '@/shared/contracts/project-requests';
+import type { Paginated } from '@/shared/pagination';
 
 export interface ProjectRequestCreateInput {
   full_name: string;
@@ -26,7 +27,7 @@ export interface ProjectRequestListQuery {
 
 export interface ProjectRequestsReader {
   getById(id: string): Promise<ProjectRequest | null>;
-  list(query: ProjectRequestListQuery): Promise<{ data: ProjectRequest[]; total: number }>;
+  list(query: ProjectRequestListQuery): Promise<Paginated<ProjectRequest>>;
 }
 
 export interface ProjectRequestsWriter {

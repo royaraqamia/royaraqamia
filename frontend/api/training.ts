@@ -1,4 +1,5 @@
 import type { TrainingApplication, TrainingApplicationStatus } from '@/shared/contracts/training';
+import type { Paginated } from '@/shared/pagination';
 import { request } from '@/frontend/transport/http';
 
 export interface SubmitTrainingApplicationResult {
@@ -39,13 +40,13 @@ export async function getTrainingApplications(
   pageSize = 20,
   status?: TrainingApplicationStatus,
   search = ''
-): Promise<{ data: TrainingApplication[]; total: number }> {
+): Promise<Paginated<TrainingApplication>> {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
   if (status) params.set('status', status);
   if (search) params.set('search', search);
 
   try {
-    return await request<{ data: TrainingApplication[]; total: number }>(
+    return await request<Paginated<TrainingApplication>>(
       `/api/training/applications?${params.toString()}`
     );
   } catch {

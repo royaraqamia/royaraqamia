@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type { Retainer } from '@/shared/contracts/retainers';
+import type { Paginated } from '@/shared/pagination';
 import type {
   RetainerCreateInput,
   RetainerListQuery,
@@ -18,7 +19,7 @@ export function createRetainersRepository(supabase: SupabaseClient<Database>): R
       return data as Retainer;
     },
 
-    async list(query: RetainerListQuery): Promise<{ data: Retainer[]; total: number }> {
+    async list(query: RetainerListQuery): Promise<Paginated<Retainer>> {
       let request = supabase
         .from('retainers')
         .select('*', { count: 'exact' })

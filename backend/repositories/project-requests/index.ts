@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type { ProjectRequest, ProjectRequestStatus } from '@/shared/contracts/project-requests';
+import type { Paginated } from '@/shared/pagination';
 import type {
   ProjectRequestCreateInput,
   ProjectRequestListQuery,
@@ -23,7 +24,7 @@ export function createProjectRequestsRepository(
       return data as ProjectRequest;
     },
 
-    async list(query: ProjectRequestListQuery): Promise<{ data: ProjectRequest[]; total: number }> {
+    async list(query: ProjectRequestListQuery): Promise<Paginated<ProjectRequest>> {
       let request = supabase
         .from('project_requests')
         .select('*', { count: 'exact' })

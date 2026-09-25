@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
-import type { z } from 'zod';
+import { createStatusGuard, parseAdminListQuery } from '@/backend/controllers/admin-list';
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { createDefaultProjectRequestService } from '@/backend/config/project-requests';
@@ -8,16 +8,13 @@ import {
   ProjectRequestRateLimitError,
 } from '@/backend/services/project-requests/project-requests-service';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import {
   PROJECT_REQUEST_STATUSES,
   ProjectRequestSchema,
   ProjectRequestUpdateSchema,
   type ProjectRequest,
-  type ProjectRequestStatus,
 } from '@/shared/contracts/project-requests';
-
-const DEFAULT_PAGE_SIZE = 20;
-const MAX_PAGE_SIZE = 100;
 
 interface ProjectRequestActionResult {
   success: boolean;
@@ -27,27 +24,7 @@ interface ProjectRequestActionResult {
   fieldErrors?: Record<string, string>;
 }
 
-function zodFieldErrors(error: z.ZodError): Record<string, string> {
-  const fieldErrors: Record<string, string> = {};
-  for (const issue of error.issues) {
-    const key = issue.path.join('.') || 'form';
-    if (!fieldErrors[key]) fieldErrors[key] = issue.message;
-  }
-  return fieldErrors;
-}
-
-function isProjectRequestStatus(value: string): value is ProjectRequestStatus {
-  return (PROJECT_REQUEST_STATUSES as readonly string[]).includes(value);
-}
-
-function normalizePage(page: number): number {
-  return Number.isFinite(page) && page > 0 ? Math.floor(page) : 1;
-}
-
-function normalizePageSize(pageSize: number): number {
-  if (!Number.isFinite(pageSize) || pageSize < 1) return DEFAULT_PAGE_SIZE;
-  return Math.min(Math.floor(pageSize), MAX_PAGE_SIZE);
-}
+const isProjectRequestStatus = createStatusGuard(PROJECT_REQUEST_STATUSES);
 
 /**
  * Public and unauthenticated by design: a prospective Client is the coldest
@@ -115,12 +92,9 @@ export async function listProjectRequests(
 ): Promise<HttpResult> {
   return withAdminUser(
     async () => {
-      const result = await createDefaultProjectRequestService().list({
-        page: normalizePage(page),
-        pageSize: normalizePageSize(pageSize),
-        status: status && isProjectRequestStatus(status) ? status : undefined,
-        search: search?.trim() || undefined,
-      });
+      const result = await createDefaultProjectRequestService().list(
+        parseAdminListQuery(page, pageSize, status, search, isProjectRequestStatus)
+      );
       return jsonResult(200, result);
     },
     { whenFailed: { success: false, error: 'تعذر تحميل الطلبات.' } }

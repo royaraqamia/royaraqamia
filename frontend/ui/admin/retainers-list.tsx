@@ -25,6 +25,7 @@ import { Input } from '@/frontend/ui/primitives/input';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { formatHijriDate, hasDatePassed } from '@/frontend/shared/format';
+import { whatsappHref } from '@/frontend/shared/whatsapp';
 import {
   RETAINER_NOTES_MAX,
   RETAINER_STATUSES,
@@ -65,15 +66,6 @@ interface RowDraft {
   notes?: string;
   fee?: string;
   paidThrough?: string;
-}
-
-/**
- * The row's reply affordance. The Reference Code is the token the Client quotes
- * and the handoff is WhatsApp, so the code travels in the prefilled message
- * rather than leaving the Admin to retype it.
- */
-function whatsappHref(phone: string, message: string): string {
-  return `https://wa.me/${phone.replace(/\D/g, '')}?text=${encodeURIComponent(message)}`;
 }
 
 export interface RetainerDetailsEdit {
