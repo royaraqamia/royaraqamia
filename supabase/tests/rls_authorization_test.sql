@@ -73,7 +73,7 @@ select throws_ok(
 
 -- project_requests holds anonymous leads, so it is service-role only: neither
 -- anon nor authenticated has any access, exactly like training_applications.
--- See 20260925120000_create_project_requests.sql.
+-- See 20260925133716_create_project_requests.sql.
 --
 -- Still `authenticated` from the assertions above.
 
@@ -105,7 +105,7 @@ select ok(
 );
 
 -- retainers holds anonymous maintenance requests and is service-role only for the
--- same reason. See 20260925120200_create_retainers.sql.
+-- same reason. See 20260925133809_create_retainers.sql.
 
 set local role authenticated;
 
