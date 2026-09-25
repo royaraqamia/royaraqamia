@@ -3,6 +3,7 @@ import {
   formatDateArabic,
   formatHijriDate,
   calculateTimeAgo,
+  hasDatePassed,
   isCertificateExpired,
 } from '@/frontend/shared/format';
 
@@ -72,6 +73,34 @@ describe('isCertificateExpired', () => {
     vi.setSystemTime(new Date('2026-08-02T23:30:00Z'));
     expect(isCertificateExpired('2026-08-01T00:00:00Z')).toBe(true);
     expect(isCertificateExpired('2026-08-02T00:00:00Z')).toBe(false);
+  });
+});
+
+describe('hasDatePassed', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-08-02T12:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns false when there is no date to compare', () => {
+    expect(hasDatePassed(null)).toBe(false);
+    expect(hasDatePassed('')).toBe(false);
+  });
+
+  it('treats the paid-through day itself as still current', () => {
+    expect(hasDatePassed('2026-08-02')).toBe(false);
+  });
+
+  it('returns true once the calendar day is behind', () => {
+    expect(hasDatePassed('2026-08-01')).toBe(true);
+  });
+
+  it('returns false for a date still ahead', () => {
+    expect(hasDatePassed('2026-08-03')).toBe(false);
   });
 });
 

@@ -74,6 +74,18 @@ describe('RetainersList', () => {
     expect(screen.getByText('لم يُسجَّل بعد')).toBeInTheDocument();
   });
 
+  it('marks a paid-through date that is already behind today', () => {
+    renderList([makeRetainer({ paid_through: '2020-01-01' })]);
+
+    expect(screen.getByText('انتهت المُدَّة')).toBeInTheDocument();
+  });
+
+  it('leaves a paid-through date that is still ahead unmarked', () => {
+    renderList([makeRetainer({ paid_through: '2099-01-01' })]);
+
+    expect(screen.queryByText('انتهت المُدَّة')).not.toBeInTheDocument();
+  });
+
   it('does not offer a save button when nothing has changed', () => {
     renderList([makeRetainer()]);
 

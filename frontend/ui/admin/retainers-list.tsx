@@ -24,7 +24,7 @@ import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { Input } from '@/frontend/ui/primitives/input';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
-import { formatHijriDate } from '@/frontend/shared/format';
+import { formatHijriDate, hasDatePassed } from '@/frontend/shared/format';
 import {
   RETAINER_NOTES_MAX,
   RETAINER_STATUSES,
@@ -164,6 +164,10 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
           fee,
           paidThrough,
         });
+
+        // Factual only: it marks that the recorded period is behind today, not that
+        // the Client is late — collection is offline and a lag may be normal.
+        const periodEnded = hasDatePassed(paidThrough);
 
         const updateDraft = (patch: RowDraft) =>
           setDrafts((current) => ({
@@ -331,8 +335,13 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
                   disabled={isSaving}
                   onChange={(event) => updateDraft({ paidThrough: event.target.value })}
                 />
-                <span className="block text-[11px] text-muted-foreground">
+                <span className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
                   {paidThrough ? formatPaidThrough(paidThrough) : 'لم يُسجَّل بعد'}
+                  {periodEnded && (
+                    <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-bold text-amber-700 dark:text-amber-300">
+                      انتهت المُدَّة
+                    </span>
+                  )}
                 </span>
               </div>
             </div>

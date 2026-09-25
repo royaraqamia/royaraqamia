@@ -8,6 +8,29 @@ export function isCertificateExpired(expirationDate: string | null): boolean {
   return todayUTC > expirationDate;
 }
 
+/**
+ * Whether a date-only column is behind today's calendar day.
+ *
+ * The calendar day is read locally rather than in UTC (unlike `isCertificateExpired`):
+ * this compares a date a human typed about a real-world agreement to the day the
+ * human is reading it, so the local day is the meaningful frame.
+ *
+ * It is deliberately factual — "the date has passed", nothing more. Whether a payment
+ * actually lagging is normal or a problem is a judgement the Admin makes, because
+ * collection is offline (ADR-0006).
+ */
+export function hasDatePassed(date: string | null): boolean {
+  if (!date) return false;
+  return localIsoDate() > date;
+}
+
+function localIsoDate(): string {
+  const now = new Date();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${month}-${day}`;
+}
+
 export function formatHijriDate(
   date: Date | string | number,
   options: Intl.DateTimeFormatOptions = {}
