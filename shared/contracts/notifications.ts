@@ -11,7 +11,8 @@ export type NotificationType =
   | 'system_announcement'
   | 'training_application'
   | 'consultation_booking'
-  | 'project_request';
+  | 'project_request'
+  | 'retainer_request';
 
 export interface Notification {
   id: string;

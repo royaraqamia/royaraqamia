@@ -150,6 +150,10 @@ export function WebDevService() {
                   </div>
                 </div>
               </div>
+
+              <Button asChild variant="outline" size="sm" className="mt-5 w-full">
+                <Link href="/hire">اطلب التَّوظيف الشَّهريّ</Link>
+              </Button>
             </article>
 
             {/* CTA Button Link */}

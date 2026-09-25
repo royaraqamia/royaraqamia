@@ -8,7 +8,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(9);
+select plan(12);
 
 -- is_admin(): identity from the verified JWT, allowlist from app_settings, and no
 -- dependence on the non-authoritative users.is_admin column.
@@ -102,6 +102,36 @@ reset role;
 select ok(
   has_table_privilege('service_role', 'public.project_requests', 'insert'),
   'service_role can insert project_requests'
+);
+
+-- retainers holds anonymous maintenance requests and is service-role only for the
+-- same reason. See 20260925120200_create_retainers.sql.
+
+set local role authenticated;
+
+select throws_ok(
+  $$insert into public.retainers
+      (full_name, phone_whatsapp, current_projects, needs, reference_code)
+    values ('test', '+963111111111', 'test', 'test', 'RLSTEST-RET-1')$$,
+  '42501',
+  null,
+  'an authenticated user cannot insert a retainer'
+);
+
+set local role anon;
+
+select throws_ok(
+  $$select * from public.retainers limit 1$$,
+  '42501',
+  null,
+  'anon cannot read retainers'
+);
+
+reset role;
+
+select ok(
+  has_table_privilege('service_role', 'public.retainers', 'insert'),
+  'service_role can insert retainers'
 );
 
 select * from finish();

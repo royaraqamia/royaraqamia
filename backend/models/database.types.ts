@@ -905,6 +905,71 @@ export type Database = {
           },
         ];
       };
+      retainers: {
+        Row: {
+          company: string | null;
+          created_at: string;
+          current_projects: string;
+          email: string | null;
+          full_name: string;
+          id: string;
+          monthly_fee_usd: number;
+          needs: string;
+          notes: string | null;
+          paid_through: string | null;
+          phone_whatsapp: string;
+          preferred_start: string | null;
+          reference_code: string;
+          status: string;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          company?: string | null;
+          created_at?: string;
+          current_projects: string;
+          email?: string | null;
+          full_name: string;
+          id?: string;
+          monthly_fee_usd?: number;
+          needs: string;
+          notes?: string | null;
+          paid_through?: string | null;
+          phone_whatsapp: string;
+          preferred_start?: string | null;
+          reference_code: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          company?: string | null;
+          created_at?: string;
+          current_projects?: string;
+          email?: string | null;
+          full_name?: string;
+          id?: string;
+          monthly_fee_usd?: number;
+          needs?: string;
+          notes?: string | null;
+          paid_through?: string | null;
+          phone_whatsapp?: string;
+          preferred_start?: string | null;
+          reference_code?: string;
+          status?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'retainers_user_id_fkey';
+            columns: ['user_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       short_links: {
         Row: {
           code: string;

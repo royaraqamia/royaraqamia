@@ -40,6 +40,7 @@ export const PUSH_URL_BY_TYPE: Record<NotificationType, string> = {
   training_application: '/admin/training/applications',
   consultation_booking: '/admin/consultations/bookings',
   project_request: '/admin/clients/project-requests',
+  retainer_request: '/admin/clients/retainers',
 };
 
 export function toPushUrl(type: NotificationType, metadata?: Record<string, unknown>): string {

@@ -135,6 +135,11 @@ export function Navbar() {
           isRoute: true,
         },
         {
+          href: '/hire',
+          label: 'طلب التَّوظيف الشَّهريّ',
+          isRoute: true,
+        },
+        {
           href: '#raboah-app',
           label: 'تطبيق رَبْوَة (قريبًا)',
           isRoute: false,

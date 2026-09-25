@@ -1,0 +1,127 @@
+import { z } from 'zod';
+import { whatsappPhoneRegex } from './phone';
+
+// ------------------------------------------------------------
+// Client Work — Retainer
+//
+// A prospective Client asks royaraqamia to take on the monthly maintenance of
+// their own projects and receives a Reference Code to quote. The arrangement is
+// sold publicly as التَّوظيف الشَّهري.
+//
+// It records a request, not a subscription: no account, no billing, nothing paid
+// on the site (ADR-0005, ADR-0006). "Employment", "employee" and "salary" are
+// deliberately not domain terms — the monthly terms belong to the Retainer, and
+// the money is collected offline (CONTEXT.md).
+// ------------------------------------------------------------
+
+export const RETAINER_STATUSES = ['new', 'contacted', 'active', 'paused', 'ended'] as const;
+export type RetainerStatus = (typeof RETAINER_STATUSES)[number];
+
+export const RETAINER_STATUS_LABELS: Record<RetainerStatus, string> = {
+  new: 'جديد',
+  contacted: 'تمّ التواصل',
+  active: 'نشط',
+  paused: 'متوقّف مؤقّتًا',
+  ended: 'منتهٍ',
+};
+
+/** Reference codes are quoted in the WhatsApp handoff — `RET-2026-A7K2M9QX`. */
+export const RETAINER_REFERENCE_CODE_REGEX = /^RET-\d{4}-[A-Z0-9]{8}$/;
+
+/**
+ * The advertised monthly figure, and the default the `retainers` table stores.
+ * It records the agreed terms, not a charge: nothing is collected on the site.
+ */
+export const RETAINER_DEFAULT_MONTHLY_FEE_USD = 100;
+
+/**
+ * Bounds for the two required prose fields, matching the Consultation topic
+ * bound. The floors are anti-junk guards, not quality gates: the Admin triages
+ * the submitted text.
+ */
+export const RETAINER_CURRENT_PROJECTS_MIN = 30;
+export const RETAINER_CURRENT_PROJECTS_MAX = 2000;
+export const RETAINER_NEEDS_MIN = 30;
+export const RETAINER_NEEDS_MAX = 2000;
+
+/** Optional, so it only carries a ceiling — the floor would reject a one-word name. */
+export const RETAINER_COMPANY_MAX = 120;
+
+const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+
+// ------------------------------------------------------------
+// Entity
+// ------------------------------------------------------------
+
+export interface Retainer {
+  id: string;
+  full_name: string;
+  phone_whatsapp: string;
+  email: string | null;
+  company: string | null;
+  /** The projects the Client already runs — the scope the retainer would cover. */
+  current_projects: string;
+  /** What they want maintained, fixed, improved or managed. */
+  needs: string;
+  preferred_start: string | null;
+  /** The agreed terms, defaulted to the advertised figure. Never a charge. */
+  monthly_fee_usd: number;
+  /** Offline-collection bookkeeping, recorded by the Admin. */
+  paid_through: string | null;
+  reference_code: string;
+  status: RetainerStatus;
+  notes: string | null;
+  /** Opportunistic attribution; NULL for the anonymous visitor, which is the norm. */
+  user_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ------------------------------------------------------------
+// Validation schema
+// ------------------------------------------------------------
+
+export const RetainerSchema = z.object({
+  full_name: z
+    .string()
+    .trim()
+    .min(2, 'الاسم يجب أن يكون حرفين على الأقل')
+    .max(120, 'الاسم طويل جدًّا'),
+  phone_whatsapp: z.string().trim().regex(whatsappPhoneRegex, 'رقم واتساب غير صحيح'),
+  email: z
+    .string()
+    .trim()
+    .max(200, 'البريد الإلكتروني طويل جدًّا')
+    .optional()
+    .refine((value) => !value || z.email().safeParse(value).success, 'البريد الإلكتروني غير صحيح'),
+  company: z.string().trim().max(RETAINER_COMPANY_MAX, 'اسم الشركة طويل جدًّا').optional(),
+  current_projects: z
+    .string()
+    .trim()
+    .min(
+      RETAINER_CURRENT_PROJECTS_MIN,
+      `اذكر المشاريع التي لديك بما لا يقل عن ${RETAINER_CURRENT_PROJECTS_MIN} حرفًا`
+    )
+    .max(
+      RETAINER_CURRENT_PROJECTS_MAX,
+      `وصف المشاريع طويل جدًّا (${RETAINER_CURRENT_PROJECTS_MAX.toLocaleString('en-US')} حرف كحد أقصى)`
+    ),
+  needs: z
+    .string()
+    .trim()
+    .min(RETAINER_NEEDS_MIN, `اشرح ما تحتاج صيانته بما لا يقل عن ${RETAINER_NEEDS_MIN} حرفًا`)
+    .max(
+      RETAINER_NEEDS_MAX,
+      `وصف الاحتياجات طويل جدًّا (${RETAINER_NEEDS_MAX.toLocaleString('en-US')} حرف كحد أقصى)`
+    ),
+  preferred_start: z
+    .string()
+    .trim()
+    .optional()
+    .refine(
+      (value) => !value || (ISO_DATE_PATTERN.test(value) && !Number.isNaN(Date.parse(value))),
+      'تاريخ غير صحيح'
+    ),
+});
+
+export type RetainerInput = z.infer<typeof RetainerSchema>;
