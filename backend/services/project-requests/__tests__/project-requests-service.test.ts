@@ -1,11 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { ProjectRequestCreateInput } from '@/backend/repositories/project-requests/project-requests-repository';
 import {
+  ProjectRequestNotFoundError,
   ProjectRequestRateLimitError,
   ProjectRequestService,
   type ProjectRequestServiceDeps,
 } from '@/backend/services/project-requests/project-requests-service';
-import type { ProjectRequest, ProjectRequestInput } from '@/shared/contracts/project-requests';
+import type {
+  ProjectRequest,
+  ProjectRequestInput,
+  ProjectRequestStatus,
+} from '@/shared/contracts/project-requests';
 
 const REFERENCE = 'PRJ-2026-A7K2M9QX';
 
@@ -20,9 +25,29 @@ const VALID_INPUT: ProjectRequestInput = {
   existing_url: 'https://example.com',
 };
 
-function toRow(input: ProjectRequestCreateInput): ProjectRequest {
+function makeRow(overrides: Partial<ProjectRequest> = {}): ProjectRequest {
   return {
     id: 'req-1',
+    full_name: VALID_INPUT.full_name,
+    phone_whatsapp: VALID_INPUT.phone_whatsapp,
+    email: VALID_INPUT.email ?? null,
+    project_type: VALID_INPUT.project_type,
+    description: VALID_INPUT.description,
+    budget_range: VALID_INPUT.budget_range ?? null,
+    timeline: VALID_INPUT.timeline ?? null,
+    existing_url: VALID_INPUT.existing_url ?? null,
+    reference_code: REFERENCE,
+    status: 'new',
+    notes: null,
+    user_id: null,
+    created_at: '2026-09-25T00:00:00.000Z',
+    updated_at: '2026-09-25T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+function toRow(input: ProjectRequestCreateInput): ProjectRequest {
+  return makeRow({
     full_name: input.full_name,
     phone_whatsapp: input.phone_whatsapp,
     email: input.email,
@@ -32,16 +57,19 @@ function toRow(input: ProjectRequestCreateInput): ProjectRequest {
     timeline: input.timeline,
     existing_url: input.existing_url,
     reference_code: input.reference_code,
-    status: 'new',
-    notes: null,
     user_id: input.user_id,
-    created_at: '2026-09-25T00:00:00.000Z',
-    updated_at: '2026-09-25T00:00:00.000Z',
-  };
+  });
 }
 
 function makeService(overrides: Partial<ProjectRequestServiceDeps> = {}) {
-  const repository = { create: vi.fn(async (input: ProjectRequestCreateInput) => toRow(input)) };
+  const repository = {
+    create: vi.fn(async (input: ProjectRequestCreateInput) => toRow(input)),
+    getById: vi.fn(async (): Promise<ProjectRequest | null> => makeRow()),
+    list: vi.fn(async () => ({ data: [makeRow()], total: 1 })),
+    updateStatus: vi.fn(async (id: string, status: ProjectRequestStatus, notes: string | null) =>
+      makeRow({ id, status, notes })
+    ),
+  };
   const checkRateLimit = vi.fn(async () => true);
   const notifyAdmins = vi.fn();
   const captureException = vi.fn();
@@ -177,5 +205,54 @@ describe('ProjectRequestService.submit', () => {
 
     await expect(service.submit(VALID_INPUT, { ip: '1.1.1.1' })).rejects.toThrow('db down');
     expect(repository.create).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('ProjectRequestService.list', () => {
+  it('delegates the query to the repository unchanged', async () => {
+    const { service, repository } = makeService();
+    const query = { page: 2, pageSize: 20, status: 'new' as const, search: 'أحمد' };
+
+    const result = await service.list(query);
+
+    expect(repository.list).toHaveBeenCalledWith(query);
+    expect(result.total).toBe(1);
+  });
+});
+
+describe('ProjectRequestService.update', () => {
+  it('moves the request and returns the updated row', async () => {
+    const { service, repository } = makeService();
+
+    const updated = await service.update('req-1', { status: 'contacted' });
+
+    expect(repository.updateStatus).toHaveBeenCalledWith('req-1', 'contacted', null);
+    expect(updated.status).toBe('contacted');
+  });
+
+  it('stores blank notes as NULL rather than an empty string', async () => {
+    const { service, repository } = makeService();
+
+    await service.update('req-1', { status: 'quoted', notes: '   ' });
+
+    expect(repository.updateStatus).toHaveBeenCalledWith('req-1', 'quoted', null);
+  });
+
+  it('trims notes before storing them', async () => {
+    const { service, repository } = makeService();
+
+    await service.update('req-1', { status: 'won', notes: '  ملاحظة  ' });
+
+    expect(repository.updateStatus).toHaveBeenCalledWith('req-1', 'won', 'ملاحظة');
+  });
+
+  it('refuses to update a request that does not exist', async () => {
+    const { service, repository } = makeService();
+    repository.getById.mockResolvedValue(null);
+
+    await expect(service.update('missing', { status: 'won' })).rejects.toBeInstanceOf(
+      ProjectRequestNotFoundError
+    );
+    expect(repository.updateStatus).not.toHaveBeenCalled();
   });
 });

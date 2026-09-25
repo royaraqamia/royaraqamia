@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   ArrowLeft,
+  Briefcase,
   CalendarCheck2,
   GraduationCap,
   Link2,
@@ -34,6 +35,12 @@ const SECTIONS = [
     label: 'إدارة الاستشارات',
     description: 'الحجوزات، المواعيد المتاحة، الباقات، وبيانات الدفع',
     icon: CalendarCheck2,
+  },
+  {
+    href: '/admin/clients/project-requests',
+    label: 'العملاء',
+    description: 'طلبات المشاريع والعقود الشَّهريَّة الواردة من الموقع',
+    icon: Briefcase,
   },
   {
     href: '/admin/linksnap',

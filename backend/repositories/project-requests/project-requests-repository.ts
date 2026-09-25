@@ -1,4 +1,8 @@
-import type { ProjectRequest, ProjectRequestType } from '@/shared/contracts/project-requests';
+import type {
+  ProjectRequest,
+  ProjectRequestStatus,
+  ProjectRequestType,
+} from '@/shared/contracts/project-requests';
 
 export interface ProjectRequestCreateInput {
   full_name: string;
@@ -13,11 +17,30 @@ export interface ProjectRequestCreateInput {
   user_id: string | null;
 }
 
-/**
- * Only what the intake flow needs: a submission is written and never read back
- * by a client. The Admin list and the status transitions arrive with the Admin
- * Console, and widen this interface then.
- */
-export interface ProjectRequestsRepository {
-  create(input: ProjectRequestCreateInput): Promise<ProjectRequest>;
+export interface ProjectRequestListQuery {
+  page: number;
+  pageSize: number;
+  status?: ProjectRequestStatus;
+  search?: string;
 }
+
+export interface ProjectRequestsReader {
+  getById(id: string): Promise<ProjectRequest | null>;
+  list(query: ProjectRequestListQuery): Promise<{ data: ProjectRequest[]; total: number }>;
+}
+
+export interface ProjectRequestsWriter {
+  create(input: ProjectRequestCreateInput): Promise<ProjectRequest>;
+  updateStatus(
+    id: string,
+    status: ProjectRequestStatus,
+    notes: string | null
+  ): Promise<ProjectRequest>;
+}
+
+/**
+ * The intake flow only ever writes; the Admin Console reads the queue back and
+ * moves each request through its life. Both sit behind the service role, since
+ * the table has no anon/authenticated access at all.
+ */
+export interface ProjectRequestsRepository extends ProjectRequestsReader, ProjectRequestsWriter {}

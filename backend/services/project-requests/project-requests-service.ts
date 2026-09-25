@@ -1,6 +1,13 @@
 import { randomInt } from 'crypto';
-import type { ProjectRequestsRepository } from '@/backend/repositories/project-requests/project-requests-repository';
-import { type ProjectRequest, type ProjectRequestInput } from '@/shared/contracts/project-requests';
+import type {
+  ProjectRequestListQuery,
+  ProjectRequestsRepository,
+} from '@/backend/repositories/project-requests/project-requests-repository';
+import {
+  type ProjectRequest,
+  type ProjectRequestInput,
+  type ProjectRequestUpdateInput,
+} from '@/shared/contracts/project-requests';
 import { toNullableText } from '@/shared/contracts/text';
 import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 
@@ -17,6 +24,13 @@ export class ProjectRequestRateLimitError extends Error {
   constructor() {
     super('تم تجاوز الحد المسموح من المحاولات. الرجاء المحاولة بعد قليل.');
     this.name = 'ProjectRequestRateLimitError';
+  }
+}
+
+export class ProjectRequestNotFoundError extends Error {
+  constructor() {
+    super('الطلب غير موجود.');
+    this.name = 'ProjectRequestNotFoundError';
   }
 }
 
@@ -76,6 +90,17 @@ export class ProjectRequestService {
     }
 
     return request;
+  }
+
+  async list(query: ProjectRequestListQuery): Promise<{ data: ProjectRequest[]; total: number }> {
+    return this.deps.repository.list(query);
+  }
+
+  async update(id: string, input: ProjectRequestUpdateInput): Promise<ProjectRequest> {
+    const existing = await this.deps.repository.getById(id);
+    if (!existing) throw new ProjectRequestNotFoundError();
+
+    return this.deps.repository.updateStatus(id, input.status, toNullableText(input.notes));
   }
 
   private async insertWithUniqueReference(

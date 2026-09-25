@@ -1,4 +1,8 @@
-import type { ProjectRequestInput } from '@/shared/contracts/project-requests';
+import type {
+  ProjectRequest,
+  ProjectRequestInput,
+  ProjectRequestStatus,
+} from '@/shared/contracts/project-requests';
 import { request } from '@/frontend/transport/http';
 
 export interface SubmitProjectRequestResult {
@@ -20,6 +24,45 @@ export async function submitProjectRequest(
       method: 'POST',
       body: JSON.stringify(input),
     });
+  } catch (error) {
+    return error instanceof Error ? { success: false, error: error.message } : { success: false };
+  }
+}
+
+export interface ProjectRequestUpdateResult {
+  success: boolean;
+  data?: ProjectRequest;
+  error?: string;
+}
+
+export async function getProjectRequests(
+  page = 1,
+  pageSize = 20,
+  status?: ProjectRequestStatus,
+  search = ''
+): Promise<{ data: ProjectRequest[]; total: number }> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+  if (status) params.set('status', status);
+  if (search) params.set('search', search);
+
+  try {
+    return await request<{ data: ProjectRequest[]; total: number }>(
+      `/api/project-requests?${params.toString()}`
+    );
+  } catch {
+    return { data: [], total: 0 };
+  }
+}
+
+export async function updateProjectRequest(
+  id: string,
+  input: { status: ProjectRequestStatus; notes?: string | null }
+): Promise<ProjectRequestUpdateResult> {
+  try {
+    return await request<ProjectRequestUpdateResult>(
+      `/api/project-requests/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body: JSON.stringify(input) }
+    );
   } catch (error) {
     return error instanceof Error ? { success: false, error: error.message } : { success: false };
   }

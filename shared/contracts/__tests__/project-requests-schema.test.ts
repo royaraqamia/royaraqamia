@@ -6,6 +6,7 @@ import {
   PROJECT_REQUEST_TIMELINES,
   PROJECT_REQUEST_TYPES,
   ProjectRequestSchema,
+  ProjectRequestUpdateSchema,
 } from '@/shared/contracts/project-requests';
 
 const validRequest = {
@@ -143,5 +144,37 @@ describe('PROJECT_REQUEST_REFERENCE_CODE_REGEX', () => {
     expect(PROJECT_REQUEST_REFERENCE_CODE_REGEX.test('prj-2026-a7k2m9qx')).toBe(false);
     expect(PROJECT_REQUEST_REFERENCE_CODE_REGEX.test('PRJ-2026-A7K2')).toBe(false);
     expect(PROJECT_REQUEST_REFERENCE_CODE_REGEX.test('TRN-2026-A7K2M9QX')).toBe(false);
+  });
+});
+
+describe('ProjectRequestUpdateSchema', () => {
+  it('accepts every documented status', () => {
+    for (const status of PROJECT_REQUEST_STATUSES) {
+      expect(ProjectRequestUpdateSchema.safeParse({ status }).success).toBe(true);
+    }
+  });
+
+  it('rejects an unknown status', () => {
+    const result = ProjectRequestUpdateSchema.safeParse({ status: 'archived' });
+
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('حالة');
+  });
+
+  it('accepts present, null and absent notes', () => {
+    expect(ProjectRequestUpdateSchema.safeParse({ status: 'won', notes: 'اتُّفق' }).success).toBe(
+      true
+    );
+    expect(ProjectRequestUpdateSchema.safeParse({ status: 'won', notes: null }).success).toBe(true);
+    expect(ProjectRequestUpdateSchema.safeParse({ status: 'won' }).success).toBe(true);
+  });
+
+  it('rejects notes past the maximum', () => {
+    const result = ProjectRequestUpdateSchema.safeParse({
+      status: 'won',
+      notes: 'ا'.repeat(2001),
+    });
+
+    expect(result.success).toBe(false);
   });
 });

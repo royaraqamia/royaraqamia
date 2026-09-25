@@ -149,3 +149,20 @@ export const ProjectRequestSchema = z.object({
 });
 
 export type ProjectRequestInput = z.infer<typeof ProjectRequestSchema>;
+
+// ------------------------------------------------------------
+// Admin transition
+// ------------------------------------------------------------
+
+/**
+ * What an Admin may change on a request: the sales state and the follow-up
+ * notes. The visitor's own answers are never editable — a request is a record
+ * of what was submitted, and the notes column is where the Admin's context
+ * goes (who called, what was quoted). `notes: null` clears them.
+ */
+export const ProjectRequestUpdateSchema = z.object({
+  status: z.enum(PROJECT_REQUEST_STATUSES, 'حالة غير معروفة'),
+  notes: z.string().trim().max(2000, 'الملاحظات طويلة جدًّا').optional().nullable(),
+});
+
+export type ProjectRequestUpdateInput = z.infer<typeof ProjectRequestUpdateSchema>;
