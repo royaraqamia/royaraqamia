@@ -32,4 +32,10 @@ describe('zodFieldErrors', () => {
 
     expect(issuesOf(schema, { name: 'ok' })).toEqual({ form: 'root problem' });
   });
+
+  it('keys an issue on an array element onto the array field', () => {
+    const schema = z.object({ ids: z.array(z.string().uuid('bad id')) });
+
+    expect(issuesOf(schema, { ids: ['not-a-uuid'] })).toEqual({ ids: 'bad id' });
+  });
 });
