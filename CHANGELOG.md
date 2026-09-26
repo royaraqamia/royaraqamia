@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.30.0] - 2026-09-26
+
+### Changed
+- fold cache invalidation into the response seam
+- move the intake schema onto the contract
+- collapse the post delegation stack
+- give the admin list plumbing one shared seam
+- name the applied Client Work migrations after their remote versions
+- one Reference Code mint module
+- add Client Work terms and ADRs 0005-0006
+
+### Added
+- mark a retainer whose paid period has passed
+- an Admin can run the retainer book
+- an Admin can work the project request queue
+- a visitor can request monthly maintenance
+- a visitor can request a project build
+
+### Fixed
+- key field errors by field name for array inputs
+- bound a retainer's preferred start to today
+- name the retainer card and drop the daily-attendance line
+
 ## [1.29.0] - 2026-09-24
 
 ### Changed
