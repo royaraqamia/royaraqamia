@@ -14,14 +14,13 @@ import { whatsappPhoneRegex } from './phone';
 // table (ADR-0005).
 // ------------------------------------------------------------
 
-export const PROJECT_REQUEST_TYPES = ['website', 'app', 'other'] as const;
+export const PROJECT_REQUEST_TYPES = ['website', 'app'] as const;
 export type ProjectRequestType = (typeof PROJECT_REQUEST_TYPES)[number];
 
 /** The labels the advertised tiers are sold under in the البناء section. */
 export const PROJECT_REQUEST_TYPE_LABELS: Record<ProjectRequestType, string> = {
   website: 'موقع',
   app: 'تطبيق',
-  other: 'أخرى',
 };
 
 /**
