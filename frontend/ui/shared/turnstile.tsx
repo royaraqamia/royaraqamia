@@ -103,7 +103,7 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
     };
 
     applyScale();
-    const observer = new ResizeObserver((_entries) => {
+    const observer = new ResizeObserver(() => {
       applyScale();
     });
     observer.observe(el);
