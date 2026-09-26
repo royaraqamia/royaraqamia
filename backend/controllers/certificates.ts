@@ -9,7 +9,7 @@ import {
 } from '@/backend/services/certificates/certificates-service';
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
-import type { Certificate } from '@/shared/contracts/certificates';
+import type { Certificate, CertificateIntakeInput } from '@/shared/contracts/certificates';
 
 type AdminCertificate = Certificate;
 
@@ -20,15 +20,7 @@ interface AdminActionResult {
   fieldErrors?: Record<string, string>;
 }
 
-interface CertificateInput {
-  student_name: string;
-  course_name: string;
-  issue_date: string;
-  expiration_date?: string;
-  grade_or_status?: string;
-  recipient_email?: string;
-  recipient_user_ids?: string[];
-}
+type CertificateInput = CertificateIntakeInput;
 
 /**
  * The Certificate domain errors an Admin request may surface. Returning `null`

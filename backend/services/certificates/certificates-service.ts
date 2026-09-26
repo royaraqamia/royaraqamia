@@ -1,8 +1,13 @@
 import { randomInt } from 'crypto';
-import { z } from 'zod';
 import type { CertificatesRepository } from '@/backend/repositories/certificates/certificates-repository';
-import { CERT_CODE_REGEX, type Certificate } from '@/shared/contracts/certificates';
-import { UserIdsSchema } from '@/shared/contracts/users';
+import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
+import {
+  CERT_CODE_REGEX,
+  CertificateIntakeSchema,
+  type Certificate,
+  type CertificateIntakeInput,
+  type CertificateIntakeValues,
+} from '@/shared/contracts/certificates';
 import { mintReferenceCode } from '@/shared/reference-code';
 
 export class CertificateValidationError extends Error {
@@ -29,51 +34,10 @@ export class CertificateDuplicateCodeError extends Error {
   }
 }
 
-const certificateSchema = z
-  .object({
-    student_name: z.string().min(2, 'اسم الطالب قصير جداً').max(200, 'اسم الطالب طويل جداً'),
-    course_name: z.string().min(2, 'اسم الدورة قصير جداً').max(200, 'اسم الدورة طويل جداً'),
-    issue_date: z.string().refine((d) => !isNaN(Date.parse(d)), 'تاريخ الإصدار غير صالح'),
-    expiration_date: z
-      .string()
-      .optional()
-      .refine((d) => !d || !isNaN(Date.parse(d)), 'تاريخ الانتهاء غير صالح'),
-    grade_or_status: z.string().max(100).optional(),
-    recipient_email: z
-      .string()
-      .optional()
-      .refine((e) => !e || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e), 'البريد الإلكتروني غير صالح'),
-    recipient_user_ids: UserIdsSchema.optional(),
-  })
-  .refine(
-    (data) => {
-      if (!data.expiration_date) return true;
-      return new Date(data.expiration_date) > new Date(data.issue_date);
-    },
-    { message: 'تاريخ الانتهاء يجب أن يكون بعد تاريخ الإصدار', path: ['expiration_date'] }
-  );
-
-function buildFieldErrors(issues: z.ZodIssue[]): Record<string, string> {
-  const fieldErrors: Record<string, string> = {};
-  for (const issue of issues) {
-    const field = issue.path[0] as string;
-    fieldErrors[field] = issue.message;
-  }
-  return fieldErrors;
-}
-
-function parseCertificate(data: {
-  student_name: string;
-  course_name: string;
-  issue_date: string;
-  expiration_date?: string;
-  grade_or_status?: string;
-  recipient_email?: string;
-  recipient_user_ids?: string[];
-}) {
-  const parsed = certificateSchema.safeParse(data);
+function parseCertificate(data: CertificateIntakeInput): CertificateIntakeValues {
+  const parsed = CertificateIntakeSchema.safeParse(data);
   if (!parsed.success) {
-    throw new CertificateValidationError(buildFieldErrors(parsed.error.issues));
+    throw new CertificateValidationError(zodFieldErrors(parsed.error));
   }
   return {
     student_name: parsed.data.student_name,
@@ -115,15 +79,7 @@ export class CertificatesService {
   }
 
   async create(
-    input: {
-      student_name: string;
-      course_name: string;
-      issue_date: string;
-      expiration_date?: string;
-      grade_or_status?: string;
-      recipient_email?: string;
-      recipient_user_ids?: string[];
-    },
+    input: CertificateIntakeInput,
     customCode?: string,
     createdBy?: string | null
   ): Promise<Certificate> {
@@ -158,18 +114,7 @@ export class CertificatesService {
     return certificate;
   }
 
-  async update(
-    id: string,
-    input: {
-      student_name: string;
-      course_name: string;
-      issue_date: string;
-      expiration_date?: string;
-      grade_or_status?: string;
-      recipient_email?: string;
-      recipient_user_ids?: string[];
-    }
-  ): Promise<Certificate> {
+  async update(id: string, input: CertificateIntakeInput): Promise<Certificate> {
     const parsed = parseCertificate(input);
 
     const existing = await this.repository.getById(id);

@@ -1,27 +1,12 @@
-import type { Certificate } from '@/shared/contracts/certificates';
+import type { Certificate, CertificateIntakeValues } from '@/shared/contracts/certificates';
 
-export interface CertificateCreateInput {
+export interface CertificateCreateInput extends CertificateIntakeValues {
   certificate_code: string;
-  student_name: string;
-  course_name: string;
-  issue_date: string;
-  expiration_date: string | null;
-  grade_or_status: string | null;
-  recipient_email?: string | null;
-  recipient_user_ids: string[];
   /** Set by the issuing Admin; the repository stores null when absent. */
   created_by?: string | null;
 }
 
-export interface CertificateUpdateInput {
-  student_name: string;
-  course_name: string;
-  issue_date: string;
-  expiration_date: string | null;
-  grade_or_status: string | null;
-  recipient_email?: string | null;
-  recipient_user_ids: string[];
-}
+export type CertificateUpdateInput = CertificateIntakeValues;
 
 export interface CertificatesReader {
   getByCode(code: string): Promise<Certificate | null>;
