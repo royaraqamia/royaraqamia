@@ -34,7 +34,7 @@ describe('RetainersList', () => {
   it('announces itself busy while loading', () => {
     render(<RetainersList retainers={[]} loading savingId={null} onSave={vi.fn()} />);
 
-    expect(screen.getByLabelText('جارٍ تحميل العقود')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByLabelText('جاري تحميل العقود')).toHaveAttribute('aria-busy', 'true');
   });
 
   it('shows the empty state when there are no retainers', () => {
@@ -64,7 +64,7 @@ describe('RetainersList', () => {
   it('shows the agreed terms in editable fields', () => {
     renderList([makeRetainer({ monthly_fee_usd: 250, paid_through: '2026-10-01' })]);
 
-    expect(screen.getByLabelText('الرَّسم الشَّهريّ (دولار)')).toHaveValue(250);
+    expect(screen.getByLabelText('الرَّسم الشَّهري (دولار)')).toHaveValue(250);
     expect(screen.getByLabelText('مدفوع حتى')).toHaveValue('2026-10-01');
   });
 
@@ -108,7 +108,7 @@ describe('RetainersList', () => {
   it('sends only the fee when only the fee changes, so the terms cannot be reverted', () => {
     const { onSave } = renderList([makeRetainer({ monthly_fee_usd: 100 })]);
 
-    fireEvent.change(screen.getByLabelText('الرَّسم الشَّهريّ (دولار)'), {
+    fireEvent.change(screen.getByLabelText('الرَّسم الشَّهري (دولار)'), {
       target: { value: '375' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'حفظ التَّفاصيل' }));
@@ -128,9 +128,9 @@ describe('RetainersList', () => {
   it('refuses to save a fee that is not an amount above zero, in the API\u2019s own words', () => {
     const { onSave } = renderList([makeRetainer({ monthly_fee_usd: 100 })]);
 
-    fireEvent.change(screen.getByLabelText('الرَّسم الشَّهريّ (دولار)'), { target: { value: '' } });
+    fireEvent.change(screen.getByLabelText('الرَّسم الشَّهري (دولار)'), { target: { value: '' } });
 
-    expect(screen.getByText('الرَّسم الشَّهريّ يجب أن يكون أكبر من صفر')).toBeInTheDocument();
+    expect(screen.getByText('الرَّسم الشَّهري يجب أن يكون أكبر من صفر')).toBeInTheDocument();
     const save = screen.getByRole('button', { name: 'حفظ التَّفاصيل' });
     expect(save).toBeDisabled();
 
@@ -141,12 +141,12 @@ describe('RetainersList', () => {
   it('refuses a fee with sub-cent precision that the column would round away', () => {
     renderList([makeRetainer({ monthly_fee_usd: 100 })]);
 
-    fireEvent.change(screen.getByLabelText('الرَّسم الشَّهريّ (دولار)'), {
+    fireEvent.change(screen.getByLabelText('الرَّسم الشَّهري (دولار)'), {
       target: { value: '100.999' },
     });
 
     expect(
-      screen.getByText('الرَّسم الشَّهريّ لا يقبل أكثر من منزلتين عشريّتين')
+      screen.getByText('الرَّسم الشَّهري لا يقبل أكثر من منزلتين عشريّتين')
     ).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'حفظ التَّفاصيل' })).toBeDisabled();
   });

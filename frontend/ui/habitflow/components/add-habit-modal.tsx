@@ -244,7 +244,7 @@ export const AddHabitModal = memo(function AddHabitModal({
               {isSubmitting ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin opacity-80" aria-hidden="true" />
-                  <span>جارٍ الحفظ...</span>
+                  <span>جاري الحفظ...</span>
                 </>
               ) : (
                 'حفظ العادة'

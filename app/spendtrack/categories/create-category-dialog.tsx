@@ -143,7 +143,7 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
             className="btn-lift w-full transition-safe duration-200 btn-press focus-ring touch-target"
             disabled={pending}
           >
-            {pending ? 'جارٍ الإنشاء...' : 'إنشاء'}
+            {pending ? 'جاري الإنشاء...' : 'إنشاء'}
           </Button>
         </form>
       </DialogContent>

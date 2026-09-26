@@ -97,7 +97,7 @@ export function buildRetainerDetailsEdit(
   const feeValue = fee.success ? fee.data : undefined;
   const feeError = fee.success
     ? null
-    : (fee.error.issues[0]?.message ?? 'الرَّسم الشَّهريّ غير صحيح');
+    : (fee.error.issues[0]?.message ?? 'الرَّسم الشَّهري غير صحيح');
 
   if (typeof feeValue === 'number' && feeValue !== retainer.monthly_fee_usd) {
     edit.monthly_fee_usd = feeValue;
@@ -120,7 +120,7 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
 
   if (loading) {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="جارٍ تحميل العقود">
+      <div className="space-y-4" aria-busy="true" aria-label="جاري تحميل العقود">
         {[0, 1, 2].map((key) => (
           <div key={key} className="rounded-2xl border border-border/60 bg-card p-5">
             <Skeleton className="mb-3 h-5 w-48" />
@@ -137,7 +137,7 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
       <EmptyState
         icon={Wallet}
         title="لا توجد عقود بعد"
-        description="ستظهر هنا كل الطلبات الواردة من صفحة التَّوظيف الشَّهريّ."
+        description="ستظهر هنا كل الطلبات الواردة من صفحة التَّوظيف الشَّهري."
       />
     );
   }
@@ -289,7 +289,7 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
                   className="form-label inline-flex items-center gap-1.5 text-xs text-muted-foreground"
                 >
                   <Wallet className="size-3.5 shrink-0" aria-hidden="true" />
-                  الرَّسم الشَّهريّ (دولار)
+                  الرَّسم الشَّهري (دولار)
                 </label>
                 <Input
                   id={`fee-${retainer.id}`}
@@ -364,7 +364,7 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
                   onClick={() => onSave(retainer.id, edit)}
                 >
                   <Save className="size-4" aria-hidden="true" />
-                  {isSaving ? 'جارٍ الحفظ...' : 'حفظ التَّفاصيل'}
+                  {isSaving ? 'جاري الحفظ...' : 'حفظ التَّفاصيل'}
                 </Button>
               )}
             </div>

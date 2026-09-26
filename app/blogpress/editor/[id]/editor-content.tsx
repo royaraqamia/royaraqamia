@@ -343,7 +343,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
                 ) : (
                   <Upload className="size-4 ms-1.5" />
                 )}
-                {isUploading ? 'جارٍ الرَّفع...' : 'صورة'}
+                {isUploading ? 'جاري الرَّفع...' : 'صورة'}
               </Button>
               <PostSettingsDialog
                 title={title}
@@ -473,7 +473,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
                 className={`size-2 rounded-full transition-smooth ${isDirty ? 'bg-warning' : 'bg-success'}`}
               />
               <span className="text-xs text-muted-foreground hidden sm:inline">
-                {isSaving ? 'جارٍ الحفظ...' : isDirty ? 'تغييرات غير محفوظة' : 'تمَّ الحفظ'}
+                {isSaving ? 'جاري الحفظ...' : isDirty ? 'تغييرات غير محفوظة' : 'تمَّ الحفظ'}
               </span>
             </div>
             <span className="text-muted-foreground/40 hidden sm:inline">·</span>
@@ -508,7 +508,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
             >
               {pending || isSaving ? (
                 <>
-                  <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ الحفظ...
+                  <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جاري الحفظ...
                 </>
               ) : (
                 <>
@@ -525,7 +525,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
               >
                 {pending ? (
                   <>
-                    <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جارٍ النَّشر...
+                    <Loader2 className="ms-1.5 size-3.5 animate-spin" /> جاري النَّشر...
                   </>
                 ) : (
                   <>

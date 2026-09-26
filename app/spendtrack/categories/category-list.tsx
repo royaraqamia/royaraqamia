@@ -192,7 +192,7 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
             className="w-full transition-safe duration-200 btn-lift btn-press focus-ring touch-target"
             disabled={pending}
           >
-            {pending ? 'جارٍ الحفظ...' : 'حفظ'}
+            {pending ? 'جاري الحفظ...' : 'حفظ'}
           </Button>
         </form>
       </DialogContent>
@@ -256,7 +256,7 @@ const DeleteCategoryButton = memo(function DeleteCategoryButton({
                 disabled={pending}
                 className="btn-press touch-target focus-ring"
               >
-                {pending ? 'جارٍ الحذف...' : 'حذف'}
+                {pending ? 'جاري الحذف...' : 'حذف'}
               </Button>
             </form>
           </div>

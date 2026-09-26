@@ -260,7 +260,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin opacity-80" aria-hidden="true" />
-                    <span>جارٍ التَّطبيق...</span>
+                    <span>جاري التَّطبيق...</span>
                   </>
                 ) : (
                   'تطبيق التَّغييرات'

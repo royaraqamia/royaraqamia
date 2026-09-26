@@ -136,7 +136,7 @@ export function Navbar() {
         },
         {
           href: '/hire',
-          label: 'طلب التَّوظيف الشَّهريّ',
+          label: 'طلب التَّوظيف الشَّهري',
           isRoute: true,
         },
         {

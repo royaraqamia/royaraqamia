@@ -69,7 +69,7 @@ export function ProjectRequestsList({
 
   if (loading) {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="جارٍ تحميل الطلبات">
+      <div className="space-y-4" aria-busy="true" aria-label="جاري تحميل الطلبات">
         {[0, 1, 2].map((key) => (
           <div key={key} className="rounded-2xl border border-border/60 bg-card p-5">
             <Skeleton className="mb-3 h-5 w-48" />
@@ -259,7 +259,7 @@ export function ProjectRequestsList({
                   }
                 >
                   <Save className="size-4" aria-hidden="true" />
-                  {isSaving ? 'جارٍ الحفظ...' : 'حفظ الملاحظات'}
+                  {isSaving ? 'جاري الحفظ...' : 'حفظ الملاحظات'}
                 </Button>
               )}
             </div>

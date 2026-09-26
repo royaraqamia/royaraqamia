@@ -480,7 +480,7 @@ export function DashboardShell({
             open={showLogoutConfirm}
             title="تسجيل الخروج"
             message="هل أنت متأكِّد من رغبتك في تسجيل الخروج؟"
-            confirmLabel={isLoggingOut ? 'جارٍ تسجيل الخروج...' : 'تسجيل الخروج'}
+            confirmLabel={isLoggingOut ? 'جاري تسجيل الخروج...' : 'تسجيل الخروج'}
             cancelLabel="إلغاء"
             onConfirm={signOut}
             onCancel={() => setShowLogoutConfirm(false)}

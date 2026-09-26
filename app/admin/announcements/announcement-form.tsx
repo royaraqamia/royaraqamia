@@ -139,7 +139,7 @@ export function AnnouncementForm() {
             disabled={sending}
           >
             {sending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-            {sending ? 'جارٍ الإرسال...' : 'إرسال'}
+            {sending ? 'جاري الإرسال...' : 'إرسال'}
           </Button>
         </form>
       </CardContent>

@@ -131,7 +131,7 @@ export function RetainerRequestForm() {
     <form onSubmit={onSubmit} noValidate className="form-group">
       <div className="rounded-2xl border border-purple-500/25 bg-purple-500/5 p-4">
         <p className="text-sm font-bold text-foreground">
-          التَّوظيف الشَّهريّ — {RETAINER_DEFAULT_MONTHLY_FEE_USD}$ شهريًّا
+          التَّوظيف الشَّهري — {RETAINER_DEFAULT_MONTHLY_FEE_USD}$ شهريًّا
         </p>
         <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
           رسم شهريّ ثابت يغطّي الصِّيانة والتَّطوير وإدارة مشاريعك. لا يُدفع أيّ مبلغ على الموقع —

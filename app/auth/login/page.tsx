@@ -155,7 +155,7 @@ function LoginForm() {
           className="w-full h-11 sm:h-12 rounded-full text-sm sm:text-base font-medium border border-border/80 bg-background/50 hover:bg-accent/80 hover:border-border text-foreground transition-safe duration-300 ease-out hover:scale-[1.01] active:scale-[0.985] flex items-center justify-center gap-2.5 shadow-xs cursor-pointer focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
         >
           <GoogleLogo size={20} className="shrink-0" />
-          <span>{googleLoading ? 'جارٍ الاتِّصال بـ Google...' : 'الدُّخول بحساب Google'}</span>
+          <span>{googleLoading ? 'جاري الاتِّصال بـ Google...' : 'الدُّخول بحساب Google'}</span>
         </Button>
 
         {googleError && (

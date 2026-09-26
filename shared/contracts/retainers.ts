@@ -194,10 +194,10 @@ export const RetainerUpdateSchema = z.object({
   status: z.enum(RETAINER_STATUSES, 'حالة غير معروفة').optional(),
   notes: z.string().trim().max(RETAINER_NOTES_MAX, 'الملاحظات طويلة جدًّا').optional().nullable(),
   monthly_fee_usd: z.coerce
-    .number('الرَّسم الشَّهريّ غير صحيح')
-    .positive('الرَّسم الشَّهريّ يجب أن يكون أكبر من صفر')
-    .max(RETAINER_MONTHLY_FEE_MAX, 'الرَّسم الشَّهريّ كبير جدًّا')
-    .refine(hasAtMostTwoDecimals, 'الرَّسم الشَّهريّ لا يقبل أكثر من منزلتين عشريّتين')
+    .number('الرَّسم الشَّهري غير صحيح')
+    .positive('الرَّسم الشَّهري يجب أن يكون أكبر من صفر')
+    .max(RETAINER_MONTHLY_FEE_MAX, 'الرَّسم الشَّهري كبير جدًّا')
+    .refine(hasAtMostTwoDecimals, 'الرَّسم الشَّهري لا يقبل أكثر من منزلتين عشريّتين')
     .optional(),
   paid_through: z
     .string()

@@ -79,7 +79,7 @@ export const PostActionsMenu = memo(function PostActionsMenu({
           ) : (
             <CopyPlus className="size-4" />
           )}
-          <span>{duplicating ? 'جارٍ النسخ...' : 'نسخ المقال'}</span>
+          <span>{duplicating ? 'جاري النسخ...' : 'نسخ المقال'}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="my-1 border-border/60" />
         <DropdownMenuItem

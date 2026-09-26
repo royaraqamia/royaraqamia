@@ -236,7 +236,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                       )}
                     </div>
                     <p className="text-xs font-bold text-foreground group-hover/dropzone:text-primary transition-colors">
-                      {isCoverUploading ? 'جارٍ الرَّفع...' : 'انقر لرفع صورة الغلاف'}
+                      {isCoverUploading ? 'جاري الرَّفع...' : 'انقر لرفع صورة الغلاف'}
                     </p>
                     <p className="text-[11px] text-muted-foreground/70 mt-1.5 max-w-xs leading-relaxed">
                       PNG أو JPG أو WebP. يُفضَّل أبعاد 1200×630 بكسل.

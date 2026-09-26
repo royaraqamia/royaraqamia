@@ -133,7 +133,7 @@ export function WebDevService() {
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="text-start min-w-0">
                     <h3 className="text-lg sm:text-xl font-bold text-foreground">
-                      التَّوظيف الشَّهريّ
+                      التَّوظيف الشَّهري
                     </h3>
                     <p className="text-xs sm:text-sm text-foreground/60 mt-1">صيانة وتطوير مستمر</p>
                   </div>
@@ -152,7 +152,7 @@ export function WebDevService() {
               </div>
 
               <Button asChild variant="outline" size="sm" className="mt-5 w-full">
-                <Link href="/hire">اطلب التَّوظيف الشَّهريّ</Link>
+                <Link href="/hire">اطلب التَّوظيف الشَّهري</Link>
               </Button>
             </article>
 

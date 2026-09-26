@@ -3,7 +3,7 @@ import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 export function DashboardSkeleton() {
   return (
     <section
-      aria-label="جارٍ تحميل المحتوى"
+      aria-label="جاري تحميل المحتوى"
       aria-busy="true"
       className="w-full max-w-7xl mx-auto space-y-6 animate-in fade-in-50 duration-500"
     >
@@ -43,7 +43,7 @@ export function DashboardSkeleton() {
           </article>
         ))}
       </div>
-      <span className="sr-only">جارٍ تحميل المحتوى...</span>
+      <span className="sr-only">جاري تحميل المحتوى...</span>
     </section>
   );
 }
@@ -51,7 +51,7 @@ export function DashboardSkeleton() {
 export function AnalyticsSkeleton() {
   return (
     <section
-      aria-label="جارٍ تحميل المحتوى"
+      aria-label="جاري تحميل المحتوى"
       aria-busy="true"
       className="w-full max-w-7xl mx-auto space-y-6 animate-in fade-in-50 duration-500"
     >
@@ -96,7 +96,7 @@ export function AnalyticsSkeleton() {
           ))}
         </div>
       </div>
-      <span className="sr-only">جارٍ تحميل المحتوى...</span>
+      <span className="sr-only">جاري تحميل المحتوى...</span>
     </section>
   );
 }
@@ -104,7 +104,7 @@ export function AnalyticsSkeleton() {
 export function AdminSkeleton() {
   return (
     <section
-      aria-label="جارٍ تحميل المحتوى"
+      aria-label="جاري تحميل المحتوى"
       aria-busy="true"
       className="w-full space-y-6 animate-in fade-in-50 duration-500"
     >
@@ -148,7 +148,7 @@ export function AdminSkeleton() {
           ))}
         </div>
       </div>
-      <span className="sr-only">جارٍ تحميل المحتوى...</span>
+      <span className="sr-only">جاري تحميل المحتوى...</span>
     </section>
   );
 }

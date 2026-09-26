@@ -222,7 +222,7 @@ export function CertificatesList({
 }: CertificatesListProps) {
   if (loading) {
     return (
-      <div className="space-y-3" aria-busy="true" aria-label="جارٍ تحميل الشهادات">
+      <div className="space-y-3" aria-busy="true" aria-label="جاري تحميل الشهادات">
         {[0, 1, 2, 3].map((key) => (
           <Card key={key} className="glass-card">
             <CardContent className="flex items-center gap-3 py-4">

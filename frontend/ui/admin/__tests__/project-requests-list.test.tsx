@@ -35,7 +35,7 @@ describe('ProjectRequestsList', () => {
   it('announces itself busy while loading', () => {
     render(<ProjectRequestsList requests={[]} loading savingId={null} onSave={vi.fn()} />);
 
-    expect(screen.getByLabelText('جارٍ تحميل الطلبات')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByLabelText('جاري تحميل الطلبات')).toHaveAttribute('aria-busy', 'true');
   });
 
   it('shows the empty state when there are no requests', () => {
