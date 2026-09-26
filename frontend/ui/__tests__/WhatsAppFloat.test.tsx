@@ -55,6 +55,8 @@ describe('WhatsAppFloat', () => {
 
   it.each([
     '/training/apply',
+    '/request-project',
+    '/hire',
     '/auth/login',
     '/auth/signup',
     '/auth/reset-password',
