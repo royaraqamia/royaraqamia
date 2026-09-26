@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { X } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -36,8 +37,18 @@ export function joinHHmm(hour12: string, minute: string, period: TimePeriod): st
   return `${pad2(hour24)}:${minute}`;
 }
 
+/* Minute options for a given increment. `include` keeps a controlled value
+   selectable even when it does not land on the step (e.g. 07 past with a
+   15-minute step), so a valid `value` always has a matching option. */
+export function getMinuteOptions(step = 1, include?: string): string[] {
+  const size = Math.min(60, Math.max(1, Math.floor(step)));
+  const options = new Set<string>();
+  for (let minute = 0; minute < 60; minute += size) options.add(pad2(minute));
+  if (include && /^[0-5]\d$/.test(include)) options.add(include);
+  return Array.from(options).sort();
+}
+
 const HOURS = Array.from({ length: 12 }, (_, i) => pad2(i + 1));
-const MINUTES = Array.from({ length: 60 }, (_, i) => pad2(i));
 
 const PERIOD_LABELS: Record<TimePeriod, string> = { am: 'ص', pm: 'م' };
 
@@ -49,6 +60,10 @@ interface TimePickerProps {
   triggerClassName?: string;
   'aria-label'?: string;
   disabled?: boolean;
+  /** Minute increment between options (default `1`). */
+  minuteStep?: number;
+  /** Show a clear action when a time is selected. */
+  clearable?: boolean;
 }
 
 export function TimePicker({
@@ -59,6 +74,8 @@ export function TimePicker({
   triggerClassName,
   'aria-label': ariaLabel = placeholder,
   disabled,
+  minuteStep = 1,
+  clearable = true,
 }: TimePickerProps) {
   const selected = splitHHmm(value);
   const [draft, setDraft] = React.useState<Partial<TimeParts>>({});
@@ -68,6 +85,10 @@ export function TimePicker({
   }, [value]);
 
   const current: Partial<TimeParts> = selected ?? draft;
+  const minutes = React.useMemo(
+    () => getMinuteOptions(minuteStep, selected?.minute),
+    [minuteStep, selected?.minute]
+  );
 
   const select = (patch: Partial<TimeParts>) => {
     const next = { ...current, ...patch };
@@ -108,7 +129,7 @@ export function TimePicker({
           <SelectValue placeholder="دقيقة" />
         </SelectTrigger>
         <SelectContent className="max-h-60">
-          {MINUTES.map((minute) => (
+          {minutes.map((minute) => (
             <SelectItem key={minute} value={minute}>
               {minute}
             </SelectItem>
@@ -132,6 +153,23 @@ export function TimePicker({
           ))}
         </SelectContent>
       </Select>
+
+      {clearable && value && (
+        <button
+          type="button"
+          onClick={() => onChange('')}
+          disabled={disabled}
+          aria-label={`${ariaLabel} — مسح`}
+          className={cn(
+            'inline-flex size-8 shrink-0 cursor-pointer items-center justify-center rounded-lg text-muted-foreground/70',
+            'transition-safe duration-150 ease-out hover:bg-destructive/10 hover:text-destructive active:scale-95',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
+            'disabled:pointer-events-none disabled:opacity-40'
+          )}
+        >
+          <X className="size-3.5" aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }

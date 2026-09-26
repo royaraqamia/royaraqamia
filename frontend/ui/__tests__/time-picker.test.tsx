@@ -1,6 +1,11 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import { TimePicker, joinHHmm, splitHHmm } from '@/frontend/ui/primitives/time-picker';
+import {
+  TimePicker,
+  getMinuteOptions,
+  joinHHmm,
+  splitHHmm,
+} from '@/frontend/ui/primitives/time-picker';
 
 describe('splitHHmm', () => {
   it('parses a valid 24h HH:mm into 12h parts', () => {
@@ -34,6 +39,25 @@ describe('joinHHmm', () => {
   });
 });
 
+describe('getMinuteOptions', () => {
+  it('defaults to every minute', () => {
+    const options = getMinuteOptions();
+    expect(options).toHaveLength(60);
+    expect(options[0]).toBe('00');
+    expect(options.at(-1)).toBe('59');
+  });
+
+  it('steps minutes and keeps the current value selectable', () => {
+    expect(getMinuteOptions(15)).toEqual(['00', '15', '30', '45']);
+    expect(getMinuteOptions(15, '07')).toEqual(['00', '07', '15', '30', '45']);
+  });
+
+  it('clamps out-of-range steps', () => {
+    expect(getMinuteOptions(0)).toHaveLength(60);
+    expect(getMinuteOptions(120)).toEqual(['00']);
+  });
+});
+
 describe('TimePicker', () => {
   afterEach(cleanup);
 
@@ -45,5 +69,13 @@ describe('TimePicker', () => {
     expect(
       screen.getByRole('combobox', { name: 'وقت التذكير — صباحاً أو مساءً' })
     ).toBeInTheDocument();
+  });
+
+  it('renders a clear action only when a time is selected', () => {
+    const { rerender } = render(<TimePicker value="" onChange={() => {}} aria-label="الوقت" />);
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+
+    rerender(<TimePicker value="09:30" onChange={() => {}} aria-label="الوقت" />);
+    expect(screen.getByRole('button', { name: 'الوقت — مسح' })).toBeInTheDocument();
   });
 });
