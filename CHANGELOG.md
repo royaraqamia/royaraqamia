@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.31.0] - 2026-09-26
+
+### Changed
+- Potential fix for code scanning alert no. 38: Superfluous trailing arguments
+- Potential fix for code scanning alert no. 39: Superfluous trailing arguments
+- Potential fix for code scanning alert no. 36: Superfluous trailing arguments
+- Potential fix for code scanning alert no. 37: Superfluous trailing arguments
+- align the budget label assertion with the contract copy
+- polish the project request labels and copy
+- normalize two Arabic copy spellings
+- drop the intro copy from the request and hire pages
+
+### Added
+- harden the calendar and date/time pickers
+- use the shared DatePicker for the retainer start date
+- drop the other project type from project requests
+
+### Fixed
+- hide WhatsApp float on request-project and hire pages
+- surface database failures as typed repository errors
+
 ## [1.30.0] - 2026-09-26
 
 ### Changed
