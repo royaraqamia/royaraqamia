@@ -7,6 +7,7 @@ import { AlertCircle, Check, CheckCircle2, Copy } from 'lucide-react';
 import type { z } from 'zod';
 
 import { Button } from '@/frontend/ui/primitives/button';
+import { DatePicker } from '@/frontend/ui/primitives/date-picker';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
@@ -248,14 +249,20 @@ export function RetainerRequestForm() {
         <Label htmlFor="preferred_start" optional>
           تاريخ البدء المُفضَّل
         </Label>
-        <Input
-          id="preferred_start"
-          type="date"
-          dir="ltr"
-          min={todayIsoDate()}
-          {...register('preferred_start')}
-          error={Boolean(errors.preferred_start)}
-          aria-describedby={errors.preferred_start ? 'preferred_start-error' : undefined}
+        <Controller
+          name="preferred_start"
+          control={control}
+          render={({ field }) => (
+            <DatePicker
+              id="preferred_start"
+              value={field.value ?? ''}
+              onChange={field.onChange}
+              placeholder="اختر التاريخ"
+              min={todayIsoDate()}
+              aria-invalid={Boolean(errors.preferred_start)}
+              aria-describedby={errors.preferred_start ? 'preferred_start-error' : undefined}
+            />
+          )}
         />
         <FieldError id="preferred_start-error" message={errors.preferred_start?.message} />
       </div>

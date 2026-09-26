@@ -58,6 +58,9 @@ interface DatePickerProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  id?: string;
+  /** ISO date (`YYYY-MM-DD`); earlier dates are not selectable. */
+  min?: string;
   'aria-label'?: string;
   disabled?: boolean;
 }
@@ -67,10 +70,12 @@ export function DatePicker({
   onChange,
   placeholder = 'اختر تاريخًا',
   className,
+  min,
   disabled,
   ...props
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const minDate = parseIsoDate(min);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -115,6 +120,7 @@ export function DatePicker({
             onChange(toIsoDate(date));
             setIsOpen(false);
           }}
+          disabled={minDate ? { before: minDate } : undefined}
           autoFocus
         />
       </PopoverContent>
