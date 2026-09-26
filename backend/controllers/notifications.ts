@@ -16,7 +16,7 @@ export async function listNotifications(): Promise<HttpResult> {
     const notifications = await service.getNotifications(user.id);
     return jsonResult(200, { notifications });
   } catch {
-    return jsonResult(200, { notifications: [] });
+    return jsonResult(500, { error: 'فشل تحميل الإشعارات' });
   }
 }
 
@@ -60,7 +60,7 @@ export async function getUnreadNotificationCount(): Promise<HttpResult> {
     const count = await createSupabaseNotificationService(supabase).getUnreadCount(user.id);
     return jsonResult(200, { count });
   } catch {
-    return jsonResult(200, { count: 0 });
+    return jsonResult(500, { error: 'فشل تحميل عدد الإشعارات' });
   }
 }
 

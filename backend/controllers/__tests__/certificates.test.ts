@@ -60,6 +60,7 @@ import {
   CertificateDuplicateCodeError,
   CertificateValidationError,
 } from '@/backend/services/certificates/certificates-service';
+import { RepositoryError } from '@/backend/shared/repository-error';
 
 const CERTIFICATE = {
   id: 'cert-1',
@@ -368,5 +369,15 @@ describe('verifyCertificate', () => {
     const result = await verifyCertificate('COMP-2026-ABCDEFGH', '1.1.1.1');
 
     expect(result).toMatchObject({ status: 200, body: { success: false } });
+  });
+
+  it('answers 500 when the read fails, not a 200 not-found', async () => {
+    mockVerify.mockRejectedValue(
+      new RepositoryError('certificates.getByCode', new Error('db down'))
+    );
+
+    const result = await verifyCertificate('COMP-2026-ABCDEFGH', '1.1.1.1');
+
+    expect(result).toMatchObject({ status: 500, body: { success: false } });
   });
 });

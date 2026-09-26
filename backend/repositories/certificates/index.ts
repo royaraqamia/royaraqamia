@@ -7,6 +7,7 @@ import type {
   CertificatesRepository,
 } from '@/backend/repositories/certificates/certificates-repository';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
+import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-error';
 
 export function createCertificatesRepository(
   supabase: SupabaseClient<Database>
@@ -19,8 +20,12 @@ export function createCertificatesRepository(
         .eq('certificate_code', code)
         .single();
 
-      if (error || !data) return null;
-      return data as Certificate;
+      if (error) {
+        if (isNotFoundError(error)) return null;
+        throw repositoryFailure('certificates.getByCode', error);
+      }
+
+      return data ? (data as Certificate) : null;
     },
 
     async getCodes(): Promise<string[]> {
@@ -29,7 +34,8 @@ export function createCertificatesRepository(
         .select('certificate_code')
         .order('certificate_code', { ascending: true });
 
-      if (error) return [];
+      if (error) throw repositoryFailure('certificates.getCodes', error);
+
       return (data ?? [])
         .map((row) => row.certificate_code)
         .filter((code): code is string => typeof code === 'string' && code.length > 0);
@@ -55,7 +61,9 @@ export function createCertificatesRepository(
       const from = (page - 1) * pageSize;
       const to = from + pageSize - 1;
 
-      const { data, count } = await query.range(from, to);
+      const { data, count, error } = await query.range(from, to);
+
+      if (error) throw repositoryFailure('certificates.list', error);
 
       return { data: (data as Certificate[]) ?? [], total: count ?? 0 };
     },
@@ -63,8 +71,12 @@ export function createCertificatesRepository(
     async getById(id: string): Promise<Certificate | null> {
       const { data, error } = await supabase.from('certificates').select('*').eq('id', id).single();
 
-      if (error || !data) return null;
-      return data as Certificate;
+      if (error) {
+        if (isNotFoundError(error)) return null;
+        throw repositoryFailure('certificates.getById', error);
+      }
+
+      return data ? (data as Certificate) : null;
     },
 
     async listByRecipient(userId: string): Promise<Certificate[]> {
@@ -74,7 +86,8 @@ export function createCertificatesRepository(
         .contains('recipient_user_ids', [userId])
         .order('issue_date', { ascending: false });
 
-      if (error) throw error;
+      if (error) throw repositoryFailure('certificates.listByRecipient', error);
+
       return (data as Certificate[]) ?? [];
     },
 

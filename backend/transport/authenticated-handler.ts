@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import type { Database } from '@/backend/models/database.types';
+import { isRepositoryError } from '@/backend/shared/repository-error';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
 /**
@@ -90,7 +91,8 @@ export async function handleAuthenticated<Identity>(
   try {
     return await run(raw as Identity);
   } catch (error) {
-    Sentry.captureException(error);
+    // Repository failures already logged and reported at the repository seam.
+    if (!isRepositoryError(error)) Sentry.captureException(error);
     return policy.mapError?.(error) ?? jsonResult(500, policy.whenFailed ?? FAILED_BODY);
   }
 }

@@ -6,6 +6,7 @@ import {
 } from '@/shared/contracts/certificates';
 import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
 import { logger } from '@/backend/shared/logger';
+import { isRepositoryError } from '@/backend/shared/repository-error';
 
 export { CERT_CODE_REGEX };
 
@@ -107,6 +108,9 @@ export class CertificateVerifier {
 
       return { success: true, certificate: toPublicCertificate(certificate) };
     } catch (e) {
+      // A repository failure already logged and reported at the seam; it must
+      // reach the controller as a failure, not masquerade as "not found".
+      if (isRepositoryError(e)) throw e;
       logger.error('Unexpected error in verifyCertificateByCode', { error: String(e), code, ip });
       this.deps.captureException(e, {
         extra: { code, ip, source: 'verifyCertificateByCode' },

@@ -13,6 +13,7 @@ import type { PostInput } from '@/shared/contracts/blog';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import { estimateReadingTime } from '@/shared/reading-time';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
+import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-error';
 
 const PUBLISHED_POSTS_FILTER =
   'or(status.eq.published,and(status.eq.scheduled,publish_at.lte.now))';
@@ -25,19 +26,25 @@ type Client = SupabaseClient<Database>;
 
 export function createPostsRepository(supabase: Client): PostsRepository {
   async function resolveCategoryIdBySlug(slug: string): Promise<string | null> {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('blog_categories')
       .select('id')
       .eq('slug', slug)
       .maybeSingle();
+
+    if (error) throw repositoryFailure('blogpress.resolveCategoryIdBySlug', error);
+
     return data?.id ?? null;
   }
 
   async function postIdsForCategory(categoryId: string): Promise<string[]> {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('post_categories')
       .select('post_id')
       .eq('category_id', categoryId);
+
+    if (error) throw repositoryFailure('blogpress.postIdsForCategory', error);
+
     return (data ?? []).map((row) => row.post_id);
   }
 
@@ -112,9 +119,15 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         queryBuilder = queryBuilder.or(`title.ilike.%${search}%,meta_desc.ilike.%${search}%`);
       }
 
-      const { data: posts, count } = await queryBuilder
+      const {
+        data: posts,
+        count,
+        error,
+      } = await queryBuilder
         .order('published_at', { ascending: false, nullsFirst: true })
         .range(from, to);
+
+      if (error) throw repositoryFailure('blogpress.getPublishedPosts', error);
 
       return {
         posts: (posts as PostSummary[]) ?? [],
@@ -123,63 +136,86 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     },
 
     async getPublishedPostSlugs(): Promise<string[]> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('posts')
         .select('slug')
         .or(PUBLISHED_POSTS_FILTER)
         .eq('blog_visible', true);
+
+      if (error) throw repositoryFailure('blogpress.getPublishedPostSlugs', error);
+
       return (data ?? []).map((row) => row.slug);
     },
 
     async getPublishedPostBySlug(slug: string): Promise<Post | null> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('posts')
         .select('*')
         .eq('slug', slug)
         .or(PUBLISHED_POSTS_FILTER)
         .eq('blog_visible', true)
         .single();
-      return (data as Post) ?? null;
+
+      if (error) {
+        if (isNotFoundError(error)) return null;
+        throw repositoryFailure('blogpress.getPublishedPostBySlug', error);
+      }
+
+      return data ? (data as Post) : null;
     },
 
     async getPostAuthor(authorId: string): Promise<PostAuthor | null> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('users')
         .select('name, avatar_url, bio')
         .eq('id', authorId)
         .maybeSingle();
+
+      if (error) throw repositoryFailure('blogpress.getPostAuthor', error);
+
       return data ?? null;
     },
 
     async getPublishedCategories(): Promise<PostCategory[]> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('post_categories')
         .select('blog_categories(id, name, slug)');
+
+      if (error) throw repositoryFailure('blogpress.getPublishedCategories', error);
+
       return mapCategoryRows(data ?? []);
     },
 
     async getPublishedPostCategories(postId: string): Promise<PostCategory[]> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('post_categories')
         .select('blog_categories(id, name, slug)')
         .eq('post_id', postId);
+
+      if (error) throw repositoryFailure('blogpress.getPublishedPostCategories', error);
+
       return mapCategoryRows(data ?? []);
     },
 
     async incrementPostViewCount(postId: string): Promise<void> {
-      await supabase.rpc('increment_post_view_count', { p_post_id: postId });
+      const { error } = await supabase.rpc('increment_post_view_count', { p_post_id: postId });
+
+      if (error) throw repositoryFailure('blogpress.incrementPostViewCount', error);
     },
 
     async listPostsByAuthor(authorId: string, categorySlug?: string): Promise<Post[]> {
       let queryBuilder = supabase.from('posts').select('*').eq('author_id', authorId);
 
       if (categorySlug) {
-        const { data: category } = await supabase
+        const { data: category, error: categoryError } = await supabase
           .from('blog_categories')
           .select('id')
           .eq('user_id', authorId)
           .eq('slug', categorySlug)
           .maybeSingle();
+        if (categoryError) {
+          throw repositoryFailure('blogpress.listPostsByAuthor.category', categoryError);
+        }
         if (!category) {
           return [];
         }
@@ -190,14 +226,23 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         queryBuilder = queryBuilder.in('id', postIds);
       }
 
-      const { data } = await queryBuilder
+      const { data, error } = await queryBuilder
         .order('featured', { ascending: false })
         .order('updated_at', { ascending: false });
+
+      if (error) throw repositoryFailure('blogpress.listPostsByAuthor', error);
+
       return (data as Post[]) ?? [];
     },
 
     async getPostTitleById(id: string): Promise<string | null> {
-      const { data } = await supabase.from('posts').select('title').eq('id', id).single();
+      const { data, error } = await supabase.from('posts').select('title').eq('id', id).single();
+
+      if (error) {
+        if (isNotFoundError(error)) return null;
+        throw repositoryFailure('blogpress.getPostTitleById', error);
+      }
+
       return data?.title ?? null;
     },
 
@@ -209,8 +254,9 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .eq('author_id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') {
-        throw new Error(`Failed to fetch post: ${error.message}`);
+      if (error) {
+        if (isNotFoundError(error)) return null;
+        throw repositoryFailure('blogpress.getPostForUser', error);
       }
 
       return (data as Post) ?? null;
@@ -388,11 +434,14 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     },
 
     async listCategoriesByAuthor(authorId: string): Promise<PostCategory[]> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('blog_categories')
         .select('id, name, slug')
         .eq('user_id', authorId)
         .order('created_at', { ascending: true });
+
+      if (error) throw repositoryFailure('blogpress.listCategoriesByAuthor', error);
+
       return (data as PostCategory[]) ?? [];
     },
 
@@ -419,10 +468,13 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     },
 
     async getPostCategories(postId: string): Promise<PostCategory[]> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('post_categories')
         .select('blog_categories(id, name, slug)')
         .eq('post_id', postId);
+
+      if (error) throw repositoryFailure('blogpress.getPostCategories', error);
+
       return mapCategoryRows(data ?? []);
     },
 
@@ -441,19 +493,25 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     },
 
     async getPublishedPostTags(postId: string): Promise<PostTag[]> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('post_tags')
         .select('blog_tags(id, name, slug)')
         .eq('post_id', postId);
+
+      if (error) throw repositoryFailure('blogpress.getPublishedPostTags', error);
+
       return mapTagRows(data ?? []);
     },
 
     async listTagsByAuthor(authorId: string): Promise<PostTag[]> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('blog_tags')
         .select('id, name, slug')
         .eq('user_id', authorId)
         .order('created_at', { ascending: true });
+
+      if (error) throw repositoryFailure('blogpress.listTagsByAuthor', error);
+
       return (data as PostTag[]) ?? [];
     },
 
@@ -480,19 +538,25 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     },
 
     async getPostTags(postId: string): Promise<PostTag[]> {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('post_tags')
         .select('blog_tags(id, name, slug)')
         .eq('post_id', postId);
+
+      if (error) throw repositoryFailure('blogpress.getPostTags', error);
+
       return mapTagRows(data ?? []);
     },
 
     async getPostTagsByPostIds(postIds: string[]): Promise<Record<string, PostTag[]>> {
       if (postIds.length === 0) return {};
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('post_tags')
         .select('post_id, blog_tags(id, name, slug)')
         .in('post_id', postIds);
+
+      if (error) throw repositoryFailure('blogpress.getPostTagsByPostIds', error);
+
       return buildTagMapByPost(data ?? []);
     },
 
@@ -552,11 +616,14 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       authorId: string,
       categoryId: string
     ): Promise<void> {
-      const { data: owned } = await supabase
+      const { data: owned, error: ownedError } = await supabase
         .from('posts')
         .select('id')
         .in('id', postIds)
         .eq('author_id', authorId);
+
+      if (ownedError) throw repositoryFailure('blogpress.bulkSetPostCategories.owned', ownedError);
+
       const ownedIds = (owned ?? []).map((row) => row.id);
       if (ownedIds.length === 0) return;
 

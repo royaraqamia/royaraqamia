@@ -9,6 +9,7 @@ import {
 } from '@/backend/services/certificates/certificates-service';
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import { isRepositoryError } from '@/backend/shared/repository-error';
 import type { Certificate, CertificateIntakeInput } from '@/shared/contracts/certificates';
 
 type AdminCertificate = Certificate;
@@ -106,7 +107,14 @@ export async function deleteCertificate(id: string): Promise<HttpResult> {
 export async function verifyCertificate(code: string, ip: string): Promise<HttpResult> {
   try {
     return jsonResult(200, await verifyCertificateByCode(code, ip));
-  } catch {
+  } catch (error) {
+    // A repository failure is a real outage, not "certificate not found".
+    if (isRepositoryError(error)) {
+      return jsonResult(500, {
+        success: false,
+        error: 'تعذّر التحقّق من الشهادة حاليًّا. الرجاء المحاولة بعد قليل.',
+      });
+    }
     return jsonResult(200, {
       success: false,
       error: 'حدث خطأ غير متوقع. الرجاء المحاولة مرة أخرى.',

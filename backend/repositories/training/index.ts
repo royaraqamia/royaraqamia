@@ -8,6 +8,7 @@ import type {
   TrainingApplicationsRepository,
 } from '@/backend/repositories/training/training-applications-repository';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
+import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-error';
 
 export function createTrainingApplicationsRepository(
   supabase: SupabaseClient<Database>
@@ -20,8 +21,12 @@ export function createTrainingApplicationsRepository(
         .eq('id', id)
         .single();
 
-      if (error || !data) return null;
-      return data as TrainingApplication;
+      if (error) {
+        if (isNotFoundError(error)) return null;
+        throw repositoryFailure('training.getById', error);
+      }
+
+      return data ? (data as TrainingApplication) : null;
     },
 
     async getByReferenceCode(referenceCode: string): Promise<TrainingApplication | null> {
@@ -31,8 +36,9 @@ export function createTrainingApplicationsRepository(
         .eq('reference_code', referenceCode)
         .maybeSingle();
 
-      if (error || !data) return null;
-      return data as TrainingApplication;
+      if (error) throw repositoryFailure('training.getByReferenceCode', error);
+
+      return data ? (data as TrainingApplication) : null;
     },
 
     async list(query: TrainingApplicationListQuery): Promise<Paginated<TrainingApplication>> {
@@ -53,7 +59,9 @@ export function createTrainingApplicationsRepository(
       }
 
       const from = (query.page - 1) * query.pageSize;
-      const { data, count } = await request.range(from, from + query.pageSize - 1);
+      const { data, count, error } = await request.range(from, from + query.pageSize - 1);
+
+      if (error) throw repositoryFailure('training.list', error);
 
       return { data: (data as TrainingApplication[]) ?? [], total: count ?? 0 };
     },

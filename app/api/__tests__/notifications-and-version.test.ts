@@ -87,14 +87,14 @@ describe('GET /api/notifications', () => {
     expect(mockService.getNotifications).toHaveBeenCalledWith('u-1');
   });
 
-  it('returns an empty list when the service throws', async () => {
+  it('returns 500, not an empty list, when the service throws', async () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.getNotifications.mockRejectedValue(new Error('db down'));
 
     const res = await listGET({} as NextRequest);
 
-    expect(res.status).toBe(200);
-    expect(readBody(res)).toEqual({ notifications: [] });
+    expect(res.status).toBe(500);
+    expect(readBody(res)).toEqual({ error: 'فشل تحميل الإشعارات' });
   });
 });
 
@@ -142,13 +142,14 @@ describe('GET /api/notifications/unread-count', () => {
     expect(readBody(res)).toEqual({ count: 4 });
   });
 
-  it('returns 0 when the service throws', async () => {
+  it('returns 500, not a zero count, when the service throws', async () => {
     mockGetAuthUser.mockResolvedValue({ user, client: {} });
     mockService.getUnreadCount.mockRejectedValue(new Error('db down'));
 
     const res = await unreadGET({} as NextRequest);
 
-    expect(readBody(res)).toEqual({ count: 0 });
+    expect(res.status).toBe(500);
+    expect(readBody(res)).toEqual({ error: 'فشل تحميل عدد الإشعارات' });
   });
 });
 

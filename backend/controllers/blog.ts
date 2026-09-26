@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/nextjs';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { recordBlogPostView } from '@/backend/config/blog';
 import { BlogPostViewRateLimitError } from '@/backend/services/blogpress/blog-view-recorder';
+import { isRepositoryError } from '@/backend/shared/repository-error';
 import { PostSlugSchema } from '@/shared/contracts/blog';
 
 export async function recordPostView(slug: string, ip: string): Promise<HttpResult> {
@@ -17,7 +18,7 @@ export async function recordPostView(slug: string, ip: string): Promise<HttpResu
     if (error instanceof BlogPostViewRateLimitError) {
       return jsonResult(429, { success: false, error: error.message });
     }
-    Sentry.captureException(error);
+    if (!isRepositoryError(error)) Sentry.captureException(error);
     return jsonResult(500, { success: false, error: 'تعذر تسجيل الزيارة.' });
   }
 }

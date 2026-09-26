@@ -10,6 +10,7 @@ import {
 } from '@/backend/services/training/training-application-service';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
+import { isRepositoryError } from '@/backend/shared/repository-error';
 import {
   TRAINING_APPLICATION_STATUSES,
   TrainingApplicationSchema,
@@ -55,7 +56,7 @@ export async function submitTrainingApplication(body: unknown, ip: string): Prom
       referenceCode: application.reference_code,
     } satisfies ApplicationActionResult);
   } catch (error) {
-    Sentry.captureException(error);
+    if (!isRepositoryError(error)) Sentry.captureException(error);
 
     if (error instanceof TrainingApplicationClosedError) {
       return jsonResult(400, {
