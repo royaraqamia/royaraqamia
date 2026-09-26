@@ -19,8 +19,8 @@ export type ProjectRequestType = (typeof PROJECT_REQUEST_TYPES)[number];
 
 /** The labels the advertised tiers are sold under in the البناء section. */
 export const PROJECT_REQUEST_TYPE_LABELS: Record<ProjectRequestType, string> = {
-  website: 'موقع',
-  app: 'تطبيق',
+  website: 'موقع (بدون Backend)',
+  app: 'تطبيق (مع Backend)',
 };
 
 /**
@@ -31,16 +31,16 @@ export const PROJECT_REQUEST_TYPE_LABELS: Record<ProjectRequestType, string> = {
 export const PROJECT_REQUEST_BUDGET_RANGES = [
   'under-300',
   '300-600',
-  '600-1500',
-  'over-1500',
+  '600-1200',
+  'over-1200',
 ] as const;
 export type ProjectRequestBudgetRange = (typeof PROJECT_REQUEST_BUDGET_RANGES)[number];
 
 export const PROJECT_REQUEST_BUDGET_RANGE_LABELS: Record<ProjectRequestBudgetRange, string> = {
-  'under-300': 'أقل من 300$',
-  '300-600': '300$ – 600$',
-  '600-1500': '600$ – 1,500$',
-  'over-1500': 'أكثر من 1,500$',
+  'under-300': 'أقل من $300',
+  '300-600': '$300 – $600',
+  '600-1200': '$600 – $1,200',
+  'over-1200': 'أكثر من $1,200',
 };
 
 export const PROJECT_REQUEST_TIMELINES = [
@@ -53,8 +53,8 @@ export type ProjectRequestTimeline = (typeof PROJECT_REQUEST_TIMELINES)[number];
 
 export const PROJECT_REQUEST_TIMELINE_LABELS: Record<ProjectRequestTimeline, string> = {
   'within-a-month': 'خلال شهر',
-  'one-to-three-months': 'شهر – 3 أشهر',
-  'three-to-six-months': '3 أشهر – 6 أشهر',
+  'one-to-three-months': 'شهر – ثلاثة أشهر',
+  'three-to-six-months': 'ثلاثة أشهر - ستَّة أشهر',
   flexible: 'مرن',
 };
 
@@ -63,8 +63,8 @@ export type ProjectRequestStatus = (typeof PROJECT_REQUEST_STATUSES)[number];
 
 export const PROJECT_REQUEST_STATUS_LABELS: Record<ProjectRequestStatus, string> = {
   new: 'جديد',
-  contacted: 'تمّ التواصل',
-  quoted: 'تمّ إرسال العرض',
+  contacted: 'تمَّ التواصل',
+  quoted: 'تمَّ إرسال العرض',
   won: 'مكسوب',
   lost: 'خسارة',
 };
@@ -137,12 +137,12 @@ export const ProjectRequestSchema = z.object({
       PROJECT_REQUEST_DESCRIPTION_MAX,
       `الوصف طويل جدًّا (${PROJECT_REQUEST_DESCRIPTION_MAX.toLocaleString('en-US')} حرف كحد أقصى)`
     ),
-  budget_range: z.enum(PROJECT_REQUEST_BUDGET_RANGES, 'الميزانية غير صحيحة').optional(),
-  timeline: z.enum(PROJECT_REQUEST_TIMELINES, 'المدة غير صحيحة').optional(),
+  budget_range: z.enum(PROJECT_REQUEST_BUDGET_RANGES, 'الميزانيَّة غير صحيحة').optional(),
+  timeline: z.enum(PROJECT_REQUEST_TIMELINES, 'المدَّة غير صحيحة').optional(),
   existing_url: z
     .string()
     .trim()
-    .max(500, 'الرابط طويل جدًّا')
+    .max(500, 'الرَّابط طويل جدًّا')
     .optional()
     .refine((value) => !value || z.url().safeParse(value).success, 'رابط غير صحيح'),
 });
