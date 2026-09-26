@@ -64,7 +64,7 @@ describe('ProjectRequestsList', () => {
   it('renders a chosen budget and timeline as their labels', () => {
     renderList([makeRequest({ budget_range: '300-600', timeline: 'flexible' })]);
 
-    expect(screen.getByText(/300\$ – 600\$/)).toBeInTheDocument();
+    expect(screen.getByText(/\$300 – \$600/)).toBeInTheDocument();
     expect(screen.getByText(/مرن/)).toBeInTheDocument();
   });
 
