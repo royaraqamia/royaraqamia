@@ -1,6 +1,5 @@
 import { NextRequest } from 'next/server';
 import { toNextResponse } from '@/backend/transport/http-result';
-import { revalidateResultPaths } from '@/backend/transport/revalidate';
 import { createExpense, getExpenses } from '@/backend/controllers/spendtrack';
 
 export async function GET(req: NextRequest) {
@@ -11,6 +10,5 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const result = await createExpense(body);
-  revalidateResultPaths(result);
   return toNextResponse(result);
 }

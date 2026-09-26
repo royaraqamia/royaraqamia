@@ -66,7 +66,6 @@ export async function listConsultationPackages(): Promise<HttpResult> {
     { packages },
     {
       headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300' },
-      tags: [CONSULTATION_TAGS.packages],
     }
   );
 }
@@ -123,7 +122,7 @@ export async function getConsultationSettings(): Promise<HttpResult> {
   const settings = await loadConsultationSettings();
   // No browser/CDN cache: the admin settings form reads this same endpoint
   // and must not see stale values right after saving.
-  return jsonResult(200, { settings }, { tags: [CONSULTATION_TAGS.settings] });
+  return jsonResult(200, { settings });
 }
 
 // ------------------------------------------------------------
