@@ -1,10 +1,6 @@
 import type { Metadata } from 'next';
 import { verifySession } from '@/backend/middleware/session-guard';
-import {
-  loadBlogpressDashboard,
-  loadBlogCategories,
-  loadManyPostTags,
-} from '@/backend/loaders/blogpress';
+import { getBlogpressPosts } from '@/backend/loaders/blogpress';
 import { PostList } from '../_components/post-list';
 import { CreatePostButton } from '../_components/create-post-button';
 import { AutoCreatePost } from '../_components/auto-create-post';
@@ -29,11 +25,12 @@ export default async function DashboardPage({
 }) {
   const { category, create } = await searchParams;
   const session = await verifySession();
+  const { repository } = await getBlogpressPosts();
   const [postList, categories] = await Promise.all([
-    loadBlogpressDashboard(session.userId, category),
-    loadBlogCategories(session.userId),
+    repository.listPostsByAuthor(session.userId, category),
+    repository.listCategoriesByAuthor(session.userId),
   ]);
-  const tagsByPost = await loadManyPostTags(postList.map((p) => p.id));
+  const tagsByPost = await repository.getPostTagsByPostIds(postList.map((p) => p.id));
 
   const stats = {
     total: postList.length,

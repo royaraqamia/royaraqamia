@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
+import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import { createMediaRepository } from '@/backend/repositories/blogpress/supabase-media';
 import { getAdminSupabase } from '@/backend/config/supabase';
 import {
@@ -11,22 +12,28 @@ import { BlogpressMediaService } from '@/backend/services/blogpress/media-servic
 import { createNotificationFanout, type NotificationFanout } from '@/backend/config/notifications';
 import { env } from '@/backend/config/env';
 
-export function createBlogpressPostsService(
-  supabase: SupabaseClient<Database>
-): BlogpressPostsService {
-  return new BlogpressPostsService(
-    createPostsRepository(supabase),
-    env.adminEmails,
-    createPostPublishedNotifier()
-  );
+/**
+ * The Blogpress post module and the repository it rules over, wired to one
+ * client. Rule-carrying operations go through `posts`; pure reads and
+ * single-writes go through `repository`.
+ */
+export interface BlogpressPostsModule {
+  repository: PostsRepository;
+  posts: BlogpressPostsService;
 }
 
-export function createBlogpressAdminPostsService(): BlogpressPostsService {
-  return new BlogpressPostsService(
-    createPostsRepository(getAdminSupabase()),
-    env.adminEmails,
-    createPostPublishedNotifier()
-  );
+export function createBlogpressPostsModule(
+  supabase: SupabaseClient<Database>
+): BlogpressPostsModule {
+  const repository = createPostsRepository(supabase);
+  return {
+    repository,
+    posts: new BlogpressPostsService(repository, env.adminEmails, createPostPublishedNotifier()),
+  };
+}
+
+export function createBlogpressAdminPostsModule(): BlogpressPostsModule {
+  return createBlogpressPostsModule(getAdminSupabase());
 }
 
 /**

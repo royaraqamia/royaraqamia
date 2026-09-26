@@ -3,15 +3,15 @@ import 'server-only';
 import { unstable_cache } from 'next/cache';
 import { getPublicSupabase } from '@/backend/config/supabase';
 import {
-  createBlogpressAdminPostsService,
-  createBlogpressPostsService,
+  createBlogpressAdminPostsModule,
+  createBlogpressPostsModule,
 } from '@/backend/config/blogpress';
 import type { Post, PostAuthor, PostTag } from '@/shared/contracts/blogpress';
 import { BLOG_TAGS } from '@/backend/shared/blog-cache-tags';
 
 const BLOG_CACHE_SECONDS = 60;
 
-const pub = () => createBlogpressPostsService(getPublicSupabase());
+const pub = () => createBlogpressPostsModule(getPublicSupabase()).repository;
 
 export const loadBlogIndex = unstable_cache(
   (page: number, query: string, pageSize: number, categorySlug?: string) =>
@@ -52,15 +52,14 @@ export const loadBlogPost = unstable_cache(
     author: PostAuthor | null;
     postTags: PostTag[];
   } | null> => {
-    const supabase = getPublicSupabase();
-    const postsService = createBlogpressPostsService(supabase);
+    const repository = createBlogpressPostsModule(getPublicSupabase()).repository;
 
-    const post = await postsService.getPublishedPostBySlug(slug);
+    const post = await repository.getPublishedPostBySlug(slug);
     if (!post) return null;
 
     const [author, postTags] = await Promise.all([
-      createBlogpressAdminPostsService().getPostAuthor(post.author_id),
-      postsService.getPublishedPostTags(post.id),
+      createBlogpressAdminPostsModule().repository.getPostAuthor(post.author_id),
+      repository.getPublishedPostTags(post.id),
     ]);
 
     return { post, author, postTags };

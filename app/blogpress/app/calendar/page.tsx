@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { verifySession } from '@/backend/middleware/session-guard';
-import { loadBlogpressDashboard } from '@/backend/loaders/blogpress';
+import { getBlogpressPosts } from '@/backend/loaders/blogpress';
 import { ScheduledCalendar } from '@/frontend/ui/blogpress/scheduled-calendar';
 import { CalendarRange, ArrowRight } from 'lucide-react';
 
@@ -13,7 +13,8 @@ export const metadata: Metadata = {
 
 export default async function CalendarPage() {
   const session = await verifySession();
-  const posts = await loadBlogpressDashboard(session.userId);
+  const { repository } = await getBlogpressPosts();
+  const posts = await repository.listPostsByAuthor(session.userId);
 
   const scheduled = posts.filter((p) => p.status === 'scheduled' && p.publish_at);
   const drafts = posts.filter((p) => p.status === 'draft');

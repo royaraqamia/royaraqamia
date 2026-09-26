@@ -2,9 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockGetAuthUser = vi.fn();
 const mockPosts = {
+  publishPost: vi.fn(),
+};
+const mockRepository = {
   createPost: vi.fn(),
   updatePost: vi.fn(),
-  publishPost: vi.fn(),
   listTagsByAuthor: vi.fn(),
 };
 
@@ -21,7 +23,7 @@ vi.mock('@/backend/config/identity', async () => {
 });
 
 vi.mock('@/backend/config/blogpress', () => ({
-  createBlogpressPostsService: () => mockPosts,
+  createBlogpressPostsModule: () => ({ posts: mockPosts, repository: mockRepository }),
   createBlogpressMediaService: () => ({}),
 }));
 
@@ -34,10 +36,10 @@ describe('blogpress controller', () => {
       user: { id: 'u-1', email: 'author@b.com' },
       supabase: {},
     });
-    mockPosts.createPost.mockResolvedValue({ id: 'p-1' });
-    mockPosts.updatePost.mockResolvedValue(undefined);
+    mockRepository.createPost.mockResolvedValue({ id: 'p-1' });
+    mockRepository.updatePost.mockResolvedValue(undefined);
+    mockRepository.listTagsByAuthor.mockResolvedValue([]);
     mockPosts.publishPost.mockResolvedValue({ slug: 'hello' });
-    mockPosts.listTagsByAuthor.mockResolvedValue([]);
   });
 
   it('returns 401 when there is no session user', async () => {
@@ -46,7 +48,7 @@ describe('blogpress controller', () => {
     const result = await createPost();
 
     expect(result).toEqual(expect.objectContaining({ status: 401, body: { error: 'غير مصرح' } }));
-    expect(mockPosts.createPost).not.toHaveBeenCalled();
+    expect(mockRepository.createPost).not.toHaveBeenCalled();
   });
 
   it('passes the session identity into publish', async () => {
@@ -57,7 +59,7 @@ describe('blogpress controller', () => {
   });
 
   it('maps a post failure to 500 with the message under the "message" key', async () => {
-    mockPosts.updatePost.mockRejectedValue(new Error('فشل حفظ المقال'));
+    mockRepository.updatePost.mockRejectedValue(new Error('فشل حفظ المقال'));
 
     const result = await updatePost('p-1', { title: 'عنوان', slug: 'hello' });
 
@@ -75,11 +77,11 @@ describe('blogpress controller', () => {
         body: expect.objectContaining({ errors: expect.any(Object) }),
       })
     );
-    expect(mockPosts.updatePost).not.toHaveBeenCalled();
+    expect(mockRepository.updatePost).not.toHaveBeenCalled();
   });
 
   it('maps a listing failure to 500', async () => {
-    mockPosts.listTagsByAuthor.mockRejectedValue(new Error('db down'));
+    mockRepository.listTagsByAuthor.mockRejectedValue(new Error('db down'));
 
     const result = await listBlogTags();
 

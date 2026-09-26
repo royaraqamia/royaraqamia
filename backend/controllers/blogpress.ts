@@ -1,6 +1,6 @@
 import {
   createBlogpressMediaService,
-  createBlogpressPostsService,
+  createBlogpressPostsModule,
 } from '@/backend/config/blogpress';
 import {
   PostSchema,
@@ -30,7 +30,8 @@ function publishRevalidation(slug: string): RevalidationHint[] {
 export async function createPost(): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { id } = await createBlogpressPostsService(supabase).createPost(userId);
+      const { repository } = createBlogpressPostsModule(supabase);
+      const { id } = await repository.createPost(userId);
       return jsonResult(200, { id });
     },
     { mapError: messageError(500, 'فشل إنشاء المقال') }
@@ -46,7 +47,8 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
         return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
       }
 
-      await createBlogpressPostsService(supabase).updatePost(id, userId, validated.data);
+      const { repository } = createBlogpressPostsModule(supabase);
+      await repository.updatePost(id, userId, validated.data);
 
       return jsonResult(
         200,
@@ -67,7 +69,8 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
 export async function deletePost(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { slug } = await createBlogpressPostsService(supabase).deletePost(id, userId);
+      const { repository } = createBlogpressPostsModule(supabase);
+      const { slug } = await repository.deletePost(id, userId);
 
       return jsonResult(
         200,
@@ -82,7 +85,8 @@ export async function deletePost(id: string): Promise<HttpResult> {
 export async function duplicatePost(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { id: newId } = await createBlogpressPostsService(supabase).duplicatePost(id, userId);
+      const { posts } = createBlogpressPostsModule(supabase);
+      const { id: newId } = await posts.duplicatePost(id, userId);
       return jsonResult(200, { success: true, id: newId });
     },
     { mapError: messageError(500, 'فشل نسخ المقال') }
@@ -97,11 +101,8 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
         return jsonResult(400, { error: 'بيانات استرجاع المقال غير صالحة' });
       }
 
-      const { id } = await createBlogpressPostsService(supabase).restorePost(
-        userId,
-        validated.data,
-        userEmail
-      );
+      const { posts } = createBlogpressPostsModule(supabase);
+      const { id } = await posts.restorePost(userId, validated.data, userEmail);
 
       return jsonResult(
         200,
@@ -119,11 +120,8 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
 export async function publishPost(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, userEmail, supabase }) => {
-      const { slug } = await createBlogpressPostsService(supabase).publishPost(
-        id,
-        userId,
-        userEmail
-      );
+      const { posts } = createBlogpressPostsModule(supabase);
+      const { slug } = await posts.publishPost(id, userId, userEmail);
 
       return jsonResult(
         200,
@@ -138,7 +136,8 @@ export async function publishPost(id: string): Promise<HttpResult> {
 export async function unpublishPost(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { slug } = await createBlogpressPostsService(supabase).unpublishPost(id, userId);
+      const { repository } = createBlogpressPostsModule(supabase);
+      const { slug } = await repository.unpublishPost(id, userId);
 
       return jsonResult(
         200,
@@ -156,11 +155,8 @@ export async function schedulePost(id: string, body: Record<string, unknown>): P
       const validated = SchedulePostSchema.safeParse(body);
       if (!validated.success) return jsonResult(400, { error: 'تاريخ الجدولة غير صالح' });
 
-      const { slug } = await createBlogpressPostsService(supabase).schedulePost(
-        id,
-        userId,
-        validated.data.publish_at
-      );
+      const { repository } = createBlogpressPostsModule(supabase);
+      const { slug } = await repository.schedulePost(id, userId, validated.data.publish_at);
 
       return jsonResult(
         200,
@@ -178,7 +174,8 @@ export async function schedulePost(id: string, body: Record<string, unknown>): P
 export async function setPostFeatured(id: string, featured: boolean): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      await createBlogpressPostsService(supabase).setPostFeatured(id, userId, featured);
+      const { repository } = createBlogpressPostsModule(supabase);
+      await repository.setPostFeatured(id, userId, featured);
       return jsonResult(200, { success: true }, { revalidate: [{ path: '/blogpress' }] });
     },
     { mapError: messageError(500, 'فشل تحديث تثبيت المقال') }
@@ -194,11 +191,11 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
       }
 
       const { action, postIds, categoryId } = validated.data;
-      const service = createBlogpressPostsService(supabase);
+      const { posts, repository } = createBlogpressPostsModule(supabase);
 
       if (action === 'setCategory') {
         if (!categoryId) return jsonResult(400, { error: 'اختر تصنيفاً' });
-        await service.bulkSetPostCategories(postIds, userId, categoryId);
+        await repository.bulkSetPostCategories(postIds, userId, categoryId);
         return jsonResult(
           200,
           { success: true, affected: postIds.length },
@@ -206,7 +203,7 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         );
       }
 
-      const { affected, slugs } = await service.bulkActionPosts(postIds, userId, action, userEmail);
+      const { affected, slugs } = await posts.bulkActionPosts(postIds, userId, action, userEmail);
 
       if (action === 'publish' || action === 'unpublish') {
         return jsonResult(
@@ -241,12 +238,8 @@ export async function saveAndPublishPost(
         return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
       }
 
-      const { slug } = await createBlogpressPostsService(supabase).saveAndPublishPost(
-        id,
-        userId,
-        validated.data,
-        userEmail
-      );
+      const { posts } = createBlogpressPostsModule(supabase);
+      const { slug } = await posts.saveAndPublishPost(id, userId, validated.data, userEmail);
 
       return jsonResult(
         200,
@@ -271,7 +264,8 @@ export async function uploadMedia(formData: FormData): Promise<HttpResult> {
 export async function listBlogTags(): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const tags = await createBlogpressPostsService(supabase).listTagsByAuthor(userId);
+      const { repository } = createBlogpressPostsModule(supabase);
+      const tags = await repository.listTagsByAuthor(userId);
       return jsonResult(200, { tags });
     },
     { mapError: messageError(500, 'فشل جلب الوسوم') }
@@ -286,11 +280,8 @@ export async function createBlogTag(body: Record<string, unknown>): Promise<Http
         return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
       }
 
-      const tag = await createBlogpressPostsService(supabase).createTag(
-        userId,
-        validated.data.name,
-        validated.data.slug
-      );
+      const { repository } = createBlogpressPostsModule(supabase);
+      const tag = await repository.createTag(userId, validated.data.name, validated.data.slug);
 
       return jsonResult(200, { tag });
     },
@@ -301,7 +292,8 @@ export async function createBlogTag(body: Record<string, unknown>): Promise<Http
 export async function deleteBlogTag(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      await createBlogpressPostsService(supabase).deleteTag(id, userId);
+      const { repository } = createBlogpressPostsModule(supabase);
+      await repository.deleteTag(id, userId);
       return jsonResult(200, { success: true });
     },
     { mapError: messageError(500, 'فشل حذف الوسم') }
@@ -319,7 +311,8 @@ export async function setBlogPostTags(
         return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
       }
 
-      await createBlogpressPostsService(supabase).setPostTags(id, userId, validated.data.tagIds);
+      const { repository } = createBlogpressPostsModule(supabase);
+      await repository.setPostTags(id, userId, validated.data.tagIds);
 
       return jsonResult(
         200,
