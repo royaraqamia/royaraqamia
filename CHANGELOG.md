@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.32.1] - 2026-09-27
+
+### Fixed
+- correct RTL calendar nav caption contrast and chevron direction
+
 ## [1.32.0] - 2026-09-27
 
 ### Changed
