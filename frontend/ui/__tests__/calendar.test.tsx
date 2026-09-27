@@ -40,6 +40,10 @@ describe('Calendar', () => {
     const leftChevron = '16 18.112'; // orientation="left"
     expect(buttons[0]?.querySelector('polygon')?.getAttribute('points')).toContain(rightChevron);
     expect(buttons[1]?.querySelector('polygon')?.getAttribute('points')).toContain(leftChevron);
+
+    /* The vendored react-day-picker stylesheet is not imported, so without
+       `fill-current` the polygon falls back to SVG's default black fill. */
+    expect(buttons[0]?.querySelector('svg')?.getAttribute('class')).toContain('fill-current');
   });
 
   it('selects a day through onSelect', () => {

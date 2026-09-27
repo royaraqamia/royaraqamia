@@ -78,7 +78,11 @@ const calendarClassNames: Partial<ClassNames> = {
   nav: 'rdp-nav pointer-events-none absolute inset-x-0 top-0 z-10 flex h-9 items-center justify-between px-0.5',
   button_previous: navButtonClassNames,
   button_next: navButtonClassNames,
-  chevron: 'size-4 transition-transform duration-200 ease-out group-hover:scale-110',
+  /* `fill-current` is required: react-day-picker's own stylesheet (never
+     imported here) sets `.rdp-chevron { fill: var(--rdp-accent-color) }`, and our
+     override replaces that class, so the `<polygon>` falls back to SVG's default
+     black fill and ignores the button's text color. */
+  chevron: 'size-4 fill-current transition-transform duration-200 ease-out group-hover:scale-110',
   month_caption: 'relative flex h-9 items-center justify-center px-8',
   caption_label: 'select-none text-sm font-bold tracking-tight text-foreground',
   month_grid: 'w-full border-collapse',
