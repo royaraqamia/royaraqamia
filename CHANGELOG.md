@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.32.0] - 2026-09-27
+
+### Changed
+- remove pre-push hook
+- hand ResizeObserver the resize handler directly
+- Potential fix for code scanning alert no. 40: Superfluous trailing arguments
+- Potential fix for code scanning alert no. 41: Superfluous trailing arguments
+- Potential fix for code scanning alert no. 40: Superfluous trailing arguments
+- remove the focus ring from form inputs
+
+### Added
+- cover every country and default the phone picker to the visitor's location
+
+### Fixed
+- keep the global nav override off the calendar nav
+
 ## [1.31.0] - 2026-09-26
 
 ### Changed
