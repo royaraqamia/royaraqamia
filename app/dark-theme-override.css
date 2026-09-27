@@ -128,7 +128,9 @@ textarea::placeholder {
 section {
   background-color: transparent;
 }
-nav:not([data-app-navbar]):not([data-mobile-menu]):not([data-flat-nav]) {
+/* Excludes react-day-picker's `<nav>` (`.rdp-nav`): it is positioned over the
+   month caption, so painting it opaque hid the caption label. */
+nav:not([data-app-navbar]):not([data-mobile-menu]):not([data-flat-nav]):not(.rdp-nav) {
   background-color: hsl(var(--background) / 0.95);
 }
 footer:not([data-mobile-menu]) {

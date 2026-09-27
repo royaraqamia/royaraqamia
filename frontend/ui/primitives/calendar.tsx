@@ -4,8 +4,8 @@ import { ar } from 'react-day-picker/locale';
 import { cn } from '@/frontend/shared/cn';
 
 const navButtonClassNames = cn(
-  'pointer-events-auto group inline-flex size-8 cursor-pointer items-center justify-center rounded-lg border border-border/60 bg-background/80 text-muted-foreground/80 shadow-xs',
-  'transition-safe duration-200 ease-out hover:scale-105 hover:border-border hover:bg-accent hover:text-accent-foreground hover:shadow-md active:scale-95',
+  'pointer-events-auto group inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-foreground/70',
+  'transition-safe duration-200 ease-out hover:bg-accent hover:text-foreground active:scale-95',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
   'disabled:pointer-events-none disabled:opacity-30'
 );
