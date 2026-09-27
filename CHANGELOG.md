@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.32.2] - 2026-09-27
+
+### Changed
+- drop the reference code from request and hire confirmations
+
+### Fixed
+- give calendar nav chevrons an explicit fill
+
 ## [1.32.1] - 2026-09-27
 
 ### Fixed
