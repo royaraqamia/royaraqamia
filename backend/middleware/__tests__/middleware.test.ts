@@ -12,6 +12,7 @@ const mockNextUrl: {
 
 const mockRequest: Record<string, unknown> = {
   url: 'https://royaraqamia.com/',
+  headers: new Headers(),
   cookies: {
     getAll: vi.fn().mockReturnValue([]),
     set: vi.fn(),
@@ -49,10 +50,12 @@ function convertRedirectUrl(
   return href;
 }
 
+const { cookieSetMock } = vi.hoisted(() => ({ cookieSetMock: vi.fn() }));
+
 vi.mock('next/server', () => ({
   NextResponse: {
     next: vi.fn(() => ({
-      cookies: { set: vi.fn() },
+      cookies: { set: cookieSetMock },
     })),
     redirect: vi.fn((url: string | URL | { pathname: string; searchParams: URLSearchParams }) => {
       const href = convertRedirectUrl(url);
@@ -97,6 +100,7 @@ beforeEach(() => {
     searchParams: new URLSearchParams(),
   });
   mockRequest.url = 'https://royaraqamia.com/';
+  mockRequest.headers = new Headers();
   getCookieMock().mockReturnValue([]);
   mockExchangeCodeForSession.mockReset();
   mockGetSession.mockReset();
@@ -113,6 +117,26 @@ describe('proxy', () => {
 
     expect(mockGetSession).not.toHaveBeenCalled();
     expect(mockGetUser).not.toHaveBeenCalled();
+  });
+
+  it('persists the IP-derived country in a cookie for the contact forms', async () => {
+    mockRequest.headers = new Headers({ 'x-vercel-ip-country': 'DE' });
+
+    const { proxy } = await import('@/proxy');
+    await proxy(mockRequest as never);
+
+    expect(cookieSetMock).toHaveBeenCalledWith(
+      'rr-country',
+      'DE',
+      expect.objectContaining({ path: '/' })
+    );
+  });
+
+  it('does not set the country cookie when no geo data is available', async () => {
+    const { proxy } = await import('@/proxy');
+    await proxy(mockRequest as never);
+
+    expect(cookieSetMock).not.toHaveBeenCalled();
   });
 
   it('calls getSession to refresh tokens when a session cookie is present', async () => {

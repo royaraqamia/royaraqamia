@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 
 import { CountryPhoneInput } from '../country-phone-input';
+import { getCountryByIso } from '../country-dial-codes';
 
 function mockMatchMedia(matches: boolean) {
   window.matchMedia = vi.fn().mockImplementation((query: string) => ({
@@ -38,10 +39,14 @@ function paste(input: HTMLInputElement, text: string) {
 
 beforeEach(() => {
   mockMatchMedia(false);
+  // Pin the location default so these assertions don't depend on the host's
+  // timezone/language.
+  document.cookie = 'rr-country=SY; path=/';
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
+  document.cookie = 'rr-country=; max-age=0; path=/';
 });
 
 describe('CountryPhoneInput', () => {
@@ -49,6 +54,18 @@ describe('CountryPhoneInput', () => {
     render(<Harness />);
     expect(screen.getByText('+963')).toBeInTheDocument();
     expect(getInput().value).toBe('');
+  });
+
+  it('defaults the country to the geo cookie', () => {
+    document.cookie = 'rr-country=DE; path=/';
+    render(<Harness />);
+    expect(screen.getByText('+49')).toBeInTheDocument();
+  });
+
+  it('lets an explicit defaultCountry prop win over the geo cookie', () => {
+    document.cookie = 'rr-country=DE; path=/';
+    render(<Harness defaultCountry={getCountryByIso('FR') ?? undefined} />);
+    expect(screen.getByText('+33')).toBeInTheDocument();
   });
 
   it('composes a canonical international value on change', () => {

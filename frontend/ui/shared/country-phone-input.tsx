@@ -22,7 +22,8 @@ import {
   SheetTrigger,
 } from '@/frontend/ui/primitives/sheet';
 
-import { COUNTRY_DIAL_CODES, DEFAULT_COUNTRY, type CountryDialCode } from './country-dial-codes';
+import { COUNTRY_DIAL_CODES, type CountryDialCode } from './country-dial-codes';
+import { useDefaultCountry } from './default-country';
 import { BELOW_SM_MEDIA_QUERY } from './breakpoints';
 import {
   composePhoneNumber,
@@ -40,6 +41,8 @@ interface CountryPhoneInputProps {
   placeholder?: string;
   invalid?: boolean;
   disabled?: boolean;
+  /** Overrides the location-based default when the stored value has no country. */
+  defaultCountry?: CountryDialCode;
   'aria-describedby'?: string;
 }
 
@@ -126,6 +129,7 @@ export function CountryPhoneInput({
   placeholder,
   invalid,
   disabled,
+  defaultCountry,
   'aria-describedby': ariaDescribedBy,
 }: CountryPhoneInputProps) {
   const [open, setOpen] = React.useState(false);
@@ -140,7 +144,8 @@ export function CountryPhoneInput({
   const inputRef = React.useRef<HTMLInputElement>(null);
 
   const parsed = React.useMemo(() => splitStoredPhone(value), [value]);
-  const country = parsed.country ?? DEFAULT_COUNTRY;
+  const locationCountry = useDefaultCountry(defaultCountry?.iso);
+  const country = parsed.country ?? locationCountry;
   const national = draftNational ?? parsed.national;
 
   const emit = (nextCountry: CountryDialCode, nextNational: string) => {

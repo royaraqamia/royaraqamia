@@ -42,9 +42,15 @@ describe('toNationalFromPaste', () => {
     expect(toNationalFromPaste('+963912345678')).toBe('912345678');
   });
 
-  it('keeps digits untouched when the international prefix is not listed', () => {
-    // Unlisted country: nothing is stripped; the user picks the country manually.
-    expect(toNationalFromPaste('+995599123456')).toBe('995599123456');
+  it('strips a pasted international prefix for a non-Arab country', () => {
+    // Every ISO 3166-1 country is listed, so a Georgian (+995) paste resolves.
+    expect(toNationalFromPaste('+995599123456')).toBe('599123456');
+  });
+
+  it('keeps digits untouched when the international prefix is unassigned', () => {
+    // +999 is not an assigned calling code: nothing is stripped; the user picks
+    // the country manually.
+    expect(toNationalFromPaste('+999599123456')).toBe('999599123456');
   });
 
   it('sanitizes domestic pastes without a plus sign', () => {
@@ -94,10 +100,23 @@ describe('splitStoredPhone', () => {
     expect(splitStoredPhone('')).toEqual({ country: null, national: '' });
   });
 
-  it('falls back to Syria in data with unique dial codes among entries', () => {
+  it('falls back to Syria and lists every country exactly once', () => {
     expect(DEFAULT_COUNTRY.dial).toBe('963');
-    const dials = COUNTRY_DIAL_CODES.map((c) => c.dial);
-    expect(new Set(dials).size).toBe(dials.length);
+    const isos = COUNTRY_DIAL_CODES.map((c) => c.iso);
+    expect(new Set(isos).size).toBe(isos.length);
+  });
+
+  it('covers the full ISO 3166-1 set so any country can be dialed', () => {
+    expect(COUNTRY_DIAL_CODES.length).toBeGreaterThanOrEqual(240);
+    const isos = new Set(COUNTRY_DIAL_CODES.map((c) => c.iso));
+    for (const iso of ['SY', 'US', 'CA', 'GB', 'DE', 'IN', 'CN', 'BR', 'NG', 'GE', 'XK', 'VA']) {
+      expect(isos.has(iso)).toBe(true);
+    }
+    for (const country of COUNTRY_DIAL_CODES) {
+      expect(country.dial).toMatch(/^\d{1,4}$/);
+      expect(country.nameAr.length).toBeGreaterThan(0);
+      expect(country.flag).toHaveLength(4);
+    }
   });
 
   it('round-trips through compose', () => {
