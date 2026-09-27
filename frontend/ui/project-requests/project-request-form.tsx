@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Check, CheckCircle2, Copy } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import type { z } from 'zod';
 
 import { Button } from '@/frontend/ui/primitives/button';
@@ -96,7 +96,6 @@ function SelectField({
 export function ProjectRequestForm() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [referenceCode, setReferenceCode] = useState<string | null>(null);
-  const [isCopied, setIsCopied] = useState(false);
 
   const {
     control,
@@ -137,18 +136,6 @@ export function ProjectRequestForm() {
     setSubmitError(response.error ?? 'حدث خطأ غير متوقَّع. الرَّجاء المحاولة مرَّة أخرى.');
   });
 
-  const copyReferenceCode = async () => {
-    if (!referenceCode) return;
-    try {
-      await navigator.clipboard.writeText(referenceCode);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
-    } catch {
-      // The clipboard can be unavailable (insecure origin, denied permission).
-      // The code stays on screen, so the client can still select it by hand.
-    }
-  };
-
   if (referenceCode) {
     return (
       <div className="p-6 sm:p-10 text-center">
@@ -158,31 +145,8 @@ export function ProjectRequestForm() {
           تمَّ استلام طلبك بنجاح!
         </h2>
         <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
-          سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة. احتفظ برقم الطَّلب هذا لتتابع به مشروعك.
+          سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة.
         </p>
-
-        <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
-          <output
-            aria-label="رقم الطلب"
-            dir="ltr"
-            className="rounded-2xl border border-border/60 bg-muted/30 px-5 py-3.5 text-lg sm:text-xl font-mono font-bold tracking-wider text-foreground"
-          >
-            {referenceCode}
-          </output>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={copyReferenceCode}
-            className="h-13 rounded-full px-6 font-bold gap-2 cursor-pointer"
-          >
-            {isCopied ? (
-              <Check className="size-4 shrink-0" aria-hidden="true" />
-            ) : (
-              <Copy className="size-4 shrink-0" aria-hidden="true" />
-            )}
-            <span>{isCopied ? 'تم النَّسخ' : 'انسخ رقم الطَّلب'}</span>
-          </Button>
-        </div>
       </div>
     );
   }
