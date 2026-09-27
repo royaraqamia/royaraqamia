@@ -90,10 +90,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
             // Interactive Hover & Transition States
             'hover:border-border hover:bg-background transition-safe duration-200 ease-out',
             // Custom Focus Ring System (Vercel/Linear Aesthetic)
-            'focus-visible:outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20 focus-visible:shadow-md',
+            'focus-visible:outline-none focus-visible:shadow-md',
             // Contextual Padding & Error State Adjustments (Prevents text overlap)
-            error &&
-              'pr-11 border-destructive/70 focus-visible:border-destructive focus-visible:ring-destructive/20 bg-destructive/5',
+            error && 'pr-11 border-destructive/70 bg-destructive/5',
             showCount && maxLength && 'pb-10',
             // Disabled States
             'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/40 disabled:hover:border-border/80 disabled:shadow-none',

@@ -33,17 +33,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             'shadow-2xs',
             // Interactive Hover & Focus Halo Effects
             'hover:border-ring/40 hover:bg-background hover:shadow-xs',
-            'focus-visible:outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/20 focus-visible:bg-background focus-visible:shadow-xs',
+            'focus-visible:outline-none focus-visible:bg-background focus-visible:shadow-xs',
             // Disabled State Precision
             'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/30 disabled:border-border/50 disabled:shadow-none hover:disabled:border-border/50 hover:disabled:bg-muted/30',
             // File Upload Styling
             'file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground file:me-3 file:cursor-pointer',
             // High-Contrast Error State Overrides
-            error && [
-              'border-destructive/70 bg-destructive/3',
-              'hover:border-destructive/90',
-              'focus-visible:border-destructive focus-visible:ring-destructive/20',
-            ],
+            error && ['border-destructive/70 bg-destructive/3', 'hover:border-destructive/90'],
             // Bi-directional & Logical Text Alignment
             'text-start',
             className

@@ -35,7 +35,7 @@ function SelectTrigger({
       className={cn(
         'group flex w-full items-center justify-between border border-input/80 bg-background/80 px-3.5 py-2 text-sm font-medium text-foreground shadow-xs transition-[background-color,border-color,box-shadow,color,transform] duration-200 ease-out',
         'hover:border-ring/40 hover:bg-background hover:shadow-sm',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-ring',
+        'focus-visible:outline-none',
         'active:scale-[0.995]',
         'disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-muted/40 disabled:hover:border-input/80 disabled:hover:shadow-xs',
         'data-[size=sm]:h-9 data-[size=sm]:px-3 data-[size=sm]:text-xs data-[size=sm]:rounded-lg data-[size=sm]:gap-1.5',

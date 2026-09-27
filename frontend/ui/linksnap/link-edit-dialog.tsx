@@ -468,12 +468,12 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
 
               <div
                 className={cn(
-                  'flex items-center w-full overflow-hidden bg-background dark:bg-neutral-950 border rounded-xl transition-safe duration-200 shadow-xs focus-within:ring-2',
+                  'flex items-center w-full overflow-hidden bg-background dark:bg-neutral-950 border rounded-xl transition-safe duration-200 shadow-xs',
                   slugStatus === 'taken'
-                    ? 'border-destructive/60 focus-within:ring-destructive/20'
+                    ? 'border-destructive/60'
                     : slugStatus === 'available' && editingCodeValue !== code
-                      ? 'border-emerald-500/60 focus-within:ring-emerald-500/20'
-                      : 'border-border/70 dark:border-neutral-800 focus-within:ring-primary/20 focus-within:border-primary'
+                      ? 'border-emerald-500/60'
+                      : 'border-border/70 dark:border-neutral-800'
                 )}
                 dir="ltr"
               >

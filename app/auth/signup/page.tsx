@@ -130,7 +130,7 @@ function SignupForm() {
                 autoComplete="new-password"
                 onChange={setPassword}
                 aria-describedby={message ? 'signup-error' : undefined}
-                className="w-full h-11 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-safe duration-200 shadow-xs"
+                className="w-full h-11 rounded-xl border border-border/60 bg-background/50 hover:border-border hover:bg-background/80 transition-safe duration-200 shadow-xs"
               />
               <PasswordStrength password={password} />
             </div>

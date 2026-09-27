@@ -218,9 +218,9 @@ export function CountryPhoneInput({
         'flex h-11 w-full items-stretch overflow-hidden rounded-xl border bg-background/80 shadow-2xs',
         'transition-safe duration-200 ease-out',
         'hover:border-ring/40 hover:bg-background hover:shadow-xs',
-        'focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/20 focus-within:bg-background focus-within:shadow-xs',
+        'focus-within:bg-background focus-within:shadow-xs',
         invalid
-          ? 'border-destructive/70 bg-destructive/3 focus-within:border-destructive focus-within:ring-destructive/20'
+          ? 'border-destructive/70 bg-destructive/3 focus-within:border-destructive'
           : 'border-input/80',
         disabled && 'cursor-not-allowed opacity-60'
       )}

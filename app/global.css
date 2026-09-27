@@ -190,10 +190,7 @@
 
   /* Enhanced Focus states for better accessibility */
   a:focus-visible,
-  button:focus-visible,
-  input:focus-visible,
-  textarea:focus-visible,
-  select:focus-visible {
+  button:focus-visible {
     outline: none;
     box-shadow:
       0 0 0 2px hsl(var(--background)),
@@ -203,18 +200,15 @@
     transition: box-shadow 0.15s ease-out;
   }
 
-  /* Input specific focus improvements with multi-layered rings */
+  /* Form controls intentionally render no focus ring */
   input:focus,
+  input:focus-visible,
   textarea:focus,
-  select:focus {
-    border-color: hsl(var(--ring));
-    box-shadow:
-      0 0 0 2px hsl(var(--background)),
-      0 0 0 4px hsl(var(--ring)),
-      0 0 0 6px hsl(var(--ring) / 0.2);
-    transition:
-      box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-      border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
   }
 
   /* Enhanced input hover states */

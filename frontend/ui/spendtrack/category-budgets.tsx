@@ -81,7 +81,7 @@ export function CategoryBudgets({
           return (
             <div
               key={cat.categoryId}
-              className="group/row relative flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 p-2 shadow-2xs transition-safe duration-200 hover:border-border/80 hover:bg-background/90 focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20 sm:gap-3 sm:p-2.5"
+              className="group/row relative flex items-center justify-between gap-2 rounded-xl border border-border/40 bg-background/50 p-2 shadow-2xs transition-safe duration-200 hover:border-border/80 hover:bg-background/90 sm:gap-3 sm:p-2.5"
             >
               {/* Category Info */}
               <div className="flex min-w-0 flex-1 items-center gap-2.5">

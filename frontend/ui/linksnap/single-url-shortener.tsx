@@ -190,7 +190,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 رمز مُخصَّص (اختياري)
               </label>
               <div
-                className="flex items-center w-full overflow-hidden bg-muted/50 border border-border rounded-full focus-within:ring-2 focus-within:ring-primary/20 transition-safe"
+                className="flex items-center w-full overflow-hidden bg-muted/50 border border-border rounded-full transition-safe"
                 dir="ltr"
               >
                 <span className="shrink-0 pr-3 text-sm text-muted-foreground font-bold select-none whitespace-nowrap py-3.5 leading-snug">
