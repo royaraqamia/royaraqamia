@@ -26,6 +26,22 @@ describe('Calendar', () => {
     expect(container.querySelector('[dir="rtl"]')).toBeInTheDocument();
   });
 
+  it('points the nav chevrons outward for RTL', () => {
+    const { container } = render(<Calendar mode="single" month={MARCH_2024} />);
+    const buttons = container.querySelectorAll('nav button');
+    expect(buttons).toHaveLength(2);
+
+    /* DOM order is [previous, next]; `justify-between` puts previous at the RTL
+       start (right edge). react-day-picker's Nav hardcodes the chevron
+       orientation without consulting `dir`, so without our override previous
+       would render a left chevron. Assert on the polygon point sets, which are
+       the only locale-independent signal for orientation. */
+    const rightChevron = '8 18.112'; // orientation="right"
+    const leftChevron = '16 18.112'; // orientation="left"
+    expect(buttons[0]?.querySelector('polygon')?.getAttribute('points')).toContain(rightChevron);
+    expect(buttons[1]?.querySelector('polygon')?.getAttribute('points')).toContain(leftChevron);
+  });
+
   it('selects a day through onSelect', () => {
     const onSelect = vi.fn();
     const { container } = render(

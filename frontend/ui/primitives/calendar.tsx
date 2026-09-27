@@ -1,10 +1,10 @@
-import type { ClassNames, DayButtonProps, Modifiers } from 'react-day-picker';
-import { DayButton as RdpDayButton, DayPicker } from 'react-day-picker';
+import type { ChevronProps, ClassNames, DayButtonProps, Modifiers } from 'react-day-picker';
+import { Chevron as RdpChevron, DayButton as RdpDayButton, DayPicker } from 'react-day-picker';
 import { ar } from 'react-day-picker/locale';
 import { cn } from '@/frontend/shared/cn';
 
 const navButtonClassNames = cn(
-  'pointer-events-auto group inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-foreground/70',
+  'pointer-events-auto group inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-foreground/85',
   'transition-safe duration-200 ease-out hover:bg-accent hover:text-foreground active:scale-95',
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background',
   'disabled:pointer-events-none disabled:opacity-30'
@@ -51,6 +51,17 @@ function CalendarDayButton({ modifiers, className, ...props }: DayButtonProps) {
   );
 }
 
+/* react-day-picker's standalone `Nav` hardcodes the chevron orientation
+   ("left" for previous, "right" for next) without consulting `dir`, so both
+   glyphs render mirrored under RTL. The buttons are already laid out correctly
+   by `justify-between` (previous at the right edge, next at the left), so only
+   the glyph needs flipping: previous must point right, next must point left. */
+function CalendarChevron({ orientation, ...props }: ChevronProps) {
+  const mirrored =
+    orientation === 'left' ? 'right' : orientation === 'right' ? 'left' : orientation;
+  return <RdpChevron orientation={mirrored} {...props} />;
+}
+
 const calendarClassNames: Partial<ClassNames> = {
   root: cn(
     'relative w-fit select-none rounded-2xl border border-border/80 bg-card/95 p-4 text-card-foreground',
@@ -58,7 +69,13 @@ const calendarClassNames: Partial<ClassNames> = {
   ),
   months: 'relative flex flex-col gap-5 sm:flex-row sm:gap-7',
   month: 'relative w-full space-y-4',
-  nav: 'pointer-events-none absolute inset-x-0 top-0 z-10 flex h-9 items-center justify-between px-0.5',
+  /* Overriding `classNames` replaces react-day-picker's defaults rather than
+     merging them, so the nav loses its built-in `rdp-nav` hook. That hook is
+     what `app/dark-theme-override.css` excludes from its global
+     `nav { background-color: hsl(var(--background) / 0.95) }` rule; without it
+     the nav paints an opaque slab over the month caption. Keep `rdp-nav`
+     explicitly. */
+  nav: 'rdp-nav pointer-events-none absolute inset-x-0 top-0 z-10 flex h-9 items-center justify-between px-0.5',
   button_previous: navButtonClassNames,
   button_next: navButtonClassNames,
   chevron: 'size-4 transition-transform duration-200 ease-out group-hover:scale-110',
@@ -66,8 +83,11 @@ const calendarClassNames: Partial<ClassNames> = {
   caption_label: 'select-none text-sm font-bold tracking-tight text-foreground',
   month_grid: 'w-full border-collapse',
   weekdays: 'mb-1 flex items-center justify-between border-b border-border/40 pb-1.5',
+  /* 12px bold uppercase counts as small text (AA needs 4.5:1). At `--muted-foreground`
+     full strength this is 7.7:1 on `--card`; the old /70 landed at 4.46:1, just
+     under. /80 sits at 5.4:1 — comfortably AA while still reading as subdued. */
   weekday:
-    'flex size-9 select-none items-center justify-center text-[0.75rem] font-bold tracking-wider text-muted-foreground/70 uppercase',
+    'flex size-9 select-none items-center justify-center text-[0.75rem] font-bold tracking-wider text-muted-foreground/80 uppercase',
   weeks: 'space-y-1',
   week: 'flex w-full items-center justify-between',
   day: 'relative size-9 p-0 text-center text-sm focus-within:z-20',
@@ -86,7 +106,7 @@ export function Calendar({ className, classNames, components, ...props }: Calend
       showOutsideDays={props.showOutsideDays ?? props.mode === 'range'}
       className={cn('w-fit', className)}
       classNames={{ ...calendarClassNames, ...classNames }}
-      components={{ DayButton: CalendarDayButton, ...components }}
+      components={{ DayButton: CalendarDayButton, Chevron: CalendarChevron, ...components }}
       {...props}
     />
   );
