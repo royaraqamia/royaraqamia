@@ -8,8 +8,8 @@ import { SlotStep } from '@/frontend/ui/consultation/steps/slot-step';
 
 const BOOKING_STEP_META: WizardStepMeta[] = [
   { key: 'package', label: 'الباقة' },
-  { key: 'details', label: 'بياناتك' },
   { key: 'slots', label: 'الموعد' },
+  { key: 'details', label: 'بياناتك' },
 ];
 
 interface BookingWizardProps {

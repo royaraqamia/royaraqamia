@@ -13,7 +13,7 @@ import {
   submitBooking,
 } from '@/frontend/api/consultation';
 
-export const BOOKING_STEPS = ['package', 'details', 'slots'] as const;
+export const BOOKING_STEPS = ['package', 'slots', 'details'] as const;
 export type BookingStep = (typeof BOOKING_STEPS)[number];
 
 export interface BookingContactDraft {
@@ -185,10 +185,10 @@ export function useBookingFlow(
 
   const next = useCallback(() => {
     if (!canProceed) return;
-    if (BOOKING_STEPS[stepIndex] === 'details') {
+    if (BOOKING_STEPS[stepIndex] === 'package') {
       void loadSlots();
     }
-    if (BOOKING_STEPS[stepIndex] === 'slots') {
+    if (BOOKING_STEPS[stepIndex] === 'details') {
       // Keep selection ordered chronologically for the summary.
       setSelectedSlotIds((ids) =>
         slots
