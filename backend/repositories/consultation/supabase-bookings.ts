@@ -110,12 +110,12 @@ export function createSupabaseConsultationBookingsRepository(
 
     async create(command: CreateBookingCommand): Promise<string> {
       const { data, error } = await supabase.rpc('create_consultation_booking', {
-        p_user_id: command.userId,
+        p_user_id: command.userId ?? undefined,
         p_package_id: command.package_id,
         p_slot_ids: command.slot_ids,
         p_full_name: command.full_name,
         p_phone_whatsapp: command.phone_whatsapp,
-        p_email: command.email,
+        p_email: command.email ?? undefined,
         p_topic_description: command.topic_description,
         p_reference_code: command.referenceCode,
       });

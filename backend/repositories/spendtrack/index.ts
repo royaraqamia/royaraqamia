@@ -57,7 +57,7 @@ export function createSpendtrackRepository(
         p_user_id: userId,
         p_start: start,
         p_end: end,
-        p_categories: catFilter,
+        p_categories: catFilter ?? undefined,
       });
       return data;
     },
@@ -72,7 +72,7 @@ export function createSpendtrackRepository(
         p_user_id: userId,
         p_start: start,
         p_end: end,
-        p_categories: catFilter,
+        p_categories: catFilter ?? undefined,
       });
       if (!data) return null;
       return data.map(
@@ -95,7 +95,7 @@ export function createSpendtrackRepository(
         p_user_id: userId,
         p_start: start,
         p_end: end,
-        p_categories: catFilter,
+        p_categories: catFilter ?? undefined,
       });
       return data;
     },

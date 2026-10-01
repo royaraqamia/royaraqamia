@@ -1264,14 +1264,14 @@ export type Database = {
     Functions: {
       create_consultation_booking: {
         Args: {
-          p_email: string;
-          p_full_name: string;
-          p_package_id: string;
-          p_phone_whatsapp: string;
-          p_reference_code: string;
-          p_slot_ids: string[];
-          p_topic_description: string;
-          p_user_id: string;
+          p_email?: string;
+          p_full_name?: string;
+          p_package_id?: string;
+          p_phone_whatsapp?: string;
+          p_reference_code?: string;
+          p_slot_ids?: string[];
+          p_topic_description?: string;
+          p_user_id?: string;
         };
         Returns: string;
       };
@@ -1282,7 +1282,7 @@ export type Database = {
       generate_certificate_code: { Args: never; Returns: string };
       get_category_breakdown: {
         Args: {
-          p_categories: string[];
+          p_categories?: string[];
           p_end: string;
           p_start: string;
           p_user_id: string;
@@ -1296,7 +1296,7 @@ export type Database = {
       };
       get_daily_totals: {
         Args: {
-          p_categories: string[];
+          p_categories?: string[];
           p_end: string;
           p_start: string;
           p_user_id: string;
@@ -1308,7 +1308,7 @@ export type Database = {
       };
       get_total_expenses: {
         Args: {
-          p_categories: string[];
+          p_categories?: string[];
           p_end: string;
           p_start: string;
           p_user_id: string;
