@@ -25,9 +25,9 @@ const SECTIONS = [
     icon: ShieldCheck,
   },
   {
-    href: '/admin/training/applications',
-    label: 'طلبات التَّسجيل على التَّدريب',
-    description: 'الطَّلبات الواردة من صفحة التَّقديم على الدَّورة',
+    href: '/admin/training/cohorts',
+    label: 'إدارة التَّدريب',
+    description: 'الدُّفعات وطلبات الالتحاق بدورة التَّدريب',
     icon: GraduationCap,
   },
   {
