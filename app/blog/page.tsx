@@ -8,7 +8,7 @@ import { BLOG_PAGE_SIZE } from './_components/constants';
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'المدوَّنة',
+  title: 'المجتمع',
   description: 'أفكار، دروس، وقصص في العالم الرَّقمي',
 };
 

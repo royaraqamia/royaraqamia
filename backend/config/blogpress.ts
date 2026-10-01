@@ -49,7 +49,7 @@ export function createPostPublishedNotifier(
       {
         type: 'post_published',
         title: 'تم نشر مقال جديد',
-        body: 'تم نشر مقال جديد على المدونة.',
+        body: 'تم نشر مقال جديد على المجتمع.',
         metadata: { postId, slug },
       },
       { excludeUserIds: [authorId] }

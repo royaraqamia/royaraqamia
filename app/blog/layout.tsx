@@ -3,7 +3,7 @@ import { Navbar } from '@/frontend/ui/Navbar';
 
 export const metadata: Metadata = {
   title: {
-    default: 'المدوَّنة',
+    default: 'المجتمع',
     template: '%s | رؤيَة رقَميَّة',
   },
   description: 'اقرأ أحدث المقالات من رؤيَة رقَميَّة.',

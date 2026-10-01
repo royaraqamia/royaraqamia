@@ -39,7 +39,7 @@ interface PaletteItem {
 
 const GENERAL_ITEMS: PaletteItem[] = [
   { id: 'home', label: 'الرَّئيسيَّة', group: 'general', href: '/', icon: House },
-  { id: 'blog', label: 'المدوَّنة', group: 'general', href: '/blog', icon: BookOpen },
+  { id: 'blog', label: 'المجتمع', group: 'general', href: '/blog', icon: BookOpen },
 ];
 
 const QUICK_ACTIONS: PaletteItem[] = [
@@ -143,7 +143,7 @@ export const CommandPalette = memo(function CommandPalette({
               <Search className="size-8 stroke-[1.5] text-muted-foreground/30" />
               <p className="font-bold text-foreground/80">لم يتمَّ العثور على نتائج</p>
               <p className="text-xs text-muted-foreground/60">
-                جرِّب البحث عن كلمات أخرى مثل "مدوَّنة" أو "شهادة"
+                جرِّب البحث عن كلمات أخرى مثل "مجتمع" أو "شهادة"
               </p>
             </div>
           </CommandEmpty>

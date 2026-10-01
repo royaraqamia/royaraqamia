@@ -193,7 +193,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                       href="/blog"
                       className="hover:text-foreground font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded-sm"
                     >
-                      المدوَّنة
+                      المجتمع
                     </Link>
                   </li>
                 </>
@@ -341,7 +341,7 @@ export default async function BlogPostPage(props: { params: Promise<{ slug: stri
                   className="w-full sm:w-auto rounded-full px-5 py-2.5 transition-safe duration-300 hover:scale-[1.02] active:scale-[0.98] border-border/60 hover:bg-muted/80 shadow-2xs font-medium"
                 >
                   <ArrowRight className="ms-2 size-4 text-primary" />
-                  العودة إلى المدوَّنة
+                  العودة إلى المجتمع
                 </Button>
               </Link>
               <SocialShare url={postUrl} title={p.title} />

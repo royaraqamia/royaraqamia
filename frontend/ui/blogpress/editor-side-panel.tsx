@@ -497,7 +497,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
                       إدارة الوسوم
                     </h3>
                     <p className="text-[11px] text-muted-foreground/70">
-                      صنِّف المقال لتحسين الوصول والتصفُّح في المدوَّنة
+                      صنِّف المقال لتحسين الوصول والتصفُّح في المجتمع
                     </p>
                   </div>
                 </div>

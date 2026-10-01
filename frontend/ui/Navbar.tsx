@@ -149,7 +149,7 @@ export function Navbar() {
     },
     {
       href: '/blog',
-      label: 'المدوَّنة',
+      label: 'المجتمع',
       icon: BookOpen,
       isRoute: true,
       visible: true,

@@ -106,7 +106,7 @@ describe('notification producer adapters', () => {
     expect(fanout.mock.calls[0]?.[0]).toEqual({
       type: 'post_published',
       title: 'تم نشر مقال جديد',
-      body: 'تم نشر مقال جديد على المدونة.',
+      body: 'تم نشر مقال جديد على المجتمع.',
       metadata: { postId: 'post-1', slug: 'hello' },
     });
     expect(fanout.mock.calls[0]?.[1]).toEqual({ excludeUserIds: ['author-1'] });
@@ -270,7 +270,7 @@ describe('post-published burst', () => {
       expect(call[0]).toMatchObject({
         type: 'post_published',
         title: 'تم نشر مقال جديد',
-        body: 'تم نشر مقال جديد على المدونة.',
+        body: 'تم نشر مقال جديد على المجتمع.',
       });
     }
     for (const call of sendToUsers.mock.calls) {
@@ -279,7 +279,7 @@ describe('post-published burst', () => {
       expect(call[1]).toMatchObject({
         type: 'post_published',
         title: 'تم نشر مقال جديد',
-        body: 'تم نشر مقال جديد على المدونة.',
+        body: 'تم نشر مقال جديد على المجتمع.',
       });
     }
     expect(broadcast.mock.calls.map((call) => call[0].metadata?.postId).sort()).toEqual([
