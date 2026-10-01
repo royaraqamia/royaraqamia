@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.34.0] - 2026-10-01
+
+### Changed
+- drop the no-payment badge from the consultation summary
+- drop the gradient divider from the metric cards
+- match the service card CTA size to the hero buttons
+- remove extra top padding above portfolio and testimonials bodies
+
+### Added
+- move contact details to the last booking step
+- rewrite the retainer pitch and sync the page metadata
+
 ## [1.33.0] - 2026-10-01
 
 ### Changed
