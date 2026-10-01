@@ -3,10 +3,10 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CheckCircle2 } from 'lucide-react';
 import type { z } from 'zod';
 
 import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizard';
+import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
 import { submitProjectRequest } from '@/frontend/api/project-requests';
 import { ProjectRequestSchema } from '@/shared/contracts/project-requests';
 import { ProjectTypeStep } from './steps/project-type-step';
@@ -116,16 +116,10 @@ export function ProjectRequestWizard({ onSubmitted }: ProjectRequestWizardProps 
 
   if (referenceCode) {
     return (
-      <div className="p-6 sm:p-10 text-center">
-        <CheckCircle2 className="mx-auto mb-5 size-12 text-emerald-600" aria-hidden="true" />
-
-        <h2 className="text-xl sm:text-2xl font-extrabold text-foreground">
-          تمَّ استلام طلبك بنجاح!
-        </h2>
-        <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
-          سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة.
-        </p>
-      </div>
+      <LeadSuccessPanel
+        referenceCode={referenceCode}
+        message="احتفظ برقم الطَّلب أدناه — سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة."
+      />
     );
   }
 
