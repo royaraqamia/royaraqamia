@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.35.0] - 2026-10-01
+
+### Changed
+- remove decorative ambient and looping animations
+- remove the card lift on hover
+- drop the redundant session chip from package cards
+- drop the privacy notice from the apply form
+- rename the blog section to المجتمع
+
+### Added
+- require a cohort on the apply form
+- add cohort management to the training console
+
+### Fixed
+- show the user's profile avatar in the account menu
+
 ## [1.34.0] - 2026-10-01
 
 ### Changed
