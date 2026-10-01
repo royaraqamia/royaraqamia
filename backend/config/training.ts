@@ -52,15 +52,19 @@ export function createDefaultTrainingCohortsRepository(
 export function createTrainingApplicationNotifier(
   fanOut: NotificationFanout = createNotificationFanout()
 ): TrainingApplicationNotifier {
-  return (application) => {
+  return (application, event) => {
+    const isEdit = event === 'edited';
     void fanOut({
       type: 'training_application',
-      title: 'طلب التحاق جديد بالدورة',
-      body: `${application.full_name} — ${TRAINING_COURSE.title} (${application.reference_code})`,
+      title: isEdit ? 'تعديل طلب التحاق بالدورة' : 'طلب التحاق جديد بالدورة',
+      body: isEdit
+        ? `عدَّل ${application.full_name} طلبه (${application.reference_code})`
+        : `${application.full_name} — ${TRAINING_COURSE.title} (${application.reference_code})`,
       metadata: {
         applicationId: application.id,
         referenceCode: application.reference_code,
         courseSlug: application.course_slug,
+        event,
       },
     });
   };

@@ -26,10 +26,23 @@ export interface TrainingApplicationListQuery {
   search?: string;
 }
 
+/**
+ * The visitor-owned fields an applicant may replace on their own application.
+ * `cohort_id` is present, but the service only passes it through while the
+ * application holds no seat.
+ */
+export interface TrainingApplicationEditFields {
+  full_name: string;
+  phone_whatsapp: string;
+  goal: string | null;
+}
+
 export interface TrainingApplicationsReader {
   getById(id: string): Promise<TrainingApplication | null>;
   getByReferenceCode(referenceCode: string): Promise<TrainingApplication | null>;
   list(query: TrainingApplicationListQuery): Promise<Paginated<TrainingApplication>>;
+  /** The applications attributed to one signed-in visitor, newest first. */
+  listByUser(userId: string): Promise<TrainingApplication[]>;
 }
 
 export interface TrainingApplicationsWriter {
@@ -39,6 +52,18 @@ export interface TrainingApplicationsWriter {
     status: TrainingApplicationStatus,
     notes: string | null
   ): Promise<TrainingApplication>;
+  /**
+   * Replaces the visitor fields of an application the visitor owns. The service
+   * decides whether a requested `cohort_id` is safe to apply (only while no seat
+   * is held); this writes the profile fields and the cohort preference together.
+   * Returns `null` when no owned row matched.
+   */
+  updateOwned(
+    id: string,
+    userId: string,
+    input: TrainingApplicationEditFields,
+    cohortId: string | null
+  ): Promise<TrainingApplication | null>;
   /**
    * Claims a seat: moves the application into `enrolled` against a cohort, in the
    * `enroll_application` RPC so the capacity check and the write are atomic.

@@ -91,6 +91,8 @@ export interface ConsultationBooking {
   rejected_reason: string | null;
   created_at: string;
   updated_at: string;
+  /** Last submitter edit; NULL until the booker corrects their booking. */
+  edited_at: string | null;
   /** Session times attached to this booking (UTC instants). */
   sessions: AvailabilitySlot[];
 }
@@ -129,6 +131,28 @@ export const CreateBookingSchema = BookingContactSchema.extend({
 });
 
 export type CreateBookingInput = z.infer<typeof CreateBookingSchema>;
+
+/**
+ * A signed-in booker's edit of their own booking. It carries the same visitor
+ * fields as creation — contact details and topic — but the package and slots
+ * are optional: leaving them out changes only the text, while including them
+ * triggers an atomic reschedule that moves the slot holds.
+ *
+ * `status`, `confirmed_at`, `rejected_reason`, `reference_code` and `user_id`
+ * are never accepted here, so an edit cannot confirm a booking or re-point it.
+ */
+export const UpdateBookingSchema = BookingContactSchema.extend({
+  email: z
+    .string()
+    .trim()
+    .max(200, 'البريد الإلكتروني طويل جدًّا')
+    .optional()
+    .refine((value) => !value || z.email().safeParse(value).success, 'البريد الإلكتروني غير صحيح'),
+  package_id: z.string().uuid('الباقة غير صحيحة').optional(),
+  slot_ids: z.array(z.string().uuid()).min(1, 'اختر موعدًا واحدًا على الأقل').optional(),
+});
+
+export type UpdateBookingInput = z.infer<typeof UpdateBookingSchema>;
 
 // Admin-facing schemas -------------------------------------------------------
 

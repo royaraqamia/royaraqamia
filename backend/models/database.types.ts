@@ -271,6 +271,7 @@ export type Database = {
         Row: {
           confirmed_at: string | null;
           created_at: string;
+          edited_at: string | null;
           email: string | null;
           full_name: string;
           id: string;
@@ -286,6 +287,7 @@ export type Database = {
         Insert: {
           confirmed_at?: string | null;
           created_at?: string;
+          edited_at?: string | null;
           email?: string | null;
           full_name: string;
           id?: string;
@@ -301,6 +303,7 @@ export type Database = {
         Update: {
           confirmed_at?: string | null;
           created_at?: string;
+          edited_at?: string | null;
           email?: string | null;
           full_name?: string;
           id?: string;
@@ -901,6 +904,7 @@ export type Database = {
           budget_range: string | null;
           created_at: string;
           description: string;
+          edited_at: string | null;
           email: string | null;
           existing_url: string | null;
           full_name: string;
@@ -918,6 +922,7 @@ export type Database = {
           budget_range?: string | null;
           created_at?: string;
           description: string;
+          edited_at?: string | null;
           email?: string | null;
           existing_url?: string | null;
           full_name: string;
@@ -935,6 +940,7 @@ export type Database = {
           budget_range?: string | null;
           created_at?: string;
           description?: string;
+          edited_at?: string | null;
           email?: string | null;
           existing_url?: string | null;
           full_name?: string;
@@ -1035,6 +1041,7 @@ export type Database = {
           company: string | null;
           created_at: string;
           current_projects: string;
+          edited_at: string | null;
           email: string | null;
           full_name: string;
           id: string;
@@ -1053,6 +1060,7 @@ export type Database = {
           company?: string | null;
           created_at?: string;
           current_projects: string;
+          edited_at?: string | null;
           email?: string | null;
           full_name: string;
           id?: string;
@@ -1071,6 +1079,7 @@ export type Database = {
           company?: string | null;
           created_at?: string;
           current_projects?: string;
+          edited_at?: string | null;
           email?: string | null;
           full_name?: string;
           id?: string;
@@ -1125,6 +1134,7 @@ export type Database = {
           cohort_id: string | null;
           course_slug: string;
           created_at: string;
+          edited_at: string | null;
           full_name: string;
           goal: string | null;
           id: string;
@@ -1139,6 +1149,7 @@ export type Database = {
           cohort_id?: string | null;
           course_slug: string;
           created_at?: string;
+          edited_at?: string | null;
           full_name: string;
           goal?: string | null;
           id?: string;
@@ -1153,6 +1164,7 @@ export type Database = {
           cohort_id?: string | null;
           course_slug?: string;
           created_at?: string;
+          edited_at?: string | null;
           full_name?: string;
           goal?: string | null;
           id?: string;
@@ -1337,6 +1349,10 @@ export type Database = {
       release_application: {
         Args: { p_application_id: string; p_status: string };
         Returns: string;
+      };
+      reschedule_consultation_booking: {
+        Args: { p_booking_id: string; p_package_id: string; p_slot_ids: string[] };
+        Returns: undefined;
       };
       send_daily_habit_reminders: { Args: never; Returns: undefined };
       send_recovery_nudges: { Args: never; Returns: undefined };

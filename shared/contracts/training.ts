@@ -157,6 +157,8 @@ export interface TrainingApplication {
   user_id: string | null;
   created_at: string;
   updated_at: string;
+  /** Last submitter edit; NULL until the applicant corrects their application. */
+  edited_at: string | null;
 }
 
 // ------------------------------------------------------------
@@ -183,6 +185,17 @@ export const TrainingApplicationSchema = z.object({
 });
 
 export type TrainingApplicationInput = z.infer<typeof TrainingApplicationSchema>;
+
+/**
+ * What a signed-in applicant may change on their own application. `cohort_id`
+ * is accepted only while the application holds no seat: once enrolled, the
+ * cohort is a claimed reservation and a change must go through release-then-
+ * enroll (ADR-0008), which the service enforces. The status, notes, reference
+ * code and attribution are never accepted here.
+ */
+export const TrainingApplicationEditSchema = TrainingApplicationSchema;
+
+export type TrainingApplicationEditInput = z.infer<typeof TrainingApplicationEditSchema>;
 
 /**
  * Statuses an application may be moved to through the plain update path.

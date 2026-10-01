@@ -29,6 +29,7 @@ const application: TrainingApplication = {
   user_id: null,
   created_at: '2026-09-16T00:00:00.000Z',
   updated_at: '2026-09-16T00:00:00.000Z',
+  edited_at: null,
 };
 
 const certificate: Certificate = {
@@ -49,7 +50,7 @@ describe('notification producer adapters', () => {
   it('hands the training notification to the Admin audience with no target set', () => {
     const fanout = makeFanout();
 
-    createTrainingApplicationNotifier(fanout)(application);
+    createTrainingApplicationNotifier(fanout)(application, 'created');
 
     expect(fanout).toHaveBeenCalledTimes(1);
     expect(fanout.mock.calls[0]?.[0]).toEqual({
@@ -60,9 +61,23 @@ describe('notification producer adapters', () => {
         applicationId: 'app-1',
         referenceCode: 'TRN-2026-A7K2M9QX',
         courseSlug: 'build-digital-products',
+        event: 'created',
       },
     });
     expect(fanout.mock.calls[0]?.[1]).toBeUndefined();
+  });
+
+  it('announces an applicant edit distinctly from a fresh application', () => {
+    const fanout = makeFanout();
+
+    createTrainingApplicationNotifier(fanout)(application, 'edited');
+
+    expect(fanout.mock.calls[0]?.[0]).toMatchObject({
+      type: 'training_application',
+      title: 'تعديل طلب التحاق بالدورة',
+      body: 'عدَّل أحمد العلي طلبه (TRN-2026-A7K2M9QX)',
+      metadata: { event: 'edited' },
+    });
   });
 
   it('hands the consultation notification to the Admin audience with no target set', () => {

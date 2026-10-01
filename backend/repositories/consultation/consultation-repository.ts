@@ -57,12 +57,28 @@ export interface BookingListResult {
   total: number;
 }
 
+/**
+ * The visitor-owned fields a booker may replace on their own booking, plus an
+ * optional reschedule. When `slot_ids`/`package_id` are absent only the text is
+ * rewritten; when present the holds move through the reschedule RPC.
+ */
+export interface BookingOwnedEdit {
+  full_name: string;
+  phone_whatsapp: string;
+  email: string | null;
+  topic_description: string;
+  package_id?: string;
+  slot_ids?: string[];
+}
+
 export interface ConsultationBookingsReader {
   listForAdmin(
     page: number,
     pageSize: number,
     status?: ConsultationBookingStatus
   ): Promise<BookingListResult>;
+  /** The bookings attributed to one signed-in booker, newest first, with sessions. */
+  listByUser(userId: string): Promise<ConsultationBooking[]>;
 }
 
 export interface CreateBookingCommand extends CreateBookingInput {
@@ -79,6 +95,22 @@ export interface ConsultationBookingsWriter {
   create(command: CreateBookingCommand): Promise<string>;
   confirm(bookingId: string): Promise<void>;
   reject(bookingId: string, reason?: string): Promise<void>;
+  /**
+   * Rewrites the visitor fields of a booking the booker owns, stamping
+   * `edited_at`. Ownership is enforced by the write predicate (`user_id`).
+   * Returns `null` when no owned row matched.
+   */
+  updateContactOwned(
+    bookingId: string,
+    userId: string,
+    edit: Pick<BookingOwnedEdit, 'full_name' | 'phone_whatsapp' | 'email' | 'topic_description'>
+  ): Promise<ConsultationBooking | null>;
+  /**
+   * Atomically swaps the package and/or the slot holds in the
+   * `reschedule_consultation_booking` RPC, which checks `auth.uid()` against
+   * the booking owner. Throws the same codes as creation on failure.
+   */
+  reschedule(bookingId: string, packageId: string, slotIds: string[]): Promise<void>;
 }
 
 // ------------------------------------------------------------

@@ -1,10 +1,12 @@
 import * as Sentry from '@sentry/nextjs';
 import { createStatusGuard, parseAdminListQuery } from '@/backend/controllers/admin-list';
 import { withAdminUser } from '@/backend/transport/admin-handler';
+import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { createDefaultTrainingApplicationService } from '@/backend/config/training';
 import {
   TrainingApplicationClosedError,
+  TrainingApplicationEnrolledError,
   TrainingApplicationNotFoundError,
   TrainingApplicationRateLimitError,
 } from '@/backend/services/training/training-application-service';
@@ -21,6 +23,7 @@ import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import { isRepositoryError } from '@/backend/shared/repository-error';
 import {
   TRAINING_APPLICATION_STATUSES,
+  TrainingApplicationEditSchema,
   TrainingApplicationEnrollSchema,
   TrainingApplicationReleaseSchema,
   TrainingApplicationSchema,
@@ -135,7 +138,66 @@ function mapTrainingApplicationError(error: unknown): HttpResult | null {
       error: 'حالة غير معروفة.',
     } satisfies ApplicationActionResult);
   }
+  if (error instanceof TrainingApplicationEnrolledError) {
+    return jsonResult(409, {
+      success: false,
+      error: error.message,
+    } satisfies ApplicationActionResult);
+  }
+  if (error instanceof TrainingApplicationRateLimitError) {
+    return jsonResult(429, {
+      success: false,
+      error: error.message,
+    } satisfies ApplicationActionResult);
+  }
   return null;
+}
+
+interface MyApplicationsResult {
+  success: boolean;
+  data?: TrainingApplication[];
+  error?: string;
+}
+
+/**
+ * The signed-in applicant's own applications. Account-gated rather than
+ * anonymous: the account is what proves ownership.
+ */
+export async function listMyTrainingApplications(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      const data = await createDefaultTrainingApplicationService().listMine(userId);
+      return jsonResult(200, { success: true, data } satisfies MyApplicationsResult);
+    },
+    { whenFailed: { success: false, error: 'تعذّر تحميل طلباتك.' } }
+  );
+}
+
+/** Edits one application the applicant owns; a guessed id yields the same `404`. */
+export async function updateMyTrainingApplication(id: string, body: unknown): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      const parsed = TrainingApplicationEditSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'تحقق من الحقول المدخلة.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        } satisfies ApplicationActionResult);
+      }
+
+      const data = await createDefaultTrainingApplicationService().updateOwned(
+        userId,
+        id,
+        parsed.data
+      );
+      return jsonResult(200, { success: true, data } satisfies ApplicationActionResult);
+    },
+    {
+      mapError: (error) => mapTrainingApplicationError(error),
+      whenFailed: { success: false, error: 'تعذّر تحديث الطلب.' },
+    }
+  );
 }
 
 export async function listTrainingApplications(

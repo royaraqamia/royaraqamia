@@ -3,6 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockSubmit = vi.fn();
 const mockList = vi.fn();
 const mockUpdate = vi.fn();
+const mockListMine = vi.fn();
+const mockUpdateOwned = vi.fn();
+const mockGetSession = vi.fn();
 const mockGetOptionalUser = vi.fn();
 const mockGetAuthUser = vi.fn();
 const mockSyncAdminAllowlistMirror = vi.fn();
@@ -16,7 +19,7 @@ vi.mock('@/backend/config/admin-allowlist', () => ({
 vi.mock('@/backend/config/identity', async () => {
   const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
   return identityDouble({
-    session: async () => ({ user: null, client: null }),
+    session: () => mockGetSession(),
     optional: () => mockGetOptionalUser(),
     admin: async () => {
       const { user, client } = await mockGetAuthUser();
@@ -33,16 +36,21 @@ vi.mock('@/backend/config/training', () => ({
     submit: mockSubmit,
     list: mockList,
     update: mockUpdate,
+    listMine: mockListMine,
+    updateOwned: mockUpdateOwned,
   }),
 }));
 
 import {
+  listMyTrainingApplications,
   listTrainingApplications,
   submitTrainingApplication,
+  updateMyTrainingApplication,
   updateTrainingApplication,
 } from '@/backend/controllers/training';
 import {
   TrainingApplicationClosedError,
+  TrainingApplicationEnrolledError,
   TrainingApplicationNotFoundError,
   TrainingApplicationRateLimitError,
 } from '@/backend/services/training/training-application-service';
@@ -257,5 +265,90 @@ describe('training controller: updateTrainingApplication', () => {
       status: 500,
       body: { success: false, error: 'تعذّر تحديث الطلب.' },
     });
+  });
+});
+
+const USER_SESSION = { user: { id: 'user-9', email: 'user@example.com' }, client: {} };
+
+describe('training controller: listMyTrainingApplications', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetSession.mockResolvedValue(USER_SESSION);
+    mockListMine.mockResolvedValue([APPLICATION]);
+  });
+
+  it('answers 401 when signed out and never reaches the service', async () => {
+    mockGetSession.mockResolvedValue(SIGNED_OUT);
+
+    const result = await listMyTrainingApplications();
+
+    expect(result).toMatchObject({ status: 401 });
+    expect(mockListMine).not.toHaveBeenCalled();
+  });
+
+  it('reads the applications scoped to the session user', async () => {
+    const result = await listMyTrainingApplications();
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockListMine).toHaveBeenCalledWith('user-9');
+  });
+});
+
+describe('training controller: updateMyTrainingApplication', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetSession.mockResolvedValue(USER_SESSION);
+    mockUpdateOwned.mockResolvedValue(APPLICATION);
+  });
+
+  it('answers 401 when signed out before validating the body', async () => {
+    mockGetSession.mockResolvedValue(SIGNED_OUT);
+
+    const result = await updateMyTrainingApplication('app-1', VALID_BODY);
+
+    expect(result).toMatchObject({ status: 401 });
+    expect(mockUpdateOwned).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid body with field errors and never calls the service', async () => {
+    const result = await updateMyTrainingApplication('app-1', { course_slug: 'x' });
+
+    expect(result).toMatchObject({ status: 400, body: { success: false } });
+    expect(mockUpdateOwned).not.toHaveBeenCalled();
+  });
+
+  it('edits the application as the session user', async () => {
+    const result = await updateMyTrainingApplication('app-1', VALID_BODY);
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockUpdateOwned).toHaveBeenCalledWith(
+      'user-9',
+      'app-1',
+      expect.objectContaining({ cohort_id: VALID_BODY.cohort_id })
+    );
+  });
+
+  it('maps a request the visitor does not own to 404', async () => {
+    mockUpdateOwned.mockRejectedValue(new TrainingApplicationNotFoundError());
+
+    const result = await updateMyTrainingApplication('app-1', VALID_BODY);
+
+    expect(result).toMatchObject({ status: 404, body: { success: false } });
+  });
+
+  it('maps an enrolled cohort change to 409', async () => {
+    mockUpdateOwned.mockRejectedValue(new TrainingApplicationEnrolledError());
+
+    const result = await updateMyTrainingApplication('app-1', VALID_BODY);
+
+    expect(result).toMatchObject({ status: 409, body: { success: false } });
+  });
+
+  it('maps an edit rate limit to 429', async () => {
+    mockUpdateOwned.mockRejectedValue(new TrainingApplicationRateLimitError());
+
+    const result = await updateMyTrainingApplication('app-1', VALID_BODY);
+
+    expect(result).toMatchObject({ status: 429, body: { success: false } });
   });
 });

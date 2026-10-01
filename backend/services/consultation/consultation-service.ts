@@ -1,6 +1,7 @@
 import { randomInt } from 'crypto';
 import type {
   AvailabilitySlot,
+  ConsultationBooking,
   ConsultationBookingStatus,
   ConsultationPackage,
   ConsultationSettings,
@@ -8,6 +9,7 @@ import type {
   PackageUpsertInput,
   SlotCreateInput,
 } from '@/shared/contracts/consultation';
+import type { UpdateBookingInput } from '@/shared/contracts/consultation';
 import type {
   AdminAvailabilitySlot,
   BookingListResult,
@@ -28,11 +30,30 @@ export class ConsultationRateLimitError extends Error {
   }
 }
 
+export class ConsultationBookingNotFoundError extends Error {
+  constructor() {
+    super('الحجز غير موجود.');
+    this.name = 'ConsultationBookingNotFoundError';
+  }
+}
+
+export class ConsultationBookingNotReschedulableError extends Error {
+  constructor() {
+    super('BOOKING_NOT_RESCHEDULABLE');
+    this.name = 'ConsultationBookingNotReschedulableError';
+  }
+}
+
 const RPC_VALIDATION_CODES = new Set([
   'PACKAGE_NOT_FOUND',
   'SLOT_COUNT_MISMATCH',
   'SLOT_UNAVAILABLE',
 ]);
+
+// Reschedules move slot holds and push an Admin notification each time, so a
+// per-booker backstop keeps one account from churning the calendar.
+const EDIT_LIMIT = 20;
+const EDIT_WINDOW_MS = 10 * 60_000;
 
 // 5 bookings per 10 minutes per IP. Deliberately fail-open: an anonymous
 // booking form must keep accepting requests when the limiter is unreachable.
@@ -126,6 +147,60 @@ export class ConsultationService {
 
   async getSettings(): Promise<Partial<ConsultationSettings>> {
     return this.repositories.settings.read();
+  }
+
+  /** The signed-in booker's own bookings, for the account submissions page. */
+  async listMyBookings(userId: string): Promise<ConsultationBooking[]> {
+    return this.repositories.bookings.listByUser(userId);
+  }
+
+  /**
+   * A signed-in booker's edit of their own booking. The contact/topic text may
+   * always change. Moving the package or slots is a reschedule that runs in the
+   * RPC (owner-checked, atomic) so the scarce holds cannot leak. A booking that
+   * no longer holds its slots (rejected/cancelled) may only have its text edited.
+   */
+  async updateMyBooking(
+    userId: string,
+    bookingId: string,
+    input: UpdateBookingInput
+  ): Promise<ConsultationBooking> {
+    const allowed = await this.config.checkRateLimit(
+      `consultation-edit:${userId}`,
+      EDIT_LIMIT,
+      EDIT_WINDOW_MS
+    );
+    if (!allowed) throw new ConsultationRateLimitError();
+
+    const owns = (await this.repositories.bookings.listByUser(userId)).some(
+      (booking) => booking.id === bookingId
+    );
+    if (!owns) throw new ConsultationBookingNotFoundError();
+
+    // A reschedule is requested only when the caller sends both halves.
+    if (input.package_id && input.slot_ids) {
+      try {
+        await this.repositories.bookings.reschedule(bookingId, input.package_id, input.slot_ids);
+      } catch (error) {
+        throw this.mapOwnedError(error);
+      }
+    }
+
+    const updated = await this.repositories.bookings.updateContactOwned(bookingId, userId, {
+      full_name: input.full_name,
+      phone_whatsapp: input.phone_whatsapp,
+      email: input.email ? input.email.trim() : null,
+      topic_description: input.topic_description,
+    });
+    if (!updated) throw new ConsultationBookingNotFoundError();
+
+    this.notifyAdmins({
+      id: updated.id,
+      referenceCode: updated.reference_code,
+      fullName: updated.full_name,
+      packageName: updated.package_name ?? null,
+    });
+    return updated;
   }
 
   async createBooking(
@@ -264,5 +339,16 @@ export class ConsultationService {
     if (code === 'SLOT_TAKEN') return new SlotTakenError(code);
     if (RPC_VALIDATION_CODES.has(code)) return new ConsultationValidationError(code);
     return error instanceof Error ? error : new Error('UNKNOWN');
+  }
+
+  /**
+   * The reschedule RPC's codes, mapped the same way creation maps them, plus the
+   * ownership/state codes specific to an owned edit.
+   */
+  private mapOwnedError(error: unknown): Error {
+    const code = errorCode(error);
+    if (code === 'BOOKING_NOT_FOUND') return new ConsultationBookingNotFoundError();
+    if (code === 'BOOKING_NOT_RESCHEDULABLE') return new ConsultationBookingNotReschedulableError();
+    return this.mapBookingError(error);
   }
 }

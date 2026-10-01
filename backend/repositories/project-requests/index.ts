@@ -4,6 +4,7 @@ import type { ProjectRequest, ProjectRequestStatus } from '@/shared/contracts/pr
 import type { Paginated } from '@/shared/pagination';
 import type {
   ProjectRequestCreateInput,
+  ProjectRequestEditFields,
   ProjectRequestListQuery,
   ProjectRequestsRepository,
 } from '@/backend/repositories/project-requests/project-requests-repository';
@@ -47,6 +48,17 @@ export function createProjectRequestsRepository(
       return { data: (data as ProjectRequest[]) ?? [], total: count ?? 0 };
     },
 
+    async listByUser(userId: string): Promise<ProjectRequest[]> {
+      const { data, error } = await supabase
+        .from('project_requests')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data as ProjectRequest[]) ?? [];
+    },
+
     async create(input: ProjectRequestCreateInput): Promise<ProjectRequest> {
       const { data, error } = await supabase
         .from('project_requests')
@@ -85,6 +97,35 @@ export function createProjectRequestsRepository(
       if (error) throw error;
 
       return data as ProjectRequest;
+    },
+
+    async updateOwned(
+      id: string,
+      userId: string,
+      input: ProjectRequestEditFields
+    ): Promise<ProjectRequest | null> {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('project_requests')
+        .update({
+          full_name: input.full_name,
+          phone_whatsapp: input.phone_whatsapp,
+          email: input.email,
+          project_type: input.project_type,
+          description: input.description,
+          budget_range: input.budget_range,
+          timeline: input.timeline,
+          existing_url: input.existing_url,
+          edited_at: now,
+          updated_at: now,
+        })
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data as ProjectRequest | null) ?? null;
     },
   };
 }

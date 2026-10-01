@@ -21,6 +21,7 @@ export type {
   AvailabilitySlotsReader,
   AvailabilitySlotsWriter,
   BookingListResult,
+  BookingOwnedEdit,
   ConsultationPackagesReader,
   ConsultationPackagesWriter,
   ConsultationSettingsReader,

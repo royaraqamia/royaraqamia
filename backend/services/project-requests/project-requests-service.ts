@@ -1,10 +1,12 @@
 import { randomInt } from 'crypto';
 import type {
+  ProjectRequestEditFields,
   ProjectRequestListQuery,
   ProjectRequestsRepository,
 } from '@/backend/repositories/project-requests/project-requests-repository';
 import {
   type ProjectRequest,
+  type ProjectRequestEditInput,
   type ProjectRequestInput,
   type ProjectRequestUpdateInput,
 } from '@/shared/contracts/project-requests';
@@ -17,6 +19,12 @@ import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 // because a shared network (office, agency) can legitimately send many.
 const IP_LIMIT = 10;
 const WINDOW_MS = 10 * 60_000;
+
+// Edits push an Admin notification each time, so a per-user backstop keeps one
+// account from spamming the Admin audience. Generous: correcting a lead a few
+// times is normal.
+const EDIT_LIMIT = 20;
+const EDIT_WINDOW_MS = 10 * 60_000;
 
 const PROJECT_REQUEST_REFERENCE_CODE_PREFIX = 'PRJ';
 const MAX_REFERENCE_CODE_ATTEMPTS = 3;
@@ -41,8 +49,11 @@ export function generateProjectRequestReferenceCode(): string {
   );
 }
 
+/** Distinguishes a fresh lead from a later visitor correction. */
+export type ProjectRequestNotificationEvent = 'created' | 'edited';
+
 export interface ProjectRequestNotifier {
-  (request: ProjectRequest): void;
+  (request: ProjectRequest, event: ProjectRequestNotificationEvent): void;
 }
 
 export interface ProjectRequestServiceDeps {
@@ -64,6 +75,20 @@ function isUniqueViolation(error: unknown): boolean {
   return (error as { code?: string } | null)?.code === '23505';
 }
 
+/** A blank optional field is cleared, never stored as an empty string. */
+function toEditFields(input: ProjectRequestEditInput): ProjectRequestEditFields {
+  return {
+    full_name: input.full_name,
+    phone_whatsapp: input.phone_whatsapp,
+    email: toNullableText(input.email),
+    project_type: input.project_type,
+    description: input.description,
+    budget_range: toNullableText(input.budget_range),
+    timeline: toNullableText(input.timeline),
+    existing_url: toNullableText(input.existing_url),
+  };
+}
+
 export class ProjectRequestService {
   constructor(private readonly deps: ProjectRequestServiceDeps) {}
 
@@ -81,7 +106,7 @@ export class ProjectRequestService {
     const request = await this.insertWithUniqueReference(input, context.userId ?? null);
 
     try {
-      this.deps.notifyAdmins?.(request);
+      this.deps.notifyAdmins?.(request, 'created');
     } catch (error) {
       // The request is already committed — a notify failure must not surface to
       // the visitor as a failed submission.
@@ -102,6 +127,43 @@ export class ProjectRequestService {
     if (!existing) throw new ProjectRequestNotFoundError();
 
     return this.deps.repository.updateStatus(id, input.status, toNullableText(input.notes));
+  }
+
+  /** The signed-in visitor's own requests, for the account submissions page. */
+  async listMine(userId: string): Promise<ProjectRequest[]> {
+    return this.deps.repository.listByUser(userId);
+  }
+
+  /**
+   * Replaces the visitor fields of a request the visitor owns. A missing row
+   * and a row owned by someone else are both `NotFound`: the caller must never
+   * learn that an id exists but is not theirs. Admins are notified so a lead
+   * they already triaged cannot go stale under them.
+   */
+  async updateOwned(
+    userId: string,
+    id: string,
+    input: ProjectRequestEditInput
+  ): Promise<ProjectRequest> {
+    const allowed = await this.deps.checkRateLimit(
+      `project-request-edit:${userId}`,
+      EDIT_LIMIT,
+      EDIT_WINDOW_MS
+    );
+    if (!allowed) throw new ProjectRequestRateLimitError();
+
+    const updated = await this.deps.repository.updateOwned(id, userId, toEditFields(input));
+    if (!updated) throw new ProjectRequestNotFoundError();
+
+    try {
+      this.deps.notifyAdmins?.(updated, 'edited');
+    } catch (error) {
+      this.deps.captureException?.(error, {
+        extra: { source: 'projectRequest.updateOwned.notify', id: updated.id },
+      });
+    }
+
+    return updated;
   }
 
   private async insertWithUniqueReference(

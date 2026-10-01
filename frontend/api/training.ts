@@ -1,5 +1,6 @@
 import type {
   TrainingApplication,
+  TrainingApplicationEditInput,
   TrainingApplicationStatus,
   TrainingCohort,
   TrainingCohortCreateInput,
@@ -110,6 +111,35 @@ export async function releaseTrainingApplication(
     return await request<TrainingApplicationActionResult>(
       `/api/training/applications/${encodeURIComponent(id)}/release`,
       { method: 'POST', body: JSON.stringify(input) }
+    );
+  } catch (error) {
+    return error instanceof Error ? { success: false, error: error.message } : { success: false };
+  }
+}
+
+/**
+ * The signed-in applicant's own applications. A failure degrades to an empty
+ * list so the account page renders its empty state rather than an error screen.
+ */
+export async function getMyTrainingApplications(): Promise<TrainingApplication[]> {
+  try {
+    const result = await request<{ success: boolean; data?: TrainingApplication[] }>(
+      '/api/me/training-applications'
+    );
+    return result.data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function updateMyTrainingApplication(
+  id: string,
+  input: TrainingApplicationEditInput
+): Promise<TrainingApplicationActionResult> {
+  try {
+    return await request<TrainingApplicationActionResult>(
+      `/api/me/training-applications/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body: JSON.stringify(input) }
     );
   } catch (error) {
     return error instanceof Error ? { success: false, error: error.message } : { success: false };

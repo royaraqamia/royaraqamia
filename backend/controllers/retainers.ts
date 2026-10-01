@@ -1,6 +1,7 @@
 import * as Sentry from '@sentry/nextjs';
 import { createStatusGuard, parseAdminListQuery } from '@/backend/controllers/admin-list';
 import { withAdminUser } from '@/backend/transport/admin-handler';
+import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { createDefaultRetainerService } from '@/backend/config/retainers';
 import {
@@ -11,6 +12,7 @@ import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import {
   RETAINER_STATUSES,
+  RetainerEditSchema,
   RetainerSchema,
   RetainerUpdateSchema,
   type Retainer,
@@ -119,6 +121,71 @@ export async function updateRetainer(id: string, body: unknown): Promise<HttpRes
     {
       mapError: mapRetainerError,
       whenFailed: { success: false, error: 'تعذّر تحديث التَّعاقُد.' },
+    }
+  );
+}
+
+interface MyRetainersResult {
+  success: boolean;
+  data?: Retainer[];
+  error?: string;
+}
+
+interface MyRetainerResult {
+  success: boolean;
+  data?: Retainer;
+  error?: string;
+  fieldErrors?: Record<string, string>;
+}
+
+/**
+ * The signed-in visitor's own retainers. Account-gated rather than anonymous:
+ * the account is what proves ownership, so an anonymous submission cannot be
+ * listed or edited.
+ */
+export async function listMyRetainers(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      const data = await createDefaultRetainerService().listMine(userId);
+      return jsonResult(200, { success: true, data } satisfies MyRetainersResult);
+    },
+    { whenFailed: { success: false, error: 'تعذّر تحميل طلباتك.' } }
+  );
+}
+
+/** Edits one retainer the visitor owns; a guessed id yields the same `404`. */
+export async function updateMyRetainer(id: string, body: unknown): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      const parsed = RetainerEditSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'تحقق من الحقول المدخلة.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        } satisfies MyRetainerResult);
+      }
+
+      const data = await createDefaultRetainerService().updateOwned(userId, id, parsed.data);
+      return jsonResult(200, { success: true, data } satisfies MyRetainerResult);
+    },
+    {
+      mapError: (error) => {
+        if (error instanceof RetainerNotFoundError) {
+          return jsonResult(404, {
+            success: false,
+            error: error.message,
+          } satisfies MyRetainerResult);
+        }
+        if (error instanceof RetainerRateLimitError) {
+          return jsonResult(429, {
+            success: false,
+            error: error.message,
+          } satisfies MyRetainerResult);
+        }
+        return null;
+      },
+      whenFailed: { success: false, error: 'تعذّر تحديث الطَّلب.' },
     }
   );
 }

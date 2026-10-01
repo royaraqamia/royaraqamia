@@ -1,10 +1,12 @@
 import { randomInt } from 'crypto';
 import type {
   TrainingApplicationsRepository,
+  TrainingApplicationEditFields,
   TrainingApplicationListQuery,
 } from '@/backend/repositories/training/training-applications-repository';
 import {
   type TrainingApplication,
+  type TrainingApplicationEditInput,
   type TrainingApplicationInput,
   type TrainingApplicationUpdateInput,
   type TrainingReleaseTargetStatus,
@@ -23,6 +25,11 @@ const IP_LIMIT = 300;
 const GLOBAL_LIMIT = 1_000;
 const WINDOW_MS = 10 * 60_000;
 const GLOBAL_RATE_LIMIT_KEY = 'training-apply:global';
+
+// Edits push an Admin notification each time, so a per-user backstop keeps one
+// account from spamming the Admin audience.
+const EDIT_LIMIT = 20;
+const EDIT_WINDOW_MS = 10 * 60_000;
 
 const TRAINING_REFERENCE_CODE_PREFIX = 'TRN';
 const MAX_REFERENCE_CODE_ATTEMPTS = 3;
@@ -69,14 +76,29 @@ export class TrainingApplicationNotFoundError extends Error {
   }
 }
 
+/**
+ * Raised when an applicant tries to change the cohort of an application that is
+ * already enrolled. The seat is scarce and moving it is release-then-enroll, not
+ * an edit (ADR-0008).
+ */
+export class TrainingApplicationEnrolledError extends Error {
+  constructor() {
+    super('لا يمكن تغيير الدُّفعة بعد تأكيد تسجيلك. تواصل معنا لتغييرها.');
+    this.name = 'TrainingApplicationEnrolledError';
+  }
+}
+
 export function generateTrainingReferenceCode(): string {
   return mintReferenceCode(TRAINING_REFERENCE_CODE_PREFIX, (maxExclusive) =>
     randomInt(maxExclusive)
   );
 }
 
+/** Distinguishes a fresh application from a later applicant correction. */
+export type TrainingApplicationNotificationEvent = 'created' | 'edited';
+
 export interface TrainingApplicationNotifier {
-  (application: TrainingApplication): void;
+  (application: TrainingApplication, event: TrainingApplicationNotificationEvent): void;
 }
 
 export interface TrainingApplicationServiceDeps {
@@ -101,6 +123,15 @@ export interface SubmitApplicationContext {
 
 function isUniqueViolation(error: unknown): boolean {
   return (error as { code?: string } | null)?.code === '23505';
+}
+
+/** A blank optional field is cleared, never stored as an empty string. */
+function toEditFields(input: TrainingApplicationEditInput): TrainingApplicationEditFields {
+  return {
+    full_name: input.full_name,
+    phone_whatsapp: input.phone_whatsapp,
+    goal: toNullableText(input.goal),
+  };
 }
 
 /** Network resets / timeouts / 5xx are worth a bounded retry; validation or
@@ -166,7 +197,7 @@ export class TrainingApplicationService {
     const application = await this.insertWithUniqueReference(input, context.userId ?? null);
 
     try {
-      this.deps.notifyAdmins?.(application);
+      this.deps.notifyAdmins?.(application, 'created');
     } catch (error) {
       // The application is already committed — a notify failure must not surface
       // to the applicant as a failed submission.
@@ -187,6 +218,60 @@ export class TrainingApplicationService {
     if (!existing) throw new TrainingApplicationNotFoundError();
 
     return this.deps.repository.updateStatus(id, input.status, toNullableText(input.notes));
+  }
+
+  /** The signed-in applicant's own applications, for the account submissions page. */
+  async listMine(userId: string): Promise<TrainingApplication[]> {
+    return this.deps.repository.listByUser(userId);
+  }
+
+  /**
+   * Replaces the visitor fields of an application the applicant owns. The
+   * cohort is the sharp edge: while the application is `enrolled` it holds a
+   * scarce seat, so a requested change of cohort is refused rather than silently
+   * moved — releasing and re-enrolling is what gives one seat back and claims
+   * another atomically (ADR-0008). Once not enrolled, the chosen cohort is only
+   * a preference, so it may be written directly.
+   */
+  async updateOwned(
+    userId: string,
+    id: string,
+    input: TrainingApplicationEditInput
+  ): Promise<TrainingApplication> {
+    const allowed = await this.deps.checkRateLimit(
+      `training-edit:${userId}`,
+      EDIT_LIMIT,
+      EDIT_WINDOW_MS
+    );
+    if (!allowed) throw new TrainingApplicationRateLimitError();
+
+    const existing = await this.deps.repository.getById(id);
+    // A missing row and a row owned by someone else are both absent to this
+    // caller; ownership is re-checked in the write predicate below.
+    if (!existing || existing.user_id !== userId) throw new TrainingApplicationNotFoundError();
+
+    const enrolled = existing.status === 'enrolled';
+    if (enrolled && input.cohort_id !== existing.cohort_id) {
+      throw new TrainingApplicationEnrolledError();
+    }
+
+    const updated = await this.deps.repository.updateOwned(
+      id,
+      userId,
+      toEditFields(input),
+      enrolled ? existing.cohort_id : (input.cohort_id ?? null)
+    );
+    if (!updated) throw new TrainingApplicationNotFoundError();
+
+    try {
+      this.deps.notifyAdmins?.(updated, 'edited');
+    } catch (error) {
+      this.deps.captureException?.(error, {
+        extra: { source: 'trainingApplication.updateOwned.notify', id: updated.id },
+      });
+    }
+
+    return updated;
   }
 
   /**

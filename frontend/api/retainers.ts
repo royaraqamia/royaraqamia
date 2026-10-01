@@ -1,4 +1,9 @@
-import type { Retainer, RetainerInput, RetainerStatus } from '@/shared/contracts/retainers';
+import type {
+  Retainer,
+  RetainerEditInput,
+  RetainerInput,
+  RetainerStatus,
+} from '@/shared/contracts/retainers';
 import type { Paginated } from '@/shared/pagination';
 import { request } from '@/frontend/transport/http';
 
@@ -58,6 +63,33 @@ export async function updateRetainer(
 ): Promise<RetainerUpdateResult> {
   try {
     return await request<RetainerUpdateResult>(`/api/retainers/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      body: JSON.stringify(input),
+    });
+  } catch (error) {
+    return error instanceof Error ? { success: false, error: error.message } : { success: false };
+  }
+}
+
+/**
+ * The signed-in visitor's own retainers. A failure degrades to an empty list so
+ * the account page can render its empty state rather than an error screen.
+ */
+export async function getMyRetainers(): Promise<Retainer[]> {
+  try {
+    const result = await request<{ success: boolean; data?: Retainer[] }>('/api/me/retainers');
+    return result.data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function updateMyRetainer(
+  id: string,
+  input: RetainerEditInput
+): Promise<RetainerUpdateResult> {
+  try {
+    return await request<RetainerUpdateResult>(`/api/me/retainers/${encodeURIComponent(id)}`, {
       method: 'PATCH',
       body: JSON.stringify(input),
     });

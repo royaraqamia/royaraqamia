@@ -124,6 +124,8 @@ export interface Retainer {
   user_id: string | null;
   created_at: string;
   updated_at: string;
+  /** Last submitter edit; NULL until the visitor corrects their request. */
+  edited_at: string | null;
 }
 
 // ------------------------------------------------------------
@@ -172,6 +174,20 @@ export const RetainerSchema = z.object({
 });
 
 export type RetainerInput = z.infer<typeof RetainerSchema>;
+
+// ------------------------------------------------------------
+// Submitter edit
+// ------------------------------------------------------------
+
+/**
+ * What a signed-in submitter may change on their own retainer: exactly the
+ * fields they filled in. The Reference Code, `status`, Admin `notes`, the
+ * agreed `monthly_fee_usd`/`paid_through` terms and attribution are never
+ * accepted here, so an edit cannot forge an agreement or re-point a row.
+ */
+export const RetainerEditSchema = RetainerSchema;
+
+export type RetainerEditInput = z.infer<typeof RetainerEditSchema>;
 
 // ------------------------------------------------------------
 // Admin record

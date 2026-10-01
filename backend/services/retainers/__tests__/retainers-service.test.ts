@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type {
   RetainerCreateInput,
+  RetainerEditFields,
   RetainerUpdate,
 } from '@/backend/repositories/retainers/retainers-repository';
 import {
@@ -9,7 +10,7 @@ import {
   RetainerService,
   type RetainerServiceDeps,
 } from '@/backend/services/retainers/retainers-service';
-import type { Retainer, RetainerInput } from '@/shared/contracts/retainers';
+import type { Retainer, RetainerEditInput, RetainerInput } from '@/shared/contracts/retainers';
 
 const REFERENCE = 'RET-2026-A7K2M9QX';
 
@@ -41,6 +42,7 @@ function makeRow(overrides: Partial<Retainer> = {}): Retainer {
     user_id: null,
     created_at: '2026-09-25T00:00:00.000Z',
     updated_at: '2026-09-25T00:00:00.000Z',
+    edited_at: null,
     ...overrides,
   };
 }
@@ -64,7 +66,12 @@ function makeService(overrides: Partial<RetainerServiceDeps> = {}) {
     create: vi.fn(async (input: RetainerCreateInput) => toRow(input)),
     getById: vi.fn(async (): Promise<Retainer | null> => makeRow()),
     list: vi.fn(async () => ({ data: [makeRow()], total: 1 })),
+    listByUser: vi.fn(async (): Promise<Retainer[]> => [makeRow({ user_id: 'user-9' })]),
     update: vi.fn(async (id: string, input: RetainerUpdate) => makeRow({ id, ...input })),
+    updateOwned: vi.fn(
+      async (id: string, userId: string, input: RetainerEditFields): Promise<Retainer | null> =>
+        makeRow({ id, user_id: userId, ...input, edited_at: '2026-09-26T00:00:00.000Z' })
+    ),
   };
   const checkRateLimit = vi.fn(async () => true);
   const notifyAdmins = vi.fn();
@@ -149,7 +156,7 @@ describe('RetainerService.submit', () => {
 
     const created = await service.submit(VALID_INPUT, { ip: '1.1.1.1' });
 
-    expect(notifyAdmins).toHaveBeenCalledWith(created);
+    expect(notifyAdmins).toHaveBeenCalledWith(created, 'created');
   });
 
   it('does not fail the submission when the notification throws', async () => {
@@ -339,5 +346,90 @@ describe('RetainerService.update', () => {
       RetainerNotFoundError
     );
     expect(repository.update).not.toHaveBeenCalled();
+  });
+});
+
+describe('RetainerService.listMine', () => {
+  it('reads only the signed-in visitor\u2019s retainers', async () => {
+    const { service, repository } = makeService();
+
+    const rows = await service.listMine('user-9');
+
+    expect(repository.listByUser).toHaveBeenCalledWith('user-9');
+    expect(rows).toHaveLength(1);
+  });
+});
+
+describe('RetainerService.updateOwned', () => {
+  const EDIT: RetainerEditInput = { ...VALID_INPUT, needs: 'احتياجات محدَّثة شهريًّا.' };
+
+  it('replaces the visitor fields and attributes the edit to the owner', async () => {
+    const { service, repository } = makeService();
+
+    const updated = await service.updateOwned('user-9', 'ret-1', EDIT);
+
+    expect(repository.updateOwned).toHaveBeenCalledWith(
+      'ret-1',
+      'user-9',
+      expect.objectContaining({ needs: 'احتياجات محدَّثة شهريًّا.' })
+    );
+    expect(updated.needs).toBe('احتياجات محدَّثة شهريًّا.');
+  });
+
+  it('never carries the agreed terms into the visitor edit', async () => {
+    const { service, repository } = makeService();
+
+    await service.updateOwned('user-9', 'ret-1', EDIT);
+
+    const payload = repository.updateOwned.mock.calls[0]?.[2];
+    expect(payload).not.toHaveProperty('monthly_fee_usd');
+    expect(payload).not.toHaveProperty('paid_through');
+    expect(payload).not.toHaveProperty('status');
+  });
+
+  it('stores blank optional fields as NULL rather than empty strings', async () => {
+    const { service, repository } = makeService();
+
+    await service.updateOwned('user-9', 'ret-1', {
+      ...EDIT,
+      email: '',
+      company: '  ',
+      preferred_start: undefined,
+    });
+
+    expect(repository.updateOwned).toHaveBeenCalledWith(
+      'ret-1',
+      'user-9',
+      expect.objectContaining({ email: null, company: null, preferred_start: null })
+    );
+  });
+
+  it('notifies the Admin that the retainer was edited', async () => {
+    const { service, notifyAdmins } = makeService();
+
+    const updated = await service.updateOwned('user-9', 'ret-1', EDIT);
+
+    expect(notifyAdmins).toHaveBeenCalledWith(updated, 'edited');
+  });
+
+  it('refuses an edit to a retainer the visitor does not own', async () => {
+    const { service, repository, notifyAdmins } = makeService();
+    repository.updateOwned.mockResolvedValue(null);
+
+    await expect(service.updateOwned('user-9', 'ret-1', EDIT)).rejects.toBeInstanceOf(
+      RetainerNotFoundError
+    );
+    expect(notifyAdmins).not.toHaveBeenCalled();
+  });
+
+  it('refuses an edit past the per-user limit without writing anything', async () => {
+    const { service, repository, checkRateLimit } = makeService();
+    checkRateLimit.mockResolvedValue(false);
+
+    await expect(service.updateOwned('user-9', 'ret-1', EDIT)).rejects.toBeInstanceOf(
+      RetainerRateLimitError
+    );
+    expect(checkRateLimit).toHaveBeenCalledWith('retainer-edit:user-9', 20, 600_000);
+    expect(repository.updateOwned).not.toHaveBeenCalled();
   });
 });

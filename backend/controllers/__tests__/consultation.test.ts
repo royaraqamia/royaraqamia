@@ -13,6 +13,9 @@ const mockAdminDeletePackage = vi.fn();
 const mockSaveSettings = vi.fn();
 const mockGetAvailableSlots = vi.fn();
 const mockCreateBooking = vi.fn();
+const mockListMyBookings = vi.fn();
+const mockUpdateMyBooking = vi.fn();
+const mockGetSession = vi.fn();
 const mockLoadActivePackages = vi.fn();
 const mockLoadSettings = vi.fn();
 const mockGetOptionalUser = vi.fn();
@@ -33,6 +36,8 @@ vi.mock('@/backend/config/identity', async () => {
   const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
   return identityDouble({
     session: async () => {
+      const session = await mockGetSession();
+      if (session) return session;
       const { user, supabase } = await mockGetAuthUser();
       return { user, client: supabase };
     },
@@ -64,6 +69,8 @@ vi.mock('@/backend/config/consultation', () => ({
   createPublicConsultationService: () => ({
     getAvailableSlots: mockGetAvailableSlots,
     createBooking: mockCreateBooking,
+    listMyBookings: mockListMyBookings,
+    updateMyBooking: mockUpdateMyBooking,
   }),
 }));
 
@@ -86,8 +93,13 @@ import {
   createBooking,
   getConsultationSettings,
   listConsultationPackages,
+  listMyConsultationBookings,
+  updateMyConsultationBooking,
 } from '@/backend/controllers/consultation';
 import {
+  ConsultationBookingNotFoundError,
+  ConsultationBookingNotReschedulableError,
+  ConsultationRateLimitError,
   ConsultationValidationError,
   PackageInUseError,
   SlotReservedError,
@@ -121,6 +133,7 @@ const VALID_PACKAGE_BODY = {
 const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@example.com' }, supabase: {} };
 const NON_ADMIN_SESSION = { user: { id: 'u-2', email: 'user@example.com' }, supabase: {} };
 const SIGNED_OUT = { user: null, supabase: {} };
+const USER_SESSION = { user: { id: 'user-9', email: 'user@example.com' }, supabase: {} };
 
 function bodyOf(result: HttpResult): unknown {
   if ('redirect' in result) throw new Error('unexpected redirect');
@@ -130,6 +143,7 @@ function bodyOf(result: HttpResult): unknown {
 function resetMocks() {
   vi.clearAllMocks();
   mockGetAuthUser.mockResolvedValue(ADMIN_SESSION);
+  mockGetSession.mockResolvedValue(null);
   mockSyncAdminAllowlistMirror.mockResolvedValue(undefined);
   mockGetOptionalUser.mockResolvedValue({ user: null, client: null });
   mockAdminListBookings.mockResolvedValue({ data: [BOOKING], total: 1 });
@@ -145,9 +159,17 @@ function resetMocks() {
   mockSaveSettings.mockResolvedValue(undefined);
   mockGetAvailableSlots.mockResolvedValue([SLOT]);
   mockCreateBooking.mockResolvedValue({ id: 'booking-1', referenceCode: 'CONS-2026-A7K2M9QX' });
+  mockListMyBookings.mockResolvedValue([BOOKING]);
+  mockUpdateMyBooking.mockResolvedValue(BOOKING);
   mockLoadActivePackages.mockResolvedValue([PACKAGE]);
   mockLoadSettings.mockResolvedValue({ booking_whatsapp_url: 'https://wa.me/963968478904' });
 }
+
+const MY_BOOKING_BODY = {
+  full_name: 'أحمد محمد',
+  phone_whatsapp: '+963968478904',
+  topic_description: 'موضوع الاستشارة محدَّث بما يكفي من الحروف المطلوبة.',
+};
 
 beforeEach(resetMocks);
 
@@ -657,5 +679,83 @@ describe('consultation public endpoints stay public', () => {
 
     expect(result).toMatchObject({ status: 200, body: { success: true } });
     expect(mockGetAuthUser).not.toHaveBeenCalled();
+  });
+});
+
+describe('consultation owner edit endpoints', () => {
+  it('listMyConsultationBookings answers 401 signed out and never reaches the service', async () => {
+    mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
+
+    const result = await listMyConsultationBookings();
+
+    expect(result).toMatchObject({ status: 401 });
+    expect(mockListMyBookings).not.toHaveBeenCalled();
+  });
+
+  it('listMyConsultationBookings reads scoped to the session user', async () => {
+    mockGetSession.mockResolvedValue(USER_SESSION);
+
+    const result = await listMyConsultationBookings();
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockListMyBookings).toHaveBeenCalledWith('user-9');
+  });
+
+  it('updateMyConsultationBooking answers 401 signed out before validating', async () => {
+    mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
+
+    const result = await updateMyConsultationBooking('booking-1', MY_BOOKING_BODY);
+
+    expect(result).toMatchObject({ status: 401 });
+    expect(mockUpdateMyBooking).not.toHaveBeenCalled();
+  });
+
+  it('updateMyConsultationBooking rejects an invalid body', async () => {
+    mockGetSession.mockResolvedValue(USER_SESSION);
+
+    const result = await updateMyConsultationBooking('booking-1', { full_name: 'أ' });
+
+    expect(result).toMatchObject({ status: 400, body: { success: false } });
+    expect(mockUpdateMyBooking).not.toHaveBeenCalled();
+  });
+
+  it('updateMyConsultationBooking edits as the session user', async () => {
+    mockGetSession.mockResolvedValue(USER_SESSION);
+
+    const result = await updateMyConsultationBooking('booking-1', MY_BOOKING_BODY);
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockUpdateMyBooking).toHaveBeenCalledWith(
+      'user-9',
+      'booking-1',
+      expect.objectContaining({ full_name: 'أحمد محمد' })
+    );
+  });
+
+  it('maps a booking the visitor does not own to 404', async () => {
+    mockGetSession.mockResolvedValue(USER_SESSION);
+    mockUpdateMyBooking.mockRejectedValue(new ConsultationBookingNotFoundError());
+
+    const result = await updateMyConsultationBooking('booking-1', MY_BOOKING_BODY);
+
+    expect(result).toMatchObject({ status: 404, body: { success: false } });
+  });
+
+  it('maps a non-reschedulable booking to 409', async () => {
+    mockGetSession.mockResolvedValue(USER_SESSION);
+    mockUpdateMyBooking.mockRejectedValue(new ConsultationBookingNotReschedulableError());
+
+    const result = await updateMyConsultationBooking('booking-1', MY_BOOKING_BODY);
+
+    expect(result).toMatchObject({ status: 409, body: { success: false } });
+  });
+
+  it('maps an edit rate limit to 429', async () => {
+    mockGetSession.mockResolvedValue(USER_SESSION);
+    mockUpdateMyBooking.mockRejectedValue(new ConsultationRateLimitError());
+
+    const result = await updateMyConsultationBooking('booking-1', MY_BOOKING_BODY);
+
+    expect(result).toMatchObject({ status: 429, body: { success: false } });
   });
 });

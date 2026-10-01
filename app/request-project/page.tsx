@@ -2,6 +2,7 @@ import { Building2, MonitorSmartphone, Rocket, Wallet } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { RequestProjectFlow } from '@/frontend/ui/project-requests/request-project-flow';
 import { SITE_NAME } from '@/frontend/shared/metadata';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { PROJECT_REQUEST_WEBSITE_START_PRICE_USD } from '@/shared/contracts/project-requests';
 
 const SUMMARY_ITEMS = [
@@ -10,9 +11,12 @@ const SUMMARY_ITEMS = [
   { icon: Rocket, label: 'التَّسليم', value: 'خلال أسابيع' },
 ];
 
-export default function RequestProjectPage() {
+export default async function RequestProjectPage() {
+  const { user } = await getOptionalUser();
+
   return (
     <RequestProjectFlow
+      isAuthenticated={Boolean(user)}
       summary={
         /* Project summary — the page's own pitch, server-rendered so it stays
            out of the client bundle. */

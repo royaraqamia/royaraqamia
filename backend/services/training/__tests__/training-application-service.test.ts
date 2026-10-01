@@ -1,17 +1,21 @@
 import { describe, it, expect, vi } from 'vitest';
 import {
   TrainingApplicationClosedError,
+  TrainingApplicationEnrolledError,
+  TrainingApplicationNotFoundError,
   TrainingApplicationRateLimitError,
   TrainingApplicationService,
   generateTrainingReferenceCode,
 } from '@/backend/services/training/training-application-service';
 import type {
   TrainingApplicationCreateInput,
+  TrainingApplicationEditFields,
   TrainingApplicationsRepository,
 } from '@/backend/repositories/training/training-applications-repository';
 import {
   TRAINING_REFERENCE_CODE_REGEX,
   type TrainingApplication,
+  type TrainingApplicationEditInput,
   type TrainingApplicationInput,
 } from '@/shared/contracts/training';
 import { createRateLimiter } from '@/backend/clients/rate-limiter';
@@ -42,6 +46,7 @@ function makeApplication(overrides: Partial<TrainingApplication> = {}): Training
     user_id: null,
     created_at: '2026-09-16T00:00:00.000Z',
     updated_at: '2026-09-16T00:00:00.000Z',
+    edited_at: null,
     ...overrides,
   };
 }
@@ -61,6 +66,26 @@ function makeRepository(overrides: Partial<TrainingApplicationsRepository> = {})
       )
     ),
     updateStatus: vi.fn().mockResolvedValue(makeApplication({ status: 'contacted' })),
+    listByUser: vi.fn().mockResolvedValue([makeApplication({ user_id: 'user-9' })]),
+    updateOwned: vi
+      .fn()
+      .mockImplementation(
+        (
+          id: string,
+          userId: string,
+          input: TrainingApplicationEditFields,
+          cohortId: string | null
+        ) =>
+          Promise.resolve(
+            makeApplication({
+              id,
+              user_id: userId,
+              ...input,
+              cohort_id: cohortId,
+              edited_at: '2026-09-17T00:00:00.000Z',
+            })
+          )
+      ),
     ...overrides,
   } as unknown as TrainingApplicationsRepository;
 }
@@ -233,7 +258,8 @@ describe('TrainingApplicationService.submit', () => {
 
     expect(notifyAdmins).toHaveBeenCalledTimes(1);
     expect(notifyAdmins).toHaveBeenCalledWith(
-      expect.objectContaining({ reference_code: 'TRN-2026-A7K2M9QX' })
+      expect.objectContaining({ reference_code: 'TRN-2026-A7K2M9QX' }),
+      'created'
     );
   });
 
@@ -401,6 +427,144 @@ describe('TrainingApplicationService.enroll', () => {
     });
 
     await expect(service.enroll('app-1', 'cohort-1')).rejects.toBeInstanceOf(CohortFullError);
+  });
+});
+
+describe('TrainingApplicationService.listMine', () => {
+  it('reads only the signed-in applicant\u2019s applications', async () => {
+    const { service, repository } = makeService();
+
+    const rows = await service.listMine('user-9');
+
+    expect(repository.listByUser).toHaveBeenCalledWith('user-9');
+    expect(rows).toHaveLength(1);
+  });
+});
+
+describe('TrainingApplicationService.updateOwned', () => {
+  const EDIT: TrainingApplicationEditInput = {
+    ...VALID_INPUT,
+    full_name: 'أحمد المحدَّث',
+    cohort_id: '3f2504e0-4f89-41d3-9a0c-0305e82c3302',
+  };
+
+  it('replaces the visitor fields and attributes the edit to the owner', async () => {
+    const { service, repository } = makeService({
+      repository: makeRepository({
+        getById: vi.fn().mockResolvedValue(makeApplication({ user_id: 'user-9' })),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    const updated = await service.updateOwned('user-9', 'app-1', EDIT);
+
+    expect(repository.updateOwned).toHaveBeenCalledWith(
+      'app-1',
+      'user-9',
+      expect.objectContaining({ full_name: 'أحمد المحدَّث' }),
+      EDIT.cohort_id
+    );
+    expect(updated.full_name).toBe('أحمد المحدَّث');
+  });
+
+  it('stores a blank goal as null rather than an empty string', async () => {
+    const { service, repository } = makeService({
+      repository: makeRepository({
+        getById: vi.fn().mockResolvedValue(makeApplication({ user_id: 'user-9' })),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await service.updateOwned('user-9', 'app-1', { ...EDIT, goal: '' });
+
+    expect(repository.updateOwned).toHaveBeenCalledWith(
+      'app-1',
+      'user-9',
+      expect.objectContaining({ goal: null }),
+      expect.anything()
+    );
+  });
+
+  it('notifies the Admin that the application was edited', async () => {
+    const { service, notifyAdmins } = makeService({
+      repository: makeRepository({
+        getById: vi.fn().mockResolvedValue(makeApplication({ user_id: 'user-9' })),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    const updated = await service.updateOwned('user-9', 'app-1', EDIT);
+
+    expect(notifyAdmins).toHaveBeenCalledWith(updated, 'edited');
+  });
+
+  it('refuses an edit to an application the visitor does not own', async () => {
+    const { service, repository } = makeService({
+      repository: makeRepository({
+        getById: vi.fn().mockResolvedValue(makeApplication({ user_id: 'someone-else' })),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await expect(service.updateOwned('user-9', 'app-1', EDIT)).rejects.toBeInstanceOf(
+      TrainingApplicationNotFoundError
+    );
+    expect(repository.updateOwned).not.toHaveBeenCalled();
+  });
+
+  it('refuses to change the cohort while the application is enrolled', async () => {
+    const { service, repository } = makeService({
+      repository: makeRepository({
+        getById: vi.fn().mockResolvedValue(
+          makeApplication({
+            user_id: 'user-9',
+            status: 'enrolled',
+            cohort_id: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+          })
+        ),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await expect(service.updateOwned('user-9', 'app-1', EDIT)).rejects.toBeInstanceOf(
+      TrainingApplicationEnrolledError
+    );
+    expect(repository.updateOwned).not.toHaveBeenCalled();
+  });
+
+  it('lets an enrolled applicant edit their details without moving the seat', async () => {
+    const { service, repository } = makeService({
+      repository: makeRepository({
+        getById: vi.fn().mockResolvedValue(
+          makeApplication({
+            user_id: 'user-9',
+            status: 'enrolled',
+            cohort_id: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+          })
+        ),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await service.updateOwned('user-9', 'app-1', {
+      ...EDIT,
+      cohort_id: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
+    });
+
+    expect(repository.updateOwned).toHaveBeenCalledWith(
+      'app-1',
+      'user-9',
+      expect.anything(),
+      '3f2504e0-4f89-41d3-9a0c-0305e82c3301'
+    );
+  });
+
+  it('refuses an edit past the per-user limit without writing anything', async () => {
+    const { service, repository } = makeService({
+      checkRateLimit: () => Promise.resolve(false),
+      repository: makeRepository({
+        getById: vi.fn().mockResolvedValue(makeApplication({ user_id: 'user-9' })),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await expect(service.updateOwned('user-9', 'app-1', EDIT)).rejects.toBeInstanceOf(
+      TrainingApplicationRateLimitError
+    );
+    expect(repository.updateOwned).not.toHaveBeenCalled();
   });
 });
 

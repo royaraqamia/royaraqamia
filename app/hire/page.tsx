@@ -2,6 +2,7 @@ import { Building2, CalendarClock, Wrench } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { HireApplyFlow } from '@/frontend/ui/retainers/hire-apply-flow';
 import { SITE_NAME } from '@/frontend/shared/metadata';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { RETAINER_DEFAULT_MONTHLY_FEE_USD } from '@/shared/contracts/retainers';
 
 const SUMMARY_ITEMS = [
@@ -10,9 +11,12 @@ const SUMMARY_ITEMS = [
   { icon: CalendarClock, label: 'مدَّة التَّعاقُد', value: 'شهريّ متجدِّد' },
 ];
 
-export default function HirePage() {
+export default async function HirePage() {
+  const { user } = await getOptionalUser();
+
   return (
     <HireApplyFlow
+      isAuthenticated={Boolean(user)}
       summary={
         /* Retainer summary — the page's own pitch, server-rendered so it stays
            out of the client bundle. */

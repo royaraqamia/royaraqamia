@@ -3,6 +3,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockSubmit = vi.fn();
 const mockList = vi.fn();
 const mockUpdate = vi.fn();
+const mockListMine = vi.fn();
+const mockUpdateOwned = vi.fn();
+const mockGetSession = vi.fn();
 const mockGetOptionalUser = vi.fn();
 const mockGetAuthUser = vi.fn();
 const mockSyncAdminAllowlistMirror = vi.fn();
@@ -16,7 +19,7 @@ vi.mock('@/backend/config/admin-allowlist', () => ({
 vi.mock('@/backend/config/identity', async () => {
   const { identityDouble } = await import('@/backend/identity/__tests__/test-double');
   return identityDouble({
-    session: async () => ({ user: null, client: null }),
+    session: () => mockGetSession(),
     optional: () => mockGetOptionalUser(),
     admin: async () => {
       const { user, client } = await mockGetAuthUser();
@@ -33,6 +36,8 @@ vi.mock('@/backend/config/project-requests', () => ({
     submit: mockSubmit,
     list: mockList,
     update: mockUpdate,
+    listMine: mockListMine,
+    updateOwned: mockUpdateOwned,
   }),
 }));
 
@@ -41,8 +46,10 @@ vi.mock('@/backend/middleware/auth-guard', () => ({
 }));
 
 import {
+  listMyProjectRequests,
   listProjectRequests,
   submitProjectRequest,
+  updateMyProjectRequest,
   updateProjectRequest,
 } from '@/backend/controllers/project-requests';
 import {
@@ -62,6 +69,7 @@ const REQUEST = { id: 'req-1', reference_code: 'PRJ-2026-A7K2M9QX' };
 const ADMIN_SESSION = { user: { id: 'admin-1', email: 'admin@example.com' }, client: {} };
 const NON_ADMIN_SESSION = { user: { id: 'user-2', email: 'user@example.com' }, client: {} };
 const SIGNED_OUT = { user: null, client: {} };
+const USER_SESSION = { user: { id: 'user-9', email: 'user@example.com' }, client: {} };
 
 describe('project requests controller: submitProjectRequest', () => {
   beforeEach(() => {
@@ -249,5 +257,80 @@ describe('project requests controller: updateProjectRequest', () => {
       status: 500,
       body: { success: false, error: 'تعذّر تحديث الطلب.' },
     });
+  });
+});
+
+describe('project requests controller: listMyProjectRequests', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetSession.mockResolvedValue(USER_SESSION);
+    mockListMine.mockResolvedValue([REQUEST]);
+  });
+
+  it('answers 401 when signed out and never reaches the service', async () => {
+    mockGetSession.mockResolvedValue(SIGNED_OUT);
+
+    const result = await listMyProjectRequests();
+
+    expect(result).toMatchObject({ status: 401 });
+    expect(mockListMine).not.toHaveBeenCalled();
+  });
+
+  it('reads the requests scoped to the session user', async () => {
+    const result = await listMyProjectRequests();
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockListMine).toHaveBeenCalledWith('user-9');
+  });
+});
+
+describe('project requests controller: updateMyProjectRequest', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetSession.mockResolvedValue(USER_SESSION);
+    mockUpdateOwned.mockResolvedValue(REQUEST);
+  });
+
+  it('answers 401 when signed out before validating the body', async () => {
+    mockGetSession.mockResolvedValue(SIGNED_OUT);
+
+    const result = await updateMyProjectRequest('req-1', VALID_BODY);
+
+    expect(result).toMatchObject({ status: 401 });
+    expect(mockUpdateOwned).not.toHaveBeenCalled();
+  });
+
+  it('rejects an invalid body with field errors and never calls the service', async () => {
+    const result = await updateMyProjectRequest('req-1', { project_type: 'website' });
+
+    expect(result).toMatchObject({ status: 400, body: { success: false } });
+    expect(mockUpdateOwned).not.toHaveBeenCalled();
+  });
+
+  it('edits the request as the session user', async () => {
+    const result = await updateMyProjectRequest('req-1', VALID_BODY);
+
+    expect(result).toMatchObject({ status: 200, body: { success: true } });
+    expect(mockUpdateOwned).toHaveBeenCalledWith(
+      'user-9',
+      'req-1',
+      expect.objectContaining({ project_type: 'website' })
+    );
+  });
+
+  it('maps a request the visitor does not own to 404', async () => {
+    mockUpdateOwned.mockRejectedValue(new ProjectRequestNotFoundError());
+
+    const result = await updateMyProjectRequest('req-1', VALID_BODY);
+
+    expect(result).toMatchObject({ status: 404, body: { success: false } });
+  });
+
+  it('maps an edit rate limit to 429', async () => {
+    mockUpdateOwned.mockRejectedValue(new ProjectRequestRateLimitError());
+
+    const result = await updateMyProjectRequest('req-1', VALID_BODY);
+
+    expect(result).toMatchObject({ status: 429, body: { success: false } });
   });
 });

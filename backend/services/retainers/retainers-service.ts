@@ -1,10 +1,12 @@
 import { randomInt } from 'crypto';
 import type {
+  RetainerEditFields,
   RetainerListQuery,
   RetainersRepository,
 } from '@/backend/repositories/retainers/retainers-repository';
 import {
   type Retainer,
+  type RetainerEditInput,
   type RetainerInput,
   type RetainerUpdateInput,
 } from '@/shared/contracts/retainers';
@@ -17,6 +19,11 @@ import { mintReferenceCode, mintWithUniqueCode } from '@/shared/reference-code';
 // because a shared network (office, agency) can legitimately send many.
 const IP_LIMIT = 10;
 const WINDOW_MS = 10 * 60_000;
+
+// Edits push an Admin notification each time, so a per-user backstop keeps one
+// account from spamming the Admin audience.
+const EDIT_LIMIT = 20;
+const EDIT_WINDOW_MS = 10 * 60_000;
 
 const RETAINER_REFERENCE_CODE_PREFIX = 'RET';
 const MAX_REFERENCE_CODE_ATTEMPTS = 3;
@@ -41,8 +48,11 @@ export function generateRetainerReferenceCode(): string {
   );
 }
 
+/** Distinguishes a fresh request from a later visitor correction. */
+export type RetainerNotificationEvent = 'created' | 'edited';
+
 export interface RetainerNotifier {
-  (retainer: Retainer): void;
+  (retainer: Retainer, event: RetainerNotificationEvent): void;
 }
 
 export interface RetainerServiceDeps {
@@ -64,6 +74,19 @@ function isUniqueViolation(error: unknown): boolean {
   return (error as { code?: string } | null)?.code === '23505';
 }
 
+/** A blank optional field is cleared, never stored as an empty string. */
+function toEditFields(input: RetainerEditInput): RetainerEditFields {
+  return {
+    full_name: input.full_name,
+    phone_whatsapp: input.phone_whatsapp,
+    email: toNullableText(input.email),
+    company: toNullableText(input.company),
+    current_projects: input.current_projects,
+    needs: input.needs,
+    preferred_start: toNullableText(input.preferred_start),
+  };
+}
+
 export class RetainerService {
   constructor(private readonly deps: RetainerServiceDeps) {}
 
@@ -74,7 +97,7 @@ export class RetainerService {
     const retainer = await this.insertWithUniqueReference(input, context.userId ?? null);
 
     try {
-      this.deps.notifyAdmins?.(retainer);
+      this.deps.notifyAdmins?.(retainer, 'created');
     } catch (error) {
       // The request is already committed — a notify failure must not surface to
       // the visitor as a failed submission.
@@ -110,6 +133,38 @@ export class RetainerService {
           ? existing.paid_through
           : toNullableText(input.paid_through),
     });
+  }
+
+  /** The signed-in visitor's own retainers, for the account submissions page. */
+  async listMine(userId: string): Promise<Retainer[]> {
+    return this.deps.repository.listByUser(userId);
+  }
+
+  /**
+   * Replaces the visitor fields of a retainer the visitor owns. A missing row
+   * and a row owned by someone else are both `NotFound`. Admins are notified so
+   * a retainer they already triaged cannot go stale under them.
+   */
+  async updateOwned(userId: string, id: string, input: RetainerEditInput): Promise<Retainer> {
+    const allowed = await this.deps.checkRateLimit(
+      `retainer-edit:${userId}`,
+      EDIT_LIMIT,
+      EDIT_WINDOW_MS
+    );
+    if (!allowed) throw new RetainerRateLimitError();
+
+    const updated = await this.deps.repository.updateOwned(id, userId, toEditFields(input));
+    if (!updated) throw new RetainerNotFoundError();
+
+    try {
+      this.deps.notifyAdmins?.(updated, 'edited');
+    } catch (error) {
+      this.deps.captureException?.(error, {
+        extra: { source: 'retainer.updateOwned.notify', id: updated.id },
+      });
+    }
+
+    return updated;
   }
 
   private async insertWithUniqueReference(

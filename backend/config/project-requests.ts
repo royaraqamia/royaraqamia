@@ -38,15 +38,19 @@ export function createDefaultProjectRequestService(
 export function createProjectRequestNotifier(
   fanOut: NotificationFanout = createNotificationFanout()
 ): ProjectRequestNotifier {
-  return (request) => {
+  return (request, event) => {
+    const isEdit = event === 'edited';
     void fanOut({
       type: 'project_request',
-      title: 'طلب مشروع جديد',
-      body: `${request.full_name} — ${PROJECT_REQUEST_TYPE_LABELS[request.project_type]} (${request.reference_code})`,
+      title: isEdit ? 'تعديل طلب مشروع' : 'طلب مشروع جديد',
+      body: isEdit
+        ? `عدَّل ${request.full_name} طلبه (${request.reference_code})`
+        : `${request.full_name} — ${PROJECT_REQUEST_TYPE_LABELS[request.project_type]} (${request.reference_code})`,
       metadata: {
         projectRequestId: request.id,
         referenceCode: request.reference_code,
         projectType: request.project_type,
+        event,
       },
     });
   };

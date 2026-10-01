@@ -35,15 +35,19 @@ export function createDefaultRetainerService(supabase?: SupabaseClient<Database>
 export function createRetainerNotifier(
   fanOut: NotificationFanout = createNotificationFanout()
 ): RetainerNotifier {
-  return (retainer) => {
+  return (retainer, event) => {
+    const isEdit = event === 'edited';
     void fanOut({
       type: 'retainer_request',
-      title: 'طلب تعاقُد شهري جديد',
-      body: `${retainer.full_name} — ${retainer.company ?? 'بدون شركة'} (${retainer.reference_code})`,
+      title: isEdit ? 'تعديل طلب تعاقُد شهري' : 'طلب تعاقُد شهري جديد',
+      body: isEdit
+        ? `عدَّل ${retainer.full_name} طلبه (${retainer.reference_code})`
+        : `${retainer.full_name} — ${retainer.company ?? 'بدون شركة'} (${retainer.reference_code})`,
       metadata: {
         retainerId: retainer.id,
         referenceCode: retainer.reference_code,
         monthlyFeeUsd: retainer.monthly_fee_usd,
+        event,
       },
     });
   };

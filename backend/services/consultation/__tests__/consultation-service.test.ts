@@ -3,6 +3,8 @@ import {
   ConsultationService,
   ConsultationRateLimitError,
   ConsultationValidationError,
+  ConsultationBookingNotFoundError,
+  ConsultationBookingNotReschedulableError,
   SlotTakenError,
   PackageInUseError,
   SlotReservedError,
@@ -33,9 +35,12 @@ function makeRepositories(overrides: Partial<ConsultationRepositories> = {}) {
     },
     bookings: {
       listForAdmin: vi.fn(),
+      listByUser: vi.fn(),
       create: vi.fn(),
       confirm: vi.fn(),
       reject: vi.fn(),
+      updateContactOwned: vi.fn(),
+      reschedule: vi.fn(),
     },
     settings: {
       read: vi.fn(),
@@ -382,6 +387,150 @@ describe('ConsultationService', () => {
       const service = makeService(repositories);
 
       await expect(service.adminDeletePackage('pkg-1')).rejects.toBeInstanceOf(PackageInUseError);
+    });
+  });
+
+  describe('owner edits', () => {
+    const ownedBooking = {
+      id: 'booking-9',
+      reference_code: REFERENCE,
+      user_id: 'user-1',
+      full_name: 'أحمد محمد',
+      package_name: 'باقة',
+      status: 'pending',
+    };
+
+    it('lists only the signed-in booker\u2019s bookings', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([
+        ownedBooking,
+      ]);
+      const service = makeService(repositories);
+
+      const rows = await service.listMyBookings('user-1');
+
+      expect(repositories.bookings.listByUser).toHaveBeenCalledWith('user-1');
+      expect(rows).toHaveLength(1);
+    });
+
+    it('refuses an edit to a booking the visitor does not own', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([]);
+      const service = makeService(repositories);
+
+      await expect(
+        service.updateMyBooking('user-1', 'booking-9', {
+          full_name: 'أحمد',
+          phone_whatsapp: '+963968478904',
+          topic_description: 'موضوع الاستشارة محدَّث بما يكفي من الحروف.',
+        })
+      ).rejects.toBeInstanceOf(ConsultationBookingNotFoundError);
+      expect(repositories.bookings.updateContactOwned).not.toHaveBeenCalled();
+    });
+
+    it('rewrites the contact text without rescheduling when no package/slots are sent', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([
+        ownedBooking,
+      ]);
+      (repositories.bookings.updateContactOwned as ReturnType<typeof vi.fn>).mockResolvedValue(
+        ownedBooking
+      );
+      const service = makeService(repositories);
+
+      await service.updateMyBooking('user-1', 'booking-9', {
+        full_name: 'أحمد محمد',
+        phone_whatsapp: '+963968478904',
+        topic_description: 'موضوع الاستشارة محدَّث بما يكفي من الحروف.',
+      });
+
+      expect(repositories.bookings.reschedule).not.toHaveBeenCalled();
+      expect(repositories.bookings.updateContactOwned).toHaveBeenCalledWith(
+        'booking-9',
+        'user-1',
+        expect.objectContaining({ topic_description: 'موضوع الاستشارة محدَّث بما يكفي من الحروف.' })
+      );
+    });
+
+    it('reschedules atomically when the package and slots are sent', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([
+        ownedBooking,
+      ]);
+      (repositories.bookings.updateContactOwned as ReturnType<typeof vi.fn>).mockResolvedValue(
+        ownedBooking
+      );
+      const service = makeService(repositories);
+
+      await service.updateMyBooking('user-1', 'booking-9', {
+        full_name: 'أحمد محمد',
+        phone_whatsapp: '+963968478904',
+        topic_description: 'موضوع الاستشارة محدَّث بما يكفي من الحروف.',
+        package_id: 'pkg-2',
+        slot_ids: ['slot-3'],
+      });
+
+      expect(repositories.bookings.reschedule).toHaveBeenCalledWith('booking-9', 'pkg-2', [
+        'slot-3',
+      ]);
+    });
+
+    it('maps a SLOT_TAKEN reschedule to SlotTakenError', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([
+        ownedBooking,
+      ]);
+      (repositories.bookings.reschedule as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('SLOT_TAKEN')
+      );
+      const service = makeService(repositories);
+
+      await expect(
+        service.updateMyBooking('user-1', 'booking-9', {
+          full_name: 'أحمد محمد',
+          phone_whatsapp: '+963968478904',
+          topic_description: 'موضوع الاستشارة محدَّث بما يكفي من الحروف.',
+          package_id: 'pkg-2',
+          slot_ids: ['slot-3'],
+        })
+      ).rejects.toBeInstanceOf(SlotTakenError);
+      expect(repositories.bookings.updateContactOwned).not.toHaveBeenCalled();
+    });
+
+    it('maps BOOKING_NOT_RESCHEDULABLE to its typed error', async () => {
+      const repositories = makeRepositories();
+      (repositories.bookings.listByUser as ReturnType<typeof vi.fn>).mockResolvedValue([
+        ownedBooking,
+      ]);
+      (repositories.bookings.reschedule as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('BOOKING_NOT_RESCHEDULABLE')
+      );
+      const service = makeService(repositories);
+
+      await expect(
+        service.updateMyBooking('user-1', 'booking-9', {
+          full_name: 'أحمد محمد',
+          phone_whatsapp: '+963968478904',
+          topic_description: 'موضوع الاستشارة محدَّث بما يكفي من الحروف.',
+          package_id: 'pkg-2',
+          slot_ids: ['slot-3'],
+        })
+      ).rejects.toBeInstanceOf(ConsultationBookingNotReschedulableError);
+    });
+
+    it('refuses an edit past the per-booker limit without writing anything', async () => {
+      const repositories = makeRepositories();
+      const checkRateLimit = vi.fn().mockResolvedValue(false);
+      const service = makeService(repositories, { checkRateLimit });
+
+      await expect(
+        service.updateMyBooking('user-1', 'booking-9', {
+          full_name: 'أحمد محمد',
+          phone_whatsapp: '+963968478904',
+          topic_description: 'موضوع الاستشارة محدَّث بما يكفي من الحروف.',
+        })
+      ).rejects.toBeInstanceOf(ConsultationRateLimitError);
+      expect(repositories.bookings.listByUser).not.toHaveBeenCalled();
     });
   });
 });

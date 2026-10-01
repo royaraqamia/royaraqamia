@@ -3,6 +3,7 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { TrainingApplyFlow } from '@/frontend/ui/training/training-apply-flow';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
 
 const SUMMARY_ITEMS = [
@@ -11,7 +12,9 @@ const SUMMARY_ITEMS = [
   { icon: Trophy, label: 'عدد الجلسات', value: TRAINING_COURSE.sessions },
 ];
 
-export default function TrainingApplyPage() {
+export default async function TrainingApplyPage() {
+  const { user } = await getOptionalUser();
+
   if (!TRAINING_COURSE.isOpen) {
     return (
       <div className="rounded-3xl border border-border/60 bg-muted/30 p-8 sm:p-12 text-center">
@@ -44,6 +47,7 @@ export default function TrainingApplyPage() {
 
   return (
     <TrainingApplyFlow
+      isAuthenticated={Boolean(user)}
       summary={
         /* Course summary — same source as the homepage card, so copy cannot drift. */
         <section

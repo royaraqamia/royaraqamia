@@ -121,6 +121,8 @@ export interface ProjectRequest {
   user_id: string | null;
   created_at: string;
   updated_at: string;
+  /** Last submitter edit; NULL until the visitor corrects their request. */
+  edited_at: string | null;
 }
 
 // ------------------------------------------------------------
@@ -163,6 +165,21 @@ export const ProjectRequestSchema = z.object({
 });
 
 export type ProjectRequestInput = z.infer<typeof ProjectRequestSchema>;
+
+// ------------------------------------------------------------
+// Submitter edit
+// ------------------------------------------------------------
+
+/**
+ * What a signed-in submitter may change on their own request: exactly the fields
+ * they filled in. The Reference Code, `status`, Admin `notes` and attribution
+ * are never accepted here, so an edit cannot forge a quote state or re-point a
+ * request at another account. It is the submit schema verbatim, kept under its
+ * own name so the two can diverge without a silent behaviour change.
+ */
+export const ProjectRequestEditSchema = ProjectRequestSchema;
+
+export type ProjectRequestEditInput = z.infer<typeof ProjectRequestEditSchema>;
 
 // ------------------------------------------------------------
 // Admin transition

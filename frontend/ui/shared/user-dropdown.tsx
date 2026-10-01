@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/frontend/shared/cn';
-import { User, LogOut, Download, ShieldCheck } from 'lucide-react';
+import { User, LogOut, Download, ShieldCheck, ClipboardList } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
 import { usePWAContext } from '../PWAProvider';
 import { ConfirmDialog } from './confirm-dialog';
@@ -158,6 +158,21 @@ export const UserDropdown = memo(function UserDropdown() {
                     </p>
                   </div>
                 </div>
+
+                {/* My Submissions — the account-based edit path */}
+                <Link
+                  href="/account/submissions"
+                  onClick={() => setIsOpen(false)}
+                  className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  role="menuitem"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+                      <ClipboardList size={16} />
+                    </div>
+                    <span>طلباتي</span>
+                  </div>
+                </Link>
 
                 {/* Admin Console (Admins only — the flag defaults to false) */}
                 {isAdmin && (

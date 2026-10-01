@@ -1,5 +1,8 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { ProjectRequestCreateInput } from '@/backend/repositories/project-requests/project-requests-repository';
+import type {
+  ProjectRequestCreateInput,
+  ProjectRequestEditFields,
+} from '@/backend/repositories/project-requests/project-requests-repository';
 import {
   ProjectRequestNotFoundError,
   ProjectRequestRateLimitError,
@@ -8,6 +11,7 @@ import {
 } from '@/backend/services/project-requests/project-requests-service';
 import type {
   ProjectRequest,
+  ProjectRequestEditInput,
   ProjectRequestInput,
   ProjectRequestStatus,
 } from '@/shared/contracts/project-requests';
@@ -42,6 +46,7 @@ function makeRow(overrides: Partial<ProjectRequest> = {}): ProjectRequest {
     user_id: null,
     created_at: '2026-09-25T00:00:00.000Z',
     updated_at: '2026-09-25T00:00:00.000Z',
+    edited_at: null,
     ...overrides,
   };
 }
@@ -66,8 +71,17 @@ function makeService(overrides: Partial<ProjectRequestServiceDeps> = {}) {
     create: vi.fn(async (input: ProjectRequestCreateInput) => toRow(input)),
     getById: vi.fn(async (): Promise<ProjectRequest | null> => makeRow()),
     list: vi.fn(async () => ({ data: [makeRow()], total: 1 })),
+    listByUser: vi.fn(async (): Promise<ProjectRequest[]> => [makeRow({ user_id: 'user-9' })]),
     updateStatus: vi.fn(async (id: string, status: ProjectRequestStatus, notes: string | null) =>
       makeRow({ id, status, notes })
+    ),
+    updateOwned: vi.fn(
+      async (
+        id: string,
+        userId: string,
+        input: ProjectRequestEditFields
+      ): Promise<ProjectRequest | null> =>
+        makeRow({ id, user_id: userId, ...input, edited_at: '2026-09-26T00:00:00.000Z' })
     ),
   };
   const checkRateLimit = vi.fn(async () => true);
@@ -155,7 +169,7 @@ describe('ProjectRequestService.submit', () => {
 
     const created = await service.submit(VALID_INPUT, { ip: '1.1.1.1' });
 
-    expect(notifyAdmins).toHaveBeenCalledWith(created);
+    expect(notifyAdmins).toHaveBeenCalledWith(created, 'created');
   });
 
   it('does not fail the submission when the notification throws', async () => {
@@ -254,5 +268,98 @@ describe('ProjectRequestService.update', () => {
       ProjectRequestNotFoundError
     );
     expect(repository.updateStatus).not.toHaveBeenCalled();
+  });
+});
+
+describe('ProjectRequestService.listMine', () => {
+  it('reads only the signed-in visitor\u2019s requests', async () => {
+    const { service, repository } = makeService();
+
+    const rows = await service.listMine('user-9');
+
+    expect(repository.listByUser).toHaveBeenCalledWith('user-9');
+    expect(rows).toHaveLength(1);
+  });
+});
+
+describe('ProjectRequestService.updateOwned', () => {
+  const EDIT: ProjectRequestEditInput = { ...VALID_INPUT, description: 'وصف محدَّث للمشروع.' };
+
+  it('replaces the visitor fields and attributes the edit to the owner', async () => {
+    const { service, repository } = makeService();
+
+    const updated = await service.updateOwned('user-9', 'req-1', EDIT);
+
+    expect(repository.updateOwned).toHaveBeenCalledWith(
+      'req-1',
+      'user-9',
+      expect.objectContaining({ description: 'وصف محدَّث للمشروع.' })
+    );
+    expect(updated.description).toBe('وصف محدَّث للمشروع.');
+  });
+
+  it('stores blank optional fields as NULL rather than empty strings', async () => {
+    const { service, repository } = makeService();
+
+    await service.updateOwned('user-9', 'req-1', {
+      ...EDIT,
+      email: '',
+      budget_range: undefined,
+      timeline: undefined,
+      existing_url: '   ',
+    });
+
+    expect(repository.updateOwned).toHaveBeenCalledWith(
+      'req-1',
+      'user-9',
+      expect.objectContaining({
+        email: null,
+        budget_range: null,
+        timeline: null,
+        existing_url: null,
+      })
+    );
+  });
+
+  it('notifies the Admin that the request was edited', async () => {
+    const { service, notifyAdmins } = makeService();
+
+    const updated = await service.updateOwned('user-9', 'req-1', EDIT);
+
+    expect(notifyAdmins).toHaveBeenCalledWith(updated, 'edited');
+  });
+
+  it('does not fail the edit when the notification throws', async () => {
+    const { service, captureException } = makeService({
+      notifyAdmins: vi.fn(() => {
+        throw new Error('push service down');
+      }),
+    });
+
+    await expect(service.updateOwned('user-9', 'req-1', EDIT)).resolves.toMatchObject({
+      description: 'وصف محدَّث للمشروع.',
+    });
+    expect(captureException).toHaveBeenCalled();
+  });
+
+  it('refuses an edit to a request the visitor does not own', async () => {
+    const { service, repository, notifyAdmins } = makeService();
+    repository.updateOwned.mockResolvedValue(null);
+
+    await expect(service.updateOwned('user-9', 'req-1', EDIT)).rejects.toBeInstanceOf(
+      ProjectRequestNotFoundError
+    );
+    expect(notifyAdmins).not.toHaveBeenCalled();
+  });
+
+  it('refuses an edit past the per-user limit without writing anything', async () => {
+    const { service, repository, checkRateLimit } = makeService();
+    checkRateLimit.mockResolvedValue(false);
+
+    await expect(service.updateOwned('user-9', 'req-1', EDIT)).rejects.toBeInstanceOf(
+      ProjectRequestRateLimitError
+    );
+    expect(checkRateLimit).toHaveBeenCalledWith('project-request-edit:user-9', 20, 600_000);
+    expect(repository.updateOwned).not.toHaveBeenCalled();
   });
 });

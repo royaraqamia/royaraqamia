@@ -5,11 +5,13 @@ import {
   CreateBookingSchema,
   PackageUpsertSchema,
   SlotCreateSchema,
+  UpdateBookingSchema,
   toBookingErrorMessage,
   type ConsultationBookingStatus,
 } from '@/shared/contracts/consultation';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAdminUser } from '@/backend/transport/admin-handler';
+import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import {
   createAdminConsultationService,
@@ -22,12 +24,15 @@ import {
 import { CONSULTATION_TAGS } from '@/backend/shared/consultation-cache-tags';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import {
+  ConsultationBookingNotFoundError,
+  ConsultationBookingNotReschedulableError,
   ConsultationRateLimitError,
   ConsultationValidationError,
   PackageInUseError,
   SlotReservedError,
   SlotTakenError,
 } from '@/backend/services/consultation/consultation-service';
+import type { ConsultationBooking } from '@/shared/contracts/consultation';
 
 // ------------------------------------------------------------
 // Helpers
@@ -116,6 +121,75 @@ export async function createBooking(body: unknown, ip: string): Promise<HttpResu
     }
     return jsonResult(500, { success: false, error: 'تعذر إنشاء الحجز.' });
   }
+}
+
+interface MyBookingsResult {
+  success: boolean;
+  data?: ConsultationBooking[];
+  error?: string;
+}
+
+interface MyBookingResult {
+  success: boolean;
+  data?: ConsultationBooking;
+  error?: string;
+  fieldErrors?: Record<string, string>;
+}
+
+/** The signed-in booker's own consultations, for the account submissions page. */
+export async function listMyConsultationBookings(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      const data = await createPublicConsultationService().listMyBookings(userId);
+      return jsonResult(200, { success: true, data } satisfies MyBookingsResult);
+    },
+    { whenFailed: { success: false, error: 'تعذّر تحميل حجوزاتك.' } }
+  );
+}
+
+/** Edits one booking the booker owns; a guessed id yields the same `404`. */
+export async function updateMyConsultationBooking(id: string, body: unknown): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId }) => {
+      const parsed = UpdateBookingSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'تحقق من الحقول المدخلة.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        } satisfies MyBookingResult);
+      }
+
+      const data = await createPublicConsultationService().updateMyBooking(userId, id, parsed.data);
+      return jsonResult(200, { success: true, data } satisfies MyBookingResult);
+    },
+    {
+      mapError: (error) => {
+        if (error instanceof ConsultationBookingNotFoundError) {
+          return jsonResult(404, {
+            success: false,
+            error: error.message,
+          } satisfies MyBookingResult);
+        }
+        if (error instanceof ConsultationBookingNotReschedulableError) {
+          return jsonResult(409, {
+            success: false,
+            error: 'لا يمكن تعديل مواعيد هذا الحجز في حالته الحاليَّة.',
+          } satisfies MyBookingResult);
+        }
+        const mapped = bookingErrorResponse(error);
+        if (mapped) return mapped;
+        if (error instanceof ConsultationRateLimitError) {
+          return jsonResult(429, {
+            success: false,
+            error: error.message,
+          } satisfies MyBookingResult);
+        }
+        return null;
+      },
+      whenFailed: { success: false, error: 'تعذّر تحديث الحجز.' },
+    }
+  );
 }
 
 export async function getConsultationSettings(): Promise<HttpResult> {

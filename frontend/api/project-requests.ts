@@ -1,5 +1,6 @@
 import type {
   ProjectRequest,
+  ProjectRequestEditInput,
   ProjectRequestInput,
   ProjectRequestStatus,
 } from '@/shared/contracts/project-requests';
@@ -60,6 +61,35 @@ export async function updateProjectRequest(
   try {
     return await request<ProjectRequestUpdateResult>(
       `/api/project-requests/${encodeURIComponent(id)}`,
+      { method: 'PATCH', body: JSON.stringify(input) }
+    );
+  } catch (error) {
+    return error instanceof Error ? { success: false, error: error.message } : { success: false };
+  }
+}
+
+/**
+ * The signed-in visitor's own requests. A failure degrades to an empty list so
+ * the account page can render its empty state rather than an error screen.
+ */
+export async function getMyProjectRequests(): Promise<ProjectRequest[]> {
+  try {
+    const result = await request<{ success: boolean; data?: ProjectRequest[] }>(
+      '/api/me/project-requests'
+    );
+    return result.data ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export async function updateMyProjectRequest(
+  id: string,
+  input: ProjectRequestEditInput
+): Promise<ProjectRequestUpdateResult> {
+  try {
+    return await request<ProjectRequestUpdateResult>(
+      `/api/me/project-requests/${encodeURIComponent(id)}`,
       { method: 'PATCH', body: JSON.stringify(input) }
     );
   } catch (error) {

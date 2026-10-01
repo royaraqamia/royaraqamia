@@ -7,6 +7,7 @@ import type {
 } from '@/shared/contracts/consultation';
 import type {
   BookingListResult,
+  BookingOwnedEdit,
   ConsultationBookingsReader,
   ConsultationBookingsWriter,
   CreateBookingCommand,
@@ -74,6 +75,7 @@ function toBooking(row: BookingRowWithPackage, sessions: AvailabilitySlot[]): Co
     rejected_reason: row.rejected_reason,
     created_at: row.created_at,
     updated_at: row.updated_at,
+    edited_at: row.edited_at,
     sessions,
   };
 }
@@ -106,6 +108,17 @@ export function createSupabaseConsultationBookingsRepository(
 
       if (error) throw error;
       return { data: await fetchMany(data ?? []), total: count ?? 0 };
+    },
+
+    async listByUser(userId: string): Promise<ConsultationBooking[]> {
+      const { data, error } = await supabase
+        .from('consultation_bookings')
+        .select(baseSelect)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return fetchMany((data ?? []) as BookingRow[]);
     },
 
     async create(command: CreateBookingCommand): Promise<string> {
@@ -146,6 +159,58 @@ export function createSupabaseConsultationBookingsRepository(
         .eq('status', 'pending');
 
       if (error) throw error;
+    },
+
+    async updateContactOwned(
+      bookingId: string,
+      userId: string,
+      edit: Pick<BookingOwnedEdit, 'full_name' | 'phone_whatsapp' | 'email' | 'topic_description'>
+    ): Promise<ConsultationBooking | null> {
+      const now = new Date().toISOString();
+      const { error } = await supabase
+        .from('consultation_bookings')
+        .update({
+          full_name: edit.full_name,
+          phone_whatsapp: edit.phone_whatsapp,
+          email: edit.email,
+          topic_description: edit.topic_description,
+          edited_at: now,
+          updated_at: now,
+        })
+        .eq('id', bookingId)
+        .eq('user_id', userId);
+
+      if (error) throw error;
+
+      // Re-read with sessions and the package name, so the caller gets the same
+      // shape the list does rather than a partial row.
+      const { data, error: readError } = await supabase
+        .from('consultation_bookings')
+        .select(baseSelect)
+        .eq('id', bookingId)
+        .maybeSingle();
+
+      if (readError) throw readError;
+      if (!data) return null;
+
+      const [booking] = await fetchMany([data as BookingRow]);
+      return booking ?? null;
+    },
+
+    async reschedule(bookingId: string, packageId: string, slotIds: string[]): Promise<void> {
+      const { error } = await supabase.rpc('reschedule_consultation_booking', {
+        p_booking_id: bookingId,
+        p_package_id: packageId,
+        p_slot_ids: slotIds,
+      });
+
+      if (error) {
+        const code = extractRpcErrorCode(error.message);
+        // BOOKING_NOT_FOUND doubles as "not yours": the RPC's ownership check
+        // and a genuine absence are indistinguishable to the caller on purpose.
+        if (code === 'BOOKING_NOT_FOUND') throw new Error('BOOKING_NOT_FOUND');
+        throw new Error(code);
+      }
     },
   };
 }

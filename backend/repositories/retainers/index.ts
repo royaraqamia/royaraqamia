@@ -4,6 +4,7 @@ import type { Retainer } from '@/shared/contracts/retainers';
 import type { Paginated } from '@/shared/pagination';
 import type {
   RetainerCreateInput,
+  RetainerEditFields,
   RetainerListQuery,
   RetainerUpdate,
   RetainersRepository,
@@ -40,6 +41,17 @@ export function createRetainersRepository(supabase: SupabaseClient<Database>): R
       const { data, count } = await request.range(from, from + query.pageSize - 1);
 
       return { data: (data as Retainer[]) ?? [], total: count ?? 0 };
+    },
+
+    async listByUser(userId: string): Promise<Retainer[]> {
+      const { data, error } = await supabase
+        .from('retainers')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return (data as Retainer[]) ?? [];
     },
 
     async create(input: RetainerCreateInput): Promise<Retainer> {
@@ -81,6 +93,34 @@ export function createRetainersRepository(supabase: SupabaseClient<Database>): R
       if (error) throw error;
 
       return data as Retainer;
+    },
+
+    async updateOwned(
+      id: string,
+      userId: string,
+      input: RetainerEditFields
+    ): Promise<Retainer | null> {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('retainers')
+        .update({
+          full_name: input.full_name,
+          phone_whatsapp: input.phone_whatsapp,
+          email: input.email,
+          company: input.company,
+          current_projects: input.current_projects,
+          needs: input.needs,
+          preferred_start: input.preferred_start,
+          edited_at: now,
+          updated_at: now,
+        })
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select()
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data as Retainer | null) ?? null;
     },
   };
 }

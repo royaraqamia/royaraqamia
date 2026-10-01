@@ -10,6 +10,7 @@ import {
   InvalidReleaseStatusError,
   NotEnrolledError,
   type TrainingApplicationCreateInput,
+  type TrainingApplicationEditFields,
   type TrainingApplicationListQuery,
   type TrainingApplicationsRepository,
 } from '@/backend/repositories/training/training-applications-repository';
@@ -107,6 +108,17 @@ export function createTrainingApplicationsRepository(
       return { data: (data as TrainingApplication[]) ?? [], total: count ?? 0 };
     },
 
+    async listByUser(userId: string): Promise<TrainingApplication[]> {
+      const { data, error } = await supabase
+        .from('training_applications')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw repositoryFailure('training.listByUser', error);
+      return (data as TrainingApplication[]) ?? [];
+    },
+
     async create(input: TrainingApplicationCreateInput): Promise<TrainingApplication> {
       const { data, error } = await supabase
         .from('training_applications')
@@ -142,6 +154,32 @@ export function createTrainingApplicationsRepository(
       if (error) throw error;
 
       return data as TrainingApplication;
+    },
+
+    async updateOwned(
+      id: string,
+      userId: string,
+      input: TrainingApplicationEditFields,
+      cohortId: string | null
+    ): Promise<TrainingApplication | null> {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+        .from('training_applications')
+        .update({
+          full_name: input.full_name,
+          phone_whatsapp: input.phone_whatsapp,
+          goal: input.goal,
+          cohort_id: cohortId,
+          edited_at: now,
+          updated_at: now,
+        })
+        .eq('id', id)
+        .eq('user_id', userId)
+        .select()
+        .maybeSingle();
+
+      if (error) throw repositoryFailure('training.updateOwned', error);
+      return (data as TrainingApplication | null) ?? null;
     },
 
     async enroll(id: string, cohortId: string): Promise<TrainingApplication> {
