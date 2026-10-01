@@ -1,4 +1,4 @@
-import { Building2, CalendarClock, Wallet, Wrench } from 'lucide-react';
+import { Building2, CalendarClock, Wrench } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { HireApplyFlow } from '@/frontend/ui/retainers/hire-apply-flow';
 import { SITE_NAME } from '@/frontend/shared/metadata';
@@ -21,18 +21,18 @@ export default function HirePage() {
           className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
         >
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
+            <span className="inline-block bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent py-1 leading-[1.4]">
               التَّعاقُد الشَّهري
             </span>
           </h2>
           <CollapsibleText
-            lines={2}
+            lines={3}
             className="mt-2 text-sm text-muted-foreground leading-relaxed"
             buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
           >
-            تعاقُد مع شركة برمجيَّات، لا توظيف أفراد: نتولَّى صيانة مشاريعك وتطويرها وإدارتها مقابل
-            رسم شهري ثابت. لا يُدفَع أي مبلغ على الموقع — نتواصل معك بعد الطَّلب ونتَّفق على طريقة
-            الدَّفع إن شاء الله.
+            إن كنتَ صاحب شركة أو مشروع أو صاحب فكرة ولديك حلول رقميَّة تنوي إطلاقها، فبين يديك فريق
+            يتمتَّع بخبرة تتجاوز 7 سنوات يتولَّى صيانة مشاريعك وتطويرها وإدارتها، باستثمار شهري ثابت
+            ودون الحاجة إلى بناء فريق داخلي.
           </CollapsibleText>
 
           <dl className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -55,10 +55,6 @@ export default function HirePage() {
               {`$${RETAINER_DEFAULT_MONTHLY_FEE_USD}`}
             </span>
             <span className="text-xs text-muted-foreground">شهريًّا</span>
-            <span className="inline-flex items-center gap-1 self-center rounded-full border border-emerald-500/25 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-              <Wallet className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              لا يُدفع على الموقع
-            </span>
           </div>
         </section>
       }
