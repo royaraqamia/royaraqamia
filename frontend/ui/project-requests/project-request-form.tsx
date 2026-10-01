@@ -93,7 +93,12 @@ function SelectField({
   );
 }
 
-export function ProjectRequestForm() {
+interface ProjectRequestFormProps {
+  /** Lets the surrounding page step aside once the Client has submitted. */
+  onSubmitted?: () => void;
+}
+
+export function ProjectRequestForm({ onSubmitted }: ProjectRequestFormProps = {}) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [referenceCode, setReferenceCode] = useState<string | null>(null);
 
@@ -130,6 +135,7 @@ export function ProjectRequestForm() {
 
     if (response.success && response.referenceCode) {
       setReferenceCode(response.referenceCode);
+      onSubmitted?.();
       return;
     }
 

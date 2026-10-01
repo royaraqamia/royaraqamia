@@ -3,6 +3,7 @@
 import { CheckCircle2 } from 'lucide-react';
 import { type ConsultationPackage } from '@/shared/contracts/consultation';
 import { useBookingFlow } from '@/frontend/state/consultation/use-booking-flow';
+import { BookingSummary } from '@/frontend/ui/consultation/booking-summary';
 import { BookingWizard } from '@/frontend/ui/consultation/booking-wizard';
 
 interface ConsultationBookingPageProps {
@@ -15,9 +16,12 @@ export function ConsultationBookingPage({ initialPackages }: ConsultationBooking
 
   if (!flow.createdBooking) {
     return (
-      <section aria-label="حجز جديد">
-        <BookingWizard flow={flow} />
-      </section>
+      <div className="space-y-8">
+        <BookingSummary packages={flow.packages} />
+        <section aria-label="حجز جديد">
+          <BookingWizard flow={flow} />
+        </section>
+      </div>
     );
   }
 

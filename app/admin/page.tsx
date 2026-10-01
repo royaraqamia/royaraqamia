@@ -39,7 +39,7 @@ const SECTIONS = [
   {
     href: '/admin/clients/project-requests',
     label: 'العملاء',
-    description: 'طلبات المشاريع والعقود الشَّهريَّة الواردة من الموقع',
+    description: 'طلبات المشاريع والتَّعاقُدات الشَّهريَّة الواردة من الموقع',
     icon: Briefcase,
   },
   {

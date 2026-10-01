@@ -9,7 +9,7 @@ const mockedUsePathname = vi.mocked(usePathname);
 
 const SECTIONS = [
   { href: '/admin/clients/project-requests', label: 'طلبات المشاريع' },
-  { href: '/admin/clients/retainers', label: 'العقود الشَّهريَّة' },
+  { href: '/admin/clients/retainers', label: 'التَّعاقُدات الشَّهريَّة' },
 ];
 
 describe('ClientsNav', () => {
@@ -38,7 +38,7 @@ describe('ClientsNav', () => {
     mockedUsePathname.mockReturnValue('/admin/clients/retainers');
     render(<ClientsNav />);
 
-    expect(screen.getByRole('link', { name: 'العقود الشَّهريَّة' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'التَّعاقُدات الشَّهريَّة' })).toHaveAttribute(
       'aria-current',
       'page'
     );
@@ -51,7 +51,7 @@ describe('ClientsNav', () => {
     mockedUsePathname.mockReturnValue('/admin/clients/retainers/ret-1');
     render(<ClientsNav />);
 
-    expect(screen.getByRole('link', { name: 'العقود الشَّهريَّة' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'التَّعاقُدات الشَّهريَّة' })).toHaveAttribute(
       'aria-current',
       'page'
     );

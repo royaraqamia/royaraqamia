@@ -24,9 +24,18 @@ export const PROJECT_REQUEST_TYPE_LABELS: Record<ProjectRequestType, string> = {
 };
 
 /**
- * Budget brackets anchored on the advertised starting prices ($300 for a site,
- * $600 for an app), so a prospective Client signals a range instead of guessing
- * at a number. Stored as the stable key; the Admin list shows the label.
+ * The advertised starting prices the البناء section sells under: a website
+ * without Backend, and an app with Backend. Single source for the homepage
+ * cards, the /request-project summary and the budget brackets below.
+ */
+export const PROJECT_REQUEST_WEBSITE_START_PRICE_USD = 300;
+export const PROJECT_REQUEST_APP_START_PRICE_USD = 600;
+
+/**
+ * Budget brackets anchored on the advertised starting prices, so a prospective
+ * Client signals a range instead of guessing at a number. Stored as the stable
+ * key; the Admin list shows the label. The keys are persisted on rows, so they
+ * stay fixed even if the prices move — only the labels follow the constants.
  */
 export const PROJECT_REQUEST_BUDGET_RANGES = [
   'under-300',
@@ -36,11 +45,17 @@ export const PROJECT_REQUEST_BUDGET_RANGES = [
 ] as const;
 export type ProjectRequestBudgetRange = (typeof PROJECT_REQUEST_BUDGET_RANGES)[number];
 
+const usd = (value: number): string => value.toLocaleString('en-US');
+
 export const PROJECT_REQUEST_BUDGET_RANGE_LABELS: Record<ProjectRequestBudgetRange, string> = {
-  'under-300': 'أقل من $300',
-  '300-600': '$300 – $600',
-  '600-1200': '$600 – $1,200',
-  'over-1200': 'أكثر من $1,200',
+  'under-300': `أقل من $${usd(PROJECT_REQUEST_WEBSITE_START_PRICE_USD)}`,
+  '300-600': `$${usd(PROJECT_REQUEST_WEBSITE_START_PRICE_USD)} – $${usd(
+    PROJECT_REQUEST_APP_START_PRICE_USD
+  )}`,
+  '600-1200': `$${usd(PROJECT_REQUEST_APP_START_PRICE_USD)} – $${usd(
+    PROJECT_REQUEST_APP_START_PRICE_USD * 2
+  )}`,
+  'over-1200': `أكثر من $${usd(PROJECT_REQUEST_APP_START_PRICE_USD * 2)}`,
 };
 
 export const PROJECT_REQUEST_TIMELINES = [

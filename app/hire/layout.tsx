@@ -3,8 +3,8 @@ import { Navbar } from '@/frontend/ui/Navbar';
 import { RETAINER_DEFAULT_MONTHLY_FEE_USD } from '@/shared/contracts/retainers';
 
 export const metadata: Metadata = {
-  title: 'التَّوظيف الشَّهري',
-  description: `اطلب التَّوظيف الشَّهري من رؤيَة رَقَميَّة: صيانة وتطوير وإدارة مشاريعك مقابل ${RETAINER_DEFAULT_MONTHLY_FEE_USD}$ شهريًّا. املأ النَّموذج واحصل على رقم طلب فورًا.`,
+  title: 'التَّعاقُد الشَّهري',
+  description: `اطلب التَّعاقُد الشَّهري من رؤيَة رَقَميَّة: تعاقُد مع شركة برمجيات نتولَّى فيه صيانة مشاريعك وتطويرها وإدارتها مقابل ${RETAINER_DEFAULT_MONTHLY_FEE_USD}$ شهريًّا. املأ النَّموذج واحصل على رقم طلب فورًا.`,
 };
 
 export default function HireLayout({ children }: { children: React.ReactNode }) {

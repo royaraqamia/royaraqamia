@@ -1,5 +1,10 @@
 import { CircleCheck } from 'lucide-react';
 import Link from 'next/link';
+import {
+  PROJECT_REQUEST_APP_START_PRICE_USD,
+  PROJECT_REQUEST_WEBSITE_START_PRICE_USD,
+} from '@/shared/contracts/project-requests';
+import { RETAINER_DEFAULT_MONTHLY_FEE_USD } from '@/shared/contracts/retainers';
 import { Button } from './primitives/button';
 import { MotionReveal } from './MotionReveal';
 
@@ -89,7 +94,7 @@ export function WebDevService() {
                     يبدأ من
                   </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    $300
+                    {`$${PROJECT_REQUEST_WEBSITE_START_PRICE_USD}`}
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     الدَّفع بالتَّقسيط مُتاح
@@ -115,7 +120,7 @@ export function WebDevService() {
                     يبدأ من
                   </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    $600
+                    {`$${PROJECT_REQUEST_APP_START_PRICE_USD}`}
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     الدَّفع بالتَّقسيط مُتاح
@@ -124,7 +129,7 @@ export function WebDevService() {
               </div>
             </article>
 
-            {/* Pricing Card 3: Employment / Retainer */}
+            {/* Pricing Card 3: Retainer */}
             <article
               className=" group relative p-6 sm:p-7 rounded-3xl bg-background/88 border border-white/10 dark:border-white/10 hover:border-purple-500/40 shadow-xl shadow-black/5 hover:shadow-purple-500/10 transition-safe duration-300 overflow-hidden"
               style={{ ['--ld' as string]: '0.26s' } as React.CSSProperties}
@@ -133,7 +138,7 @@ export function WebDevService() {
                 <div className="flex items-center gap-3.5 min-w-0">
                   <div className="text-start min-w-0">
                     <h3 className="text-lg sm:text-xl font-bold text-foreground">
-                      التَّوظيف الشَّهري
+                      التَّعاقُد الشَّهري
                     </h3>
                     <p className="text-xs sm:text-sm text-foreground/60 mt-1">صيانة وتطوير مستمر</p>
                   </div>
@@ -143,7 +148,7 @@ export function WebDevService() {
                     فقط شهريًّا
                   </span>
                   <div className="text-3xl sm:text-4xl font-extrabold text-purple-400 tracking-tight font-mono">
-                    $100
+                    {`$${RETAINER_DEFAULT_MONTHLY_FEE_USD}`}
                   </div>
                   <div className="text-[11px] sm:text-xs font-bold text-foreground/50 uppercase tracking-wider mt-0.5">
                     لتطوير وإدارة مشاريعك
@@ -152,7 +157,7 @@ export function WebDevService() {
               </div>
 
               <Button asChild variant="outline" size="sm" className="mt-5 w-full">
-                <Link href="/hire">اطلب التَّوظيف الشَّهري</Link>
+                <Link href="/hire">اطلب التَّعاقُد الشَّهري</Link>
               </Button>
             </article>
 

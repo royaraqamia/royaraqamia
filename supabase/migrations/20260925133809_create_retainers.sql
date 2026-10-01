@@ -1,6 +1,6 @@
 -- retainers: inbound requests from prospective Clients asking royaraqamia to
 -- take on the monthly maintenance of their own projects, submitted from /hire
--- and sold publicly as التَّوظيف الشَّهري.
+-- and sold publicly as التَّعاقُد الشَّهري.
 --
 -- These are requests, not subscriptions: no account is created, nothing is paid
 -- and no billing exists — the arrangement is collected offline (ADR-0006). Like

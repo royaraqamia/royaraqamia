@@ -78,8 +78,8 @@ _Avoid_: Project inquiry, build application, order
 A monthly arrangement in which royaraqamia maintains, fixes, improves or manages a
 Client's own projects for a fixed monthly fee. It begins as a lead and becomes an
 arrangement only when an operator activates it.
-_Sold as_: التَّوظيف الشَّهري
-_Avoid_: Employment, employee, salary, subscription, maintenance contract
+_Sold as_: التَّعاقُد الشَّهري
+_Avoid_: التوظيف, Employment, employee, salary, subscription, maintenance contract
 
 ### Showcase
 

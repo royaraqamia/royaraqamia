@@ -38,7 +38,7 @@ export function createRetainerNotifier(
   return (retainer) => {
     void fanOut({
       type: 'retainer_request',
-      title: 'طلب توظيف شهري جديد',
+      title: 'طلب تعاقُد شهري جديد',
       body: `${retainer.full_name} — ${retainer.company ?? 'بدون شركة'} (${retainer.reference_code})`,
       metadata: {
         retainerId: retainer.id,

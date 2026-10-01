@@ -15,7 +15,6 @@ import { CountryPhoneInput } from '@/frontend/ui/shared/country-phone-input';
 import { submitRetainer } from '@/frontend/api/retainers';
 import {
   RETAINER_CURRENT_PROJECTS_MAX,
-  RETAINER_DEFAULT_MONTHLY_FEE_USD,
   RETAINER_NEEDS_MAX,
   RetainerSchema,
   todayIsoDate,
@@ -33,7 +32,12 @@ function FieldError({ id, message }: { id: string; message?: string }) {
   );
 }
 
-export function RetainerRequestForm() {
+interface RetainerRequestFormProps {
+  /** Lets the surrounding page step aside once the Client has submitted. */
+  onSubmitted?: () => void;
+}
+
+export function RetainerRequestForm({ onSubmitted }: RetainerRequestFormProps = {}) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [referenceCode, setReferenceCode] = useState<string | null>(null);
 
@@ -71,6 +75,7 @@ export function RetainerRequestForm() {
 
     if (response.success && response.referenceCode) {
       setReferenceCode(response.referenceCode);
+      onSubmitted?.();
       return;
     }
 
@@ -86,7 +91,7 @@ export function RetainerRequestForm() {
           تمَّ استلام طلبك بنجاح!
         </h2>
         <p className="mt-3 text-sm sm:text-base text-muted-foreground leading-relaxed max-w-lg mx-auto">
-          سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة.
+          سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة إن شاء الله.
         </p>
       </div>
     );
@@ -94,16 +99,6 @@ export function RetainerRequestForm() {
 
   return (
     <form onSubmit={onSubmit} noValidate className="form-group">
-      <div className="rounded-2xl border border-purple-500/25 bg-purple-500/5 p-4">
-        <p className="text-sm font-bold text-foreground">
-          التَّوظيف الشَّهري — {RETAINER_DEFAULT_MONTHLY_FEE_USD}$ شهريًّا
-        </p>
-        <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
-          رسم شهريّ ثابت يغطّي الصِّيانة والتَّطوير وإدارة مشاريعك. لا يُدفع أيّ مبلغ على الموقع —
-          نتواصل معك بعد الطَّلب ونُتّفق على طريقة الدَّفع.
-        </p>
-      </div>
-
       <div className="form-field">
         <Label htmlFor="full_name" required>
           الاسم الكامل
@@ -111,7 +106,7 @@ export function RetainerRequestForm() {
         <Input
           id="full_name"
           autoComplete="name"
-          placeholder="مثال: أحمد العلي"
+          placeholder="مثال: مُحمَّد الحسن"
           {...register('full_name')}
           error={Boolean(errors.full_name)}
           aria-describedby={errors.full_name ? 'full_name-error' : undefined}
@@ -138,7 +133,7 @@ export function RetainerRequestForm() {
           )}
         />
         <p className="form-help-text">
-          اختر رمز الدولة ثم اكتب رقمك — سنتواصل معك على هذا الرَّقم.
+          اختر رمز الدَّولة ثمَّ اكتب رقمك — سنتواصل معك على هذا الرَّقم إن شاء الله.
         </p>
         <FieldError id="phone_whatsapp-error" message={errors.phone_whatsapp?.message} />
       </div>
@@ -167,7 +162,7 @@ export function RetainerRequestForm() {
         <Input
           id="company"
           autoComplete="organization"
-          placeholder="مثال: شركة النُّور للتجارة"
+          placeholder="مثال: شركة النُّور للتِّجارة"
           {...register('company')}
           error={Boolean(errors.company)}
           aria-describedby={errors.company ? 'company-error' : undefined}
@@ -201,7 +196,7 @@ export function RetainerRequestForm() {
           rows={5}
           maxLength={RETAINER_NEEDS_MAX}
           showCount
-          placeholder="حدِّد ما تريد أن نتولَّاه شهريًّا: صيانة، إصلاح أعطال، إضافة ميزات، متابعة وإدارة."
+          placeholder="حدِّد ما تريد أن نتولَّاه شهريًّا: صيانة، إصلاح أعطال، إضافة ميِّزات، متابعة وإدارة."
           {...register('needs')}
           error={Boolean(errors.needs)}
           aria-describedby={errors.needs ? 'needs-error' : undefined}
@@ -211,7 +206,7 @@ export function RetainerRequestForm() {
 
       <div className="form-field">
         <Label htmlFor="preferred_start" optional>
-          تاريخ البدء المُفضَّل
+          تاريخ البدء المفضَّل
         </Label>
         <Controller
           name="preferred_start"
@@ -221,7 +216,7 @@ export function RetainerRequestForm() {
               id="preferred_start"
               value={field.value ?? ''}
               onChange={field.onChange}
-              placeholder="اختر التاريخ"
+              placeholder="اختر التَّاريخ"
               min={todayIsoDate()}
               aria-invalid={Boolean(errors.preferred_start)}
               aria-describedby={errors.preferred_start ? 'preferred_start-error' : undefined}
@@ -244,7 +239,7 @@ export function RetainerRequestForm() {
           disabled={isSubmitting}
           className="group relative overflow-hidden w-full h-14 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white font-bold text-base shadow-xl shadow-purple-600/25 hover:shadow-purple-600/40 hover:scale-[1.005] active:scale-[0.995] transition-safe duration-300 flex items-center justify-center gap-3 cursor-pointer border-0 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          <span>{isSubmitting ? 'جاري الإرسال...' : 'أرسِل طلب التَّوظيف'}</span>
+          <span>{isSubmitting ? 'جاري الإرسال...' : 'أرسِل طلب التَّعاقُد'}</span>
         </Button>
       </div>
     </form>

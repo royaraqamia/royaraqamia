@@ -5,7 +5,7 @@ import { ClientsNav } from '@/frontend/ui/admin/clients-nav';
 
 export const metadata: Metadata = {
   title: 'العملاء',
-  description: 'طلبات المشاريع والعقود الشَّهريَّة الواردة من الموقع.',
+  description: 'طلبات المشاريع والتَّعاقُدات الشَّهريَّة الواردة من الموقع.',
 };
 
 /**
@@ -18,7 +18,7 @@ export default function AdminClientsLayout({ children }: { children: React.React
       <AdminPageHeader
         icon={Briefcase}
         title="العملاء"
-        description="طلبات المشاريع والعقود الشَّهريَّة الواردة من الموقع"
+        description="طلبات المشاريع والتَّعاقُدات الشَّهريَّة الواردة من الموقع"
       >
         <ClientsNav />
       </AdminPageHeader>

@@ -97,7 +97,7 @@ export async function listRetainers(
       );
       return jsonResult(200, result);
     },
-    { whenFailed: { success: false, error: 'تعذر تحميل العقود.' } }
+    { whenFailed: { success: false, error: 'تعذر تحميل التَّعاقُدات.' } }
   );
 }
 
@@ -118,7 +118,7 @@ export async function updateRetainer(id: string, body: unknown): Promise<HttpRes
     },
     {
       mapError: mapRetainerError,
-      whenFailed: { success: false, error: 'تعذّر تحديث العقد.' },
+      whenFailed: { success: false, error: 'تعذّر تحديث التَّعاقُد.' },
     }
   );
 }

@@ -34,13 +34,13 @@ describe('RetainersList', () => {
   it('announces itself busy while loading', () => {
     render(<RetainersList retainers={[]} loading savingId={null} onSave={vi.fn()} />);
 
-    expect(screen.getByLabelText('جاري تحميل العقود')).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByLabelText('جاري تحميل التَّعاقُدات')).toHaveAttribute('aria-busy', 'true');
   });
 
   it('shows the empty state when there are no retainers', () => {
     renderList([]);
 
-    expect(screen.getByText('لا توجد عقود بعد')).toBeInTheDocument();
+    expect(screen.getByText('لا توجد تعاقُدات بعد')).toBeInTheDocument();
   });
 
   it('renders the client name, company and reference code for each retainer', () => {

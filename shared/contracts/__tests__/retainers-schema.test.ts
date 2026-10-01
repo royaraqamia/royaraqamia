@@ -169,7 +169,7 @@ describe('RETAINER_STATUSES', () => {
 
 describe('RETAINER_DEFAULT_MONTHLY_FEE_USD', () => {
   it('is the advertised figure the copy and the table default share', () => {
-    expect(RETAINER_DEFAULT_MONTHLY_FEE_USD).toBe(100);
+    expect(RETAINER_DEFAULT_MONTHLY_FEE_USD).toBe(150);
   });
 });
 

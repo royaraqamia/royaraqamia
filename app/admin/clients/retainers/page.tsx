@@ -75,9 +75,9 @@ export default function RetainersPage() {
       const updated = result.data;
       if (result.success && updated) {
         setRetainers((rows) => rows.map((row) => (row.id === id ? updated : row)));
-        toast.success('تم تحديث العقد');
+        toast.success('تم تحديث التَّعاقُد');
       } else {
-        toast.error(result.error || 'تعذّر تحديث العقد');
+        toast.error(result.error || 'تعذّر تحديث التَّعاقُد');
       }
     } finally {
       setSavingId(null);
@@ -94,8 +94,8 @@ export default function RetainersPage() {
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="ابحث بالاسم أو الرَّقم أو رمز العقد..."
-            aria-label="البحث في العقود الشَّهريَّة"
+            placeholder="ابحث بالاسم أو الرَّقم أو رمز التَّعاقُد..."
+            aria-label="البحث في التَّعاقُدات الشَّهريَّة"
             className="ps-10"
           />
           <Search
@@ -130,7 +130,7 @@ export default function RetainersPage() {
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
         <span className="text-muted-foreground">
-          إجمالي العقود: <span className="font-bold text-foreground">{total}</span>
+          إجمالي التَّعاقُدات: <span className="font-bold text-foreground">{total}</span>
         </span>
         {total > 0 && (
           <span className="text-muted-foreground">

@@ -120,7 +120,7 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
 
   if (loading) {
     return (
-      <div className="space-y-4" aria-busy="true" aria-label="جاري تحميل العقود">
+      <div className="space-y-4" aria-busy="true" aria-label="جاري تحميل التَّعاقُدات">
         {[0, 1, 2].map((key) => (
           <div key={key} className="rounded-2xl border border-border/60 bg-card p-5">
             <Skeleton className="mb-3 h-5 w-48" />
@@ -136,8 +136,8 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
     return (
       <EmptyState
         icon={Wallet}
-        title="لا توجد عقود بعد"
-        description="ستظهر هنا كل الطلبات الواردة من صفحة التَّوظيف الشَّهري."
+        title="لا توجد تعاقُدات بعد"
+        description="ستظهر هنا كل الطلبات الواردة من صفحة التَّعاقُد الشَّهري."
       />
     );
   }
@@ -200,7 +200,7 @@ export function RetainersList({ retainers, loading, savingId, onSave }: Retainer
 
               <div className="w-full sm:w-48">
                 <label htmlFor={`status-${retainer.id}`} className="sr-only">
-                  حالة العقد
+                  حالة التَّعاقُد
                 </label>
                 <Select
                   value={retainer.status}

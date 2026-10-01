@@ -6,7 +6,7 @@ import { cn } from '@/frontend/shared/cn';
 
 const SECTIONS = [
   { href: '/admin/clients/project-requests', label: 'طلبات المشاريع' },
-  { href: '/admin/clients/retainers', label: 'العقود الشَّهريَّة' },
+  { href: '/admin/clients/retainers', label: 'التَّعاقُدات الشَّهريَّة' },
 ];
 
 export function ClientsNav() {

@@ -30,7 +30,7 @@ export class RetainerRateLimitError extends Error {
 
 export class RetainerNotFoundError extends Error {
   constructor() {
-    super('العقد غير موجود.');
+    super('التَّعاقُد غير موجود.');
     this.name = 'RetainerNotFoundError';
   }
 }

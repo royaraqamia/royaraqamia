@@ -6,7 +6,7 @@ import { whatsappPhoneRegex } from './phone';
 //
 // A prospective Client asks royaraqamia to take on the monthly maintenance of
 // their own projects and receives a Reference Code to quote. The arrangement is
-// sold publicly as التَّوظيف الشَّهري.
+// sold publicly as التَّعاقُد الشَّهري.
 //
 // It records a request, not a subscription: no account, no billing, nothing paid
 // on the site (ADR-0005, ADR-0006). "Employment", "employee" and "salary" are
@@ -32,7 +32,7 @@ export const RETAINER_REFERENCE_CODE_REGEX = /^RET-\d{4}-[A-Z0-9]{8}$/;
  * The advertised monthly figure, and the default the `retainers` table stores.
  * It records the agreed terms, not a charge: nothing is collected on the site.
  */
-export const RETAINER_DEFAULT_MONTHLY_FEE_USD = 100;
+export const RETAINER_DEFAULT_MONTHLY_FEE_USD = 150;
 
 /**
  * Bounds for the two required prose fields, matching the Consultation topic

@@ -183,7 +183,7 @@ describe('retainers controller: listRetainers', () => {
 
     expect(result).toMatchObject({
       status: 500,
-      body: { success: false, error: 'تعذر تحميل العقود.' },
+      body: { success: false, error: 'تعذر تحميل التَّعاقُدات.' },
     });
   });
 });
@@ -265,7 +265,7 @@ describe('retainers controller: updateRetainer', () => {
 
     expect(result).toMatchObject({
       status: 500,
-      body: { success: false, error: 'تعذّر تحديث العقد.' },
+      body: { success: false, error: 'تعذّر تحديث التَّعاقُد.' },
     });
   });
 });
