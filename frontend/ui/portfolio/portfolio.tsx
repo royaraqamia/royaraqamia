@@ -36,7 +36,7 @@ export const Portfolio = memo(function Portfolio() {
       {/* Portfolio Horizontal Scroll Area */}
       <div className="relative w-full group/scroll z-10">
         {/* Section Controls Bar: Progress Bar & Navigation Arrows */}
-        <div className="max-w-7xl mx-auto px-6 md:px-12 mb-6 sm:mb-8 flex flex-col sm:flex-row items-center justify-end gap-4">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 mb-4 sm:mb-6 flex flex-col sm:flex-row items-center justify-end gap-4">
           <HorizontalScrollArrows
             onScroll={scroll}
             canScrollLeft={canScrollLeft}

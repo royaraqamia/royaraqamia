@@ -29,7 +29,7 @@ export function WebDevService() {
         {/* Section Header */}
         <MotionReveal
           from="translateY(24px)"
-          className="text-center max-w-3xl mx-auto mb-14 sm:mb-20"
+          className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12"
         >
           <h2
             id="web-dev-heading"

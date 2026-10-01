@@ -20,7 +20,7 @@ export function VerifySection() {
       <div className="relative max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <ScrollAnimation animation="slide-up" duration={0.8}>
-          <div className="text-center mb-12 sm:mb-16 lg:mb-20">
+          <div className="text-center mb-8 sm:mb-10 lg:mb-12">
             {/* Section Main Title */}
             <h2
               id="verify-heading"

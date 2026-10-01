@@ -29,7 +29,7 @@ export function ConsultationCards() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header Section */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
-          <div className="text-center mb-12 sm:mb-16 md:mb-20">
+          <div className="text-center mb-8 sm:mb-10 lg:mb-12">
             {/* Main H2 Title */}
             <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white">
               <span className="bg-linear-to-r from-purple-300 via-purple-100 to-indigo-300 bg-clip-text text-transparent">

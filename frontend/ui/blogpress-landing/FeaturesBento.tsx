@@ -285,7 +285,7 @@ export function FeaturesBento() {
       sectionClassName="relative py-20 sm:py-28 lg:py-32 bg-neutral-950 text-neutral-100 selection:bg-indigo-500/45 selection:text-indigo-200 overflow-hidden"
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
-        wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-20',
+        wrapperClassName: 'text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 leading-tight text-white',
         titlePrefix: 'كل ما تحتاجه لـ ',

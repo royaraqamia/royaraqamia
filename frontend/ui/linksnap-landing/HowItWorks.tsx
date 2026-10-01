@@ -32,7 +32,7 @@ export function HowItWorks() {
       sectionClassName="relative py-20 sm:py-28 lg:py-36 overflow-hidden bg-background text-foreground"
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
-        wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24',
+        wrapperClassName: 'text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12',
         titleClassName:
           'text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground leading-[1.15] mb-6',
         titlePrefix: 'ثلاث خطوات ',

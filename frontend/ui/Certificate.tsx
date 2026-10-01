@@ -20,7 +20,7 @@ export function Certificate() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Section Header */}
         <MotionReveal from="translateY(-20px)" duration={0.8}>
-          <header className="text-center mb-12 sm:mb-16 flex flex-col items-center">
+          <header className="text-center mb-8 sm:mb-10 lg:mb-12 flex flex-col items-center">
             {/* Headline */}
             <h2
               id="certificate-heading"

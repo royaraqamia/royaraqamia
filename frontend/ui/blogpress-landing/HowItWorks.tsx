@@ -32,7 +32,7 @@ export function HowItWorks() {
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
         as: 'header',
-        wrapperClassName: 'text-center max-w-3xl mx-auto mb-16 sm:mb-24',
+        wrapperClassName: 'text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12',
         titleId: 'how-it-works-title',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.15] mb-5',

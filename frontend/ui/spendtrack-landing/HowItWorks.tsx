@@ -37,7 +37,7 @@ export function HowItWorks() {
       }
       containerClassName="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10"
       heading={{
-        wrapperClassName: 'text-center mb-16 sm:mb-20 lg:mb-24 max-w-3xl mx-auto',
+        wrapperClassName: 'text-center mb-8 sm:mb-10 lg:mb-12 max-w-3xl mx-auto',
         titleId: 'how-it-works-heading',
         titleClassName:
           'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-6 leading-tight sm:leading-[1.18]',
