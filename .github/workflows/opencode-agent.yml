@@ -1,4 +1,4 @@
-# Autonomous maintenance pipeline: plan (GLM 5.3 Flash) -> implement (DeepSeek 4.1 Flash) -> review/test -> PR.
+# Autonomous maintenance pipeline: plan (DeepSeek 4.1 Flash) -> implement (DeepSeek 4.1 Flash) -> review/test -> PR.
 # Runs weekly on Monday at 06:00 Damascus time (UTC+3) and on demand from the Actions tab.
 # Hard time limit per run: 90 minutes (job timeout). The pre-split single-model
 # pipeline needed 39-50 minutes on its own; the plan phase adds ~7 more, so 60
@@ -109,7 +109,7 @@ jobs:
               .join('; ');
             return pending || 'none';
 
-      - name: Plan — GLM 5.3 Flash (Analyze)
+      - name: Plan — DeepSeek 4.1 Flash (Analyze)
         id: plan
         timeout-minutes: 35
         uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
@@ -118,7 +118,7 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 250000
         with:
-          model: opencode-go/glm-5.3-flash
+          model: opencode-go/deepseek-v4.1-flash
           variant: high
           share: 'false'
           prompt: |
