@@ -13,6 +13,7 @@ import {
   TRAINING_APPLICATION_STATUS_LABELS,
   type TrainingApplication,
   type TrainingApplicationStatus,
+  type TrainingManualStatus,
 } from '@/shared/contracts/training';
 
 const PAGE_SIZE = 20;
@@ -69,7 +70,7 @@ export default function TrainingApplicationsPage() {
   }, [fetchData]);
 
   const handleSave = useCallback(
-    async (id: string, input: { status: TrainingApplicationStatus; notes: string | null }) => {
+    async (id: string, input: { status: TrainingManualStatus; notes: string | null }) => {
       setSavingId(id);
       try {
         const result = await updateTrainingApplication(id, input);
@@ -147,6 +148,7 @@ export default function TrainingApplicationsPage() {
         loading={loading}
         savingId={savingId}
         onSave={handleSave}
+        onEnrollmentChanged={fetchData}
       />
 
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />

@@ -16,24 +16,31 @@ import { Skeleton } from '@/frontend/ui/primitives/skeleton';
 import { formatHijriDate } from '@/frontend/shared/format';
 import { whatsappHref } from '@/frontend/shared/whatsapp';
 import {
-  TRAINING_APPLICATION_STATUSES,
   TRAINING_APPLICATION_STATUS_LABELS,
+  TRAINING_MANUAL_STATUSES,
   type TrainingApplication,
-  type TrainingApplicationStatus,
+  type TrainingManualStatus,
 } from '@/shared/contracts/training';
+import { EnrollControl } from './training-enroll-control';
 
-const STATUS_TONES: Record<TrainingApplicationStatus, string> = {
+const STATUS_TONES: Record<TrainingApplication['status'], string> = {
   new: 'border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300',
   contacted: 'border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300',
   enrolled: 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300',
   rejected: 'border-border/60 bg-muted/50 text-muted-foreground',
 };
 
+/** `enrolled` is not a manual status — it is reached only through the enroll RPC. */
+function manualStatusOf(status: TrainingApplication['status']): TrainingManualStatus {
+  return status === 'enrolled' ? 'contacted' : status;
+}
+
 interface TrainingApplicationsListProps {
   applications: TrainingApplication[];
   loading: boolean;
   savingId: string | null;
-  onSave: (id: string, input: { status: TrainingApplicationStatus; notes: string | null }) => void;
+  onSave: (id: string, input: { status: TrainingManualStatus; notes: string | null }) => void;
+  onEnrollmentChanged: () => void;
 }
 
 export function TrainingApplicationsList({
@@ -41,6 +48,7 @@ export function TrainingApplicationsList({
   loading,
   savingId,
   onSave,
+  onEnrollmentChanged,
 }: TrainingApplicationsListProps) {
   const [drafts, setDrafts] = useState<Record<string, string>>({});
 
@@ -74,6 +82,7 @@ export function TrainingApplicationsList({
         const notes = drafts[application.id] ?? application.notes ?? '';
         const isSaving = savingId === application.id;
         const notesDirty = notes.trim() !== (application.notes ?? '').trim();
+        const isEnrolled = application.status === 'enrolled';
 
         return (
           <li
@@ -104,10 +113,10 @@ export function TrainingApplicationsList({
                 </label>
                 <Select
                   value={application.status}
-                  disabled={isSaving}
+                  disabled={isSaving || isEnrolled}
                   onValueChange={(value) =>
                     onSave(application.id, {
-                      status: value as TrainingApplicationStatus,
+                      status: value as TrainingManualStatus,
                       notes: application.notes,
                     })
                   }
@@ -116,7 +125,12 @@ export function TrainingApplicationsList({
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {TRAINING_APPLICATION_STATUSES.map((status) => (
+                    {isEnrolled && (
+                      <SelectItem value="enrolled" disabled>
+                        {TRAINING_APPLICATION_STATUS_LABELS.enrolled}
+                      </SelectItem>
+                    )}
+                    {TRAINING_MANUAL_STATUSES.map((status) => (
                       <SelectItem key={status} value={status}>
                         {TRAINING_APPLICATION_STATUS_LABELS[status]}
                       </SelectItem>
@@ -124,6 +138,15 @@ export function TrainingApplicationsList({
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="mt-4 border-t border-border/50 pt-4">
+              <EnrollControl
+                applicationId={application.id}
+                isEnrolled={isEnrolled}
+                enrolledCohortId={application.cohort_id}
+                onChanged={onEnrollmentChanged}
+              />
             </div>
 
             <dl className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
@@ -183,10 +206,16 @@ export function TrainingApplicationsList({
                   type="button"
                   size="sm"
                   variant="outline"
-                  disabled={isSaving}
+                  disabled={isSaving || isEnrolled}
                   className="btn-hover-lift"
+                  title={
+                    isEnrolled ? 'ألغِ التَّسجيل أوَّلًا لتعديل الحالة والملاحظات.' : undefined
+                  }
                   onClick={() =>
-                    onSave(application.id, { status: application.status, notes: notes.trim() })
+                    onSave(application.id, {
+                      status: manualStatusOf(application.status),
+                      notes: notes.trim(),
+                    })
                   }
                 >
                   <Save className="size-4" aria-hidden="true" />

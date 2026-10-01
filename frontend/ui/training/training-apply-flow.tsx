@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { cn } from '@/frontend/shared/cn';
-import { TrainingApplicationForm } from './training-application-form';
+import { TrainingApplicationWizard } from './training-application-wizard';
 
 /**
  * Holds the "applied" flag for the apply page so the course summary can step
@@ -22,15 +21,10 @@ export function TrainingApplyFlow({ summary }: { summary: ReactNode }) {
     <div className="space-y-8">
       {!isSubmitted && summary}
 
-      {/* The confirmation is a self-contained panel, so the wrapper drops its
-          card chrome for it instead of framing a panel inside a panel. */}
-      <section
-        aria-label="نموذج التقديم"
-        className={cn(
-          !isSubmitted && 'rounded-3xl border border-border/60 bg-card p-6 sm:p-8 shadow-sm'
-        )}
-      >
-        <TrainingApplicationForm onSubmitted={() => setIsSubmitted(true)} />
+      {/* The wizard supplies its own card chrome; the confirmation is a
+          self-contained panel, so no wrapper frames either of them. */}
+      <section aria-label="نموذج التقديم">
+        <TrainingApplicationWizard onSubmitted={() => setIsSubmitted(true)} />
       </section>
     </div>
   );

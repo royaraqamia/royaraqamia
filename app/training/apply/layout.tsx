@@ -4,7 +4,7 @@ import { Navbar } from '@/frontend/ui/Navbar';
 export const metadata: Metadata = {
   title: 'التَّسجيل في التَّدريب',
   description:
-    'قدّم طلبك للالتحاق بدورة بناء المنتجات الرقميَّة من الصِّفر: املأ النَّموذج وسنتواصل معك عبر واتساب لتأكيد مقعدك.',
+    'قدّم طلبك للالتحاق بدورة تطوير وإدارة المنتجات الرَّقميَّة: املأ النَّموذج وسنتواصل معك عبر واتساب.',
 };
 
 export default function TrainingApplyLayout({ children }: { children: React.ReactNode }) {
