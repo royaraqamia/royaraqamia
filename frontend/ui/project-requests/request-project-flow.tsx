@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 
-import { cn } from '@/frontend/shared/cn';
-import { ProjectRequestForm } from './project-request-form';
+import { ProjectRequestWizard } from './project-request-wizard';
 
 /**
  * Holds the "submitted" flag for the request-project page so the summary can
@@ -22,15 +21,10 @@ export function RequestProjectFlow({ summary }: { summary: ReactNode }) {
     <div className="space-y-8">
       {!isSubmitted && summary}
 
-      {/* The confirmation is a self-contained panel, so the wrapper drops its
-          card chrome for it instead of framing a panel inside a panel. */}
-      <section
-        aria-label="نموذج طلب المشروع"
-        className={cn(
-          !isSubmitted && 'rounded-3xl border border-border/60 bg-card p-6 sm:p-8 shadow-sm'
-        )}
-      >
-        <ProjectRequestForm onSubmitted={() => setIsSubmitted(true)} />
+      {/* The wizard supplies its own card chrome; the confirmation is a
+          self-contained panel, so no wrapper frames either of them. */}
+      <section aria-label="نموذج طلب المشروع">
+        <ProjectRequestWizard onSubmitted={() => setIsSubmitted(true)} />
       </section>
     </div>
   );
