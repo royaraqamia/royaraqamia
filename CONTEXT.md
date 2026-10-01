@@ -18,14 +18,25 @@ A single taught programme that a student applies to — the thing with a title, 
 trainer, a price and a duration.
 _Avoid_: Class, workshop, programme, module
 
+**Cohort**:
+A dated intake of a Course: a fixed start date and a fixed number of seats. Seats are
+the only scarce resource in the training offering, and a Cohort holds them.
+_Avoid_: Batch, group, class, intake, round, session
+
 **Application**:
-A prospective student's request to join a Course. It is a lead: it reserves no seat
-and involves no payment.
+A prospective student's request to join a Course, optionally naming the Cohort they
+want. It is a lead: it involves no payment, and it holds no seat until it is enrolled.
 _Avoid_: Registration, enrollment, booking, signup
 
+**Enrollment**:
+The act of moving an Application into a Cohort, which claims one of that Cohort's
+seats and is the only thing that consumes capacity. Seats are claimed by an operator,
+never by the applicant.
+_Avoid_: Booking, registration, admission, signup, reservation
+
 **Application Status**:
-Where an Application sits in the operator's follow-up. `enrolled` records a human
-decision to accept the applicant; it does not mean a seat was allocated or paid for.
+Where an Application sits in the operator's follow-up. `enrolled` means the applicant
+was accepted and a seat in a Cohort was claimed for them; it does not mean payment.
 _Avoid_: Booking status, payment status, order status
 
 **Reference Code**:

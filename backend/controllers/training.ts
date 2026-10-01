@@ -8,11 +8,21 @@ import {
   TrainingApplicationNotFoundError,
   TrainingApplicationRateLimitError,
 } from '@/backend/services/training/training-application-service';
+import {
+  AlreadyEnrolledError,
+  CohortClosedError,
+  CohortFullError,
+  CohortNotFoundError,
+  InvalidReleaseStatusError,
+  NotEnrolledError,
+} from '@/backend/repositories/training/training-applications-repository';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import { isRepositoryError } from '@/backend/shared/repository-error';
 import {
   TRAINING_APPLICATION_STATUSES,
+  TrainingApplicationEnrollSchema,
+  TrainingApplicationReleaseSchema,
   TrainingApplicationSchema,
   TrainingApplicationUpdateSchema,
   type TrainingApplication,
@@ -89,6 +99,42 @@ function mapTrainingApplicationError(error: unknown): HttpResult | null {
       error: error.message,
     } satisfies ApplicationActionResult);
   }
+  if (error instanceof CohortFullError) {
+    return jsonResult(409, {
+      success: false,
+      error: 'اكتمل عدد المقاعد في هذه الدُّفعة.',
+    } satisfies ApplicationActionResult);
+  }
+  if (error instanceof CohortNotFoundError) {
+    return jsonResult(404, {
+      success: false,
+      error: 'الدُّفعة المختارة غير موجودة.',
+    } satisfies ApplicationActionResult);
+  }
+  if (error instanceof CohortClosedError) {
+    return jsonResult(400, {
+      success: false,
+      error: 'هذه الدُّفعة مُغلَقة.',
+    } satisfies ApplicationActionResult);
+  }
+  if (error instanceof AlreadyEnrolledError) {
+    return jsonResult(409, {
+      success: false,
+      error: 'الطَّلب مُسجَّل بالفعل في دُفعة.',
+    } satisfies ApplicationActionResult);
+  }
+  if (error instanceof NotEnrolledError) {
+    return jsonResult(409, {
+      success: false,
+      error: 'الطَّلب غير مُسجَّل في أي دُفعة.',
+    } satisfies ApplicationActionResult);
+  }
+  if (error instanceof InvalidReleaseStatusError) {
+    return jsonResult(400, {
+      success: false,
+      error: 'حالة غير معروفة.',
+    } satisfies ApplicationActionResult);
+  }
   return null;
 }
 
@@ -127,6 +173,62 @@ export async function updateTrainingApplication(id: string, body: unknown): Prom
     {
       mapError: mapTrainingApplicationError,
       whenFailed: { success: false, error: 'تعذّر تحديث الطلب.' },
+    }
+  );
+}
+
+/**
+ * Enrolls an application into a cohort, claiming a seat. An explicit action, not
+ * a status flip: the seat is scarce and must not be consumed by a dropdown write.
+ */
+export async function enrollTrainingApplication(id: string, body: unknown): Promise<HttpResult> {
+  return withAdminUser(
+    async () => {
+      const parsed = TrainingApplicationEnrollSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'تحقق من الحقول المدخلة.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        } satisfies ApplicationActionResult);
+      }
+
+      const data = await createDefaultTrainingApplicationService().enroll(
+        id,
+        parsed.data.cohort_id
+      );
+      return jsonResult(200, { success: true, data } satisfies ApplicationActionResult);
+    },
+    {
+      mapError: mapTrainingApplicationError,
+      whenFailed: { success: false, error: 'تعذّر تسجيل الطَّلب.' },
+    }
+  );
+}
+
+/** Releases a seat: moves the application out of `enrolled` and frees capacity. */
+export async function releaseTrainingApplication(id: string, body: unknown): Promise<HttpResult> {
+  return withAdminUser(
+    async () => {
+      const parsed = TrainingApplicationReleaseSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: 'تحقق من الحقول المدخلة.',
+          fieldErrors: zodFieldErrors(parsed.error),
+        } satisfies ApplicationActionResult);
+      }
+
+      const data = await createDefaultTrainingApplicationService().release(
+        id,
+        parsed.data.status,
+        parsed.data.notes ?? null
+      );
+      return jsonResult(200, { success: true, data } satisfies ApplicationActionResult);
+    },
+    {
+      mapError: mapTrainingApplicationError,
+      whenFailed: { success: false, error: 'تعذّر تحرير المقعد.' },
     }
   );
 }

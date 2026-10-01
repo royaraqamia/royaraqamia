@@ -15,6 +15,10 @@ import {
   type TrainingApplicationInput,
 } from '@/shared/contracts/training';
 import { createRateLimiter } from '@/backend/clients/rate-limiter';
+import {
+  CohortFullError,
+  NotEnrolledError,
+} from '@/backend/repositories/training/training-applications-repository';
 
 const VALID_INPUT: TrainingApplicationInput = {
   course_slug: 'build-digital-products',
@@ -32,6 +36,7 @@ function makeApplication(overrides: Partial<TrainingApplication> = {}): Training
     goal: 'أريد بناء متجر إلكتروني.',
     reference_code: 'TRN-2026-A7K2M9QX',
     status: 'new',
+    cohort_id: null,
     notes: null,
     user_id: null,
     created_at: '2026-09-16T00:00:00.000Z',
@@ -349,9 +354,9 @@ describe('TrainingApplicationService.update', () => {
   it('writes null when notes are blanked out', async () => {
     const { service, repository } = makeService();
 
-    await service.update('app-1', { status: 'enrolled', notes: '   ' });
+    await service.update('app-1', { status: 'contacted', notes: '   ' });
 
-    expect(repository.updateStatus).toHaveBeenCalledWith('app-1', 'enrolled', null);
+    expect(repository.updateStatus).toHaveBeenCalledWith('app-1', 'contacted', null);
   });
 
   it('rejects an unknown application', async () => {
@@ -360,5 +365,64 @@ describe('TrainingApplicationService.update', () => {
     });
 
     await expect(service.update('missing', { status: 'contacted' })).rejects.toThrow('غير موجود');
+  });
+});
+
+describe('TrainingApplicationService.enroll', () => {
+  it('delegates to the repository enroll, which owns the race guard', async () => {
+    const enroll = vi.fn().mockResolvedValue(makeApplication({ status: 'enrolled' }));
+    const { service, repository } = makeService({
+      repository: makeRepository({ enroll } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await service.enroll('app-1', 'cohort-1');
+
+    expect(repository.enroll).toHaveBeenCalledWith('app-1', 'cohort-1');
+  });
+
+  it('rejects an unknown application without touching the cohort', async () => {
+    const enroll = vi.fn();
+    const { service } = makeService({
+      repository: makeRepository({
+        getById: vi.fn().mockResolvedValue(null),
+        enroll,
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await expect(service.enroll('missing', 'cohort-1')).rejects.toThrow('غير موجود');
+    expect(enroll).not.toHaveBeenCalled();
+  });
+
+  it('propagates a full cohort instead of swallowing it', async () => {
+    const enroll = vi.fn().mockRejectedValue(new CohortFullError());
+    const { service } = makeService({
+      repository: makeRepository({ enroll } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await expect(service.enroll('app-1', 'cohort-1')).rejects.toBeInstanceOf(CohortFullError);
+  });
+});
+
+describe('TrainingApplicationService.release', () => {
+  it('delegates to the repository release with a trimmed status and notes', async () => {
+    const release = vi.fn().mockResolvedValue(makeApplication({ status: 'contacted' }));
+    const { service, repository } = makeService({
+      repository: makeRepository({ release } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await service.release('app-1', 'contacted', null);
+
+    expect(repository.release).toHaveBeenCalledWith('app-1', 'contacted', null);
+  });
+
+  it('rejects an application that is not enrolled', async () => {
+    const release = vi.fn().mockRejectedValue(new NotEnrolledError());
+    const { service } = makeService({
+      repository: makeRepository({ release } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await expect(service.release('app-1', 'contacted', null)).rejects.toBeInstanceOf(
+      NotEnrolledError
+    );
   });
 });

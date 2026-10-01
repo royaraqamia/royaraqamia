@@ -1,4 +1,4 @@
-export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+﻿export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
@@ -79,44 +79,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      budgets: {
-        Row: {
-          amount: number;
-          category_id: string | null;
-          created_at: string;
-          id: string;
-          month: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          amount: number;
-          category_id?: string | null;
-          created_at?: string;
-          id?: string;
-          month: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          amount?: number;
-          category_id?: string | null;
-          created_at?: string;
-          id?: string;
-          month?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'budgets_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       blog_categories: {
         Row: {
           created_at: string;
@@ -164,6 +126,44 @@ export type Database = {
           user_id?: string;
         };
         Relationships: [];
+      };
+      budgets: {
+        Row: {
+          amount: number;
+          category_id: string | null;
+          created_at: string;
+          id: string;
+          month: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          category_id?: string | null;
+          created_at?: string;
+          id?: string;
+          month: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          category_id?: string | null;
+          created_at?: string;
+          id?: string;
+          month?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'budgets_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       categories: {
         Row: {
@@ -377,6 +377,45 @@ export type Database = {
         };
         Relationships: [];
       };
+      expense_splits: {
+        Row: {
+          amount: number;
+          category_id: string;
+          created_at: string;
+          expense_id: string;
+          id: string;
+        };
+        Insert: {
+          amount: number;
+          category_id: string;
+          created_at?: string;
+          expense_id: string;
+          id?: string;
+        };
+        Update: {
+          amount?: number;
+          category_id?: string;
+          created_at?: string;
+          expense_id?: string;
+          id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'expense_splits_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+          {
+            foreignKeyName: 'expense_splits_expense_id_fkey';
+            columns: ['expense_id'];
+            isOneToOne: false;
+            referencedRelation: 'expenses';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       expenses: {
         Row: {
           amount: number;
@@ -421,92 +460,6 @@ export type Database = {
           },
         ];
       };
-      expense_splits: {
-        Row: {
-          amount: number;
-          category_id: string;
-          created_at: string;
-          expense_id: string;
-          id: string;
-        };
-        Insert: {
-          amount: number;
-          category_id: string;
-          created_at?: string;
-          expense_id: string;
-          id?: string;
-        };
-        Update: {
-          amount?: number;
-          category_id?: string;
-          created_at?: string;
-          expense_id?: string;
-          id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'expense_splits_category_id_fkey';
-            columns: ['category_id'];
-            isOneToOne: false;
-            referencedRelation: 'categories';
-            referencedColumns: ['id'];
-          },
-          {
-            foreignKeyName: 'expense_splits_expense_id_fkey';
-            columns: ['expense_id'];
-            isOneToOne: false;
-            referencedRelation: 'expenses';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      recurring_expenses: {
-        Row: {
-          active: boolean;
-          amount: number;
-          category_id: string;
-          created_at: string;
-          day_of_month: number;
-          description: string | null;
-          id: string;
-          start_month: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          active?: boolean;
-          amount: number;
-          category_id: string;
-          created_at?: string;
-          day_of_month: number;
-          description?: string | null;
-          id?: string;
-          start_month: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          active?: boolean;
-          amount?: number;
-          category_id?: string;
-          created_at?: string;
-          day_of_month?: number;
-          description?: string | null;
-          id?: string;
-          start_month?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'recurring_expenses_category_id_fkey';
-            columns: ['category_id'];
-            isOneToOne: false;
-            referencedRelation: 'categories';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       habit_logs: {
         Row: {
           completed: boolean;
@@ -514,6 +467,8 @@ export type Database = {
           date: string;
           habit_id: string;
           id: string;
+          log_kind: string;
+          note: string | null;
           user_id: string;
         };
         Insert: {
@@ -522,6 +477,8 @@ export type Database = {
           date: string;
           habit_id: string;
           id?: string;
+          log_kind?: string;
+          note?: string | null;
           user_id: string;
         };
         Update: {
@@ -530,6 +487,8 @@ export type Database = {
           date?: string;
           habit_id?: string;
           id?: string;
+          log_kind?: string;
+          note?: string | null;
           user_id?: string;
         };
         Relationships: [
@@ -549,6 +508,9 @@ export type Database = {
           frequency: string;
           id: string;
           name: string;
+          reminder_time: string | null;
+          target: number | null;
+          target_period: string | null;
           user_id: string;
         };
         Insert: {
@@ -557,6 +519,9 @@ export type Database = {
           frequency?: string;
           id?: string;
           name: string;
+          reminder_time?: string | null;
+          target?: number | null;
+          target_period?: string | null;
           user_id: string;
         };
         Update: {
@@ -565,6 +530,135 @@ export type Database = {
           frequency?: string;
           id?: string;
           name?: string;
+          reminder_time?: string | null;
+          target?: number | null;
+          target_period?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      mcp_oauth_auth_codes: {
+        Row: {
+          challenge_method: string;
+          client_id: string;
+          code_challenge: string;
+          code_hash: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          redirect_uri: string;
+          scope: Json;
+          session_enc: string | null;
+          used_at: string | null;
+          user_id: string;
+        };
+        Insert: {
+          challenge_method?: string;
+          client_id: string;
+          code_challenge: string;
+          code_hash: string;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          redirect_uri: string;
+          scope?: Json;
+          session_enc?: string | null;
+          used_at?: string | null;
+          user_id: string;
+        };
+        Update: {
+          challenge_method?: string;
+          client_id?: string;
+          code_challenge?: string;
+          code_hash?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          redirect_uri?: string;
+          scope?: Json;
+          session_enc?: string | null;
+          used_at?: string | null;
+          user_id?: string;
+        };
+        Relationships: [];
+      };
+      mcp_oauth_clients: {
+        Row: {
+          client_id: string;
+          client_name: string | null;
+          client_secret_hash: string | null;
+          created_at: string;
+          expires_at: string | null;
+          id: string;
+          redirect_uris: Json;
+          registration_token_hash: string | null;
+          scopes: Json;
+        };
+        Insert: {
+          client_id: string;
+          client_name?: string | null;
+          client_secret_hash?: string | null;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          redirect_uris?: Json;
+          registration_token_hash?: string | null;
+          scopes?: Json;
+        };
+        Update: {
+          client_id?: string;
+          client_name?: string | null;
+          client_secret_hash?: string | null;
+          created_at?: string;
+          expires_at?: string | null;
+          id?: string;
+          redirect_uris?: Json;
+          registration_token_hash?: string | null;
+          scopes?: Json;
+        };
+        Relationships: [];
+      };
+      mcp_oauth_tokens: {
+        Row: {
+          client_id: string;
+          created_at: string;
+          expires_at: string;
+          id: string;
+          kind: string;
+          last_used_at: string | null;
+          refresh_token_hash: string | null;
+          revoked_at: string | null;
+          scope: Json;
+          session_enc: string | null;
+          token_hash: string;
+          user_id: string;
+        };
+        Insert: {
+          client_id: string;
+          created_at?: string;
+          expires_at: string;
+          id?: string;
+          kind: string;
+          last_used_at?: string | null;
+          refresh_token_hash?: string | null;
+          revoked_at?: string | null;
+          scope?: Json;
+          session_enc?: string | null;
+          token_hash: string;
+          user_id: string;
+        };
+        Update: {
+          client_id?: string;
+          created_at?: string;
+          expires_at?: string;
+          id?: string;
+          kind?: string;
+          last_used_at?: string | null;
+          refresh_token_hash?: string | null;
+          revoked_at?: string | null;
+          scope?: Json;
+          session_enc?: string | null;
+          token_hash?: string;
           user_id?: string;
         };
         Relationships: [];
@@ -674,74 +768,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      posts: {
-        Row: {
-          author_id: string;
-          blog_visible: boolean;
-          content: string | null;
-          cover_image: string | null;
-          created_at: string;
-          featured: boolean;
-          id: string;
-          meta_desc: string | null;
-          meta_title: string | null;
-          published_at: string | null;
-          publish_at: string | null;
-          reading_time_minutes: number;
-          slug: string;
-          status: Database['public']['Enums']['post_status'];
-          title: string;
-          updated_at: string;
-          view_count: number;
-        };
-        Insert: {
-          author_id: string;
-          blog_visible?: boolean;
-          content?: string | null;
-          cover_image?: string | null;
-          created_at?: string;
-          featured?: boolean;
-          id?: string;
-          meta_desc?: string | null;
-          meta_title?: string | null;
-          published_at?: string | null;
-          publish_at?: string | null;
-          reading_time_minutes?: number;
-          slug: string;
-          status?: Database['public']['Enums']['post_status'];
-          title: string;
-          updated_at?: string;
-          view_count?: number;
-        };
-        Update: {
-          author_id?: string;
-          blog_visible?: boolean;
-          content?: string | null;
-          cover_image?: string | null;
-          created_at?: string;
-          featured?: boolean;
-          id?: string;
-          meta_desc?: string | null;
-          meta_title?: string | null;
-          published_at?: string | null;
-          publish_at?: string | null;
-          reading_time_minutes?: number;
-          slug?: string;
-          status?: Database['public']['Enums']['post_status'];
-          title?: string;
-          updated_at?: string;
-          view_count?: number;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'posts_author_id_fkey';
-            columns: ['author_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       post_categories: {
         Row: {
           category_id: string;
@@ -802,6 +828,74 @@ export type Database = {
           },
         ];
       };
+      posts: {
+        Row: {
+          author_id: string;
+          blog_visible: boolean;
+          content: string | null;
+          cover_image: string | null;
+          created_at: string;
+          featured: boolean;
+          id: string;
+          meta_desc: string | null;
+          meta_title: string | null;
+          publish_at: string | null;
+          published_at: string | null;
+          reading_time_minutes: number;
+          slug: string;
+          status: Database['public']['Enums']['post_status'];
+          title: string;
+          updated_at: string;
+          view_count: number;
+        };
+        Insert: {
+          author_id: string;
+          blog_visible?: boolean;
+          content?: string | null;
+          cover_image?: string | null;
+          created_at?: string;
+          featured?: boolean;
+          id?: string;
+          meta_desc?: string | null;
+          meta_title?: string | null;
+          publish_at?: string | null;
+          published_at?: string | null;
+          reading_time_minutes?: number;
+          slug: string;
+          status?: Database['public']['Enums']['post_status'];
+          title: string;
+          updated_at?: string;
+          view_count?: number;
+        };
+        Update: {
+          author_id?: string;
+          blog_visible?: boolean;
+          content?: string | null;
+          cover_image?: string | null;
+          created_at?: string;
+          featured?: boolean;
+          id?: string;
+          meta_desc?: string | null;
+          meta_title?: string | null;
+          publish_at?: string | null;
+          published_at?: string | null;
+          reading_time_minutes?: number;
+          slug?: string;
+          status?: Database['public']['Enums']['post_status'];
+          title?: string;
+          updated_at?: string;
+          view_count?: number;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'posts_author_id_fkey';
+            columns: ['author_id'];
+            isOneToOne: false;
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       project_requests: {
         Row: {
           budget_range: string | null;
@@ -854,15 +948,7 @@ export type Database = {
           updated_at?: string;
           user_id?: string | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'project_requests_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       push_subscriptions: {
         Row: {
@@ -895,12 +981,51 @@ export type Database = {
           user_agent?: string | null;
           user_id?: string;
         };
+        Relationships: [];
+      };
+      recurring_expenses: {
+        Row: {
+          active: boolean;
+          amount: number;
+          category_id: string;
+          created_at: string;
+          day_of_month: number;
+          description: string | null;
+          id: string;
+          start_month: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          amount: number;
+          category_id: string;
+          created_at?: string;
+          day_of_month: number;
+          description?: string | null;
+          id?: string;
+          start_month: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          active?: boolean;
+          amount?: number;
+          category_id?: string;
+          created_at?: string;
+          day_of_month?: number;
+          description?: string | null;
+          id?: string;
+          start_month?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
         Relationships: [
           {
-            foreignKeyName: 'push_subscriptions_user_id_fkey';
-            columns: ['user_id'];
+            foreignKeyName: 'recurring_expenses_category_id_fkey';
+            columns: ['category_id'];
             isOneToOne: false;
-            referencedRelation: 'users';
+            referencedRelation: 'categories';
             referencedColumns: ['id'];
           },
         ];
@@ -960,15 +1085,7 @@ export type Database = {
           updated_at?: string;
           user_id?: string | null;
         };
-        Relationships: [
-          {
-            foreignKeyName: 'retainers_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: false;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
+        Relationships: [];
       };
       short_links: {
         Row: {
@@ -1005,6 +1122,7 @@ export type Database = {
       };
       training_applications: {
         Row: {
+          cohort_id: string | null;
           course_slug: string;
           created_at: string;
           full_name: string;
@@ -1018,6 +1136,7 @@ export type Database = {
           user_id: string | null;
         };
         Insert: {
+          cohort_id?: string | null;
           course_slug: string;
           created_at?: string;
           full_name: string;
@@ -1031,6 +1150,7 @@ export type Database = {
           user_id?: string | null;
         };
         Update: {
+          cohort_id?: string | null;
           course_slug?: string;
           created_at?: string;
           full_name?: string;
@@ -1045,13 +1165,67 @@ export type Database = {
         };
         Relationships: [
           {
-            foreignKeyName: 'training_applications_user_id_fkey';
-            columns: ['user_id'];
+            foreignKeyName: 'training_applications_cohort_id_fkey';
+            columns: ['cohort_id'];
             isOneToOne: false;
-            referencedRelation: 'users';
+            referencedRelation: 'training_cohorts';
             referencedColumns: ['id'];
           },
         ];
+      };
+      training_cohorts: {
+        Row: {
+          capacity: number;
+          course_slug: string;
+          created_at: string;
+          id: string;
+          label: string;
+          seats_taken: number;
+          starts_at: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          capacity: number;
+          course_slug: string;
+          created_at?: string;
+          id?: string;
+          label: string;
+          seats_taken?: number;
+          starts_at: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          capacity?: number;
+          course_slug?: string;
+          created_at?: string;
+          id?: string;
+          label?: string;
+          seats_taken?: number;
+          starts_at?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      user_settings: {
+        Row: {
+          currency: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          currency?: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          currency?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [];
       };
       users: {
         Row: {
@@ -1083,32 +1257,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      user_settings: {
-        Row: {
-          currency: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          currency?: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          currency?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'user_settings_user_id_fkey';
-            columns: ['user_id'];
-            isOneToOne: true;
-            referencedRelation: 'users';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
     };
     Views: {
       [_ in never]: never;
@@ -1116,21 +1264,25 @@ export type Database = {
     Functions: {
       create_consultation_booking: {
         Args: {
-          p_email: string | null;
+          p_email: string;
           p_full_name: string;
           p_package_id: string;
           p_phone_whatsapp: string;
           p_reference_code: string;
           p_slot_ids: string[];
           p_topic_description: string;
-          p_user_id: string | null;
+          p_user_id: string;
         };
+        Returns: string;
+      };
+      enroll_application: {
+        Args: { p_application_id: string; p_cohort_id: string };
         Returns: string;
       };
       generate_certificate_code: { Args: never; Returns: string };
       get_category_breakdown: {
         Args: {
-          p_categories: string[] | null;
+          p_categories: string[];
           p_end: string;
           p_start: string;
           p_user_id: string;
@@ -1144,7 +1296,7 @@ export type Database = {
       };
       get_daily_totals: {
         Args: {
-          p_categories: string[] | null;
+          p_categories: string[];
           p_end: string;
           p_start: string;
           p_user_id: string;
@@ -1156,28 +1308,42 @@ export type Database = {
       };
       get_total_expenses: {
         Args: {
-          p_categories: string[] | null;
+          p_categories: string[];
           p_end: string;
           p_start: string;
           p_user_id: string;
         };
         Returns: number;
       };
-      increment_post_view_count: { Args: { p_post_id: string }; Returns: undefined };
       increment_otp_attempts: { Args: { row_id: string }; Returns: number };
+      increment_post_view_count: {
+        Args: { p_post_id: string };
+        Returns: undefined;
+      };
       is_admin: { Args: never; Returns: boolean };
       list_available_consultation_slots: {
         Args: { p_now: string };
         Returns: {
+          ends_at: string;
           slot_id: string;
           starts_at: string;
-          ends_at: string;
         }[];
       };
+      materialize_due_recurring_expenses: { Args: never; Returns: boolean };
       recompute_admin_flags: {
         Args: { p_emails: string[] };
         Returns: undefined;
       };
+      release_application: {
+        Args: { p_application_id: string; p_status: string };
+        Returns: string;
+      };
+      send_daily_habit_reminders: { Args: never; Returns: undefined };
+      send_recovery_nudges: { Args: never; Returns: undefined };
+      show_limit: { Args: never; Returns: number };
+      show_trgm: { Args: { '': string }; Returns: string[] };
+      sweep_expired_mcp_oauth_tokens: { Args: never; Returns: undefined };
+      sweep_stale_push_subscriptions: { Args: never; Returns: undefined };
     };
     Enums: {
       post_status: 'draft' | 'published' | 'scheduled';
@@ -1302,7 +1468,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      post_status: ['draft', 'published'],
+      post_status: ['draft', 'published', 'scheduled'],
     },
   },
 } as const;

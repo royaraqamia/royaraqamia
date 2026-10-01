@@ -61,6 +61,85 @@ export const TRAINING_APPLICATION_STATUS_LABELS: Record<TrainingApplicationStatu
 export const TRAINING_REFERENCE_CODE_REGEX = /^TRN-\d{4}-[A-Z0-9]{8}$/;
 
 // ------------------------------------------------------------
+// Cohorts
+//
+// A dated intake: a fixed start date and a fixed number of seats. Seats are the
+// only scarce resource in the training offering. Applying to a Cohort reserves
+// nothing; an operator enrolls an Application into it, claiming a seat
+// (ADR-0008).
+// ------------------------------------------------------------
+
+export const TRAINING_COHORT_STATUSES = ['open', 'closed'] as const;
+export type TrainingCohortStatus = (typeof TRAINING_COHORT_STATUSES)[number];
+
+export const TRAINING_COHORT_STATUS_LABELS: Record<TrainingCohortStatus, string> = {
+  open: 'مفتوحة',
+  closed: 'مُغلَقة',
+};
+
+/** The default seat count for a new Cohort, and the ceiling the form enforces. */
+export const TRAINING_COHORT_DEFAULT_CAPACITY = 10;
+export const TRAINING_COHORT_CAPACITY_MAX = 100;
+
+/** Bound for the operator-facing Cohort label, e.g. "الدُّفعة الثَّانية — نوفمبر". */
+export const TRAINING_COHORT_LABEL_MAX = 120;
+export const TRAINING_COHORT_NOTES_MAX = 2000;
+
+export interface TrainingCohort {
+  id: string;
+  course_slug: string;
+  label: string;
+  starts_at: string;
+  capacity: number;
+  seats_taken: number;
+  status: TrainingCohortStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+/** Seats still available in a Cohort. Never negative, even if a counter drifts. */
+export function trainingCohortSeatsLeft(cohort: Pick<TrainingCohort, 'capacity' | 'seats_taken'>) {
+  return Math.max(cohort.capacity - cohort.seats_taken, 0);
+}
+
+export const TrainingCohortCreateSchema = z.object({
+  course_slug: z.enum(COURSE_SLUGS, 'الدورة المطلوبة غير متوفِّرة'),
+  label: z
+    .string()
+    .trim()
+    .min(2, 'العنوان يجب أن يكون حرفين على الأقل')
+    .max(TRAINING_COHORT_LABEL_MAX, 'العنوان طويل جدًّا'),
+  starts_at: z.string().trim().min(1, 'تاريخ البدء مطلوب'),
+  capacity: z.coerce
+    .number()
+    .int('عدد المقاعد يجب أن يكون رقمًا صحيحًا')
+    .min(1, 'عدد المقاعد يجب أن يكون مقعدًا واحدًا على الأقل')
+    .max(TRAINING_COHORT_CAPACITY_MAX, 'عدد المقاعد كبير جدًّا'),
+  status: z.enum(TRAINING_COHORT_STATUSES).optional().default('open'),
+});
+
+export type TrainingCohortCreateInput = z.infer<typeof TrainingCohortCreateSchema>;
+
+export const TrainingCohortUpdateSchema = z.object({
+  label: z
+    .string()
+    .trim()
+    .min(2, 'العنوان يجب أن يكون حرفين على الأقل')
+    .max(TRAINING_COHORT_LABEL_MAX, 'العنوان طويل جدًّا')
+    .optional(),
+  starts_at: z.string().trim().min(1, 'تاريخ البدء مطلوب').optional(),
+  capacity: z.coerce
+    .number()
+    .int('عدد المقاعد يجب أن يكون رقمًا صحيحًا')
+    .min(1, 'عدد المقاعد يجب أن يكون مقعدًا واحدًا على الأقل')
+    .max(TRAINING_COHORT_CAPACITY_MAX, 'عدد المقاعد كبير جدًّا')
+    .optional(),
+  status: z.enum(TRAINING_COHORT_STATUSES, 'حالة غير معروفة').optional(),
+});
+
+export type TrainingCohortUpdateInput = z.infer<typeof TrainingCohortUpdateSchema>;
+
+// ------------------------------------------------------------
 // Entity
 // ------------------------------------------------------------
 
@@ -72,6 +151,8 @@ export interface TrainingApplication {
   goal: string | null;
   reference_code: string;
   status: TrainingApplicationStatus;
+  /** The Cohort holding this Application's seat; null until enrolled. */
+  cohort_id: string | null;
   notes: string | null;
   user_id: string | null;
   created_at: string;
@@ -91,13 +172,45 @@ export const TrainingApplicationSchema = z.object({
     .max(120, 'الاسم طويل جدًّا'),
   phone_whatsapp: z.string().trim().regex(whatsappPhoneRegex, 'رقم واتساب غير صحيح'),
   goal: z.string().trim().max(1000, 'النصّ طويل جدًّا (1,000 حرف كحد أقصى)').optional(),
+  /**
+   * The Cohort the applicant wants. Optional: a Cohort may not be open yet, and
+   * applying still just records a lead — the seat is claimed at enrollment.
+   */
+  cohort_id: z.string().uuid('الدُّفعة المختارة غير صحيحة').optional().nullable(),
 });
 
 export type TrainingApplicationInput = z.infer<typeof TrainingApplicationSchema>;
 
+/**
+ * Statuses an application may be moved to through the plain update path.
+ *
+ * `enrolled` is deliberately absent: enrolling claims a scarce seat, so it must
+ * go through the capacity-guarded `enroll` RPC, never a status write (ADR-0008).
+ * Leaving `enrolled` is likewise the `release` path, which gives the seat back.
+ */
+export const TRAINING_MANUAL_STATUSES = ['new', 'contacted', 'rejected'] as const;
+export type TrainingManualStatus = (typeof TRAINING_MANUAL_STATUSES)[number];
+
 export const TrainingApplicationUpdateSchema = z.object({
-  status: z.enum(TRAINING_APPLICATION_STATUSES, 'حالة غير معروفة'),
+  status: z.enum(TRAINING_MANUAL_STATUSES, 'حالة غير معروفة'),
   notes: z.string().trim().max(2000, 'الملاحظات طويلة جدًّا').optional().nullable(),
 });
 
 export type TrainingApplicationUpdateInput = z.infer<typeof TrainingApplicationUpdateSchema>;
+
+/** Targets an enrolled Application can be released to (it can never go back to `enrolled`). */
+export const TRAINING_RELEASE_TARGET_STATUSES = ['new', 'contacted', 'rejected'] as const;
+export type TrainingReleaseTargetStatus = (typeof TRAINING_RELEASE_TARGET_STATUSES)[number];
+
+export const TrainingApplicationEnrollSchema = z.object({
+  cohort_id: z.string().uuid('الدُّفعة غير صحيحة'),
+});
+
+export type TrainingApplicationEnrollInput = z.infer<typeof TrainingApplicationEnrollSchema>;
+
+export const TrainingApplicationReleaseSchema = z.object({
+  status: z.enum(TRAINING_RELEASE_TARGET_STATUSES, 'حالة غير معروفة'),
+  notes: z.string().trim().max(2000, 'الملاحظات طويلة جدًّا').optional().nullable(),
+});
+
+export type TrainingApplicationReleaseInput = z.infer<typeof TrainingApplicationReleaseSchema>;

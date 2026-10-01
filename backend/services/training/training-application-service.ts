@@ -7,6 +7,7 @@ import {
   type TrainingApplication,
   type TrainingApplicationInput,
   type TrainingApplicationUpdateInput,
+  type TrainingReleaseTargetStatus,
 } from '@/shared/contracts/training';
 import { toNullableText } from '@/shared/contracts/text';
 import type { Paginated } from '@/shared/pagination';
@@ -188,6 +189,34 @@ export class TrainingApplicationService {
     return this.deps.repository.updateStatus(id, input.status, toNullableText(input.notes));
   }
 
+  /**
+   * Claims a seat: enrolls the application into a cohort. The capacity check and
+   * the status write happen atomically inside the `enroll_application` RPC, so
+   * there is no count-then-insert race (ADR-0008). Errors cross the repository
+   * seam already typed (`CohortFullError`, `CohortClosedError`, …).
+   */
+  async enroll(id: string, cohortId: string): Promise<TrainingApplication> {
+    const existing = await this.deps.repository.getById(id);
+    if (!existing) throw new TrainingApplicationNotFoundError();
+
+    return this.deps.repository.enroll(id, cohortId);
+  }
+
+  /**
+   * Releases the seat: moves the application out of `enrolled` and gives the
+   * seat back, atomically, inside the `release_application` RPC.
+   */
+  async release(
+    id: string,
+    status: TrainingReleaseTargetStatus,
+    notes: string | null
+  ): Promise<TrainingApplication> {
+    const existing = await this.deps.repository.getById(id);
+    if (!existing) throw new TrainingApplicationNotFoundError();
+
+    return this.deps.repository.release(id, status, notes);
+  }
+
   private async insertWithUniqueReference(
     input: TrainingApplicationInput,
     userId: string | null
@@ -197,6 +226,7 @@ export class TrainingApplicationService {
       full_name: input.full_name,
       phone_whatsapp: input.phone_whatsapp,
       goal: toNullableText(input.goal),
+      cohort_id: input.cohort_id ?? null,
       user_id: userId,
     };
 

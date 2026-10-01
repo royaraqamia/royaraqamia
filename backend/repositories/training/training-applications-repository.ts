@@ -1,4 +1,8 @@
-import type { TrainingApplication, TrainingApplicationStatus } from '@/shared/contracts/training';
+import type {
+  TrainingApplication,
+  TrainingApplicationStatus,
+  TrainingReleaseTargetStatus,
+} from '@/shared/contracts/training';
 import type { Paginated } from '@/shared/pagination';
 
 export interface TrainingApplicationCreateInput {
@@ -6,6 +10,11 @@ export interface TrainingApplicationCreateInput {
   full_name: string;
   phone_whatsapp: string;
   goal: string | null;
+  /**
+   * The Cohort the applicant asked for, if any. Stored as a preference only —
+   * it claims no seat; enrollment does that.
+   */
+  cohort_id: string | null;
   reference_code: string;
   user_id: string | null;
 }
@@ -30,7 +39,80 @@ export interface TrainingApplicationsWriter {
     status: TrainingApplicationStatus,
     notes: string | null
   ): Promise<TrainingApplication>;
+  /**
+   * Claims a seat: moves the application into `enrolled` against a cohort, in the
+   * `enroll_application` RPC so the capacity check and the write are atomic.
+   * Throws {@link CohortFullError} / {@link CohortNotFoundError} / {@link AlreadyEnrolledError}.
+   */
+  enroll(id: string, cohortId: string): Promise<TrainingApplication>;
+  /**
+   * Releases the seat: moves the application out of `enrolled`, in the
+   * `release_application` RPC so the seat is given back atomically.
+   * Throws {@link NotEnrolledError}.
+   */
+  release(
+    id: string,
+    status: TrainingReleaseTargetStatus,
+    notes: string | null
+  ): Promise<TrainingApplication>;
 }
 
 export interface TrainingApplicationsRepository
   extends TrainingApplicationsReader, TrainingApplicationsWriter {}
+
+// ------------------------------------------------------------
+// Enrollment failures
+//
+// The `enroll_application` / `release_application` RPCs raise plain error codes;
+// these typed errors are how the seam carries them to the service, which maps
+// them to HTTP. Kept here (next to the calls that raise them) rather than in the
+// service, so a repository test can assert them without the service.
+// ------------------------------------------------------------
+
+/** The cohort was already at capacity when the seat claim ran. */
+export class CohortFullError extends Error {
+  constructor() {
+    super('COHORT_FULL');
+    this.name = 'CohortFullError';
+  }
+}
+
+/** The named cohort does not exist. */
+export class CohortNotFoundError extends Error {
+  constructor() {
+    super('COHORT_NOT_FOUND');
+    this.name = 'CohortNotFoundError';
+  }
+}
+
+/** The cohort is closed to new enrollments. */
+export class CohortClosedError extends Error {
+  constructor() {
+    super('COHORT_CLOSED');
+    this.name = 'CohortClosedError';
+  }
+}
+
+/** The application is already enrolled; it holds a seat. */
+export class AlreadyEnrolledError extends Error {
+  constructor() {
+    super('ALREADY_ENROLLED');
+    this.name = 'AlreadyEnrolledError';
+  }
+}
+
+/** The application is not enrolled, so it holds no seat to release. */
+export class NotEnrolledError extends Error {
+  constructor() {
+    super('NOT_ENROLLED');
+    this.name = 'NotEnrolledError';
+  }
+}
+
+/** The release target status is not one an enrolled application may move to. */
+export class InvalidReleaseStatusError extends Error {
+  constructor() {
+    super('INVALID_TARGET_STATUS');
+    this.name = 'InvalidReleaseStatusError';
+  }
+}

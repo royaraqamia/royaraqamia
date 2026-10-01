@@ -5,6 +5,8 @@ import { getAdminSupabase } from '@/backend/config/supabase';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { createNotificationFanout, type NotificationFanout } from '@/backend/config/notifications';
 import { createTrainingApplicationsRepository } from '@/backend/repositories/training';
+import { createTrainingCohortsRepository } from '@/backend/repositories/training/cohorts';
+import type { TrainingCohortsRepository } from '@/backend/repositories/training/training-cohorts-repository';
 import {
   createTrainingApplicationService,
   generateTrainingReferenceCode,
@@ -29,6 +31,13 @@ export function createDefaultTrainingApplicationService(
     notifyAdmins: createTrainingApplicationNotifier(),
     captureException: (error, options) => Sentry.captureException(error, options),
   });
+}
+
+/** Cohorts hold the seats; the same service-role-only posture as applications. */
+export function createDefaultTrainingCohortsRepository(
+  supabase?: SupabaseClient<Database>
+): TrainingCohortsRepository {
+  return createTrainingCohortsRepository(supabase ?? getAdminSupabase());
 }
 
 /**

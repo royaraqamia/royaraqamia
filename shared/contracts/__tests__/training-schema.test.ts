@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  TRAINING_APPLICATION_STATUSES,
   TRAINING_COURSE,
+  TRAINING_MANUAL_STATUSES,
   TRAINING_REFERENCE_CODE_REGEX,
   TrainingApplicationSchema,
   TrainingApplicationUpdateSchema,
@@ -53,10 +53,14 @@ describe('TrainingApplicationSchema', () => {
 });
 
 describe('TrainingApplicationUpdateSchema', () => {
-  it('accepts every documented status', () => {
-    for (const status of TRAINING_APPLICATION_STATUSES) {
+  it('accepts every manually settable status', () => {
+    for (const status of TRAINING_MANUAL_STATUSES) {
       expect(TrainingApplicationUpdateSchema.safeParse({ status }).success).toBe(true);
     }
+  });
+
+  it('rejects `enrolled`, which only the seat-claiming enroll path may set', () => {
+    expect(TrainingApplicationUpdateSchema.safeParse({ status: 'enrolled' }).success).toBe(false);
   });
 
   it('rejects an unknown status', () => {

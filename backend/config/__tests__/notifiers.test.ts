@@ -24,6 +24,7 @@ const application: TrainingApplication = {
   goal: 'أريد بناء متجر إلكتروني.',
   reference_code: 'TRN-2026-A7K2M9QX',
   status: 'new',
+  cohort_id: null,
   notes: null,
   user_id: null,
   created_at: '2026-09-16T00:00:00.000Z',

@@ -1,5 +1,10 @@
 # Training applications are anonymous and unpaid, unlike consultation bookings
 
+> **Superseded in part by [ADR 0008](0008-training-uses-dated-cohorts-with-seats.md)
+> (2026-10-01):** Courses now run as dated Cohorts with a fixed number of seats, so
+> training no longer has "no scarce inventory to protect". Applications remain
+> anonymous and unpaid, and now reserve a seat once enrolled.
+>
 > **Superseded in part by [ADR 0002](0002-consultation-bookings-become-anonymous-and-unpaid.md)
 > (2026-09-16):** consultation bookings are now anonymous and unpaid too. They still
 > differ by holding scarce inventory and by requiring an operator decision.

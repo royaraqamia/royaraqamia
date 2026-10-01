@@ -2,6 +2,13 @@ import { describe, it, expect, vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import { createTrainingApplicationsRepository } from '@/backend/repositories/training';
+import {
+  AlreadyEnrolledError,
+  CohortClosedError,
+  CohortFullError,
+  CohortNotFoundError,
+  NotEnrolledError,
+} from '@/backend/repositories/training/training-applications-repository';
 import { RepositoryError } from '@/backend/shared/repository-error';
 
 const { loggerError, captureException } = vi.hoisted(() => ({
@@ -103,5 +110,49 @@ describe('training repository failure contract', () => {
     );
 
     await expect(repo.getById('app-1')).resolves.toEqual(APPLICATION);
+  });
+});
+
+/**
+ * The enroll/release RPCs raise plain error codes; the repository is the seam
+ * that turns them into typed errors the controller maps to HTTP. A wrong mapping
+ * here is a wrong status code on a scarce, business-critical write.
+ */
+describe('training repository enrollment error mapping', () => {
+  function makeRpcClient(rpcResult: { data?: unknown; error?: unknown }) {
+    const getByIdClient = makeClient({ data: APPLICATION, error: null }).client;
+    const rpc = vi.fn(() => Promise.resolve(rpcResult));
+    return {
+      from: (getByIdClient as unknown as { from: (...args: unknown[]) => unknown }).from,
+      rpc,
+    } as unknown as SupabaseClient<Database>;
+  }
+
+  const cases: Array<[string, unknown]> = [
+    ['COHORT_FULL', CohortFullError],
+    ['COHORT_NOT_FOUND', CohortNotFoundError],
+    ['COHORT_CLOSED', CohortClosedError],
+    ['ALREADY_ENROLLED', AlreadyEnrolledError],
+  ];
+
+  it.each(cases)('maps enroll RPC %s to the typed error', async (code, expected) => {
+    const client = makeRpcClient({ error: { message: code } });
+    const repo = createTrainingApplicationsRepository(client);
+
+    await expect(repo.enroll('app-1', 'cohort-1')).rejects.toBeInstanceOf(expected);
+  });
+
+  it('maps the release NOT_ENROLLED code to NotEnrolledError', async () => {
+    const client = makeRpcClient({ error: { message: 'NOT_ENROLLED' } });
+    const repo = createTrainingApplicationsRepository(client);
+
+    await expect(repo.release('app-1', 'contacted', null)).rejects.toBeInstanceOf(NotEnrolledError);
+  });
+
+  it('re-reads the application after a successful enroll', async () => {
+    const client = makeRpcClient({ data: 'app-1', error: null });
+    const repo = createTrainingApplicationsRepository(client);
+
+    await expect(repo.enroll('app-1', 'cohort-1')).resolves.toEqual(APPLICATION);
   });
 });
