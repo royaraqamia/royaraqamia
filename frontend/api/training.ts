@@ -37,7 +37,7 @@ export async function submitTrainingApplication(input: {
   full_name: string;
   phone_whatsapp: string;
   goal?: string;
-  cohort_id?: string | null;
+  cohort_id: string;
 }): Promise<SubmitTrainingApplicationResult> {
   try {
     return await request<SubmitTrainingApplicationResult>('/api/training/applications', {

@@ -25,6 +25,7 @@ const VALID_INPUT: TrainingApplicationInput = {
   full_name: 'أحمد العلي',
   phone_whatsapp: '+963 968 478 904',
   goal: 'أريد بناء متجر إلكتروني.',
+  cohort_id: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
 };
 
 function makeApplication(overrides: Partial<TrainingApplication> = {}): TrainingApplication {

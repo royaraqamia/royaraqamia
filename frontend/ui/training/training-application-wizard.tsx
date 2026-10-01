@@ -28,12 +28,9 @@ const STEP_FIELDS: Record<StepKey, readonly (keyof TrainingApplicationFormValues
   details: ['full_name', 'phone_whatsapp', 'goal'],
 };
 
-/**
- * The subset that gates Next. The cohort is deliberately NOT required: a course
- * may have no open cohort yet, and applying still just records a lead.
- */
+/** The subset that gates Next. A Cohort must be chosen before advancing. */
 const REQUIRED_FIELDS: Record<StepKey, readonly (keyof TrainingApplicationFormValues)[]> = {
-  cohort: [],
+  cohort: ['cohort_id'],
   details: ['full_name', 'phone_whatsapp'],
 };
 
@@ -67,12 +64,12 @@ export function TrainingApplicationWizard({ onSubmitted }: TrainingApplicationWi
       full_name: '',
       phone_whatsapp: '',
       goal: '',
-      cohort_id: null,
+      cohort_id: '',
     },
   });
 
   // Advisory only: the seat is claimed at enrollment, so a failure here must not
-  // block the form — the student can still apply without picking a cohort.
+  // block the form — the student can still see which cohorts exist to pick one.
   useEffect(() => {
     let cancelled = false;
     void getOpenTrainingCohorts().then((result) => {
@@ -108,7 +105,7 @@ export function TrainingApplicationWizard({ onSubmitted }: TrainingApplicationWi
       full_name: formValues.full_name,
       phone_whatsapp: formValues.phone_whatsapp,
       goal: formValues.goal,
-      cohort_id: formValues.cohort_id ?? null,
+      cohort_id: formValues.cohort_id,
     });
 
     if (response.success && response.referenceCode) {

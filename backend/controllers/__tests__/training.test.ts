@@ -51,6 +51,7 @@ const VALID_BODY = {
   course_slug: 'build-digital-products',
   full_name: 'أحمد العلي',
   phone_whatsapp: '+963 968 478 904',
+  cohort_id: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
 };
 
 const APPLICATION = {

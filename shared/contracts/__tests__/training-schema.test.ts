@@ -12,11 +12,19 @@ const validApplication = {
   full_name: 'أحمد العلي',
   phone_whatsapp: '+963 968 478 904',
   goal: 'أريد بناء متجر إلكتروني.',
+  cohort_id: '3f2504e0-4f89-41d3-9a0c-0305e82c3301',
 };
 
 describe('TrainingApplicationSchema', () => {
   it('accepts a valid application', () => {
     expect(TrainingApplicationSchema.safeParse(validApplication).success).toBe(true);
+  });
+
+  it('rejects an application with no cohort chosen', () => {
+    const { cohort_id: _cohortId, ...withoutCohort } = validApplication;
+    const result = TrainingApplicationSchema.safeParse(withoutCohort);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toContain('اختيار');
   });
 
   it('rejects a one-character name', () => {

@@ -173,10 +173,13 @@ export const TrainingApplicationSchema = z.object({
   phone_whatsapp: z.string().trim().regex(whatsappPhoneRegex, 'رقم واتساب غير صحيح'),
   goal: z.string().trim().max(1000, 'النصّ طويل جدًّا (1,000 حرف كحد أقصى)').optional(),
   /**
-   * The Cohort the applicant wants. Optional: a Cohort may not be open yet, and
-   * applying still just records a lead — the seat is claimed at enrollment.
+   * The Cohort the applicant wants. Required: the apply form must not let a
+   * student advance without choosing one, even when no Cohort is open yet.
    */
-  cohort_id: z.string().uuid('الدُّفعة المختارة غير صحيحة').optional().nullable(),
+  cohort_id: z
+    .string('الرَّجاء اختيار الدُّفعة')
+    .min(1, 'الرَّجاء اختيار الدُّفعة')
+    .uuid('الدُّفعة المختارة غير صحيحة'),
 });
 
 export type TrainingApplicationInput = z.infer<typeof TrainingApplicationSchema>;

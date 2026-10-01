@@ -42,6 +42,7 @@ const nextButton = () => screen.getByRole('button', { name: /التَّالي/ }
 
 /** Step 1 -> step 2, then fill the details step. */
 async function advanceAndFillDetails() {
+  fireEvent.click(await screen.findByRole('radio', { name: /الدُّفعة الأولى/ }));
   await waitFor(() => expect(nextButton()).not.toBeDisabled());
   fireEvent.click(nextButton());
   await screen.findByLabelText(/الاسم الكامل/);
@@ -50,12 +51,14 @@ async function advanceAndFillDetails() {
 }
 
 describe('TrainingApplicationWizard', () => {
-  it('starts on the cohort step and lets Next through when no cohort is required', async () => {
+  it('starts on the cohort step and blocks Next until a cohort is chosen', async () => {
     render(<TrainingApplicationWizard />);
 
     expect(await screen.findByText('الدُّفعة الأولى')).toBeInTheDocument();
     expect(screen.getByText('7 أماكن متبقية')).toBeInTheDocument();
 
+    expect(nextButton()).toBeDisabled();
+    fireEvent.click(screen.getByRole('radio', { name: /الدُّفعة الأولى/ }));
     await waitFor(() => expect(nextButton()).not.toBeDisabled());
   });
 
@@ -103,12 +106,12 @@ describe('TrainingApplicationWizard', () => {
     expect(screen.queryByText('رقم الطَّلب')).not.toBeInTheDocument();
   });
 
-  it('still lets a student apply when no cohort is open', async () => {
+  it('blocks the form when no cohort is open', async () => {
     getOpenTrainingCohorts.mockResolvedValue([]);
 
     render(<TrainingApplicationWizard />);
 
     expect(await screen.findByText('لا توجد دُفعات مفتوحة للتَّسجيل حاليًّا.')).toBeInTheDocument();
-    await waitFor(() => expect(nextButton()).not.toBeDisabled());
+    expect(nextButton()).toBeDisabled();
   });
 });

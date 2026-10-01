@@ -22,7 +22,8 @@ export function CohortStep({ control, cohorts, error }: CohortStepProps) {
           لا توجد دُفعات مفتوحة للتَّسجيل حاليًّا.
         </p>
         <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-          أرسِل طلبك دون اختيار دُفعة، وسنتواصل معك عبر واتساب عند فتح الدُّفعة القادمة.
+          لا يمكنك إرسال الطَّلب دون اختيار دُفعة. تابعنا عبر واتساب وسنُعلمك عند فتح الدُّفعة
+          القادمة.
         </p>
       </div>
     );
