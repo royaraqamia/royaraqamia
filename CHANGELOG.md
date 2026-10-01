@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.33.0] - 2026-10-01
+
+### Changed
+- switch OpenCode plan phase to DeepSeek V4.1 Flash
+- tighten section heading-to-body spacing
+
+### Added
+- book training by cohort and enroll applicants from admin
+- add dated cohorts with seats and enroll/release
+- show the reference code on every intake confirmation
+- convert project request and retainer forms to multi-step wizards
+- rename the retainer offering, raise its fee, add form summaries
+
+### Fixed
+- declare NULL-accepting RPC params with DEFAULT NULL
+
 ## [1.32.6] - 2026-10-01
 
 ### Changed
