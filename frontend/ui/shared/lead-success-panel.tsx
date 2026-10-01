@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, CheckCircle2, Copy } from 'lucide-react';
+import { Check, CheckCircle2, ClipboardList, Copy, LogIn, RefreshCw } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 
@@ -11,6 +11,15 @@ interface LeadSuccessPanelProps {
   title?: string;
   message: string;
   className?: string;
+  /** Whether a session was present when the form rendered. */
+  isAuthenticated?: boolean;
+  /**
+   * Whether this receipt was restored after a refresh rather than shown right
+   * after submitting — so the panel can reassure rather than re-announce.
+   */
+  restored?: boolean;
+  /** Starts a fresh submission, clearing the remembered receipt. */
+  onStartOver?: () => void;
 }
 
 /**
@@ -19,12 +28,19 @@ interface LeadSuccessPanelProps {
  * It leads with the Reference Code because that is the whole point of minting
  * one: the applicant cannot quote a code they were never shown. Keeping it in
  * one component means all four flows tell the same story.
+ *
+ * It also points at where the submission can be corrected later. Editing needs
+ * an account, so the bridge is honest about that: a signed-in submitter is sent
+ * straight to `طلباتي`, an anonymous one to sign in first.
  */
 export function LeadSuccessPanel({
   referenceCode,
   title = 'تمَّ استلام طلبك بنجاح!',
   message,
   className,
+  isAuthenticated = false,
+  restored = false,
+  onStartOver,
 }: LeadSuccessPanelProps) {
   const [copied, setCopied] = useState(false);
 
@@ -74,6 +90,50 @@ export function LeadSuccessPanel({
             </>
           )}
         </button>
+      </div>
+
+      {restored && (
+        <p className="mt-4 text-xs font-medium text-muted-foreground" role="status">
+          استعدنا رقم طلبك المحفوظ على هذا الجهاز — احتفظ به.
+        </p>
+      )}
+
+      {/* The bridge to the account edit path. Editing needs an account, so the
+          copy is scoped to whether one is present rather than promising an
+          anonymous visitor something they cannot do. */}
+      <div className="mt-6 border-t border-border/50 pt-5">
+        {isAuthenticated ? (
+          <a
+            href="/account/submissions"
+            className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-primary/10 px-5 py-2.5 text-sm font-bold text-primary transition-safe duration-200 hover:border-primary/50 hover:bg-primary/15"
+          >
+            <ClipboardList className="size-4" aria-hidden="true" />
+            عدِّل طلبك من «طلباتي»
+          </a>
+        ) : (
+          <p className="mx-auto max-w-md text-xs text-muted-foreground leading-relaxed">
+            <LogIn className="mx-1 inline size-3.5 align-text-bottom" aria-hidden="true" />
+            لتعديل هذا الطلب لاحقًا، أنشئ حسابًا ثم أعِد إرساله وأنت مسجَّل الدُّخول؛ عندها يظهر في
+            <a
+              href="/account/submissions"
+              className="mx-1 font-bold text-primary hover:underline underline-offset-4"
+            >
+              طلباتي
+            </a>
+            .
+          </p>
+        )}
+
+        {onStartOver && (
+          <button
+            type="button"
+            onClick={onStartOver}
+            className="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <RefreshCw className="size-3.5" aria-hidden="true" />
+            إرسال طلب جديد
+          </button>
+        )}
       </div>
     </div>
   );

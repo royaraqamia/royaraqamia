@@ -8,6 +8,7 @@ import type { z } from 'zod';
 import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizard';
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
 import { submitRetainer } from '@/frontend/api/retainers';
+import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
 import { RetainerSchema } from '@/shared/contracts/retainers';
 import { RetainerProjectsStep } from './steps/retainer-projects-step';
 import { RetainerNeedsStep } from './steps/retainer-needs-step';
@@ -48,12 +49,19 @@ function fieldIsValid(field: keyof RetainerFormValues, value: unknown): boolean 
 interface RetainerRequestWizardProps {
   /** Lets the surrounding page step aside once the Client has submitted. */
   onSubmitted?: () => void;
+  /** Whether a session was present at first render, for the edit bridge. */
+  isAuthenticated?: boolean;
 }
 
-export function RetainerRequestWizard({ onSubmitted }: RetainerRequestWizardProps = {}) {
+export function RetainerRequestWizard({
+  onSubmitted,
+  isAuthenticated = false,
+}: RetainerRequestWizardProps = {}) {
   const [stepIndex, setStepIndex] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [referenceCode, setReferenceCode] = useState<string | null>(null);
+  // Remembered across a refresh, so a reload still shows the reference code.
+  const receipt = useSubmissionReceipt('retainer');
+  const referenceCode = receipt.referenceCode;
 
   const {
     control,
@@ -107,7 +115,7 @@ export function RetainerRequestWizard({ onSubmitted }: RetainerRequestWizardProp
     });
 
     if (response.success && response.referenceCode) {
-      setReferenceCode(response.referenceCode);
+      receipt.remember(response.referenceCode);
       onSubmitted?.();
       return;
     }
@@ -119,6 +127,8 @@ export function RetainerRequestWizard({ onSubmitted }: RetainerRequestWizardProp
     return (
       <LeadSuccessPanel
         referenceCode={referenceCode}
+        isAuthenticated={isAuthenticated}
+        onStartOver={receipt.dismiss}
         message="احتفظ برقم الطَّلب أدناه — سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة إن شاء الله."
       />
     );

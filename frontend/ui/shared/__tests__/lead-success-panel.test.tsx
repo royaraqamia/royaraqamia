@@ -30,4 +30,32 @@ describe('LeadSuccessPanel', () => {
     expect(writeText).toHaveBeenCalledWith('PRJ-2026-ABCDEFGH');
     expect(await screen.findByText('تمَّ النَّسخ')).toBeInTheDocument();
   });
+
+  it('sends a signed-in submitter straight to طلباتي', () => {
+    render(<LeadSuccessPanel referenceCode="A" message="m" isAuthenticated />);
+
+    expect(screen.getByRole('link', { name: /طلباتي/ })).toHaveAttribute(
+      'href',
+      '/account/submissions'
+    );
+  });
+
+  it('tells an anonymous submitter that editing needs an account', () => {
+    render(<LeadSuccessPanel referenceCode="A" message="m" />);
+
+    expect(screen.queryByRole('link', { name: /عدِّل طلبك/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'طلباتي' })).toHaveAttribute(
+      'href',
+      '/account/submissions'
+    );
+  });
+
+  it('offers a fresh start when the receipt is restored', () => {
+    const onStartOver = vi.fn();
+    render(<LeadSuccessPanel referenceCode="A" message="m" restored onStartOver={onStartOver} />);
+
+    expect(screen.getByText(/استعدنا رقم طلبك/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: /إرسال طلب جديد/ }));
+    expect(onStartOver).toHaveBeenCalledOnce();
+  });
 });

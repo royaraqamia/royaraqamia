@@ -20,6 +20,7 @@ function makeRequest(overrides: Partial<ProjectRequest> = {}): ProjectRequest {
     user_id: null,
     created_at: '2026-09-25T00:00:00.000Z',
     updated_at: '2026-09-25T00:00:00.000Z',
+    edited_at: null,
     ...overrides,
   };
 }
@@ -92,5 +93,17 @@ describe('ProjectRequestsList', () => {
     renderList([makeRequest({ notes: 'مكتمل' })]);
 
     expect(screen.queryByRole('button', { name: 'حفظ الملاحظات' })).not.toBeInTheDocument();
+  });
+
+  it('marks a request the client edited themselves', () => {
+    renderList([makeRequest({ edited_at: '2026-09-26T00:00:00.000Z' })]);
+
+    expect(screen.getByText('عدَّله صاحبه')).toBeInTheDocument();
+  });
+
+  it('does not mark an untouched request as edited', () => {
+    renderList([makeRequest()]);
+
+    expect(screen.queryByText('عدَّله صاحبه')).not.toBeInTheDocument();
   });
 });

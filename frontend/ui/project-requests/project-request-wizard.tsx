@@ -8,6 +8,7 @@ import type { z } from 'zod';
 import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizard';
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
 import { submitProjectRequest } from '@/frontend/api/project-requests';
+import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
 import { ProjectRequestSchema } from '@/shared/contracts/project-requests';
 import { ProjectTypeStep } from './steps/project-type-step';
 import { ProjectDetailsStep } from './steps/project-details-step';
@@ -48,12 +49,20 @@ function fieldIsValid(field: keyof ProjectRequestFormValues, value: unknown): bo
 interface ProjectRequestWizardProps {
   /** Lets the surrounding page step aside once the Client has submitted. */
   onSubmitted?: () => void;
+  /** Whether a session was present at first render, for the edit bridge. */
+  isAuthenticated?: boolean;
 }
 
-export function ProjectRequestWizard({ onSubmitted }: ProjectRequestWizardProps = {}) {
+export function ProjectRequestWizard({
+  onSubmitted,
+  isAuthenticated = false,
+}: ProjectRequestWizardProps = {}) {
   const [stepIndex, setStepIndex] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [referenceCode, setReferenceCode] = useState<string | null>(null);
+  // Remembered across a refresh, so a visitor who reloads still sees the code
+  // instead of a blank form.
+  const receipt = useSubmissionReceipt('projectRequest');
+  const referenceCode = receipt.referenceCode;
 
   const {
     control,
@@ -106,7 +115,7 @@ export function ProjectRequestWizard({ onSubmitted }: ProjectRequestWizardProps 
     });
 
     if (response.success && response.referenceCode) {
-      setReferenceCode(response.referenceCode);
+      receipt.remember(response.referenceCode);
       onSubmitted?.();
       return;
     }
@@ -118,6 +127,8 @@ export function ProjectRequestWizard({ onSubmitted }: ProjectRequestWizardProps 
     return (
       <LeadSuccessPanel
         referenceCode={referenceCode}
+        isAuthenticated={isAuthenticated}
+        onStartOver={receipt.dismiss}
         message="احتفظ برقم الطَّلب أدناه — سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة."
       />
     );

@@ -8,6 +8,7 @@ import type { z } from 'zod';
 import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizard';
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
 import { getOpenTrainingCohorts, submitTrainingApplication } from '@/frontend/api/training';
+import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
 import { TRAINING_COURSE, TrainingApplicationSchema } from '@/shared/contracts/training';
 import type { TrainingCohort } from '@/shared/contracts/training';
 import { CohortStep } from './steps/cohort-step';
@@ -41,12 +42,19 @@ function fieldIsValid(field: keyof TrainingApplicationFormValues, value: unknown
 interface TrainingApplicationWizardProps {
   /** Lets the surrounding page step aside once the student has applied. */
   onSubmitted?: () => void;
+  /** Whether a session was present at first render, for the edit bridge. */
+  isAuthenticated?: boolean;
 }
 
-export function TrainingApplicationWizard({ onSubmitted }: TrainingApplicationWizardProps = {}) {
+export function TrainingApplicationWizard({
+  onSubmitted,
+  isAuthenticated = false,
+}: TrainingApplicationWizardProps = {}) {
   const [stepIndex, setStepIndex] = useState(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [referenceCode, setReferenceCode] = useState<string | null>(null);
+  // Remembered across a refresh, so a reload still shows the reference code.
+  const receipt = useSubmissionReceipt('training');
+  const referenceCode = receipt.referenceCode;
   const [cohorts, setCohorts] = useState<TrainingCohort[]>([]);
 
   const {
@@ -109,7 +117,7 @@ export function TrainingApplicationWizard({ onSubmitted }: TrainingApplicationWi
     });
 
     if (response.success && response.referenceCode) {
-      setReferenceCode(response.referenceCode);
+      receipt.remember(response.referenceCode);
       onSubmitted?.();
       return;
     }
@@ -121,6 +129,8 @@ export function TrainingApplicationWizard({ onSubmitted }: TrainingApplicationWi
     return (
       <LeadSuccessPanel
         referenceCode={referenceCode}
+        isAuthenticated={isAuthenticated}
+        onStartOver={receipt.dismiss}
         message="احتفظ برقم الطَّلب أدناه — سنُراجع طلبك ونتواصل معك خلال 48 ساعة عبر واتساب لتأكيد التحاقك بالدَّورة."
       />
     );

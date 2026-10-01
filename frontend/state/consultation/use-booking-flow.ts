@@ -12,6 +12,7 @@ import {
   fetchConsultationPackages,
   submitBooking,
 } from '@/frontend/api/consultation';
+import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
 
 export const BOOKING_STEPS = ['package', 'slots', 'details'] as const;
 export type BookingStep = (typeof BOOKING_STEPS)[number];
@@ -62,7 +63,10 @@ export interface UseBookingFlowResult {
   submitting: boolean;
   error: string | null;
   fieldErrors: Record<string, string>;
+  /** The reference code of the booking just made, restored across a refresh. */
   createdBooking: CreatedBooking | null;
+  /** Forgets the remembered receipt and starts a fresh booking. */
+  startOver: () => void;
   next: () => void;
   back: () => void;
   goTo: (step: BookingStep) => void;
@@ -89,7 +93,12 @@ export function useBookingFlow(
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [createdBooking, setCreatedBooking] = useState<CreatedBooking | null>(null);
+  // The receipt survives a refresh; only the reference code is remembered, so
+  // the booking id is filled in from the stored code when present.
+  const receipt = useSubmissionReceipt('consultation');
+  const createdBooking: CreatedBooking | null = receipt.referenceCode
+    ? { id: '', referenceCode: receipt.referenceCode }
+    : null;
 
   useEffect(() => {
     // Packages are server-rendered into the page; only fetch when absent.
@@ -228,7 +237,7 @@ export function useBookingFlow(
         topic_description: contact.topic_description.trim(),
       });
       if (result.success && result.bookingId && result.referenceCode) {
-        setCreatedBooking({ id: result.bookingId, referenceCode: result.referenceCode });
+        receipt.remember(result.referenceCode);
       } else {
         setError(result.error ?? 'تعذر إنشاء الحجز.');
         setFieldErrors(result.fieldErrors ?? {});
@@ -238,7 +247,7 @@ export function useBookingFlow(
     } finally {
       setSubmitting(false);
     }
-  }, [selectedPackage, submitting, selectedSlotIds, contact]);
+  }, [selectedPackage, submitting, selectedSlotIds, contact, receipt]);
 
   return {
     stepIndex,
@@ -264,6 +273,15 @@ export function useBookingFlow(
     error,
     fieldErrors,
     createdBooking,
+    startOver: () => {
+      receipt.dismiss();
+      setStepIndex(0);
+      setSelectedPackageId(null);
+      setSelectedSlotIds([]);
+      setContact(EMPTY_CONTACT);
+      setError(null);
+      setFieldErrors({});
+    },
     next,
     back,
     goTo,
