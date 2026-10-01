@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.32.5] - 2026-10-01
+
+### Changed
+- bump @sentry/nextjs from 10.75.0 to 11.0.0
+
 ## [1.32.4] - 2026-10-01
 
 ### Changed
