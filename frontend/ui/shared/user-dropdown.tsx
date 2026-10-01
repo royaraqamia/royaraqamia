@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/frontend/shared/cn';
@@ -20,7 +21,7 @@ const AUTH_PATHS = [
 ];
 
 export const UserDropdown = memo(function UserDropdown() {
-  const { user, isLoading, isAdmin, profileName, signOut } = useSession();
+  const { user, isLoading, isAdmin, profileName, profileAvatarUrl, signOut } = useSession();
   const { canInstall, promptInstall, isInstalled } = usePWAContext();
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
@@ -67,8 +68,14 @@ export const UserDropdown = memo(function UserDropdown() {
       : typeof metadata.full_name === 'string' && metadata.full_name.trim()
         ? metadata.full_name
         : null;
+  const metadataAvatar =
+    typeof metadata.avatar_url === 'string' && metadata.avatar_url.trim()
+      ? metadata.avatar_url
+      : null;
   const userName = profileName?.trim() || metadataName;
   const userEmail = typeof user?.email === 'string' ? user.email : null;
+  const avatarUrl = profileAvatarUrl?.trim() || metadataAvatar;
+  const showAvatar = Boolean(user && avatarUrl);
 
   return (
     <div ref={ref} className="relative inline-block text-right">
@@ -88,6 +95,19 @@ export const UserDropdown = memo(function UserDropdown() {
           size={20}
           className="text-foreground/90 transition-transform duration-200 group-hover:scale-110"
         />
+        {showAvatar && (
+          <Image
+            src={avatarUrl!}
+            alt=""
+            width={40}
+            height={40}
+            unoptimized
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+            }}
+            className="absolute inset-0 h-full w-full rounded-full object-cover"
+          />
+        )}
         {user && (
           <span className="absolute bottom-0.5 inset-e-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background" />
         )}
@@ -113,8 +133,21 @@ export const UserDropdown = memo(function UserDropdown() {
               <div className="space-y-1">
                 {/* Profile Card Header */}
                 <div className="px-3 py-2.5 mb-1 rounded-xl bg-muted/40 border border-border/40 flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-xs">
+                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-xs">
                     {userName ? userName.charAt(0).toUpperCase() : <User size={16} />}
+                    {showAvatar && (
+                      <Image
+                        src={avatarUrl!}
+                        alt=""
+                        width={32}
+                        height={32}
+                        unoptimized
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    )}
                   </div>
                   <div className="min-w-0 flex-1 text-right">
                     <p className="text-xs font-bold text-foreground truncate">
