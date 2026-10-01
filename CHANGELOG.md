@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.32.6] - 2026-10-01
+
+### Changed
+- fix npm audit vulnerabilities
+
+### Fixed
+- import withSentryConfig from @sentry/nextjs/config
+
 ## [1.32.5] - 2026-10-01
 
 ### Changed
