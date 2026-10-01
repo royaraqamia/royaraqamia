@@ -33,7 +33,6 @@ const colorConfigs = {
     bgHover: 'group-hover/card:bg-purple-500/[0.04]',
     borderHover: 'group-hover/card:border-purple-500/40',
     textGradient: 'from-purple-300 via-purple-400 to-indigo-400',
-    dividerGradient: 'from-purple-500 via-purple-400/80 to-transparent',
     shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(168,85,247,0.25)]',
     glowBg: 'bg-purple-500/20',
   },
@@ -41,7 +40,6 @@ const colorConfigs = {
     bgHover: 'group-hover/card:bg-indigo-500/[0.04]',
     borderHover: 'group-hover/card:border-indigo-500/40',
     textGradient: 'from-indigo-300 via-indigo-400 to-sky-400',
-    dividerGradient: 'from-indigo-500 via-indigo-400/80 to-transparent',
     shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(99,102,241,0.25)]',
     glowBg: 'bg-indigo-500/20',
   },
@@ -49,7 +47,6 @@ const colorConfigs = {
     bgHover: 'group-hover/card:bg-violet-500/[0.04]',
     borderHover: 'group-hover/card:border-violet-500/40',
     textGradient: 'from-violet-300 via-violet-400 to-fuchsia-400',
-    dividerGradient: 'from-violet-500 via-violet-400/80 to-transparent',
     shadow: 'group-hover/card:shadow-[0_0_50px_-12px_rgba(139,92,246,0.25)]',
     glowBg: 'bg-violet-500/20',
   },
@@ -109,12 +106,6 @@ export function MetricCards() {
                         {metric.suffix}
                       </span>
                     </div>
-
-                    {/* Dynamic Gradient Accent Divider */}
-                    <div
-                      className={`w-12 h-1 rounded-full mx-auto mb-6 transition-[width] duration-500 ease-out group-hover/card:w-24 bg-linear-to-r ${colors.dividerGradient}`}
-                      aria-hidden="true"
-                    />
 
                     {/* Label */}
                     <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight mb-2.5 transition-colors duration-300">
