@@ -72,13 +72,6 @@ export function DetailsStep({ control, register, errors }: DetailsStepProps) {
         />
         <FieldError id="goal-error" message={errors.goal?.message} />
       </div>
-
-      <p className="text-center text-xs text-muted-foreground leading-relaxed">
-        نستخدم بياناتك للتَّواصل معك بخصوص هذا الطَّلب فقط.{' '}
-        <a href="/privacy" className="underline hover:text-foreground transition-colors">
-          سياسة الخصوصيَّة
-        </a>
-      </p>
     </div>
   );
 }

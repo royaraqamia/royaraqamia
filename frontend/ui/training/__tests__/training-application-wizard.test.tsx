@@ -111,15 +111,4 @@ describe('TrainingApplicationWizard', () => {
     expect(await screen.findByText('لا توجد دُفعات مفتوحة للتَّسجيل حاليًّا.')).toBeInTheDocument();
     await waitFor(() => expect(nextButton()).not.toBeDisabled());
   });
-
-  it('links the privacy policy on the details step', async () => {
-    render(<TrainingApplicationWizard />);
-    fireEvent.click(nextButton());
-    await screen.findByLabelText(/الاسم الكامل/);
-
-    expect(screen.getByRole('link', { name: 'سياسة الخصوصيَّة' })).toHaveAttribute(
-      'href',
-      '/privacy'
-    );
-  });
 });
