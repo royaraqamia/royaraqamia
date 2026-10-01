@@ -91,10 +91,10 @@ export function ServiceCard({ service }: { service: Service }) {
 
           {/* Premium CTA Button */}
           {service.pricing && (
-            <div className="mt-auto pt-6 border-t border-white/10 relative">
+            <div className="mt-auto pt-6 border-t border-white/10 relative flex justify-center">
               <a
                 href={service.href}
-                className="group/cta relative w-full flex items-center justify-center gap-2.5 px-6 py-3.5 sm:py-4 rounded-full font-bold text-sm sm:text-base text-white overflow-hidden transition-[background-color,border-color,transform] duration-300 border border-white/15 bg-neutral-800/60 hover:bg-neutral-800/90 hover:border-white/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-[0.98] shadow-md shadow-black/30"
+                className="group/cta relative inline-flex w-auto h-13 sm:h-14 min-w-44 sm:min-w-50 items-center justify-center gap-2.5 px-6 sm:px-8 rounded-full font-bold text-base sm:text-lg text-white overflow-hidden transition-[background-color,border-color,transform] duration-300 border border-white/15 bg-neutral-800/60 hover:bg-neutral-800/90 hover:border-white/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 active:scale-[0.98] shadow-md shadow-black/30"
                 aria-label={`${service.pricing.cta} - ${service.title}`}
               >
                 {/* Background gradient injection */}
