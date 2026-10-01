@@ -202,7 +202,7 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
   return (
     <section
       aria-labelledby={headingId}
-      className="relative w-full py-8 md:py-14 overflow-hidden select-none"
+      className="relative w-full pb-8 md:pb-14 overflow-hidden select-none"
     >
       {/* Main Carousel Wrapper with Edge Navigation Controls */}
       <div className="relative w-full group/carousel">
@@ -220,7 +220,7 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
           role="region"
           aria-label="آراء وتجارب العملاء"
           tabIndex={0}
-          className="horizontal-scroll testimonials-scroll-track pt-4 pb-10 flex items-stretch overflow-x-auto scrollbar-none snap-x snap-mandatory scroll-smooth focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"
+          className="horizontal-scroll testimonials-scroll-track pb-10 flex items-stretch overflow-x-auto scrollbar-none snap-x snap-mandatory scroll-smooth focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/50"
         >
           {testimonials.map((testimonial, index) => (
             <TestimonialCard

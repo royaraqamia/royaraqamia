@@ -36,7 +36,7 @@ export const Portfolio = memo(function Portfolio() {
       {/* Portfolio Horizontal Scroll Area */}
       <div className="relative w-full group/scroll z-10">
         {/* Section Controls Bar: Progress Bar & Navigation Arrows */}
-        <div className="max-w-7xl mx-auto px-6 md:px-12 mb-4 sm:mb-6 flex flex-col sm:flex-row items-center justify-end gap-4">
+        <div className="max-w-7xl mx-auto px-6 md:px-12 flex flex-col sm:flex-row items-center justify-end gap-4">
           <HorizontalScrollArrows
             onScroll={scroll}
             canScrollLeft={canScrollLeft}
@@ -49,7 +49,7 @@ export const Portfolio = memo(function Portfolio() {
         {/* Horizontal Scroll Container */}
         <div
           ref={scrollContainerRef}
-          className="flex snap-x snap-mandatory overflow-x-auto pb-12 pt-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none items-center touch-manipulation is-visible"
+          className="flex snap-x snap-mandatory overflow-x-auto pb-12 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] scrollbar-none items-center touch-manipulation is-visible"
           style={{
             paddingLeft: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',
             paddingRight: 'max(24px, calc((100vw - 1280px) / 2 + 24px))',
