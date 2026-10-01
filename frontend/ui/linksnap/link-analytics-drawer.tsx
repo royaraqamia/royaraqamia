@@ -212,7 +212,7 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
                     <span
                       className={`text-xs font-bold border px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1 ${
                         STATUS_META[status]?.className ?? STATUS_META.active.className
-                      } ${status === 'active' ? 'animate-pulse' : ''}`}
+                      }`}
                     >
                       <span className="w-1.5 h-1.5 bg-current rounded-full" />
                       {STATUS_META[status]?.label ?? 'نشط وسليم'}

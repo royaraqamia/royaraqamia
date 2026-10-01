@@ -39,7 +39,6 @@ function MiniChart() {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
           </span>
           <span className="text-sm font-bold text-slate-300">أداء النَّقرات</span>
@@ -92,7 +91,7 @@ function AnalyticsPreview() {
       <div className="flex items-center justify-between mb-1">
         <span className="text-sm font-bold text-slate-300">نظرة عامَّة فوريَّة</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/14 border border-emerald-500/20 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
           مباشر
         </span>
       </div>

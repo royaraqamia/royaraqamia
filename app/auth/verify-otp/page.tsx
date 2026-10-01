@@ -155,7 +155,7 @@ function VerifyOtpForm() {
                 تمَّ التَّحقُّق بنجاح
               </h3>
               <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
-                <span className="inline-block size-1.5 rounded-full bg-emerald-500 animate-ping" />
+                <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
                 جارِ تحويلك تلقائيًّا...
               </p>
             </div>
@@ -185,10 +185,7 @@ function VerifyOtpForm() {
                         : 'bg-neutral-100/80 border-neutral-200/80 text-muted-foreground dark:bg-neutral-800/80 dark:border-neutral-700/80'
                     }`}
                   >
-                    <Clock
-                      size={14}
-                      className={`shrink-0 ${countdown <= 60 ? 'animate-pulse' : ''}`}
-                    />
+                    <Clock size={14} className="shrink-0" />
                     <span>ينتهي الرَّمز خلال</span>
                     <span className="font-mono font-bold tracking-wider tabular-nums">
                       {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}

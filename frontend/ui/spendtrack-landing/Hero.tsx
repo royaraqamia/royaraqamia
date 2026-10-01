@@ -85,7 +85,7 @@ export function Hero() {
                 <span className="w-3 h-3 rounded-full bg-green-500/88 inline-block shadow-xs" />
               </div>
               <div className="ms-auto flex items-center gap-1.5 px-3 py-1 rounded-full bg-muted/75 border border-border/40 text-xs font-mono text-muted-foreground">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 royaraqamia.com
               </div>
             </div>
@@ -140,7 +140,7 @@ export function Hero() {
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-primary" />
                   <span className="text-xs sm:text-sm font-medium text-muted-foreground">
                     الميزانيَّة الشَّهريَّة
                   </span>

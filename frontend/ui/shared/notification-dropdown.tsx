@@ -154,9 +154,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                   <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground animate-pulse">
-                    جاري التَّحميل...
-                  </p>
+                  <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
                 </div>
               ) : notifications.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center">

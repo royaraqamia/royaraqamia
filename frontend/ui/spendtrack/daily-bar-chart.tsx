@@ -24,7 +24,7 @@ function CustomTooltip({
   return (
     <div className="relative overflow-hidden rounded-xl border border-border/80 bg-popover/95 px-3.5 py-2.5 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 transition-safe duration-200 will-change-[transform,opacity]">
       <div className="flex items-center gap-2">
-        <span className="size-2 rounded-full bg-primary ring-2 ring-primary/30 animate-pulse" />
+        <span className="size-2 rounded-full bg-primary ring-2 ring-primary/30" />
         <p className="text-xs font-medium text-muted-foreground tracking-wide">{label}</p>
       </div>
       <p className="mt-1 text-sm font-bold tracking-tight text-popover-foreground">

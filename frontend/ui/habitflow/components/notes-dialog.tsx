@@ -80,7 +80,6 @@ export const NotesDialog = memo(function NotesDialog({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3.5">
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="relative flex h-2.5 w-2.5 shrink-0 items-center justify-center">
-                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/40 opacity-75" />
                     <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                   </span>
                   <span className="text-sm font-bold text-foreground/90 wrap-break-word line-clamp-2 sm:line-clamp-1">

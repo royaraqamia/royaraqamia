@@ -143,7 +143,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
               className={cn(
                 'h-1.5 w-1.5 rounded-full transition-colors duration-200',
                 countState === 'at-limit'
-                  ? 'bg-destructive animate-pulse'
+                  ? 'bg-destructive'
                   : countState === 'near-limit' || countState === 'below-min'
                     ? 'bg-amber-500'
                     : countState === 'met'

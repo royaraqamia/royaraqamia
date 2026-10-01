@@ -57,7 +57,7 @@ export function HowItWorks() {
           aria-hidden="true"
           className="hidden lg:block absolute top-32.5 left-[15%] right-[15%] h-0.5 bg-linear-to-r from-border/10 via-primary/30 to-border/10 z-0"
         >
-          <div className="absolute inset-0 bg-linear-to-r from-transparent via-primary to-transparent animate-pulse opacity-60" />
+          <div className="absolute inset-0 bg-linear-to-r from-transparent via-primary to-transparent opacity-60" />
         </div>
       }
       stepsClassName="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-8 relative z-10 list-none p-0 m-0"

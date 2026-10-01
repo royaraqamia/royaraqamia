@@ -465,7 +465,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
                 }`}
               >
                 <span
-                  className={`size-1.5 rounded-full ${post.status === 'published' ? 'bg-success' : 'bg-warning animate-pulse'}`}
+                  className={`size-1.5 rounded-full ${post.status === 'published' ? 'bg-success' : 'bg-warning'}`}
                 />
                 {post.status === 'published' ? 'منشور' : 'مسودَّة'}
               </span>

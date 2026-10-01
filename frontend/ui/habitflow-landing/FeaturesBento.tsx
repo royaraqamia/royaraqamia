@@ -42,7 +42,7 @@ function HabitTracker() {
       <div className="flex items-center justify-between mb-3 px-1">
         <span className="text-sm font-bold text-slate-200">عادات اليوم</span>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/14 border border-emerald-500/20 text-xs font-bold text-emerald-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           3/4 تمّ
         </span>
       </div>
@@ -99,7 +99,7 @@ function StreakCalendar() {
       <div className="flex items-center justify-between mb-5 px-1">
         <span className="text-sm font-bold text-slate-200">السَّلاسل الشَّهريَّة</span>
         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-linear-to-r from-amber-500/15 to-orange-500/15 border border-amber-500/30">
-          <Flame size={18} fill="currentColor" className="text-amber-400 animate-pulse" />
+          <Flame size={18} fill="currentColor" className="text-amber-400" />
           <span className="text-lg font-black bg-linear-to-r from-amber-300 via-orange-400 to-amber-500 bg-clip-text text-transparent">
             22
           </span>

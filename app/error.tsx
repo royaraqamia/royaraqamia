@@ -41,7 +41,6 @@ export default function Error({
         {/* Animated System Status Pill Tag */}
         <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-destructive/20 bg-destructive/10 px-3.5 py-1 text-xs font-bold text-destructive tracking-wide">
           <span className="relative flex h-2 w-2">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-destructive opacity-75" />
             <span className="relative inline-flex h-2 w-2 rounded-full bg-destructive" />
           </span>
           <span>خطأ في النِّظام</span>

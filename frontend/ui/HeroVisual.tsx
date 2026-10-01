@@ -39,7 +39,6 @@ export function HeroVisual() {
               <div className="h-3.5 w-px bg-white/10 mx-1.5" />
               <div className="flex items-center gap-2 bg-white/5 px-2.5 py-1 rounded-full border border-white/5">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <span className="h-2 w-14 rounded-full bg-linear-to-r from-white/25 to-white/10" />
@@ -214,7 +213,7 @@ export function HeroVisual() {
       <div className=" absolute -bottom-4 -left-2 sm:-bottom-5 sm:-left-4 lg:bottom-2 lg:left-2 z-30 w-14 h-14 lg:w-18 lg:h-18">
         <div className="relative w-full h-full rounded-full bg-linear-to-br from-indigo-500 via-purple-600 to-accent flex items-center justify-center shadow-2xl border border-white/20 transition-transform hover:scale-105 duration-300">
           <div className="w-1/2 h-1/2 border-2 border-white/80 rounded-full flex items-center justify-center shadow-inner">
-            <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,1)] animate-ping" />
+            <div className="w-2 h-2 bg-white rounded-full shadow-[0_0_12px_rgba(255,255,255,1)]" />
           </div>
         </div>
       </div>

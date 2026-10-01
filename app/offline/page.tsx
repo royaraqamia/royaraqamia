@@ -27,7 +27,6 @@ export default function OfflinePage() {
           <div className="mb-6 flex flex-col items-center">
             <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/20 shadow-inner sm:h-22 sm:w-22 dark:bg-amber-500/15 dark:text-amber-400 dark:ring-amber-500/30">
               <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"></span>
                 <span className="relative inline-flex h-4 w-4 rounded-full bg-amber-500"></span>
               </span>
               <svg
@@ -50,7 +49,7 @@ export default function OfflinePage() {
           {/* Primary Typography & Status Header */}
           <div className="text-center">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
               <span>انقطع الاتِّصال بالشَّبكة</span>
             </div>
 

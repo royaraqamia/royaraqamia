@@ -57,7 +57,7 @@ export function VerifySection() {
                   </div>
 
                   <div className="hidden sm:flex items-center gap-1.5 text-[11px] text-emerald-400 font-mono bg-emerald-500/14 border border-emerald-500/20 px-2.5 py-1 rounded-md">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     <span>آمن 256-bit</span>
                   </div>
                 </div>
@@ -91,7 +91,7 @@ export function VerifySection() {
 
                     {/* Quick Verification Status Pill */}
                     <div className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-xl bg-indigo-500/14 border border-indigo-500/20 text-indigo-300 text-xs sm:text-sm font-medium">
-                      <ScanLine className="w-4 h-4 text-indigo-400 animate-pulse" />
+                      <ScanLine className="w-4 h-4 text-indigo-400" />
                       <span>تحقُّق فوري متاح</span>
                     </div>
                   </div>

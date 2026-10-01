@@ -233,11 +233,7 @@ export const LinkRowCard = memo(function LinkRowCard({
                   >
                     <span
                       aria-hidden="true"
-                      className={cn(
-                        'h-1.5 w-1.5 rounded-full',
-                        meta.dotClass,
-                        status === 'active' && 'animate-pulse'
-                      )}
+                      className={cn('h-1.5 w-1.5 rounded-full', meta.dotClass)}
                     />
                     {meta.label}
                   </span>

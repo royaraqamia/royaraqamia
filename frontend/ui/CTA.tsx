@@ -30,7 +30,6 @@ export function CTA() {
               {/* Status Badge */}
               <div className="inline-flex items-center gap-2.5 px-4 py-1.5 mb-6 sm:mb-8 rounded-full bg-slate-950/88 border border-purple-500/30 text-slate-200 text-xs sm:text-sm font-medium shadow-[0_0_15px_rgba(168,85,247,0.15)] transition-[background-color,border-color] duration-300 hover:border-purple-500/60 hover:bg-slate-900">
                 <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
                 </span>
                 <span className="tracking-wide text-slate-200">متاحون للرَّد 24/7</span>

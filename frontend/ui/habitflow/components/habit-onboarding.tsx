@@ -23,10 +23,7 @@ export function HabitOnboarding({ onTemplateSelect, onCreateBlank }: HabitOnboar
         <header className="text-center space-y-3 mb-8 sm:mb-10">
           <div className="inline-flex items-center">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold bg-primary/10 text-primary border border-primary/20 shadow-xs">
-              <Sparkles
-                className="w-3.5 h-3.5 shrink-0 text-primary animate-pulse motion-reduce:animate-none"
-                aria-hidden="true"
-              />
+              <Sparkles className="w-3.5 h-3.5 shrink-0 text-primary" aria-hidden="true" />
               ابدأ بسرعة
             </span>
           </div>

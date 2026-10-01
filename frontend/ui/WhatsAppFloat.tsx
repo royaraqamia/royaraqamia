@@ -77,7 +77,6 @@ export function WhatsAppFloat({
           fill="currentColor"
         />
       </svg>
-      <span className="whatsapp-pulse"></span>
     </a>
   );
 }

@@ -270,10 +270,7 @@ export function CalendarGrid({
               </h2>
               {stats.perfectDays > 0 && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] @min-[440px]:text-[11px] font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 whitespace-nowrap">
-                  <Flame
-                    className="w-3 h-3 text-amber-500 fill-amber-500 animate-pulse motion-reduce:animate-none"
-                    aria-hidden="true"
-                  />
+                  <Flame className="w-3 h-3 text-amber-500 fill-amber-500" aria-hidden="true" />
                   <span>
                     {stats.perfectDays} {pluralize(stats.perfectDays, PERFECT_DAY_FORMS)}
                   </span>
@@ -302,10 +299,7 @@ export function CalendarGrid({
 
           {habitsCount > 0 && (
             <div className="inline-flex items-center gap-1.5 px-2.5 @min-[440px]:px-3.5 py-1.5 rounded-lg @min-[440px]:rounded-xl text-[11px] @min-[440px]:text-xs font-extrabold bg-linear-to-r from-primary/15 via-primary/10 to-primary/5 text-primary border border-primary/30 whitespace-nowrap">
-              <Sparkles
-                className="w-3.5 h-3.5 text-primary animate-pulse motion-reduce:animate-none"
-                aria-hidden="true"
-              />
+              <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
               <span>
                 {habitsCount} {pluralize(habitsCount, ACTIVE_HABIT_FORMS)}
               </span>
@@ -360,7 +354,6 @@ export function CalendarGrid({
                 />
               </div>
               <span className="absolute -top-1.5 -right-1.5 flex h-5 w-5">
-                <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-primary/60 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-5 w-5 bg-primary border-2 border-background shadow-xs"></span>
               </span>
             </div>
@@ -493,7 +486,6 @@ export function CalendarGrid({
                                 className="relative flex h-1.5 w-1.5 @min-[440px]:h-2 @min-[440px]:w-2"
                                 aria-hidden="true"
                               >
-                                <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-primary opacity-80" />
                                 <span className="relative inline-flex rounded-full h-full w-full bg-primary" />
                               </span>
                             )}

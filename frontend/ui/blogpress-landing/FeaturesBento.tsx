@@ -69,7 +69,6 @@ function EditorPreview() {
 
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-500/14 border border-indigo-500/20 text-[11px] text-indigo-400 font-medium">
           <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500" />
           </span>
           <span>جاري التَّحرير</span>
@@ -107,7 +106,7 @@ function EditorPreview() {
                 <span className="text-neutral-300">
                   {line.split('**BlogPress**')[0]}
                   <span className="px-1.5 py-0.5 mx-0.5 rounded bg-indigo-500/35 text-indigo-300 font-bold border border-indigo-500/30 text-[11px] shadow-xs inline-flex items-center gap-1">
-                    <Sparkle size={10} className="text-indigo-400 animate-pulse" />
+                    <Sparkle size={10} className="text-indigo-400" />
                     رؤيَة رقَميَّة
                   </span>
                   {line.split('**BlogPress**')[1]}

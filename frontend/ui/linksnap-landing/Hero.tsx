@@ -80,7 +80,7 @@ export function Hero() {
                 <div className="w-3 h-3 rounded-full bg-emerald-500/88 hover:opacity-100 transition-opacity" />
               </div>
               <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-muted/75 text-xs font-mono text-muted-foreground border border-border/40">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <span>royaraqamia.com</span>
               </div>
             </div>

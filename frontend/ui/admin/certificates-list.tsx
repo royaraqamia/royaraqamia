@@ -89,9 +89,6 @@ function CertificateListItem({
                 <p className="truncate font-bold">{cert.student_name}</p>
                 <Badge variant={isExpired ? 'destructive' : 'default'} className="shrink-0 text-xs">
                   <span className="relative ms-1.5 flex size-1.5">
-                    {!isExpired && (
-                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-current opacity-75" />
-                    )}
                     <span
                       className={`relative inline-flex size-1.5 rounded-full ${
                         isExpired ? 'bg-destructive-foreground' : 'bg-green-500'

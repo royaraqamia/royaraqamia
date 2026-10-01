@@ -77,7 +77,6 @@ function NotFoundState({ code }: { code: string }) {
           <m.div variants={fadeUp} className="mb-6">
             <span className="inline-flex items-center gap-2 rounded-full border border-red-500/20 bg-red-500/10 px-3.5 py-1.5 text-xs font-bold text-red-600 dark:text-red-400">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
               </span>
               خطأ في التَّحقُّق
@@ -335,9 +334,6 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                     className="flex items-center gap-2 px-3.5 py-1.5 text-xs font-bold rounded-xl"
                   >
                     <span className="relative flex h-2 w-2">
-                      {!isExpired && (
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
-                      )}
                       <span
                         className={`relative inline-flex h-2 w-2 rounded-full ${
                           isExpired ? 'bg-red-500' : 'bg-primary'

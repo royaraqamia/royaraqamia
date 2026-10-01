@@ -77,7 +77,7 @@ export function PasswordStrength({ password }: PasswordStrengthProps) {
           aria-live="polite"
           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold tracking-wide transition-safe duration-300 ${tierStyle.badgeBg}`}
         >
-          <span className={`h-1.5 w-1.5 rounded-full ${tierStyle.dot} animate-pulse`} />
+          <span className={`h-1.5 w-1.5 rounded-full ${tierStyle.dot}`} />
           <span key={label} className="">
             {label}
           </span>

@@ -44,7 +44,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
 
           <div className="text-center">
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-              <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="h-1.5 w-1.5 rounded-full bg-primary" />
               <span>رابط محمي بكلمة مرور</span>
             </div>
 

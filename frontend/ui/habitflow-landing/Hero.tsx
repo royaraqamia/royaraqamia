@@ -95,7 +95,7 @@ export function Hero() {
             <div className="flex items-center justify-between mb-5 bg-muted/45 p-3.5 rounded-xl border border-border/30">
               <span className="text-xs sm:text-sm font-bold text-foreground">هذا الأسبوع</span>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-500/14 border border-orange-500/20 text-orange-500 text-xs sm:text-sm font-bold shadow-xs">
-                <Flame size={18} fill="currentColor" className="text-orange-500 animate-pulse" />
+                <Flame size={18} fill="currentColor" className="text-orange-500" />
                 <span>12</span>
               </div>
             </div>

@@ -170,7 +170,7 @@ export const LinkQrModal = memo(function LinkQrModal({
                       aria-hidden="true"
                     />
                   </div>
-                  <p className="text-xs font-medium text-muted-foreground animate-pulse">
+                  <p className="text-xs font-medium text-muted-foreground">
                     جاري جلب رمز الـ QR...
                   </p>
                 </div>

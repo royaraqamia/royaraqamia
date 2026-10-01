@@ -88,9 +88,7 @@ export function BudgetCard({
         {loading ? (
           <div className="flex flex-col items-center justify-center py-10 space-y-3 min-h-45">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="text-xs text-muted-foreground/80 animate-pulse font-medium">
-              جاري التَّحميل...
-            </span>
+            <span className="text-xs text-muted-foreground/80 font-medium">جاري التَّحميل...</span>
           </div>
         ) : (
           <>

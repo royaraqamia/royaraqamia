@@ -168,8 +168,6 @@ export function WebDevService() {
                 className="block group focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-2xl"
               >
                 <Button className="relative w-full h-14 sm:h-16 text-base sm:text-lg font-bold rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white shadow-[0_0_30px_-5px_rgba(147,51,234,0.4)] hover:shadow-[0_0_45px_-5px_rgba(168,85,247,0.6)] active:scale-[0.99] transition-safe duration-300 overflow-hidden cursor-pointer">
-                  {/* Button hover shimmer animation */}
-                  <div className="absolute inset-0 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite] bg-linear-to-r from-transparent via-white/25 to-transparent w-1/2 -skew-x-12 z-0" />
                   <span className="relative z-10 flex items-center justify-center gap-2">
                     ابدأ البناء الآن
                   </span>
