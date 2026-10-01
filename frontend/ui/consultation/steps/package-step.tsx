@@ -1,6 +1,6 @@
 'use client';
 
-import { CheckCircle, Clock, Layers } from 'lucide-react';
+import { CheckCircle, Clock } from 'lucide-react';
 import type { ConsultationPackage } from '@/shared/contracts/consultation';
 import { cn } from '@/frontend/shared/cn';
 
@@ -63,10 +63,6 @@ export function PackageStep({ packages, selectedId, onSelect }: PackageStepProps
               <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="size-3.5" />
                 {pkg.duration_minutes} دقيقة للجلسة
-              </span>
-              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                <Layers className="size-3.5" />
-                {pkg.sessions_count === 1 ? 'جلسة واحدة' : `${pkg.sessions_count} جلسات`}
               </span>
             </div>
           </button>
