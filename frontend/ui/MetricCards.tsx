@@ -95,6 +95,10 @@ export function MetricCards() {
                         className={`block font-heading tabular-nums bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent`}
                       >
                         {metric.numericValue}
+                      </span>
+                      <span
+                        className={`absolute right-full top-1/2 -translate-y-1/2 mr-2 sm:mr-3 font-heading text-2xl sm:text-3xl lg:text-4xl xl:text-5xl bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent`}
+                      >
                         {metric.suffix}
                       </span>
                     </div>
