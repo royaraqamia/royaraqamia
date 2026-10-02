@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.36.2] - 2026-10-02
+
+### Changed
+- rename the card feature badge to مكالمة صوتيَّة
+- match the update popup CTA to the hero gradient
+- flatten the apply summary and refine course copy
+- use max-w-3xl for all form pages
+
+### Fixed
+- add the missing damma to the Services heading
+
 ## [1.36.1] - 2026-10-02
 
 ### Changed
