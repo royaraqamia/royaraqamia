@@ -1,15 +1,7 @@
-import { Building2, CalendarClock, Wrench } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { HireApplyFlow } from '@/frontend/ui/retainers/hire-apply-flow';
-import { SITE_NAME } from '@/frontend/shared/metadata';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { RETAINER_DEFAULT_MONTHLY_FEE_USD } from '@/shared/contracts/retainers';
-
-const SUMMARY_ITEMS = [
-  { icon: Building2, label: 'المزوِّد', value: SITE_NAME },
-  { icon: Wrench, label: 'نطاق العمل', value: 'صيانة وتطوير وإدارة' },
-  { icon: CalendarClock, label: 'مدَّة التَّعاقُد', value: 'شهريّ متجدِّد' },
-];
 
 export default async function HirePage() {
   const { user } = await getOptionalUser();
@@ -26,7 +18,7 @@ export default async function HirePage() {
         >
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             <span className="inline-block bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent py-1 leading-[1.4]">
-              التَّعاقُد الشَّهري
+              طلب التَّعاقُد الشَّهري
             </span>
           </h2>
           <CollapsibleText
@@ -38,20 +30,6 @@ export default async function HirePage() {
             يتمتَّع بخبرة تتجاوز 7 سنوات يتولَّى صيانة مشاريعك وتطويرها وإدارتها، باستثمار شهري ثابت
             ودون الحاجة إلى بناء فريق داخلي.
           </CollapsibleText>
-
-          <dl className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {SUMMARY_ITEMS.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-                  <dd className="truncate text-sm font-bold text-foreground">{value}</dd>
-                </div>
-              </div>
-            ))}
-          </dl>
 
           <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">
             <span className="text-xs font-medium text-muted-foreground">رسوم الاستثمار</span>

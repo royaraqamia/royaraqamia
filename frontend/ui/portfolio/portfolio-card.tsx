@@ -23,7 +23,7 @@ export function PortfolioCard({
 }: PortfolioCardProps) {
   return (
     <div
-      className="shrink-0 w-[85vw] sm:w-95 md:w-110 lg:w-120 min-w-0 snap-center group/card bg-[#050810] rounded-3xl overflow-hidden"
+      className="shrink-0 w-[82vw] sm:w-95 md:w-110 lg:w-120 min-w-0 snap-center group/card bg-[#050810] rounded-3xl overflow-hidden"
       style={{ ['--ld' as string]: `${0.2 + displayIdx * 0.1}s` } as React.CSSProperties}
     >
       <div
@@ -44,7 +44,7 @@ export function PortfolioCard({
           alt={`${item.title} - رؤيَة رقَميَّة`}
           fill
           loading="lazy"
-          sizes="(max-width: 640px) 85vw, (max-width: 768px) 380px, (max-width: 1024px) 440px, 480px"
+          sizes="(max-width: 640px) 82vw, (max-width: 768px) 380px, (max-width: 1024px) 440px, 480px"
           className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] motion-reduce:duration-0 group-hover/card-inner:scale-105"
           onError={() => onImageError(actualIndex)}
         />

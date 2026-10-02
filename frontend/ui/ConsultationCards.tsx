@@ -1,6 +1,7 @@
 import { Mic, CheckCircle, Clock, Sparkle } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
+import { CONSULTATION_START_PRICE_USD } from '@/shared/contracts/consultation';
 
 const WhatsappIcon = ({
   size = '1em',
@@ -49,13 +50,26 @@ export function ConsultationCards() {
 
               {/* Internal Card Canvas */}
               <div className="p-6 sm:p-8 md:p-10 lg:p-12">
-                {/* Header Row: Interactive Pill Badge */}
-                <div className="mt-2 mb-8 pb-8 border-b border-purple-500/15">
+                {/* Header Row: Interactive Pill Badge + Starting Price */}
+                <div className="mt-2 mb-8 pb-8 border-b border-purple-500/15 flex flex-wrap items-center justify-between gap-3">
                   {/* Microphone Feature Badge */}
                   <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-purple-500/25 border border-purple-400/30 shadow-inner shadow-purple-500/10">
                     <Mic className="w-4 h-4 text-purple-300 shrink-0" />
                     <span className="text-xs sm:text-sm text-purple-200 font-bold tracking-wide">
                       جلسة تفاعليَّة صوتيَّة
+                    </span>
+                  </div>
+
+                  {/* Starting Price Badge */}
+                  <div className="inline-flex items-baseline gap-2 rounded-full border border-purple-400/30 bg-purple-500/15 px-4 py-2">
+                    <span className="text-xs sm:text-sm text-purple-200/80 font-medium">
+                      تبدأ من
+                    </span>
+                    <span
+                      dir="ltr"
+                      className="text-xl sm:text-2xl font-black tracking-tight bg-linear-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-transparent"
+                    >
+                      {`$${CONSULTATION_START_PRICE_USD}`}
                     </span>
                   </div>
                 </div>

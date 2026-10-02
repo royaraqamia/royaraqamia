@@ -56,7 +56,7 @@ export default async function TrainingApplyPage() {
         >
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
-              {TRAINING_COURSE.title}
+              التَّسجيل في التَّدريب
             </span>
           </h2>
           <CollapsibleText

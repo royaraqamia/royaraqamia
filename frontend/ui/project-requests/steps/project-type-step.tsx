@@ -70,7 +70,7 @@ export function ProjectTypeStep({ control, error }: ProjectTypeStepProps) {
 
                   <span className="inline-flex items-center gap-1.5 text-sm font-bold text-muted-foreground">
                     <Wallet className="size-4" aria-hidden="true" />
-                    تبدأ من ${START_PRICES[type]}
+                    تبدأ من <span dir="ltr">${START_PRICES[type]}</span>
                   </span>
                 </button>
               );

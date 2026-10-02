@@ -32,16 +32,9 @@ export function RequestProjectFlow({ summary, isAuthenticated }: RequestProjectF
           notice only sets the expectation that editing later needs an account. */}
       {!isSubmitted && !isAuthenticated && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          <LogIn className="size-4 shrink-0" aria-hidden="true" />
-          <span>
-            سجِّل الدُّخول قبل الإرسال إن أردت تعديل طلبك لاحقًا من صفحة
-            <a
-              href="/account/submissions"
-              className="mx-1 font-bold text-primary hover:underline underline-offset-4"
-            >
-              طلباتي
-            </a>
-            .
+          <span className="flex items-center gap-2">
+            <LogIn className="size-4 shrink-0" aria-hidden="true" />
+            <span>سجِّل الدُّخول قبل الإرسال إن أردتَّ تعديل طلبك لاحقًا.</span>
           </span>
           <a
             href="/auth/login?redirect=/request-project"

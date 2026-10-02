@@ -29,6 +29,14 @@ export const ACTIVE_BOOKING_STATUSES: readonly ConsultationBookingStatus[] = [
 /** Reference codes are quoted in the WhatsApp handoff — `CONS-2026-A7K2M9QX`. */
 export const CONSULTATION_REFERENCE_CODE_REGEX = /^CONS-\d{4}-[A-Z0-9]{8}$/;
 
+/**
+ * Marketing "starting from" figure for the consultation section on the static
+ * homepage. The bookable packages live in the database; this mirrors the
+ * seeded floor so the prerendered page can quote a price without a database
+ * read at build time. Update alongside the package seed and marketing copy.
+ */
+export const CONSULTATION_START_PRICE_USD = 25;
+
 // ------------------------------------------------------------
 // Entities
 // ------------------------------------------------------------

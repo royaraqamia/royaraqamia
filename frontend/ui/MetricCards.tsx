@@ -89,18 +89,10 @@ export function MetricCards() {
                 <div className="flex flex-col h-full relative z-10">
                   {/* Data & Editorial Content */}
                   <div className="mt-auto flex flex-col items-center text-center">
-                    {/* The Number Container with Dual-Layer Hover Gradient Transition */}
+                    {/* The Number with a Brand Gradient at Rest */}
                     <div className="relative text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-none mb-6 transition-transform duration-500 ease-out group-hover/card:scale-105">
-                      {/* Base White Display Number */}
-                      <span className="text-white transition-opacity duration-500 group-hover/card:opacity-0 block tabular-nums">
-                        {metric.numericValue}
-                        {metric.suffix}
-                      </span>
-
-                      {/* Hover Gradient Text Reveal Layer */}
                       <span
-                        className={`absolute inset-0 bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent opacity-0 transition-opacity duration-500 group-hover/card:opacity-100 pointer-events-none block tabular-nums`}
-                        aria-hidden="true"
+                        className={`block tabular-nums bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent`}
                       >
                         {metric.numericValue}
                         {metric.suffix}
