@@ -111,10 +111,11 @@ export function FormWizard({
           type="button"
           onClick={onBack}
           disabled={currentIndex === 0 || submitting}
+          aria-label="السَّابق"
           className="inline-flex items-center justify-end gap-2 rounded-full border border-border px-6 py-2.5 text-sm font-bold text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:border-border"
         >
           <ArrowRight className="size-4" aria-hidden="true" />
-          السَّابق
+          <span className="hidden sm:inline">السَّابق</span>
         </button>
 
         {isLastStep ? (
@@ -122,7 +123,7 @@ export function FormWizard({
             type="button"
             onClick={onConfirm}
             disabled={!canProceed || submitting}
-            className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold text-primary-foreground bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 shadow-lg transition-safe duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+            className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold whitespace-nowrap text-primary-foreground bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 shadow-lg transition-safe duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             {submitting ? (
               <>
@@ -138,7 +139,7 @@ export function FormWizard({
             type="button"
             onClick={onNext}
             disabled={!canProceed}
-            className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold text-primary-foreground bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 shadow-lg transition-safe duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
+            className="inline-flex items-center justify-start gap-2 rounded-full px-8 py-2.5 text-sm font-bold whitespace-nowrap text-primary-foreground bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 shadow-lg transition-safe duration-300 active:scale-[0.98] cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring min-h-11 disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
           >
             التَّالي
             <ArrowLeft className="size-4" aria-hidden="true" />
