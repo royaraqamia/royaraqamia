@@ -6,7 +6,7 @@ import type {
   PublishedPostsResult,
   RestorePostSnapshot,
 } from '@/shared/contracts/blogpress';
-import type { PostInput } from '@/shared/contracts/blog';
+import type { PostInput } from '@/shared/contracts/community';
 
 export interface PostsRepository {
   getPublishedPosts(

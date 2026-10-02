@@ -35,19 +35,19 @@ describe('toNextResponse invalidation', () => {
       200,
       { success: true },
       {
-        revalidate: [{ path: '/blog' }, { path: '/spendtrack', type: 'layout' }],
-        tags: ['blog-index', 'blog-post'],
+        revalidate: [{ path: '/community' }, { path: '/spendtrack', type: 'layout' }],
+        tags: ['community-index', 'community-post'],
       }
     );
 
     toNextResponse(result);
 
     expect(revalidatePath).toHaveBeenCalledTimes(2);
-    expect(revalidatePath).toHaveBeenNthCalledWith(1, '/blog', undefined);
+    expect(revalidatePath).toHaveBeenNthCalledWith(1, '/community', undefined);
     expect(revalidatePath).toHaveBeenNthCalledWith(2, '/spendtrack', 'layout');
     expect(revalidateTag).toHaveBeenCalledTimes(2);
-    expect(revalidateTag).toHaveBeenNthCalledWith(1, 'blog-index', 'minutes');
-    expect(revalidateTag).toHaveBeenNthCalledWith(2, 'blog-post', 'minutes');
+    expect(revalidateTag).toHaveBeenNthCalledWith(1, 'community-index', 'minutes');
+    expect(revalidateTag).toHaveBeenNthCalledWith(2, 'community-post', 'minutes');
   });
 
   it('invalidates nothing when a result carries no hints (a read)', () => {

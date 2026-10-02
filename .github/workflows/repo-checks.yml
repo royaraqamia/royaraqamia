@@ -31,7 +31,7 @@ jobs:
             echo "::error title=Invalid PR title::'$TITLE' does not follow Conventional Commits."
             echo "Expected format: type(optional-scope)[!]: description"
             echo "Valid types: feat fix docs style refactor perf test build ci chore revert"
-            echo "Example: feat(blog): add draft preview"
+            echo "Example: feat(community): add draft preview"
             exit 1
           fi
 

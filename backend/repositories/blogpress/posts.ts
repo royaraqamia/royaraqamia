@@ -9,7 +9,7 @@ import type {
   PublishedPostsResult,
   RestorePostSnapshot,
 } from '@/shared/contracts/blogpress';
-import type { PostInput } from '@/shared/contracts/blog';
+import type { PostInput } from '@/shared/contracts/community';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import { estimateReadingTime } from '@/shared/reading-time';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
@@ -20,14 +20,14 @@ const PUBLISHED_POSTS_FILTER =
 
 /** Light card projection used by the public feed and related posts — no `content`. */
 const POST_SUMMARY_COLUMNS =
-  'id, author_id, title, slug, status, cover_image, meta_title, meta_desc, published_at, publish_at, view_count, featured, blog_visible, reading_time_minutes, created_at, updated_at';
+  'id, author_id, title, slug, status, cover_image, meta_title, meta_desc, published_at, publish_at, view_count, featured, community_visible, reading_time_minutes, created_at, updated_at';
 
 type Client = SupabaseClient<Database>;
 
 export function createPostsRepository(supabase: Client): PostsRepository {
   async function resolveCategoryIdBySlug(slug: string): Promise<string | null> {
     const { data, error } = await supabase
-      .from('blog_categories')
+      .from('community_categories')
       .select('id')
       .eq('slug', slug)
       .maybeSingle();
@@ -48,11 +48,13 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     return (data ?? []).map((row) => row.post_id);
   }
 
-  function mapCategoryRows(rows: Array<{ blog_categories: PostCategory | null }>): PostCategory[] {
+  function mapCategoryRows(
+    rows: Array<{ community_categories: PostCategory | null }>
+  ): PostCategory[] {
     const seen = new Set<string>();
     const categories: PostCategory[] = [];
     for (const row of rows) {
-      const category = row.blog_categories;
+      const category = row.community_categories;
       if (category && !seen.has(category.id)) {
         seen.add(category.id);
         categories.push(category);
@@ -61,11 +63,11 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     return categories;
   }
 
-  function mapTagRows(rows: Array<{ blog_tags: PostTag | null }>): PostTag[] {
+  function mapTagRows(rows: Array<{ community_tags: PostTag | null }>): PostTag[] {
     const seen = new Set<string>();
     const tags: PostTag[] = [];
     for (const row of rows) {
-      const tag = row.blog_tags;
+      const tag = row.community_tags;
       if (tag && !seen.has(tag.id)) {
         seen.add(tag.id);
         tags.push(tag);
@@ -75,12 +77,12 @@ export function createPostsRepository(supabase: Client): PostsRepository {
   }
 
   function buildTagMapByPost(
-    rows: Array<{ post_id: string; blog_tags: PostTag | null }>
+    rows: Array<{ post_id: string; community_tags: PostTag | null }>
   ): Record<string, PostTag[]> {
     const result: Record<string, PostTag[]> = {};
     for (const row of rows) {
-      if (!row.blog_tags) continue;
-      (result[row.post_id] ??= []).push(row.blog_tags);
+      if (!row.community_tags) continue;
+      (result[row.post_id] ??= []).push(row.community_tags);
     }
     return result;
   }
@@ -108,7 +110,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .from('posts')
         .select(POST_SUMMARY_COLUMNS, { count: 'exact' })
         .or(PUBLISHED_POSTS_FILTER)
-        .eq('blog_visible', true);
+        .eq('community_visible', true);
 
       if (postIds) {
         queryBuilder = queryBuilder.in('id', postIds);
@@ -140,7 +142,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .from('posts')
         .select('slug')
         .or(PUBLISHED_POSTS_FILTER)
-        .eq('blog_visible', true);
+        .eq('community_visible', true);
 
       if (error) throw repositoryFailure('blogpress.getPublishedPostSlugs', error);
 
@@ -153,7 +155,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('*')
         .eq('slug', slug)
         .or(PUBLISHED_POSTS_FILTER)
-        .eq('blog_visible', true)
+        .eq('community_visible', true)
         .single();
 
       if (error) {
@@ -179,7 +181,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async getPublishedCategories(): Promise<PostCategory[]> {
       const { data, error } = await supabase
         .from('post_categories')
-        .select('blog_categories(id, name, slug)');
+        .select('community_categories(id, name, slug)');
 
       if (error) throw repositoryFailure('blogpress.getPublishedCategories', error);
 
@@ -189,7 +191,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async getPublishedPostCategories(postId: string): Promise<PostCategory[]> {
       const { data, error } = await supabase
         .from('post_categories')
-        .select('blog_categories(id, name, slug)')
+        .select('community_categories(id, name, slug)')
         .eq('post_id', postId);
 
       if (error) throw repositoryFailure('blogpress.getPublishedPostCategories', error);
@@ -208,7 +210,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
       if (categorySlug) {
         const { data: category, error: categoryError } = await supabase
-          .from('blog_categories')
+          .from('community_categories')
           .select('id')
           .eq('user_id', authorId)
           .eq('slug', categorySlug)
@@ -306,7 +308,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
           ...data,
           status: 'published',
           published_at: new Date().toISOString(),
-          blog_visible: true,
+          community_visible: true,
           ...(data.content !== undefined
             ? { reading_time_minutes: estimateReadingTime(data.content) }
             : {}),
@@ -327,7 +329,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .update({
           status: 'published',
           published_at: new Date().toISOString(),
-          blog_visible: true,
+          community_visible: true,
         })
         .eq('id', postId)
         .eq('author_id', authorId)
@@ -407,7 +409,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
           publish_at: snapshot.publish_at,
           view_count: snapshot.view_count,
           featured: snapshot.featured,
-          blog_visible: snapshot.blog_visible,
+          community_visible: snapshot.community_visible,
           reading_time_minutes: snapshot.reading_time_minutes,
         })
         .select('id')
@@ -430,7 +432,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
     async listCategoriesByAuthor(authorId: string): Promise<PostCategory[]> {
       const { data, error } = await supabase
-        .from('blog_categories')
+        .from('community_categories')
         .select('id, name, slug')
         .eq('user_id', authorId)
         .order('created_at', { ascending: true });
@@ -442,7 +444,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
     async createCategory(authorId: string, name: string, slug: string): Promise<PostCategory> {
       const { data, error } = await supabase
-        .from('blog_categories')
+        .from('community_categories')
         .insert({ user_id: authorId, name, slug })
         .select('id, name, slug')
         .single();
@@ -454,7 +456,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
     async deleteCategory(categoryId: string, authorId: string): Promise<void> {
       const { error } = await supabase
-        .from('blog_categories')
+        .from('community_categories')
         .delete()
         .eq('id', categoryId)
         .eq('user_id', authorId);
@@ -465,7 +467,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async getPostCategories(postId: string): Promise<PostCategory[]> {
       const { data, error } = await supabase
         .from('post_categories')
-        .select('blog_categories(id, name, slug)')
+        .select('community_categories(id, name, slug)')
         .eq('post_id', postId);
 
       if (error) throw repositoryFailure('blogpress.getPostCategories', error);
@@ -490,7 +492,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async getPublishedPostTags(postId: string): Promise<PostTag[]> {
       const { data, error } = await supabase
         .from('post_tags')
-        .select('blog_tags(id, name, slug)')
+        .select('community_tags(id, name, slug)')
         .eq('post_id', postId);
 
       if (error) throw repositoryFailure('blogpress.getPublishedPostTags', error);
@@ -500,7 +502,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
     async listTagsByAuthor(authorId: string): Promise<PostTag[]> {
       const { data, error } = await supabase
-        .from('blog_tags')
+        .from('community_tags')
         .select('id, name, slug')
         .eq('user_id', authorId)
         .order('created_at', { ascending: true });
@@ -512,7 +514,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
     async createTag(authorId: string, name: string, slug: string): Promise<PostTag> {
       const { data, error } = await supabase
-        .from('blog_tags')
+        .from('community_tags')
         .insert({ user_id: authorId, name, slug })
         .select('id, name, slug')
         .single();
@@ -524,7 +526,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
     async deleteTag(tagId: string, authorId: string): Promise<void> {
       const { error } = await supabase
-        .from('blog_tags')
+        .from('community_tags')
         .delete()
         .eq('id', tagId)
         .eq('user_id', authorId);
@@ -535,7 +537,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async getPostTags(postId: string): Promise<PostTag[]> {
       const { data, error } = await supabase
         .from('post_tags')
-        .select('blog_tags(id, name, slug)')
+        .select('community_tags(id, name, slug)')
         .eq('post_id', postId);
 
       if (error) throw repositoryFailure('blogpress.getPostTags', error);
@@ -547,7 +549,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       if (postIds.length === 0) return {};
       const { data, error } = await supabase
         .from('post_tags')
-        .select('post_id, blog_tags(id, name, slug)')
+        .select('post_id, community_tags(id, name, slug)')
         .in('post_id', postIds);
 
       if (error) throw repositoryFailure('blogpress.getPostTagsByPostIds', error);
@@ -586,7 +588,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
           ? {
               status: 'published' as const,
               published_at: new Date().toISOString(),
-              blog_visible: true,
+              community_visible: true,
             }
           : { status: 'draft' as const, published_at: null }
       ) satisfies Partial<Database['public']['Tables']['posts']['Row']> & {

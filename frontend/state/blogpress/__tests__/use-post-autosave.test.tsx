@@ -25,7 +25,7 @@ const mockPost: Post = {
   publish_at: null,
   view_count: 0,
   featured: false,
-  blog_visible: false,
+  community_visible: false,
   reading_time_minutes: 1,
   created_at: '2026-08-18T08:00:00.000Z',
   updated_at: '2026-08-18T08:00:00.000Z',

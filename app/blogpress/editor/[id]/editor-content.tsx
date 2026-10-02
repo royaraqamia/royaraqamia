@@ -240,7 +240,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
         markSaved();
         setPublishDialogOpen(false);
         toast.success('تمَّ نشر المقال!');
-        router.push(`/blog/${finalSlug}`);
+        router.push(`/community/${finalSlug}`);
       } catch {
         toast.error('فشل نشر المقال. حاول مرَّة أخرى.');
       }

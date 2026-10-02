@@ -22,7 +22,7 @@ const postFixture = {
   publish_at: null,
   view_count: 3,
   featured: false,
-  blog_visible: true,
+  community_visible: true,
   created_at: '2026-08-01T00:00:00.000Z',
   updated_at: '2026-08-01T00:00:00.000Z',
 } as unknown as Post;
@@ -87,7 +87,7 @@ const snapshotBase = {
   publish_at: null,
   view_count: 0,
   featured: false,
-  blog_visible: true,
+  community_visible: true,
   reading_time_minutes: 0,
 };
 
@@ -223,7 +223,7 @@ describe('BlogpressPostsService.restorePost', () => {
 
     expect(repository.restorePost).toHaveBeenCalledWith(
       'u-1',
-      expect.objectContaining({ blog_visible: false })
+      expect.objectContaining({ community_visible: false })
     );
     expect(repository.setPostTags).toHaveBeenCalledWith('p-2', 'u-1', ['t-1', 't-2']);
   });
@@ -236,7 +236,7 @@ describe('BlogpressPostsService.restorePost', () => {
 
     expect(repository.restorePost).toHaveBeenCalledWith(
       'u-1',
-      expect.objectContaining({ blog_visible: true })
+      expect.objectContaining({ community_visible: true })
     );
   });
 

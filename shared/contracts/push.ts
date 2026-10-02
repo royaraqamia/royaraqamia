@@ -54,7 +54,7 @@ export function toPushUrl(type: NotificationType, metadata?: Record<string, unkn
   if (type === 'post_published') {
     const slug = metadata?.slug;
     if (typeof slug === 'string' && slug.length > 0) {
-      return `/blog/${encodeURIComponent(slug)}`;
+      return `/community/${encodeURIComponent(slug)}`;
     }
   }
   return base;

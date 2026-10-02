@@ -303,9 +303,9 @@ describe('post-published burst', () => {
       'post-3',
     ]);
     expect(sendToUsers.mock.calls.map((call) => call[1].url).sort()).toEqual([
-      '/blog/hello-1',
-      '/blog/hello-2',
-      '/blog/hello-3',
+      '/community/hello-1',
+      '/community/hello-2',
+      '/community/hello-3',
     ]);
   });
 });

@@ -22,7 +22,7 @@ import {
  * tools operate on the caller's own posts/categories/tags when authenticated,
  * and on public published content when anonymous. The user-scoped client
  * enforces `posts_select_own_or_published` RLS and the per-author
- * blog_categories / blog_tags policies.
+ * community_categories / community_tags policies.
  */
 
 const ListPostsInputSchema = z
@@ -73,7 +73,7 @@ function serializePost(post: PostSummary) {
     publish_at: post.publish_at,
     view_count: post.view_count,
     featured: post.featured,
-    blog_visible: post.blog_visible,
+    community_visible: post.community_visible,
     reading_time_minutes: post.reading_time_minutes,
     created_at: post.created_at,
     updated_at: post.updated_at,
@@ -108,7 +108,7 @@ export async function listPostsHandler(
       for (const p of items) {
         lines.push(
           `- **${p.title || '(untitled)'}** (${p.status}) — views: ${p.view_count}${
-            p.blog_visible ? ', visible' : ''
+            p.community_visible ? ', visible' : ''
           } | \`${p.id}\``
         );
       }

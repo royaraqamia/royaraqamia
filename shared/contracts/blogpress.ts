@@ -16,7 +16,7 @@ export interface Post {
   publish_at: string | null;
   view_count: number;
   featured: boolean;
-  blog_visible: boolean;
+  community_visible: boolean;
   reading_time_minutes: number;
   created_at: string;
   updated_at: string;
@@ -56,7 +56,7 @@ export const RestorePostSnapshotSchema = z.object({
   publish_at: z.string().nullable(),
   view_count: z.number().int().min(0),
   featured: z.boolean(),
-  blog_visible: z.boolean(),
+  community_visible: z.boolean(),
   reading_time_minutes: z.number().int().min(0),
   tagIds: z.array(z.string().uuid('معرّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم').optional(),
 });

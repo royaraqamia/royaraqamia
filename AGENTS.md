@@ -1,6 +1,6 @@
 # Project Agent Contract — royaraqamia
 
-Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Multiple products (Blog, Certificates, Consultations) + Auth on Supabase Postgres 17.
+Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Multiple products (Community, Certificates, Consultations) + Auth on Supabase Postgres 17.
 
 **Package manager:** npm >= 10 (`legacy-peer-deps=true` in `.npmrc`)
 

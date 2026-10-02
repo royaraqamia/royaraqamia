@@ -146,7 +146,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                   >
                     <div className="flex items-center gap-1.5 truncate">
                       <Globe className="size-3.5 text-muted-foreground/50 shrink-0" />
-                      <span className="text-muted-foreground/60">{siteHost}/blog/</span>
+                      <span className="text-muted-foreground/60">{siteHost}/community/</span>
                       <span className="font-bold text-primary truncate">
                         {slug || (
                           <span className="text-muted-foreground/40 italic">رابط-المقال</span>
@@ -405,7 +405,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                       </div>
                       <div className="flex items-center gap-1 truncate text-xs">
                         <span className="text-foreground/90 font-medium">{siteHost}</span>
-                        <span className="text-muted-foreground/50">› blog ›</span>
+                        <span className="text-muted-foreground/50">› community ›</span>
                         <span className="text-muted-foreground/80 truncate">{slug || '...'}</span>
                       </div>
                     </div>

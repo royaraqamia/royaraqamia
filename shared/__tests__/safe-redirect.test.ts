@@ -18,7 +18,7 @@ describe('safeRedirect', () => {
     expect(safeRedirect('/auth/login?redirect=/spendtrack')).toBe(
       '/auth/login?redirect=/spendtrack'
     );
-    expect(safeRedirect('/blog/some-post')).toBe('/blog/some-post');
+    expect(safeRedirect('/community/some-post')).toBe('/community/some-post');
   });
 
   it('returns the decoded path for percent-encoded internal paths', () => {

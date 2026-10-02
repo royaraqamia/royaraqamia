@@ -39,7 +39,7 @@ interface PaletteItem {
 
 const GENERAL_ITEMS: PaletteItem[] = [
   { id: 'home', label: 'الرَّئيسيَّة', group: 'general', href: '/', icon: House },
-  { id: 'blog', label: 'المجتمع', group: 'general', href: '/blog', icon: BookOpen },
+  { id: 'community', label: 'المجتمع', group: 'general', href: '/community', icon: BookOpen },
 ];
 
 const QUICK_ACTIONS: PaletteItem[] = [

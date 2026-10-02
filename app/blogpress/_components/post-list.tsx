@@ -525,7 +525,7 @@ const PostRow = memo(function PostRow({
             {post.status === 'published' && (
               <DropdownMenuItem asChild>
                 <Link
-                  href={`/blog/${post.slug}`}
+                  href={`/community/${post.slug}`}
                   target="_blank"
                   className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
                 >
@@ -690,7 +690,7 @@ const PostRow = memo(function PostRow({
                                     publish_at: post.publish_at,
                                     view_count: post.view_count ?? 0,
                                     featured: post.featured,
-                                    blog_visible: post.blog_visible,
+                                    community_visible: post.community_visible,
                                     reading_time_minutes: post.reading_time_minutes ?? 0,
                                     tagIds: tags.map((t) => t.id),
                                   });

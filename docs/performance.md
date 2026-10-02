@@ -50,7 +50,7 @@ npm run perf:baseline:update   # re-record perf/baseline.json after an intended 
 Point it at other built routes, or a different build directory:
 
 ```bash
-node scripts/perf-baseline.mjs --routes /,/blog,/terms
+node scripts/perf-baseline.mjs --routes /,/community,/terms
 node scripts/perf-baseline.mjs --public-dir public
 node scripts/perf-baseline.mjs --json          # machine-readable output
 ```
@@ -83,7 +83,7 @@ tickets measure their wins against.
 
 - `measure` lists the routes the report covers by default (`--routes` overrides).
 - `default` applies to every route; `routes.<path>` overrides it per route.
-  Route keys are normalized, so `blog`, `/blog` and `/blog/` all match the same route.
+  Route keys are normalized, so `community`, `/community` and `/community/` all match the same route.
 - Available metrics: `totalGzipKb`, `jsGzipKb`, `cssGzipKb`, `htmlGzipKb`,
   `fontsGzipKb`. A metric absent from both `default` and the route's override is
   simply not constrained.
@@ -181,7 +181,7 @@ The win here is runtime — paint, compositing and battery — which this tool d
 
 - **Prerendered routes only.** `--routes` works for routes Next prerenders to
   `.next/server/app/<path>.html`. A dynamically server-rendered route (for
-  example `/blog/[slug]`) has no such artifact and needs a live-server mode,
+  example `/community/[slug]`) has no such artifact and needs a live-server mode,
   which this tool does not implement.
 - **Initial request only.** It counts the document plus the subresources its HTML
   references. Chunks pulled in later by client-side navigation or hydration are

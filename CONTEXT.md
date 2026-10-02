@@ -1,7 +1,7 @@
 # رؤيَة رقَميَّة (royaraqamia)
 
 The public site and the product family it hosts. This glossary fixes the vocabulary
-shared across the Blog, Certificates, Consultations, Training and Client Work offerings,
+shared across the Community, Certificates, Consultations, Training and Client Work offerings,
 so the same concept is not named three different ways in code, copy and the admin UI.
 
 ## Language
@@ -43,6 +43,23 @@ _Avoid_: Booking status, payment status, order status
 The short human-readable identifier an applicant quotes on WhatsApp. It identifies an
 Application and is deliberately not a secret.
 _Avoid_: Tracking number, ticket, booking ref
+
+### Community
+
+**Community Post**:
+A published article in the public feed, rendered from Markdown. Authored by a
+signed-in User and readable by anyone.
+_Sold as_: المجتمع
+_Avoid_: Blog post, article, entry
+
+**Community Category**:
+A User-owned grouping of Community Posts. Private to its owner until a post in
+it is published, then visible on the public feed.
+_Avoid_: Blog category, section, topic
+
+**Community Tag**:
+A User-owned label attached to Community Posts for discovery.
+_Avoid_: Blog tag, keyword, label
 
 ### Certificates
 

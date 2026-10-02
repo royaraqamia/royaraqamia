@@ -26,7 +26,7 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
-    path: '/blog',
+    path: '/community',
     changeFrequency: 'daily',
     priority: 0.9,
   },

@@ -46,7 +46,7 @@ const POST = {
   publish_at: null,
   view_count: 0,
   featured: false,
-  blog_visible: true,
+  community_visible: true,
   reading_time_minutes: 1,
   created_at: '2026-08-01T10:00:00.000Z',
   updated_at: '2026-08-01T10:00:00.000Z',

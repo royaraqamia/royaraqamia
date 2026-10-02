@@ -17,7 +17,7 @@ export type AppProduct =
   | 'verify'
   | 'consultation'
   | 'training'
-  | 'blog';
+  | 'community';
 
 export interface AppProductDef {
   id: AppProduct;

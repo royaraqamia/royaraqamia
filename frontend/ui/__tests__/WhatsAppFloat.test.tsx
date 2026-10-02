@@ -72,7 +72,7 @@ describe('WhatsAppFloat', () => {
     expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
   });
 
-  it.each(['/blog', '/blog/my-post'])('hides on blog page %s', (pathname) => {
+  it.each(['/community', '/community/my-post'])('hides on community page %s', (pathname) => {
     mockUsePathname.mockReturnValue(pathname);
     renderWithProviders(<WhatsAppFloat />);
     act(() => {

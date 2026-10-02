@@ -8,7 +8,7 @@ import {
   PostTagIdsSchema,
   BulkPostsActionSchema,
   SchedulePostSchema,
-} from '@/shared/contracts/blog';
+} from '@/shared/contracts/community';
 import { RestorePostSnapshotSchema } from '@/shared/contracts/blogpress';
 import {
   jsonResult,
@@ -17,10 +17,10 @@ import {
 } from '@/backend/transport/http-result';
 import { messageError } from '@/backend/transport/authenticated-handler';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
-import { BLOG_MUTATION_TAGS } from '@/backend/shared/blog-cache-tags';
+import { COMMUNITY_MUTATION_TAGS } from '@/backend/shared/community-cache-tags';
 
 function postRevalidation(slug: string): RevalidationHint[] {
-  return [{ path: '/blogpress' }, { path: `/blog/${slug}` }, { path: '/blog' }];
+  return [{ path: '/blogpress' }, { path: `/community/${slug}` }, { path: '/community' }];
 }
 
 function publishRevalidation(slug: string): RevalidationHint[] {
@@ -58,7 +58,7 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
             ...postRevalidation(validated.data.slug),
             { path: `/blogpress/editor/${id}` },
           ],
-          tags: BLOG_MUTATION_TAGS,
+          tags: COMMUNITY_MUTATION_TAGS,
         }
       );
     },
@@ -75,7 +75,7 @@ export async function deletePost(id: string): Promise<HttpResult> {
       return jsonResult(
         200,
         { success: true },
-        { revalidate: postRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+        { revalidate: postRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
     { mapError: messageError(500, 'فشل حذف المقال') }
@@ -109,7 +109,7 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
         { success: true, id },
         {
           revalidate: postRevalidation(validated.data.slug),
-          tags: BLOG_MUTATION_TAGS,
+          tags: COMMUNITY_MUTATION_TAGS,
         }
       );
     },
@@ -126,7 +126,7 @@ export async function publishPost(id: string): Promise<HttpResult> {
       return jsonResult(
         200,
         { success: true },
-        { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+        { revalidate: publishRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
     { mapError: messageError(500, 'فشل نشر المقال') }
@@ -142,7 +142,7 @@ export async function unpublishPost(id: string): Promise<HttpResult> {
       return jsonResult(
         200,
         { success: true },
-        { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+        { revalidate: publishRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
     { mapError: messageError(500, 'فشل إلغاء النَّشر') }
@@ -163,7 +163,7 @@ export async function schedulePost(id: string, body: Record<string, unknown>): P
         { success: true },
         {
           revalidate: [...postRevalidation(slug), { path: '/blogpress/calendar' }],
-          tags: BLOG_MUTATION_TAGS,
+          tags: COMMUNITY_MUTATION_TAGS,
         }
       );
     },
@@ -199,7 +199,7 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         return jsonResult(
           200,
           { success: true, affected: postIds.length },
-          { revalidate: [{ path: '/blogpress' }], tags: BLOG_MUTATION_TAGS }
+          { revalidate: [{ path: '/blogpress' }], tags: COMMUNITY_MUTATION_TAGS }
         );
       }
 
@@ -211,7 +211,7 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
           { success: true, affected },
           {
             revalidate: slugs.flatMap((slug) => publishRevalidation(slug)),
-            tags: BLOG_MUTATION_TAGS,
+            tags: COMMUNITY_MUTATION_TAGS,
           }
         );
       }
@@ -219,7 +219,10 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
       return jsonResult(
         200,
         { success: true, affected },
-        { revalidate: slugs.flatMap((slug) => postRevalidation(slug)), tags: BLOG_MUTATION_TAGS }
+        {
+          revalidate: slugs.flatMap((slug) => postRevalidation(slug)),
+          tags: COMMUNITY_MUTATION_TAGS,
+        }
       );
     },
     { mapError: messageError(500, 'فشل تنفيذ الإجراء على المقالات') }
@@ -244,7 +247,7 @@ export async function saveAndPublishPost(
       return jsonResult(
         200,
         { success: true, slug },
-        { revalidate: publishRevalidation(slug), tags: BLOG_MUTATION_TAGS }
+        { revalidate: publishRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
     { mapError: messageError(500, 'فشل نشر المقال') }
@@ -317,7 +320,7 @@ export async function setBlogPostTags(
       return jsonResult(
         200,
         { success: true },
-        { revalidate: [{ path: `/blogpress/editor/${id}` }], tags: BLOG_MUTATION_TAGS }
+        { revalidate: [{ path: `/blogpress/editor/${id}` }], tags: COMMUNITY_MUTATION_TAGS }
       );
     },
     { mapError: messageError(500, 'فشل تحديث وسوم المقال') }

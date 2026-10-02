@@ -1,6 +1,6 @@
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import type { RestorePostSnapshot } from '@/shared/contracts/blogpress';
-import type { PostInput } from '@/shared/contracts/blog';
+import type { PostInput } from '@/shared/contracts/community';
 import { isAdmin } from '@/backend/shared/admin-validator';
 
 export interface PostPublishedNotifier {
@@ -48,10 +48,10 @@ export class BlogpressPostsService {
       throw new Error('المعرّف (slug) مطلوب');
     }
 
-    const blogVisible = isAdmin(authorEmail, this.adminEmails) && snapshot.blog_visible;
+    const communityVisible = isAdmin(authorEmail, this.adminEmails) && snapshot.community_visible;
     const { id } = await this.repository.restorePost(authorId, {
       ...snapshot,
-      blog_visible: blogVisible,
+      community_visible: communityVisible,
     });
     if (snapshot.tagIds && snapshot.tagIds.length > 0) {
       await this.repository.setPostTags(id, authorId, snapshot.tagIds);

@@ -148,7 +148,7 @@ export function Navbar() {
       ],
     },
     {
-      href: '/blog',
+      href: '/community',
       label: 'المجتمع',
       icon: BookOpen,
       isRoute: true,

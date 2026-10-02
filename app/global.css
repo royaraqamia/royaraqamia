@@ -1234,7 +1234,7 @@
   }
 }
 
-/* Compose FAB — social-style "new post" button on the public blog */
+/* Compose FAB — social-style "new post" button on the public community */
 .compose-fab-btn {
   position: fixed;
   left: 20px;
@@ -1658,7 +1658,7 @@
 }
 
 /*
- * Off-screen render skipping for long-form content (blog articles, legal
+ * Off-screen render skipping for long-form content (community articles, legal
  * pages). The browser skips layout *and* paint for everything below the
  * viewport until it approaches, cutting initial render cost on text-heavy
  * pages to roughly one screenful. `auto` in contain-intrinsic-size makes the

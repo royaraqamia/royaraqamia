@@ -79,7 +79,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      blog_categories: {
+      community_categories: {
         Row: {
           created_at: string;
           id: string;
@@ -103,7 +103,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      blog_tags: {
+      community_tags: {
         Row: {
           created_at: string;
           id: string;
@@ -789,7 +789,7 @@ export type Database = {
             foreignKeyName: 'post_categories_category_id_fkey';
             columns: ['category_id'];
             isOneToOne: false;
-            referencedRelation: 'blog_categories';
+            referencedRelation: 'community_categories';
             referencedColumns: ['id'];
           },
           {
@@ -826,7 +826,7 @@ export type Database = {
             foreignKeyName: 'post_tags_tag_id_fkey';
             columns: ['tag_id'];
             isOneToOne: false;
-            referencedRelation: 'blog_tags';
+            referencedRelation: 'community_tags';
             referencedColumns: ['id'];
           },
         ];
@@ -834,7 +834,7 @@ export type Database = {
       posts: {
         Row: {
           author_id: string;
-          blog_visible: boolean;
+          community_visible: boolean;
           content: string | null;
           cover_image: string | null;
           created_at: string;
@@ -853,7 +853,7 @@ export type Database = {
         };
         Insert: {
           author_id: string;
-          blog_visible?: boolean;
+          community_visible?: boolean;
           content?: string | null;
           cover_image?: string | null;
           created_at?: string;
@@ -872,7 +872,7 @@ export type Database = {
         };
         Update: {
           author_id?: string;
-          blog_visible?: boolean;
+          community_visible?: boolean;
           content?: string | null;
           cover_image?: string | null;
           created_at?: string;

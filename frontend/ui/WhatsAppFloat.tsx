@@ -6,7 +6,7 @@ import { useUI } from '../state/UIContext';
 import { WHATSAPP_PHONE, WHATSAPP_MESSAGE } from '@/frontend/shared/constants';
 
 // Routes where a floating support button would cover working UI
-const HIDDEN_ROUTE_EXACTS = ['/blog'];
+const HIDDEN_ROUTE_EXACTS = ['/community'];
 const HIDDEN_ROUTE_PREFIXES = [
   '/habitflow/app',
   '/spendtrack/app',
@@ -21,8 +21,8 @@ const HIDDEN_ROUTE_PREFIXES = [
   '/request-project',
   '/hire',
   '/auth',
-  // Blog post pages (the listing page is matched exactly above)
-  '/blog/',
+  // Community post pages (the listing page is matched exactly above)
+  '/community/',
 ];
 
 interface WhatsAppFloatProps {

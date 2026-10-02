@@ -249,7 +249,7 @@ describe('checkBudget', () => {
     };
     const result = checkBudget(summary, budget, '/');
     expect(result.violations.map((v) => v.metric)).toEqual(['jsGzipKb']);
-    expect(checkBudget(summary, budget, '/blog').ok).toBe(true);
+    expect(checkBudget(summary, budget, '/community').ok).toBe(true);
   });
 
   it('treats a missing budget as no constraint', () => {
@@ -258,8 +258,8 @@ describe('checkBudget', () => {
   });
 
   it('matches route overrides regardless of how the key was written', () => {
-    const budget = { default: { jsGzipKb: 1000 }, routes: { blog: { jsGzipKb: 100 } } };
-    expect(checkBudget(summary, budget, '/blog').violations.map((v) => v.metric)).toEqual([
+    const budget = { default: { jsGzipKb: 1000 }, routes: { community: { jsGzipKb: 100 } } };
+    expect(checkBudget(summary, budget, '/community').violations.map((v) => v.metric)).toEqual([
       'jsGzipKb',
     ]);
     expect(checkBudget(summary, budget, '/').ok).toBe(true);

@@ -87,7 +87,7 @@ const nextConfig = {
         ],
       },
       {
-        source: '/blog/:path*',
+        source: '/community/:path*',
         headers: [
           { key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=600' },
         ],

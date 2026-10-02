@@ -430,7 +430,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
                         <div className="flex items-center gap-1 truncate text-[11px]">
                           <span className="text-foreground/90 font-medium">{siteHost}</span>
                           <span className="text-muted-foreground/40">›</span>
-                          <span className="text-muted-foreground/70">blog</span>
+                          <span className="text-muted-foreground/70">community</span>
                           <span className="text-muted-foreground/40">›</span>
                           <span className="text-muted-foreground/90 truncate font-mono text-[10px]">
                             {slug || 'post-slug'}

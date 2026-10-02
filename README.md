@@ -2,7 +2,7 @@
 
 > We build websites and applications with an entrepreneurial vision that benefits people; we also provide students and new graduates with comprehensive professional training for building websites and applications.
 
-**royaraqamia** is a private, production-grade monorepo that powers the company's marketing site and a suite of first-party SaaS products — a public blog and a certificate-verification service — all unified under a single Next.js application, a shared clean-architecture backend, and one Supabase database.
+**royaraqamia** is a private, production-grade monorepo that powers the company's marketing site and a suite of first-party SaaS products — a public community and a certificate-verification service — all unified under a single Next.js application, a shared clean-architecture backend, and one Supabase database.
 
 |                    |                                                                 |
 | ------------------ | --------------------------------------------------------------- |
@@ -33,7 +33,7 @@
 The application is a single Next.js 16 (App Router) deployment that serves multiple products from one codebase:
 
 - **Marketing site** — the company's landing page, portfolio, services, and training offerings (`app/page.tsx`).
-- **Blog** — public, SEO-oriented articles rendered from Markdown (`app/blog`).
+- **Community** — the public, SEO-oriented article feed rendered from Markdown (`app/community`).
 
 - **Certificates** — certificate issuance, admin management, and QR-based public verification (`app/admin/certificates`, `app/verify`).
 - **Auth & Accounts** — OTP-based email authentication, password reset, and admin role management (`app/auth`).
@@ -54,7 +54,7 @@ royaraqamia/
 │   ├── api/version/              #   Version probe endpoint
 │   ├── app-info/                 #   Application information page
 │   ├── auth/                     #   Login, signup, OTP, password reset/update
-│   ├── blog/                     #   Public blog (list + [slug] article)
+│   ├── community/                #   Public community (list + [slug] article)
 │   ├── blogpress/                #   Blog editor product (app + editor/[id])
 │   ├── habitflow/                #   Habit tracker product (+ api/)
 │   ├── linksnap/                 #   URL shortener product (+ api/, landing)
@@ -91,7 +91,7 @@ royaraqamia/
 │       └── <product>/            #     Product-specific components (blogpress, habitflow, linksnap, …)
 │
 ├── shared/                       # The API contract — request/response types both sides import
-│   └── contracts/                #   Zod schemas + TS types per domain (auth, blog, certificates, …)
+│   └── contracts/                #   Zod schemas + TS types per domain (auth, community, certificates, …)
 │
 ├── supabase/
 │   └── migrations/               #   Versioned SQL migrations (schema, RLS, storage buckets)

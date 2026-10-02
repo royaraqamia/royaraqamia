@@ -135,8 +135,8 @@ describe('toPushUrl', () => {
     expect(toPushUrl('certificate_issued', {})).toBe('/verify');
   });
 
-  it('resolves post_published to the public blog post when a slug is present', () => {
-    expect(toPushUrl('post_published', { slug: 'my-post' })).toBe('/blog/my-post');
+  it('resolves post_published to the public community post when a slug is present', () => {
+    expect(toPushUrl('post_published', { slug: 'my-post' })).toBe('/community/my-post');
   });
 
   it('URL-encodes metadata segments', () => {
