@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.38.0] - 2026-10-02
+
+### Changed
+- rename blog to community end to end
+- center digits and detach smaller plus sign
+
+### Added
+- add compose FAB so any signed-in user can publish
+
 ### Changed
 - rename the public blog to Community across routes (`/blog` → `/community`), API, backend identifiers, cache tags and the database (`blog_categories` → `community_categories`, `blog_tags` → `community_tags`, `posts.blog_visible` → `posts.community_visible`); BlogPress keeps its name
 
