@@ -24,9 +24,20 @@ const TONE_CLASSES: Record<SectionTitleTone, string> = {
   auth: 'font-sans text-zinc-900 dark:text-zinc-50',
 };
 
-/** The site-wide gradient used for the highlighted part of a title. */
-export const SECTION_TITLE_HIGHLIGHT =
-  'bg-linear-to-r from-violet-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent';
+/**
+ * Mechanics for a gradient highlight.
+ *
+ * `inline-block` plus vertical padding gives the background box enough room to
+ * cover Arabic ascenders and dots — without it, `bg-clip-text` slices their
+ * tops off (the text is transparent, so anywhere the gradient box does not
+ * reach renders invisible).
+ */
+const HIGHLIGHT_BASE = 'inline-block bg-clip-text py-[0.15em] text-transparent';
+
+/** The site-wide gradient used when a caller does not supply its own. */
+const HIGHLIGHT_GRADIENT = 'bg-linear-to-r from-violet-400 via-fuchsia-400 to-indigo-400';
+
+export const SECTION_TITLE_HIGHLIGHT = `${HIGHLIGHT_BASE} ${HIGHLIGHT_GRADIENT}`;
 
 interface SectionTitleProps {
   children: ReactNode;
@@ -55,10 +66,10 @@ export function SectionTitle({
 
 interface SectionTitleHighlightProps {
   children: ReactNode;
-  /** Overrides the gradient when a surface needs a different palette. */
+  /** A full gradient palette that replaces the default one (e.g. a product's brand). */
   className?: string;
 }
 
 export function SectionTitleHighlight({ children, className }: SectionTitleHighlightProps) {
-  return <span className={cn(SECTION_TITLE_HIGHLIGHT, className)}>{children}</span>;
+  return <span className={cn(HIGHLIGHT_BASE, className ?? HIGHLIGHT_GRADIENT)}>{children}</span>;
 }
