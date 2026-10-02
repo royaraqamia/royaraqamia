@@ -534,8 +534,7 @@ export async function publishPostHandler(
     requireAnyScope(ctx, ['blog.write']);
     const userId = requireUserId(ctx, 'Publishing a post');
     const repo = createPostsRepository(ctx.supabase as never);
-    const blogVisible = ctx.isAdmin;
-    const { slug } = await repo.publishPost(params.id, userId, blogVisible);
+    const { slug } = await repo.publishPost(params.id, userId);
 
     const output = { id: params.id, slug, message: 'Post published.' };
     return params.format === 'json'

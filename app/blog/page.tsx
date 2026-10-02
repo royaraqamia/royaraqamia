@@ -5,6 +5,7 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 import { BlogIndexResults } from './_components/blog-index-results';
 import { BlogResults } from './_components/blog-results';
 import { BlogSearch } from './_components/blog-search';
+import { ComposeFab } from './_components/compose-fab';
 import { BLOG_PAGE_SIZE } from './_components/constants';
 
 export const revalidate = 60;
@@ -67,6 +68,8 @@ export default async function BlogPage() {
           </BlogIndexResults>
         </Suspense>
       </div>
+
+      <ComposeFab />
     </div>
   );
 }

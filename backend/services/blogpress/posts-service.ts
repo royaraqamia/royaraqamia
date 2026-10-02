@@ -23,22 +23,15 @@ export class BlogpressPostsService {
   async saveAndPublishPost(
     postId: string,
     authorId: string,
-    data: PostInput,
-    authorEmail: string
+    data: PostInput
   ): Promise<{ slug: string }> {
-    const blogVisible = isAdmin(authorEmail, this.adminEmails);
-    const result = await this.repository.saveAndPublishPost(postId, authorId, data, blogVisible);
+    const result = await this.repository.saveAndPublishPost(postId, authorId, data);
     this.onPostPublished?.({ postId, authorId, slug: result.slug });
     return result;
   }
 
-  async publishPost(
-    postId: string,
-    authorId: string,
-    authorEmail: string
-  ): Promise<{ slug: string }> {
-    const blogVisible = isAdmin(authorEmail, this.adminEmails);
-    const result = await this.repository.publishPost(postId, authorId, blogVisible);
+  async publishPost(postId: string, authorId: string): Promise<{ slug: string }> {
+    const result = await this.repository.publishPost(postId, authorId);
     this.onPostPublished?.({ postId, authorId, slug: result.slug });
     return result;
   }
@@ -110,11 +103,8 @@ export class BlogpressPostsService {
   async bulkActionPosts(
     postIds: string[],
     authorId: string,
-    action: 'publish' | 'unpublish' | 'delete',
-    authorEmail?: string
+    action: 'publish' | 'unpublish' | 'delete'
   ): Promise<{ affected: number; slugs: string[] }> {
-    const blogVisible =
-      action === 'publish' ? isAdmin(authorEmail ?? '', this.adminEmails) : undefined;
-    return this.repository.bulkActionPosts(postIds, authorId, action, blogVisible);
+    return this.repository.bulkActionPosts(postIds, authorId, action);
   }
 }

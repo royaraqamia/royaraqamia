@@ -55,7 +55,7 @@ describe('blogpress controller', () => {
     const result = await publishPost('p-1');
 
     expect(result).toMatchObject({ status: 200 });
-    expect(mockPosts.publishPost).toHaveBeenCalledWith('p-1', 'u-1', 'author@b.com');
+    expect(mockPosts.publishPost).toHaveBeenCalledWith('p-1', 'u-1');
   });
 
   it('maps a post failure to 500 with the message under the "message" key', async () => {

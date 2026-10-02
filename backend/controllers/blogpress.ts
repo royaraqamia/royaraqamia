@@ -119,9 +119,9 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
 
 export async function publishPost(id: string): Promise<HttpResult> {
   return withAuthenticatedUser(
-    async ({ userId, userEmail, supabase }) => {
+    async ({ userId, supabase }) => {
       const { posts } = createBlogpressPostsModule(supabase);
-      const { slug } = await posts.publishPost(id, userId, userEmail);
+      const { slug } = await posts.publishPost(id, userId);
 
       return jsonResult(
         200,
@@ -184,7 +184,7 @@ export async function setPostFeatured(id: string, featured: boolean): Promise<Ht
 
 export async function bulkPostsAction(body: Record<string, unknown>): Promise<HttpResult> {
   return withAuthenticatedUser(
-    async ({ userId, userEmail, supabase }) => {
+    async ({ userId, supabase }) => {
       const validated = BulkPostsActionSchema.safeParse(body);
       if (!validated.success) {
         return jsonResult(400, { error: 'بيانات الإجراء غير صالحة' });
@@ -203,7 +203,7 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         );
       }
 
-      const { affected, slugs } = await posts.bulkActionPosts(postIds, userId, action, userEmail);
+      const { affected, slugs } = await posts.bulkActionPosts(postIds, userId, action);
 
       if (action === 'publish' || action === 'unpublish') {
         return jsonResult(
@@ -231,7 +231,7 @@ export async function saveAndPublishPost(
   body: Record<string, unknown>
 ): Promise<HttpResult> {
   return withAuthenticatedUser(
-    async ({ userId, userEmail, supabase }) => {
+    async ({ userId, supabase }) => {
       const validated = PostSchema.safeParse(body);
 
       if (!validated.success) {
@@ -239,7 +239,7 @@ export async function saveAndPublishPost(
       }
 
       const { posts } = createBlogpressPostsModule(supabase);
-      const { slug } = await posts.saveAndPublishPost(id, userId, validated.data, userEmail);
+      const { slug } = await posts.saveAndPublishPost(id, userId, validated.data);
 
       return jsonResult(
         200,

@@ -298,8 +298,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async saveAndPublishPost(
       postId: string,
       authorId: string,
-      data: PostInput,
-      blogVisible: boolean
+      data: PostInput
     ): Promise<{ slug: string }> {
       const { data: updated, error } = await supabase
         .from('posts')
@@ -307,7 +306,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
           ...data,
           status: 'published',
           published_at: new Date().toISOString(),
-          blog_visible: blogVisible,
+          blog_visible: true,
           ...(data.content !== undefined
             ? { reading_time_minutes: estimateReadingTime(data.content) }
             : {}),
@@ -322,17 +321,13 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return { slug: updated.slug };
     },
 
-    async publishPost(
-      postId: string,
-      authorId: string,
-      blogVisible: boolean
-    ): Promise<{ slug: string }> {
+    async publishPost(postId: string, authorId: string): Promise<{ slug: string }> {
       const { data, error } = await supabase
         .from('posts')
         .update({
           status: 'published',
           published_at: new Date().toISOString(),
-          blog_visible: blogVisible,
+          blog_visible: true,
         })
         .eq('id', postId)
         .eq('author_id', authorId)
@@ -573,8 +568,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async bulkActionPosts(
       postIds: string[],
       authorId: string,
-      action: 'publish' | 'unpublish' | 'delete',
-      blogVisible?: boolean
+      action: 'publish' | 'unpublish' | 'delete'
     ): Promise<{ affected: number; slugs: string[] }> {
       if (action === 'delete') {
         const { data: deleted, error } = await supabase
@@ -592,7 +586,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
           ? {
               status: 'published' as const,
               published_at: new Date().toISOString(),
-              blog_visible: blogVisible ?? false,
+              blog_visible: true,
             }
           : { status: 'draft' as const, published_at: null }
       ) satisfies Partial<Database['public']['Tables']['posts']['Row']> & {

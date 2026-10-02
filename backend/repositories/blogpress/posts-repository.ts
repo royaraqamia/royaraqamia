@@ -26,13 +26,8 @@ export interface PostsRepository {
   getPostForUser(id: string, userId: string): Promise<Post | null>;
   createPost(authorId: string): Promise<{ id: string }>;
   updatePost(postId: string, authorId: string, data: PostInput): Promise<void>;
-  saveAndPublishPost(
-    postId: string,
-    authorId: string,
-    data: PostInput,
-    blogVisible: boolean
-  ): Promise<{ slug: string }>;
-  publishPost(postId: string, authorId: string, blogVisible: boolean): Promise<{ slug: string }>;
+  saveAndPublishPost(postId: string, authorId: string, data: PostInput): Promise<{ slug: string }>;
+  publishPost(postId: string, authorId: string): Promise<{ slug: string }>;
   unpublishPost(postId: string, authorId: string): Promise<{ slug: string }>;
   schedulePost(postId: string, authorId: string, publishAt: string): Promise<{ slug: string }>;
   deletePost(postId: string, authorId: string): Promise<{ slug: string }>;
@@ -41,8 +36,7 @@ export interface PostsRepository {
   bulkActionPosts(
     postIds: string[],
     authorId: string,
-    action: 'publish' | 'unpublish' | 'delete',
-    blogVisible?: boolean
+    action: 'publish' | 'unpublish' | 'delete'
   ): Promise<{ affected: number; slugs: string[] }>;
   bulkSetPostCategories(postIds: string[], authorId: string, categoryId: string): Promise<void>;
   listCategoriesByAuthor(authorId: string): Promise<PostCategory[]>;

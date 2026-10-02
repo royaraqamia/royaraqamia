@@ -1234,6 +1234,73 @@
   }
 }
 
+/* Compose FAB — social-style "new post" button on the public blog */
+.compose-fab-btn {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--primary-foreground));
+  z-index: 9998;
+  cursor: pointer;
+  box-shadow: 0 4px 20px hsl(var(--primary) / 0.4);
+  transition:
+    background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0;
+  transform: scale(0.8) translateY(20px);
+  pointer-events: none;
+}
+
+.compose-fab-btn.visible {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+.compose-fab-btn:hover {
+  transform: scale(1.1) translateY(-4px);
+  box-shadow: 0 8px 30px hsl(var(--primary) / 0.5);
+}
+
+.compose-fab-btn:active {
+  transform: scale(0.95);
+}
+
+.compose-fab-btn:focus-visible {
+  outline: 3px solid hsl(var(--ring));
+  outline-offset: 4px;
+}
+
+@media (max-width: 768px) {
+  .compose-fab-btn {
+    width: 52px;
+    height: 52px;
+    left: 16px;
+    bottom: 16px;
+  }
+
+  .compose-fab-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compose-fab-btn {
+    transition: opacity 0.2s ease;
+  }
+}
+
 /* Dialog custom scrollbar — hidden by default, visible on hover/scroll */
 .dialog-scrollbar {
   scrollbar-width: thin;

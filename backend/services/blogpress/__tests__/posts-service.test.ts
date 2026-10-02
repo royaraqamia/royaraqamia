@@ -91,75 +91,47 @@ const snapshotBase = {
   reading_time_minutes: 0,
 };
 
-describe('BlogpressPostsService visibility rule', () => {
-  it('stores blog visibility on save-and-publish for an admin', async () => {
+describe('BlogpressPostsService publish visibility', () => {
+  it('publishes through save-and-publish', async () => {
     const { repository, service } = makeRepo();
     (repository.saveAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
       slug: 'post-1',
     });
 
-    await expect(
-      service.saveAndPublishPost('p-1', 'u-1', postData, 'admin@example.com')
-    ).resolves.toEqual({ slug: 'post-1' });
-    expect(repository.saveAndPublishPost).toHaveBeenCalledWith('p-1', 'u-1', postData, true);
-  });
-
-  it('hides a non-admin save-and-publish from the blog', async () => {
-    const { repository, service } = makeRepo();
-    (repository.saveAndPublishPost as ReturnType<typeof vi.fn>).mockResolvedValue({
+    await expect(service.saveAndPublishPost('p-1', 'u-1', postData)).resolves.toEqual({
       slug: 'post-1',
     });
-
-    await service.saveAndPublishPost('p-1', 'u-1', postData, 'user@example.com');
-    expect(repository.saveAndPublishPost).toHaveBeenCalledWith('p-1', 'u-1', postData, false);
+    expect(repository.saveAndPublishPost).toHaveBeenCalledWith('p-1', 'u-1', postData);
   });
 
-  it('stores blog visibility on publish for an admin', async () => {
+  it('publishes through publish', async () => {
     const { repository, service } = makeRepo();
     (repository.publishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
 
-    await expect(service.publishPost('p-1', 'u-1', 'admin@example.com')).resolves.toEqual({
-      slug: 'post-1',
-    });
-    expect(repository.publishPost).toHaveBeenCalledWith('p-1', 'u-1', true);
+    await expect(service.publishPost('p-1', 'u-1')).resolves.toEqual({ slug: 'post-1' });
+    expect(repository.publishPost).toHaveBeenCalledWith('p-1', 'u-1');
   });
 
-  it('hides a non-admin publish from the blog', async () => {
-    const { repository, service } = makeRepo();
-    (repository.publishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
-
-    await service.publishPost('p-1', 'u-1', 'user@example.com');
-    expect(repository.publishPost).toHaveBeenCalledWith('p-1', 'u-1', false);
-  });
-
-  it('gates a bulk publish on the same admin rule', async () => {
+  it('delegates bulk publish to the repository', async () => {
     const { repository, service } = makeRepo();
     (repository.bulkActionPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       affected: 2,
       slugs: ['post-1', 'post-2'],
     });
 
-    await service.bulkActionPosts(['p-1', 'p-2'], 'u-1', 'publish', 'admin@example.com');
-    expect(repository.bulkActionPosts).toHaveBeenCalledWith(['p-1', 'p-2'], 'u-1', 'publish', true);
-
-    await service.bulkActionPosts(['p-1', 'p-2'], 'u-1', 'publish', 'user@example.com');
-    expect(repository.bulkActionPosts).toHaveBeenLastCalledWith(
-      ['p-1', 'p-2'],
-      'u-1',
-      'publish',
-      false
-    );
+    await service.bulkActionPosts(['p-1', 'p-2'], 'u-1', 'publish');
+    expect(repository.bulkActionPosts).toHaveBeenCalledWith(['p-1', 'p-2'], 'u-1', 'publish');
   });
 
-  it('leaves the visibility flag undefined for non-publish bulk actions', async () => {
+  it('delegates bulk unpublish to the repository', async () => {
     const { repository, service } = makeRepo();
     (repository.bulkActionPosts as ReturnType<typeof vi.fn>).mockResolvedValue({
       affected: 1,
       slugs: ['post-1'],
     });
 
-    await service.bulkActionPosts(['p-1'], 'u-1', 'unpublish', 'admin@example.com');
-    expect(repository.bulkActionPosts).toHaveBeenCalledWith(['p-1'], 'u-1', 'unpublish', undefined);
+    await service.bulkActionPosts(['p-1'], 'u-1', 'unpublish');
+    expect(repository.bulkActionPosts).toHaveBeenCalledWith(['p-1'], 'u-1', 'unpublish');
   });
 });
 
@@ -171,7 +143,7 @@ describe('BlogpressPostsService publish notifier', () => {
       slug: 'post-1',
     });
 
-    await service.saveAndPublishPost('p-1', 'u-1', postData, 'user@example.com');
+    await service.saveAndPublishPost('p-1', 'u-1', postData);
 
     expect(onPostPublished).toHaveBeenCalledWith({
       postId: 'p-1',
@@ -185,7 +157,7 @@ describe('BlogpressPostsService publish notifier', () => {
     const { repository, service } = makeRepo({}, onPostPublished);
     (repository.publishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
 
-    await service.publishPost('p-1', 'u-1', 'user@example.com');
+    await service.publishPost('p-1', 'u-1');
 
     expect(onPostPublished).toHaveBeenCalledWith({
       postId: 'p-1',
@@ -199,7 +171,7 @@ describe('BlogpressPostsService publish notifier', () => {
     const { repository, service } = makeRepo({}, onPostPublished);
     (repository.publishPost as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('db down'));
 
-    await expect(service.publishPost('p-1', 'u-1', 'user@example.com')).rejects.toThrow('db down');
+    await expect(service.publishPost('p-1', 'u-1')).rejects.toThrow('db down');
     expect(onPostPublished).not.toHaveBeenCalled();
   });
 
@@ -220,7 +192,7 @@ describe('BlogpressPostsService publish notifier', () => {
     const { repository, service } = makeRepo({}, onPostPublished);
     (repository.publishPost as ReturnType<typeof vi.fn>).mockResolvedValue({ slug: 'post-1' });
 
-    await expect(service.publishPost('p-1', 'u-1', 'user@example.com')).resolves.toEqual({
+    await expect(service.publishPost('p-1', 'u-1')).resolves.toEqual({
       slug: 'post-1',
     });
     await vi.waitFor(() => expect(broadcast).toHaveBeenCalledTimes(1));

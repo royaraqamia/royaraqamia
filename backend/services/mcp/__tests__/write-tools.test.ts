@@ -31,24 +31,24 @@ describe('blogpress write tools', () => {
     expect(result.content[0]?.text).toContain('requires the scope');
   });
 
-  it('publishPostHandler sets blog_visible for admins', async () => {
+  it('publishPostHandler publishes through the owning author', async () => {
     const publishPost = vi.fn().mockResolvedValue({ slug: 'my-post' });
     vi.doMock(postsRepoPath, () => ({ createPostsRepository: () => ({ publishPost }) }));
 
     const { publishPostHandler } = await import('../tools/blogpress');
     const result = await publishPostHandler({ id: 'p1', format: 'json' }, adminCtx);
     expect(result.isError).toBeFalsy();
-    expect(publishPost).toHaveBeenCalledWith('p1', 'u1', true);
+    expect(publishPost).toHaveBeenCalledWith('p1', 'u1');
     expect(result.structuredContent?.slug).toBe('my-post');
   });
 
-  it('publishPostHandler hides non-admin posts from the blog', async () => {
+  it('publishPostHandler publishes non-admin posts too', async () => {
     const publishPost = vi.fn().mockResolvedValue({ slug: 'my-post' });
     vi.doMock(postsRepoPath, () => ({ createPostsRepository: () => ({ publishPost }) }));
 
     const { publishPostHandler } = await import('../tools/blogpress');
     await publishPostHandler({ id: 'p1', format: 'json' }, userCtx);
-    expect(publishPost).toHaveBeenCalledWith('p1', 'u1', false);
+    expect(publishPost).toHaveBeenCalledWith('p1', 'u1');
   });
 
   it('deletePostHandler passes the caller user id for ownership scoping', async () => {
