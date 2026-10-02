@@ -92,7 +92,7 @@ export function MetricCards() {
                     {/* The Number with a Brand Gradient at Rest */}
                     <div className="relative text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-none mb-6 transition-transform duration-500 ease-out group-hover/card:scale-105">
                       <span
-                        className={`block tabular-nums bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent`}
+                        className={`block font-heading tabular-nums bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent`}
                       >
                         {metric.numericValue}
                         {metric.suffix}
