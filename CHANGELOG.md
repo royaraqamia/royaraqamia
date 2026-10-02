@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.37.0] - 2026-10-02
+
+### Added
+- mount the search box on the blog index
+
 ## [1.36.3] - 2026-10-02
 
 ### Changed
