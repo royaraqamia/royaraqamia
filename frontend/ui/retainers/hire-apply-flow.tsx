@@ -31,9 +31,9 @@ export function HireApplyFlow({ summary, isAuthenticated }: HireApplyFlowProps) 
       {/* Signing in is optional — an anonymous submission still works. The
           notice only sets the expectation that editing later needs an account. */}
       {!isSubmitted && !isAuthenticated && (
-        <div className="flex items-start gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          <LogIn className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+        <div className="rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
           <p>
+            <LogIn className="me-1.5 -mt-0.5 inline size-4 align-middle" aria-hidden="true" />
             سجِّل الدُّخول قبل الإرسال إن أردتَّ تعديل طلبك لاحقًا.{' '}
             <a
               href="/auth/login?redirect=/hire"
