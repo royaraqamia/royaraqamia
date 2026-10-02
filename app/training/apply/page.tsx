@@ -1,16 +1,10 @@
-import { Clock, GraduationCap, MessageCircle, Trophy, User, Wallet } from 'lucide-react';
+import { GraduationCap, MessageCircle, Wallet } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { TrainingApplyFlow } from '@/frontend/ui/training/training-apply-flow';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
-
-const SUMMARY_ITEMS = [
-  { icon: User, label: 'المدرِّب', value: TRAINING_COURSE.trainer },
-  { icon: Clock, label: 'عدد السَّاعات', value: TRAINING_COURSE.duration },
-  { icon: Trophy, label: 'عدد الجلسات', value: TRAINING_COURSE.sessions },
-];
 
 export default async function TrainingApplyPage() {
   const { user } = await getOptionalUser();
@@ -67,19 +61,16 @@ export default async function TrainingApplyPage() {
             {TRAINING_COURSE.description}
           </CollapsibleText>
 
-          <dl className="mt-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {SUMMARY_ITEMS.map(({ icon: Icon, label, value }) => (
-              <div key={label} className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-purple-500/20 bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                  <Icon className="h-5 w-5" aria-hidden="true" />
-                </div>
-                <div className="min-w-0">
-                  <dt className="text-xs font-medium text-muted-foreground">{label}</dt>
-                  <dd className="truncate text-sm font-bold text-foreground">{value}</dd>
-                </div>
-              </div>
-            ))}
-          </dl>
+          <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
+            <span className="font-medium text-foreground/80">المدرِّب:</span>{' '}
+            {TRAINING_COURSE.trainer}
+            <span className="mx-2 text-border">•</span>
+            <span className="font-medium text-foreground/80">عدد السَّاعات:</span>{' '}
+            {TRAINING_COURSE.duration}
+            <span className="mx-2 text-border">•</span>
+            <span className="font-medium text-foreground/80">عدد الجلسات:</span>{' '}
+            {TRAINING_COURSE.sessions}
+          </p>
 
           <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">
             <span className="text-xs font-medium text-muted-foreground">رسوم الاستثمار</span>
