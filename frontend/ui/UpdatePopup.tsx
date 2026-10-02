@@ -131,13 +131,13 @@ export const UpdatePopup = memo(function UpdatePopup({
             <div className="flex gap-2 border-t border-border bg-muted/30 px-6 py-4">
               <button
                 onClick={handleDismiss}
-                className="flex-1 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                className="flex-1 rounded-full border border-border bg-background px-4 py-2.5 text-sm font-bold text-foreground transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
               >
                 لاحقًا
               </button>
               <button
                 onClick={onReload}
-                className="flex-1 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-safe hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-card active:scale-[0.98]"
+                className="flex-1 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-safe hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-card active:scale-[0.98]"
               >
                 تحديث الآن
               </button>
