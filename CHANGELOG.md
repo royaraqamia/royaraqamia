@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.36.3] - 2026-10-02
+
+### Changed
+- unify all section and page titles into SectionTitle
+- keep the wizard's primary button on one line on mobile
+- make the update popup buttons bold
+- keep the sign-in link inline with the apply notice
+- move the course spec line into the apply summary copy
+
 ## [1.36.2] - 2026-10-02
 
 ### Changed
