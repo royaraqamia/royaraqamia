@@ -4,6 +4,7 @@ import { loadBlogIndex } from '@/backend/loaders/blog';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { BlogIndexResults } from './_components/blog-index-results';
 import { BlogResults } from './_components/blog-results';
+import { BlogSearch } from './_components/blog-search';
 import { BLOG_PAGE_SIZE } from './_components/constants';
 
 export const revalidate = 60;
@@ -25,6 +26,19 @@ export default async function BlogPage() {
             <SectionTitleHighlight>المجتمع</SectionTitleHighlight>
           </SectionTitle>
         </div>
+
+        <Suspense
+          fallback={
+            <div
+              className="mx-auto mb-8 h-11 w-full max-w-xl rounded-xl bg-muted/20 animate-pulse sm:mb-10"
+              aria-hidden="true"
+            />
+          }
+        >
+          <div className="mx-auto mb-8 w-full max-w-xl sm:mb-10">
+            <BlogSearch />
+          </div>
+        </Suspense>
 
         <Suspense
           fallback={
