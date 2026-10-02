@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.37.1] - 2026-10-02
+
+### Changed
+- render numbers in Aref Ruqaa font
+- inline the apply notice icon with its text
+
+### Fixed
+- stop gradient highlights clipping Arabic ascenders
+
 ## [1.37.0] - 2026-10-02
 
 ### Added
