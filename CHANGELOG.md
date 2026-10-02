@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.36.1] - 2026-10-02
+
+### Changed
+- streamline form summaries and polish landing sections
+
 ## [1.36.0] - 2026-10-01
 
 ### Added
