@@ -58,19 +58,11 @@ export default async function TrainingApplyPage() {
             className="mt-2 text-sm text-muted-foreground leading-relaxed"
             buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
           >
-            {TRAINING_COURSE.description}
+            {[
+              TRAINING_COURSE.description,
+              `المدرِّب: ${TRAINING_COURSE.trainer} • عدد السَّاعات: ${TRAINING_COURSE.duration} • عدد الجلسات: ${TRAINING_COURSE.sessions}`,
+            ].join('\n\n')}
           </CollapsibleText>
-
-          <p className="mt-3 text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            <span className="font-medium text-foreground/80">المدرِّب:</span>{' '}
-            {TRAINING_COURSE.trainer}
-            <span className="mx-2 text-border">•</span>
-            <span className="font-medium text-foreground/80">عدد السَّاعات:</span>{' '}
-            {TRAINING_COURSE.duration}
-            <span className="mx-2 text-border">•</span>
-            <span className="font-medium text-foreground/80">عدد الجلسات:</span>{' '}
-            {TRAINING_COURSE.sessions}
-          </p>
 
           <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">
             <span className="text-xs font-medium text-muted-foreground">رسوم الاستثمار</span>
