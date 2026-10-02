@@ -12,7 +12,7 @@ describe('Services', () => {
     renderWithProviders(<Services />);
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toHaveTextContent(/ماذا/);
-    expect(heading).toHaveTextContent(/نقدِّم/);
+    expect(heading).toHaveTextContent(/نُقدِّم/);
   });
 
   it('renders all service cards', () => {

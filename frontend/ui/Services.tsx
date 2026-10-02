@@ -95,7 +95,7 @@ export function Services() {
           <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15]">
             ماذا{' '}
             <span className="bg-linear-to-r from-indigo-400 via-purple-300 to-teal-300 bg-clip-text text-transparent drop-shadow-sm">
-              نقدِّم
+              نُقدِّم
             </span>
             ؟
           </h2>
