@@ -2,6 +2,7 @@ import { GraduationCap, MessageCircle, Wallet } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { TrainingApplyFlow } from '@/frontend/ui/training/training-apply-flow';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
@@ -48,11 +49,9 @@ export default async function TrainingApplyPage() {
           aria-label="تفاصيل الدورة"
           className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
-              التَّسجيل في التَّدريب
-            </span>
-          </h2>
+          <SectionTitle size="card">
+            <SectionTitleHighlight>التَّسجيل في التَّدريب</SectionTitleHighlight>
+          </SectionTitle>
           <CollapsibleText
             lines={2}
             className="mt-2 text-sm text-muted-foreground leading-relaxed"

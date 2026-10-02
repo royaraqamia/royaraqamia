@@ -131,8 +131,8 @@ export function FeaturesBento() {
       containerClassName="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
       heading={{
         wrapperClassName: 'text-center mb-8 sm:mb-10 lg:mb-12',
-        titleClassName:
-          'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-5 text-slate-100',
+        titleClassName: 'mb-5',
+        titleTone: 'inverse',
         titlePrefix: 'كل ما تحتاجه ',
         titleHighlight: 'لإدارة الرَّوابط',
         titleHighlightClassName:

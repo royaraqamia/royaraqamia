@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { loadBlogIndex } from '@/backend/loaders/blog';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { BlogIndexResults } from './_components/blog-index-results';
 import { BlogResults } from './_components/blog-results';
 import { BLOG_PAGE_SIZE } from './_components/constants';
@@ -19,6 +20,12 @@ export default async function BlogPage() {
     <div className="min-h-screen text-foreground selection:bg-primary/30 selection:text-white pb-24">
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4 relative z-10">
+        <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
+          <SectionTitle>
+            <SectionTitleHighlight>المجتمع</SectionTitleHighlight>
+          </SectionTitle>
+        </div>
+
         <Suspense
           fallback={
             <div

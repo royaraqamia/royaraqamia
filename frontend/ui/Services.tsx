@@ -1,6 +1,7 @@
 import { MotionReveal } from './MotionReveal';
 import { ServiceCard, type ServiceIconKey } from './services/ServiceCard';
 import type { ColorKey } from './services/colorConfigs';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 
 // Interfaces remain identical for seamless drop-in
 interface ServiceItem {
@@ -92,13 +93,9 @@ export function Services() {
           className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12 flex flex-col items-center"
         >
           {/* Heading */}
-          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-[1.15]">
-            ماذا{' '}
-            <span className="bg-linear-to-r from-indigo-400 via-purple-300 to-teal-300 bg-clip-text text-transparent drop-shadow-sm">
-              نُقدِّم
-            </span>
-            ؟
-          </h2>
+          <SectionTitle tone="inverse">
+            ماذا <SectionTitleHighlight>نُقدِّم</SectionTitleHighlight>؟
+          </SectionTitle>
         </MotionReveal>
 
         {/* Dynamic Grid Layout */}

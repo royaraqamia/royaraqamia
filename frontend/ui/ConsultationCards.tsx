@@ -1,6 +1,7 @@
 import { Mic, CheckCircle, Clock, Sparkle } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 import { CONSULTATION_START_PRICE_USD } from '@/shared/contracts/consultation';
 
 const WhatsappIcon = ({
@@ -32,11 +33,9 @@ export function ConsultationCards() {
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center mb-8 sm:mb-10 lg:mb-12">
             {/* Main H2 Title */}
-            <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-white">
-              <span className="bg-linear-to-r from-purple-300 via-purple-100 to-indigo-300 bg-clip-text text-transparent">
-                الاستشارات
-              </span>
-            </h2>
+            <SectionTitle tone="inverse">
+              <SectionTitleHighlight>الاستشارات</SectionTitleHighlight>
+            </SectionTitle>
           </div>
         </ScrollAnimation>
 

@@ -1,6 +1,7 @@
 import { Copy } from 'lucide-react';
 import { ScanLine, Lock, QrCode, CheckCircle, FileText } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 import Link from 'next/link';
 
 export function VerifySection() {
@@ -22,15 +23,9 @@ export function VerifySection() {
         <ScrollAnimation animation="slide-up" duration={0.8}>
           <div className="text-center mb-8 sm:mb-10 lg:mb-12">
             {/* Section Main Title */}
-            <h2
-              id="verify-heading"
-              className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-100 leading-tight sm:leading-tight"
-            >
-              التَّحقُّق من{' '}
-              <span className="bg-linear-to-r from-[#7766EE] via-purple-300 to-[#A78BFA] bg-clip-text text-transparent">
-                الشَّهادة
-              </span>
-            </h2>
+            <SectionTitle id="verify-heading" tone="inverse">
+              التَّحقُّق من <SectionTitleHighlight>الشَّهادة</SectionTitleHighlight>
+            </SectionTitle>
           </div>
         </ScrollAnimation>
 

@@ -2,6 +2,7 @@
 
 import type { ConsultationPackage } from '@/shared/contracts/consultation';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 interface BookingSummaryProps {
   packages: ConsultationPackage[];
@@ -20,11 +21,9 @@ export function BookingSummary({ packages }: BookingSummaryProps) {
       aria-label="تفاصيل الاستشارة"
       className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
     >
-      <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-        <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
-          حجز استشارة
-        </span>
-      </h2>
+      <SectionTitle size="card">
+        <SectionTitleHighlight>حجز استشارة</SectionTitleHighlight>
+      </SectionTitle>
       <CollapsibleText
         lines={2}
         className="mt-2 text-sm text-muted-foreground leading-relaxed"

@@ -20,7 +20,7 @@ export function BottomCTA() {
       contentMotion={{ initialY: 30, viewportMargin: '-80px', duration: 0.8 }}
       contentClassName="flex flex-col items-center"
       headingId="cta-heading"
-      headingClassName="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.1] mb-6 text-foreground text-balance max-w-4xl"
+      headingClassName="mb-6 text-balance max-w-4xl"
       headingPrefix="هل أنت مستعد "
       headingHighlight="لتتبُّع كل نقرة؟"
       headingHighlightClassName="bg-linear-to-r from-primary via-primary/90 to-primary/70 bg-clip-text text-transparent gradient-text"

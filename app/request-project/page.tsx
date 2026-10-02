@@ -1,5 +1,6 @@
 import { Wallet } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { RequestProjectFlow } from '@/frontend/ui/project-requests/request-project-flow';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { PROJECT_REQUEST_WEBSITE_START_PRICE_USD } from '@/shared/contracts/project-requests';
@@ -17,11 +18,9 @@ export default async function RequestProjectPage() {
           aria-label="تفاصيل طلب المشروع"
           className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
-              طلب بناء مشروع
-            </span>
-          </h2>
+          <SectionTitle size="card">
+            <SectionTitleHighlight>طلب بناء مشروع</SectionTitleHighlight>
+          </SectionTitle>
           <CollapsibleText
             lines={2}
             className="mt-2 text-sm text-muted-foreground leading-relaxed"

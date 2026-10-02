@@ -3,6 +3,7 @@ import { Trophy, Clock, Target, Sparkle, User, Wallet } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 import { CollapsibleText } from './shared/collapsible-text';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
 
 export function TrainingCourses() {
@@ -45,11 +46,9 @@ export function TrainingCourses() {
         {/* Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center mb-8 sm:mb-10 lg:mb-12">
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black tracking-tight text-foreground">
-              <span className="bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent">
-                التَّدريب
-              </span>
-            </h2>
+            <SectionTitle>
+              <SectionTitleHighlight>التَّدريب</SectionTitleHighlight>
+            </SectionTitle>
           </div>
         </ScrollAnimation>
 

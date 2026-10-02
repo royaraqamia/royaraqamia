@@ -282,8 +282,7 @@ export function FeaturesBento() {
       heading={{
         as: 'header',
         wrapperClassName: 'mx-auto mb-8 max-w-3xl text-center sm:mb-10 lg:mb-12',
-        titleClassName:
-          'mb-6 text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl lg:text-6xl',
+        titleClassName: 'mb-6',
         titlePrefix: 'كل ما تحتاجه لتتبُّع ',
         titleHighlight: 'المصروفات',
         titleHighlightClassName:

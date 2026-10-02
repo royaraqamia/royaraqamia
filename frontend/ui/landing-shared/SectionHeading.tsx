@@ -1,13 +1,22 @@
 import { Reveal } from './Reveal';
+import {
+  SectionTitle,
+  SectionTitleHighlight,
+  type SectionTitleTone,
+} from '@/frontend/ui/shared/section-title';
 
 interface SectionHeadingProps {
   as?: 'div' | 'header';
   wrapperClassName: string;
   titleId?: string;
-  titleClassName: string;
+  /** Surface the title sits on; controls the text color. */
+  titleTone?: SectionTitleTone;
+  /** Spacing/layout only — the size, weight, tracking and leading come from SectionTitle. */
+  titleClassName?: string;
   titlePrefix: string;
   titleHighlight: string;
-  titleHighlightClassName: string;
+  /** Overrides the highlight gradient for a product's own palette. */
+  titleHighlightClassName?: string;
   subtitle: string;
   subtitleClassName: string;
   initialY?: number;
@@ -20,6 +29,7 @@ export function SectionHeading({
   as = 'div',
   wrapperClassName,
   titleId,
+  titleTone = 'foreground',
   titleClassName,
   titlePrefix,
   titleHighlight,
@@ -30,10 +40,12 @@ export function SectionHeading({
   const Tag = as === 'header' ? 'header' : 'div';
   return (
     <Reveal as={Tag} variant="fade" className={wrapperClassName}>
-      <h2 id={titleId} className={titleClassName}>
+      <SectionTitle id={titleId} tone={titleTone} className={titleClassName}>
         {titlePrefix}
-        <span className={titleHighlightClassName}>{titleHighlight}</span>
-      </h2>
+        <SectionTitleHighlight className={titleHighlightClassName}>
+          {titleHighlight}
+        </SectionTitleHighlight>
+      </SectionTitle>
       <p className={subtitleClassName}>{subtitle}</p>
     </Reveal>
   );

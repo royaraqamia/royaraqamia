@@ -1,5 +1,6 @@
 import { ScrollAnimation } from './ScrollAnimations';
 import { FAQAccordion, type FAQItem } from './FAQAccordion';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 
 const faqs: FAQItem[] = [
   {
@@ -57,12 +58,9 @@ export function FAQ() {
           {/* Header */}
           <ScrollAnimation animation="slide-down" duration={0.7}>
             <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
-              <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-tight">
-                <span className="bg-linear-to-r from-violet-400 via-fuchsia-400 to-indigo-400 bg-clip-text text-transparent">
-                  الأسئلة
-                </span>{' '}
-                الشَّائعة
-              </h2>
+              <SectionTitle>
+                <SectionTitleHighlight>الأسئلة</SectionTitleHighlight> الشَّائعة
+              </SectionTitle>
             </div>
           </ScrollAnimation>
 

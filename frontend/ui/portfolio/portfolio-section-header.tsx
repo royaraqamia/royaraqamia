@@ -1,15 +1,13 @@
 import { MotionReveal } from '../MotionReveal';
+import { SectionTitle, SectionTitleHighlight } from '../shared/section-title';
 
 export function PortfolioSectionHeader() {
   return (
     <MotionReveal from="translateY(-40px)">
       <div className="text-center max-w-4xl mx-auto mb-8 sm:mb-10 lg:mb-12 flex flex-col items-center">
-        <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.15]">
-          نبذة عن{' '}
-          <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 via-violet-300 to-indigo-400">
-            أعمالنا
-          </span>
-        </h2>
+        <SectionTitle tone="inverse">
+          نبذة عن <SectionTitleHighlight>أعمالنا</SectionTitleHighlight>
+        </SectionTitle>
       </div>
     </MotionReveal>
   );

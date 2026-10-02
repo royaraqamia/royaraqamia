@@ -1,5 +1,6 @@
 import { ScrollAnimation } from './ScrollAnimations';
 import { TestimonialsCarousel } from './TestimonialsCarousel';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 
 export function Testimonials() {
   return (
@@ -8,16 +9,9 @@ export function Testimonials() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8 sm:mb-10 lg:mb-12">
         <ScrollAnimation animation="slide-down" duration={0.7}>
           <div className="text-center max-w-3xl mx-auto flex flex-col items-center">
-            <h2
-              id="testimonials-heading"
-              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-foreground leading-tight"
-            >
-              ماذا{' '}
-              <span className="bg-linear-to-r from-violet-400 via-purple-400 to-indigo-400 bg-clip-text text-transparent">
-                قالوا عنَّا
-              </span>
-              ؟
-            </h2>
+            <SectionTitle id="testimonials-heading">
+              ماذا <SectionTitleHighlight>قالوا عنَّا</SectionTitleHighlight>؟
+            </SectionTitle>
           </div>
         </ScrollAnimation>
       </div>

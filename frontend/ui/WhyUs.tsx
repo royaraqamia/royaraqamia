@@ -1,5 +1,6 @@
 import { Trophy, Clock, Headphones, ShieldCheck, TrendingUp, Users } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 
 interface Reason {
   icon: React.ElementType;
@@ -115,13 +116,9 @@ export function WhyUs() {
         {/* Editorial Section Header */}
         <ScrollAnimation animation="slide-down" duration={0.8}>
           <header className="text-center max-w-3xl mx-auto mb-16 sm:mb-20 lg:mb-24">
-            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.15]">
-              لماذا{' '}
-              <span className="bg-linear-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
-                رؤيَة رقَميَّة
-              </span>
-              ؟
-            </h2>
+            <SectionTitle tone="inverse">
+              لماذا <SectionTitleHighlight>رؤيَة رقَميَّة</SectionTitleHighlight>؟
+            </SectionTitle>
           </header>
         </ScrollAnimation>
 

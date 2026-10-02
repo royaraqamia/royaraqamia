@@ -1,6 +1,11 @@
 import { cn } from '@/frontend/shared/cn';
 import { Reveal } from './Reveal';
 import { LandingCta } from './LandingCta';
+import {
+  SectionTitle,
+  SectionTitleHighlight,
+  type SectionTitleTone,
+} from '@/frontend/ui/shared/section-title';
 
 interface BottomCTAProps {
   appPath: string;
@@ -17,10 +22,13 @@ interface BottomCTAProps {
   contentClassName: string;
   contentDecor?: React.ReactNode;
   headingId?: string;
-  headingClassName: string;
+  /** Spacing/layout only — the size, weight, tracking and leading come from SectionTitle. */
+  headingClassName?: string;
+  headingTone?: SectionTitleTone;
   headingPrefix: string;
   headingHighlight: string;
-  headingHighlightClassName: string;
+  /** Overrides the highlight gradient for a product's own palette. */
+  headingHighlightClassName?: string;
   subtitle: string;
   subtitleClassName: string;
   actionsClassName: string;
@@ -43,6 +51,7 @@ export function BottomCTA({
   contentDecor,
   headingId,
   headingClassName,
+  headingTone = 'foreground',
   headingPrefix,
   headingHighlight,
   headingHighlightClassName,
@@ -58,10 +67,12 @@ export function BottomCTA({
     <>
       {contentDecor}
 
-      <h2 id={headingId} className={headingClassName}>
+      <SectionTitle id={headingId} tone={headingTone} className={headingClassName}>
         {headingPrefix}
-        <span className={headingHighlightClassName}>{headingHighlight}</span>
-      </h2>
+        <SectionTitleHighlight className={headingHighlightClassName}>
+          {headingHighlight}
+        </SectionTitleHighlight>
+      </SectionTitle>
 
       <p className={subtitleClassName}>{subtitle}</p>
 

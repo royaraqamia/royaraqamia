@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { SectionTitle } from '@/frontend/ui/shared/section-title';
 
 interface AuthCardProps {
   children: ReactNode;
@@ -29,9 +30,9 @@ export function AuthCard({ children, title, description }: AuthCardProps) {
 
           {/* Header Section */}
           <header className="relative z-10 text-center mb-8 sm:mb-10">
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 font-sans">
+            <SectionTitle as="h1" size="card" tone="auth">
               {title}
-            </h1>
+            </SectionTitle>
             {description && (
               <div className="mt-2.5 text-sm sm:text-base text-zinc-600 dark:text-zinc-400 font-normal leading-relaxed">
                 {description}

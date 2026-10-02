@@ -7,6 +7,7 @@ import {
 import { RETAINER_DEFAULT_MONTHLY_FEE_USD } from '@/shared/contracts/retainers';
 import { Button } from './primitives/button';
 import { MotionReveal } from './MotionReveal';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 
 // --- Scroll reveal (IO island + CSS animations) ---
 
@@ -36,14 +37,9 @@ export function WebDevService() {
           from="translateY(24px)"
           className="text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12"
         >
-          <h2
-            id="web-dev-heading"
-            className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-tight"
-          >
-            <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-400 via-violet-300 to-indigo-300">
-              البناء
-            </span>
-          </h2>
+          <SectionTitle id="web-dev-heading">
+            <SectionTitleHighlight>البناء</SectionTitleHighlight>
+          </SectionTitle>
         </MotionReveal>
 
         {/* Grid Layout */}

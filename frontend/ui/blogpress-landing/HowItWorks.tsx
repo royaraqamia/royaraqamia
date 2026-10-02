@@ -34,8 +34,7 @@ export function HowItWorks() {
         as: 'header',
         wrapperClassName: 'text-center max-w-3xl mx-auto mb-8 sm:mb-10 lg:mb-12',
         titleId: 'how-it-works-title',
-        titleClassName:
-          'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.15] mb-5',
+        titleClassName: 'mb-5',
         titlePrefix: 'ثلاث خطوات لـ ',
         titleHighlight: 'نشر سلس',
         titleHighlightClassName:

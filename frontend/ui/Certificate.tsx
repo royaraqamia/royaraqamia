@@ -3,6 +3,7 @@
 import { ShieldCheck, BadgeCheck, Share2 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import { MotionReveal } from './MotionReveal';
+import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 
 export function Certificate() {
   return (
@@ -22,15 +23,9 @@ export function Certificate() {
         <MotionReveal from="translateY(-20px)" duration={0.8}>
           <header className="text-center mb-8 sm:mb-10 lg:mb-12 flex flex-col items-center">
             {/* Headline */}
-            <h2
-              id="certificate-heading"
-              className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.15]"
-            >
-              نموذج عن{' '}
-              <span className="bg-clip-text text-transparent bg-linear-to-r from-purple-300 via-violet-300 to-indigo-400 drop-shadow-sm">
-                الشَّهادة
-              </span>
-            </h2>
+            <SectionTitle id="certificate-heading" tone="inverse">
+              نموذج عن <SectionTitleHighlight>الشَّهادة</SectionTitleHighlight>
+            </SectionTitle>
           </header>
         </MotionReveal>
 

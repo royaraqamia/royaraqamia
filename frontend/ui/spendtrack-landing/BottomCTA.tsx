@@ -19,7 +19,7 @@ export function BottomCTA() {
       containerClassName="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center"
       contentMotion={{ initialY: 24, viewportMargin: '-60px', duration: 0.7 }}
       contentClassName="flex flex-col items-center"
-      headingClassName="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.15] sm:leading-[1.1] mb-6 max-w-3xl text-balance"
+      headingClassName="mb-6 max-w-3xl text-balance"
       headingPrefix="هل أنت مستعد للتَّحكُّم "
       headingHighlight="بأموالك؟"
       headingHighlightClassName="bg-linear-to-r from-primary via-primary/85 to-primary/65 bg-clip-text text-transparent"

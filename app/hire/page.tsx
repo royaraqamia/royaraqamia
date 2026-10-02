@@ -1,4 +1,5 @@
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { HireApplyFlow } from '@/frontend/ui/retainers/hire-apply-flow';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import { RETAINER_DEFAULT_MONTHLY_FEE_USD } from '@/shared/contracts/retainers';
@@ -16,11 +17,9 @@ export default async function HirePage() {
           aria-label="تفاصيل التَّعاقُد الشَّهري"
           className="rounded-3xl border border-purple-500/20 bg-linear-to-b from-purple-500/5 to-transparent p-6 sm:p-8"
         >
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-            <span className="inline-block bg-linear-to-r from-purple-600 via-violet-500 to-indigo-600 dark:from-purple-400 dark:via-violet-300 dark:to-indigo-400 bg-clip-text text-transparent py-1 leading-[1.4]">
-              طلب التَّعاقُد الشَّهري
-            </span>
-          </h2>
+          <SectionTitle size="card">
+            <SectionTitleHighlight>طلب التَّعاقُد الشَّهري</SectionTitleHighlight>
+          </SectionTitle>
           <CollapsibleText
             lines={3}
             className="mt-2 text-sm text-muted-foreground leading-relaxed"

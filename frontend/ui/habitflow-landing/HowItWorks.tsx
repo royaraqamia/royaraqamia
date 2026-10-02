@@ -31,8 +31,7 @@ export function HowItWorks() {
       containerClassName="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 container-padding"
       heading={{
         wrapperClassName: 'text-center mb-8 sm:mb-10 lg:mb-12',
-        titleClassName:
-          'text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-foreground mb-4 sm:mb-6 leading-[1.15]',
+        titleClassName: 'mb-4 sm:mb-6',
         titlePrefix: 'ثلاث خطوات لـ ',
         titleHighlight: 'عادات دائمة',
         titleHighlightClassName:
