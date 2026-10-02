@@ -31,17 +31,17 @@ export function TrainingApplyFlow({ summary, isAuthenticated }: TrainingApplyFlo
       {/* Signing in is optional — an anonymous application still works. The
           notice only sets the expectation that editing later needs an account. */}
       {!isSubmitted && !isAuthenticated && (
-        <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
-          <span className="flex items-center gap-2">
-            <LogIn className="size-4 shrink-0" aria-hidden="true" />
-            <span>سجِّل الدُّخول قبل الإرسال إن أردتَّ تعديل طلبك لاحقًا.</span>
-          </span>
-          <a
-            href="/auth/login?redirect=/training/apply"
-            className="font-bold text-primary hover:underline underline-offset-4"
-          >
-            تسجيل الدُّخول
-          </a>
+        <div className="flex items-start gap-2 rounded-2xl border border-border/60 bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+          <LogIn className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p>
+            سجِّل الدُّخول قبل الإرسال إن أردتَّ تعديل طلبك لاحقًا.{' '}
+            <a
+              href="/auth/login?redirect=/training/apply"
+              className="font-bold text-primary hover:underline underline-offset-4"
+            >
+              تسجيل الدُّخول
+            </a>
+          </p>
         </div>
       )}
 
