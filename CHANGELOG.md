@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.38.3] - 2026-10-03
+
+### Changed
+- center title and drop subtitle
+
+### Fixed
+- restore testimonials scroll and fill portfolio image
+- stop middleware racing the browser for token refresh
+
 ## [1.38.2] - 2026-10-03
 
 ### Changed
