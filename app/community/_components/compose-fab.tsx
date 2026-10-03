@@ -18,14 +18,14 @@ const BODY_MAX = 20000;
 const DESCRIPTION_PREVIEW = 160;
 
 /**
- * Turn a title into a public slug. Mirrors the editor's generator and the
- * server-side `PostSchema` allowed character set (word chars + Arabic + dash).
+ * Turn a title into a URL-safe ASCII slug. Only Latin word characters survive,
+ * so an Arabic-only title yields an empty string and `buildSlug` falls back to a
+ * random `post-xxxxxxxx` identifier — community URLs must stay Latin.
  */
 function slugify(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^\w\s\u0600-\u06FF-]/g, '')
-    .replace(/[\u060C\u061B\u061F\u0640\u066A\u066B\u066C\u066D\u06D4]/g, '')
+    .replace(/[^\w\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-|-$/g, '')
