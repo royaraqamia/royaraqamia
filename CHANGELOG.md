@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.39.0] - 2026-10-03
+
+### Changed
+- rename المقال to المنشور in user-facing copy
+- document PENDING_LOGIN_SECRET and PASSWORD_BREACH_CHECK_ENABLED in README
+- trim post page share row and author card
+
+### Added
+- reject breached passwords via free HaveIBeenPwned range API
+- social-style feed with keyset load-more pagination
+
+### Fixed
+- hide WhatsApp float on account pages
+- harden email signup/login, recovery, and abuse controls
+- cap testimonials height via scrollable body
+
 ## [1.38.3] - 2026-10-03
 
 ### Changed
