@@ -346,42 +346,6 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
               </Link>
               <SocialShare url={postUrl} title={p.title} />
             </div>
-
-            {/* Author Bio Card */}
-            {author?.name && (
-              <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-linear-to-br from-card/80 via-card to-muted/20 p-6 sm:p-8 shadow-lg shadow-foreground/2">
-                <div className="relative z-10 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-                  {author.avatar_url?.trim() ? (
-                    <Image
-                      src={author.avatar_url}
-                      alt={author.name}
-                      width={56}
-                      height={56}
-                      className="rounded-2xl object-cover shrink-0 ring-4 ring-primary/10 shadow-md"
-                    />
-                  ) : (
-                    <div className="size-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 ring-4 ring-primary/10 shadow-md">
-                      <User className="size-6 text-primary" />
-                    </div>
-                  )}
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="text-base sm:text-lg font-bold text-foreground">
-                        {author.name}
-                      </h3>
-                      <span className="px-2 py-0.5 rounded-md bg-primary/10 text-[10px] font-bold text-primary border border-primary/20">
-                        كاتب
-                      </span>
-                    </div>
-                    {author.bio && (
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-2xl">
-                        {author.bio}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
           </footer>
         </article>
       </div>
