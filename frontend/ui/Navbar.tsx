@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { List, X, House, Package, BookOpen } from 'lucide-react';
+import { List, X, House, Package, Users } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
@@ -150,7 +150,7 @@ export function Navbar() {
     {
       href: '/community',
       label: 'المجتمع',
-      icon: BookOpen,
+      icon: Users,
       isRoute: true,
       visible: true,
     },

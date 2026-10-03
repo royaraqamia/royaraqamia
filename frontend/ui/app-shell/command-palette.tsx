@@ -3,7 +3,6 @@
 import { useEffect, useState, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  BookOpen,
   CornerDownLeft,
   FilePlus2,
   House,
@@ -12,6 +11,7 @@ import {
   Receipt,
   Search,
   ShieldCheck,
+  Users,
 } from 'lucide-react';
 import {
   CommandDialog,
@@ -39,7 +39,7 @@ interface PaletteItem {
 
 const GENERAL_ITEMS: PaletteItem[] = [
   { id: 'home', label: 'الرَّئيسيَّة', group: 'general', href: '/', icon: House },
-  { id: 'community', label: 'المجتمع', group: 'general', href: '/community', icon: BookOpen },
+  { id: 'community', label: 'المجتمع', group: 'general', href: '/community', icon: Users },
 ];
 
 const QUICK_ACTIONS: PaletteItem[] = [
