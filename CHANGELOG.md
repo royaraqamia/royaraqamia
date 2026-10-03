@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.38.1] - 2026-10-03
+
+### Changed
+- rename blog scopes and tools to community
+
+### Fixed
+- redirect old /blog paths and de-flake mcp write-tools
+
 ## [1.38.0] - 2026-10-02
 
 ### Changed
