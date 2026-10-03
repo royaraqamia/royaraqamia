@@ -29,7 +29,21 @@ alter table if exists public.blog_categories rename to community_categories;
 alter table if exists public.blog_tags rename to community_tags;
 
 -- 2. Column ---------------------------------------------------------
-alter table public.posts rename column blog_visible to community_visible;
+-- Guarded: on a database where the rename has already run (so the
+-- column is already community_visible), this is a no-op. Postgres has
+-- no "RENAME COLUMN IF EXISTS", so probe the catalog first.
+do $$
+begin
+  if exists (
+    select 1
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'posts'
+      and column_name = 'blog_visible'
+  ) then
+    alter table public.posts rename column blog_visible to community_visible;
+  end if;
+end $$;
 
 -- 3. Indexes that do not track the table name, or embed the column ---
 alter index if exists public.idx_blog_tags_user_id rename to idx_community_tags_user_id;
@@ -126,6 +140,12 @@ drop policy if exists "Users can delete their own blog categories" on public.com
 drop policy if exists "Users can create their own blog tags" on public.community_tags;
 drop policy if exists "Users can update their own blog tags" on public.community_tags;
 drop policy if exists "Users can delete their own blog tags" on public.community_tags;
+drop policy if exists "Users can create their own community categories" on public.community_categories;
+drop policy if exists "Users can update their own community categories" on public.community_categories;
+drop policy if exists "Users can delete their own community categories" on public.community_categories;
+drop policy if exists "Users can create their own community tags" on public.community_tags;
+drop policy if exists "Users can update their own community tags" on public.community_tags;
+drop policy if exists "Users can delete their own community tags" on public.community_tags;
 
 create policy "Users can create their own community categories"
   on public.community_categories for insert to authenticated
