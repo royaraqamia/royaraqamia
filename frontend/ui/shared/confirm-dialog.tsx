@@ -41,14 +41,14 @@ export const ConfirmDialog = memo(function ConfirmDialog({
       }}
     >
       <DialogContent
-        className="sm:max-w-md w-[calc(100%-2rem)] mx-auto p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-border/80 bg-background/95 shadow-2xl z-10002"
+        className="sm:max-w-md w-[calc(100%-2rem)] mx-auto p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-border/80 bg-background/95 shadow-2xl"
         onPointerDownOutside={(e) => {
           e.preventDefault();
           onCancel();
         }}
         onEscapeKeyDown={onCancel}
       >
-        <DialogHeader className="flex flex-col items-center text-center space-y-0 pt-1">
+        <DialogHeader className="flex flex-col items-center text-center space-y-0 pt-1 pe-0">
           <div
             className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-300 hover:scale-105 shadow-xs ${
               variant === 'danger'

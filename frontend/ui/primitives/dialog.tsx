@@ -33,6 +33,7 @@ const DialogOverlay = React.forwardRef<
       'fixed inset-0 z-10000 bg-black/70 transition-opacity duration-300 ease-out',
       'data-[state=open]:animate-in data-[state=open]:fade-in-0',
       'data-[state=closed]:animate-out data-[state=closed]:fade-out-0',
+      'will-change-[opacity] contain-strict',
       className
     )}
     {...props}
@@ -55,7 +56,7 @@ const DialogContent = React.forwardRef<
         'fixed z-10000 grid w-[calc(100%-2rem)] gap-5 p-6 text-foreground duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
         'border border-border/60 bg-background',
         'rounded-3xl sm:rounded-2xl',
-        'max-h-[calc(100dvh-3rem)] overflow-y-auto dialog-scrollbar',
+        'max-h-[calc(100dvh_-_3rem)] overflow-y-auto dialog-scrollbar',
         // Mobile-first positioning: Floating card on mobile -> Perfectly centered dialog on desktop
         'bottom-4 left-1/2 -translate-x-1/2 translate-y-0 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 sm:w-full sm:max-w-lg',
         // Entrance & Exit Motion Animations
@@ -64,6 +65,7 @@ const DialogContent = React.forwardRef<
         'max-sm:data-[state=open]:slide-in-from-bottom-6 max-sm:data-[state=closed]:slide-out-to-bottom-6',
         'sm:data-[state=open]:slide-in-from-top-[48%]',
         'sm:data-[state=closed]:slide-out-to-top-[48%]',
+        'will-change-[transform,opacity] contain-layout contain-style',
         className
       )}
       {...props}

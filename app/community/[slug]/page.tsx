@@ -307,7 +307,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                       فهرس المحتويات
                     </h4>
                   </div>
-                  <nav className="space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto pr-1 scrollbar-thin">
+                  <nav className="space-y-1 max-h-[calc(100vh_-_200px)] overflow-y-auto pr-1 scrollbar-thin">
                     {headings.map((h, i) => (
                       <a
                         key={i}

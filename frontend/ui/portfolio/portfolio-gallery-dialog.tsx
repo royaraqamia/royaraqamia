@@ -32,6 +32,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
 }: PortfolioGalleryDialogProps) {
   const [zoom, setZoom] = useState({ scale: 1, x: 0, y: 0 });
   const [galleryImageError, setGalleryImageError] = useState(false);
+  const [contentReady, setContentReady] = useState(false);
   const imageContainerRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{
     x: number;
@@ -54,6 +55,18 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
     setZoom({ scale: 1, x: 0, y: 0 });
     setGalleryImageError(false);
   }, [galleryIndex]);
+
+  // Defer mounting the (heavy) gallery image until the dialog's open transition
+  // finishes, so image decode/layout never competes with the enter animation.
+  useEffect(() => {
+    if (selectedItem === null) {
+      setContentReady(false);
+      return;
+    }
+    setContentReady(false);
+    const id = window.setTimeout(() => setContentReady(true), 220);
+    return () => window.clearTimeout(id);
+  }, [selectedItem]);
 
   // Preload adjacent gallery images for instant navigation
   useEffect(() => {
@@ -81,7 +94,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
 
   return (
     <Dialog open={selectedItem !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 overflow-y-auto dialog-scrollbar max-md:max-h-[80dvh] max-md:my-auto">
+      <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 overflow-y-auto dialog-scrollbar">
         {selectedItem !== null &&
           (() => {
             const item = portfolioItems[selectedItem]!;
@@ -194,7 +207,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
               <div className="flex flex-col h-full">
                 <div
                   ref={imageContainerRef}
-                  className={`flex-1 min-h-0 flex items-center justify-center bg-black/30 p-0 relative ${
+                  className={`flex-1 min-h-0 flex items-center justify-center bg-black/30 p-0 relative min-h-[45dvh] sm:min-h-[60dvh] ${
                     zoomed
                       ? 'overflow-auto touch-action-none'
                       : 'overflow-hidden touch-action-manipulation'
@@ -220,7 +233,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                       </svg>
                       <span className="text-sm">تعذر تحميل الصورة</span>
                     </div>
-                  ) : (
+                  ) : contentReady ? (
                     <Image
                       key={galleryIndex}
                       src={currentImage.webp}
@@ -245,7 +258,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                       onError={() => setGalleryImageError(true)}
                       sizes="(max-width: 768px) 100vw, 900px"
                     />
-                  )}
+                  ) : null}
                   {zoomed && (
                     <button
                       onClick={() => setZoom({ scale: 1, x: 0, y: 0 })}

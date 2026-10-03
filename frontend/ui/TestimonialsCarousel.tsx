@@ -6,7 +6,7 @@ import { useHorizontalScroll } from '../shared/use-horizontal-scroll';
 import { useUI } from '../state/UIContext';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
 import { testimonials, type Testimonial } from '../../data/testimonials';
-import { Sheet, SheetContent, SheetTitle, SheetDescription } from './primitives/sheet';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from './primitives/dialog';
 
 // Deterministic pastel/vibrant gradient generator based on user name
 const AVATAR_GRADIENTS = [
@@ -92,7 +92,6 @@ const TestimonialCard = memo(function TestimonialCard({
       role="button"
       aria-haspopup="dialog"
       aria-expanded={isSelected}
-      aria-controls="testimonials-review-sheet"
       aria-label={`مراجعة من ${testimonial.name}`}
       onClick={() => onOpen(index)}
       onKeyDown={(e) => {
@@ -233,29 +232,25 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
         </div>
       </div>
 
-      {/* Expanded Modal View (Mobile Sheet + Desktop Glass Dialog) */}
-      <Sheet
+      {/* Expanded Modal View — same zoom dialog primitive as the compose modal */}
+      <Dialog
         open={selectedReviewIndex !== null}
         onOpenChange={(open) => {
           if (!open) closeReviewSheet();
         }}
       >
-        <SheetContent
-          id="testimonials-review-sheet"
-          side="bottom"
-          className="gap-0 p-0 max-h-[90vh] left-3 right-3 bottom-3 sm:left-6 sm:right-6 sm:bottom-6 rounded-3xl border border-white/15 bg-slate-950/95 text-slate-100 md:left-1/2 md:right-auto md:-translate-x-1/2 md:top-1/2 md:bottom-auto md:-translate-y-1/2 md:w-full md:max-w-xl md:rounded-3xl overflow-hidden focus:outline-none"
-        >
+        <DialogContent className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-slate-950/95 text-slate-100 overflow-hidden">
           {/* Mobile Handle Indicator */}
-          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full md:hidden" />
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full sm:hidden" />
 
           {activeReview && (
             <>
-              <SheetTitle className="sr-only">تقييم من {activeReview.name}</SheetTitle>
-              <SheetDescription className="sr-only">
+              <DialogTitle className="sr-only">تقييم من {activeReview.name}</DialogTitle>
+              <DialogDescription className="sr-only">
                 التَّقييم الكامل من {activeReview.name}
-              </SheetDescription>
+              </DialogDescription>
 
-              <div className="relative p-6 sm:p-8 flex flex-col justify-between max-h-[calc(90vh-1rem)] overflow-y-auto">
+              <div className="p-6 sm:p-8 flex flex-col justify-between">
                 {/* Expanded Review Content */}
                 <div className="my-6 relative">
                   <p className="text-base sm:text-lg text-slate-100 leading-relaxed font-normal whitespace-pre-line select-text">
@@ -264,7 +259,7 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
                 </div>
 
                 {/* Detailed Author Profile Footer */}
-                <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10 bg-white/2 -mx-6 -mb-6 px-6 pb-6 sm:-mx-8 sm:-mb-8 sm:px-8 sm:pb-8 rounded-b-3xl">
+                <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10 bg-white/2 -mx-6 -mb-6 px-6 pb-6 sm:-mx-8 sm:-mb-8 sm:px-8 sm:pb-8 rounded-b-[inherit]">
                   <div className="flex items-center gap-4 min-w-0">
                     <div
                       className={`
@@ -292,8 +287,8 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
               </div>
             </>
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 });

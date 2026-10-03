@@ -311,7 +311,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
         <DialogContent
           dir="rtl"
           onKeyDown={handleKeyDown}
-          className="sm:max-w-xl w-[calc(100%-2rem)] mx-auto p-0 gap-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/80 dark:border-neutral-800/90 bg-background/95 dark:bg-neutral-950/95 shadow-2xl dark:shadow-[0_24px_60px_-15px_rgba(0,0,0,0.85)] transition-safe duration-300 max-h-[calc(100dvh-3rem)] flex flex-col"
+          className="sm:max-w-xl w-[calc(100%-2rem)] mx-auto p-0 gap-0 overflow-hidden rounded-2xl sm:rounded-3xl border border-border/80 dark:border-neutral-800/90 bg-background/95 dark:bg-neutral-950/95 shadow-2xl dark:shadow-[0_24px_60px_-15px_rgba(0,0,0,0.85)] transition-safe duration-300 max-h-[calc(100dvh_-_3rem)] flex flex-col"
         >
           {/* Top Decorative Ambient Accent */}
           <div
