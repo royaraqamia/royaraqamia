@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.39.1] - 2026-10-03
+
+### Changed
+- use hero gradient for submission edit save buttons
+- use Users icon for community
+
+### Fixed
+- right-align Arabic placeholders in post composer
+
 ## [1.39.0] - 2026-10-03
 
 ### Changed
