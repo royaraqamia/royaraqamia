@@ -18,25 +18,12 @@ const BODY_MAX = 20000;
 const DESCRIPTION_PREVIEW = 160;
 
 /**
- * Turn a title into a URL-safe ASCII slug. Only Latin word characters survive,
- * so an Arabic-only title yields an empty string and `buildSlug` falls back to a
- * random `post-xxxxxxxx` identifier — community URLs must stay Latin.
+ * Every community post gets the same URL-safe identifier shape —
+ * `post-xxxxxxxx` — so English and Arabic titles share one slug system instead
+ * of deriving a Latinised slug from the title.
  */
-function slugify(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '')
-    .slice(0, 200);
-}
-
-function buildSlug(title: string): string {
-  return (
-    slugify(title) ||
-    `post-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2, 10)).slice(0, 8)}`
-  );
+function buildSlug(): string {
+  return `post-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2, 10)).slice(0, 8)}`;
 }
 
 /**
@@ -83,7 +70,7 @@ export function ComposeFab() {
 
     startTransition(async () => {
       try {
-        const slug = buildSlug(trimmedTitle);
+        const slug = buildSlug();
         const { id } = await createPost();
 
         await saveAndPublishPost(id, {
