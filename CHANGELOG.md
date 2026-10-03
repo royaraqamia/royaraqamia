@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.38.2] - 2026-10-03
+
+### Changed
+- unify animation, sizing, and containment across dialogs
+- fix gh read commands and note auth scope
+
+### Fixed
+- make blog-to-community rename migration idempotent
+
 ## [1.38.1] - 2026-10-03
 
 ### Changed
