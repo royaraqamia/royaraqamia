@@ -93,7 +93,7 @@ export function RetainerEditForm({ retainer, onSaved, onCancel }: RetainerEditFo
       )}
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" isLoading={isSubmitting} disabled={isSubmitting}>
+        <Button type="submit" variant="hero" isLoading={isSubmitting} disabled={isSubmitting}>
           حفظ التَّعديلات
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
