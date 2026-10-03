@@ -3,7 +3,6 @@ import { Suspense } from 'react';
 import { loadCommunityIndex } from '@/backend/loaders/community';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { CommunityIndexResults } from './_components/community-index-results';
-import { CommunityResults } from './_components/community-results';
 import { CommunitySearch } from './_components/community-search';
 import { ComposeFab } from './_components/compose-fab';
 import { COMMUNITY_PAGE_SIZE } from './_components/constants';
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CommunityPage() {
-  const { posts, totalPages } = await loadCommunityIndex(1, '', COMMUNITY_PAGE_SIZE);
+  const { posts, nextCursor } = await loadCommunityIndex(null, '', COMMUNITY_PAGE_SIZE);
 
   return (
     <div className="min-h-screen text-foreground selection:bg-primary/30 selection:text-white pb-24">
@@ -43,10 +42,7 @@ export default async function CommunityPage() {
 
         <Suspense
           fallback={
-            <div
-              className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr"
-              aria-hidden="true"
-            >
+            <div className="mx-auto flex w-full max-w-xl flex-col gap-6" aria-hidden="true">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div
                   key={i}
@@ -63,9 +59,7 @@ export default async function CommunityPage() {
             </div>
           }
         >
-          <CommunityIndexResults>
-            <CommunityResults posts={posts} totalPages={totalPages} page={1} query="" />
-          </CommunityIndexResults>
+          <CommunityIndexResults initialPosts={posts} initialNextCursor={nextCursor} />
         </Suspense>
       </div>
 

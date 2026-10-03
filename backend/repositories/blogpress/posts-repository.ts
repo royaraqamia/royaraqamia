@@ -4,6 +4,7 @@ import type {
   PostTag,
   PostAuthor,
   PublishedPostsResult,
+  PublishedFeedResult,
   RestorePostSnapshot,
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
@@ -15,6 +16,12 @@ export interface PostsRepository {
     pageSize: number,
     categorySlug?: string
   ): Promise<PublishedPostsResult>;
+  getPublishedFeed(
+    cursor: string | null,
+    query: string,
+    pageSize: number,
+    categorySlug?: string
+  ): Promise<PublishedFeedResult>;
   getPublishedPostSlugs(): Promise<string[]>;
   getPublishedPostBySlug(slug: string): Promise<Post | null>;
   getPostAuthor(authorId: string): Promise<PostAuthor | null>;

@@ -4,10 +4,10 @@ import { COMMUNITY_PAGE_SIZE } from '@/app/community/_components/constants';
 
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
-  const page = Math.max(1, Number(params.get('page')) || 1);
+  const cursor = params.get('cursor') || null;
   const query = params.get('q')?.trim() ?? '';
 
-  const { posts, totalPages } = await loadCommunityIndex(page, query, COMMUNITY_PAGE_SIZE);
+  const { posts, nextCursor } = await loadCommunityIndex(cursor, query, COMMUNITY_PAGE_SIZE);
 
-  return NextResponse.json({ posts, totalPages });
+  return NextResponse.json({ posts, nextCursor });
 }

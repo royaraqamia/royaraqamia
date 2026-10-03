@@ -3,16 +3,23 @@ import { FileText, Search, X } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { PostCard } from './post-card';
-import { Pagination } from './pagination';
+import { LoadMore } from './load-more';
 
 interface CommunityResultsProps {
   posts: PostSummary[];
-  totalPages: number;
-  page: number;
+  nextCursor: string | null;
   query: string;
+  onLoadMore: () => void;
+  isLoadingMore: boolean;
 }
 
-export function CommunityResults({ posts, totalPages, page, query }: CommunityResultsProps) {
+export function CommunityResults({
+  posts,
+  nextCursor,
+  query,
+  onLoadMore,
+  isLoadingMore,
+}: CommunityResultsProps) {
   return (
     <>
       {query && (
@@ -60,13 +67,20 @@ export function CommunityResults({ posts, totalPages, page, query }: CommunityRe
         </div>
       ) : (
         <>
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr">
+          <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
             {posts.map((post, index) => (
               <PostCard key={post.id} post={post} index={index} />
             ))}
           </div>
 
-          {totalPages > 1 && <Pagination page={page} totalPages={totalPages} query={query} />}
+          {nextCursor && (
+            <LoadMore
+              cursor={nextCursor}
+              query={query}
+              isLoading={isLoadingMore}
+              onLoadMore={onLoadMore}
+            />
+          )}
         </>
       )}
     </>

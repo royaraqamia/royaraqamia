@@ -14,8 +14,8 @@ const COMMUNITY_CACHE_SECONDS = 60;
 const pub = () => createBlogpressPostsModule(getPublicSupabase()).repository;
 
 export const loadCommunityIndex = unstable_cache(
-  (page: number, query: string, pageSize: number, categorySlug?: string) =>
-    pub().getPublishedPosts(page, query, pageSize, categorySlug),
+  (cursor: string | null, query: string, pageSize: number, categorySlug?: string) =>
+    pub().getPublishedFeed(cursor, query, pageSize, categorySlug),
   ['community-index'],
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.index] }
 );

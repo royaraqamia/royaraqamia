@@ -7,10 +7,12 @@ import type {
   PostTag,
   PostAuthor,
   PublishedPostsResult,
+  PublishedFeedResult,
   RestorePostSnapshot,
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
+import { decodeFeedCursor, encodeFeedCursor, feedCursorFilter } from './feed-cursor';
 import { estimateReadingTime } from '@/shared/reading-time';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-error';
@@ -134,6 +136,64 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return {
         posts: (posts as PostSummary[]) ?? [],
         totalPages: Math.ceil((count ?? 0) / pageSize),
+      };
+    },
+
+    async getPublishedFeed(
+      cursor: string | null,
+      query: string,
+      pageSize: number,
+      categorySlug?: string
+    ): Promise<PublishedFeedResult> {
+      const decoded = cursor ? decodeFeedCursor(cursor) : null;
+
+      let postIds: string[] | null = null;
+      if (categorySlug) {
+        const categoryId = await resolveCategoryIdBySlug(categorySlug);
+        if (!categoryId) {
+          return { posts: [], nextCursor: null };
+        }
+        postIds = await postIdsForCategory(categoryId);
+      }
+
+      let queryBuilder = supabase
+        .from('posts')
+        .select(POST_SUMMARY_COLUMNS)
+        .or(PUBLISHED_POSTS_FILTER)
+        .eq('community_visible', true);
+
+      if (postIds) {
+        queryBuilder = queryBuilder.in('id', postIds);
+      }
+
+      const search = sanitizeOrFilterTerm(query);
+      if (search) {
+        queryBuilder = queryBuilder.or(`title.ilike.%${search}%,meta_desc.ilike.%${search}%`);
+      }
+
+      if (decoded) {
+        queryBuilder = queryBuilder.or(feedCursorFilter(decoded));
+      }
+
+      // Fetch one extra row to know whether another page exists without a COUNT.
+      const { data, error } = await queryBuilder
+        .order('published_at', { ascending: false, nullsFirst: true })
+        .order('id', { ascending: false })
+        .limit(pageSize + 1);
+
+      if (error) throw repositoryFailure('blogpress.getPublishedFeed', error);
+
+      const rows = (data as PostSummary[]) ?? [];
+      const hasMore = rows.length > pageSize;
+      const posts = hasMore ? rows.slice(0, pageSize) : rows;
+      const last = posts[posts.length - 1];
+
+      return {
+        posts,
+        nextCursor:
+          hasMore && last
+            ? encodeFeedCursor({ publishedAt: last.published_at, id: last.id })
+            : null,
       };
     },
 

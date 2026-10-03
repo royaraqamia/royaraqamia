@@ -23,7 +23,7 @@ export function PostCard({ post, index }: PostCardProps) {
               alt={post.title}
               fill
               priority={index < 2}
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+              sizes="(max-width: 768px) 100vw, 576px"
               className="object-cover transition-transform duration-700 ease-out group-hover/community:scale-105"
             />
 

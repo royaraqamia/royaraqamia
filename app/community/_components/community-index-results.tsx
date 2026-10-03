@@ -1,89 +1,127 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { CommunityResults } from './community-results';
 
 interface CommunityIndexResultsProps {
-  children: ReactNode;
+  initialPosts: PostSummary[];
+  initialNextCursor: string | null;
 }
 
 interface IndexData {
   posts: PostSummary[];
-  totalPages: number;
+  nextCursor: string | null;
+}
+
+function fetchIndex(
+  cursor: string | null,
+  query: string,
+  signal?: AbortSignal
+): Promise<IndexData> {
+  const params = new URLSearchParams();
+  if (cursor) params.set('cursor', cursor);
+  if (query) params.set('q', query);
+  const search = params.toString();
+
+  return fetch(`/api/community/index${search ? `?${search}` : ''}`, { signal }).then((res) => {
+    if (!res.ok) throw new Error('failed to load community index');
+    return res.json() as Promise<IndexData>;
+  });
+}
+
+function CommunityFeedSkeleton() {
+  return (
+    <div className="mx-auto flex w-full max-w-xl flex-col gap-6" aria-hidden="true">
+      {Array.from({ length: 6 }).map((_, i) => (
+        <div
+          key={i}
+          className="rounded-3xl border border-border bg-muted/20 overflow-hidden animate-pulse"
+        >
+          <div className="aspect-16/10 w-full bg-muted/60" />
+          <div className="p-6 sm:p-7 space-y-3">
+            <div className="h-5 w-3/4 rounded-full bg-muted/70" />
+            <div className="h-3.5 w-full rounded-full bg-muted/50" />
+            <div className="h-3.5 w-2/3 rounded-full bg-muted/50" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /**
- * Client island for the static `/community` page.
+ * Client island for the `/community` feed.
  *
- * The page itself is statically prerendered (ISR) with the default page-1 grid
- * passed as `children`. This island only becomes active when the URL carries
- * search params (`?q=` / `?page=`) — it fetches the matching results from
- * `/api/community/index` and renders them. The default view keeps its server HTML.
+ * Page 1 is statically prerendered (ISR) and passed in as `initialPosts`; the
+ * island keeps the rendered list in state so it can append further pages via the
+ * opaque keyset `cursor` when the visitor presses "load more" (which degrades to
+ * a `?cursor=` navigation without JS). Searching or opening a direct `?cursor=`
+ * link replaces the list instead of appending to it.
  */
-export function CommunityIndexResults({ children }: CommunityIndexResultsProps) {
+export function CommunityIndexResults({
+  initialPosts,
+  initialNextCursor,
+}: CommunityIndexResultsProps) {
   const searchParams = useSearchParams();
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const cursor = searchParams.get('cursor');
   const query = searchParams.get('q')?.trim() ?? '';
-  const isDefault = page === 1 && !query;
+  const isDefault = !cursor && !query;
 
-  const [data, setData] = useState<IndexData | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [posts, setPosts] = useState(initialPosts);
+  const [nextCursor, setNextCursor] = useState(initialNextCursor);
+  const [ready, setReady] = useState(isDefault);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     if (isDefault) {
-      setData(null);
-      setIsLoading(false);
+      setPosts(initialPosts);
+      setNextCursor(initialNextCursor);
+      setReady(true);
+      setIsLoadingMore(false);
       return;
     }
-    let ignore = false;
-    setIsLoading(true);
-    const params = new URLSearchParams();
-    params.set('page', String(page));
-    if (query) params.set('q', query);
-    fetch(`/api/community/index?${params.toString()}`)
-      .then((res) => {
-        if (!res.ok) throw new Error('failed to load community index');
-        return res.json() as Promise<IndexData>;
-      })
+
+    const controller = new AbortController();
+    setReady(false);
+    setIsLoadingMore(false);
+
+    fetchIndex(cursor, query, controller.signal)
       .then((json) => {
-        if (!ignore) {
-          setData(json);
-          setIsLoading(false);
-        }
+        setPosts(json.posts);
+        setNextCursor(json.nextCursor);
+        setReady(true);
       })
-      .catch(() => {
-        if (!ignore) setIsLoading(false);
+      .catch((error: unknown) => {
+        if ((error as { name?: string })?.name !== 'AbortError') setReady(true);
       });
-    return () => {
-      ignore = true;
-    };
-  }, [page, query, isDefault]);
 
-  if (isDefault) return <>{children}</>;
+    return () => controller.abort();
+  }, [cursor, query, isDefault, initialPosts, initialNextCursor]);
 
-  if (isLoading || !data) {
-    return (
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 auto-rows-fr" aria-hidden="true">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div
-            key={i}
-            className="rounded-3xl border border-border bg-muted/20 overflow-hidden animate-pulse"
-          >
-            <div className="aspect-16/10 w-full bg-muted/60" />
-            <div className="p-6 sm:p-7 space-y-3">
-              <div className="h-5 w-3/4 rounded-full bg-muted/70" />
-              <div className="h-3.5 w-full rounded-full bg-muted/50" />
-              <div className="h-3.5 w-2/3 rounded-full bg-muted/50" />
-            </div>
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const handleLoadMore = useCallback(() => {
+    if (isLoadingMore || !nextCursor) return;
+    const requestCursor = nextCursor;
+    setIsLoadingMore(true);
+    fetchIndex(requestCursor, query)
+      .then((json) => {
+        setPosts((prev) => [...prev, ...json.posts]);
+        setNextCursor(json.nextCursor);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingMore(false));
+  }, [isLoadingMore, nextCursor, query]);
+
+  if (!ready) return <CommunityFeedSkeleton />;
 
   return (
-    <CommunityResults posts={data.posts} totalPages={data.totalPages} page={page} query={query} />
+    <CommunityResults
+      posts={posts}
+      nextCursor={nextCursor}
+      query={query}
+      onLoadMore={handleLoadMore}
+      isLoadingMore={isLoadingMore}
+    />
   );
 }

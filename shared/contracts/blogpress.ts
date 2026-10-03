@@ -67,3 +67,9 @@ export interface PublishedPostsResult {
   posts: PostSummary[];
   totalPages: number;
 }
+
+/** Keyset (cursor) page of the public feed: `nextCursor` is null on the last page. */
+export interface PublishedFeedResult {
+  posts: PostSummary[];
+  nextCursor: string | null;
+}

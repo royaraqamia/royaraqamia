@@ -24,7 +24,7 @@ export function CommunitySearch() {
       } else {
         params.delete('q');
       }
-      params.delete('page');
+      params.delete('cursor');
       router.push(`/community?${params.toString()}`);
     },
     [router, searchParams]
