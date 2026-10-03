@@ -207,7 +207,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
               <div className="flex flex-col h-full">
                 <div
                   ref={imageContainerRef}
-                  className={`flex-1 min-h-0 flex items-center justify-center bg-black/30 p-0 relative min-h-[45dvh] sm:min-h-[60dvh] ${
+                  className={`relative bg-black/30 p-0 min-h-[45dvh] sm:min-h-[60dvh] flex items-center justify-center ${
                     zoomed
                       ? 'overflow-auto touch-action-none'
                       : 'overflow-hidden touch-action-manipulation'
@@ -241,9 +241,7 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
                       width={1600}
                       height={1152}
                       className={`relative z-10 select-none ${
-                        zoomed
-                          ? 'max-w-none max-h-none rounded-2xl'
-                          : 'object-contain w-full h-auto'
+                        zoomed ? 'max-w-none max-h-none rounded-2xl' : 'object-cover w-full h-full'
                       }`}
                       style={
                         zoomed

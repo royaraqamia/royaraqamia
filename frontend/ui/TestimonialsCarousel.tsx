@@ -239,7 +239,7 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
           if (!open) closeReviewSheet();
         }}
       >
-        <DialogContent className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-slate-950/95 text-slate-100 overflow-hidden">
+        <DialogContent className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-slate-950/95 text-slate-100 overflow-y-auto dialog-scrollbar">
           {/* Mobile Handle Indicator */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full sm:hidden" />
 
@@ -259,7 +259,7 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
                 </div>
 
                 {/* Detailed Author Profile Footer */}
-                <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10 bg-white/2 -mx-6 -mb-6 px-6 pb-6 sm:-mx-8 sm:-mb-8 sm:px-8 sm:pb-8 rounded-b-[inherit]">
+                <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10">
                   <div className="flex items-center gap-4 min-w-0">
                     <div
                       className={`
