@@ -234,35 +234,37 @@ Open [http://localhost:3000](http://localhost:3000) (RTL Arabic site by default)
 
 Copy `example.env` to `.env.local` and set each value. All values below are **placeholders** — never commit real secrets.
 
-| Variable                               | Description                                                            | Example / Placeholder                          | Required                 |
-| -------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------- | ------------------------ |
-| `NEXT_PUBLIC_SITE_URL`                 | Public canonical origin of the site                                    | `https://royaraqamia.com`                      | ✅                       |
-| `NEXT_PUBLIC_WHATSAPP_PHONE`           | WhatsApp number for contact CTAs                                       | `963000000000`                                 | ✅ (build-time enforced) |
-| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL (client + server)                                 | `https://<project-ref>.supabase.co`            | ✅                       |
-| `SUPABASE_URL`                         | Alias of the Supabase project URL                                      | `https://<project-ref>.supabase.co`            | ✅                       |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public anon/publishable key (safe for the browser)                     | `sb_publishable_...`                           | ✅                       |
-| `SUPABASE_SERVICE_ROLE_KEY`            | **Secret.** Server-only service-role key (admin operations, E2E setup) | `eyJhbGciOi...`                                | ✅                       |
-| `RESEND_API_KEY`                       | Resend API key for transactional email                                 | `re_...`                                       | ✅                       |
-| `RESEND_FROM_EMAIL`                    | Sender address for outgoing email                                      | `no-reply@royaraqamia.com`                     | ✅                       |
-| `RESEND_FROM_NAME`                     | Sender display name                                                    | `رؤيَة رقَميَّة`                               | ✅                       |
-| `NEXT_PUBLIC_SENTRY_DSN`               | Public Sentry DSN (client SDK)                                         | `https://...@o000000.ingest.sentry.io/0000000` | ✅                       |
-| `SENTRY_DSN`                           | Server-side Sentry DSN                                                 | `https://...@o000000.ingest.sentry.io/0000000` | ✅                       |
-| `SENTRY_ORG`                           | Sentry organization slug (build plugin)                                | `your-org-slug`                                | ✅ (for CI build)        |
-| `SENTRY_PROJECT`                       | Sentry project slug (build plugin)                                     | `your-project-slug`                            | ✅ (for CI build)        |
-| `SENTRY_AUTH_TOKEN`                    | **Secret.** Sentry auth token (build plugin, sourcemap upload)         | `sntrys_...`                                   | ✅ (for CI build)        |
-| `ADMIN_EMAILS`                         | Comma-separated emails granted admin access                            | `admin@royaraqamia.com,ops@royaraqamia.com`    | ✅                       |
-| `MCP_TOKEN_ENCRYPTION_KEY`             | **Secret.** 32-byte key (hex) encrypting MCP OAuth refresh tokens      | `a1b2...` (64 hex chars)                       | for `/mcp` OAuth only    |
-| `UPSTASH_REDIS_REST_URL`               | Upstash Redis REST endpoint (rate limiting)                            | `https://<db>.upstash.io`                      | ✅                       |
-| `UPSTASH_REDIS_REST_TOKEN`             | **Secret.** Upstash Redis REST token                                   | `AVNS_...`                                     | ✅                       |
-| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | Cloudflare Turnstile site key (client)                                 | `0x4AAAA...`                                   | ✅                       |
-| `TURNSTILE_SECRET_KEY`                 | **Secret.** Cloudflare Turnstile secret (server verify)                | `0x4AAAA...`                                   | ✅                       |
-| `E2E_TEST_EMAIL`                       | Email of the Playwright test account                                   | `e2e+ci@example.com`                           | for `test:e2e`           |
-| `E2E_TEST_PASSWORD`                    | **Secret.** Password of the Playwright test account                    | `change-me`                                    | for `test:e2e`           |
-| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Public Web Push VAPID key (safe for the browser)                       | `BElN...`                                      | Web Push only            |
-| `PUSH_ENDPOINT_ALLOWLIST`              | Comma-separated push-service hosts allowed for dispatch                | `fcm.googleapis.com,...`                       | Web Push only            |
-| `PUSH_WEBHOOK_TOKEN`                   | **Secret.** Bearer token for the habit-reminder push webhook           | `change-me`                                    | Web Push only            |
-| `VAPID_PRIVATE_KEY`                    | **Secret.** Server-only Web Push VAPID private key                     | `f7Qz...`                                      | Web Push only            |
-| `VAPID_SUBJECT`                        | Web Push contact (must be `mailto:` or `https:` URL)                   | `mailto:admin@royaraqamia.com`                 | Web Push only            |
+| Variable                               | Description                                                            | Example / Placeholder                          | Required                        |
+| -------------------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------- |
+| `NEXT_PUBLIC_SITE_URL`                 | Public canonical origin of the site                                    | `https://royaraqamia.com`                      | ✅                              |
+| `NEXT_PUBLIC_WHATSAPP_PHONE`           | WhatsApp number for contact CTAs                                       | `963000000000`                                 | ✅ (build-time enforced)        |
+| `NEXT_PUBLIC_SUPABASE_URL`             | Supabase project URL (client + server)                                 | `https://<project-ref>.supabase.co`            | ✅                              |
+| `SUPABASE_URL`                         | Alias of the Supabase project URL                                      | `https://<project-ref>.supabase.co`            | ✅                              |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Public anon/publishable key (safe for the browser)                     | `sb_publishable_...`                           | ✅                              |
+| `SUPABASE_SERVICE_ROLE_KEY`            | **Secret.** Server-only service-role key (admin operations, E2E setup) | `eyJhbGciOi...`                                | ✅                              |
+| `RESEND_API_KEY`                       | Resend API key for transactional email                                 | `re_...`                                       | ✅                              |
+| `RESEND_FROM_EMAIL`                    | Sender address for outgoing email                                      | `no-reply@royaraqamia.com`                     | ✅                              |
+| `RESEND_FROM_NAME`                     | Sender display name                                                    | `رؤيَة رقَميَّة`                               | ✅                              |
+| `NEXT_PUBLIC_SENTRY_DSN`               | Public Sentry DSN (client SDK)                                         | `https://...@o000000.ingest.sentry.io/0000000` | ✅                              |
+| `SENTRY_DSN`                           | Server-side Sentry DSN                                                 | `https://...@o000000.ingest.sentry.io/0000000` | ✅                              |
+| `SENTRY_ORG`                           | Sentry organization slug (build plugin)                                | `your-org-slug`                                | ✅ (for CI build)               |
+| `SENTRY_PROJECT`                       | Sentry project slug (build plugin)                                     | `your-project-slug`                            | ✅ (for CI build)               |
+| `SENTRY_AUTH_TOKEN`                    | **Secret.** Sentry auth token (build plugin, sourcemap upload)         | `sntrys_...`                                   | ✅ (for CI build)               |
+| `ADMIN_EMAILS`                         | Comma-separated emails granted admin access                            | `admin@royaraqamia.com,ops@royaraqamia.com`    | ✅                              |
+| `MCP_TOKEN_ENCRYPTION_KEY`             | **Secret.** 32-byte key (hex) encrypting MCP OAuth refresh tokens      | `a1b2...` (64 hex chars)                       | for `/mcp` OAuth only           |
+| `UPSTASH_REDIS_REST_URL`               | Upstash Redis REST endpoint (rate limiting)                            | `https://<db>.upstash.io`                      | ✅                              |
+| `UPSTASH_REDIS_REST_TOKEN`             | **Secret.** Upstash Redis REST token                                   | `AVNS_...`                                     | ✅                              |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY`       | Cloudflare Turnstile site key (client)                                 | `0x4AAAA...`                                   | ✅                              |
+| `TURNSTILE_SECRET_KEY`                 | **Secret.** Cloudflare Turnstile secret (server verify)                | `0x4AAAA...`                                   | ✅                              |
+| `PENDING_LOGIN_SECRET`                 | **Secret.** Key encrypting the short-lived pending-login cookie        | `change-me` (random 32+ bytes)                 | ✅ (falls back to service-role) |
+| `PASSWORD_BREACH_CHECK_ENABLED`        | Enable HIBP breached-password check (set `false` to disable)           | `true`                                         | optional (default `true`)       |
+| `E2E_TEST_EMAIL`                       | Email of the Playwright test account                                   | `e2e+ci@example.com`                           | for `test:e2e`                  |
+| `E2E_TEST_PASSWORD`                    | **Secret.** Password of the Playwright test account                    | `change-me`                                    | for `test:e2e`                  |
+| `NEXT_PUBLIC_VAPID_PUBLIC_KEY`         | Public Web Push VAPID key (safe for the browser)                       | `BElN...`                                      | Web Push only                   |
+| `PUSH_ENDPOINT_ALLOWLIST`              | Comma-separated push-service hosts allowed for dispatch                | `fcm.googleapis.com,...`                       | Web Push only                   |
+| `PUSH_WEBHOOK_TOKEN`                   | **Secret.** Bearer token for the habit-reminder push webhook           | `change-me`                                    | Web Push only                   |
+| `VAPID_PRIVATE_KEY`                    | **Secret.** Server-only Web Push VAPID private key                     | `f7Qz...`                                      | Web Push only                   |
+| `VAPID_SUBJECT`                        | Web Push contact (must be `mailto:` or `https:` URL)                   | `mailto:admin@royaraqamia.com`                 | Web Push only                   |
 
 > **Web Push (VAPID):** OS-level push notifications (browser subscription → server dispatch via `web-push`) activate once the five keys above are set. Generate a key pair with `node scripts/generate-vapid.mjs`; put the public key in `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and keep `VAPID_PRIVATE_KEY` + `PUSH_WEBHOOK_TOKEN` server-only. `PUSH_ENDPOINT_ALLOWLIST` defaults to the known push-service hosts and is fail-closed. Without these keys the push pipeline is a graceful no-op — in-app notifications keep working.
 
