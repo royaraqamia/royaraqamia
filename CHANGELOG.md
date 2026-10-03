@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.39.2] - 2026-10-03
+
+### Fixed
+- generate ASCII-only slugs in the composer
+- render composer placeholders with RTL bidi
+
 ## [1.39.1] - 2026-10-03
 
 ### Changed
