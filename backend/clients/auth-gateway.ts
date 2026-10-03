@@ -9,13 +9,14 @@ export interface AuthGateway {
   signUp(input: { email: string; password: string; name: string }): Promise<{
     user: { id: string } | null;
     error: { message: string } | null;
+    hasSession: boolean;
+    existing: boolean;
   }>;
   signInWithPassword(input: { email: string; password: string }): Promise<{
     user: AuthUser | null;
     error: { message: string } | null;
   }>;
   getUser(): Promise<{ user: AuthUser | null }>;
-  updateUser(input: { password: string }): Promise<{ error: { message: string } | null }>;
   updateUserPassword(
     userId: string,
     password: string

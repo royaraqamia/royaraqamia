@@ -25,9 +25,15 @@ export interface BroadcastEmailRecipient {
   body?: string;
 }
 
+export interface AccountExistsUrls {
+  loginUrl: string;
+  resetUrl: string;
+}
+
 export interface EmailClient {
   sendOtpEmail(email: string, otp: string): Promise<void>;
   sendPasswordResetEmail(email: string, resetUrl: string): Promise<void>;
+  sendAccountExistsEmail(email: string, urls: AccountExistsUrls): Promise<void>;
   sendBroadcastEmails(recipients: BroadcastEmailRecipient[]): Promise<number>;
 }
 
@@ -154,6 +160,34 @@ export class ResendEmailClient implements EmailClient {
         ${cardFooter(`الرَّابط صالح لمدَّة ${formatHours(this.validity.passwordResetHours)}`)}
       `,
         'اختر كلمة مرور جديدة لحسابك'
+      ),
+    });
+  }
+
+  async sendAccountExistsEmail(email: string, urls: AccountExistsUrls): Promise<void> {
+    const safeLoginUrl = escapeHtml(urls.loginUrl);
+    const safeResetUrl = escapeHtml(urls.resetUrl);
+    await this.resend.emails.send({
+      from: `${this.sender.fromName} <${this.sender.fromEmail}>`,
+      to: email,
+      subject: 'حسابك موجود بالفعل',
+      html: layout(
+        `
+        <div style="padding:32px 32px 32px;">
+          ${eyebrow('تنبيه')}
+          ${heading('هذا البريد مرتبط بحساب موجود')}
+          ${paragraph('يبدو أنَّك حاولت إنشاء حساب ببريد إلكتروني مسجَّل لدينا بالفعل. لست بحاجة إلى حساب جديد — يمكنك تسجيل الدُّخول مباشرةً.')}
+          <div style="text-align:center;margin:24px 0 0;">
+            <a href="${safeLoginUrl}" style="display:inline-block;background-color:${palette.violet};color:#ffffff;text-decoration:none;padding:14px 36px;border-radius:10px;font-weight:700;font-size:15px;">تسجيل الدُّخول</a>
+          </div>
+          ${paragraph('وإذا لم تتذكَّر كلمة المرور، يمكنك إعادة تعيينها بسهولة.')}
+          <div style="text-align:center;margin:12px 0 0;">
+            <a href="${safeResetUrl}" style="display:inline-block;background-color:${palette.violetSoft};color:${palette.violet};text-decoration:none;padding:12px 28px;border-radius:10px;font-weight:700;font-size:14px;">إعادة تعيين كلمة المرور</a>
+          </div>
+        </div>
+        ${cardFooter('إذا لم تكن أنت من طلب إنشاء الحساب، يمكنك تجاهل هذه الرسالة بأمان')}
+      `,
+        'حسابك موجود بالفعل — سجِّل الدُّخول بدلاً من إنشاء حساب جديد'
       ),
     });
   }

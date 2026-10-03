@@ -7,7 +7,11 @@ import { EMAIL_VALIDITY } from '@/backend/config/email';
 import { SupabaseOtpRepository } from '@/backend/repositories/otp/supabase-otp-repository';
 import { SupabasePasswordResetTokenRepository } from '@/backend/repositories/password-reset/supabase-password-reset-token-repository';
 import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
-import { sendOtpEmail, sendPasswordResetEmail } from '@/backend/config/email';
+import {
+  sendOtpEmail,
+  sendPasswordResetEmail,
+  sendAccountExistsEmail,
+} from '@/backend/config/email';
 import { checkRateLimit, getRateLimitRemaining } from '@/backend/config/rate-limiter';
 import { createTurnstileVerifier } from '@/backend/config/turnstile';
 import { env } from '@/backend/config/env';
@@ -34,6 +38,7 @@ export function createAuthService(
     emailClient: {
       sendOtpEmail,
       sendPasswordResetEmail,
+      sendAccountExistsEmail,
       sendBroadcastEmails: async () => 0,
     },
     rateLimiter: {

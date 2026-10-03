@@ -12,6 +12,7 @@ function makeService(recipients: Array<{ id: string; email: string }>, sent = 3)
   const emailClient = {
     sendOtpEmail: vi.fn(),
     sendPasswordResetEmail: vi.fn(),
+    sendAccountExistsEmail: vi.fn(),
     sendBroadcastEmails: vi.fn().mockResolvedValue(sent),
   };
   const service = new EmailBroadcastService(repository, emailClient);

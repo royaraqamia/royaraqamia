@@ -9,13 +9,17 @@ import type {
   VerifyOtpResult,
 } from '@/backend/services/auth/auth-service';
 
-export async function login(body: Record<string, unknown>): Promise<HttpResult> {
+export async function login(
+  body: Record<string, unknown>,
+  ipAddress: string | null = null
+): Promise<HttpResult> {
   const authService = await createServerAuthService();
   const result: LoginResult = await authService.login({
     email: (body.email ?? '') as string,
     password: (body.password ?? '') as string,
     redirectTo: (body.redirectTo ?? null) as string | null,
     turnstileToken: (body.turnstileToken ?? '') as string,
+    ipAddress,
   });
 
   if ('needsOtp' in result) {
@@ -29,7 +33,10 @@ export async function login(body: Record<string, unknown>): Promise<HttpResult> 
   return jsonResult(200, { redirectUrl: result.redirectUrl });
 }
 
-export async function signup(body: Record<string, unknown>): Promise<HttpResult> {
+export async function signup(
+  body: Record<string, unknown>,
+  ipAddress: string | null = null
+): Promise<HttpResult> {
   const authService = await createServerAuthService();
   const result: SignupResult = await authService.signup({
     name: (body.name ?? '') as string,
@@ -37,6 +44,7 @@ export async function signup(body: Record<string, unknown>): Promise<HttpResult>
     password: (body.password ?? '') as string,
     redirectTo: (body.redirectTo ?? null) as string | null,
     turnstileToken: (body.turnstileToken ?? '') as string,
+    ipAddress,
   });
 
   if (!result.ok) {
@@ -46,12 +54,16 @@ export async function signup(body: Record<string, unknown>): Promise<HttpResult>
   return jsonResult(200, { redirectUrl: result.redirectUrl });
 }
 
-export async function verifyOtp(body: Record<string, unknown>): Promise<HttpResult> {
+export async function verifyOtp(
+  body: Record<string, unknown>,
+  ipAddress: string | null = null
+): Promise<HttpResult> {
   const authService = await createServerAuthService();
   const result: VerifyOtpResult = await authService.verifyOtp({
     email: (body.email ?? '') as string,
     otp: (body.otp ?? '') as string,
     redirectTo: (body.redirectTo ?? null) as string | null,
+    ipAddress,
   });
 
   if (!result.ok) {
@@ -61,10 +73,14 @@ export async function verifyOtp(body: Record<string, unknown>): Promise<HttpResu
   return jsonResult(200, { success: true, redirectTo: result.redirectUrl });
 }
 
-export async function resendOtp(body: Record<string, unknown>): Promise<HttpResult> {
+export async function resendOtp(
+  body: Record<string, unknown>,
+  ipAddress: string | null = null
+): Promise<HttpResult> {
   const authService = await createServerAuthService();
   const result: SimpleResult = await authService.resendOtp({
     email: (body.email ?? '') as string,
+    ipAddress,
   });
 
   if (!result.ok) {
@@ -74,11 +90,15 @@ export async function resendOtp(body: Record<string, unknown>): Promise<HttpResu
   return jsonResult(200, { message: result.message ?? '' });
 }
 
-export async function resetPassword(body: Record<string, unknown>): Promise<HttpResult> {
+export async function resetPassword(
+  body: Record<string, unknown>,
+  ipAddress: string | null = null
+): Promise<HttpResult> {
   const authService = await createServerAuthService();
   const result: SimpleResult = await authService.resetPassword({
     email: (body.email ?? '') as string,
     redirectTo: (body.redirectTo ?? null) as string | null,
+    ipAddress,
   });
 
   if (!result.ok) {
@@ -88,7 +108,10 @@ export async function resetPassword(body: Record<string, unknown>): Promise<Http
   return jsonResult(200, { message: result.message ?? '' });
 }
 
-export async function updatePassword(body: Record<string, unknown>): Promise<HttpResult> {
+export async function updatePassword(
+  body: Record<string, unknown>,
+  ipAddress: string | null = null
+): Promise<HttpResult> {
   const authService = await createServerAuthService();
   const result: UpdatePasswordResult = await authService.updatePassword({
     password: (body.password ?? '') as string,
@@ -96,6 +119,7 @@ export async function updatePassword(body: Record<string, unknown>): Promise<Htt
     token: (body.token ?? '') as string,
     email: (body.email ?? '') as string,
     redirectTo: (body.redirectTo ?? null) as string | null,
+    ipAddress,
   });
 
   if (!result.ok) {

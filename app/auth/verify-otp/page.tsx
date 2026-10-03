@@ -232,6 +232,11 @@ function VerifyOtpForm() {
                 </Button>
               </form>
 
+              <p className="text-[11px] leading-relaxed text-muted-foreground/80 px-2">
+                إذا كان لديك حساب مُسبقًا بهذا البريد، فقد أرسلنا إليك روابط الدُّخول وإعادة تعيين
+                كلمة المرور بدلًا من الرَّمز.
+              </p>
+
               {resendMessage && (
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-medium">
                   <CircleCheck size={14} className="shrink-0" />

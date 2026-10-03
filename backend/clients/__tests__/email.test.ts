@@ -87,6 +87,26 @@ describe('ResendEmailClient', () => {
     expect(String(payload.html)).toContain('https://x.com/auth?code=abc&amp;type=recovery');
   });
 
+  it('sendAccountExistsEmail embeds both the sign-in and reset links', async () => {
+    mockSend.mockResolvedValue({ id: 'email-exists' });
+    const client = new ResendEmailClient(makeResend(), makeSender(), makeValidity());
+
+    await client.sendAccountExistsEmail('user@example.com', {
+      loginUrl: 'https://royaraqamia.com/auth/login?redirect=%2Fdash',
+      resetUrl: 'https://royaraqamia.com/auth/reset-password?redirect=%2Fdash',
+    });
+
+    const [payload] = mockSend.mock.calls[0] as [Record<string, unknown>];
+    expect(payload).toMatchObject({
+      to: 'user@example.com',
+      subject: 'حسابك موجود بالفعل',
+    });
+    expect(String(payload.html)).toContain('https://royaraqamia.com/auth/login?redirect=%2Fdash');
+    expect(String(payload.html)).toContain(
+      'https://royaraqamia.com/auth/reset-password?redirect=%2Fdash'
+    );
+  });
+
   it('uses the configured sender in the from field', async () => {
     mockSend.mockResolvedValue({ id: 'email-3' });
     const client = new ResendEmailClient(

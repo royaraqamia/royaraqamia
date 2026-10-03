@@ -6,6 +6,7 @@ import {
 } from '@/backend/shared/otp/generator';
 import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
 import { safeRedirect } from '@/shared/safe-redirect';
+import { normalizeEmail } from '@/shared/email';
 import type { PendingLoginStore } from '@/backend/shared/auth/pending-login-store';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
 import type { OtpRepository } from '@/backend/repositories/otp/otp-repository';
@@ -32,6 +33,19 @@ export type UpdatePasswordResult =
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
 
 const OTP_ATTEMPT_CAS_MAX_RETRIES = 3;
+
+// Per-IP ceilings run alongside the per-email limits. They are deliberately
+// looser than the per-email limits (shared NAT / offices), but they stop a
+// distributed attacker from sidestepping the per-email buckets by rotating the
+// target address or the casing of a single address.
+const IP_RATE_LIMITS = {
+  signup: { limit: 10, windowMs: 60 * 60 * 1000 },
+  login: { limit: 30, windowMs: 60 * 1000 },
+  verify: { limit: 30, windowMs: 60 * 1000 },
+  resend: { limit: 5, windowMs: 60 * 1000 },
+  reset: { limit: 10, windowMs: 60 * 60 * 1000 },
+  update: { limit: 30, windowMs: 60 * 1000 },
+} as const;
 
 export interface AuthServiceDeps {
   otpRepository: OtpRepository;
@@ -89,22 +103,24 @@ export class AuthService {
     password: string;
     redirectTo: string | null;
     turnstileToken: string;
+    ipAddress?: string | null;
   }): Promise<SignupResult> {
+    const email = normalizeEmail(input.email);
     const parsed = SignupSchema.safeParse({
       name: input.name,
-      email: input.email,
+      email,
       password: input.password,
     });
     if (!parsed.success) {
       return { ok: false, message: parsed.error.issues[0]?.message || 'بيانات غير صحيحة' };
     }
 
-    if (input.turnstileToken && !(await this.verifyTurnstile(input.turnstileToken))) {
+    if (!(await this.verifyTurnstile(input.turnstileToken))) {
       return { ok: false, message: 'فشل التحقق الأمني. يرجى تحديث الصفحة والمحاولة مرة أخرى' };
     }
 
     const signupRateOk = await this.rateLimiter.checkRateLimit(
-      `signup:${input.email}`,
+      `signup:${email}`,
       3,
       60 * 60 * 1000
     );
@@ -112,26 +128,38 @@ export class AuthService {
       return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
     }
 
-    const { user, error } = await this.gateway.signUp({
-      email: input.email,
+    if (await this.isIpRateLimited('signup', input.ipAddress)) {
+      return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
+    }
+
+    const { user, error, hasSession, existing } = await this.gateway.signUp({
+      email,
       password: input.password,
       name: input.name,
     });
 
-    if (error) {
-      return {
-        ok: false,
-        message:
-          error.message === 'User already registered'
-            ? 'البريد الإلكتروني مسجل مسبقاً'
-            : error.message,
-      };
+    // Supabase signals an already-registered email in two ways depending on its
+    // config: an error ("User already registered") or an obfuscated user with no
+    // identities. Treat both identically and neutrally so signup cannot be used
+    // to enumerate accounts.
+    const alreadyRegistered = existing || error?.message === 'User already registered';
+
+    if (error && !alreadyRegistered) {
+      return { ok: false, message: error.message };
+    }
+
+    if (alreadyRegistered) {
+      // Never reveal that the email exists, and never send an OTP to an account
+      // that did not request one. The owner gets sign-in / reset links by email,
+      // and the caller gets the same success response as a brand-new signup.
+      await this.notifyAccountExists(email, input.redirectTo);
+      return this.pendingSignupResponse(email, input.redirectTo);
     }
 
     if (user?.id) {
       await this.userProfileRepository.upsert({
         id: user.id,
-        email: input.email,
+        email,
         name: input.name,
       });
     }
@@ -141,21 +169,26 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + this.otpTtlMinutes * 60 * 1000);
 
     await this.otpRepository.createOtpRecord({
-      email: input.email,
+      email,
       otpHash: hash,
       salt,
       expiresAt,
       maxAttempts: this.otpMaxAttempts,
     });
     try {
-      await this.emailClient.sendOtpEmail(input.email, otp);
+      await this.emailClient.sendOtpEmail(email, otp);
     } catch {
       // Email delivery failure — OTP is created, user can still resend from verify page
     }
 
-    const params = new URLSearchParams({ email: input.email });
-    if (input.redirectTo) params.set('redirect', input.redirectTo);
-    return { ok: true, redirectUrl: `/auth/verify-otp?${params.toString()}` };
+    // When email confirmation is enabled Supabase creates the account but no
+    // session, so stash the password (encrypted, httpOnly, short TTL) for
+    // verifyOtp to complete the sign-in once the account is confirmed.
+    if (!hasSession) {
+      await this.pendingLoginStore.setPassword(input.password);
+    }
+
+    return this.pendingSignupResponse(email, input.redirectTo);
   }
 
   async login(input: {
@@ -163,17 +196,19 @@ export class AuthService {
     password: string;
     redirectTo: string | null;
     turnstileToken: string;
+    ipAddress?: string | null;
   }): Promise<LoginResult> {
-    const parsed = LoginSchema.safeParse({ email: input.email, password: input.password });
+    const email = normalizeEmail(input.email);
+    const parsed = LoginSchema.safeParse({ email, password: input.password });
     if (!parsed.success) {
       return { ok: false, message: parsed.error.issues[0]?.message || 'بيانات غير صحيحة' };
     }
 
-    if (input.turnstileToken && !(await this.verifyTurnstile(input.turnstileToken))) {
+    if (!(await this.verifyTurnstile(input.turnstileToken))) {
       return { ok: false, message: 'فشل التحقق الأمني. يرجى تحديث الصفحة والمحاولة مرة أخرى' };
     }
 
-    const loginRateOk = await this.rateLimiter.checkRateLimit(`login:${input.email}`, 5, 60 * 1000);
+    const loginRateOk = await this.rateLimiter.checkRateLimit(`login:${email}`, 5, 60 * 1000);
     if (!loginRateOk) {
       return {
         ok: false,
@@ -181,8 +216,15 @@ export class AuthService {
       };
     }
 
+    if (await this.isIpRateLimited('login', input.ipAddress)) {
+      return {
+        ok: false,
+        message: 'تم تجاوز الحد الأقصى لمحاولات الدخول. يرجى المحاولة بعد دقيقة',
+      };
+    }
+
     const { error } = await this.gateway.signInWithPassword({
-      email: input.email,
+      email,
       password: input.password,
     });
 
@@ -193,25 +235,25 @@ export class AuthService {
         const expiresAt = new Date(Date.now() + this.otpTtlMinutes * 60 * 1000);
 
         await this.otpRepository.createOtpRecord({
-          email: input.email,
+          email,
           otpHash: hash,
           salt,
           expiresAt,
           maxAttempts: this.otpMaxAttempts,
         });
         try {
-          await this.emailClient.sendOtpEmail(input.email, otp);
+          await this.emailClient.sendOtpEmail(email, otp);
         } catch {
           // Email delivery failure — OTP is created, user can resend
         }
 
         await this.pendingLoginStore.setPassword(input.password);
 
-        const params = new URLSearchParams({ email: input.email });
+        const params = new URLSearchParams({ email });
         if (input.redirectTo) params.set('redirect', input.redirectTo);
         return {
           needsOtp: true,
-          email: input.email,
+          email,
           redirectUrl: `/auth/verify-otp?${params.toString()}`,
         };
       }
@@ -225,9 +267,11 @@ export class AuthService {
     email: string;
     otp: string;
     redirectTo: string | null;
+    ipAddress?: string | null;
   }): Promise<VerifyOtpResult> {
+    const email = normalizeEmail(input.email);
     const verifyRateOk = await this.rateLimiter.checkRateLimit(
-      `verify:${input.email}`,
+      `verify:${email}`,
       this.otpVerifyMaxPerMinute,
       60 * 1000
     );
@@ -238,8 +282,14 @@ export class AuthService {
       };
     }
 
-    const pendingPassword = await this.pendingLoginStore.readPassword();
-    const record = await this.otpRepository.findLatestPendingOtp(input.email);
+    if (await this.isIpRateLimited('verify', input.ipAddress)) {
+      return {
+        ok: false,
+        message: 'تم تجاوز عدد محاولات التحقق المسموح بها. يرجى المحاولة لاحقاً',
+      };
+    }
+
+    const record = await this.otpRepository.findLatestPendingOtp(email);
 
     if (!record) {
       return { ok: false, message: 'لم يتم العثور على رمز التحقق' };
@@ -254,11 +304,13 @@ export class AuthService {
     }
 
     if (!verifyOtp(input.otp, record.otpHash, record.salt)) {
-      await this.countFailedOtpAttempt(input.email, record.id, record.attempts);
+      await this.countFailedOtpAttempt(email, record.id, record.attempts);
       return { ok: false, message: 'رمز التحقق غير صحيح' };
     }
 
     await this.otpRepository.markOtpVerified(record.id);
+
+    const pendingPassword = await this.pendingLoginStore.readPassword();
 
     // Try session-first (signup flow — user already has unconfirmed session).
     // Only confirm the session account if it is the account whose OTP is being
@@ -266,46 +318,46 @@ export class AuthService {
     // would be confirmed instead of the intended one.
     const { user } = await this.gateway.getUser();
 
-    if (
-      user &&
-      user.email_confirmed_at === null &&
-      user.email?.trim().toLowerCase() === input.email.trim().toLowerCase()
-    ) {
+    if (user && user.email_confirmed_at === null && normalizeEmail(user.email) === email) {
       await this.gateway.confirmUserEmail(user.id);
+      if (pendingPassword) {
+        await this.pendingLoginStore.clear();
+      }
       return { ok: true, redirectUrl: safeRedirect(input.redirectTo), consumedPendingLogin: false };
     }
 
-    // Targeted lookup by email (login flow — no active session yet)
-    const { user: targetUser } = await this.gateway.getUserByEmail(input.email);
+    // Targeted lookup by email (login/signup flow without an active session)
+    const { user: targetUser } = await this.gateway.getUserByEmail(email);
     let consumedPendingLogin = false;
 
     if (targetUser && targetUser.email_confirmed_at === null) {
       await this.gateway.confirmUserEmail(targetUser.id);
 
-      // Auto-sign-in if user came from login flow (has pending password)
+      // Auto-sign-in when this flow stashed a pending password (login with an
+      // unconfirmed account, or signup with email confirmation enabled).
       if (pendingPassword) {
-        consumedPendingLogin = true;
         const { error: signInError } = await this.gateway.signInWithPassword({
-          email: input.email,
+          email,
           password: pendingPassword,
         });
-        if (signInError) {
-          // Password may have changed or pending store expired — user can log in manually
-          consumedPendingLogin = false;
-        }
+        consumedPendingLogin = !signInError;
       }
     }
 
-    if (consumedPendingLogin) {
+    // Once the OTP is verified the stashed credential must not linger, whether
+    // or not the auto sign-in succeeded (a changed password means the user logs
+    // in manually instead).
+    if (pendingPassword) {
       await this.pendingLoginStore.clear();
     }
 
     return { ok: true, redirectUrl: safeRedirect(input.redirectTo), consumedPendingLogin };
   }
 
-  async resendOtp(input: { email: string }): Promise<SimpleResult> {
+  async resendOtp(input: { email: string; ipAddress?: string | null }): Promise<SimpleResult> {
+    const email = normalizeEmail(input.email);
     const resendRateOk = await this.rateLimiter.checkRateLimit(
-      `resend:${input.email}`,
+      `resend:${email}`,
       1,
       this.otpResendCooldownSeconds * 1000
     );
@@ -313,7 +365,11 @@ export class AuthService {
       return { ok: false, message: 'يرجى الانتظار قبل إعادة الإرسال' };
     }
 
-    const existing = await this.otpRepository.findLatestPendingOtp(input.email);
+    if (await this.isIpRateLimited('resend', input.ipAddress)) {
+      return { ok: false, message: 'يرجى الانتظار قبل إعادة الإرسال' };
+    }
+
+    const existing = await this.otpRepository.findLatestPendingOtp(email);
     if (!existing) {
       return { ok: false, message: 'لا يوجد رمز تحقق نشط لهذا البريد الإلكتروني' };
     }
@@ -323,14 +379,14 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + this.otpTtlMinutes * 60 * 1000);
 
     await this.otpRepository.createOtpRecord({
-      email: input.email,
+      email,
       otpHash: hash,
       salt,
       expiresAt,
       maxAttempts: this.otpMaxAttempts,
     });
     try {
-      await this.emailClient.sendOtpEmail(input.email, otp);
+      await this.emailClient.sendOtpEmail(email, otp);
     } catch {
       return { ok: false, message: 'فشل إرسال رمز التحقق. يرجى المحاولة لاحقاً' };
     }
@@ -338,17 +394,22 @@ export class AuthService {
     return { ok: true, message: 'تم إعادة إرسال رمز التحقق' };
   }
 
-  async resetPassword(input: { email: string; redirectTo?: string | null }): Promise<SimpleResult> {
-    const resetRateOk = await this.rateLimiter.checkRateLimit(
-      `reset:${input.email}`,
-      3,
-      60 * 60 * 1000
-    );
+  async resetPassword(input: {
+    email: string;
+    redirectTo?: string | null;
+    ipAddress?: string | null;
+  }): Promise<SimpleResult> {
+    const email = normalizeEmail(input.email);
+    const resetRateOk = await this.rateLimiter.checkRateLimit(`reset:${email}`, 3, 60 * 60 * 1000);
     if (!resetRateOk) {
       return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
     }
 
-    const { user } = await this.gateway.getUserByEmail(input.email);
+    if (await this.isIpRateLimited('reset', input.ipAddress)) {
+      return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
+    }
+
+    const { user } = await this.gateway.getUserByEmail(email);
 
     if (!user) {
       return {
@@ -362,7 +423,7 @@ export class AuthService {
     const expiresAt = new Date(Date.now() + this.passwordResetTokenTtlMinutes * 60 * 1000);
 
     await this.passwordResetTokenRepository.createToken({
-      email: input.email,
+      email,
       userId: user.id,
       tokenHash: hash,
       salt,
@@ -373,11 +434,11 @@ export class AuthService {
     const resetUrl =
       `${this.siteUrl}/auth/update-password` +
       `?token=${encodeURIComponent(token)}` +
-      `&email=${encodeURIComponent(input.email)}` +
+      `&email=${encodeURIComponent(email)}` +
       `&redirect=${encodeURIComponent(redirectTo)}`;
 
     try {
-      await this.emailClient.sendPasswordResetEmail(input.email, resetUrl);
+      await this.emailClient.sendPasswordResetEmail(email, resetUrl);
     } catch {
       // Email delivery failure — token is still created; user can request a new one
     }
@@ -394,6 +455,7 @@ export class AuthService {
     token: string;
     email: string;
     redirectTo: string | null;
+    ipAddress?: string | null;
   }): Promise<UpdatePasswordResult> {
     if (input.password !== input.confirmPassword) {
       return { ok: false, message: 'كلمة المرور غير متطابقة' };
@@ -404,8 +466,9 @@ export class AuthService {
       return { ok: false, message: parsed.error.issues[0]?.message || 'كلمة المرور غير صالحة' };
     }
 
+    const email = normalizeEmail(input.email);
     const verifyRateOk = await this.rateLimiter.checkRateLimit(
-      `reset_verify:${input.email}`,
+      `reset_verify:${email}`,
       10,
       60 * 1000
     );
@@ -416,7 +479,14 @@ export class AuthService {
       };
     }
 
-    const record = await this.passwordResetTokenRepository.findLatestValidToken(input.email);
+    if (await this.isIpRateLimited('update', input.ipAddress)) {
+      return {
+        ok: false,
+        message: 'تم تجاوز عدد محاولات التحقق المسموح بها. يرجى المحاولة لاحقاً',
+      };
+    }
+
+    const record = await this.passwordResetTokenRepository.findLatestValidToken(email);
 
     if (!record) {
       return { ok: false, message: 'رمز إعادة تعيين كلمة المرور غير صالح' };
@@ -447,6 +517,49 @@ export class AuthService {
 
   async logout(): Promise<void> {
     await this.gateway.signOut();
+  }
+
+  /**
+   * Applies the per-IP ceiling for a scope. Returns false when no IP is
+   * available (e.g. internal callers), so the per-email limits still apply.
+   */
+  private async isIpRateLimited(
+    scope: keyof typeof IP_RATE_LIMITS,
+    ipAddress: string | null | undefined
+  ): Promise<boolean> {
+    if (!ipAddress) return false;
+    const { limit, windowMs } = IP_RATE_LIMITS[scope];
+    const allowed = await this.rateLimiter.checkRateLimit(
+      `${scope}_ip:${ipAddress}`,
+      limit,
+      windowMs
+    );
+    return !allowed;
+  }
+
+  /**
+   * Anti-enumeration: when someone requests a signup for an address that already
+   * exists, send the account owner a neutral "sign in instead" email. The caller
+   * always sees the same response as a fresh signup, so the endpoint cannot be
+   * used to discover which emails are registered.
+   */
+  private async notifyAccountExists(email: string, redirectTo: string | null): Promise<void> {
+    const redirect = safeRedirect(redirectTo);
+    const query = redirect === '/' ? '' : `?redirect=${encodeURIComponent(redirect)}`;
+    try {
+      await this.emailClient.sendAccountExistsEmail(email, {
+        loginUrl: `${this.siteUrl}/auth/login${query}`,
+        resetUrl: `${this.siteUrl}/auth/reset-password${query}`,
+      });
+    } catch {
+      // Best-effort: never surface the delivery outcome to the caller.
+    }
+  }
+
+  private pendingSignupResponse(email: string, redirectTo: string | null): SignupResult {
+    const params = new URLSearchParams({ email });
+    if (redirectTo) params.set('redirect', redirectTo);
+    return { ok: true, redirectUrl: `/auth/verify-otp?${params.toString()}` };
   }
 
   /**

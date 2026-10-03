@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
 import { toNextResponse } from '@/backend/transport/http-result';
+import { getClientIp } from '@/backend/transport/http';
 import { resendOtp } from '@/backend/controllers/auth';
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  return toNextResponse(await resendOtp(body));
+  return toNextResponse(await resendOtp(body, getClientIp(req)));
 }

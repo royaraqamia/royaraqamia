@@ -1292,6 +1292,14 @@ export type Database = {
         Returns: string;
       };
       generate_certificate_code: { Args: never; Returns: string };
+      get_auth_user_by_email: {
+        Args: { p_email: string };
+        Returns: {
+          email: string;
+          email_confirmed_at: string | null;
+          id: string;
+        }[];
+      };
       get_category_breakdown: {
         Args: {
           p_categories?: string[];

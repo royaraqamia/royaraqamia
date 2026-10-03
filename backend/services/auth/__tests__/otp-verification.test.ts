@@ -24,7 +24,12 @@ function makeOtpRecord(overrides: Partial<OtpRecordData> = {}): OtpRecordData {
 }
 
 function createService(
-  overrides: { record?: OtpRecordData | null; rateLimitAllowed?: boolean } = {}
+  overrides: {
+    record?: OtpRecordData | null;
+    rateLimitAllowed?: boolean;
+    ipRateLimitAllowed?: boolean;
+    turnstileAllowed?: boolean;
+  } = {}
 ) {
   const findLatestPendingOtp = vi.fn();
   if (overrides.record === undefined) {
@@ -44,7 +49,13 @@ function createService(
     markTokenAsUsed: vi.fn().mockResolvedValue(undefined),
   };
   const rateLimiter = {
-    checkRateLimit: vi.fn().mockResolvedValue(overrides.rateLimitAllowed ?? true),
+    checkRateLimit: vi
+      .fn()
+      .mockImplementation(async (key: string) =>
+        overrides.ipRateLimitAllowed === false && String(key).includes('_ip:')
+          ? false
+          : (overrides.rateLimitAllowed ?? true)
+      ),
     getRateLimitRemaining: vi.fn().mockResolvedValue(5),
   };
   const gateway = {
@@ -69,6 +80,7 @@ function createService(
   const emailClient = {
     sendOtpEmail: vi.fn().mockResolvedValue(undefined),
     sendPasswordResetEmail: vi.fn().mockResolvedValue(undefined),
+    sendAccountExistsEmail: vi.fn().mockResolvedValue(undefined),
     sendBroadcastEmails: vi.fn().mockResolvedValue(0),
   };
   const service = new AuthService(gateway, {
@@ -77,7 +89,7 @@ function createService(
     passwordResetTokenRepository,
     emailClient,
     rateLimiter,
-    verifyTurnstile: vi.fn().mockResolvedValue(true),
+    verifyTurnstile: vi.fn().mockResolvedValue(overrides.turnstileAllowed ?? true),
     pendingLoginStore,
     otpTtlMinutes: 5,
     otpResendCooldownSeconds: 60,
@@ -224,6 +236,46 @@ describe('AuthService.verifyOtp', () => {
     expect(pendingLoginStore.clear).toHaveBeenCalled();
     expect(otpRepository.markOtpVerified).toHaveBeenCalledWith('otp-1');
   });
+
+  it('confirms the session account and clears any stashed password first', async () => {
+    const { service, pendingLoginStore, gateway } = createService({
+      record: makeOtpRecord({ attempts: 0 }),
+    });
+    pendingLoginStore.readPassword.mockResolvedValue('hunter2');
+    vi.mocked(gateway.getUser).mockResolvedValue({
+      user: {
+        id: 'session-1',
+        email: 'User@Example.com',
+        email_confirmed_at: null,
+      },
+    });
+
+    const result = await service.verifyOtp(verifyInput);
+
+    expect(result).toEqual({ ok: true, redirectUrl: '/', consumedPendingLogin: false });
+    expect(gateway.confirmUserEmail).toHaveBeenCalledWith('session-1');
+    expect(gateway.signInWithPassword).not.toHaveBeenCalled();
+    expect(pendingLoginStore.clear).toHaveBeenCalled();
+  });
+
+  it('clears the stashed password even when the auto sign-in fails', async () => {
+    const { service, pendingLoginStore, gateway } = createService({
+      record: makeOtpRecord({ attempts: 0 }),
+    });
+    pendingLoginStore.readPassword.mockResolvedValue('stale');
+    vi.mocked(gateway.getUserByEmail).mockResolvedValue({
+      user: { id: 'user-1', email: 'user@example.com', email_confirmed_at: null },
+    });
+    vi.mocked(gateway.signInWithPassword).mockResolvedValue({
+      user: null,
+      error: { message: 'Invalid login credentials' },
+    });
+
+    const result = await service.verifyOtp(verifyInput);
+
+    expect(result).toEqual({ ok: true, redirectUrl: '/', consumedPendingLogin: false });
+    expect(pendingLoginStore.clear).toHaveBeenCalled();
+  });
 });
 
 describe('AuthService.login', () => {
@@ -261,6 +313,33 @@ describe('AuthService.login', () => {
     expect(result).toEqual({ ok: true, redirectUrl: '/' });
     expect(pendingLoginStore.setPassword).not.toHaveBeenCalled();
   });
+
+  it('normalizes the email before rate-limiting and authenticating', async () => {
+    const { service, rateLimiter, gateway } = createService();
+    await service.login({
+      email: '  User@Example.COM ',
+      password: 'hunter2',
+      redirectTo: null,
+      turnstileToken: 'token',
+    });
+    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith('login:user@example.com', 5, 60 * 1000);
+    expect(gateway.signInWithPassword).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      password: 'hunter2',
+    });
+  });
+
+  it('rejects login when turnstile verification fails', async () => {
+    const { service, gateway } = createService({ turnstileAllowed: false });
+    const result = await service.login({
+      email: 'user@example.com',
+      password: 'hunter2',
+      redirectTo: null,
+      turnstileToken: '',
+    });
+    expect(result).toMatchObject({ ok: false });
+    expect(gateway.signInWithPassword).not.toHaveBeenCalled();
+  });
 });
 
 describe('AuthService.signup', () => {
@@ -273,6 +352,8 @@ describe('AuthService.signup', () => {
     vi.mocked(gateway.signUp).mockResolvedValue({
       user: { id: 'u-1' },
       error: null,
+      hasSession: false,
+      existing: false,
     });
 
     const result = await service.signup({
@@ -289,6 +370,145 @@ describe('AuthService.signup', () => {
       email: 'user@example.com',
       name: 'منتج',
     });
+  });
+
+  it('responds neutrally and emails sign-in links for an already-registered email', async () => {
+    const { service, userProfileRepository, gateway, emailClient, otpRepository } = createService();
+    vi.mocked(gateway.signUp).mockResolvedValue({
+      user: { id: 'u-1' },
+      error: null,
+      hasSession: false,
+      existing: true,
+    });
+
+    const result = await service.signup({
+      name: 'منتج',
+      email: 'user@example.com',
+      password: 'Hunter2!',
+      redirectTo: null,
+      turnstileToken: '',
+    });
+
+    expect(result).toEqual({ ok: true, redirectUrl: '/auth/verify-otp?email=user%40example.com' });
+    expect(userProfileRepository.upsert).not.toHaveBeenCalled();
+    expect(otpRepository.createOtpRecord).not.toHaveBeenCalled();
+    expect(emailClient.sendOtpEmail).not.toHaveBeenCalled();
+    expect(emailClient.sendAccountExistsEmail).toHaveBeenCalledWith('user@example.com', {
+      loginUrl: 'https://royaraqamia.com/auth/login',
+      resetUrl: 'https://royaraqamia.com/auth/reset-password',
+    });
+  });
+
+  it('treats the "User already registered" error neutrally as well', async () => {
+    const { service, gateway, emailClient, userProfileRepository, otpRepository } = createService();
+    vi.mocked(gateway.signUp).mockResolvedValue({
+      user: null,
+      error: { message: 'User already registered' },
+      hasSession: false,
+      existing: false,
+    });
+
+    const result = await service.signup({
+      name: 'منتج',
+      email: 'user@example.com',
+      password: 'Hunter2!',
+      redirectTo: '/dashboard',
+      turnstileToken: '',
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      redirectUrl: '/auth/verify-otp?email=user%40example.com&redirect=%2Fdashboard',
+    });
+    expect(userProfileRepository.upsert).not.toHaveBeenCalled();
+    expect(otpRepository.createOtpRecord).not.toHaveBeenCalled();
+    expect(emailClient.sendAccountExistsEmail).toHaveBeenCalledWith('user@example.com', {
+      loginUrl: 'https://royaraqamia.com/auth/login?redirect=%2Fdashboard',
+      resetUrl: 'https://royaraqamia.com/auth/reset-password?redirect=%2Fdashboard',
+    });
+  });
+
+  it('does not email the account-exists notice for a fresh signup', async () => {
+    const { service, gateway, emailClient } = createService();
+    vi.mocked(gateway.signUp).mockResolvedValue({
+      user: { id: 'u-1' },
+      error: null,
+      hasSession: false,
+      existing: false,
+    });
+
+    await service.signup({
+      name: 'منتج',
+      email: 'user@example.com',
+      password: 'Hunter2!',
+      redirectTo: null,
+      turnstileToken: '',
+    });
+
+    expect(emailClient.sendAccountExistsEmail).not.toHaveBeenCalled();
+  });
+
+  it('stashes the password and normalizes the email when signup returns no session', async () => {
+    const { service, gateway, pendingLoginStore, userProfileRepository } = createService();
+    vi.mocked(gateway.signUp).mockResolvedValue({
+      user: { id: 'u-1' },
+      error: null,
+      hasSession: false,
+      existing: false,
+    });
+
+    await service.signup({
+      name: 'منتج',
+      email: '  User@Example.COM ',
+      password: 'Hunter2!',
+      redirectTo: null,
+      turnstileToken: '',
+    });
+
+    expect(gateway.signUp).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      password: 'Hunter2!',
+      name: 'منتج',
+    });
+    expect(userProfileRepository.upsert).toHaveBeenCalledWith({
+      id: 'u-1',
+      email: 'user@example.com',
+      name: 'منتج',
+    });
+    expect(pendingLoginStore.setPassword).toHaveBeenCalledWith('Hunter2!');
+  });
+
+  it('does not stash the password when signup already has a session', async () => {
+    const { service, gateway, pendingLoginStore } = createService();
+    vi.mocked(gateway.signUp).mockResolvedValue({
+      user: { id: 'u-1' },
+      error: null,
+      hasSession: true,
+      existing: false,
+    });
+
+    await service.signup({
+      name: 'منتج',
+      email: 'user@example.com',
+      password: 'Hunter2!',
+      redirectTo: null,
+      turnstileToken: '',
+    });
+
+    expect(pendingLoginStore.setPassword).not.toHaveBeenCalled();
+  });
+
+  it('rejects signup when turnstile verification fails', async () => {
+    const { service, gateway } = createService({ turnstileAllowed: false });
+    const result = await service.signup({
+      name: 'منتج',
+      email: 'user@example.com',
+      password: 'Hunter2!',
+      redirectTo: null,
+      turnstileToken: '',
+    });
+    expect(result.ok).toBe(false);
+    expect(gateway.signUp).not.toHaveBeenCalled();
   });
 });
 
@@ -382,6 +602,24 @@ describe('AuthService.resetPassword', () => {
     const result = await service.resetPassword({ email: 'user@example.com' });
     expect(result.ok).toBe(true);
     expect(passwordResetTokenRepository.createToken).toHaveBeenCalled();
+  });
+
+  it('normalizes the email for lookup, token and email delivery', async () => {
+    const { service, gateway, passwordResetTokenRepository, emailClient } = createService();
+    vi.mocked(gateway.getUserByEmail).mockResolvedValue({
+      user: { id: 'user-1', email: 'user@example.com', email_confirmed_at: null },
+    });
+
+    await service.resetPassword({ email: '  User@Example.COM ' });
+
+    expect(gateway.getUserByEmail).toHaveBeenCalledWith('user@example.com');
+    expect(passwordResetTokenRepository.createToken).toHaveBeenCalledWith(
+      expect.objectContaining({ email: 'user@example.com' })
+    );
+    expect(emailClient.sendPasswordResetEmail).toHaveBeenCalledWith(
+      'user@example.com',
+      expect.stringContaining('email=user%40example.com')
+    );
   });
 });
 
@@ -540,5 +778,93 @@ describe('AuthService.updatePassword', () => {
       redirectTo: null,
     });
     expect(result).toEqual({ ok: false, message: 'Update failed' });
+  });
+});
+
+describe('AuthService per-IP rate limits', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('blocks login when the per-IP ceiling is exceeded', async () => {
+    const { service, rateLimiter, gateway } = createService({ ipRateLimitAllowed: false });
+    const result = await service.login({
+      email: 'user@example.com',
+      password: 'hunter2',
+      redirectTo: null,
+      turnstileToken: 'token',
+      ipAddress: '203.0.113.7',
+    });
+    expect(result).toMatchObject({ ok: false });
+    expect(rateLimiter.checkRateLimit).toHaveBeenCalledWith('login_ip:203.0.113.7', 30, 60_000);
+    expect(gateway.signInWithPassword).not.toHaveBeenCalled();
+  });
+
+  it('blocks signup when the per-IP ceiling is exceeded', async () => {
+    const { service, gateway } = createService({ ipRateLimitAllowed: false });
+    const result = await service.signup({
+      name: 'منتج',
+      email: 'user@example.com',
+      password: 'Hunter2!',
+      redirectTo: null,
+      turnstileToken: 'token',
+      ipAddress: '203.0.113.7',
+    });
+    expect(result).toMatchObject({ ok: false });
+    expect(gateway.signUp).not.toHaveBeenCalled();
+  });
+
+  it('blocks OTP verification when the per-IP ceiling is exceeded', async () => {
+    const { service } = createService({ ipRateLimitAllowed: false });
+    const result = await service.verifyOtp({
+      email: 'user@example.com',
+      otp: '123456',
+      redirectTo: null,
+      ipAddress: '203.0.113.7',
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it('blocks OTP resend when the per-IP ceiling is exceeded', async () => {
+    const { service } = createService({ ipRateLimitAllowed: false });
+    const result = await service.resendOtp({ email: 'user@example.com', ipAddress: '203.0.113.7' });
+    expect(result.ok).toBe(false);
+  });
+
+  it('blocks password reset when the per-IP ceiling is exceeded', async () => {
+    const { service, gateway } = createService({ ipRateLimitAllowed: false });
+    const result = await service.resetPassword({
+      email: 'user@example.com',
+      ipAddress: '203.0.113.7',
+    });
+    expect(result.ok).toBe(false);
+    expect(gateway.getUserByEmail).not.toHaveBeenCalled();
+  });
+
+  it('blocks update-password when the per-IP ceiling is exceeded', async () => {
+    const { service } = createService({ ipRateLimitAllowed: false });
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: null,
+      ipAddress: '203.0.113.7',
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it('applies no IP limit when no IP is provided', async () => {
+    const { service, rateLimiter } = createService();
+    await service.login({
+      email: 'user@example.com',
+      password: 'hunter2',
+      redirectTo: null,
+      turnstileToken: 'token',
+    });
+    const ipCalls = vi
+      .mocked(rateLimiter.checkRateLimit)
+      .mock.calls.filter(([key]) => String(key).includes('_ip:'));
+    expect(ipCalls).toHaveLength(0);
   });
 });

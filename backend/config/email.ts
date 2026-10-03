@@ -1,5 +1,9 @@
 import { Resend } from 'resend';
-import { createEmailClient, type EmailClient } from '@/backend/clients/email';
+import {
+  createEmailClient,
+  type AccountExistsUrls,
+  type EmailClient,
+} from '@/backend/clients/email';
 import { OTP_CONFIG } from '@/backend/config/otp';
 import { env } from '@/backend/config/env';
 
@@ -35,4 +39,8 @@ export function sendOtpEmail(email: string, otp: string): Promise<void> {
 
 export function sendPasswordResetEmail(email: string, resetUrl: string): Promise<void> {
   return getDefaultEmailClient().sendPasswordResetEmail(email, resetUrl);
+}
+
+export function sendAccountExistsEmail(email: string, urls: AccountExistsUrls): Promise<void> {
+  return getDefaultEmailClient().sendAccountExistsEmail(email, urls);
 }

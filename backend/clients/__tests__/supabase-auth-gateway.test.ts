@@ -8,10 +8,10 @@ function makeClients() {
     auth: {
       admin: {
         updateUserById: vi.fn().mockResolvedValue({ error: null }),
-        listUsers: vi.fn().mockResolvedValue({ data: { users: [] }, error: null }),
       },
     },
     from: vi.fn(),
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
   };
 
   const supabase = {
@@ -19,7 +19,6 @@ function makeClients() {
       signUp: vi.fn(),
       signInWithPassword: vi.fn(),
       getUser: vi.fn(),
-      updateUser: vi.fn(),
       signOut: vi.fn(),
       signInWithOAuth: vi.fn(),
       resetPasswordForEmail: vi.fn(),
@@ -53,7 +52,7 @@ describe('createSupabaseAuthGateway', () => {
 
   it('signUp passes name into user_metadata and returns user/error', async () => {
     (supabase.auth.signUp as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { user: makeUser() },
+      data: { user: makeUser(), session: null },
       error: null,
     });
     const gateway = createSupabaseAuthGateway(
@@ -72,12 +71,59 @@ describe('createSupabaseAuthGateway', () => {
       password: 'StrongP@ss1',
       options: { data: { name: 'مستخدم' } },
     });
-    expect(result).toEqual({ user: { id: 'u-1' }, error: null });
+    expect(result).toEqual({
+      user: { id: 'u-1' },
+      error: null,
+      hasSession: false,
+      existing: false,
+    });
+  });
+
+  it('signUp flags an existing email returned as a decoy user with no identities', async () => {
+    (supabase.auth.signUp as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: { user: makeUser({ identities: [] }), session: null },
+      error: null,
+    });
+    const gateway = createSupabaseAuthGateway(
+      supabase as unknown as SupabaseClient<Database>,
+      admin as unknown as SupabaseClient<Database>
+    );
+
+    const result = await gateway.signUp({
+      email: 'user@example.com',
+      password: 'StrongP@ss1',
+      name: 'مستخدم',
+    });
+
+    expect(result.existing).toBe(true);
+  });
+
+  it('signUp reports hasSession true when Supabase returns a session', async () => {
+    (supabase.auth.signUp as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: {
+        user: makeUser({ identities: [{ id: 'i-1' }] }),
+        session: { access_token: 'token' },
+      },
+      error: null,
+    });
+    const gateway = createSupabaseAuthGateway(
+      supabase as unknown as SupabaseClient<Database>,
+      admin as unknown as SupabaseClient<Database>
+    );
+
+    const result = await gateway.signUp({
+      email: 'user@example.com',
+      password: 'StrongP@ss1',
+      name: 'مستخدم',
+    });
+
+    expect(result.hasSession).toBe(true);
+    expect(result.existing).toBe(false);
   });
 
   it('signUp returns the error when sign-up fails', async () => {
     (supabase.auth.signUp as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { user: null },
+      data: { user: null, session: null },
       error: { message: 'User already registered' },
     });
     const gateway = createSupabaseAuthGateway(
@@ -90,6 +136,8 @@ describe('createSupabaseAuthGateway', () => {
     ).resolves.toEqual({
       user: null,
       error: { message: 'User already registered' },
+      hasSession: false,
+      existing: false,
     });
   });
 
@@ -152,18 +200,6 @@ describe('createSupabaseAuthGateway', () => {
 
     (supabase.auth.getUser as ReturnType<typeof vi.fn>).mockResolvedValue({ data: { user: null } });
     await expect(gateway.getUser()).resolves.toEqual({ user: null });
-  });
-
-  it('updateUser calls auth.updateUser with the new password', async () => {
-    (supabase.auth.updateUser as ReturnType<typeof vi.fn>).mockResolvedValue({ error: null });
-    const gateway = createSupabaseAuthGateway(
-      supabase as unknown as SupabaseClient<Database>,
-      admin as unknown as SupabaseClient<Database>
-    );
-    await expect(gateway.updateUser({ password: 'NewStrongP@ss1' })).resolves.toEqual({
-      error: null,
-    });
-    expect(supabase.auth.updateUser).toHaveBeenCalledWith({ password: 'NewStrongP@ss1' });
   });
 
   it('updateUserPassword uses the admin client to set a specific user password', async () => {
@@ -239,34 +275,50 @@ describe('createSupabaseAuthGateway', () => {
     expect(admin.auth.admin.updateUserById).toHaveBeenCalledWith('u-1', { email_confirm: true });
   });
 
-  it('getUserByEmail maps the found user', async () => {
-    (admin.auth.admin.listUsers as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { users: [makeUser()] },
+  it('getUserByEmail resolves the user via the service-role RPC', async () => {
+    (admin.rpc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: [
+        { id: 'u-1', email: 'user@example.com', email_confirmed_at: '2026-01-01T00:00:00.000Z' },
+      ],
       error: null,
+    });
+    const gateway = createSupabaseAuthGateway(
+      supabase as unknown as SupabaseClient<Database>,
+      admin as unknown as SupabaseClient<Database>
+    );
+
+    const result = await gateway.getUserByEmail('  User@Example.COM ');
+
+    expect(admin.rpc).toHaveBeenCalledWith('get_auth_user_by_email', {
+      p_email: 'user@example.com',
+    });
+    expect(result.user).toEqual({
+      id: 'u-1',
+      email: 'user@example.com',
+      email_confirmed_at: '2026-01-01T00:00:00.000Z',
+    });
+  });
+
+  it('getUserByEmail returns null when the RPC returns no row', async () => {
+    (admin.rpc as ReturnType<typeof vi.fn>).mockResolvedValue({ data: [], error: null });
+    const gateway = createSupabaseAuthGateway(
+      supabase as unknown as SupabaseClient<Database>,
+      admin as unknown as SupabaseClient<Database>
+    );
+    const result = await gateway.getUserByEmail('nobody@example.com');
+    expect(result.user).toBeNull();
+  });
+
+  it('getUserByEmail returns null when the RPC errors', async () => {
+    (admin.rpc as ReturnType<typeof vi.fn>).mockResolvedValue({
+      data: null,
+      error: { message: 'permission denied' },
     });
     const gateway = createSupabaseAuthGateway(
       supabase as unknown as SupabaseClient<Database>,
       admin as unknown as SupabaseClient<Database>
     );
     const result = await gateway.getUserByEmail('user@example.com');
-    expect(result.user).toEqual({
-      id: 'u-1',
-      email: 'user@example.com',
-      name: 'مستخدم',
-      email_confirmed_at: '2026-01-01T00:00:00.000Z',
-    });
-  });
-
-  it('getUserByEmail returns null when no user matches', async () => {
-    (admin.auth.admin.listUsers as ReturnType<typeof vi.fn>).mockResolvedValue({
-      data: { users: [] },
-      error: null,
-    });
-    const gateway = createSupabaseAuthGateway(
-      supabase as unknown as SupabaseClient<Database>,
-      admin as unknown as SupabaseClient<Database>
-    );
-    const result = await gateway.getUserByEmail('nobody@example.com');
     expect(result.user).toBeNull();
   });
 });

@@ -13,7 +13,12 @@ const IV_LENGTH = 12;
 // processes per request), so it cannot live in an in-memory Map. We instead
 // encrypt it into the httpOnly cookie itself, making the store stateless.
 function getEncryptionKey(): Buffer {
-  const secret = env.pendingLoginSecret ?? env.supabaseServiceRoleKey ?? '';
+  const secret = env.pendingLoginSecret ?? env.supabaseServiceRoleKey;
+  if (!secret) {
+    throw new Error(
+      '[pending-login] Missing env var: set PENDING_LOGIN_SECRET (or SUPABASE_SERVICE_ROLE_KEY as fallback)'
+    );
+  }
   return createHash('sha256').update(`royaraqamia:pending-login:${secret}`).digest();
 }
 

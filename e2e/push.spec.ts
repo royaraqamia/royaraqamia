@@ -37,10 +37,19 @@ test('native web push round-trip', async ({ browser, baseURL }) => {
     viewport: { width: 1280, height: 800 },
   });
 
-  // Authenticate through the same API the login form posts to.
+  // Authenticate through the same API the login form posts to. Turnstile is
+  // fail-closed when TURNSTILE_SECRET_KEY is configured, so send a non-empty
+  // token and run the E2E environment with Cloudflare's "always passes" test
+  // secret (1x0000000000000000000000000000000AA) — otherwise leave the secret
+  // unset and verification is skipped.
   const loginRes = await context.request.fetch(`${baseURL}/auth/api/login`, {
     method: 'POST',
-    data: { email: EMAIL, password: PASSWORD, redirectTo: null, turnstileToken: '' },
+    data: {
+      email: EMAIL,
+      password: PASSWORD,
+      redirectTo: null,
+      turnstileToken: 'XXXX.DUMMY.TOKEN.XXXX',
+    },
     headers: { 'Content-Type': 'application/json' },
   });
   expect(loginRes.ok()).toBeTruthy();

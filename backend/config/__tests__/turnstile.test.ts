@@ -12,6 +12,7 @@ describe('createTurnstileVerifier', () => {
   it('skips verification when no secret is configured', async () => {
     const verify = createTurnstileVerifier(undefined);
     await expect(verify('any-token')).resolves.toBe(true);
+    await expect(verify('')).resolves.toBe(true);
     expect(mockVerify).not.toHaveBeenCalled();
   });
 
@@ -20,6 +21,13 @@ describe('createTurnstileVerifier', () => {
     const verify = createTurnstileVerifier('test-secret');
     await expect(verify('valid-token')).resolves.toBe(true);
     expect(mockVerify).toHaveBeenCalledWith('valid-token', 'test-secret');
+  });
+
+  it('rejects an empty token when a secret is configured (fail-closed)', async () => {
+    mockVerify.mockResolvedValue(true);
+    const verify = createTurnstileVerifier('test-secret');
+    await expect(verify('')).resolves.toBe(false);
+    expect(mockVerify).not.toHaveBeenCalled();
   });
 
   it('propagates a failed verification', async () => {

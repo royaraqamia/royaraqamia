@@ -16,6 +16,13 @@ export function createSupabaseAuthGateway(
       return {
         user: data.user ? { id: data.user.id } : null,
         error: error ? { message: error.message } : null,
+        hasSession: Boolean(data.session),
+        // Supabase returns an obfuscated user with no identities instead of an
+        // error when the email is already registered.
+        existing:
+          Boolean(data.user) &&
+          Array.isArray(data.user?.identities) &&
+          data.user?.identities.length === 0,
       };
     },
 
@@ -33,11 +40,6 @@ export function createSupabaseAuthGateway(
     async getUser() {
       const { data } = await supabase.auth.getUser();
       return { user: data?.user ? toAuthUser(data.user) : null };
-    },
-
-    async updateUser(input) {
-      const { error } = await supabase.auth.updateUser({ password: input.password });
-      return { error: error ? { message: error.message } : null };
     },
 
     async updateUserPassword(userId, password) {
@@ -70,20 +72,26 @@ export function createSupabaseAuthGateway(
     },
 
     async getUserByEmail(email) {
-      const target = email.trim().toLowerCase();
-      const perPage = 1000;
-      const maxPages = 100;
+      // The admin auth API has no email filter (listUsers pages the whole user
+      // base), so resolve the user through a service-role-only RPC that reads
+      // auth.users by its unique email index. This is O(1) and, unlike a
+      // public.users lookup, stays correct even if the profile mirror is
+      // missing a row.
+      const { data, error } = await admin.rpc('get_auth_user_by_email', {
+        p_email: email.trim().toLowerCase(),
+      });
 
-      // listUsers has no email filter, so paginate until the account is found
-      // or the result set is exhausted (users beyond page 1 were previously unreachable).
-      for (let page = 1; page <= maxPages; page++) {
-        const { data, error } = await admin.auth.admin.listUsers({ page, perPage });
-        if (error || !data?.users?.length) return { user: null };
-        const found = data.users.find((u) => u.email?.trim().toLowerCase() === target);
-        if (found) return { user: toAuthUser(found) };
-        if (data.users.length < perPage) return { user: null };
-      }
-      return { user: null };
+      if (error || !data || data.length === 0) return { user: null };
+
+      const row = data[0];
+      if (!row) return { user: null };
+      return {
+        user: {
+          id: row.id,
+          email: row.email ?? '',
+          email_confirmed_at: row.email_confirmed_at ?? null,
+        },
+      };
     },
   };
 }
