@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.39.3] - 2026-10-03
+
+### Changed
+- unify composer slugs as post-xxxxxxxx
+
 ## [1.39.2] - 2026-10-03
 
 ### Fixed
