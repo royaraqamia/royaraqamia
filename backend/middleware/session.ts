@@ -5,7 +5,6 @@ import { createUserProfileRepository } from '@/backend/repositories/users/user-p
 import { PROTECTED_ROUTES, AUTH_ROUTES } from '@/backend/config/routes';
 import { env } from '@/backend/config/env';
 import { isSafeRedirect } from '@/shared/safe-redirect';
-import { hasSessionCookie } from '@/shared/session-cookie';
 
 function isProtectedRoute(pathname: string): boolean {
   return Object.keys(PROTECTED_ROUTES).some((path) => pathname.startsWith(path));
@@ -13,18 +12,22 @@ function isProtectedRoute(pathname: string): boolean {
 
 export async function updateSession(request: NextRequest) {
   const hasAuthCode = request.nextUrl.searchParams.has('code');
+  const pathname = request.nextUrl.pathname;
+  const needsAuthDecision =
+    Object.keys(AUTH_ROUTES).includes(pathname) || isProtectedRoute(pathname);
 
-  // Fast path (dev + prod): a request with no session cookie and no auth code
-  // is anonymous. On public pages the remote getSession/getUser calls below
-  // would resolve to "no user" anyway (nothing to refresh, no redirect), so
-  // skip them to avoid a network round-trip on every page load while
-  // development. Protected routes keep their guard; auth-code exchanges keep
-  // running regardless of environment.
-  if (
-    !hasAuthCode &&
-    !hasSessionCookie(request.cookies.getAll()) &&
-    !isProtectedRoute(request.nextUrl.pathname)
-  ) {
+  // Fast path (dev + prod): a request that carries no auth code and lands
+  // nowhere this middleware must make an auth decision has nothing to do here.
+  //
+  // Do NOT build a Supabase client on those routes. The browser-side
+  // SessionProvider owns token refresh on them, and the rotating refresh-token
+  // cookie allows only one successful refresh per token. A second, eager
+  // server-side refresh on every navigation/prefetch races the browser: the
+  // loser gets a non-retryable "refresh token already used" error, which
+  // either signs the browser out (SIGNED_OUT → the "session expired" redirect)
+  // or clears the cookie on the response. Pages that need the user server-side
+  // resolve it through the identity module, which refreshes only on demand.
+  if (!hasAuthCode && !needsAuthDecision) {
     return NextResponse.next({ request });
   }
 
@@ -83,21 +86,13 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // Refresh session if needed (uses refresh_token cookie). This is a local
-  // cookie-parse unless the access token is near expiry, so it stays cheap.
-  await supabase.auth.getSession();
-
-  const pathname = request.nextUrl.pathname;
-  const needsAuthDecision =
-    Object.keys(AUTH_ROUTES).includes(pathname) || isProtectedRoute(pathname);
-
-  // getUser() always hits the Supabase Auth endpoint (a network round-trip),
-  // but its result is only ever consulted on auth pages (redirect logged-in
-  // users away) and on protected routes (block anonymous users). Skipping it
-  // on public pages removes one guaranteed round-trip from every public page
-  // load for signed-in users; the browser-side SessionProvider refreshes the
-  // session there. The cookie-refresh side effect of getSession() above is
-  // preserved for all routes.
+  // getUser() both validates the access token against Supabase Auth and, as a
+  // side effect, refreshes the session (rotating the refresh-token cookie)
+  // when the access token is near expiry. This is the middleware's only
+  // refresh, and it runs only where its result is actually consulted:
+  // redirecting logged-in users off auth pages, and blocking anonymous users
+  // from protected routes. The browser-side SessionProvider owns refresh on
+  // every other route.
   if (needsAuthDecision) {
     const {
       data: { user },

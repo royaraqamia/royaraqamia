@@ -139,26 +139,27 @@ describe('proxy', () => {
     expect(cookieSetMock).not.toHaveBeenCalled();
   });
 
-  it('calls getSession to refresh tokens when a session cookie is present', async () => {
+  it('does not refresh the session on public pages, even with a session cookie', async () => {
+    // The browser-side SessionProvider owns refresh here. A server-side refresh
+    // would race it for the rotating refresh-token cookie and can sign the user
+    // out with a spurious "session expired" redirect.
     mockSessionCookie();
-    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
 
     const { proxy } = await import('@/proxy');
     await proxy(mockRequest as never);
 
-    expect(mockGetSession).toHaveBeenCalled();
+    expect(mockGetSession).not.toHaveBeenCalled();
+    expect(mockGetUser).not.toHaveBeenCalled();
   });
 
-  it('calls getSession when the session cookie is chunked (auth-token.0, .1, ...)', async () => {
+  it('does not refresh on public pages with a chunked session cookie', async () => {
     mockChunkedSessionCookie();
-    mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
 
     const { proxy } = await import('@/proxy');
     await proxy(mockRequest as never);
 
-    expect(mockGetSession).toHaveBeenCalled();
+    expect(mockGetSession).not.toHaveBeenCalled();
+    expect(mockGetUser).not.toHaveBeenCalled();
   });
 
   it('redirects logged-in users away from auth pages to root', async () => {
