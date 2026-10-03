@@ -29,8 +29,8 @@ describe('ALL_SCOPES', () => {
   });
 
   it('includes all expected granular scopes', () => {
-    expect(ALL_SCOPES).toContain('blog.read');
-    expect(ALL_SCOPES).toContain('blog.write');
+    expect(ALL_SCOPES).toContain('community.read');
+    expect(ALL_SCOPES).toContain('community.write');
     expect(ALL_SCOPES).toContain('linksnap.read');
     expect(ALL_SCOPES).toContain('linksnap.write');
     expect(ALL_SCOPES).toContain('spendtrack.read');
@@ -56,7 +56,7 @@ describe('SCOPE_LABELS', () => {
 
 describe('SCOPE_PRODUCT_GROUPS', () => {
   it('groups scopes by product', () => {
-    expect(SCOPE_PRODUCT_GROUPS.Blog).toEqual(['blog.read', 'blog.write']);
+    expect(SCOPE_PRODUCT_GROUPS.Community).toEqual(['community.read', 'community.write']);
     expect(SCOPE_PRODUCT_GROUPS.LinkSnap).toEqual(['linksnap.read', 'linksnap.write']);
     expect(SCOPE_PRODUCT_GROUPS.SpendTrack).toEqual(['spendtrack.read', 'spendtrack.write']);
     expect(SCOPE_PRODUCT_GROUPS.HabitFlow).toEqual(['habitflow.read', 'habitflow.write']);
@@ -68,8 +68,8 @@ describe('SCOPE_PRODUCT_GROUPS', () => {
 
 describe('scopesToLabels', () => {
   it('maps scopes to their labels', () => {
-    expect(scopesToLabels(['blog.read', 'admin'])).toEqual([
-      'Read your blog posts and categories',
+    expect(scopesToLabels(['community.read', 'admin'])).toEqual([
+      'Read your community posts and categories',
       'Full administrative access to all data',
     ]);
   });
@@ -95,48 +95,48 @@ describe('TIER_SCOPES', () => {
   });
 
   it('authenticated has product scopes but not admin', () => {
-    expect(TIER_SCOPES.authenticated).toContain('blog.read');
+    expect(TIER_SCOPES.authenticated).toContain('community.read');
     expect(TIER_SCOPES.authenticated).toContain('linksnap.write');
     expect(TIER_SCOPES.authenticated).not.toContain('admin');
   });
 
   it('admin has all scopes including admin', () => {
-    expect(TIER_SCOPES.admin).toContain('blog.read');
+    expect(TIER_SCOPES.admin).toContain('community.read');
     expect(TIER_SCOPES.admin).toContain('admin');
   });
 });
 
 describe('hasAnyScope', () => {
   it('returns true when any required scope is present', () => {
-    expect(hasAnyScope(['blog.read', 'linksnap.read'], ['blog.read'])).toBe(true);
-    expect(hasAnyScope(['blog.read'], ['linksnap.read', 'blog.read'])).toBe(true);
+    expect(hasAnyScope(['community.read', 'linksnap.read'], ['community.read'])).toBe(true);
+    expect(hasAnyScope(['community.read'], ['linksnap.read', 'community.read'])).toBe(true);
   });
 
   it('returns false when no required scope is present', () => {
-    expect(hasAnyScope(['blog.read'], ['linksnap.read'])).toBe(false);
+    expect(hasAnyScope(['community.read'], ['linksnap.read'])).toBe(false);
   });
 });
 
 describe('isPublicToolScope', () => {
   it('identifies public tool scopes', () => {
-    expect(isPublicToolScope('blog.read')).toBe(true);
+    expect(isPublicToolScope('community.read')).toBe(true);
     expect(isPublicToolScope('certificates.read')).toBe(true);
-    expect(isPublicToolScope('blog.write')).toBe(false);
+    expect(isPublicToolScope('community.write')).toBe(false);
     expect(isPublicToolScope('admin')).toBe(false);
   });
 });
 
 describe('parseScopes', () => {
   it('parses a space-delimited scope string to known scopes', () => {
-    expect(parseScopes('blog.read linksnap.write admin')).toEqual([
-      'blog.read',
+    expect(parseScopes('community.read linksnap.write admin')).toEqual([
+      'community.read',
       'linksnap.write',
       'admin',
     ]);
   });
 
   it('drops unknown scopes', () => {
-    expect(parseScopes('blog.read bogus.scope admin')).toEqual(['blog.read', 'admin']);
+    expect(parseScopes('community.read bogus.scope admin')).toEqual(['community.read', 'admin']);
   });
 
   it('handles empty / null / undefined input', () => {
@@ -148,31 +148,33 @@ describe('parseScopes', () => {
 
 describe('effectiveScopes', () => {
   it('keeps known requested scopes for a non-admin', () => {
-    expect(effectiveScopes('user@example.com', ['blog.read', 'linksnap.write'])).toEqual([
-      'blog.read',
+    expect(effectiveScopes('user@example.com', ['community.read', 'linksnap.write'])).toEqual([
+      'community.read',
       'linksnap.write',
     ]);
   });
 
   it('drops unknown scopes', () => {
-    expect(effectiveScopes('user@example.com', ['blog.read', 'bogus.scope' as McpScope])).toEqual([
-      'blog.read',
-    ]);
+    expect(
+      effectiveScopes('user@example.com', ['community.read', 'bogus.scope' as McpScope])
+    ).toEqual(['community.read']);
   });
 
   it('grants admin scope to an admin email when explicitly requested', () => {
-    expect(effectiveScopes('admin@example.com', ['blog.read', 'admin'])).toEqual([
-      'blog.read',
+    expect(effectiveScopes('admin@example.com', ['community.read', 'admin'])).toEqual([
+      'community.read',
       'admin',
     ]);
   });
 
   it('does not auto-grant admin scope when the client did not request it', () => {
-    expect(effectiveScopes('admin@example.com', ['blog.read'])).toEqual(['blog.read']);
+    expect(effectiveScopes('admin@example.com', ['community.read'])).toEqual(['community.read']);
   });
 
   it('does not grant admin scope to a non-admin even if requested', () => {
-    expect(effectiveScopes('user@example.com', ['blog.read', 'admin'])).toEqual(['blog.read']);
+    expect(effectiveScopes('user@example.com', ['community.read', 'admin'])).toEqual([
+      'community.read',
+    ]);
   });
 
   it('returns an empty array for a non-admin requesting only admin', () => {

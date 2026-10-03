@@ -28,7 +28,7 @@ describe('getServerInfoHandler', () => {
       userId: 'u1',
       email: 'a@b.com',
       isAdmin: true,
-      scopes: ['blog.read', 'admin'],
+      scopes: ['community.read', 'admin'],
     };
 
     const result = await getServerInfoHandler({ format: 'json' }, ctx);
@@ -39,7 +39,7 @@ describe('getServerInfoHandler', () => {
       email: 'a@b.com',
       isAdmin: true,
     });
-    expect(result.structuredContent?.scopes).toEqual(['blog.read', 'admin']);
+    expect(result.structuredContent?.scopes).toEqual(['community.read', 'admin']);
   });
 
   it('returns markdown for anonymous callers', async () => {

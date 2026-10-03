@@ -5,7 +5,13 @@ const userCtx: McpUserContext = {
   userId: 'u1',
   email: 'user@example.com',
   isAdmin: false,
-  scopes: ['blog.write', 'linksnap.write', 'spendtrack.write', 'habitflow.write', 'profile.write'],
+  scopes: [
+    'community.write',
+    'linksnap.write',
+    'spendtrack.write',
+    'habitflow.write',
+    'profile.write',
+  ],
   clientId: null,
   tokenExpiresAt: null,
   supabase: {} as never,
@@ -24,7 +30,7 @@ describe('blogpress write tools', () => {
 
   beforeEach(() => vi.resetModules());
 
-  it('createPostHandler requires blog.write scope', async () => {
+  it('createPostHandler requires community.write scope', async () => {
     const { createPostHandler } = await import('../tools/blogpress');
     const result = await createPostHandler({ format: 'json' }, restrictedCtx);
     expect(result.isError).toBe(true);

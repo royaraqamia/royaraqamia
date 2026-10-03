@@ -8,8 +8,8 @@ import { env } from '@/backend/config/env';
  */
 
 export type McpScope =
-  | 'blog.read'
-  | 'blog.write'
+  | 'community.read'
+  | 'community.write'
   | 'linksnap.read'
   | 'linksnap.write'
   | 'spendtrack.read'
@@ -23,8 +23,8 @@ export type McpScope =
   | 'admin';
 
 export const ALL_SCOPES: McpScope[] = [
-  'blog.read',
-  'blog.write',
+  'community.read',
+  'community.write',
   'linksnap.read',
   'linksnap.write',
   'spendtrack.read',
@@ -39,8 +39,8 @@ export const ALL_SCOPES: McpScope[] = [
 ];
 
 export const SCOPE_LABELS: Record<McpScope, string> = {
-  'blog.read': 'Read your blog posts and categories',
-  'blog.write': 'Create, edit, and delete your blog posts',
+  'community.read': 'Read your community posts and categories',
+  'community.write': 'Create, edit, and delete your community posts',
   'linksnap.read': 'View your short links and analytics',
   'linksnap.write': 'Create and manage your short links',
   'spendtrack.read': 'View your budgets, expenses, and categories',
@@ -55,7 +55,7 @@ export const SCOPE_LABELS: Record<McpScope, string> = {
 };
 
 export const SCOPE_PRODUCT_GROUPS: Record<string, McpScope[]> = {
-  Blog: ['blog.read', 'blog.write'],
+  Community: ['community.read', 'community.write'],
   LinkSnap: ['linksnap.read', 'linksnap.write'],
   SpendTrack: ['spendtrack.read', 'spendtrack.write'],
   HabitFlow: ['habitflow.read', 'habitflow.write'],
@@ -82,7 +82,7 @@ export function shouldGrantAdminScope(email: string): boolean {
 export const TIER_SCOPES = {
   anonymous: [] as McpScope[],
   authenticated: [
-    'blog.read',
+    'community.read',
     'linksnap.read',
     'linksnap.write',
     'spendtrack.read',
@@ -94,8 +94,8 @@ export const TIER_SCOPES = {
     'profile.write',
   ] as McpScope[],
   admin: [
-    'blog.read',
-    'blog.write',
+    'community.read',
+    'community.write',
     'linksnap.read',
     'linksnap.write',
     'spendtrack.read',
@@ -121,7 +121,7 @@ export function hasAnyScope(scopes: McpScope[], required: McpScope[]): boolean {
  * Public read tools (available without authentication).
  */
 export const PUBLIC_TOOL_SCOPES: McpScope[] = [
-  'blog.read',
+  'community.read',
   'certificates.read', // verify_certificate
 ];
 

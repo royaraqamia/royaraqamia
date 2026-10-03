@@ -2,7 +2,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { McpUserContext } from '../session';
 import { MCP_SERVER_NAME, MCP_SERVER_VERSION } from '../constants';
 import { registerSystemTools } from './system';
-import { registerBlogTools, registerBlogWriteTools } from './blogpress';
+import { registerCommunityTools, registerCommunityWriteTools } from './blogpress';
 import { registerLinkSnapTools, registerLinkSnapWriteTools } from './linksnap';
 import { registerSpendTrackTools, registerSpendTrackWriteTools } from './spendtrack';
 import { registerHabitFlowTools, registerHabitFlowWriteTools } from './habitflow';
@@ -24,8 +24,8 @@ export function createMcpServer(ctx: McpUserContext): McpServer {
   });
 
   registerSystemTools(server, ctx);
-  registerBlogTools(server, ctx);
-  registerBlogWriteTools(server, ctx);
+  registerCommunityTools(server, ctx);
+  registerCommunityWriteTools(server, ctx);
   registerLinkSnapTools(server, ctx);
   registerLinkSnapWriteTools(server, ctx);
   registerSpendTrackTools(server, ctx);

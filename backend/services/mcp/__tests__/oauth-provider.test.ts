@@ -11,7 +11,7 @@ const mockClient = {
   client_secret_hash: null,
   client_name: 'Test Client',
   redirect_uris: ['http://localhost:3000/callback'],
-  scopes: ['blog.read', 'blog.write'],
+  scopes: ['community.read', 'community.write'],
   created_at: '2026-01-01T00:00:00Z',
   expires_at: null,
 };
@@ -24,7 +24,7 @@ const mockCodeRecord = {
   code_challenge: PKCE_CHALLENGE,
   challenge_method: 'S256',
   redirect_uri: 'http://localhost:3000/callback',
-  scope: ['blog.read'],
+  scope: ['community.read'],
   session_enc: 'enc-session',
   expires_at: new Date(Date.now() + 600_000).toISOString(),
   used_at: null,
@@ -36,7 +36,7 @@ const mockTokenRecord = {
   kind: 'refresh',
   client_id: 'client-1',
   user_id: 'user-123',
-  scope: ['blog.read'],
+  scope: ['community.read'],
   session_enc: 'enc-session',
   refresh_token_hash: null,
   expires_at: new Date(Date.now() + 3_600_000).toISOString(),
@@ -88,14 +88,14 @@ describe('createMcpOAuthProvider', () => {
         clientName: 'Test Client',
         redirectUris: ['http://localhost:3000/callback'],
         clientSecret: 'secret',
-        scopes: ['blog.read', 'not-a-scope' as any],
+        scopes: ['community.read', 'not-a-scope' as any],
       });
 
       expect(mockRepo.createClient).toHaveBeenCalledWith(
         expect.objectContaining({
           clientId: 'client-1',
           clientSecretHash: 'hash-secret',
-          scopes: ['blog.read'],
+          scopes: ['community.read'],
         })
       );
       expect(result).toEqual(mockClient);
@@ -107,7 +107,7 @@ describe('createMcpOAuthProvider', () => {
       const { code, redirectUri } = await provider.createAuthorizationCode({
         client: mockClient,
         redirectUri: 'http://localhost:3000/callback',
-        scope: ['blog.read'],
+        scope: ['community.read'],
         codeChallenge: 'challenge-abc',
         codeChallengeMethod: 'S256',
         userId: 'user-123',
@@ -121,7 +121,7 @@ describe('createMcpOAuthProvider', () => {
           codeHash: 'hash-opaque-token',
           clientId: 'client-1',
           userId: 'user-123',
-          scope: ['blog.read'],
+          scope: ['community.read'],
         })
       );
     });
@@ -161,7 +161,7 @@ describe('createMcpOAuthProvider', () => {
         token_type: 'Bearer',
         expires_in: ACCESS_TOKEN_TTL_MS / 1000,
         refresh_token: 'opaque-token',
-        scope: 'blog.read',
+        scope: 'community.read',
       });
     });
 
@@ -263,7 +263,7 @@ describe('createMcpOAuthProvider', () => {
       expect(result).toEqual({
         clientId: 'client-1',
         userId: 'user-123',
-        scopes: ['blog.read'],
+        scopes: ['community.read'],
         expiresAt: expect.any(Date),
       });
     });

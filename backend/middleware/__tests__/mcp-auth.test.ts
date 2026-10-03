@@ -15,7 +15,7 @@ const validCtx: McpUserContext = {
   userId: 'user-1',
   email: 'user@example.com',
   isAdmin: true,
-  scopes: ['blog.read', 'admin'],
+  scopes: ['community.read', 'admin'],
   clientId: 'client-1',
   tokenExpiresAt: 1780000000000,
   supabase: {} as never,
@@ -67,7 +67,7 @@ describe('authenticateMcpRequest', () => {
     if (result instanceof Response) throw new Error('expected success');
     expect(result.authInfo.token).toBe('abc123');
     expect(result.authInfo.clientId).toBe('client-1');
-    expect(result.authInfo.scopes).toEqual(['blog.read', 'admin']);
+    expect(result.authInfo.scopes).toEqual(['community.read', 'admin']);
     expect(result.authInfo.expiresAt).toBe(1780000000);
     expect(result.authInfo.extra).toEqual({
       userId: 'user-1',

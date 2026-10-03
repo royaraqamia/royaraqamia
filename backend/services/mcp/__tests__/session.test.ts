@@ -8,7 +8,7 @@ const mockTokenRecord: McpTokenRecord = {
   kind: 'access',
   client_id: 'client-1',
   user_id: 'user-123',
-  scope: ['blog.read', 'linksnap.read'],
+  scope: ['community.read', 'linksnap.read'],
   session_enc: 'encrypted-refresh-token',
   refresh_token_hash: 'refresh-hash',
   expires_at: new Date(Date.now() + 3600_000).toISOString(),
@@ -128,7 +128,7 @@ describe('resolveMcpContext', () => {
     expect(ctx!.userId).toBe('user-123');
     expect(ctx!.email).toBe('user@example.com');
     expect(ctx!.isAdmin).toBe(false);
-    expect(ctx!.scopes).toEqual(['blog.read', 'linksnap.read']);
+    expect(ctx!.scopes).toEqual(['community.read', 'linksnap.read']);
     expect(ctx!.supabase).toBeDefined();
     expect(mockRepo.touchTokenLastUsed).toHaveBeenCalledWith('tok-123');
     expect(mockRepo.updateTokenSessionEnc).toHaveBeenCalledWith(
@@ -148,11 +148,11 @@ describe('resolveMcpContext', () => {
   });
 
   it('respects admin gating: admin scope stripped if user not in ADMIN_EMAILS', async () => {
-    const adminToken = { ...mockTokenRecord, scope: ['blog.read', 'admin'] };
+    const adminToken = { ...mockTokenRecord, scope: ['community.read', 'admin'] };
     mockRepo.getTokenByHash.mockResolvedValue(adminToken);
 
     const ctx = await resolveMcpContext('admin-token');
-    expect(ctx!.scopes).toEqual(['blog.read']);
+    expect(ctx!.scopes).toEqual(['community.read']);
     expect(ctx!.isAdmin).toBe(false);
   });
 });

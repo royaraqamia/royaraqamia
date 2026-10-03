@@ -16,13 +16,13 @@ import {
 } from './shared';
 
 /**
- * BlogPress + Blog read tools. BlogPress is the content product (manage your
- * own posts under /blogpress) and Blog is its public reader (published posts
- * under /blog) — both share the `blogpress` contract and repository. These
- * tools operate on the caller's own posts/categories/tags when authenticated,
- * and on public published content when anonymous. The user-scoped client
- * enforces `posts_select_own_or_published` RLS and the per-author
- * community_categories / community_tags policies.
+ * BlogPress + Community read tools. BlogPress is the content product (manage
+ * your own posts under /blogpress) and Community is its public reader
+ * (published posts under /community) — both share the `blogpress` contract and
+ * repository. These tools operate on the caller's own posts/categories/tags
+ * when authenticated, and on public published content when anonymous. The
+ * user-scoped client enforces `posts_select_own_or_published` RLS and the
+ * per-author community_categories / community_tags policies.
  */
 
 const ListPostsInputSchema = z
@@ -88,7 +88,7 @@ export async function listPostsHandler(
     const repo = createPostsRepository(ctx.supabase as never);
 
     if (ctx.userId) {
-      requireAnyScope(ctx, ['blog.read']);
+      requireAnyScope(ctx, ['community.read']);
       const posts = await repo.listPostsByAuthor(ctx.userId, params.category_slug);
       const start = params.offset;
       const page = posts.slice(start, start + params.page_size);
@@ -100,7 +100,7 @@ export async function listPostsHandler(
       }
 
       const lines = [
-        `# Your Blog Posts${params.category_slug ? ` (category: ${params.category_slug})` : ''}`,
+        `# Your Community Posts${params.category_slug ? ` (category: ${params.category_slug})` : ''}`,
         '',
         `Found ${meta.total} post${meta.total === 1 ? '' : 's'}.`,
         '',
@@ -151,7 +151,7 @@ export async function getPostHandler(
     const repo = createPostsRepository(ctx.supabase as never);
 
     if (params.id) {
-      requireAnyScope(ctx, ['blog.read']);
+      requireAnyScope(ctx, ['community.read']);
       requireUserId(ctx, 'Getting a specific post');
       const post = await repo.getPostForUser(params.id, ctx.userId!);
       if (!post) {
@@ -228,12 +228,12 @@ export async function listCategoriesHandler(
     const repo = createPostsRepository(ctx.supabase as never);
 
     if (ctx.userId) {
-      requireAnyScope(ctx, ['blog.read']);
+      requireAnyScope(ctx, ['community.read']);
       const categories = await repo.listCategoriesByAuthor(ctx.userId);
       if (params.format === 'json') {
         return structuredResponse(jsonText(categories), { categories });
       }
-      const lines = ['# Your Blog Categories', ''];
+      const lines = ['# Your Community Categories', ''];
       for (const c of categories) {
         lines.push(`- **${c.name}** (\`${c.slug}\`)`);
       }
@@ -244,7 +244,7 @@ export async function listCategoriesHandler(
     if (params.format === 'json') {
       return structuredResponse(jsonText(categories), { categories });
     }
-    const lines = ['# Published Blog Categories', ''];
+    const lines = ['# Published Community Categories', ''];
     for (const c of categories) {
       lines.push(`- **${c.name}** (\`${c.slug}\`)`);
     }
@@ -259,7 +259,7 @@ export async function listTagsHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.read']);
+    requireAnyScope(ctx, ['community.read']);
     const userId = requireUserId(ctx, 'Listing tags');
     const repo = createPostsRepository(ctx.supabase as never);
     const tags = await repo.listTagsByAuthor(userId);
@@ -267,7 +267,7 @@ export async function listTagsHandler(
     if (params.format === 'json') {
       return structuredResponse(jsonText(tags), { tags });
     }
-    const lines = ['# Your Blog Tags', ''];
+    const lines = ['# Your Community Tags', ''];
     for (const t of tags) {
       lines.push(`- **${t.name}** (\`${t.slug}\`)`);
     }
@@ -277,13 +277,13 @@ export async function listTagsHandler(
   }
 }
 
-export function registerBlogTools(server: McpServer, ctx: McpUserContext): void {
+export function registerCommunityTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_list_posts`,
+    `${MCP_SERVER_NAME}_community_list_posts`,
     {
-      title: 'List Blog Posts',
-      description: `Lists blog posts. Authenticated callers get their own posts (all statuses); anonymous callers get the public published feed.
-Requires the "blog.read" scope when authenticated.
+      title: 'List Community Posts',
+      description: `Lists community posts. Authenticated callers get their own posts (all statuses); anonymous callers get the public published feed.
+Requires the "community.read" scope when authenticated.
 
 Args:
   - category_slug (string, optional): filter own posts by category slug
@@ -308,10 +308,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_get_post`,
+    `${MCP_SERVER_NAME}_community_get_post`,
     {
-      title: 'Get Blog Post',
-      description: `Gets a single blog post. Provide "id" to fetch one of your own posts (requires "blog.read"), or "slug" to fetch a public published post (works anonymously).
+      title: 'Get Community Post',
+      description: `Gets a single community post. Provide "id" to fetch one of your own posts (requires "community.read"), or "slug" to fetch a public published post (works anonymously).
 
 Args:
   - id (string, optional): your post id
@@ -335,10 +335,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_list_categories`,
+    `${MCP_SERVER_NAME}_community_list_categories`,
     {
-      title: 'List Blog Categories',
-      description: `Lists blog categories. Authenticated callers get their own categories (requires "blog.read"); anonymous callers get published categories.
+      title: 'List Community Categories',
+      description: `Lists community categories. Authenticated callers get their own categories (requires "community.read"); anonymous callers get published categories.
 
 Args:
   - format ('markdown' | 'json', default 'markdown'): output format
@@ -359,10 +359,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_list_tags`,
+    `${MCP_SERVER_NAME}_community_list_tags`,
     {
-      title: 'List Blog Tags',
-      description: `Lists your blog tags. Requires the "blog.read" scope and an authenticated session.
+      title: 'List Community Tags',
+      description: `Lists your community tags. Requires the "community.read" scope and an authenticated session.
 
 Args:
   - format ('markdown' | 'json', default 'markdown'): output format
@@ -384,7 +384,7 @@ Examples:
 }
 
 // ============================================================
-// Write tools (blog.write)
+// Write tools (community.write)
 // ============================================================
 
 const CreatePostInputSchema = z.object({ format: ResponseFormatSchema }).strict();
@@ -484,7 +484,7 @@ export async function createPostHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.write']);
+    requireAnyScope(ctx, ['community.write']);
     const userId = requireUserId(ctx, 'Creating a post');
     const repo = createPostsRepository(ctx.supabase as never);
     const { id } = await repo.createPost(userId);
@@ -503,7 +503,7 @@ export async function updatePostHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.write']);
+    requireAnyScope(ctx, ['community.write']);
     const userId = requireUserId(ctx, 'Updating a post');
     const repo = createPostsRepository(ctx.supabase as never);
 
@@ -531,7 +531,7 @@ export async function publishPostHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.write']);
+    requireAnyScope(ctx, ['community.write']);
     const userId = requireUserId(ctx, 'Publishing a post');
     const repo = createPostsRepository(ctx.supabase as never);
     const { slug } = await repo.publishPost(params.id, userId);
@@ -553,7 +553,7 @@ export async function unpublishPostHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.write']);
+    requireAnyScope(ctx, ['community.write']);
     const userId = requireUserId(ctx, 'Unpublishing a post');
     const repo = createPostsRepository(ctx.supabase as never);
     const { slug } = await repo.unpublishPost(params.id, userId);
@@ -575,7 +575,7 @@ export async function deletePostHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.write']);
+    requireAnyScope(ctx, ['community.write']);
     const userId = requireUserId(ctx, 'Deleting a post');
     const repo = createPostsRepository(ctx.supabase as never);
     const { slug } = await repo.deletePost(params.id, userId);
@@ -597,7 +597,7 @@ export async function createCategoryHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.write']);
+    requireAnyScope(ctx, ['community.write']);
     const userId = requireUserId(ctx, 'Creating a category');
     const repo = createPostsRepository(ctx.supabase as never);
     const category = await repo.createCategory(userId, params.name, params.slug);
@@ -619,7 +619,7 @@ export async function deleteCategoryHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.write']);
+    requireAnyScope(ctx, ['community.write']);
     const userId = requireUserId(ctx, 'Deleting a category');
     const repo = createPostsRepository(ctx.supabase as never);
     await repo.deleteCategory(params.id, userId);
@@ -638,7 +638,7 @@ export async function createTagHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.write']);
+    requireAnyScope(ctx, ['community.write']);
     const userId = requireUserId(ctx, 'Creating a tag');
     const repo = createPostsRepository(ctx.supabase as never);
     const tag = await repo.createTag(userId, params.name, params.slug);
@@ -660,7 +660,7 @@ export async function deleteTagHandler(
   ctx: McpUserContext
 ): Promise<ToolResult> {
   try {
-    requireAnyScope(ctx, ['blog.write']);
+    requireAnyScope(ctx, ['community.write']);
     const userId = requireUserId(ctx, 'Deleting a tag');
     const repo = createPostsRepository(ctx.supabase as never);
     await repo.deleteTag(params.id, userId);
@@ -674,12 +674,12 @@ export async function deleteTagHandler(
   }
 }
 
-export function registerBlogWriteTools(server: McpServer, ctx: McpUserContext): void {
+export function registerCommunityWriteTools(server: McpServer, ctx: McpUserContext): void {
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_create_post`,
+    `${MCP_SERVER_NAME}_community_create_post`,
     {
-      title: 'Create Blog Post',
-      description: `Creates a new draft blog post. Requires the "blog.write" scope and an authenticated session.
+      title: 'Create Community Post',
+      description: `Creates a new draft community post. Requires the "community.write" scope and an authenticated session.
 
 Args:
   - format ('markdown' | 'json', default 'markdown'): output format
@@ -687,7 +687,7 @@ Args:
 Returns (JSON): { "id": string, "message": string }
 
 Examples:
-  - Use when: "create a new blog post draft"`,
+  - Use when: "create a new community post draft"`,
       inputSchema: CreatePostInputSchema,
       annotations: {
         readOnlyHint: false,
@@ -700,10 +700,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_update_post`,
+    `${MCP_SERVER_NAME}_community_update_post`,
     {
-      title: 'Update Blog Post',
-      description: `Updates one of your blog posts (title, slug, content, cover image, meta). Requires "blog.write" and an authenticated session.
+      title: 'Update Community Post',
+      description: `Updates one of your community posts (title, slug, content, cover image, meta). Requires "community.write" and an authenticated session.
 
 Args:
   - id (string, required): the post id
@@ -731,10 +731,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_publish_post`,
+    `${MCP_SERVER_NAME}_community_publish_post`,
     {
-      title: 'Publish Blog Post',
-      description: `Publishes one of your draft/scheduled blog posts. Requires "blog.write" and an authenticated session. Posts by admin users are made visible on the public blog.
+      title: 'Publish Community Post',
+      description: `Publishes one of your draft/scheduled community posts. Requires "community.write" and an authenticated session. Posts by admin users are made visible on the public community.
 
 Args:
   - id (string, required): the post id
@@ -756,10 +756,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_unpublish_post`,
+    `${MCP_SERVER_NAME}_community_unpublish_post`,
     {
-      title: 'Unpublish Blog Post',
-      description: `Returns one of your published posts to draft. Requires "blog.write" and an authenticated session.
+      title: 'Unpublish Community Post',
+      description: `Returns one of your published posts to draft. Requires "community.write" and an authenticated session.
 
 Args:
   - id (string, required): the post id
@@ -781,10 +781,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_delete_post`,
+    `${MCP_SERVER_NAME}_community_delete_post`,
     {
-      title: 'Delete Blog Post',
-      description: `Permanently deletes one of your blog posts. Requires "blog.write" and an authenticated session.
+      title: 'Delete Community Post',
+      description: `Permanently deletes one of your community posts. Requires "community.write" and an authenticated session.
 
 Args:
   - id (string, required): the post id
@@ -806,10 +806,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_create_category`,
+    `${MCP_SERVER_NAME}_community_create_category`,
     {
-      title: 'Create Blog Category',
-      description: `Creates a blog category for you. Requires "blog.write" and an authenticated session.
+      title: 'Create Community Category',
+      description: `Creates a community category for you. Requires "community.write" and an authenticated session.
 
 Args:
   - name (string, required): category name (max 50)
@@ -832,10 +832,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_delete_category`,
+    `${MCP_SERVER_NAME}_community_delete_category`,
     {
-      title: 'Delete Blog Category',
-      description: `Deletes one of your blog categories. Requires "blog.write" and an authenticated session.
+      title: 'Delete Community Category',
+      description: `Deletes one of your community categories. Requires "community.write" and an authenticated session.
 
 Args:
   - id (string, required): the category id
@@ -857,10 +857,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_create_tag`,
+    `${MCP_SERVER_NAME}_community_create_tag`,
     {
-      title: 'Create Blog Tag',
-      description: `Creates a blog tag for you. Requires "blog.write" and an authenticated session.
+      title: 'Create Community Tag',
+      description: `Creates a community tag for you. Requires "community.write" and an authenticated session.
 
 Args:
   - name (string, required): tag name (max 30)
@@ -883,10 +883,10 @@ Examples:
   );
 
   server.registerTool(
-    `${MCP_SERVER_NAME}_blog_delete_tag`,
+    `${MCP_SERVER_NAME}_community_delete_tag`,
     {
-      title: 'Delete Blog Tag',
-      description: `Deletes one of your blog tags. Requires "blog.write" and an authenticated session.
+      title: 'Delete Community Tag',
+      description: `Deletes one of your community tags. Requires "community.write" and an authenticated session.
 
 Args:
   - id (string, required): the tag id

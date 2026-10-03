@@ -195,12 +195,12 @@ describe('admin certificate tools', () => {
   it('admin tools require an admin in effectiveScopes', async () => {
     vi.stubEnv('ADMIN_EMAILS', 'admin@example.com');
     const { effectiveScopes } = await import('../scope');
-    expect(effectiveScopes('user@example.com', ['certificates.write', 'blog.read'])).toEqual([
-      'blog.read',
+    expect(effectiveScopes('user@example.com', ['certificates.write', 'community.read'])).toEqual([
+      'community.read',
     ]);
     expect(
-      effectiveScopes('admin@example.com', ['certificates.write', 'admin', 'blog.read'])
-    ).toEqual(['certificates.write', 'admin', 'blog.read']);
+      effectiveScopes('admin@example.com', ['certificates.write', 'admin', 'community.read'])
+    ).toEqual(['certificates.write', 'admin', 'community.read']);
     vi.unstubAllEnvs();
   });
 });

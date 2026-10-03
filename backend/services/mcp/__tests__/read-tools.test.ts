@@ -18,7 +18,7 @@ const userCtx: McpUserContext = {
   email: 'user@example.com',
   isAdmin: false,
   scopes: [
-    'blog.read',
+    'community.read',
     'linksnap.read',
     'spendtrack.read',
     'habitflow.read',
@@ -88,7 +88,7 @@ describe('profile tools', () => {
   });
 });
 
-describe('blog tools', () => {
+describe('community tools', () => {
   const postsRepoPath = '@/backend/repositories/blogpress/posts';
 
   beforeEach(() => vi.resetModules());
@@ -127,7 +127,7 @@ describe('blog tools', () => {
     expect((result.structuredContent?.posts as Array<{ title: string }>)[0]?.title).toBe('My Post');
   });
 
-  it('listPostsHandler rejects anonymous callers without blog.read scope', async () => {
+  it('listPostsHandler rejects anonymous callers without community.read scope', async () => {
     vi.doMock(postsRepoPath, () => ({
       createPostsRepository: () => ({
         listPostsByAuthor: async () => [],
