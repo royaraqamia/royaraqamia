@@ -81,6 +81,15 @@ describe('WhatsAppFloat', () => {
     expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
   });
 
+  it('hides on the account submissions page', () => {
+    mockUsePathname.mockReturnValue('/account/submissions');
+    renderWithProviders(<WhatsAppFloat />);
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
+  });
+
   it('stays visible on blogpress landing page', () => {
     mockUsePathname.mockReturnValue('/blogpress');
     renderWithProviders(<WhatsAppFloat />);

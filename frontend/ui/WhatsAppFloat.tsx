@@ -15,6 +15,7 @@ const HIDDEN_ROUTE_PREFIXES = [
   '/blogpress/editor',
   '/linksnap/app',
   '/admin',
+  '/account',
   '/verify',
   '/consultation/book',
   '/training/apply',
