@@ -29,6 +29,7 @@ function createService(
     rateLimitAllowed?: boolean;
     ipRateLimitAllowed?: boolean;
     turnstileAllowed?: boolean;
+    breachedPassword?: boolean;
   } = {}
 ) {
   const findLatestPendingOtp = vi.fn();
@@ -83,12 +84,16 @@ function createService(
     sendAccountExistsEmail: vi.fn().mockResolvedValue(undefined),
     sendBroadcastEmails: vi.fn().mockResolvedValue(0),
   };
+  const passwordBreachChecker = {
+    isBreached: vi.fn().mockResolvedValue(overrides.breachedPassword ?? false),
+  };
   const service = new AuthService(gateway, {
     otpRepository,
     userProfileRepository,
     passwordResetTokenRepository,
     emailClient,
     rateLimiter,
+    passwordBreachChecker,
     verifyTurnstile: vi.fn().mockResolvedValue(overrides.turnstileAllowed ?? true),
     pendingLoginStore,
     otpTtlMinutes: 5,
@@ -105,6 +110,7 @@ function createService(
     passwordResetTokenRepository,
     rateLimiter,
     emailClient,
+    passwordBreachChecker,
     pendingLoginStore,
     gateway,
     userProfileRepository,
@@ -510,6 +516,21 @@ describe('AuthService.signup', () => {
     expect(result.ok).toBe(false);
     expect(gateway.signUp).not.toHaveBeenCalled();
   });
+
+  it('rejects a breached password before creating the account', async () => {
+    const { service, gateway, passwordBreachChecker } = createService({ breachedPassword: true });
+    const result = await service.signup({
+      name: 'منتج',
+      email: 'user@example.com',
+      password: 'Password1!',
+      redirectTo: null,
+      turnstileToken: 'token',
+    });
+    expect(result).toMatchObject({ ok: false });
+    if (!result.ok) expect(result.message).toContain('تسريبات');
+    expect(passwordBreachChecker.isBreached).toHaveBeenCalledWith('Password1!');
+    expect(gateway.signUp).not.toHaveBeenCalled();
+  });
 });
 
 describe('AuthService.resendOtp', () => {
@@ -778,6 +799,25 @@ describe('AuthService.updatePassword', () => {
       redirectTo: null,
     });
     expect(result).toEqual({ ok: false, message: 'Update failed' });
+  });
+
+  it('rejects a breached password before consuming the reset token', async () => {
+    const { service, passwordResetTokenRepository, passwordBreachChecker } = createService({
+      breachedPassword: true,
+    });
+
+    const result = await service.updatePassword({
+      password: 'Password1!',
+      confirmPassword: 'Password1!',
+      token: 'reset-token-123',
+      email: 'user@example.com',
+      redirectTo: null,
+    });
+
+    expect(result).toMatchObject({ ok: false });
+    if (!result.ok) expect(result.message).toContain('تسريبات');
+    expect(passwordBreachChecker.isBreached).toHaveBeenCalledWith('Password1!');
+    expect(passwordResetTokenRepository.markTokenAsUsed).not.toHaveBeenCalled();
   });
 });
 

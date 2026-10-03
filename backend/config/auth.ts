@@ -14,6 +14,7 @@ import {
 } from '@/backend/config/email';
 import { checkRateLimit, getRateLimitRemaining } from '@/backend/config/rate-limiter';
 import { createTurnstileVerifier } from '@/backend/config/turnstile';
+import { getPasswordBreachChecker } from '@/backend/config/password-breach';
 import { env } from '@/backend/config/env';
 import { createServerPendingLoginStore } from '@/backend/transport/pending-login-server-store';
 
@@ -48,6 +49,7 @@ export function createAuthService(
         getRateLimitRemaining(key, limit, windowMs, { failClosed: true }),
     },
     verifyTurnstile: createTurnstileVerifier(env.turnstileSecret),
+    passwordBreachChecker: getPasswordBreachChecker(),
     pendingLoginStore: createServerPendingLoginStore(),
     otpTtlMinutes: OTP_CONFIG.TTL_MINUTES,
     otpResendCooldownSeconds: OTP_CONFIG.RESEND_COOLDOWN_SECONDS,

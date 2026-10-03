@@ -33,3 +33,30 @@ describe('env.pushEndpointAllowlist', () => {
     expect(env.pushEndpointAllowlist).toEqual(['fcm.googleapis.com', 'example.com']);
   });
 });
+
+describe('env.passwordBreachCheckEnabled', () => {
+  const FLAG = 'PASSWORD_BREACH_CHECK_ENABLED';
+
+  beforeEach(() => {
+    delete process.env[FLAG];
+  });
+  afterEach(() => {
+    delete process.env[FLAG];
+  });
+
+  it('defaults to enabled when unset or blank', () => {
+    expect(env.passwordBreachCheckEnabled).toBe(true);
+    process.env[FLAG] = '   ';
+    expect(env.passwordBreachCheckEnabled).toBe(true);
+  });
+
+  it.each(['0', 'false', 'off', 'no', 'FALSE'])('treats %s as disabled', (value) => {
+    process.env[FLAG] = value;
+    expect(env.passwordBreachCheckEnabled).toBe(false);
+  });
+
+  it('treats other values as enabled', () => {
+    process.env[FLAG] = '1';
+    expect(env.passwordBreachCheckEnabled).toBe(true);
+  });
+});

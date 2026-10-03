@@ -25,6 +25,11 @@ export const env = {
   get pendingLoginSecret(): string | undefined {
     return read('PENDING_LOGIN_SECRET');
   },
+  get passwordBreachCheckEnabled(): boolean {
+    const raw = read('PASSWORD_BREACH_CHECK_ENABLED');
+    if (raw === undefined || raw.trim() === '') return true;
+    return !['0', 'false', 'off', 'no'].includes(raw.trim().toLowerCase());
+  },
   get resendApiKey(): string | undefined {
     return read('RESEND_API_KEY');
   },

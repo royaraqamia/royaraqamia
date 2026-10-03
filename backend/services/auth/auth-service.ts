@@ -12,6 +12,7 @@ import type { AuthGateway } from '@/backend/clients/auth-gateway';
 import type { OtpRepository } from '@/backend/repositories/otp/otp-repository';
 import type { UserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import type { EmailClient } from '@/backend/clients/email';
+import type { PasswordBreachChecker } from '@/backend/clients/password-breach';
 import type { PasswordResetTokenRepository } from '@/backend/repositories/password-reset/password-reset-token-repository';
 import type { RateLimiter } from '@/backend/clients/rate-limiter';
 
@@ -47,12 +48,16 @@ const IP_RATE_LIMITS = {
   update: { limit: 30, windowMs: 60 * 1000 },
 } as const;
 
+const BREACHED_PASSWORD_MESSAGE =
+  'كلمة المرور هذه ظهرت في تسريبات بيانات معروفة. يرجى اختيار كلمة مرور أخرى.';
+
 export interface AuthServiceDeps {
   otpRepository: OtpRepository;
   userProfileRepository: UserProfileRepository;
   passwordResetTokenRepository: PasswordResetTokenRepository;
   emailClient: EmailClient;
   rateLimiter: RateLimiter;
+  passwordBreachChecker: PasswordBreachChecker;
   verifyTurnstile: (token: string) => Promise<boolean>;
   pendingLoginStore: PendingLoginStore;
   otpTtlMinutes: number;
@@ -69,6 +74,7 @@ export class AuthService {
   private readonly passwordResetTokenRepository: PasswordResetTokenRepository;
   private readonly emailClient: EmailClient;
   private readonly rateLimiter: RateLimiter;
+  private readonly passwordBreachChecker: PasswordBreachChecker;
   private readonly verifyTurnstile: (token: string) => Promise<boolean>;
   private readonly pendingLoginStore: PendingLoginStore;
   private readonly otpTtlMinutes: number;
@@ -87,6 +93,7 @@ export class AuthService {
     this.passwordResetTokenRepository = deps.passwordResetTokenRepository;
     this.emailClient = deps.emailClient;
     this.rateLimiter = deps.rateLimiter;
+    this.passwordBreachChecker = deps.passwordBreachChecker;
     this.verifyTurnstile = deps.verifyTurnstile;
     this.pendingLoginStore = deps.pendingLoginStore;
     this.otpTtlMinutes = deps.otpTtlMinutes;
@@ -130,6 +137,10 @@ export class AuthService {
 
     if (await this.isIpRateLimited('signup', input.ipAddress)) {
       return { ok: false, message: 'تم تجاوز الحد الأقصى للمحاولات. يرجى المحاولة لاحقاً' };
+    }
+
+    if (await this.passwordBreachChecker.isBreached(input.password)) {
+      return { ok: false, message: BREACHED_PASSWORD_MESSAGE };
     }
 
     const { user, error, hasSession, existing } = await this.gateway.signUp({
@@ -484,6 +495,10 @@ export class AuthService {
         ok: false,
         message: 'تم تجاوز عدد محاولات التحقق المسموح بها. يرجى المحاولة لاحقاً',
       };
+    }
+
+    if (await this.passwordBreachChecker.isBreached(input.password)) {
+      return { ok: false, message: BREACHED_PASSWORD_MESSAGE };
     }
 
     const record = await this.passwordResetTokenRepository.findLatestValidToken(email);
