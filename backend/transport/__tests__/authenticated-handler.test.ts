@@ -187,9 +187,9 @@ describe('messageError', () => {
   });
 
   it('falls back for a non-error', () => {
-    const result = messageError(500, 'فشل حفظ المقال')('nope');
+    const result = messageError(500, 'فشل حفظ المنشور')('nope');
     expect(result).toEqual(
-      expect.objectContaining({ status: 500, body: { error: 'فشل حفظ المقال' } })
+      expect.objectContaining({ status: 500, body: { error: 'فشل حفظ المنشور' } })
     );
   });
 });

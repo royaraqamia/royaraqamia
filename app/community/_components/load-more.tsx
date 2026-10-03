@@ -26,7 +26,7 @@ export function LoadMore({ cursor, query, isLoading, onLoadMore }: LoadMoreProps
       <Link
         href={`/community?${params.toString()}`}
         rel="next"
-        aria-label="تحميل المزيد من المقالات"
+        aria-label="تحميل المزيد من المنشورات"
         aria-busy={isLoading}
         onClick={(event) => {
           event.preventDefault();

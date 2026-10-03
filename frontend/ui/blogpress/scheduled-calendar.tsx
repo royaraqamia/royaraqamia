@@ -79,7 +79,7 @@ export function ScheduledCalendar({
       router.refresh();
       toast.success('تمت إعادة الجدولة');
     } catch {
-      toast.error('فشلت إعادة جدولة المقال');
+      toast.error('فشلت إعادة جدولة المنشور');
     } finally {
       setBusy(false);
     }
@@ -232,9 +232,9 @@ export function ScheduledCalendar({
           <div className="mx-auto size-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-3">
             <CalendarDays className="size-6" />
           </div>
-          <p className="text-sm font-bold text-foreground">لا توجد مقالات مجدولة</p>
+          <p className="text-sm font-bold text-foreground">لا توجد منشورات مجدولة</p>
           <p className="text-xs text-muted-foreground mt-1">
-            حدّد موعد نشر لمقال من محرر BlogPress ليظهر هنا في التقويم.
+            حدّد موعد نشر لمنشور من محرر BlogPress ليظهر هنا في التقويم.
           </p>
         </div>
       )}

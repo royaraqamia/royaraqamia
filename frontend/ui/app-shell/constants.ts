@@ -60,7 +60,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
   },
   {
     id: 'blogpress',
-    label: 'إدارة المقالات',
+    label: 'إدارة المنشورات',
     appPath: '/blogpress/app',
     landingPath: '/blogpress',
     icon: NotebookPen,

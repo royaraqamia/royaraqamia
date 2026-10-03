@@ -45,7 +45,7 @@ const GENERAL_ITEMS: PaletteItem[] = [
 const QUICK_ACTIONS: PaletteItem[] = [
   {
     id: 'quick-blogpress',
-    label: 'إنشاء مقالة',
+    label: 'إنشاء منشور',
     group: 'quick',
     href: '/blogpress/app?create=1',
     icon: FilePlus2,

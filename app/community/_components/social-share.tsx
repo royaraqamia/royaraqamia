@@ -33,8 +33,8 @@ export function SocialShare({ url, title }: SocialShareProps) {
       <button
         onClick={handleNativeShare}
         className="size-9 rounded-full bg-muted hover:bg-primary/20 hover:text-primary border border-border hover:border-primary/30 flex items-center justify-center transition-safe cursor-pointer"
-        aria-label="مشاركة المقال"
-        title="مشاركة المقال"
+        aria-label="مشاركة المنشور"
+        title="مشاركة المنشور"
       >
         <Share2 className="size-4" />
       </button>

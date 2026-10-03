@@ -33,7 +33,7 @@ export async function updatePost(
       { method: 'PATCH', body: JSON.stringify(fields) }
     );
   } catch (error) {
-    return { message: error instanceof Error ? error.message : 'فشل حفظ المقال' };
+    return { message: error instanceof Error ? error.message : 'فشل حفظ المنشور' };
   }
 }
 

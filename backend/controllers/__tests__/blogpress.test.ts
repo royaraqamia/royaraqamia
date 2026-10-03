@@ -59,12 +59,12 @@ describe('blogpress controller', () => {
   });
 
   it('maps a post failure to 500 with the message under the "message" key', async () => {
-    mockRepository.updatePost.mockRejectedValue(new Error('فشل حفظ المقال'));
+    mockRepository.updatePost.mockRejectedValue(new Error('فشل حفظ المنشور'));
 
     const result = await updatePost('p-1', { title: 'عنوان', slug: 'hello' });
 
     expect(result).toEqual(
-      expect.objectContaining({ status: 500, body: { message: 'فشل حفظ المقال' } })
+      expect.objectContaining({ status: 500, body: { message: 'فشل حفظ المنشور' } })
     );
   });
 

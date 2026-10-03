@@ -8,7 +8,7 @@ import { CalendarRange, ArrowRight } from 'lucide-react';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  description: 'تقويم مقالات BlogPress المجدولة – انشر بجدول زمني في مكانٍ واحد.',
+  description: 'تقويم منشورات BlogPress المجدولة – انشر بجدول زمني في مكانٍ واحد.',
 };
 
 export default async function CalendarPage() {
@@ -28,7 +28,7 @@ export default async function CalendarPage() {
           </div>
           <div>
             <h1 className="text-3xl font-display font-bold tracking-tight">التقويم</h1>
-            <p className="text-sm text-muted-foreground mt-1">جدولة ونشر المقالات المخططة</p>
+            <p className="text-sm text-muted-foreground mt-1">جدولة ونشر المنشورات المخططة</p>
           </div>
         </div>
         <Link
@@ -36,7 +36,7 @@ export default async function CalendarPage() {
           className="inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium border border-border text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
         >
           <ArrowRight className="size-4 -scale-x-100" />
-          لوحة المقالات
+          لوحة المنشورات
         </Link>
       </div>
 

@@ -10,7 +10,7 @@ import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  description: 'لوحة تحكُّم BlogPress – إدارة المقالات وإنشاء محتوى جديد.',
+  description: 'لوحة تحكُّم BlogPress – إدارة المنشورات وإنشاء محتوى جديد.',
 };
 
 interface DashboardSearchParams {
@@ -41,7 +41,7 @@ export default async function DashboardPage({
 
   const statCards = [
     {
-      label: 'إجمالي المقالات',
+      label: 'إجمالي المنشورات',
       value: stats.total,
       icon: FileText,
       bg: 'bg-primary/10',

@@ -6,7 +6,7 @@ import { PostCard } from '../post-card';
 const post: PostSummary = {
   id: 'p1',
   author_id: 'a1',
-  title: 'مقال تجريبي',
+  title: 'منشور تجريبي',
   slug: 'test-post',
   status: 'published',
   cover_image: null,
@@ -25,7 +25,7 @@ const post: PostSummary = {
 describe('PostCard', () => {
   it('renders the title', () => {
     render(<PostCard post={post} index={0} />);
-    expect(screen.getByText('مقال تجريبي')).toBeInTheDocument();
+    expect(screen.getByText('منشور تجريبي')).toBeInTheDocument();
   });
 
   it('does not hide the card behind an entrance animation (ADR 0004)', () => {
@@ -42,6 +42,6 @@ describe('PostCard', () => {
 
   it('renders a cover image when the post has one', () => {
     render(<PostCard post={{ ...post, cover_image: '/cover.png' }} index={0} />);
-    expect(screen.getByAltText('مقال تجريبي')).toBeInTheDocument();
+    expect(screen.getByAltText('منشور تجريبي')).toBeInTheDocument();
   });
 });

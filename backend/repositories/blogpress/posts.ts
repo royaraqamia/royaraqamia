@@ -335,7 +335,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('id')
         .single();
 
-      if (error) throw new Error('فشل إنشاء المقال');
+      if (error) throw new Error('فشل إنشاء المنشور');
 
       return { id: data.id };
     },
@@ -378,7 +378,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('slug')
         .single();
 
-      if (error) throw new Error('فشل نشر المقال');
+      if (error) throw new Error('فشل نشر المنشور');
 
       return { slug: updated.slug };
     },
@@ -396,7 +396,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('slug')
         .single();
 
-      if (error) throw new Error('فشل نشر المقال');
+      if (error) throw new Error('فشل نشر المنشور');
 
       return { slug: data.slug };
     },
@@ -413,7 +413,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('slug')
         .single();
 
-      if (error) throw new Error('فشل إلغاء نشر المقال');
+      if (error) throw new Error('فشل إلغاء نشر المنشور');
 
       return { slug: data.slug };
     },
@@ -434,7 +434,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('slug')
         .single();
 
-      if (error) throw new Error('فشل جدولة المقال');
+      if (error) throw new Error('فشل جدولة المنشور');
 
       return { slug: data.slug };
     },
@@ -448,7 +448,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('slug')
         .single();
 
-      if (error) throw new Error('فشل حذف المقال');
+      if (error) throw new Error('فشل حذف المنشور');
 
       return { slug: data.slug };
     },
@@ -475,7 +475,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select('id')
         .single();
 
-      if (error) throw new Error('فشل استرجاع المقال');
+      if (error) throw new Error('فشل استرجاع المنشور');
 
       return { id: data.id };
     },
@@ -487,7 +487,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .eq('id', postId)
         .eq('author_id', authorId);
 
-      if (error) throw new Error('فشل تحديث تثبيت المقال');
+      if (error) throw new Error('فشل تحديث تثبيت المنشور');
     },
 
     async listCategoriesByAuthor(authorId: string): Promise<PostCategory[]> {
@@ -546,7 +546,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
       const rows = categoryIds.map((category_id) => ({ post_id: postId, category_id }));
       const { error } = await supabase.from('post_categories').insert(rows);
-      if (error) throw new Error('فشل تحديث تصنيفات المقال');
+      if (error) throw new Error('فشل تحديث تصنيفات المنشور');
     },
 
     async getPublishedPostTags(postId: string): Promise<PostTag[]> {
@@ -624,7 +624,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
       const rows = tagIds.map((tag_id) => ({ post_id: postId, tag_id }));
       const { error } = await supabase.from('post_tags').insert(rows);
-      if (error) throw new Error('فشل تحديث وسوم المقال');
+      if (error) throw new Error('فشل تحديث وسوم المنشور');
     },
 
     async bulkActionPosts(
@@ -639,7 +639,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
           .in('id', postIds)
           .eq('author_id', authorId)
           .select('slug');
-        if (error) throw new Error('فشل حذف المقالات');
+        if (error) throw new Error('فشل حذف المنشورات');
         return { affected: deleted.length, slugs: deleted.map((row) => row.slug) };
       }
 
@@ -662,7 +662,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .eq('author_id', authorId)
         .select('slug');
 
-      if (error) throw new Error('فشل تحديث حالة المقالات');
+      if (error) throw new Error('فشل تحديث حالة المنشورات');
 
       return { affected: updated.length, slugs: updated.map((row) => row.slug) };
     },
@@ -687,7 +687,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
       const rows = ownedIds.map((post_id) => ({ post_id, category_id: categoryId }));
       const { error } = await supabase.from('post_categories').insert(rows);
-      if (error) throw new Error('فشل تحديث تصنيف المقالات');
+      if (error) throw new Error('فشل تحديث تصنيف المنشورات');
     },
   };
 }

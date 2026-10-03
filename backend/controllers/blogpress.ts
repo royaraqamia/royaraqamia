@@ -34,7 +34,7 @@ export async function createPost(): Promise<HttpResult> {
       const { id } = await repository.createPost(userId);
       return jsonResult(200, { id });
     },
-    { mapError: messageError(500, 'فشل إنشاء المقال') }
+    { mapError: messageError(500, 'فشل إنشاء المنشور') }
   );
 }
 
@@ -52,7 +52,7 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
 
       return jsonResult(
         200,
-        { message: 'تمَّ حفظ المقال' },
+        { message: 'تمَّ حفظ المنشور' },
         {
           revalidate: [
             ...postRevalidation(validated.data.slug),
@@ -62,7 +62,7 @@ export async function updatePost(id: string, body: Record<string, unknown>): Pro
         }
       );
     },
-    { mapError: messageError(500, 'فشل حفظ المقال', 'message') }
+    { mapError: messageError(500, 'فشل حفظ المنشور', 'message') }
   );
 }
 
@@ -78,7 +78,7 @@ export async function deletePost(id: string): Promise<HttpResult> {
         { revalidate: postRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
-    { mapError: messageError(500, 'فشل حذف المقال') }
+    { mapError: messageError(500, 'فشل حذف المنشور') }
   );
 }
 
@@ -89,7 +89,7 @@ export async function duplicatePost(id: string): Promise<HttpResult> {
       const { id: newId } = await posts.duplicatePost(id, userId);
       return jsonResult(200, { success: true, id: newId });
     },
-    { mapError: messageError(500, 'فشل نسخ المقال') }
+    { mapError: messageError(500, 'فشل نسخ المنشور') }
   );
 }
 
@@ -98,7 +98,7 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
     async ({ userId, userEmail, supabase }) => {
       const validated = RestorePostSnapshotSchema.safeParse(body);
       if (!validated.success) {
-        return jsonResult(400, { error: 'بيانات استرجاع المقال غير صالحة' });
+        return jsonResult(400, { error: 'بيانات استرجاع المنشور غير صالحة' });
       }
 
       const { posts } = createBlogpressPostsModule(supabase);
@@ -113,7 +113,7 @@ export async function restorePost(body: Record<string, unknown>): Promise<HttpRe
         }
       );
     },
-    { mapError: messageError(500, 'فشل استرجاع المقال') }
+    { mapError: messageError(500, 'فشل استرجاع المنشور') }
   );
 }
 
@@ -129,7 +129,7 @@ export async function publishPost(id: string): Promise<HttpResult> {
         { revalidate: publishRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
-    { mapError: messageError(500, 'فشل نشر المقال') }
+    { mapError: messageError(500, 'فشل نشر المنشور') }
   );
 }
 
@@ -167,7 +167,7 @@ export async function schedulePost(id: string, body: Record<string, unknown>): P
         }
       );
     },
-    { mapError: messageError(500, 'فشل جدولة المقال') }
+    { mapError: messageError(500, 'فشل جدولة المنشور') }
   );
 }
 
@@ -178,7 +178,7 @@ export async function setPostFeatured(id: string, featured: boolean): Promise<Ht
       await repository.setPostFeatured(id, userId, featured);
       return jsonResult(200, { success: true }, { revalidate: [{ path: '/blogpress' }] });
     },
-    { mapError: messageError(500, 'فشل تحديث تثبيت المقال') }
+    { mapError: messageError(500, 'فشل تحديث تثبيت المنشور') }
   );
 }
 
@@ -225,7 +225,7 @@ export async function bulkPostsAction(body: Record<string, unknown>): Promise<Ht
         }
       );
     },
-    { mapError: messageError(500, 'فشل تنفيذ الإجراء على المقالات') }
+    { mapError: messageError(500, 'فشل تنفيذ الإجراء على المنشورات') }
   );
 }
 
@@ -250,7 +250,7 @@ export async function saveAndPublishPost(
         { revalidate: publishRevalidation(slug), tags: COMMUNITY_MUTATION_TAGS }
       );
     },
-    { mapError: messageError(500, 'فشل نشر المقال') }
+    { mapError: messageError(500, 'فشل نشر المنشور') }
   );
 }
 
@@ -323,6 +323,6 @@ export async function setBlogPostTags(
         { revalidate: [{ path: `/blogpress/editor/${id}` }], tags: COMMUNITY_MUTATION_TAGS }
       );
     },
-    { mapError: messageError(500, 'فشل تحديث وسوم المقال') }
+    { mapError: messageError(500, 'فشل تحديث وسوم المنشور') }
   );
 }

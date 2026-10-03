@@ -42,7 +42,7 @@ export class BlogpressPostsService {
     authorEmail = ''
   ): Promise<{ id: string }> {
     if (!snapshot.title || !snapshot.title.trim()) {
-      throw new Error('عنوان المقال مطلوب');
+      throw new Error('عنوان المنشور مطلوب');
     }
     if (!snapshot.slug || !snapshot.slug.trim()) {
       throw new Error('المعرّف (slug) مطلوب');
@@ -62,7 +62,7 @@ export class BlogpressPostsService {
   async duplicatePost(postId: string, authorId: string): Promise<{ id: string }> {
     const source = await this.repository.getPostForUser(postId, authorId);
     if (!source) {
-      throw new Error('المقال غير موجود');
+      throw new Error('المنشور غير موجود');
     }
 
     const { id } = await this.repository.createPost(authorId);

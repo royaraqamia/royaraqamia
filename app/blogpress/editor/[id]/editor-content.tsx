@@ -128,9 +128,9 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
     startTransition(async () => {
       try {
         const result = await updatePost(post.id, fields);
-        if (result?.message === 'تمَّ حفظ المقال') {
+        if (result?.message === 'تمَّ حفظ المنشور') {
           markSaved();
-          toast.success('تمَّ حفظ المقال');
+          toast.success('تمَّ حفظ المنشور');
         } else if (result?.errors) {
           toast.error('خطأ في التَّحقُّق من البيانات');
         }
@@ -200,8 +200,8 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
 
   const getPublishChecks = useCallback(
     () => [
-      { label: 'عنوان المقال', passed: title.trim().length > 0 },
-      { label: 'محتوى المقال (أكثر من 50 كلمة)', passed: wordCount > 50 },
+      { label: 'عنوان المنشور', passed: title.trim().length > 0 },
+      { label: 'محتوى المنشور (أكثر من 50 كلمة)', passed: wordCount > 50 },
       {
         label: 'رابط URL (Slug)',
         passed: slug.length > 0 && !slug.startsWith('post-'),
@@ -239,10 +239,10 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
         }
         markSaved();
         setPublishDialogOpen(false);
-        toast.success('تمَّ نشر المقال!');
+        toast.success('تمَّ نشر المنشور!');
         router.push(`/community/${finalSlug}`);
       } catch {
-        toast.error('فشل نشر المقال. حاول مرَّة أخرى.');
+        toast.error('فشل نشر المنشور. حاول مرَّة أخرى.');
       }
     });
   }, [
@@ -309,7 +309,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
             <ArrowRight className="size-4" />
           </Button>
           <Label htmlFor="editor-title" className="sr-only">
-            عنوان المقال
+            عنوان المنشور
           </Label>
           <Input
             id="editor-title"
@@ -317,7 +317,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={handleTitleBlur}
-            placeholder="عنوان المقال..."
+            placeholder="عنوان المنشور..."
             className="border-0 text-lg font-bold bg-transparent px-0 h-auto placeholder:text-muted-foreground/50 transition-smooth focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
           />
         </div>
@@ -453,7 +453,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
         <div
           className="flex items-center justify-between border-t border-border/50 px-4 py-2.5 bg-background/80"
           role="status"
-          aria-label="إحصائيَّات المقال"
+          aria-label="إحصائيَّات المنشور"
         >
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <div className="flex items-center gap-2">
@@ -587,8 +587,8 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
           </DialogHeader>
           <div className="space-y-3 mt-2">
             {[
-              { keys: 'Ctrl + S', label: 'حفظ المقال' },
-              { keys: 'Ctrl + Enter', label: 'نشر المقال (للمسودَّات)' },
+              { keys: 'Ctrl + S', label: 'حفظ المنشور' },
+              { keys: 'Ctrl + Enter', label: 'نشر المنشور (للمسودَّات)' },
               { keys: 'Ctrl + B', label: 'عريض' },
               { keys: 'Ctrl + I', label: 'مائل' },
               { keys: 'Ctrl + Z', label: 'تراجع' },
@@ -615,7 +615,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
         <DialogContent>
           <DialogHeader>
             <DialogTitle>التَّحقُّق قبل النَّشر</DialogTitle>
-            <DialogDescription>يُرجَى مراجعة العناصر التَّالية قبل نشر المقال</DialogDescription>
+            <DialogDescription>يُرجَى مراجعة العناصر التَّالية قبل نشر المنشور</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 mt-2">
             {publishChecks.map((check) => (

@@ -8,7 +8,7 @@ import { PostSlugSchema } from '@/shared/contracts/community';
 export async function recordPostView(slug: string, ip: string): Promise<HttpResult> {
   const parsed = PostSlugSchema.safeParse(slug);
   if (!parsed.success) {
-    return jsonResult(400, { success: false, error: 'رابط مقال غير صالح.' });
+    return jsonResult(400, { success: false, error: 'رابط منشور غير صالح.' });
   }
 
   try {

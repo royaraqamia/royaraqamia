@@ -48,8 +48,8 @@ export function createPostPublishedNotifier(
     void fanOut(
       {
         type: 'post_published',
-        title: 'تم نشر مقال جديد',
-        body: 'تم نشر مقال جديد على المجتمع.',
+        title: 'تم نشر منشور جديد',
+        body: 'تم نشر منشور جديد على المجتمع.',
         metadata: { postId, slug },
       },
       { excludeUserIds: [authorId] }

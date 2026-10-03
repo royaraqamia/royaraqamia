@@ -47,12 +47,12 @@ export function CommunityResults({
             <FileText className="size-8 stroke-[1.5]" />
           </div>
           <h2 className="text-2xl font-bold text-foreground tracking-tight mb-2">
-            {query ? 'لا توجد نتائج للبحث' : 'لا توجد مقالات بعد'}
+            {query ? 'لا توجد نتائج للبحث' : 'لا توجد منشورات بعد'}
           </h2>
           <p className="text-sm sm:text-base text-muted-foreground max-w-md mb-8 leading-relaxed">
             {query
-              ? 'لم نعثر على مقالات تُطابق بحثك. جرِّب كلمات بحث مختلفة.'
-              : 'لا توجد مقالات منشورة حاليًّا. عد لاحقًا لقراءة أحدث المحتوى والمقالات.'}
+              ? 'لم نعثر على منشورات تُطابق بحثك. جرِّب كلمات بحث مختلفة.'
+              : 'لا توجد منشورات حاليًّا. عد لاحقًا لقراءة أحدث المحتوى والمنشورات.'}
           </p>
           {query && (
             <Link href="/community">
@@ -60,7 +60,7 @@ export function CommunityResults({
                 variant="outline"
                 className="rounded-full bg-muted/50 border-border text-foreground hover:bg-muted/70 hover:border-border transition-safe duration-300 px-6"
               >
-                عرض جميع المقالات
+                عرض جميع المنشورات
               </Button>
             </Link>
           )}

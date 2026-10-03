@@ -50,7 +50,7 @@ function makeDirty() {
 describe('usePostAutosave (⌘/Ctrl+S shortcut)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.updatePost.mockResolvedValue({ message: 'تمَّ حفظ المقال' });
+    mocks.updatePost.mockResolvedValue({ message: 'تمَّ حفظ المنشور' });
   });
 
   it('saves immediately on Ctrl+S when there are pending changes', async () => {

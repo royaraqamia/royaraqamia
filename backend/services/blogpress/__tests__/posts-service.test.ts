@@ -11,7 +11,7 @@ import type { Post } from '@/shared/contracts/blogpress';
 const postFixture = {
   id: 'p-1',
   author_id: 'u-1',
-  title: 'مقال',
+  title: 'منشور',
   slug: 'post-1',
   content: null,
   status: 'published',
@@ -74,10 +74,10 @@ function makeRepo(
   };
 }
 
-const postData = { title: 'مقال', slug: 'post-1' };
+const postData = { title: 'منشور', slug: 'post-1' };
 
 const snapshotBase = {
-  title: 'مقال',
+  title: 'منشور',
   slug: 'post-1',
   content: null,
   status: 'draft' as const,
@@ -205,7 +205,7 @@ describe('BlogpressPostsService.restorePost', () => {
     const { repository, service } = makeRepo();
 
     await expect(service.restorePost('u-1', { ...snapshotBase, title: '  ' })).rejects.toThrow(
-      'عنوان المقال مطلوب'
+      'عنوان المنشور مطلوب'
     );
     await expect(service.restorePost('u-1', { ...snapshotBase, slug: ' ' })).rejects.toThrow(
       'المعرّف (slug) مطلوب'
@@ -253,10 +253,10 @@ describe('BlogpressPostsService.restorePost', () => {
   it('propagates a repository failure', async () => {
     const { repository, service } = makeRepo();
     (repository.restorePost as ReturnType<typeof vi.fn>).mockRejectedValue(
-      new Error('فشل استرجاع المقال')
+      new Error('فشل استرجاع المنشور')
     );
 
-    await expect(service.restorePost('u-1', snapshotBase)).rejects.toThrow('فشل استرجاع المقال');
+    await expect(service.restorePost('u-1', snapshotBase)).rejects.toThrow('فشل استرجاع المنشور');
   });
 });
 
@@ -265,7 +265,7 @@ describe('BlogpressPostsService.duplicatePost', () => {
     const { repository, service } = makeRepo();
     (repository.getPostForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
       ...postFixture,
-      title: 'مقال مميز',
+      title: 'منشور مميز',
       content: '# محتوى',
       cover_image: 'https://img/cover.png',
       meta_title: 'عنوان SEO',
@@ -290,7 +290,7 @@ describe('BlogpressPostsService.duplicatePost', () => {
       'p-copy',
       'u-1',
       expect.objectContaining({
-        title: 'نسخة من مقال مميز',
+        title: 'نسخة من منشور مميز',
         content: '# محتوى',
         cover_image: 'https://img/cover.png',
         meta_title: 'عنوان SEO',
@@ -306,7 +306,7 @@ describe('BlogpressPostsService.duplicatePost', () => {
     const { repository, service } = makeRepo();
     (repository.getPostForUser as ReturnType<typeof vi.fn>).mockResolvedValue(null);
 
-    await expect(service.duplicatePost('p-1', 'u-2')).rejects.toThrow('المقال غير موجود');
+    await expect(service.duplicatePost('p-1', 'u-2')).rejects.toThrow('المنشور غير موجود');
     expect(repository.createPost).not.toHaveBeenCalled();
   });
 });

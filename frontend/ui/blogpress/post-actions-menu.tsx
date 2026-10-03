@@ -34,10 +34,10 @@ export const PostActionsMenu = memo(function PostActionsMenu({
     setDuplicating(true);
     try {
       const { id } = await duplicatePost(postId);
-      toast.success('تم إنشاء نسخة من المقال');
+      toast.success('تم إنشاء نسخة من المنشور');
       onDuplicated(id);
     } catch {
-      toast.error('فشل نسخ المقال');
+      toast.error('فشل نسخ المنشور');
     } finally {
       setDuplicating(false);
     }
@@ -48,11 +48,11 @@ export const PostActionsMenu = memo(function PostActionsMenu({
       await downloadPostAsFile(title, getMarkdown(), format);
       setExported(format);
       toast.success(
-        format === 'markdown' ? 'تم تصدير المقال بصيغة Markdown' : 'تم تصدير المقال بصيغة HTML'
+        format === 'markdown' ? 'تم تصدير المنشور بصيغة Markdown' : 'تم تصدير المنشور بصيغة HTML'
       );
       setTimeout(() => setExported(null), 2000);
     } catch {
-      toast.error('فشل تصدير المقال');
+      toast.error('فشل تصدير المنشور');
     }
   };
 
@@ -62,7 +62,7 @@ export const PostActionsMenu = memo(function PostActionsMenu({
         <Button
           variant="ghost"
           size="icon-sm"
-          aria-label="إجراءات المقال"
+          aria-label="إجراءات المنشور"
           className="text-muted-foreground hover:text-foreground transition-smooth"
         >
           <MoreHorizontal className="size-4" />
@@ -79,7 +79,7 @@ export const PostActionsMenu = memo(function PostActionsMenu({
           ) : (
             <CopyPlus className="size-4" />
           )}
-          <span>{duplicating ? 'جاري النسخ...' : 'نسخ المقال'}</span>
+          <span>{duplicating ? 'جاري النسخ...' : 'نسخ المنشور'}</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator className="my-1 border-border/60" />
         <DropdownMenuItem

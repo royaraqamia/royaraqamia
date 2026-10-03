@@ -90,7 +90,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
         size="icon"
         onClick={() => setOpen(true)}
         className="relative text-muted-foreground hover:text-foreground transition-safe duration-200 hover:bg-muted/80 rounded-xl active:scale-95 focus-visible:ring-2 focus-visible:ring-primary/40"
-        aria-label="إعدادات المقال"
+        aria-label="إعدادات المنشور"
       >
         <Settings className="size-4.5 transition-transform duration-300 ease-out hover:rotate-45" />
       </Button>
@@ -104,7 +104,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
               </div>
               <div className="space-y-0.5">
                 <DialogTitle className="text-base sm:text-lg font-bold tracking-tight text-foreground">
-                  إعدادات المقال
+                  إعدادات المنشور
                 </DialogTitle>
                 <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
                   تكوين بيانات SEO وخيارات النَّشر والروابط
@@ -133,7 +133,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                   name="slug"
                   value={slug}
                   onChange={(e) => onSlugChange(e.target.value)}
-                  placeholder="رابط-المقال"
+                  placeholder="رابط-المنشور"
                   className="font-mono text-sm transition-safe duration-200 min-h-11 rounded-xl bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary"
                   dir="ltr"
                 />
@@ -149,7 +149,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                       <span className="text-muted-foreground/60">{siteHost}/community/</span>
                       <span className="font-bold text-primary truncate">
                         {slug || (
-                          <span className="text-muted-foreground/40 italic">رابط-المقال</span>
+                          <span className="text-muted-foreground/40 italic">رابط-المنشور</span>
                         )}
                       </span>
                     </div>
@@ -259,8 +259,8 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
               <div className="flex items-start gap-2.5 p-3.5 rounded-xl bg-primary/5 border border-primary/10 text-xs text-muted-foreground leading-relaxed">
                 <Info className="size-4 text-primary shrink-0 mt-0.5" />
                 <span>
-                  هذه البيانات تظهر في نتائج البحث وعند مشاركة المقال على وسائل التَّواصل. إذا
-                  تركتها فارغة، سيتمُّ استخدام عنوان المقال ووصف تلقائي.
+                  هذه البيانات تظهر في نتائج البحث وعند مشاركة المنشور على وسائل التَّواصل. إذا
+                  تركتها فارغة، سيتمُّ استخدام عنوان المنشور ووصف تلقائي.
                 </span>
               </div>
 
@@ -411,11 +411,11 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                     </div>
 
                     <p className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer leading-snug truncate">
-                      {metaTitle || title || 'عنوان المقال'}
+                      {metaTitle || title || 'عنوان المنشور'}
                     </p>
 
                     <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                      {metaDesc || 'وصف تلقائي سيظهر هنا بناءً على محتوى المقال...'}
+                      {metaDesc || 'وصف تلقائي سيظهر هنا بناءً على محتوى المنشور...'}
                     </p>
                   </div>
                 </div>

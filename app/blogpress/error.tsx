@@ -25,7 +25,7 @@ export default function Error({
         <div className="space-y-2">
           <h1 className="text-4xl font-bold text-foreground">حدث خطأ غير متوقع</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            عذراً، حدث خطأ أثناء تحميل المقالات. يمكنك المحاولة مرة أخرى أو العودة إلى لوحة التحكم.
+            عذراً، حدث خطأ أثناء تحميل المنشورات. يمكنك المحاولة مرة أخرى أو العودة إلى لوحة التحكم.
           </p>
         </div>
         {error.digest && (

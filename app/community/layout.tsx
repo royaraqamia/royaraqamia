@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     default: 'المجتمع',
     template: '%s | رؤيَة رقَميَّة',
   },
-  description: 'اقرأ أحدث المقالات من رؤيَة رقَميَّة.',
+  description: 'اقرأ أحدث المنشورات من رؤيَة رقَميَّة.',
 };
 
 export default function CommunityLayout({ children }: { children: React.ReactNode }) {

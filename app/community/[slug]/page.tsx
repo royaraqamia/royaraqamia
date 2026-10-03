@@ -98,8 +98,8 @@ export async function generateMetadata(props: {
 
   if (!post) {
     return {
-      title: 'المقال غير موجود',
-      description: 'عذرًا، المقال الذي تبحث عنه غير موجود أو تمَّ حذفه.',
+      title: 'المنشور غير موجود',
+      description: 'عذرًا، المنشور الذي تبحث عنه غير موجود أو تمَّ حذفه.',
     };
   }
 

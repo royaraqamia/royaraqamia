@@ -71,7 +71,7 @@ export function usePostAutosave(post: Post) {
     };
     try {
       const result = await updatePost(post.id, fields);
-      if (result?.message === 'تمَّ حفظ المقال') {
+      if (result?.message === 'تمَّ حفظ المنشور') {
         isDirtyRef.current = false;
         setIsDirty(false);
         setLastSaved(new Date());

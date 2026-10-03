@@ -12,8 +12,8 @@ export async function generateMetadata(props: {
   const title = await repository.getPostTitleById(id);
 
   return {
-    title: title ? `تحرير: ${title}` : 'تحرير المقال',
-    description: 'تحرير وتعديل المقالات في BlogPress.',
+    title: title ? `تحرير: ${title}` : 'تحرير المنشور',
+    description: 'تحرير وتعديل المنشورات في BlogPress.',
   };
 }
 

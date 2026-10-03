@@ -253,10 +253,10 @@ export const EditorSidePanel = memo(function EditorSidePanel({
           <div className="flex items-center justify-between mb-4">
             <div>
               <DialogTitle className="text-base font-bold text-foreground tracking-tight flex items-center gap-2">
-                <span>مساعد تحرير المقال</span>
+                <span>مساعد تحرير المنشور</span>
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground/80 mt-0.5">
-                تحسين أداء المقال ومحتواه والوسوم المرتبطة
+                تحسين أداء المنشور ومحتواه والوسوم المرتبطة
               </DialogDescription>
             </div>
           </div>
@@ -321,7 +321,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
                       تحسين محرِّكات البحث (SEO)
                     </h3>
                     <p className="text-[11px] text-muted-foreground/70">
-                      تحسين ظهور وانطباع المقال في نتائج البحث
+                      تحسين ظهور وانطباع المنشور في نتائج البحث
                     </p>
                   </div>
                 </div>
@@ -438,10 +438,10 @@ export const EditorSidePanel = memo(function EditorSidePanel({
                         </div>
                       </div>
                       <p className="text-sm font-bold text-blue-600 hover:underline cursor-pointer leading-snug truncate">
-                        {metaTitle || title || 'عنوان المقال'}
+                        {metaTitle || title || 'عنوان المنشور'}
                       </p>
                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-                        {metaDesc || 'وصف تلقائي سيظهر هنا بناءً على محتوى المقال...'}
+                        {metaDesc || 'وصف تلقائي سيظهر هنا بناءً على محتوى المنشور...'}
                       </p>
                     </div>
                   </div>
@@ -497,7 +497,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
                       إدارة الوسوم
                     </h3>
                     <p className="text-[11px] text-muted-foreground/70">
-                      صنِّف المقال لتحسين الوصول والتصفُّح في المجتمع
+                      صنِّف المنشور لتحسين الوصول والتصفُّح في المجتمع
                     </p>
                   </div>
                 </div>
@@ -514,7 +514,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
                 <div className="flex items-start gap-2 p-3 rounded-xl bg-muted/30 border border-border/30 text-muted-foreground text-[11px] leading-relaxed">
                   <Info className="size-4 shrink-0 text-muted-foreground/70 mt-0.5" />
                   <span>
-                    تظهر الوسوم المُختارة في بطاقة المقال، أطراف نتائج البحث، وأسفل المنشور لربط
+                    تظهر الوسوم المُختارة في بطاقة المنشور، أطراف نتائج البحث، وأسفل المنشور لربط
                     المواضيع المماثلة.
                   </span>
                 </div>
@@ -611,7 +611,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
               {/* Live Stats Footnote */}
               <p className="text-[11px] text-muted-foreground/60 leading-relaxed flex items-center gap-1.5 px-1">
                 <Globe className="size-3 shrink-0 text-muted-foreground/70" />
-                <span>تُحسَب الإحصاءات مباشرةً من محتوى المقال أثناء الكتابة.</span>
+                <span>تُحسَب الإحصاءات مباشرةً من محتوى المنشور أثناء الكتابة.</span>
               </p>
             </>
           )}

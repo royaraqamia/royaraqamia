@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { PostSchema, PostSlugSchema } from '@/shared/contracts/community';
 
 const validPost = {
-  title: 'مقال جديد',
+  title: 'منشور جديد',
   slug: 'new-post',
   content: 'المحتوى',
   cover_image: 'https://cdn.example.com/img.png',
@@ -39,7 +39,7 @@ describe('PostSchema', () => {
   });
 
   it('accepts slugs with Arabic characters and dashes', () => {
-    expect(PostSchema.safeParse({ title: 'عنوان', slug: 'مقال-عربي' }).success).toBe(true);
+    expect(PostSchema.safeParse({ title: 'عنوان', slug: 'منشور-عربي' }).success).toBe(true);
     expect(PostSchema.safeParse({ title: 'عنوان', slug: 'my_article-123' }).success).toBe(true);
   });
 
@@ -77,7 +77,7 @@ describe('PostSchema', () => {
 describe('PostSlugSchema', () => {
   it('accepts a valid slug', () => {
     expect(PostSlugSchema.safeParse('new-post').success).toBe(true);
-    expect(PostSlugSchema.safeParse('مقال-عربي').success).toBe(true);
+    expect(PostSlugSchema.safeParse('منشور-عربي').success).toBe(true);
     expect(PostSlugSchema.safeParse('my_article-123').success).toBe(true);
   });
 

@@ -43,7 +43,7 @@ export function useBulkPosts(ids: string[]) {
         const result = await bulkPostAction(action, selectedIds, categoryId);
         return result.affected;
       } catch (err: unknown) {
-        setError(err instanceof Error ? err.message : 'فشل تنفيذ الإجراء على المقالات.');
+        setError(err instanceof Error ? err.message : 'فشل تنفيذ الإجراء على المنشورات.');
         return null;
       } finally {
         setBusy(false);

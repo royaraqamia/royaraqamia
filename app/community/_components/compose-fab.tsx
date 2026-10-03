@@ -77,7 +77,7 @@ export function ComposeFab() {
       return;
     }
     if (!trimmedBody) {
-      toast.error('اكتب نص المقال أولاً');
+      toast.error('اكتب نص المنشور أولاً');
       return;
     }
 
@@ -95,12 +95,12 @@ export function ComposeFab() {
           meta_desc: trimmedBody.slice(0, DESCRIPTION_PREVIEW),
         });
 
-        toast.success('تمَّ نشر مقالك');
+        toast.success('تمَّ نشر منشورك');
         closeAndReset();
         router.push(`/community/${slug}`);
         router.refresh();
       } catch {
-        toast.error('فشل نشر المقال');
+        toast.error('فشل نشر المنشور');
       }
     });
   }, [title, body, closeAndReset, router]);
@@ -121,7 +121,7 @@ export function ComposeFab() {
       <button
         type="button"
         onClick={handleFabClick}
-        aria-label="إضافة مقال جديد"
+        aria-label="إضافة منشور جديد"
         className="compose-fab-btn visible group"
       >
         <PenLine className="size-6 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-rotate-6" />
@@ -145,7 +145,7 @@ export function ComposeFab() {
                 disabled={pending}
                 dir="auto"
                 onChange={(event) => setTitle(event.target.value)}
-                placeholder="عنوان جذَّاب لمقالك"
+                placeholder="عنوان جذَّاب لمنشورك"
               />
             </div>
 

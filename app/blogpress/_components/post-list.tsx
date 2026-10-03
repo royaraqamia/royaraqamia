@@ -130,7 +130,7 @@ export const PostList = memo(function PostList({
     toast.success(
       action === 'setCategory'
         ? 'تم تحديث التصنيف'
-        : `تم ${action === 'delete' ? 'حذف' : action === 'publish' ? 'نشر' : 'إلغاء نشر'} ${affected} مقال`
+        : `تم ${action === 'delete' ? 'حذف' : action === 'publish' ? 'نشر' : 'إلغاء نشر'} ${affected} منشور`
     );
     router.refresh();
   };
@@ -197,7 +197,7 @@ export const PostList = memo(function PostList({
         <div
           className="inline-flex items-center p-1 rounded-2xl bg-neutral-100/80 dark:bg-neutral-900/80 border border-neutral-200/60 dark:border-neutral-800/60 shadow-2xs overflow-x-auto no-scrollbar max-w-full"
           role="tablist"
-          aria-label="تصفية المقالات"
+          aria-label="تصفية المنشورات"
         >
           {filters.map((f) => (
             <button
@@ -238,8 +238,8 @@ export const PostList = memo(function PostList({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="بحث في المقالات..."
-            aria-label="بحث في المقالات"
+            placeholder="بحث في المنشورات..."
+            aria-label="بحث في المنشورات"
             className="w-full h-9 ps-9 pe-9 rounded-xl bg-neutral-100/60 dark:bg-neutral-900/60 border border-neutral-200/80 dark:border-neutral-800/80 focus:bg-background focus:border-primary/50 focus:ring-2 focus:ring-primary/20 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 outline-none transition-safe duration-200"
           />
           {searchQuery ? (
@@ -282,13 +282,13 @@ export const PostList = memo(function PostList({
             <EmptyState
               icon={FileText}
               className="py-12"
-              title={searchQuery ? 'لا توجد نتائج للبحث' : 'لا توجد مقالات بعد'}
+              title={searchQuery ? 'لا توجد نتائج للبحث' : 'لا توجد منشورات بعد'}
               description={
                 searchQuery
-                  ? 'لم نعثر على مقالات تُطابق بحثك.'
+                  ? 'لم نعثر على منشورات تُطابق بحثك.'
                   : activeFilter === 'all'
-                    ? 'أنشِئ مقالك الأوَّل للبدء في الكتابة.'
-                    : 'لا توجد مقالات في هذا التَّصنيف.'
+                    ? 'أنشِئ منشورك الأوَّل للبدء في الكتابة.'
+                    : 'لا توجد منشورات في هذا التَّصنيف.'
               }
               action={
                 !searchQuery && activeFilter === 'all' ? (
@@ -313,7 +313,7 @@ export const PostList = memo(function PostList({
                     ) : (
                       <Plus className="ms-2 size-4" />
                     )}
-                    {pending ? 'جاري الإنشاء...' : 'مقال جديد'}
+                    {pending ? 'جاري الإنشاء...' : 'منشور جديد'}
                   </Button>
                 ) : undefined
               }
@@ -334,8 +334,8 @@ export const PostList = memo(function PostList({
 
       <ConfirmDialog
         open={showDeleteConfirm}
-        title="حذف مقالات مختارة"
-        message={`هل أنت متأكد من حذف ${bulk.selectedCount} مقالات؟ لا يمكن التراجع عن هذا الإجراء.`}
+        title="حذف منشورات مختارة"
+        message={`هل أنت متأكد من حذف ${bulk.selectedCount} منشورات؟ لا يمكن التراجع عن هذا الإجراء.`}
         confirmLabel="حذف"
         cancelLabel="إلغاء"
         icon={Trash2}
@@ -375,7 +375,7 @@ const PostRow = memo(function PostRow({
           type="button"
           onClick={() => onToggleSelect(post.id)}
           aria-pressed={isSelected}
-          aria-label={isSelected ? 'إلغاء تحديد المقال' : 'تحديد المقال'}
+          aria-label={isSelected ? 'إلغاء تحديد المنشور' : 'تحديد المنشور'}
           className="shrink-0 size-5 rounded-md border flex items-center justify-center transition-safe duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           <span
@@ -503,7 +503,7 @@ const PostRow = memo(function PostRow({
             <Button
               variant="ghost"
               size="icon-sm"
-              aria-label="إجراءات المقال"
+              aria-label="إجراءات المنشور"
               className="rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             >
               <MoreHorizontal className="size-4" />
@@ -541,7 +541,7 @@ const PostRow = memo(function PostRow({
                     await publishPost(post.id);
                     router.refresh();
                   } catch {
-                    toast.error('فشل نشر المقال');
+                    toast.error('فشل نشر المنشور');
                   }
                 }}
                 className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
@@ -597,24 +597,24 @@ const PostRow = memo(function PostRow({
               onClick={async () => {
                 try {
                   await duplicatePost(post.id);
-                  toast.success('تم إنشاء نسخة من المقال');
+                  toast.success('تم إنشاء نسخة من المنشور');
                   router.refresh();
                 } catch {
-                  toast.error('فشل نسخ المقال');
+                  toast.error('فشل نسخ المنشور');
                 }
               }}
               className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
             >
               <CopyPlus className="size-4 text-neutral-500 me-2" />
-              <span>نسخ المقال</span>
+              <span>نسخ المنشور</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={async () => {
                 try {
                   await downloadPostAsFile(post.title, post.content ?? '', 'markdown');
-                  toast.success('تم تصدير المقال بصيغة Markdown');
+                  toast.success('تم تصدير المنشور بصيغة Markdown');
                 } catch {
-                  toast.error('فشل تصدير المقال');
+                  toast.error('فشل تصدير المنشور');
                 }
               }}
               className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
@@ -626,9 +626,9 @@ const PostRow = memo(function PostRow({
               onClick={async () => {
                 try {
                   await downloadPostAsFile(post.title, post.content ?? '', 'html');
-                  toast.success('تم تصدير المقال بصيغة HTML');
+                  toast.success('تم تصدير المنشور بصيغة HTML');
                 } catch {
-                  toast.error('فشل تصدير المقال');
+                  toast.error('فشل تصدير المنشور');
                 }
               }}
               className="flex items-center gap-2 cursor-pointer rounded-lg px-2.5 py-2 text-xs font-medium"
@@ -650,7 +650,7 @@ const PostRow = memo(function PostRow({
               <DialogContent className="rounded-2xl border border-neutral-200/80 dark:border-neutral-800 max-w-md p-6">
                 <DialogHeader className="space-y-2 text-start">
                   <DialogTitle className="text-base font-bold text-neutral-900 dark:text-neutral-100">
-                    حذف المقال
+                    حذف المنشور
                   </DialogTitle>
                   <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
                     هل أنت متأكِّد من حذف &ldquo;{post.title || 'بدون عنوان'}&rdquo;؟ لا يمكن
@@ -673,7 +673,7 @@ const PostRow = memo(function PostRow({
                       onClick={async () => {
                         try {
                           await deletePost(post.id);
-                          toast('تم حذف المقال', {
+                          toast('تم حذف المنشور', {
                             action: {
                               label: 'تراجع',
                               onClick: async () => {
@@ -696,14 +696,14 @@ const PostRow = memo(function PostRow({
                                   });
                                   router.refresh();
                                 } catch {
-                                  toast.error('فشل استرجاع المقال');
+                                  toast.error('فشل استرجاع المنشور');
                                 }
                               },
                             },
                           });
                           router.refresh();
                         } catch {
-                          toast.error('فشل حذف المقال');
+                          toast.error('فشل حذف المنشور');
                         }
                       }}
                       className="rounded-xl text-xs font-medium h-9 px-4 bg-red-600 hover:bg-red-700 text-white"
