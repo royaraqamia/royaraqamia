@@ -146,7 +146,7 @@ export function ComposeFab() {
                 dir="auto"
                 onChange={(event) => setTitle(event.target.value)}
                 placeholder="عنوان جذَّاب لمنشورك"
-                className="placeholder-shown:text-right"
+                className="placeholder-shown:[direction:rtl]"
               />
             </div>
 
@@ -164,7 +164,7 @@ export function ComposeFab() {
                 dir="auto"
                 onChange={(event) => setBody(event.target.value)}
                 placeholder="اكتب ما يدور في ذهنك..."
-                className="min-h-40 placeholder-shown:text-right"
+                className="min-h-40 placeholder-shown:[direction:rtl]"
               />
             </div>
           </div>
