@@ -6,7 +6,13 @@ import { useHorizontalScroll } from '../shared/use-horizontal-scroll';
 import { useUI } from '../state/UIContext';
 import { HorizontalScrollArrows } from './HorizontalScrollArrows';
 import { testimonials, type Testimonial } from '../../data/testimonials';
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from './primitives/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogScrollArea,
+} from './primitives/dialog';
 
 // Deterministic pastel/vibrant gradient generator based on user name
 const AVATAR_GRADIENTS = [
@@ -239,53 +245,51 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
           if (!open) closeReviewSheet();
         }}
       >
-        <DialogContent className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-slate-950/95 text-slate-100 overflow-y-auto dialog-scrollbar">
+        <DialogContent className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-slate-950/95 text-slate-100 grid-rows-[minmax(0,1fr)] overflow-hidden">
           {/* Mobile Handle Indicator */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full sm:hidden" />
 
           {activeReview && (
-            <>
+            <DialogScrollArea className="p-6 sm:p-8 flex flex-col justify-between">
               <DialogTitle className="sr-only">تقييم من {activeReview.name}</DialogTitle>
               <DialogDescription className="sr-only">
                 التَّقييم الكامل من {activeReview.name}
               </DialogDescription>
 
-              <div className="p-6 sm:p-8 flex flex-col justify-between">
-                {/* Expanded Review Content */}
-                <div className="my-6 relative">
-                  <p className="text-base sm:text-lg text-slate-100 leading-relaxed font-normal whitespace-pre-line select-text">
-                    {activeReview.content}
-                  </p>
-                </div>
+              {/* Expanded Review Content */}
+              <div className="my-6 relative">
+                <p className="text-base sm:text-lg text-slate-100 leading-relaxed font-normal whitespace-pre-line select-text">
+                  {activeReview.content}
+                </p>
+              </div>
 
-                {/* Detailed Author Profile Footer */}
-                <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <div
-                      className={`
-                        w-12 h-12 sm:w-13 sm:h-13 rounded-full 
-                        bg-linear-to-tr ${getTestimonialMeta(activeReview.name).gradient}
-                        flex items-center justify-center 
-                        text-white font-bold text-base sm:text-lg 
-                        ring-2 ring-white/20 shrink-0
-                      `}
-                    >
-                      {getTestimonialMeta(activeReview.name).initials || (
-                        <UserRound className="w-5 h-5" />
-                      )}
-                    </div>
-
-                    <div className="flex flex-col min-w-0">
-                      <h3 className="font-bold text-base sm:text-lg text-white truncate">
-                        {activeReview.name}
-                      </h3>
-                    </div>
+              {/* Detailed Author Profile Footer */}
+              <div className="flex items-center justify-between gap-4 pt-5 border-t border-white/10">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div
+                    className={`
+                      w-12 h-12 sm:w-13 sm:h-13 rounded-full 
+                      bg-linear-to-tr ${getTestimonialMeta(activeReview.name).gradient}
+                      flex items-center justify-center 
+                      text-white font-bold text-base sm:text-lg 
+                      ring-2 ring-white/20 shrink-0
+                    `}
+                  >
+                    {getTestimonialMeta(activeReview.name).initials || (
+                      <UserRound className="w-5 h-5" />
+                    )}
                   </div>
 
-                  <VerifiedBadge label="مُوثَّق" />
+                  <div className="flex flex-col min-w-0">
+                    <h3 className="font-bold text-base sm:text-lg text-white truncate">
+                      {activeReview.name}
+                    </h3>
+                  </div>
                 </div>
+
+                <VerifiedBadge label="مُوثَّق" />
               </div>
-            </>
+            </DialogScrollArea>
           )}
         </DialogContent>
       </Dialog>

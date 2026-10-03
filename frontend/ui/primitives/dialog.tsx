@@ -106,6 +106,26 @@ function DialogFooter({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ * Scrollable body for dialogs with tall content.
+ *
+ * `DialogContent` is a CSS grid, and grid rows default to `min-height: auto` —
+ * a long child then grows the row past the dialog's `max-h` instead of
+ * scrolling. This element is a single shrinkable grid child (`min-h-0`) that
+ * owns the scroll, so content caps at the dialog height. Place all dialog body
+ * children inside it (including `sr-only` title/description, so they don't
+ * create extra grid rows).
+ */
+function DialogScrollArea({ className, ...props }: React.ComponentProps<'div'>) {
+  return (
+    <div
+      data-slot="dialog-scroll-area"
+      className={cn('min-h-0 overflow-y-auto dialog-scrollbar', className)}
+      {...props}
+    />
+  );
+}
+
 function DialogTitle({ className, ...props }: React.ComponentProps<typeof DialogPrimitive.Title>) {
   return (
     <DialogPrimitive.Title
@@ -140,4 +160,5 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
+  DialogScrollArea,
 };
