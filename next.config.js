@@ -57,6 +57,22 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.googleusercontent.com' },
     ],
   },
+  async redirects() {
+    // The public blog was renamed to Community. Preserve inbound links and
+    // SEO equity with a permanent redirect from the old paths.
+    return [
+      {
+        source: '/blog',
+        destination: '/community',
+        permanent: true,
+      },
+      {
+        source: '/blog/:path*',
+        destination: '/community/:path*',
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return [
       {

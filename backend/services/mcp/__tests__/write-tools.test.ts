@@ -25,7 +25,11 @@ const adminCtx: McpUserContext = {
 
 const restrictedCtx: McpUserContext = { ...userCtx, scopes: [] };
 
-describe('blogpress write tools', () => {
+// `vi.resetModules()` + a fresh dynamic import of the tools module runs in
+// every test; under a saturated parallel suite that can exceed Vitest's 5s
+// default and time out even though the code under test is correct. Give the
+// whole file headroom so scheduling starvation is not reported as a failure.
+describe('blogpress write tools', { timeout: 20_000 }, () => {
   const postsRepoPath = '@/backend/repositories/blogpress/posts';
 
   beforeEach(() => vi.resetModules());
