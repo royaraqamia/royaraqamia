@@ -115,6 +115,45 @@ _Avoid_: التوظيف, Employment, employee, salary, subscription, maintenance
 A published sample of royaraqamia's work, shown on the site as a showcase.
 _Avoid_: Project, case study, work sample
 
+### Exchange Rates
+
+**Currency**:
+A national fiat money, identified by its ISO 4217 code, that the site can quote and convert.
+One of the full ISO 4217 set, not a curated list. Distinct from a Metal.
+_Avoid_: Money, coin, cash
+
+**Metal**:
+Gold or silver, priced as a commodity rather than issued by a country. Modelled apart from
+Currency because it is quoted and sold in different units — troy ounces, grams and karats.
+_Avoid_: Commodity, bullion, precious metal
+
+**Exchange Rate**:
+The value of one Currency expressed in another as published by an external provider on a
+given date. It is a quoted observation, not an offer, and no money moves through it (ADR-0006).
+_Avoid_: FX rate, conversion rate, price
+
+**Metal Price**:
+The spot value of a Metal for a given quote date, stated in USD per troy ounce. Gram and karat
+figures are derived from it, never stored as their own rates.
+_Avoid_: Gold rate, bullion price
+
+**Base Currency**:
+The single Currency that every Exchange Rate in a Rate Snapshot is quoted against. Today it
+is USD.
+_Avoid_: Reference currency, anchor currency
+
+**Rate Snapshot**:
+The complete set of Exchange Rates and Metal Prices captured from the provider at one moment,
+stamped with both when it was fetched and the provider's own quote date. The page's history is
+a sequence of Rate Snapshots.
+_Avoid_: Sync, reading, quote, feed
+
+**Rate Sync Run**:
+One attempt to capture a Rate Snapshot, recorded with its outcome. It is the operator's record
+of whether the feed is healthy, and the page falls back to the last good Snapshot when a run
+fails.
+_Avoid_: Sync log, job run
+
 ### Shared
 
 **Admin**:
