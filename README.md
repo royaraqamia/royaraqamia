@@ -266,6 +266,8 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 | `VAPID_PRIVATE_KEY`                    | **Secret.** Server-only Web Push VAPID private key                     | `f7Qz...`                                      | Web Push only                   |
 | `VAPID_SUBJECT`                        | Web Push contact (must be `mailto:` or `https:` URL)                   | `mailto:admin@royaraqamia.com`                 | Web Push only                   |
 
+| `CRON_SECRET` | **Secret.** Bearer token Vercel Cron sends to `/api/rates/refresh` | `change-me` (random 32 bytes) | for the rates cron |
+
 > **Web Push (VAPID):** OS-level push notifications (browser subscription → server dispatch via `web-push`) activate once the five keys above are set. Generate a key pair with `node scripts/generate-vapid.mjs`; put the public key in `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and keep `VAPID_PRIVATE_KEY` + `PUSH_WEBHOOK_TOKEN` server-only. `PUSH_ENDPOINT_ALLOWLIST` defaults to the known push-service hosts and is fail-closed. Without these keys the push pipeline is a graceful no-op — in-app notifications keep working.
 
 > **Naming convention:** `NEXT_PUBLIC_*` variables are inlined into the client bundle and are therefore **not** secrets. Everything else must only be read server-side. The Supabase **service-role key** bypasses RLS — never expose it to the browser.
