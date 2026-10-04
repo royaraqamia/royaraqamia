@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.41.0] - 2026-10-04
+
+### Changed
+- RTL-align the converter and translate the metals cards
+
+### Added
+- scope the board to Arab, USD and EUR currencies
+- add Arab-world currencies and keep expenses curated
+
 ## [1.40.0] - 2026-10-04
 
 ### Changed
