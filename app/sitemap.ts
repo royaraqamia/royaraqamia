@@ -51,6 +51,11 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
+    path: '/rates',
+    changeFrequency: 'daily',
+    priority: 0.8,
+  },
+  {
     path: '/privacy',
     changeFrequency: 'yearly',
     priority: 0.3,

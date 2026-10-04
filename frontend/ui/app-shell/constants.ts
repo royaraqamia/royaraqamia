@@ -1,6 +1,7 @@
 import {
   CalendarCheck,
   CheckSquare,
+  Coins,
   GraduationCap,
   Link2,
   NotebookPen,
@@ -14,6 +15,7 @@ export type AppProduct =
   | 'blogpress'
   | 'habitflow'
   | 'spendtrack'
+  | 'rates'
   | 'verify'
   | 'consultation'
   | 'training'
@@ -49,6 +51,13 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/consultation/book',
     landingPath: '/consultation/book',
     icon: CalendarCheck,
+  },
+  {
+    id: 'rates',
+    label: 'أسعار الصَّرف',
+    appPath: '/rates',
+    landingPath: '/rates',
+    icon: Coins,
   },
   {
     id: 'linksnap',
