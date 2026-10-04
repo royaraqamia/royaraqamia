@@ -92,6 +92,9 @@ export const env = {
   get pushWebhookToken(): string | undefined {
     return read('PUSH_WEBHOOK_TOKEN');
   },
+  get cronSecret(): string | undefined {
+    return read('CRON_SECRET');
+  },
   get pushEndpointAllowlist(): string[] {
     const raw = read('PUSH_ENDPOINT_ALLOWLIST')?.trim();
     return (raw && raw.length > 0 ? raw : DEFAULT_PUSH_ENDPOINT_ALLOWLIST)
