@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/frontend/ui/Navbar';
-import { Footer } from '@/frontend/ui/Footer';
 import { loadRatesBoard } from '@/backend/loaders/rates';
 import { RatesExplorer } from '@/frontend/ui/rates/RatesExplorer';
 
@@ -49,17 +48,13 @@ export default async function RatesPage() {
 
       <main id="main-content" dir="rtl" className="flex-1 pt-24 pb-16 md:pt-32 md:pb-24">
         <div className="cv-auto mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <header className="mb-8 text-start">
-            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl mb-3">
+          <header className="mb-10 text-center">
+            <h1 className="text-3xl font-extrabold leading-tight tracking-tight text-foreground sm:text-4xl md:text-5xl">
               أسعار الصَّرف
             </h1>
-            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-              أسعار جميع عملات العالم مقابل الدُّولار الأمريكي، وأسعار الذَّهب والفِضَّة اللَّحظيَّة
-              — مع محوِّل وبيانات تاريخيَّة.
-            </p>
 
             {board ? (
-              <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
+              <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                 <span>
                   آخر تحديث:{' '}
                   <strong className="font-bold text-foreground">
@@ -90,8 +85,6 @@ export default async function RatesPage() {
           )}
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
