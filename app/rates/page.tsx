@@ -56,12 +56,6 @@ export default async function RatesPage() {
             {board ? (
               <div className="mt-5 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-muted-foreground">
                 <span>
-                  آخر تحديث:{' '}
-                  <strong className="font-bold text-foreground">
-                    {formatDate(board.fetchedAt)}
-                  </strong>
-                </span>
-                <span>
                   تاريخ السِّعر:{' '}
                   <strong className="font-bold text-foreground">
                     {formatDate(board.providerQuoteDate)}
