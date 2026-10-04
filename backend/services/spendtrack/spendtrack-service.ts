@@ -1,5 +1,5 @@
 import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
-import { DEFAULT_CURRENCY, isSupportedCurrency, type CurrencyCode } from '@/shared/currency';
+import { DEFAULT_CURRENCY, isExpenseCurrency, type CurrencyCode } from '@/shared/currency';
 import type {
   Category,
   CategoryBudget,
@@ -206,7 +206,7 @@ export class SpendtrackService {
     }
 
     const currency = input.currency ?? null;
-    if (currency !== null && !isSupportedCurrency(currency)) {
+    if (currency !== null && !isExpenseCurrency(currency)) {
       throw new Error('عملة غير مدعومة');
     }
 
@@ -363,11 +363,11 @@ export class SpendtrackService {
 
   async getCurrency(userId: string): Promise<CurrencyCode> {
     const stored = await this.repository.getUserCurrency(userId);
-    return stored && isSupportedCurrency(stored) ? stored : DEFAULT_CURRENCY;
+    return stored && isExpenseCurrency(stored) ? stored : DEFAULT_CURRENCY;
   }
 
   async updateCurrency(userId: string, code: string): Promise<void> {
-    if (!isSupportedCurrency(code)) {
+    if (!isExpenseCurrency(code)) {
       throw new Error('عملة غير مدعومة');
     }
     await this.repository.setUserCurrency(userId, code);

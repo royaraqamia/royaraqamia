@@ -33,6 +33,12 @@ export function isSupportedCurrency(code: string): code is CurrencyCode {
   return code in CURRENCIES;
 }
 
+export const EXPENSE_CURRENCIES: CurrencyInfo[] = SUPPORTED_CURRENCIES;
+
+export function isExpenseCurrency(code: string): code is CurrencyCode {
+  return isSupportedCurrency(code);
+}
+
 export function getCurrencyInfo(code: string | null | undefined): CurrencyInfo {
   if (code && code in CURRENCIES) return CURRENCIES[code as CurrencyCode] as CurrencyInfo;
   return CURRENCIES[DEFAULT_CURRENCY] as CurrencyInfo;
@@ -53,4 +59,33 @@ export function formatMoney(amount: number, code: string | null | undefined): st
     maximumFractionDigits: 2,
   }).format(amount);
   return info.position === 'prefix' ? `${info.symbol}${value}` : `${value} ${info.symbol}`;
+}
+
+function getCurated(code: string): CurrencyInfo | undefined {
+  return Object.prototype.hasOwnProperty.call(CURRENCIES, code) ? CURRENCIES[code] : undefined;
+}
+
+export function getCurrencyDisplayName(code: string): string {
+  const curated = getCurated(code);
+  if (curated) return curated.name;
+  try {
+    return new Intl.DisplayNames(['ar'], { type: 'currency' }).of(code) ?? code;
+  } catch {
+    return code;
+  }
+}
+
+export function getCurrencyDisplaySymbol(code: string): string {
+  const curated = getCurated(code);
+  if (curated) return curated.symbol;
+  try {
+    const parts = new Intl.NumberFormat('ar', {
+      style: 'currency',
+      currency: code,
+      currencyDisplay: 'narrowSymbol',
+    }).formatToParts(1);
+    return parts.find((part) => part.type === 'currency')?.value ?? code;
+  } catch {
+    return code;
+  }
 }

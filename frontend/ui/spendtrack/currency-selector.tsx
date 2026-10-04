@@ -13,16 +13,16 @@ import {
 import { setCurrency } from '@/frontend/api/spendtrack';
 import {
   DEFAULT_CURRENCY,
-  SUPPORTED_CURRENCIES,
+  EXPENSE_CURRENCIES,
   getCurrencyName,
   getCurrencySymbol,
-  isSupportedCurrency,
+  isExpenseCurrency,
 } from '@/shared/currency';
 
 export function CurrencySelector({ currency }: { currency?: string | null }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
-  const value = currency && isSupportedCurrency(currency) ? currency : DEFAULT_CURRENCY;
+  const value = currency && isExpenseCurrency(currency) ? currency : DEFAULT_CURRENCY;
 
   async function handleChange(next: string) {
     if (next === value) return;
@@ -81,7 +81,7 @@ export function CurrencySelector({ currency }: { currency?: string | null }) {
         )}
       </SelectTrigger>
       <SelectContent className="min-w-48 overflow-hidden rounded-xl border border-neutral-200/80 bg-white/95 p-1.5 text-neutral-900 shadow-xl dark:border-neutral-800 dark:bg-neutral-900/95 dark:text-neutral-100">
-        {SUPPORTED_CURRENCIES.map((currencyItem) => (
+        {EXPENSE_CURRENCIES.map((currencyItem) => (
           <SelectItem
             key={currencyItem.code}
             value={currencyItem.code}
