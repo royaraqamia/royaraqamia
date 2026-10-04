@@ -166,9 +166,9 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           </p>
           <p className="mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
             {conversion ? (
-              <span dir="ltr">
-                {formatRate(conversion.result)}{' '}
-                {isMetalCode(to) ? 'غرام' : getCurrencyDisplaySymbol(to)}
+              <span dir="ltr" className="inline-flex items-baseline gap-1">
+                <span>{isMetalCode(to) ? 'غرام' : getCurrencyDisplaySymbol(to)}</span>
+                <span>{formatRate(conversion.result)}</span>
               </span>
             ) : (
               '—'
