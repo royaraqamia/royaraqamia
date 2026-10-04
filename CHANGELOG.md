@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.41.1] - 2026-10-04
+
+### Changed
+- drop the redundant metal code labels
+- drop the duplicated gold gram row and label the karat prices
+
+### Fixed
+- pin the converted currency symbol to the left via flex order
+- show only the provider quote date in the header
+- place the converted currency symbol left of the value
+
 ## [1.41.0] - 2026-10-04
 
 ### Changed
