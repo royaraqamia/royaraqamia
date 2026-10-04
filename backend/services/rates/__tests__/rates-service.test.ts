@@ -146,6 +146,9 @@ describe('RatesService.getBoard', () => {
     expect(sar.previousRate).toBe(3.6);
     expect(sar.changePct).toBeCloseTo(((3.75 - 3.6) / 3.6) * 100);
 
+    expect(board!.currencies.some((currency) => currency.code === 'JPY')).toBe(false);
+    expect(board!.currencies.some((currency) => currency.code === 'USD')).toBe(true);
+
     const gold = board!.metals.find((metal) => metal.code === 'XAU')!;
     expect(gold.previousPricePerOunceUsd).toBe(1900);
     expect(gold.pricePerGramUsd).toBeCloseTo(2000 / 31.1034768);

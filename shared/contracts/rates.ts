@@ -17,6 +17,34 @@ export const METAL_CODES: readonly MetalCode[] = METALS.map((metal) => metal.cod
 
 export const PRECIOUS_METAL_CODES = ['XAU', 'XAG', 'XPT', 'XPD'] as const;
 
+export const DISPLAY_CURRENCY_CODES: readonly string[] = [
+  'USD',
+  'EUR',
+  'SAR',
+  'AED',
+  'EGP',
+  'JOD',
+  'IQD',
+  'SYP',
+  'KWD',
+  'QAR',
+  'BHD',
+  'OMR',
+  'YER',
+  'LBP',
+  'LYD',
+  'TND',
+  'DZD',
+  'MAD',
+  'SDG',
+  'MRU',
+  'SOS',
+  'DJF',
+  'KMF',
+];
+
+export const DISPLAY_CURRENCY_SET = new Set<string>(DISPLAY_CURRENCY_CODES);
+
 export const RATE_RANGES = ['1W', '1M', '1Y'] as const;
 export type RateRange = (typeof RATE_RANGES)[number];
 

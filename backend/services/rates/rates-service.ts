@@ -3,6 +3,7 @@ import type { MetalPriceProvider } from '@/backend/clients/rates/metal-price-pro
 import type { RatesRepository, RateSnapshot } from '@/backend/repositories/rates/rates-repository';
 import { logger } from '@/backend/shared/logger';
 import {
+  DISPLAY_CURRENCY_SET,
   GOLD_KARATS,
   METALS,
   RATE_BASE_CURRENCY,
@@ -182,9 +183,15 @@ export class RatesService {
   }
 
   private buildBoard(latest: RateSnapshot, previous: RateSnapshot | null): RatesBoard {
-    const currencies = Object.entries(latest.rates)
+    const rateEntries = new Map<string, number>([
+      [latest.base_currency, 1],
+      ...Object.entries(latest.rates),
+    ]);
+
+    const currencies = [...rateEntries.entries()]
+      .filter(([code]) => DISPLAY_CURRENCY_SET.has(code))
       .map(([code, rate]) => {
-        const previousRate = previous?.rates[code] ?? null;
+        const previousRate = previous?.rates[code] ?? (code === latest.base_currency ? 1 : null);
         return {
           code,
           name: getCurrencyDisplayName(code),
