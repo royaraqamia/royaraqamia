@@ -1,22 +1,9 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { getCurrencyDisplaySymbol } from '@/shared/currency';
-import { RATE_RANGES, type RateRange, type RatesBoard } from '@/shared/contracts/rates';
+import type { RatesBoard } from '@/shared/contracts/rates';
 import { convertAmount, isMetalCode, type RateLookup } from '@/shared/rates';
-
-const RateChart = dynamic(
-  () => import('@/frontend/ui/rates/RateChart').then((mod) => mod.RateChart),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-56 items-center justify-center text-sm text-muted-foreground">
-        جارٍ تحميل المخطَّط…
-      </div>
-    ),
-  }
-);
 
 function formatRate(value: number): string {
   const abs = Math.abs(value);
@@ -56,9 +43,6 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   const [amount, setAmount] = useState('1');
   const [from, setFrom] = useState(board.base);
   const [to, setTo] = useState(defaultTo);
-  const [query, setQuery] = useState('');
-  const [selected, setSelected] = useState(defaultTo);
-  const [range, setRange] = useState<RateRange>('1M');
 
   const lookup: RateLookup = useMemo(
     () => ({
@@ -88,15 +72,6 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
     if (!Number.isFinite(numericAmount)) return null;
     return convertAmount(lookup, from, to, numericAmount);
   }, [lookup, from, to, numericAmount]);
-
-  const filteredCurrencies = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return board.currencies;
-    return board.currencies.filter(
-      (currency) =>
-        currency.code.toLowerCase().includes(q) || currency.name.toLowerCase().includes(q)
-    );
-  }, [board.currencies, query]);
 
   const swap = () => {
     setFrom(to);
@@ -257,118 +232,6 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
               ) : null}
             </article>
           ))}
-        </div>
-      </section>
-
-      <section
-        className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs sm:p-8"
-        aria-label="مخطَّط السَّعر"
-      >
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-foreground sm:text-2xl">الأداء التَّاريخي</h2>
-          <div className="flex items-center gap-2">
-            {RATE_RANGES.map((option) => (
-              <button
-                key={option}
-                type="button"
-                onClick={() => setRange(option)}
-                aria-pressed={range === option}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-colors ${
-                  range === option
-                    ? 'bg-primary text-primary-foreground'
-                    : 'border border-border/60 bg-background text-muted-foreground hover:border-primary/40'
-                }`}
-              >
-                {option}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="mb-4 max-w-xs">
-          <label
-            htmlFor="rates-chart-code"
-            className="mb-1 block text-sm font-medium text-muted-foreground"
-          >
-            العملة أو المعدن
-          </label>
-          <select
-            id="rates-chart-code"
-            value={selected}
-            onChange={(event) => setSelected(event.target.value)}
-            className="w-full rounded-xl border border-border/60 bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-          >
-            {options.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <RateChart code={selected} range={range} />
-      </section>
-
-      <section aria-label="جدول أسعار الصَّرف">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-4">
-          <h2 className="text-xl font-bold text-foreground sm:text-2xl">جميع العملات</h2>
-          <div className="w-full max-w-xs">
-            <label htmlFor="rates-search" className="sr-only">
-              بحث عن عملة
-            </label>
-            <input
-              id="rates-search"
-              type="search"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="ابحث بالرَّمز أو الاسم…"
-              className="w-full rounded-xl border border-border/60 bg-background px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-            />
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/85 shadow-xs">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-border/60 text-start text-xs text-muted-foreground">
-                <th className="px-4 py-3 text-start font-medium">الرَّمز</th>
-                <th className="px-4 py-3 text-start font-medium">الاسم</th>
-                <th className="px-4 py-3 text-start font-medium" dir="ltr">
-                  1 {board.base} =
-                </th>
-                <th className="px-4 py-3 text-start font-medium">التَّغيير</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredCurrencies.map((currency) => (
-                <tr
-                  key={currency.code}
-                  onClick={() => setSelected(currency.code)}
-                  className={`cursor-pointer border-b border-border/30 transition-colors last:border-b-0 hover:bg-muted/40 ${
-                    selected === currency.code ? 'bg-primary/5' : ''
-                  }`}
-                >
-                  <td className="px-4 py-3 font-mono font-bold text-foreground" dir="ltr">
-                    {currency.code}
-                  </td>
-                  <td className="px-4 py-3 text-muted-foreground">{currency.name}</td>
-                  <td className="px-4 py-3 font-bold text-foreground" dir="ltr">
-                    {formatRate(currency.rate)} {currency.symbol}
-                  </td>
-                  <td className="px-4 py-3">
-                    <ChangeBadge changePct={currency.changePct} />
-                  </td>
-                </tr>
-              ))}
-              {filteredCurrencies.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="px-4 py-8 text-center text-muted-foreground">
-                    لا توجد نتائج مطابقة.
-                  </td>
-                </tr>
-              ) : null}
-            </tbody>
-          </table>
         </div>
       </section>
     </div>
