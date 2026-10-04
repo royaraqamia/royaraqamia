@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.40.0] - 2026-10-04
+
+### Changed
+- move the two request links above the products
+- center the header and remove the subtitle and footer
+- drop the historical chart and all-currencies table
+- document CRON_SECRET in the environment table
+- align migration filename with applied version
+- schedule the daily refresh and document CRON_SECRET
+- record exchange-rate vocabulary and decisions
+
+### Added
+- hide the floating WhatsApp button on /rates
+- add public rates page, board UI and API routes
+- add snapshotted rates service, controllers and loaders
+- add keyless fiat and metal rate providers
+- add rate snapshot and sync run schema
+- add shared currency metadata and conversion math
+
 ## [1.39.3] - 2026-10-03
 
 ### Changed
