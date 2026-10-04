@@ -41,7 +41,7 @@ import {
   getCurrencyName,
   getCurrencySymbol,
   formatMoney,
-  SUPPORTED_CURRENCIES,
+  EXPENSE_CURRENCIES,
 } from '@/shared/currency';
 
 const expenseSchema = z.object({
@@ -493,7 +493,7 @@ function ExpenseForm({
                     العملة الأساسية ({getCurrencySymbol(currency)}) — {getCurrencyName(currency)}
                   </span>
                 </SelectItem>
-                {SUPPORTED_CURRENCIES.map((item) => (
+                {EXPENSE_CURRENCIES.map((item) => (
                   <SelectItem
                     key={item.code}
                     value={item.code}

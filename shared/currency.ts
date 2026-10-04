@@ -21,6 +21,17 @@ export const CURRENCIES: Record<string, CurrencyInfo> = {
   QAR: { code: 'QAR', symbol: 'ر.ق', name: 'الريال القطري', position: 'suffix' },
   BHD: { code: 'BHD', symbol: 'د.ب', name: 'الدينار البحريني', position: 'suffix' },
   OMR: { code: 'OMR', symbol: 'ر.ع', name: 'الريال العُماني', position: 'suffix' },
+  YER: { code: 'YER', symbol: 'ر.ي', name: 'الريال اليمني', position: 'suffix' },
+  LBP: { code: 'LBP', symbol: 'ل.ل', name: 'الليرة اللبنانية', position: 'suffix' },
+  LYD: { code: 'LYD', symbol: 'د.ل', name: 'الدينار الليبي', position: 'suffix' },
+  TND: { code: 'TND', symbol: 'د.ت', name: 'الدينار التونسي', position: 'suffix' },
+  DZD: { code: 'DZD', symbol: 'د.ج', name: 'الدينار الجزائري', position: 'suffix' },
+  MAD: { code: 'MAD', symbol: 'د.م', name: 'الدرهم المغربي', position: 'suffix' },
+  SDG: { code: 'SDG', symbol: 'ج.س', name: 'الجنيه السوداني', position: 'suffix' },
+  MRU: { code: 'MRU', symbol: 'أ.م', name: 'الأوقية الموريتانية', position: 'suffix' },
+  SOS: { code: 'SOS', symbol: 'ش.ص', name: 'الشلن الصومالي', position: 'suffix' },
+  DJF: { code: 'DJF', symbol: 'ف.ج', name: 'الفرنك الجيبوتي', position: 'suffix' },
+  KMF: { code: 'KMF', symbol: 'ف.ق', name: 'الفرنك القمري', position: 'suffix' },
 } as const;
 
 export type CurrencyCode = keyof typeof CURRENCIES;
@@ -33,10 +44,28 @@ export function isSupportedCurrency(code: string): code is CurrencyCode {
   return code in CURRENCIES;
 }
 
-export const EXPENSE_CURRENCIES: CurrencyInfo[] = SUPPORTED_CURRENCIES;
+const EXPENSE_CURRENCY_CODES = [
+  'USD',
+  'EUR',
+  'GBP',
+  'SAR',
+  'AED',
+  'EGP',
+  'JOD',
+  'IQD',
+  'SYP',
+  'KWD',
+  'QAR',
+  'BHD',
+  'OMR',
+] as const;
+
+export const EXPENSE_CURRENCIES: CurrencyInfo[] = EXPENSE_CURRENCY_CODES.map(
+  (code) => CURRENCIES[code] as CurrencyInfo
+);
 
 export function isExpenseCurrency(code: string): code is CurrencyCode {
-  return isSupportedCurrency(code);
+  return EXPENSE_CURRENCIES.some((currency) => currency.code === code);
 }
 
 export function getCurrencyInfo(code: string | null | undefined): CurrencyInfo {

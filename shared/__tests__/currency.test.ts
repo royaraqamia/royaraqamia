@@ -85,6 +85,8 @@ describe('currency display helpers', () => {
   it('resolves curated names and symbols verbatim', () => {
     expect(getCurrencyDisplayName('SAR')).toBe('الريال السعودي');
     expect(getCurrencyDisplaySymbol('USD')).toBe('$');
+    expect(getCurrencyDisplayName('MAD')).toBe('الدرهم المغربي');
+    expect(getCurrencyDisplaySymbol('LBP')).toBe('ل.ل');
   });
 
   it('resolves non-curated ISO codes through Intl', () => {
@@ -104,9 +106,14 @@ describe('expense currency subset', () => {
     expect(isExpenseCurrency('USD')).toBe(true);
     expect(isExpenseCurrency('SYP')).toBe(true);
     expect(isExpenseCurrency('CHF')).toBe(false);
+    expect(isExpenseCurrency('MAD')).toBe(false);
   });
 
-  it('mirrors the supported list', () => {
-    expect(EXPENSE_CURRENCIES.length).toBe(SUPPORTED_CURRENCIES.length);
+  it('is a curated subset of the known currencies', () => {
+    expect(EXPENSE_CURRENCIES.length).toBe(13);
+    expect(EXPENSE_CURRENCIES.length).toBeLessThan(SUPPORTED_CURRENCIES.length);
+    expect(EXPENSE_CURRENCIES.map((c) => c.code)).toContain('GBP');
+    expect(EXPENSE_CURRENCIES.map((c) => c.code)).not.toContain('MAD');
+    expect(isSupportedCurrency('MAD')).toBe(true);
   });
 });
