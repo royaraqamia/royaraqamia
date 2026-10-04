@@ -167,8 +167,8 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           <p className="mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
             {conversion ? (
               <span dir="ltr">
-                {isMetalCode(to) ? 'غرام' : getCurrencyDisplaySymbol(to)}{' '}
-                {formatRate(conversion.result)}
+                {formatRate(conversion.result)}{' '}
+                {isMetalCode(to) ? 'غرام' : getCurrencyDisplaySymbol(to)}
               </span>
             ) : (
               '—'
