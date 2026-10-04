@@ -196,10 +196,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
               className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs"
             >
               <div className="flex items-start justify-between">
-                <div>
-                  <h3 className="text-lg font-bold text-foreground">{metal.name}</h3>
-                  <p className="text-xs text-muted-foreground">{metal.code}</p>
-                </div>
+                <h3 className="text-lg font-bold text-foreground">{metal.name}</h3>
                 <ChangeBadge changePct={metal.changePct} />
               </div>
 
