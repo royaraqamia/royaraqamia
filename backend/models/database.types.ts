@@ -1036,6 +1036,83 @@ export type Database = {
           },
         ];
       };
+      rate_snapshots: {
+        Row: {
+          base_currency: string;
+          created_at: string;
+          fetched_at: string;
+          id: string;
+          metals: Json;
+          provider_quote_date: string;
+          rates: Json;
+        };
+        Insert: {
+          base_currency?: string;
+          created_at?: string;
+          fetched_at?: string;
+          id?: string;
+          metals?: Json;
+          provider_quote_date: string;
+          rates?: Json;
+        };
+        Update: {
+          base_currency?: string;
+          created_at?: string;
+          fetched_at?: string;
+          id?: string;
+          metals?: Json;
+          provider_quote_date?: string;
+          rates?: Json;
+        };
+        Relationships: [];
+      };
+      rate_sync_runs: {
+        Row: {
+          currency_count: number;
+          error: string | null;
+          finished_at: string | null;
+          id: string;
+          metal_count: number;
+          provider: string;
+          provider_quote_date: string | null;
+          snapshot_id: string | null;
+          started_at: string;
+          status: string;
+        };
+        Insert: {
+          currency_count?: number;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          metal_count?: number;
+          provider?: string;
+          provider_quote_date?: string | null;
+          snapshot_id?: string | null;
+          started_at?: string;
+          status?: string;
+        };
+        Update: {
+          currency_count?: number;
+          error?: string | null;
+          finished_at?: string | null;
+          id?: string;
+          metal_count?: number;
+          provider?: string;
+          provider_quote_date?: string | null;
+          snapshot_id?: string | null;
+          started_at?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'rate_sync_runs_snapshot_id_fkey';
+            columns: ['snapshot_id'];
+            isOneToOne: false;
+            referencedRelation: 'rate_snapshots';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       retainers: {
         Row: {
           company: string | null;
