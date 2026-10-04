@@ -1,5 +1,11 @@
 {
   "regions": ["dub1"],
+  "crons": [
+    {
+      "path": "/api/rates/refresh",
+      "schedule": "0 6 * * *"
+    }
+  ],
   "headers": [
     {
       "source": "/_next/static/(.*)",
