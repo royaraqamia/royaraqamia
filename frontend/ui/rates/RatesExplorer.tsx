@@ -84,23 +84,39 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
         className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs sm:p-8"
         aria-label="محوِّل العملات"
       >
-        <h2 className="mb-6 text-xl font-bold text-foreground sm:text-2xl">المحوِّل</h2>
+        <div className="space-y-2">
+          <label htmlFor="rates-amount" className="text-sm font-medium text-muted-foreground">
+            المبلغ
+          </label>
+          <input
+            id="rates-amount"
+            type="number"
+            inputMode="decimal"
+            min="0"
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+            className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
+            dir="ltr"
+          />
+        </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
           <div className="space-y-2">
-            <label htmlFor="rates-amount" className="text-sm font-medium text-muted-foreground">
-              المبلغ
+            <label htmlFor="rates-from" className="text-sm font-medium text-muted-foreground">
+              من
             </label>
-            <input
-              id="rates-amount"
-              type="number"
-              inputMode="decimal"
-              min="0"
-              value={amount}
-              onChange={(event) => setAmount(event.target.value)}
+            <select
+              id="rates-from"
+              value={from}
+              onChange={(event) => setFrom(event.target.value)}
               className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-              dir="ltr"
-            />
+            >
+              {options.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <button
@@ -126,26 +142,6 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           </button>
 
           <div className="space-y-2">
-            <label htmlFor="rates-from" className="text-sm font-medium text-muted-foreground">
-              من
-            </label>
-            <select
-              id="rates-from"
-              value={from}
-              onChange={(event) => setFrom(event.target.value)}
-              className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr]">
-          <div className="space-y-2">
             <label htmlFor="rates-to" className="text-sm font-medium text-muted-foreground">
               إلى
             </label>
@@ -164,17 +160,26 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           </div>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-5" dir="ltr">
-          <p className="text-sm text-muted-foreground">{isMetalCode(from) ? 'غرام' : from} →</p>
+        <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-5">
+          <p className="text-sm text-muted-foreground">
+            <span dir="ltr">{isMetalCode(from) ? 'غرام' : from} →</span>
+          </p>
           <p className="mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
-            {conversion
-              ? `${formatRate(conversion.result)} ${isMetalCode(to) ? 'غرام' : getCurrencyDisplaySymbol(to)}`
-              : '—'}
+            {conversion ? (
+              <span dir="ltr">
+                {isMetalCode(to) ? 'غرام' : getCurrencyDisplaySymbol(to)}{' '}
+                {formatRate(conversion.result)}
+              </span>
+            ) : (
+              '—'
+            )}
           </p>
           {conversion ? (
             <p className="mt-2 text-xs text-muted-foreground">
-              1 {isMetalCode(from) ? 'غرام' : from} = {formatRate(conversion.rate)}{' '}
-              {isMetalCode(to) ? 'غرام' : to}
+              <span dir="ltr">
+                1 {isMetalCode(from) ? 'غرام' : from} = {formatRate(conversion.rate)}{' '}
+                {isMetalCode(to) ? 'غرام' : to}
+              </span>
             </p>
           ) : (
             <p className="mt-2 text-xs text-destructive">تعذَّر التَّحويل بين هذين العنصرين.</p>
@@ -193,37 +198,32 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="text-lg font-bold text-foreground">{metal.name}</h3>
-                  <p className="text-xs text-muted-foreground" dir="ltr">
-                    {metal.code}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{metal.code}</p>
                 </div>
                 <ChangeBadge changePct={metal.changePct} />
               </div>
 
-              <dl className="mt-5 space-y-2 text-sm" dir="ltr">
+              <dl className="mt-5 space-y-2 text-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">per troy ounce</dt>
-                  <dd className="font-bold text-foreground">
+                  <dt className="text-muted-foreground">سعر الأونصة</dt>
+                  <dd className="font-bold text-foreground" dir="ltr">
                     ${formatRate(metal.pricePerOunceUsd)}
                   </dd>
                 </div>
                 <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">per gram</dt>
-                  <dd className="font-bold text-foreground">
+                  <dt className="text-muted-foreground">سعر الغرام</dt>
+                  <dd className="font-bold text-foreground" dir="ltr">
                     ${formatRate(metal.pricePerGramUsd)}
                   </dd>
                 </div>
               </dl>
 
               {metal.karats.length > 0 ? (
-                <ul
-                  className="mt-4 grid grid-cols-2 gap-2 border-t border-border/40 pt-4 text-xs"
-                  dir="ltr"
-                >
+                <ul className="mt-4 grid grid-cols-2 gap-2 border-t border-border/40 pt-4 text-xs">
                   {metal.karats.map((karat) => (
                     <li key={karat.karat} className="flex items-center justify-between gap-2">
-                      <span className="text-muted-foreground">{karat.karat}k / g</span>
-                      <span className="font-bold text-foreground">
+                      <span className="text-muted-foreground">عيار {karat.karat}</span>
+                      <span className="font-bold text-foreground" dir="ltr">
                         ${formatRate(karat.pricePerGramUsd)}
                       </span>
                     </li>
