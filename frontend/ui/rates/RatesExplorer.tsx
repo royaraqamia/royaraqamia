@@ -210,25 +210,30 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
                     ${formatRate(metal.pricePerOunceUsd)}
                   </dd>
                 </div>
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted-foreground">سعر الغرام</dt>
-                  <dd className="font-bold text-foreground" dir="ltr">
-                    ${formatRate(metal.pricePerGramUsd)}
-                  </dd>
-                </div>
+                {metal.karats.length === 0 ? (
+                  <div className="flex items-center justify-between gap-3">
+                    <dt className="text-muted-foreground">سعر الغرام</dt>
+                    <dd className="font-bold text-foreground" dir="ltr">
+                      ${formatRate(metal.pricePerGramUsd)}
+                    </dd>
+                  </div>
+                ) : null}
               </dl>
 
               {metal.karats.length > 0 ? (
-                <ul className="mt-4 grid grid-cols-2 gap-2 border-t border-border/40 pt-4 text-xs">
-                  {metal.karats.map((karat) => (
-                    <li key={karat.karat} className="flex items-center justify-between gap-2">
-                      <span className="text-muted-foreground">عيار {karat.karat}</span>
-                      <span className="font-bold text-foreground" dir="ltr">
-                        ${formatRate(karat.pricePerGramUsd)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
+                <div className="mt-4 border-t border-border/40 pt-4">
+                  <p className="mb-2 text-xs text-muted-foreground">سعر الغرام حسب العيار</p>
+                  <ul className="grid grid-cols-2 gap-2 text-xs">
+                    {metal.karats.map((karat) => (
+                      <li key={karat.karat} className="flex items-center justify-between gap-2">
+                        <span className="text-muted-foreground">عيار {karat.karat}</span>
+                        <span className="font-bold text-foreground" dir="ltr">
+                          ${formatRate(karat.pricePerGramUsd)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               ) : null}
             </article>
           ))}
