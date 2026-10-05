@@ -5,7 +5,6 @@ import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
-import { DualRatePanel } from '@/frontend/ui/rates/DualRatePanel';
 import { ChangeBadge, formatRate } from '@/frontend/ui/rates/rate-format';
 import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
 import { SECTION_TITLE_HIGHLIGHT } from '@/frontend/ui/shared/section-title';
@@ -193,8 +192,6 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           )}
         </div>
       </section>
-
-      <DualRatePanel board={board} />
 
       <section aria-label="أسعار المعادن">
         <h2 className="mb-4 text-xl font-bold text-foreground sm:text-2xl">الذَّهب والفِضَّة</h2>
