@@ -1,6 +1,16 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { Button } from '@/frontend/ui/primitives/button';
+import { Input } from '@/frontend/ui/primitives/input';
+import { Label } from '@/frontend/ui/primitives/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/frontend/ui/primitives/select';
 import { getCurrencyDisplaySymbol } from '@/shared/currency';
 import type { RatesBoard } from '@/shared/contracts/rates';
 import { convertAmount, isMetalCode, type RateLookup } from '@/shared/rates';
@@ -84,49 +94,46 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
         className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs sm:p-8"
         aria-label="محوِّل العملات"
       >
-        <div className="space-y-2">
-          <label htmlFor="rates-amount" className="text-sm font-medium text-muted-foreground">
-            المبلغ
-          </label>
-          <input
+        <div className="form-field">
+          <Label htmlFor="rates-amount">المبلغ</Label>
+          <Input
             id="rates-amount"
             type="number"
             inputMode="decimal"
             min="0"
             value={amount}
             onChange={(event) => setAmount(event.target.value)}
-            className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
             dir="ltr"
           />
         </div>
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
-          <div className="space-y-2">
-            <label htmlFor="rates-from" className="text-sm font-medium text-muted-foreground">
-              من
-            </label>
-            <select
-              id="rates-from"
-              value={from}
-              onChange={(event) => setFrom(event.target.value)}
-              className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          <div className="form-field">
+            <Label htmlFor="rates-from">من</Label>
+            <Select value={from} onValueChange={setFrom}>
+              <SelectTrigger id="rates-from">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="icon"
             onClick={swap}
-            className="hidden h-11 w-11 items-center justify-center rounded-xl border border-border/60 bg-background text-primary transition-colors hover:border-primary/50 sm:inline-flex"
+            className="h-11 w-11 justify-self-center rounded-xl text-primary"
             aria-label="عكس الاتِّجاه"
           >
             <svg
-              className="h-5 w-5"
+              className="size-5 rotate-90 transition-transform duration-200 sm:rotate-0"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -139,24 +146,22 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
                 d="M8 7h12m0 0-4-4m4 4-4 4M16 17H4m0 0 4 4m-4-4 4-4"
               />
             </svg>
-          </button>
+          </Button>
 
-          <div className="space-y-2">
-            <label htmlFor="rates-to" className="text-sm font-medium text-muted-foreground">
-              إلى
-            </label>
-            <select
-              id="rates-to"
-              value={to}
-              onChange={(event) => setTo(event.target.value)}
-              className="w-full rounded-xl border border-border/60 bg-background px-4 py-3 text-foreground outline-none transition-colors focus:border-primary/60 focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              {options.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+          <div className="form-field">
+            <Label htmlFor="rates-to">إلى</Label>
+            <Select value={to} onValueChange={setTo}>
+              <SelectTrigger id="rates-to">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {options.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
