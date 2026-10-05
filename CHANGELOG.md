@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.49.0] - 2026-10-05
+
+### Added
+- split gold/silver into a dedicated converter
+- carry the last parallel rate forward until it goes stale
+
 ## [1.48.0] - 2026-10-05
 
 ### Added
