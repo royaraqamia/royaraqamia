@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.45.0] - 2026-10-05
+
+### Added
+- add YER parallel markets to the converter
+- let authors edit and delete their posts
+
 ## [1.44.1] - 2026-10-05
 
 ### Changed
