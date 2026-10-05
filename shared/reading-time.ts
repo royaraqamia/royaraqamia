@@ -1,4 +1,4 @@
-function stripMarkdown(text: string): string {
+export function stripMarkdown(text: string): string {
   const sanitizeOnce = (value: string): string =>
     value
       .replace(/[<>]/g, ' ')

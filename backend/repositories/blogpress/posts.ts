@@ -21,9 +21,9 @@ import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-
 const PUBLISHED_POSTS_FILTER =
   'or(status.eq.published,and(status.eq.scheduled,publish_at.lte.now))';
 
-/** Light card projection used by the public feed and related posts — no `content`. */
+/** Card projection used by the public feed and related posts — includes `content`. */
 const POST_SUMMARY_COLUMNS =
-  'id, author_id, title, slug, status, cover_image, meta_title, meta_desc, published_at, publish_at, view_count, featured, community_visible, reading_time_minutes, created_at, updated_at';
+  'id, author_id, title, slug, content, status, cover_image, meta_title, meta_desc, published_at, publish_at, view_count, featured, community_visible, reading_time_minutes, created_at, updated_at';
 
 type Client = SupabaseClient<Database>;
 

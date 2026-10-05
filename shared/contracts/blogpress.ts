@@ -28,8 +28,8 @@ export interface PostAuthorSummary {
   avatar_url: string | null;
 }
 
-/** Feed-card projection: same shape as `Post` minus the heavy `content` column. */
-export type PostSummary = Omit<Post, 'content'> & {
+/** Feed-card projection: the post body plus its public publisher. */
+export type PostSummary = Post & {
   author?: PostAuthorSummary | null;
 };
 

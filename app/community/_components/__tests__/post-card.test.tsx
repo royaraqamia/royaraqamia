@@ -8,6 +8,7 @@ const post: PostSummary = {
   author_id: 'a1',
   title: 'منشور تجريبي',
   slug: 'test-post',
+  content: 'هذا هو نص المنشور الكامل الذي يجب أن يظهر.',
   status: 'published',
   cover_image: null,
   meta_title: null,
@@ -26,6 +27,20 @@ describe('PostCard', () => {
   it('renders the title', () => {
     render(<PostCard post={post} index={0} />);
     expect(screen.getByText('منشور تجريبي')).toBeInTheDocument();
+  });
+
+  it('renders the post body text', () => {
+    render(<PostCard post={post} index={0} />);
+    expect(screen.getByText('هذا هو نص المنشور الكامل الذي يجب أن يظهر.')).toBeInTheDocument();
+  });
+
+  it('strips markdown syntax from the body so raw markers stay off the card', () => {
+    render(
+      <PostCard post={{ ...post, content: 'استمع إلى **الذكاء الاصطناعي** الآن.' }} index={0} />
+    );
+
+    expect(screen.getByText('استمع إلى الذكاء الاصطناعي الآن.')).toBeInTheDocument();
+    expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument();
   });
 
   it('does not hide the card behind an entrance animation (ADR 0004)', () => {

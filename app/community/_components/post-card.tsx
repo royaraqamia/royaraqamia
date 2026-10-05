@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, ArrowLeft, User } from 'lucide-react';
+import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
+import { stripMarkdown } from '@/shared/reading-time';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 
 interface PostCardProps {
@@ -9,6 +11,8 @@ interface PostCardProps {
 }
 
 export function PostCard({ post, index }: PostCardProps) {
+  const body = post.content?.trim() ? stripMarkdown(post.content) : (post.meta_desc ?? '');
+
   return (
     <article className="group/community relative flex flex-col justify-between rounded-3xl border border-border bg-muted/20 overflow-hidden transition-safe duration-500 ease-out hover:border-border hover:bg-muted/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-background/60 focus-within:ring-2 focus-within:ring-primary/50">
       {post.cover_image && (
@@ -62,10 +66,14 @@ export function PostCard({ post, index }: PostCardProps) {
             </Link>
           </h2>
 
-          {post.meta_desc && (
-            <p className="mt-3 text-sm text-muted-foreground line-clamp-2 leading-relaxed font-normal">
-              {post.meta_desc}
-            </p>
+          {body && (
+            <CollapsibleText
+              lines={4}
+              className="mt-3 text-sm text-muted-foreground leading-relaxed font-normal"
+              buttonClassName="relative z-20 text-primary hover:text-primary/90"
+            >
+              {body}
+            </CollapsibleText>
           )}
         </div>
 
