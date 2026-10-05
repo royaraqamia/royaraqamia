@@ -22,8 +22,16 @@ export interface Post {
   updated_at: string;
 }
 
+/** Public publisher identity shown on feed cards — no private columns (e.g. email). */
+export interface PostAuthorSummary {
+  name: string | null;
+  avatar_url: string | null;
+}
+
 /** Feed-card projection: same shape as `Post` minus the heavy `content` column. */
-export type PostSummary = Omit<Post, 'content'>;
+export type PostSummary = Omit<Post, 'content'> & {
+  author?: PostAuthorSummary | null;
+};
 
 export interface PostCategory {
   id: string;

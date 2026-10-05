@@ -44,4 +44,27 @@ describe('PostCard', () => {
     render(<PostCard post={{ ...post, cover_image: '/cover.png' }} index={0} />);
     expect(screen.getByAltText('منشور تجريبي')).toBeInTheDocument();
   });
+
+  it('renders the publisher name and avatar', () => {
+    render(
+      <PostCard
+        post={{
+          ...post,
+          author: { name: 'رؤى رقميّة', avatar_url: '/avatar.png' },
+        }}
+        index={0}
+      />
+    );
+
+    expect(screen.getByText('رؤى رقميّة')).toBeInTheDocument();
+    expect(screen.getByAltText('رؤى رقميّة')).toHaveAttribute(
+      'src',
+      expect.stringContaining('avatar.png')
+    );
+  });
+
+  it('omits the publisher block when there is no author', () => {
+    render(<PostCard post={{ ...post, author: null }} index={0} />);
+    expect(screen.queryByText('رؤى رقميّة')).not.toBeInTheDocument();
+  });
 });

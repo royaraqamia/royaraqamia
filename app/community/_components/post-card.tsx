@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
-import { Calendar, ArrowLeft } from 'lucide-react';
+import { Calendar, ArrowLeft, User } from 'lucide-react';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 
 interface PostCardProps {
@@ -34,6 +34,25 @@ export function PostCard({ post, index }: PostCardProps) {
 
       <div className="flex-1 flex flex-col justify-between p-6 sm:p-7 relative">
         <div>
+          {post.author?.name && (
+            <div className="mb-3 flex items-center gap-2.5">
+              {post.author.avatar_url?.trim() ? (
+                <Image
+                  src={post.author.avatar_url}
+                  alt={post.author.name}
+                  width={28}
+                  height={28}
+                  className="size-7 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
+                />
+              ) : (
+                <div className="size-7 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0">
+                  <User className="size-3.5" />
+                </div>
+              )}
+              <span className="text-xs font-bold text-foreground">{post.author.name}</span>
+            </div>
+          )}
+
           <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground group-hover/community:text-foreground transition-colors duration-300 leading-snug line-clamp-2">
             <Link
               href={`/community/${post.slug}`}

@@ -14,8 +14,23 @@ const COMMUNITY_CACHE_SECONDS = 60;
 const pub = () => createBlogpressPostsModule(getPublicSupabase()).repository;
 
 export const loadCommunityIndex = unstable_cache(
-  (cursor: string | null, query: string, pageSize: number, categorySlug?: string) =>
-    pub().getPublishedFeed(cursor, query, pageSize, categorySlug),
+  async (cursor: string | null, query: string, pageSize: number, categorySlug?: string) => {
+    const feed = await pub().getPublishedFeed(cursor, query, pageSize, categorySlug);
+
+    // `users` is not readable by the anon client the feed runs on, so publishers
+    // are joined with the service-role repository and projected down to the
+    // public identity only (name + avatar).
+    const authorIds = [...new Set(feed.posts.map((post) => post.author_id))];
+    const authors = await createBlogpressAdminPostsModule().repository.getPostAuthors(authorIds);
+
+    return {
+      posts: feed.posts.map((post) => ({
+        ...post,
+        author: authors[post.author_id] ?? null,
+      })),
+      nextCursor: feed.nextCursor,
+    };
+  },
   ['community-index'],
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.index] }
 );

@@ -3,6 +3,7 @@ import type {
   PostCategory,
   PostTag,
   PostAuthor,
+  PostAuthorSummary,
   PublishedPostsResult,
   PublishedFeedResult,
   RestorePostSnapshot,
@@ -25,6 +26,7 @@ export interface PostsRepository {
   getPublishedPostSlugs(): Promise<string[]>;
   getPublishedPostBySlug(slug: string): Promise<Post | null>;
   getPostAuthor(authorId: string): Promise<PostAuthor | null>;
+  getPostAuthors(authorIds: string[]): Promise<Record<string, PostAuthorSummary>>;
   getPublishedCategories(): Promise<PostCategory[]>;
   getPublishedPostCategories(postId: string): Promise<PostCategory[]>;
   incrementPostViewCount(postId: string): Promise<void>;

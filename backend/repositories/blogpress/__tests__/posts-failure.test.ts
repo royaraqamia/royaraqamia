@@ -96,6 +96,32 @@ describe('blogpress posts repository failure contract', () => {
     await expect(repo.getPostAuthor('u-1')).rejects.toBeInstanceOf(RepositoryError);
   });
 
+  it('maps batch authors to their public identity only, never email', async () => {
+    const repo = createPostsRepository(
+      makeClient({
+        data: [
+          {
+            id: 'u-1',
+            name: 'رؤى رقميّة',
+            avatar_url: '/avatar.png',
+            email: 'private@example.com',
+          },
+        ],
+        error: null,
+      }).client
+    );
+
+    await expect(repo.getPostAuthors(['u-1'])).resolves.toEqual({
+      'u-1': { name: 'رؤى رقميّة', avatar_url: '/avatar.png' },
+    });
+  });
+
+  it('short-circuits getPostAuthors without an author to look up', async () => {
+    const repo = createPostsRepository(makeClient({ data: null, error: DB_ERROR }).client);
+
+    await expect(repo.getPostAuthors([])).resolves.toEqual({});
+  });
+
   it('throws from getPublishedCategories on a database error', async () => {
     const repo = createPostsRepository(makeClient({ data: null, error: DB_ERROR }).client);
 

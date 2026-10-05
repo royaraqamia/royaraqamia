@@ -6,6 +6,7 @@ import type {
   PostCategory,
   PostTag,
   PostAuthor,
+  PostAuthorSummary,
   PublishedPostsResult,
   PublishedFeedResult,
   RestorePostSnapshot,
@@ -236,6 +237,23 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       if (error) throw repositoryFailure('blogpress.getPostAuthor', error);
 
       return data ?? null;
+    },
+
+    async getPostAuthors(authorIds: string[]): Promise<Record<string, PostAuthorSummary>> {
+      if (authorIds.length === 0) return {};
+
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, avatar_url')
+        .in('id', authorIds);
+
+      if (error) throw repositoryFailure('blogpress.getPostAuthors', error);
+
+      const authors: Record<string, PostAuthorSummary> = {};
+      for (const row of data ?? []) {
+        authors[row.id] = { name: row.name, avatar_url: row.avatar_url };
+      }
+      return authors;
     },
 
     async getPublishedCategories(): Promise<PostCategory[]> {
