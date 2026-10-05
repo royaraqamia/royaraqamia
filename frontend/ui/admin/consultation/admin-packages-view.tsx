@@ -87,7 +87,7 @@ export function AdminPackagesView() {
     };
 
     if (!payload.name || !(payload.price_usd > 0)) {
-      setMessage({ ok: false, text: 'الاسم والسعر مطلوبان.' });
+      setMessage({ ok: false, text: 'الاسم والسِّعر مطلوبان.' });
       return;
     }
 
@@ -179,7 +179,7 @@ export function AdminPackagesView() {
             </div>
             <div className="form-field">
               <Label htmlFor="pkg-price" className="form-label">
-                السعر ($)
+                السِّعر ($)
               </Label>
               <Input
                 id="pkg-price"

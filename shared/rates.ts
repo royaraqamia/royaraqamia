@@ -1,4 +1,5 @@
 import {
+  GOLD_CODE,
   METAL_CODES,
   TROY_OUNCE_GRAMS,
   type MetalCode,
@@ -45,11 +46,15 @@ export function karatPricePerGram(pricePerOunce: number, karat: number): number 
 export function usdPerUnit(
   lookup: RateLookup,
   code: string,
-  basis: RateBasis = 'official'
+  basis: RateBasis = 'official',
+  karat?: number
 ): number | null {
   if (isMetalCode(code)) {
     const perOunce = lookup.metals[code];
     if (perOunce === undefined || perOunce <= 0) return null;
+    if (code === GOLD_CODE && karat !== undefined) {
+      return karatPricePerGram(perOunce, karat);
+    }
     return pricePerGram(perOunce);
   }
 
@@ -65,10 +70,11 @@ export function convertAmount(
   from: string,
   to: string,
   amount: number,
-  basis: RateBasis = 'official'
+  basis: RateBasis = 'official',
+  karat?: number
 ): { result: number; rate: number } | null {
-  const fromUsd = usdPerUnit(lookup, from, basis);
-  const toUsd = usdPerUnit(lookup, to, basis);
+  const fromUsd = usdPerUnit(lookup, from, basis, karat);
+  const toUsd = usdPerUnit(lookup, to, basis, karat);
   if (fromUsd === null || toUsd === null || toUsd === 0) return null;
 
   const rate = fromUsd / toUsd;

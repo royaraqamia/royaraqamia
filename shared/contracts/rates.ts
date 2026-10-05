@@ -13,6 +13,8 @@ export const METALS = [
 ] as const;
 
 export type MetalCode = (typeof METALS)[number]['code'];
+
+export const GOLD_CODE: MetalCode = 'XAU';
 export const METAL_CODES: readonly MetalCode[] = METALS.map((metal) => metal.code);
 
 export const PRECIOUS_METAL_CODES = ['XAU', 'XAG', 'XPT', 'XPD'] as const;

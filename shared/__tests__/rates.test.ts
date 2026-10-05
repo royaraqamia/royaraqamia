@@ -51,6 +51,16 @@ describe('usdPerUnit', () => {
   it('ignores the basis for metals', () => {
     expect(usdPerUnit(lookup, 'XAU', 'parallel')).toBeCloseTo(2000 / TROY_OUNCE_GRAMS);
   });
+
+  it('scales gold by karat when provided', () => {
+    expect(usdPerUnit(lookup, 'XAU', 'official', 18)).toBeCloseTo(
+      (2000 / TROY_OUNCE_GRAMS) * (18 / 24)
+    );
+  });
+
+  it('ignores karat for non-gold metals', () => {
+    expect(usdPerUnit(lookup, 'XAG', 'official', 18)).toBeCloseTo(25 / TROY_OUNCE_GRAMS);
+  });
 });
 
 describe('isParallelRate', () => {
@@ -90,6 +100,11 @@ describe('convertAmount', () => {
   it('converts USD to grams of gold', () => {
     const result = convertAmount(lookup, 'USD', 'XAU', 2000);
     expect(result?.result).toBeCloseTo(TROY_OUNCE_GRAMS);
+  });
+
+  it('converts a gram of 18k gold to USD', () => {
+    const result = convertAmount(lookup, 'XAU', 'USD', 1, 'official', 18);
+    expect(result?.result).toBeCloseTo((2000 / TROY_OUNCE_GRAMS) * (18 / 24));
   });
 
   it('returns null when either side is unknown', () => {

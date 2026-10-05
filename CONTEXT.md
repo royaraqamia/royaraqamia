@@ -142,15 +142,15 @@ _Avoid_: Official Rate, market rate, true rate
 The value of one Currency in another as administered or pegged by that country's central
 bank, shown on the board as the rate banks and the state use. One half of a dual-rate Currency,
 and distinct from the Reference Rate, which is a third-party blend.
-_Sold as_: السعر الرسمي (المصرف المركزي)
+_Sold as_: السِّعر الرَّسمي (المصرف المركزي)
 _Avoid_: central bank price, government rate, official price
 
 **Parallel Rate**:
 The value of one Currency in another on the informal market, where it diverges structurally
 from the Official Rate. Shown beside the Official Rate for a dual-rate Currency, and never
 averaged with it.
-_Sold as_: السوق الموازي
-_Avoid_: black market, السوق السوداء, street rate, free-market rate
+_Sold as_: السُّوق الموازي
+_Avoid_: black market, السُّوق السوداء, street rate, free-market rate
 
 **Metal Price**:
 The spot value of a Metal for a given quote date, stated in USD per troy ounce. Gram and karat

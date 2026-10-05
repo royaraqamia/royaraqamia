@@ -9,7 +9,13 @@ import { ChangeBadge, formatRate } from '@/frontend/ui/rates/rate-format';
 import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
 import { SECTION_TITLE_HIGHLIGHT } from '@/frontend/ui/shared/section-title';
 import { getCurrencyDisplaySymbol } from '@/shared/currency';
-import { type RateBasis, type RatesBoard } from '@/shared/contracts/rates';
+import {
+  GOLD_CODE,
+  GOLD_KARATS,
+  type GoldKarat,
+  type RateBasis,
+  type RatesBoard,
+} from '@/shared/contracts/rates';
 import { convertAmount, isMetalCode, isParallelRate, type RateLookup } from '@/shared/rates';
 
 interface RatesExplorerProps {
@@ -27,6 +33,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   const [to, setTo] = useState(defaultTo);
   const [basis, setBasis] = useState<RateBasis>('parallel');
   const [market, setMarket] = useState<string | null>(null);
+  const [goldKarat, setGoldKarat] = useState<GoldKarat>(24);
 
   const marketOptions = useMemo(
     () =>
@@ -75,12 +82,13 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   const basisRelevant = isParallelRate(lookup, from) || isParallelRate(lookup, to);
   const effectiveBasis: RateBasis = basisRelevant ? basis : 'official';
   const marketRelevant = basisRelevant && basis === 'parallel' && marketOptions.length > 1;
+  const goldRelevant = from === GOLD_CODE || to === GOLD_CODE;
 
   const numericAmount = Number(amount);
   const conversion = useMemo(() => {
     if (!Number.isFinite(numericAmount)) return null;
-    return convertAmount(lookup, from, to, numericAmount, effectiveBasis);
-  }, [lookup, from, to, numericAmount, effectiveBasis]);
+    return convertAmount(lookup, from, to, numericAmount, effectiveBasis, goldKarat);
+  }, [lookup, from, to, numericAmount, effectiveBasis, goldKarat]);
 
   const swap = () => {
     setFrom(to);
@@ -110,7 +118,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           <div className="mt-4">
             <span className="mb-1.5 block text-sm font-medium text-foreground">سعر التحويل</span>
             <div
-              className="inline-flex rounded-xl border border-border/60 bg-muted/30 p-1"
+              className="flex w-full rounded-xl border border-border/60 bg-muted/30 p-1"
               role="group"
               aria-label="أساس سعر التحويل"
             >
@@ -121,13 +129,13 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
                   aria-pressed={basis === value}
                   onClick={() => setBasis(value)}
                   className={cn(
-                    'rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
+                    'flex-1 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
                     basis === value
                       ? 'bg-card text-primary shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  {value === 'parallel' ? 'السوق الموازي' : 'السعر الرسمي'}
+                  {value === 'parallel' ? 'السُّوق الموازي' : 'السِّعر الرَّسمي'}
                 </button>
               ))}
             </div>
@@ -136,9 +144,9 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
 
         {marketRelevant ? (
           <div className="mt-4">
-            <span className="mb-1.5 block text-sm font-medium text-foreground">السوق</span>
+            <span className="mb-1.5 block text-sm font-medium text-foreground">السُّوق</span>
             <div
-              className="inline-flex rounded-xl border border-border/60 bg-muted/30 p-1"
+              className="flex w-full rounded-xl border border-border/60 bg-muted/30 p-1"
               role="group"
               aria-label="سوق الصرف"
             >
@@ -149,13 +157,41 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
                   aria-pressed={activeMarket === option.key}
                   onClick={() => setMarket(option.key)}
                   className={cn(
-                    'rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
+                    'flex-1 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
                     activeMarket === option.key
                       ? 'bg-card text-primary shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
                   )}
                 >
                   {option.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {goldRelevant ? (
+          <div className="mt-4">
+            <span className="mb-1.5 block text-sm font-medium text-foreground">العِيار</span>
+            <div
+              className="flex w-full rounded-xl border border-border/60 bg-muted/30 p-1"
+              role="group"
+              aria-label="عيار الذَّهَب"
+            >
+              {GOLD_KARATS.map((karat) => (
+                <button
+                  key={karat}
+                  type="button"
+                  aria-pressed={goldKarat === karat}
+                  onClick={() => setGoldKarat(karat)}
+                  className={cn(
+                    'flex-1 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
+                    goldKarat === karat
+                      ? 'bg-card text-primary shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {karat}
                 </button>
               ))}
             </div>
@@ -231,12 +267,12 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           {conversion && basisRelevant ? (
             <p className="mt-2 text-xs text-muted-foreground">
               {effectiveBasis === 'parallel'
-                ? `حسب سعر السوق الموازي${
+                ? `حسب سعر السُّوق الموازي${
                     marketRelevant
                       ? ` — ${marketOptions.find((option) => option.key === activeMarket)?.name ?? ''}`
                       : ''
                   }`
-                : 'حسب السعر الرسمي'}
+                : 'حسب السِّعر الرَّسمي'}
             </p>
           ) : null}
           {conversion ? null : (
@@ -282,7 +318,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
                     {metal.karats.map((karat) => (
                       <li
                         key={karat.karat}
-                        className="flex w-fit items-center gap-1.5 justify-self-start rounded-lg bg-muted/30 px-2.5 py-1.5"
+                        className="flex w-fit items-center gap-1.5 justify-self-start rounded-lg bg-muted/30 px-2.5 py-1.5 even:justify-self-end"
                       >
                         <span className="text-muted-foreground">عيار {karat.karat}</span>
                         <span className="font-bold text-foreground" dir="ltr">

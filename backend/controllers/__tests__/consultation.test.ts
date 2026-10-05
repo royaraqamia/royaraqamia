@@ -670,7 +670,7 @@ describe('consultation public endpoints stay public', () => {
       {
         full_name: 'أحمد العلي',
         phone_whatsapp: '+963 968 478 904',
-        topic_description: 'أحتاج إلى استشارة حول بناء منتج رقمي جديد وإطلاقه في السوق.',
+        topic_description: 'أحتاج إلى استشارة حول بناء منتج رقمي جديد وإطلاقه في السُّوق.',
         package_id: '11111111-1111-4111-8111-111111111111',
         slot_ids: ['22222222-2222-4222-8222-222222222222'],
       },
