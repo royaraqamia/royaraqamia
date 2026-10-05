@@ -10,11 +10,13 @@ import { MotionProvider } from '../frontend/ui/MotionProvider';
 import { UIProvider } from '../frontend/state/UIContext';
 import { NotificationProvider } from '../frontend/state/NotificationContext';
 import { SessionProvider } from '../frontend/state/session-provider';
+import { DirectionProvider } from '@radix-ui/react-direction';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
 import { FloatingActions } from '../frontend/ui/FloatingActions';
 import { SITE_NAME } from '@/frontend/shared/metadata';
+import { DIRECTION } from '@/frontend/shared/constants';
 import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
 import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
@@ -135,7 +137,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="ar"
-      dir="rtl"
+      dir={DIRECTION}
       className={`dark ${ibmPlexSansArabic.variable} ${arefRuqaa.variable}`}
     >
       <head>
@@ -149,22 +151,24 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ErrorBoundary>
-          <SessionProvider>
-            <MotionProvider>
-              <UIProvider>
-                <NotificationProvider>
-                  <SpeedInsights />
-                  <Analytics />
-                  <PWAProvider>
-                    <RouteChangeFocus />
-                    {children}
-                    <FloatingActions />
-                  </PWAProvider>
-                  <RoyaToaster />
-                </NotificationProvider>
-              </UIProvider>
-            </MotionProvider>
-          </SessionProvider>
+          <DirectionProvider dir={DIRECTION}>
+            <SessionProvider>
+              <MotionProvider>
+                <UIProvider>
+                  <NotificationProvider>
+                    <SpeedInsights />
+                    <Analytics />
+                    <PWAProvider>
+                      <RouteChangeFocus />
+                      {children}
+                      <FloatingActions />
+                    </PWAProvider>
+                    <RoyaToaster />
+                  </NotificationProvider>
+                </UIProvider>
+              </MotionProvider>
+            </SessionProvider>
+          </DirectionProvider>
         </ErrorBoundary>
       </body>
     </html>

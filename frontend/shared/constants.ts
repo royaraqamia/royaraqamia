@@ -18,6 +18,9 @@ export const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? '';
 
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://royaraqamia.com';
 
+/** Single source of truth for text direction; consumed by `<html dir>` and Radix's DirectionProvider. */
+export const DIRECTION = 'rtl' as const;
+
 export const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 export const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
