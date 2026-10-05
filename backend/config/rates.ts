@@ -8,6 +8,7 @@ import { createGoldApiProvider } from '@/backend/clients/rates/metal-price-provi
 import { createSpTodayProvider } from '@/backend/clients/rates/syp-market-provider';
 import { createSypMarketVariantProvider } from '@/backend/clients/rates/syp-market-variant-provider';
 import { createCompositeVariantProvider } from '@/backend/clients/rates/variant-rate-provider';
+import { createYemenRateProvider } from '@/backend/clients/rates/yemen-rate-provider';
 import { createRatesRepository } from '@/backend/repositories/rates';
 import { RatesService } from '@/backend/services/rates/rates-service';
 
@@ -34,6 +35,7 @@ export function createRatesService(supabase: SupabaseClient<Database>): RatesSer
         createSypMarketVariantProvider(createSpTodayProvider()),
         createIraqRateProvider(),
         createAlgeriaRateProvider(),
+        createYemenRateProvider(),
       ],
       { onFallback: reportVariantFallback }
     )

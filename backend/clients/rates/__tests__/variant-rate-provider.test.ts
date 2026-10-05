@@ -31,6 +31,18 @@ describe('createCompositeVariantProvider', () => {
     expect(result.find((quote) => quote.code === 'IQD')?.parallel).toBe(1596);
   });
 
+  it('carries per-market parallel values', async () => {
+    const composite = createCompositeVariantProvider([
+      provider('yemen', async () => [
+        { code: 'YER', parallel: 531, markets: { sanaa: 531, aden: 1563 }, date: '' },
+      ]),
+    ]);
+
+    const result = await composite.fetchVariants();
+
+    expect(result[0]?.markets).toEqual({ sanaa: 531, aden: 1563 });
+  });
+
   it('drops a failing source and reports it without losing the others', async () => {
     const onFallback = vi.fn();
     const composite = createCompositeVariantProvider(

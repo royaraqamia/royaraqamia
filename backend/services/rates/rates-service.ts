@@ -11,8 +11,10 @@ import {
   DISPLAY_CURRENCY_SET,
   GOLD_KARATS,
   METALS,
+  PARALLEL_MARKETS,
   RATE_BASE_CURRENCY,
   type MetalQuote,
+  type ParallelMarket,
   type RateBasis,
   type RateHealth,
   type RateRange,
@@ -55,6 +57,38 @@ function variantRate(snapshot: RateSnapshot, code: string, basis: RateBasis): nu
     return snapshot.parallel_rates[code]?.rate ?? snapshot.rates[code];
   }
   return snapshot.official_rates[code]?.rate ?? snapshot.rates[code];
+}
+
+/** Builds the per-market parallel rates for a currency that has more than one. */
+function buildParallelMarkets(
+  code: string,
+  current: RateVariant | undefined,
+  previous: RateVariant | undefined,
+  fetchedAt: string
+): ParallelMarket[] | undefined {
+  const defs = PARALLEL_MARKETS[code];
+  const markets = current?.markets;
+  if (!defs || !markets) return undefined;
+
+  const built = defs.flatMap((def): ParallelMarket[] => {
+    const value = markets[def.key];
+    if (!value) return [];
+    const previousRate = previous?.markets?.[def.key]?.rate ?? null;
+    return [
+      {
+        key: def.key,
+        name: def.name,
+        rate: {
+          rate: value.rate,
+          previousRate,
+          changePct: computeChangePct(value.rate, previousRate),
+          asOf: value.date ?? fetchedAt.slice(0, 10),
+        },
+      },
+    ];
+  });
+
+  return built.length > 0 ? built : undefined;
 }
 
 export class RatesService {
@@ -105,7 +139,16 @@ export class RatesService {
           officialRates[quote.code] = { rate: quote.official, date };
         }
         if (quote.parallel !== undefined) {
-          parallelRates[quote.code] = { rate: quote.parallel, date };
+          const markets = quote.markets
+            ? Object.fromEntries(
+                Object.entries(quote.markets).map(([key, rate]) => [key, { rate, date }])
+              )
+            : undefined;
+          parallelRates[quote.code] = {
+            rate: quote.parallel,
+            date,
+            ...(markets ? { markets } : {}),
+          };
         }
       }
 
@@ -253,6 +296,12 @@ export class RatesService {
                 asOf: parallelVariant.date ?? latest.fetched_at.slice(0, 10),
               }
             : null,
+          parallelMarkets: buildParallelMarkets(
+            code,
+            parallelVariant,
+            previous?.parallel_rates[code],
+            latest.fetched_at
+          ),
         };
       })
       .sort((a, b) => a.code.localeCompare(b.code));

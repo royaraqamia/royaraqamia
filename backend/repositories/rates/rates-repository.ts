@@ -2,6 +2,8 @@
 export interface RateVariant {
   rate: number;
   date: string | null;
+  /** Per-market values when the parallel rate spans more than one market. */
+  markets?: Record<string, RateVariant>;
 }
 
 export interface RateSnapshot {

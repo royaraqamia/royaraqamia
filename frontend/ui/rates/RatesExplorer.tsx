@@ -26,20 +26,37 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   const [from, setFrom] = useState(board.base);
   const [to, setTo] = useState(defaultTo);
   const [basis, setBasis] = useState<RateBasis>('parallel');
+  const [market, setMarket] = useState<string | null>(null);
 
-  const lookup: RateLookup = useMemo(
-    () => ({
+  const marketOptions = useMemo(
+    () =>
+      board.currencies.find(
+        (currency) =>
+          (currency.code === from || currency.code === to) && currency.parallelMarkets?.length
+      )?.parallelMarkets ?? [],
+    [board, from, to]
+  );
+  const activeMarket =
+    marketOptions.find((option) => option.key === market)?.key ?? marketOptions[0]?.key ?? null;
+
+  const lookup: RateLookup = useMemo(() => {
+    const parallel: Record<string, number> = {};
+    for (const currency of board.currencies) {
+      if (!currency.parallel) continue;
+      const markets = currency.parallelMarkets;
+      const chosen =
+        markets && markets.length > 0
+          ? (markets.find((option) => option.key === activeMarket) ?? markets[0])
+          : null;
+      parallel[currency.code] = chosen ? chosen.rate.rate : currency.parallel.rate;
+    }
+    return {
       base: board.base,
       rates: Object.fromEntries(board.currencies.map((currency) => [currency.code, currency.rate])),
-      parallel: Object.fromEntries(
-        board.currencies
-          .filter((currency) => currency.parallel !== null)
-          .map((currency) => [currency.code, currency.parallel!.rate])
-      ),
+      parallel,
       metals: Object.fromEntries(board.metals.map((metal) => [metal.code, metal.pricePerOunceUsd])),
-    }),
-    [board]
-  );
+    };
+  }, [board, activeMarket]);
 
   const options = useMemo(
     () => [
@@ -57,6 +74,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
 
   const basisRelevant = isParallelRate(lookup, from) || isParallelRate(lookup, to);
   const effectiveBasis: RateBasis = basisRelevant ? basis : 'official';
+  const marketRelevant = basisRelevant && basis === 'parallel' && marketOptions.length > 1;
 
   const numericAmount = Number(amount);
   const conversion = useMemo(() => {
@@ -110,6 +128,34 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
                   )}
                 >
                   {value === 'parallel' ? 'السوق الموازي' : 'السعر الرسمي'}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
+
+        {marketRelevant ? (
+          <div className="mt-4">
+            <span className="mb-1.5 block text-sm font-medium text-foreground">السوق</span>
+            <div
+              className="inline-flex rounded-xl border border-border/60 bg-muted/30 p-1"
+              role="group"
+              aria-label="سوق الصرف"
+            >
+              {marketOptions.map((option) => (
+                <button
+                  key={option.key}
+                  type="button"
+                  aria-pressed={activeMarket === option.key}
+                  onClick={() => setMarket(option.key)}
+                  className={cn(
+                    'rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
+                    activeMarket === option.key
+                      ? 'bg-card text-primary shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {option.name}
                 </button>
               ))}
             </div>
@@ -184,7 +230,13 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           </p>
           {conversion && basisRelevant ? (
             <p className="mt-2 text-xs text-muted-foreground">
-              {effectiveBasis === 'parallel' ? 'حسب سعر السوق الموازي' : 'حسب السعر الرسمي'}
+              {effectiveBasis === 'parallel'
+                ? `حسب سعر السوق الموازي${
+                    marketRelevant
+                      ? ` — ${marketOptions.find((option) => option.key === activeMarket)?.name ?? ''}`
+                      : ''
+                  }`
+                : 'حسب السعر الرسمي'}
             </p>
           ) : null}
           {conversion ? null : (

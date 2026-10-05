@@ -42,11 +42,16 @@ export const DISPLAY_CURRENCY_CODES: readonly string[] = [
 export const DISPLAY_CURRENCY_SET = new Set<string>(DISPLAY_CURRENCY_CODES);
 
 /**
- * Currencies shown with both an Official Rate and a Parallel Rate. Their cards
- * render even when the market feed is unavailable, so a failed source degrades
- * visibly instead of silently dropping the currency (ADR-0011, ADR-0013).
+ * Currencies whose Parallel Rate splits across more than one market, and the
+ * markets (in display order). YER has two: Sanaa (old notes) and Aden (new
+ * notes), roughly a 3x gap — they are shown separately and never blended.
  */
-export const DUAL_RATE_CURRENCY_CODES: readonly string[] = ['SYP', 'IQD', 'DZD'];
+export const PARALLEL_MARKETS: Record<string, readonly { key: string; name: string }[]> = {
+  YER: [
+    { key: 'sanaa', name: 'صنعاء' },
+    { key: 'aden', name: 'عدن' },
+  ],
+};
 
 export const RATE_RANGES = ['1W', '1M', '1Y'] as const;
 export type RateRange = (typeof RATE_RANGES)[number];
@@ -67,6 +72,12 @@ export interface CurrencyRate {
   asOf: string | null;
 }
 
+export interface ParallelMarket {
+  key: string;
+  name: string;
+  rate: CurrencyRate;
+}
+
 export interface CurrencyQuote {
   code: string;
   name: string;
@@ -80,6 +91,9 @@ export interface CurrencyQuote {
   asOf: string | null;
   /** Parallel-market rate; present only for a dual-rate Currency. */
   parallel: CurrencyRate | null;
+  /** Per-market parallel rates when the parallel value spans more than one
+   * market (YER). Absent for single-market currencies. */
+  parallelMarkets?: ParallelMarket[];
 }
 
 export interface MetalKaratQuote {

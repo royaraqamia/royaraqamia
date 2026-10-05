@@ -22,15 +22,26 @@ function toNumberRecord(value: Json): Record<string, number> {
   return out;
 }
 
+function toVariantEntry(entry: unknown): RateVariant | null {
+  if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
+  const record = entry as Record<string, unknown>;
+  const rate = record.rate;
+  if (typeof rate !== 'number' || !Number.isFinite(rate)) return null;
+  const variant: RateVariant = {
+    rate,
+    date: typeof record.date === 'string' ? record.date : null,
+  };
+  const markets = toVariantRecord(record.markets as Json);
+  if (Object.keys(markets).length > 0) variant.markets = markets;
+  return variant;
+}
+
 function toVariantRecord(value: Json): Record<string, RateVariant> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const out: Record<string, RateVariant> = {};
   for (const [key, entry] of Object.entries(value)) {
-    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
-    const record = entry as Record<string, unknown>;
-    const rate = record.rate;
-    if (typeof rate !== 'number' || !Number.isFinite(rate)) continue;
-    out[key] = { rate, date: typeof record.date === 'string' ? record.date : null };
+    const variant = toVariantEntry(entry);
+    if (variant) out[key] = variant;
   }
   return out;
 }

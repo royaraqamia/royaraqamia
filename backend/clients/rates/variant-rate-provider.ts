@@ -9,6 +9,9 @@ export interface VariantQuote {
   code: string;
   official?: number;
   parallel?: number;
+  /** Per-market parallel values when the parallel rate spans more than one
+   * market (YER: Sanaa/Aden), keyed by market. */
+  markets?: Record<string, number>;
   /** Quote date (`YYYY-MM-DD`), or '' when the source omits it. */
   date: string;
 }
@@ -62,6 +65,7 @@ export function createCompositeVariantProvider(
           code: quote.code,
           official: quote.official ?? existing?.official,
           parallel: quote.parallel ?? existing?.parallel,
+          markets: quote.markets ? { ...existing?.markets, ...quote.markets } : existing?.markets,
           date: quote.date || existing?.date || '',
         });
       }
