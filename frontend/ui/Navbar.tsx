@@ -139,12 +139,6 @@ export function Navbar() {
           label: p.label,
           isRoute: true,
         })),
-        {
-          href: '#raboah-app',
-          label: 'تطبيق رَبْوَة (قريبًا)',
-          isRoute: false,
-          comingSoon: true,
-        },
       ],
     },
     {
