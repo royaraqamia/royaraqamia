@@ -10,7 +10,7 @@ import { resolveDefaultPair } from '@/frontend/ui/rates/rates-defaults';
 import { useDefaultCountry } from '@/frontend/ui/shared/default-country';
 import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
 import { SECTION_TITLE_HIGHLIGHT } from '@/frontend/ui/shared/section-title';
-import { getCurrencyDisplaySymbol } from '@/shared/currency';
+import { getCurrencyDisplaySymbol, OLD_SYP_PER_NEW_SYP } from '@/shared/currency';
 import {
   GOLD_CODE,
   GOLD_KARATS,
@@ -127,6 +127,15 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
     if (!Number.isFinite(numericAmount)) return null;
     return convertAmount(lookup, from, to, numericAmount, effectiveBasis, goldKarat);
   }, [lookup, from, to, numericAmount, effectiveBasis, goldKarat]);
+
+  // Syrians still quote the pre-2025 pound, so the result's companion line
+  // restates the SYP side of the conversion in old lira (100 old = 1 new).
+  const oldLiraAmount = useMemo(() => {
+    if (!conversion) return null;
+    if (to === 'SYP') return conversion.result * OLD_SYP_PER_NEW_SYP;
+    if (from === 'SYP') return numericAmount * OLD_SYP_PER_NEW_SYP;
+    return null;
+  }, [conversion, to, from, numericAmount]);
 
   const swap = () => {
     touchedRef.current = true;
@@ -277,15 +286,21 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
             )}
           </p>
           {conversion && basisRelevant ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              {effectiveBasis === 'parallel'
-                ? `حسب سعر السُّوق الموازي${
-                    marketRelevant
-                      ? ` — ${marketOptions.find((option) => option.key === activeMarket)?.name ?? ''}`
-                      : ''
-                  }`
-                : 'حسب السِّعر الرَّسمي'}
-            </p>
+            oldLiraAmount !== null ? (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {formatRate(oldLiraAmount)} {getCurrencyDisplaySymbol('SYP')}
+              </p>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">
+                {effectiveBasis === 'parallel'
+                  ? `حسب سعر السُّوق الموازي${
+                      marketRelevant
+                        ? ` — ${marketOptions.find((option) => option.key === activeMarket)?.name ?? ''}`
+                        : ''
+                    }`
+                  : 'حسب السِّعر الرَّسمي'}
+              </p>
+            )
           ) : null}
           {conversion ? null : (
             <p className="mt-2 text-xs text-destructive">تعذَّر التَّحويل بين هذين العنصرين.</p>

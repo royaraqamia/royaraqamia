@@ -38,6 +38,9 @@ export type CurrencyCode = keyof typeof CURRENCIES;
 
 export const DEFAULT_CURRENCY: CurrencyCode = 'USD';
 
+/** The 2025 redenomination dropped two zeros: 100 old SYP = 1 new SYP. */
+export const OLD_SYP_PER_NEW_SYP = 100;
+
 export const SUPPORTED_CURRENCIES: CurrencyInfo[] = Object.values(CURRENCIES);
 
 export function isSupportedCurrency(code: string): code is CurrencyCode {

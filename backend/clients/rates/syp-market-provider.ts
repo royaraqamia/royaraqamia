@@ -1,4 +1,5 @@
 import { fetchText, type FetchJsonOptions } from '@/backend/clients/rates/fetch-json';
+import { OLD_SYP_PER_NEW_SYP } from '@/shared/currency';
 
 /**
  * A market (parallel/"street") rate for the Syrian Pound.
@@ -23,9 +24,6 @@ const DEFAULT_BASE_URL = 'https://sp-today.com';
 
 /** The "سوريا - عام" (Syria — General) city bucket. */
 const DEFAULT_CITY = 'damascus';
-
-/** The 2025 redenomination dropped two zeros: 100 old SYP = 1 new SYP. */
-const OLD_SYP_PER_NEW_SYP = 100;
 
 /** Each server-rendered React chunk arrives as `self.__next_f.push([1,"…"])`. */
 const FLIGHT_PUSH_PATTERN = /self\.__next_f\.push\(\[1,\s*("[\s\S]*?")\]\)/g;
