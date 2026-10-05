@@ -24,6 +24,17 @@ interface RatesExplorerProps {
   board: RatesBoard;
 }
 
+const SEGMENTED_TRACK_CLASS = 'flex w-full rounded-xl border border-border/60 bg-muted/70 p-1';
+
+function segmentedItemClass(selected: boolean) {
+  return cn(
+    'flex-1 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
+    selected
+      ? 'bg-primary text-primary-foreground shadow-sm'
+      : 'text-muted-foreground hover:text-foreground'
+  );
+}
+
 export function RatesExplorer({ board }: RatesExplorerProps) {
   const visitorCountry = useDefaultCountry().iso;
 
@@ -197,23 +208,14 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
         {basisRelevant ? (
           <div className="mt-4">
             <span className="mb-1.5 block text-sm font-medium text-foreground">سعر التَّحويل</span>
-            <div
-              className="flex w-full rounded-xl border border-border/60 bg-muted/30 p-1"
-              role="group"
-              aria-label="أساس سعر التَّحويل"
-            >
+            <div className={SEGMENTED_TRACK_CLASS} role="group" aria-label="أساس سعر التَّحويل">
               {(['parallel', 'official'] as const).map((value) => (
                 <button
                   key={value}
                   type="button"
                   aria-pressed={basis === value}
                   onClick={() => setBasis(value)}
-                  className={cn(
-                    'flex-1 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
-                    basis === value
-                      ? 'bg-card text-primary shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
+                  className={segmentedItemClass(basis === value)}
                 >
                   {value === 'parallel' ? 'السُّوق الموازي' : 'السِّعر الرَّسمي'}
                 </button>
@@ -225,23 +227,14 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
         {marketRelevant ? (
           <div className="mt-4">
             <span className="mb-1.5 block text-sm font-medium text-foreground">السُّوق</span>
-            <div
-              className="flex w-full rounded-xl border border-border/60 bg-muted/30 p-1"
-              role="group"
-              aria-label="سوق الصرف"
-            >
+            <div className={SEGMENTED_TRACK_CLASS} role="group" aria-label="سوق الصرف">
               {marketOptions.map((option) => (
                 <button
                   key={option.key}
                   type="button"
                   aria-pressed={activeMarket === option.key}
                   onClick={() => setMarket(option.key)}
-                  className={cn(
-                    'flex-1 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
-                    activeMarket === option.key
-                      ? 'bg-card text-primary shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
+                  className={segmentedItemClass(activeMarket === option.key)}
                 >
                   {option.name}
                 </button>
@@ -253,23 +246,14 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
         {goldRelevant ? (
           <div className="mt-4">
             <span className="mb-1.5 block text-sm font-medium text-foreground">العِيار</span>
-            <div
-              className="flex w-full rounded-xl border border-border/60 bg-muted/30 p-1"
-              role="group"
-              aria-label="عيار الذَّهَب"
-            >
+            <div className={SEGMENTED_TRACK_CLASS} role="group" aria-label="عيار الذَّهَب">
               {GOLD_KARATS.map((karat) => (
                 <button
                   key={karat}
                   type="button"
                   aria-pressed={goldKarat === karat}
                   onClick={() => setGoldKarat(karat)}
-                  className={cn(
-                    'flex-1 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
-                    goldKarat === karat
-                      ? 'bg-card text-primary shadow-xs'
-                      : 'text-muted-foreground hover:text-foreground'
-                  )}
+                  className={segmentedItemClass(goldKarat === karat)}
                 >
                   {karat}
                 </button>
