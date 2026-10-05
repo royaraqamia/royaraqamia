@@ -180,7 +180,12 @@ export class ConsultationService {
     // A reschedule is requested only when the caller sends both halves.
     if (input.package_id && input.slot_ids) {
       try {
-        await this.repositories.bookings.reschedule(bookingId, input.package_id, input.slot_ids);
+        await this.repositories.bookings.reschedule(
+          bookingId,
+          userId,
+          input.package_id,
+          input.slot_ids
+        );
       } catch (error) {
         throw this.mapOwnedError(error);
       }

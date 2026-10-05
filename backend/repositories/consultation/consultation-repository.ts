@@ -107,10 +107,16 @@ export interface ConsultationBookingsWriter {
   ): Promise<ConsultationBooking | null>;
   /**
    * Atomically swaps the package and/or the slot holds in the
-   * `reschedule_consultation_booking` RPC, which checks `auth.uid()` against
-   * the booking owner. Throws the same codes as creation on failure.
+   * `reschedule_consultation_booking` RPC, which checks the passed `userId`
+   * against the booking owner (the RPC runs on the session-less service-role
+   * client). Throws the same codes as creation on failure.
    */
-  reschedule(bookingId: string, packageId: string, slotIds: string[]): Promise<void>;
+  reschedule(
+    bookingId: string,
+    userId: string,
+    packageId: string,
+    slotIds: string[]
+  ): Promise<void>;
 }
 
 // ------------------------------------------------------------
