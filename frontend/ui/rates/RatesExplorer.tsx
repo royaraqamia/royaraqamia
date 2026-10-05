@@ -83,6 +83,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   const effectiveBasis: RateBasis = basisRelevant ? basis : 'official';
   const marketRelevant = basisRelevant && basis === 'parallel' && marketOptions.length > 1;
   const goldRelevant = from === GOLD_CODE || to === GOLD_CODE;
+  const fromIsMetal = isMetalCode(from);
 
   const numericAmount = Number(amount);
   const conversion = useMemo(() => {
@@ -102,7 +103,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
         aria-label="محوِّل العملات"
       >
         <div className="form-field">
-          <Label htmlFor="rates-amount">المبلغ</Label>
+          <Label htmlFor="rates-amount">{fromIsMetal ? 'عدد الغرامات' : 'المبلغ'}</Label>
           <Input
             id="rates-amount"
             type="number"
@@ -116,11 +117,11 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
 
         {basisRelevant ? (
           <div className="mt-4">
-            <span className="mb-1.5 block text-sm font-medium text-foreground">سعر التحويل</span>
+            <span className="mb-1.5 block text-sm font-medium text-foreground">سعر التَّحويل</span>
             <div
               className="flex w-full rounded-xl border border-border/60 bg-muted/30 p-1"
               role="group"
-              aria-label="أساس سعر التحويل"
+              aria-label="أساس سعر التَّحويل"
             >
               {(['parallel', 'official'] as const).map((value) => (
                 <button
