@@ -130,3 +130,14 @@ and it carries no parallel value at all.
   (license + Sanaa/Aden split). These two should not ship until a source is accepted.
 - All providers must sit behind the existing provider seam and fall back to the
   reference value with a Sentry alert, exactly as the SYP market provider does (ADR-0012).
+
+## Decisions (2026-10-05)
+
+- **SYP official — accept the reference fallback.** `cb.gov.sy` serves an incomplete TLS
+  chain; rather than disable verification or pin a rotating intermediate, SYP's official
+  value stays the reference feed (~122.2 vs CBS 122.00). Tracked in #147.
+- **LYD parallel — deferred.** No trustworthy keyless source: `fulus.ly` is paid and
+  `etcurrency` self-reports 64% confidence. LYD stays single-rate for now. (#146)
+- **YER parallel — Naqdi Live, both cities.** Publish Sanaa and Aden as separate values
+  from `naqdilive.com`; never blend or average. ACAPS/YETI rejected on license
+  (CC BY-NC-ND). Implementation waits on the dual-rate UI surface. (#146)
