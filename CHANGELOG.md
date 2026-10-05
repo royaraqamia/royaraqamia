@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.42.0] - 2026-10-05
+
+### Added
+- source the Syrian Pound from a market feed
+- align converter fields with form primitives and add Hijri date
+
 ## [1.41.1] - 2026-10-04
 
 ### Changed
