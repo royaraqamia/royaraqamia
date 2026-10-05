@@ -25,6 +25,15 @@ const DEFAULT_BASE_URL = 'https://sp-today.com';
 /** The "سوريا - عام" (Syria — General) city bucket. */
 const DEFAULT_CITY = 'damascus';
 
+/** sp-today serves a browser challenge to bare clients from datacenter IPs. */
+const BROWSER_USER_AGENT =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36';
+
+const DEFAULT_HEADERS = {
+  'User-Agent': BROWSER_USER_AGENT,
+  'Accept-Language': 'ar',
+} as const;
+
 /** Each server-rendered React chunk arrives as `self.__next_f.push([1,"…"])`. */
 const FLIGHT_PUSH_PATTERN = /self\.__next_f\.push\(\[1,\s*("[\s\S]*?")\]\)/g;
 
@@ -125,10 +134,11 @@ export function parseSypMarketQuote(
 export function createSpTodayProvider(options: SpTodayProviderOptions = {}): SypMarketProvider {
   const baseUrl = options.baseUrl ?? DEFAULT_BASE_URL;
   const city = options.city ?? DEFAULT_CITY;
+  const headers = { ...DEFAULT_HEADERS, ...options.headers };
 
   return {
     async fetchQuote(): Promise<SypMarketQuote | null> {
-      const html = await fetchText(baseUrl, options);
+      const html = await fetchText(baseUrl, { ...options, headers });
       return parseSypMarketQuote(html, city);
     },
   };

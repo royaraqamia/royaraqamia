@@ -56,7 +56,12 @@ describe('createSpTodayProvider', () => {
     await expect(provider.fetchQuote()).resolves.toEqual({ rate: 138, date: '2026-10-05' });
     expect(fetchImpl).toHaveBeenCalledWith(
       'https://example.test',
-      expect.objectContaining({ signal: expect.anything() })
+      expect.objectContaining({
+        signal: expect.anything(),
+        headers: expect.objectContaining({
+          'User-Agent': expect.stringContaining('Mozilla'),
+        }),
+      })
     );
   });
 
