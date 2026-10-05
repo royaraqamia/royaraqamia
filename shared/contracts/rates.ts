@@ -36,11 +36,7 @@ export const DISPLAY_CURRENCY_CODES: readonly string[] = [
   'TND',
   'DZD',
   'MAD',
-  'SDG',
   'MRU',
-  'SOS',
-  'DJF',
-  'KMF',
 ];
 
 export const DISPLAY_CURRENCY_SET = new Set<string>(DISPLAY_CURRENCY_CODES);
