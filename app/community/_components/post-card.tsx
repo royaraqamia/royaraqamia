@@ -15,7 +15,7 @@ export function PostCard({ post, index }: PostCardProps) {
   const body = post.content?.trim() ? stripMarkdown(post.content) : (post.meta_desc ?? '');
 
   return (
-    <article className="group/community relative flex flex-col justify-between rounded-3xl border border-border bg-muted/20 overflow-hidden transition-safe duration-500 ease-out hover:border-border hover:bg-muted/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-background/60 focus-within:ring-2 focus-within:ring-primary/50">
+    <article className="group/community relative flex flex-col justify-between rounded-3xl border border-border bg-muted/20 overflow-hidden transition-safe duration-500 ease-out hover:border-border hover:bg-muted/40 hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-background/60 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/50">
       {post.cover_image && (
         <div className="relative aspect-16/10 w-full overflow-hidden bg-muted/80">
           <Link
