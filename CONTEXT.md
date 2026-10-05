@@ -132,6 +132,26 @@ The value of one Currency expressed in another as published by an external provi
 given date. It is a quoted observation, not an offer, and no money moves through it (ADR-0006).
 _Avoid_: FX rate, conversion rate, price
 
+**Reference Rate**:
+The value of one Currency in another as blended by the external reference feed, which
+republishes many official sources rather than one central bank. It is the board's fallback
+when no dedicated source exists, and the only rate shown for a Currency that is not dual-rate.
+_Avoid_: Official Rate, market rate, true rate
+
+**Official Rate**:
+The value of one Currency in another as administered or pegged by that country's central
+bank, shown on the board as the rate banks and the state use. One half of a dual-rate Currency,
+and distinct from the Reference Rate, which is a third-party blend.
+_Sold as_: السعر الرسمي (المصرف المركزي)
+_Avoid_: central bank price, government rate, official price
+
+**Parallel Rate**:
+The value of one Currency in another on the informal market, where it diverges structurally
+from the Official Rate. Shown beside the Official Rate for a dual-rate Currency, and never
+averaged with it.
+_Sold as_: السوق الموازي
+_Avoid_: black market, السوق السوداء, street rate, free-market rate
+
 **Metal Price**:
 The spot value of a Metal for a given quote date, stated in USD per troy ounce. Gram and karat
 figures are derived from it, never stored as their own rates.
