@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.49.1] - 2026-10-05
+
+### Fixed
+- send browser headers when scraping the SYP market feed
+
 ## [1.49.0] - 2026-10-05
 
 ### Added
