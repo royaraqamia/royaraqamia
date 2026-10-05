@@ -82,4 +82,9 @@ describe('PostCard', () => {
     render(<PostCard post={{ ...post, author: null }} index={0} />);
     expect(screen.queryByText('رؤى رقميّة')).not.toBeInTheDocument();
   });
+
+  it('renders a share button', () => {
+    render(<PostCard post={post} index={0} />);
+    expect(screen.getByRole('button', { name: 'مشاركة المنشور' })).toBeInTheDocument();
+  });
 });

@@ -4,6 +4,7 @@ import { Calendar, ArrowLeft, User } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { stripMarkdown } from '@/shared/reading-time';
 import type { PostSummary } from '@/shared/contracts/blogpress';
+import { SocialShare } from './social-share';
 
 interface PostCardProps {
   post: PostSummary;
@@ -96,13 +97,16 @@ export function PostCard({ post, index }: PostCardProps) {
             <span />
           )}
 
-          <span className="inline-flex items-center gap-1.5 text-primary text-xs font-bold group-hover/community:text-primary/90 transition-colors">
-            اقرأ المزيد
-            <ArrowLeft
-              className="size-3.5 transition-transform duration-300 group-hover/community:-translate-x-1.5 rtl:group-hover/community:translate-x-1.5"
-              strokeWidth={2.5}
-            />
-          </span>
+          <div className="flex items-center gap-3">
+            <SocialShare url={`/community/${post.slug}`} title={post.title} />
+            <span className="inline-flex items-center gap-1.5 text-primary text-xs font-bold group-hover/community:text-primary/90 transition-colors">
+              اقرأ المزيد
+              <ArrowLeft
+                className="size-3.5 transition-transform duration-300 group-hover/community:-translate-x-1.5 rtl:group-hover/community:translate-x-1.5"
+                strokeWidth={2.5}
+              />
+            </span>
+          </div>
         </div>
       </div>
     </article>

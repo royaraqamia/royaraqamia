@@ -3,14 +3,23 @@
 import { Share2 } from 'lucide-react';
 
 interface SocialShareProps {
+  /** Absolute URL, or a site-relative path resolved against the current origin. */
   url: string;
   title: string;
 }
 
 export function SocialShare({ url, title }: SocialShareProps) {
+  const resolveUrl = () => {
+    try {
+      return new URL(url, window.location.origin).toString();
+    } catch {
+      return url;
+    }
+  };
+
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText(url);
+      await navigator.clipboard.writeText(resolveUrl());
     } catch {
       /* ignore */
     }
@@ -19,7 +28,7 @@ export function SocialShare({ url, title }: SocialShareProps) {
   const handleNativeShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title, url });
+        await navigator.share({ title, url: resolveUrl() });
       } catch {
         /* ignore */
       }
