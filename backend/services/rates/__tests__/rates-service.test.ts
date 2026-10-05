@@ -221,6 +221,60 @@ describe('RatesService.getBoard', () => {
     expect(syp.parallel?.changePct).toBeCloseTo(((138 - 136) / 136) * 100);
   });
 
+  it('carries the previous parallel forward when a sync omits it', async () => {
+    const repository = makeRepo({
+      getLatestSnapshot: vi.fn().mockResolvedValue(
+        snapshot({
+          rates: { SYP: 122.24 },
+          official_rates: { SYP: { rate: 122, date: '2026-10-04' } },
+          parallel_rates: {},
+        })
+      ),
+      getSnapshotBefore: vi.fn().mockResolvedValue(
+        snapshot({
+          id: 'snap-0',
+          fetched_at: '2026-10-03T06:00:00.000Z',
+          provider_quote_date: '2026-10-03',
+          rates: { SYP: 122.1 },
+          official_rates: { SYP: { rate: 121.9, date: '2026-10-03' } },
+          parallel_rates: { SYP: { rate: 138, date: '2026-10-03' } },
+        })
+      ),
+    });
+    const { service } = makeService(repository);
+
+    const board = await service.getBoard();
+    const syp = board!.currencies.find((currency) => currency.code === 'SYP')!;
+    expect(syp.parallel?.rate).toBe(138);
+    expect(syp.parallel?.asOf).toBe('2026-10-03');
+  });
+
+  it('drops a carried parallel once it leaves the window', async () => {
+    const repository = makeRepo({
+      getLatestSnapshot: vi.fn().mockResolvedValue(
+        snapshot({
+          rates: { SYP: 122.24 },
+          official_rates: { SYP: { rate: 122, date: '2026-10-04' } },
+          parallel_rates: {},
+        })
+      ),
+      getSnapshotBefore: vi.fn().mockResolvedValue(
+        snapshot({
+          id: 'snap-0',
+          fetched_at: '2026-09-01T06:00:00.000Z',
+          provider_quote_date: '2026-09-01',
+          rates: { SYP: 122.1 },
+          parallel_rates: { SYP: { rate: 138, date: '2026-09-01' } },
+        })
+      ),
+    });
+    const { service } = makeService(repository);
+
+    const board = await service.getBoard();
+    const syp = board!.currencies.find((currency) => currency.code === 'SYP')!;
+    expect(syp.parallel).toBeNull();
+  });
+
   it('flags staleness from the provider quote date', async () => {
     const repository = makeRepo({
       getLatestSnapshot: vi.fn().mockResolvedValue(snapshot({ provider_quote_date: '2026-09-01' })),

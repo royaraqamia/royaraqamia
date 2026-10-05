@@ -31,6 +31,8 @@ export interface RatesServiceOptions {
   now?: () => Date;
   staleAfterMs?: number;
   staleQuoteAfterMs?: number;
+  /** How long a currency keeps its last parallel value when a sync omits it. */
+  parallelCarryForwardMs?: number;
   logger?: RatesLogger;
 }
 
@@ -44,6 +46,14 @@ export interface RefreshResult {
 const DEFAULT_STALE_AFTER_MS = 48 * 60 * 60 * 1000;
 
 const DEFAULT_STALE_QUOTE_AFTER_MS = 96 * 60 * 60 * 1000;
+
+/**
+ * A parallel feed is an unversioned third-party source that can fail on any
+ * sync. Rather than blank the market value the moment one scrape misses, the
+ * board carries the previous snapshot's value forward for this long before
+ * degrading to the official rate (ADR-0014).
+ */
+const DEFAULT_PARALLEL_CARRY_FORWARD_MS = 48 * 60 * 60 * 1000;
 
 const RANGE_DAYS: Record<RateRange, number> = {
   '1W': 7,
@@ -64,7 +74,7 @@ function buildParallelMarkets(
   code: string,
   current: RateVariant | undefined,
   previous: RateVariant | undefined,
-  fetchedAt: string
+  fallbackDate: string
 ): ParallelMarket[] | undefined {
   const defs = PARALLEL_MARKETS[code];
   const markets = current?.markets;
@@ -82,7 +92,7 @@ function buildParallelMarkets(
           rate: value.rate,
           previousRate,
           changePct: computeChangePct(value.rate, previousRate),
-          asOf: value.date ?? fetchedAt.slice(0, 10),
+          asOf: value.date ?? fallbackDate,
         },
       },
     ];
@@ -95,6 +105,7 @@ export class RatesService {
   private readonly now: () => Date;
   private readonly staleAfterMs: number;
   private readonly staleQuoteAfterMs: number;
+  private readonly parallelCarryForwardMs: number;
   private readonly log: RatesLogger;
 
   constructor(
@@ -107,6 +118,8 @@ export class RatesService {
     this.now = options.now ?? (() => new Date());
     this.staleAfterMs = options.staleAfterMs ?? DEFAULT_STALE_AFTER_MS;
     this.staleQuoteAfterMs = options.staleQuoteAfterMs ?? DEFAULT_STALE_QUOTE_AFTER_MS;
+    this.parallelCarryForwardMs =
+      options.parallelCarryForwardMs ?? DEFAULT_PARALLEL_CARRY_FORWARD_MS;
     this.log = options.logger ?? logger;
   }
 
@@ -262,6 +275,32 @@ export class RatesService {
     };
   }
 
+  /**
+   * The parallel variant to show for a currency, with the date to display for
+   * it. Normally that is this snapshot's own value; when a sync omitted it — the
+   * market source failed — the previous snapshot's value is carried forward,
+   * keeping its original quote date, until it leaves the carry-forward window.
+   */
+  private effectiveParallel(
+    latest: RateSnapshot,
+    previous: RateSnapshot | null,
+    code: string
+  ): { variant: RateVariant; date: string } | undefined {
+    const current = latest.parallel_rates[code];
+    if (current) {
+      return { variant: current, date: current.date ?? latest.fetched_at.slice(0, 10) };
+    }
+
+    const prior = previous?.parallel_rates[code];
+    if (!prior || !previous) return undefined;
+
+    const date = prior.date ?? previous.fetched_at.slice(0, 10);
+    const age = this.now().getTime() - new Date(date).getTime();
+    if (!Number.isFinite(age) || age > this.parallelCarryForwardMs) return undefined;
+
+    return { variant: prior, date };
+  }
+
   private buildBoard(latest: RateSnapshot, previous: RateSnapshot | null): RatesBoard {
     const rateEntries = new Map<string, number>([
       [latest.base_currency, 1],
@@ -277,7 +316,7 @@ export class RatesService {
           previous?.rates[code] ?? (code === latest.base_currency ? 1 : null);
         const previousOfficial = previous?.official_rates[code]?.rate ?? previousReference;
 
-        const parallelVariant = latest.parallel_rates[code];
+        const effectiveParallel = this.effectiveParallel(latest, previous, code);
         const parallelPrevious = previous?.parallel_rates[code]?.rate ?? null;
 
         return {
@@ -288,19 +327,19 @@ export class RatesService {
           previousRate: previousOfficial,
           changePct: computeChangePct(officialRate, previousOfficial),
           asOf: officialVariant?.date ?? latest.provider_quote_date,
-          parallel: parallelVariant
+          parallel: effectiveParallel
             ? {
-                rate: parallelVariant.rate,
+                rate: effectiveParallel.variant.rate,
                 previousRate: parallelPrevious,
-                changePct: computeChangePct(parallelVariant.rate, parallelPrevious),
-                asOf: parallelVariant.date ?? latest.fetched_at.slice(0, 10),
+                changePct: computeChangePct(effectiveParallel.variant.rate, parallelPrevious),
+                asOf: effectiveParallel.date,
               }
             : null,
           parallelMarkets: buildParallelMarkets(
             code,
-            parallelVariant,
+            effectiveParallel?.variant,
             previous?.parallel_rates[code],
-            latest.fetched_at
+            effectiveParallel?.date ?? latest.fetched_at.slice(0, 10)
           ),
         };
       })
