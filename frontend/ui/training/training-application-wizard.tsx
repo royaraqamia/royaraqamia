@@ -9,8 +9,11 @@ import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizar
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
 import { getOpenTrainingCohorts, submitTrainingApplication } from '@/frontend/api/training';
 import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
-import { TRAINING_COURSE, TrainingApplicationSchema } from '@/shared/contracts/training';
-import type { TrainingCohort } from '@/shared/contracts/training';
+import {
+  TRAINING_COURSE,
+  TrainingApplicationSchema,
+  type TrainingCohort,
+} from '@/shared/contracts/training';
 import { CohortStep } from './steps/cohort-step';
 import { DetailsStep } from './steps/details-step';
 

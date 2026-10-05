@@ -175,7 +175,7 @@ export function createSpendtrackRepository(
       await attachSplits(expenses as unknown as Array<Record<string, unknown>>);
 
       return {
-        expenses: expenses,
+        expenses,
         categories: safeCategories,
         totalCount: totalCount ?? 0,
       };

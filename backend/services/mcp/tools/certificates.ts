@@ -7,8 +7,7 @@ import { requireAnyScope, requireUserId, requireAdmin } from './guards';
 import { createCertificatesRepository } from '@/backend/repositories/certificates';
 import { CertificatesService } from '@/backend/services/certificates/certificates-service';
 import { toPublicCertificate } from '@/shared/contracts/certificates';
-import { formatDate } from './shared';
-import { PAGE_SIZE_SCHEMA } from './shared';
+import { formatDate, PAGE_SIZE_SCHEMA } from './shared';
 
 /**
  * Certificates tools. `verify` is public (certificates RLS is `USING (true)`),

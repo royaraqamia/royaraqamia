@@ -7,10 +7,12 @@ import {
   TrainingApplicationService,
   generateTrainingReferenceCode,
 } from '@/backend/services/training/training-application-service';
-import type {
-  TrainingApplicationCreateInput,
-  TrainingApplicationEditFields,
-  TrainingApplicationsRepository,
+import {
+  CohortFullError,
+  NotEnrolledError,
+  type TrainingApplicationCreateInput,
+  type TrainingApplicationEditFields,
+  type TrainingApplicationsRepository,
 } from '@/backend/repositories/training/training-applications-repository';
 import {
   TRAINING_REFERENCE_CODE_REGEX,
@@ -19,10 +21,6 @@ import {
   type TrainingApplicationInput,
 } from '@/shared/contracts/training';
 import { createRateLimiter } from '@/backend/clients/rate-limiter';
-import {
-  CohortFullError,
-  NotEnrolledError,
-} from '@/backend/repositories/training/training-applications-repository';
 
 const VALID_INPUT: TrainingApplicationInput = {
   course_slug: 'build-digital-products',

@@ -23,7 +23,6 @@ export function RoyaToaster() {
 
   useEffect(() => {
     if (mounted) return;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
     const show = () => {
       window.removeEventListener('pointerdown', show);
       window.removeEventListener('keydown', show);
@@ -32,7 +31,7 @@ export function RoyaToaster() {
     };
     window.addEventListener('pointerdown', show, { once: true });
     window.addEventListener('keydown', show, { once: true });
-    timeoutId = setTimeout(show, MOUNT_DELAY_MS);
+    const timeoutId = setTimeout(show, MOUNT_DELAY_MS);
     return () => {
       window.removeEventListener('pointerdown', show);
       window.removeEventListener('keydown', show);

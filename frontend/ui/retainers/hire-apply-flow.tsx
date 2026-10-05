@@ -1,7 +1,6 @@
 'use client';
 
-import { useState } from 'react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { LogIn } from 'lucide-react';
 
 import { RetainerRequestWizard } from './retainer-request-wizard';

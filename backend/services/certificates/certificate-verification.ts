@@ -1,10 +1,10 @@
 import type { CertificatesReader } from '@/backend/repositories/certificates/certificates-repository';
 import {
   toPublicCertificate,
+  CERT_CODE_REGEX,
   type Certificate,
   type VerifyResult,
 } from '@/shared/contracts/certificates';
-import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
 import { logger } from '@/backend/shared/logger';
 import { isRepositoryError } from '@/backend/shared/repository-error';
 

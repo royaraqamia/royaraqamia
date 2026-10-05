@@ -3,16 +3,9 @@
 import React, { useState, useMemo, useCallback, useRef } from 'react';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import { HabitLog } from '@/shared/contracts/habitflow';
-import { LucideIcon, TrendingUp } from 'lucide-react';
-import { Card } from '@/frontend/ui/primitives/card';
 import {
-  formatArabicDate,
-  extractDayNumber,
-  isDayFrozen,
-  pluralize,
-  type PluralForms,
-} from '@/frontend/shared/habitflow/calendar-format';
-import {
+  LucideIcon,
+  TrendingUp,
   CalendarDays,
   Sparkles,
   CheckCircle2,
@@ -23,6 +16,14 @@ import {
   Star,
   Info,
 } from 'lucide-react';
+import { Card } from '@/frontend/ui/primitives/card';
+import {
+  formatArabicDate,
+  extractDayNumber,
+  isDayFrozen,
+  pluralize,
+  type PluralForms,
+} from '@/frontend/shared/habitflow/calendar-format';
 
 export interface CalendarGridProps {
   calendarGrid: { date: string; dayLabel: string; isToday: boolean }[];

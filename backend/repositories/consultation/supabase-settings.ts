@@ -1,7 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
-import type { ConsultationSettings } from '@/shared/contracts/consultation';
-import { SETTINGS_KEYS } from '@/shared/contracts/consultation';
+import { SETTINGS_KEYS, type ConsultationSettings } from '@/shared/contracts/consultation';
 import type {
   ConsultationSettingsReader,
   ConsultationSettingsWriter,

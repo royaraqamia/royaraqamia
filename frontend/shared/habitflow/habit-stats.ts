@@ -14,7 +14,7 @@ function countActiveStreak(
   anchorDate: string
 ): number {
   let count = 0;
-  let checkDate = new Date(`${anchorDate}T00:00:00Z`);
+  const checkDate = new Date(`${anchorDate}T00:00:00Z`);
 
   while (true) {
     const checkStr = checkDate.toISOString().split('T')[0]!;

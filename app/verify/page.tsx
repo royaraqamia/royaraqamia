@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent, useRef, useEffect } from 'react';
 import { verifyCertificate } from '@/frontend/api/certificates';
-import { CERT_CODE_REGEX } from '@/shared/contracts/certificates';
+import { CERT_CODE_REGEX, type PublicCertificate } from '@/shared/contracts/certificates';
 import { m, AnimatePresence } from 'motion/react';
 import { containerVariants, resultVariants } from '@/frontend/ui/verify/verify-variants';
 import { VerifySearchCard } from '@/frontend/ui/verify/verify-search-card';
@@ -10,7 +10,6 @@ import { VerifyLoadingState } from '@/frontend/ui/verify/verify-loading-state';
 import { VerifyErrorState } from '@/frontend/ui/verify/verify-error-state';
 import { CertificateResultCard } from '@/frontend/ui/verify/certificate-result-card';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
-import type { PublicCertificate } from '@/shared/contracts/certificates';
 
 export default function VerifyPage() {
   const [code, setCode] = useState('');

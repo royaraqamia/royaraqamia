@@ -1,10 +1,12 @@
 import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
 import { AnalyticsRepository } from '@/backend/repositories/linksnap/analytics-repository';
-import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
+import {
+  ShortLinkRedirectError,
+  type LinkClickedNotifier,
+} from '@/backend/services/linksnap/redirect-url';
 import { verifyPassword } from '@/backend/shared/password-hash';
 import { AppError } from '@/backend/shared/errors';
 import { logger } from '@/backend/shared/logger';
-import type { LinkClickedNotifier } from '@/backend/services/linksnap/redirect-url';
 
 export class UnlockLinkService {
   constructor(

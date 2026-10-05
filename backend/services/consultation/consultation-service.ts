@@ -8,8 +8,8 @@ import type {
   CreateBookingInput,
   PackageUpsertInput,
   SlotCreateInput,
+  UpdateBookingInput,
 } from '@/shared/contracts/consultation';
-import type { UpdateBookingInput } from '@/shared/contracts/consultation';
 import type {
   AdminAvailabilitySlot,
   BookingListResult,

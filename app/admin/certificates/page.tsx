@@ -3,8 +3,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { Plus } from 'lucide-react';
-import { getCertificates, deleteCertificate } from '@/frontend/api/certificates';
-import type { AdminCertificate } from '@/frontend/api/certificates';
+import {
+  getCertificates,
+  deleteCertificate,
+  type AdminCertificate,
+} from '@/frontend/api/certificates';
 import { isCertificateExpired } from '@/frontend/shared/format';
 import { toast } from 'sonner';
 import {

@@ -1,5 +1,7 @@
-import type { NotificationRepository } from '@/backend/repositories/notifications/notifications-repository';
-import type { NotificationBroadcastInput } from '@/backend/repositories/notifications/notifications-repository';
+import type {
+  NotificationRepository,
+  NotificationBroadcastInput,
+} from '@/backend/repositories/notifications/notifications-repository';
 import type { Notification, NotificationCreateInput } from '@/shared/contracts/notifications';
 
 export interface NotificationServiceDeps {

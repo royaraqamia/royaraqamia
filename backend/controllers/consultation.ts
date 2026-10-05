@@ -8,6 +8,7 @@ import {
   UpdateBookingSchema,
   toBookingErrorMessage,
   type ConsultationBookingStatus,
+  type ConsultationBooking,
 } from '@/shared/contracts/consultation';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAdminUser } from '@/backend/transport/admin-handler';
@@ -32,7 +33,6 @@ import {
   SlotReservedError,
   SlotTakenError,
 } from '@/backend/services/consultation/consultation-service';
-import type { ConsultationBooking } from '@/shared/contracts/consultation';
 
 // ------------------------------------------------------------
 // Helpers

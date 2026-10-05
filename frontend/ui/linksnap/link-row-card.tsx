@@ -31,12 +31,11 @@ import {
 } from '@/frontend/ui/primitives/dropdown-menu';
 import { cn } from '@/frontend/shared/cn';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
-import { shorten } from '@/frontend/api/linksnap';
+import { shorten, type ShortenedLink } from '@/frontend/api/linksnap';
 import { toast } from 'sonner';
 import { useDeleteLink } from '@/frontend/state/linksnap/use-links';
 import { useLinkAnalytics } from '@/frontend/state/linksnap/use-analytics';
 import type { LinkStatus } from '@/shared/contracts/linksnap';
-import type { ShortenedLink } from '@/frontend/api/linksnap';
 
 const STATUS_META: Record<LinkStatus, { label: string; className: string; dotClass: string }> = {
   active: {

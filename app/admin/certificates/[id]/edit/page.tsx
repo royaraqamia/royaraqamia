@@ -3,8 +3,11 @@
 import { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { FileX } from 'lucide-react';
-import { getCertificateById, updateCertificate } from '@/frontend/api/certificates';
-import type { AdminCertificate } from '@/frontend/api/certificates';
+import {
+  getCertificateById,
+  updateCertificate,
+  type AdminCertificate,
+} from '@/frontend/api/certificates';
 import { CertificateForm } from '@/frontend/ui/admin/certificate-form';
 import { PageLoader } from '@/frontend/ui/shared/page-loader';
 import { Button } from '@/frontend/ui/primitives/button';

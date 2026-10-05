@@ -3,15 +3,15 @@ import type { AuthGateway } from '@/backend/clients/auth-gateway';
 import { createSupabaseAuthGateway } from '@/backend/clients/supabase-auth-gateway';
 import { createServerSupabaseClient, getAdminSupabase } from '@/backend/config/supabase';
 import { OTP_CONFIG } from '@/backend/config/otp';
-import { EMAIL_VALIDITY } from '@/backend/config/email';
-import { SupabaseOtpRepository } from '@/backend/repositories/otp/supabase-otp-repository';
-import { SupabasePasswordResetTokenRepository } from '@/backend/repositories/password-reset/supabase-password-reset-token-repository';
-import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import {
+  EMAIL_VALIDITY,
   sendOtpEmail,
   sendPasswordResetEmail,
   sendAccountExistsEmail,
 } from '@/backend/config/email';
+import { SupabaseOtpRepository } from '@/backend/repositories/otp/supabase-otp-repository';
+import { SupabasePasswordResetTokenRepository } from '@/backend/repositories/password-reset/supabase-password-reset-token-repository';
+import { createUserProfileRepository } from '@/backend/repositories/users/user-profile-repository';
 import { checkRateLimit, getRateLimitRemaining } from '@/backend/config/rate-limiter';
 import { createTurnstileVerifier } from '@/backend/config/turnstile';
 import { getPasswordBreachChecker } from '@/backend/config/password-breach';

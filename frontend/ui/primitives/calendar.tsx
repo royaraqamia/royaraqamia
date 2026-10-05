@@ -1,5 +1,12 @@
-import type { ChevronProps, ClassNames, DayButtonProps, Modifiers } from 'react-day-picker';
-import { Chevron as RdpChevron, DayButton as RdpDayButton, DayPicker } from 'react-day-picker';
+import {
+  Chevron as RdpChevron,
+  DayButton as RdpDayButton,
+  DayPicker,
+  type ChevronProps,
+  type ClassNames,
+  type DayButtonProps,
+  type Modifiers,
+} from 'react-day-picker';
 import { ar } from 'react-day-picker/locale';
 import { cn } from '@/frontend/shared/cn';
 

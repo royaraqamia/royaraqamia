@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import type { ComponentType } from 'react';
+import { useEffect, useRef, useState, type ComponentType } from 'react';
 import { HOME_SECTION_IDS, loadHomeSection, type HomeSectionId } from '../lazy-sections';
 
 /**
@@ -97,7 +96,6 @@ export function LazySection({ id, className }: { id: HomeSectionId; className?: 
       preloadSection(id);
     }
 
-    let observer: IntersectionObserver | undefined;
     let cancelled = false;
 
     const mount = () => {
@@ -126,7 +124,7 @@ export function LazySection({ id, className }: { id: HomeSectionId; className?: 
       };
     }
 
-    observer = new IntersectionObserver(
+    const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
           observer?.disconnect();

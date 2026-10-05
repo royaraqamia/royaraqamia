@@ -1,5 +1,4 @@
-import { Copy } from 'lucide-react';
-import { ScanLine, Lock, QrCode, CheckCircle, FileText } from 'lucide-react';
+import { Copy, ScanLine, Lock, QrCode, CheckCircle, FileText } from 'lucide-react';
 import { ScrollAnimation } from './ScrollAnimations';
 import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 import Link from 'next/link';

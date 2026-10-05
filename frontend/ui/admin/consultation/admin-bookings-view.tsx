@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { Check, Loader2, RefreshCw, X } from 'lucide-react';
-import type {
-  ConsultationBooking,
-  ConsultationBookingStatus,
+import {
+  CONSULTATION_BOOKING_STATUS_LABELS,
+  type ConsultationBooking,
+  type ConsultationBookingStatus,
 } from '@/shared/contracts/consultation';
-import { CONSULTATION_BOOKING_STATUS_LABELS } from '@/shared/contracts/consultation';
 import { adminBookingAction, adminListBookings } from '@/frontend/api/consultation-admin';
 import {
   formatSessionDateDamascus,

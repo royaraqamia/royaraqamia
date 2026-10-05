@@ -1,7 +1,6 @@
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { jsonResult, type HttpJsonResult, type HttpResult } from '@/backend/transport/http-result';
-import { getErrorMessage } from '@/backend/shared/errors';
-import { AppError } from '@/backend/shared/errors';
+import { getErrorMessage, AppError } from '@/backend/shared/errors';
 
 interface RateLimitConfig {
   key: string;
