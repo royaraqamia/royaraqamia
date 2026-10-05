@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.46.0] - 2026-10-05
+
+### Changed
+- remove the rabwah coming-soon link
+
+### Added
+- start the converter on the visitor's currency
+- resolve the converter target from the visitor's country
+- label the amount as gram count for metal sources
+- add gold karat selector to the converter
+
+### Fixed
+- force Latin digits in the number input spinner
+
 ## [1.45.0] - 2026-10-05
 
 ### Added
