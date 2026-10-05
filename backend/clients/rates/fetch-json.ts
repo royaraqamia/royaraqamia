@@ -20,3 +20,18 @@ export async function fetchJson<T>(url: string, options: FetchJsonOptions = {}):
     clearTimeout(timer);
   }
 }
+
+export async function fetchText(url: string, options: FetchJsonOptions = {}): Promise<string> {
+  const { timeoutMs = DEFAULT_TIMEOUT_MS, fetchImpl = fetch, headers } = options;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetchImpl(url, { signal: controller.signal, headers });
+    if (!response.ok) {
+      throw new Error(`Request failed (${response.status}): ${url}`);
+    }
+    return await response.text();
+  } finally {
+    clearTimeout(timer);
+  }
+}

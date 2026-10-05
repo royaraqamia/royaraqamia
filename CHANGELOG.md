@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.43.0] - 2026-10-05
+
+### Changed
+- bump the minor-and-patch group with 28 updates
+
+### Added
+- searchable, RTL currency pickers
+
+## [1.42.0] - 2026-10-05
+
+### Added
+- source the Syrian Pound from a market feed
+- align converter fields with form primitives and add Hijri date
+
 ## [1.41.1] - 2026-10-04
 
 ### Changed

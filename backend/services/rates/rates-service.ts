@@ -62,7 +62,7 @@ export class RatesService {
   }
 
   async refresh(): Promise<RefreshResult> {
-    const runId = await this.repository.startSyncRun('frankfurter+gold-api');
+    const runId = await this.repository.startSyncRun('frankfurter+sp-today+gold-api');
     try {
       const [fiat, metals] = await Promise.all([
         this.fiatProvider.fetchRates(RATE_BASE_CURRENCY),
