@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.47.0] - 2026-10-05
+
+### Changed
+- consolidate flat config and hand formatting to Prettier
+
+### Added
+- drop post titles for body-first posts
+
+### Fixed
+- declare react-is required by recharts peer dependency
+- respect RTL in Radix components
+- give segmented-control selection an AA-contrast fill
+- make the selected converter toggle clearly active
+
 ## [1.46.0] - 2026-10-05
 
 ### Changed
