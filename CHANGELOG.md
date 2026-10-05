@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.48.0] - 2026-10-05
+
+### Added
+- show SYP conversion in old lira on the caption line
+
 ## [1.47.0] - 2026-10-05
 
 ### Changed
