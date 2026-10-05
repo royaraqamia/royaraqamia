@@ -4,13 +4,7 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/frontend/ui/primitives/select';
+import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
 import { getCurrencyDisplaySymbol } from '@/shared/currency';
 import type { RatesBoard } from '@/shared/contracts/rates';
 import { convertAmount, isMetalCode, type RateLookup } from '@/shared/rates';
@@ -110,18 +104,15 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
           <div className="form-field">
             <Label htmlFor="rates-from">من</Label>
-            <Select value={from} onValueChange={setFrom}>
-              <SelectTrigger id="rates-from">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {options.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              id="rates-from"
+              aria-label="من"
+              value={from}
+              onValueChange={setFrom}
+              options={options}
+              searchPlaceholder="ابحث عن عملة…"
+              sheetTitle="اختر العملة"
+            />
           </div>
 
           <Button
@@ -150,18 +141,15 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
 
           <div className="form-field">
             <Label htmlFor="rates-to">إلى</Label>
-            <Select value={to} onValueChange={setTo}>
-              <SelectTrigger id="rates-to">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {options.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <SearchableSelect
+              id="rates-to"
+              aria-label="إلى"
+              value={to}
+              onValueChange={setTo}
+              options={options}
+              searchPlaceholder="ابحث عن عملة…"
+              sheetTitle="اختر العملة"
+            />
           </div>
         </div>
 

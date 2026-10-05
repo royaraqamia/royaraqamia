@@ -24,7 +24,7 @@ import {
 
 import { COUNTRY_DIAL_CODES, type CountryDialCode } from './country-dial-codes';
 import { useDefaultCountry } from './default-country';
-import { BELOW_SM_MEDIA_QUERY } from './breakpoints';
+import { useIsMobile } from './use-is-mobile';
 import {
   composePhoneNumber,
   sanitizeTypedNational,
@@ -44,21 +44,6 @@ interface CountryPhoneInputProps {
   /** Overrides the location-based default when the stored value has no country. */
   defaultCountry?: CountryDialCode;
   'aria-describedby'?: string;
-}
-
-/** Below Tailwind's `sm` breakpoint the picker surfaces as a bottom sheet. */
-function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(false);
-
-  React.useEffect(() => {
-    const media = window.matchMedia(BELOW_SM_MEDIA_QUERY);
-    const sync = () => setIsMobile(media.matches);
-    sync();
-    media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
-  }, []);
-
-  return isMobile;
 }
 
 const PICKER_LIST_CLASSNAME = 'max-h-[min(58vh,24rem)] sm:max-h-[min(64vh,26rem)]';
