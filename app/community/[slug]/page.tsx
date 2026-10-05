@@ -20,6 +20,7 @@ import { ArrowRight, Calendar, BookOpen, User, ChevronLeft } from 'lucide-react'
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { PostViewTracker } from '../_components/post-view-tracker';
+import { PostOwnerActions } from '../_components/post-owner-actions';
 import {
   loadPublishedPostBySlug,
   loadCommunityPost,
@@ -280,6 +281,9 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                       #{tag.name}
                     </span>
                   ))}
+                  <div className="ms-auto">
+                    <PostOwnerActions post={p} />
+                  </div>
                 </div>
               </header>
 

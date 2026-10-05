@@ -1,7 +1,15 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { PostCard } from '../post-card';
+
+vi.mock('@/frontend/state/session-provider', () => ({
+  useSession: () => ({ user: null, isLoading: false }),
+}));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ refresh: vi.fn(), push: vi.fn() }),
+}));
 
 const post: PostSummary = {
   id: 'p1',
@@ -86,5 +94,10 @@ describe('PostCard', () => {
   it('renders a share button', () => {
     render(<PostCard post={post} index={0} />);
     expect(screen.getByRole('button', { name: 'مشاركة المنشور' })).toBeInTheDocument();
+  });
+
+  it('hides the owner actions menu from anonymous visitors', () => {
+    render(<PostCard post={post} index={0} />);
+    expect(screen.queryByRole('button', { name: 'إجراءات المنشور' })).not.toBeInTheDocument();
   });
 });
