@@ -1,10 +1,12 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
+import { SECTION_TITLE_HIGHLIGHT } from '@/frontend/ui/shared/section-title';
 import { getCurrencyDisplaySymbol } from '@/shared/currency';
 import type { RatesBoard } from '@/shared/contracts/rates';
 import { convertAmount, isMetalCode, type RateLookup } from '@/shared/rates';
@@ -153,28 +155,21 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
           </div>
         </div>
 
-        <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-5">
-          <p className="text-sm text-muted-foreground">
-            <span dir="ltr">{isMetalCode(from) ? 'غرام' : from} →</span>
-          </p>
-          <p className="mt-1 text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+        <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
+          <p className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl">
             {conversion ? (
-              <span dir="ltr" className="inline-flex items-baseline gap-1">
+              <span
+                dir="ltr"
+                className={cn(SECTION_TITLE_HIGHLIGHT, 'inline-flex items-baseline gap-2')}
+              >
                 <span>{isMetalCode(to) ? 'غرام' : getCurrencyDisplaySymbol(to)}</span>
                 <span>{formatRate(conversion.result)}</span>
               </span>
             ) : (
-              '—'
+              <span className="text-muted-foreground">—</span>
             )}
           </p>
-          {conversion ? (
-            <p className="mt-2 text-xs text-muted-foreground">
-              <span dir="ltr">
-                1 {isMetalCode(from) ? 'غرام' : from} = {formatRate(conversion.rate)}{' '}
-                {isMetalCode(to) ? 'غرام' : to}
-              </span>
-            </p>
-          ) : (
+          {conversion ? null : (
             <p className="mt-2 text-xs text-destructive">تعذَّر التَّحويل بين هذين العنصرين.</p>
           )}
         </div>
@@ -215,7 +210,10 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
                   <p className="mb-2 text-xs text-muted-foreground">سعر الغرام حسب العيار</p>
                   <ul className="grid grid-cols-2 gap-2 text-xs">
                     {metal.karats.map((karat) => (
-                      <li key={karat.karat} className="flex items-center justify-between gap-2">
+                      <li
+                        key={karat.karat}
+                        className="flex w-fit items-center gap-1.5 justify-self-start rounded-lg bg-muted/30 px-2.5 py-1.5"
+                      >
                         <span className="text-muted-foreground">عيار {karat.karat}</span>
                         <span className="font-bold text-foreground" dir="ltr">
                           ${formatRate(karat.pricePerGramUsd)}
