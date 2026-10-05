@@ -1,11 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { ChangeBadge, formatRate } from '@/frontend/ui/rates/rate-format';
+import { resolveDefaultPair } from '@/frontend/ui/rates/rates-defaults';
+import { useDefaultCountry } from '@/frontend/ui/shared/default-country';
 import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
 import { SECTION_TITLE_HIGHLIGHT } from '@/frontend/ui/shared/section-title';
 import { getCurrencyDisplaySymbol } from '@/shared/currency';
@@ -23,17 +25,41 @@ interface RatesExplorerProps {
 }
 
 export function RatesExplorer({ board }: RatesExplorerProps) {
-  const defaultTo =
-    board.currencies.find((currency) => currency.code === 'SAR')?.code ??
-    board.currencies.find((currency) => currency.code !== board.base)?.code ??
-    board.base;
+  const visitorCountry = useDefaultCountry().iso;
+
+  // The From side is USD and the To side follows the visitor's own currency,
+  // falling back to SYP. If the visitor already uses USD both sides collide, so
+  // the From side moves to SYP to keep the pair converting across currencies.
+  const defaultPair = useMemo(
+    () => resolveDefaultPair(board, visitorCountry),
+    [board, visitorCountry]
+  );
 
   const [amount, setAmount] = useState('1');
-  const [from, setFrom] = useState(board.base);
-  const [to, setTo] = useState(defaultTo);
+  const [from, setFrom] = useState(defaultPair.from);
+  const [to, setTo] = useState(defaultPair.to);
   const [basis, setBasis] = useState<RateBasis>('parallel');
   const [market, setMarket] = useState<string | null>(null);
   const [goldKarat, setGoldKarat] = useState<GoldKarat>(24);
+
+  // The first render matches the server (SYP); once the visitor's location
+  // resolves on the client we adopt their pair, unless they already chose.
+  const touchedRef = useRef(false);
+  useEffect(() => {
+    if (touchedRef.current) return;
+    setFrom(defaultPair.from);
+    setTo(defaultPair.to);
+  }, [defaultPair]);
+
+  const handleFromChange = (value: string) => {
+    touchedRef.current = true;
+    setFrom(value);
+  };
+
+  const handleToChange = (value: string) => {
+    touchedRef.current = true;
+    setTo(value);
+  };
 
   const marketOptions = useMemo(
     () =>
@@ -92,6 +118,7 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   }, [lookup, from, to, numericAmount, effectiveBasis, goldKarat]);
 
   const swap = () => {
+    touchedRef.current = true;
     setFrom(to);
     setTo(from);
   };
@@ -113,6 +140,58 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
             onChange={(event) => setAmount(event.target.value)}
             dir="ltr"
           />
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
+          <div className="form-field">
+            <Label htmlFor="rates-from">من</Label>
+            <SearchableSelect
+              id="rates-from"
+              aria-label="من"
+              value={from}
+              onValueChange={handleFromChange}
+              options={options}
+              searchPlaceholder="ابحث عن عملة…"
+              sheetTitle="اختر العملة"
+            />
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={swap}
+            className="h-11 w-11 justify-self-center rounded-xl text-primary"
+            aria-label="عكس الاتِّجاه"
+          >
+            <svg
+              className="size-5 rotate-90 transition-transform duration-200 sm:rotate-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M8 7h12m0 0-4-4m4 4-4 4M16 17H4m0 0 4 4m-4-4 4-4"
+              />
+            </svg>
+          </Button>
+
+          <div className="form-field">
+            <Label htmlFor="rates-to">إلى</Label>
+            <SearchableSelect
+              id="rates-to"
+              aria-label="إلى"
+              value={to}
+              onValueChange={handleToChange}
+              options={options}
+              searchPlaceholder="ابحث عن عملة…"
+              sheetTitle="اختر العملة"
+            />
+          </div>
         </div>
 
         {basisRelevant ? (
@@ -198,58 +277,6 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
             </div>
           </div>
         ) : null}
-
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
-          <div className="form-field">
-            <Label htmlFor="rates-from">من</Label>
-            <SearchableSelect
-              id="rates-from"
-              aria-label="من"
-              value={from}
-              onValueChange={setFrom}
-              options={options}
-              searchPlaceholder="ابحث عن عملة…"
-              sheetTitle="اختر العملة"
-            />
-          </div>
-
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            onClick={swap}
-            className="h-11 w-11 justify-self-center rounded-xl text-primary"
-            aria-label="عكس الاتِّجاه"
-          >
-            <svg
-              className="size-5 rotate-90 transition-transform duration-200 sm:rotate-0"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden="true"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8 7h12m0 0-4-4m4 4-4 4M16 17H4m0 0 4 4m-4-4 4-4"
-              />
-            </svg>
-          </Button>
-
-          <div className="form-field">
-            <Label htmlFor="rates-to">إلى</Label>
-            <SearchableSelect
-              id="rates-to"
-              aria-label="إلى"
-              value={to}
-              onValueChange={setTo}
-              options={options}
-              searchPlaceholder="ابحث عن عملة…"
-              sheetTitle="اختر العملة"
-            />
-          </div>
-        </div>
 
         <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
           <p className="text-2xl font-extrabold tracking-tight sm:text-3xl lg:text-4xl">
