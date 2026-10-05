@@ -58,6 +58,13 @@
     --accent-indigo-foreground: 0 0% 100%;
     --accent-purple: 256 80% 55%;
     --accent-purple-foreground: 0 0% 100%;
+
+    /* Filled selection states (segmented controls, filter chips). Deliberately
+       darker than --primary so white-on-fill labels clear WCAG AA while the
+       fill keeps >=3:1 against the muted track. Distinct from --primary so the
+       brand accent can stay lighter for text on dark surfaces. See issue #148. */
+    --selected: 256 70% 61%;
+    --selected-foreground: 0 0% 100%;
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 

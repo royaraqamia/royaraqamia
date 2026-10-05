@@ -72,7 +72,7 @@ export function CertificatesFilterBar({
                 'min-h-9 cursor-pointer rounded-full px-4 py-1.5 text-xs font-bold transition-colors',
                 'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring',
                 active
-                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  ? 'bg-selected text-selected-foreground shadow-sm'
                   : 'bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground'
               )}
             >

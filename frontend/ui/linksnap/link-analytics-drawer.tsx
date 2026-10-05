@@ -158,7 +158,7 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
                         aria-pressed={range === preset.value}
                         className={`px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
                           range === preset.value
-                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            ? 'bg-selected text-selected-foreground shadow-sm'
                             : 'text-muted-foreground hover:text-foreground'
                         }`}
                       >

@@ -31,6 +31,8 @@
   --color-accent-indigo-foreground: hsl(var(--accent-indigo-foreground));
   --color-accent-purple: hsl(var(--accent-purple));
   --color-accent-purple-foreground: hsl(var(--accent-purple-foreground));
+  --color-selected: hsl(var(--selected));
+  --color-selected-foreground: hsl(var(--selected-foreground));
 
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

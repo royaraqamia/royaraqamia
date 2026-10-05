@@ -30,7 +30,7 @@ function segmentedItemClass(selected: boolean) {
   return cn(
     'flex-1 rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
     selected
-      ? 'bg-primary text-primary-foreground shadow-sm'
+      ? 'bg-selected text-selected-foreground shadow-sm'
       : 'text-muted-foreground hover:text-foreground'
   );
 }
