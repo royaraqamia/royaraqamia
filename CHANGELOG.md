@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.43.0] - 2026-10-05
+
+### Changed
+- bump the minor-and-patch group with 28 updates
+
+### Added
+- searchable, RTL currency pickers
+
 ## [1.42.0] - 2026-10-05
 
 ### Added
