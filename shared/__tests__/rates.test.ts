@@ -3,6 +3,7 @@ import { TROY_OUNCE_GRAMS } from '@/shared/contracts/rates';
 import {
   computeChangePct,
   convertAmount,
+  isParallelRate,
   karatPricePerGram,
   pricePerGram,
   usdPerUnit,
@@ -12,6 +13,7 @@ import {
 const lookup: RateLookup = {
   base: 'USD',
   rates: { USD: 1, SAR: 3.75, SYP: 13000 },
+  parallel: { SYP: 13800 },
   metals: { XAU: 2000, XAG: 25 },
 };
 
@@ -33,7 +35,29 @@ describe('usdPerUnit', () => {
   });
 
   it('returns null for a non-positive rate', () => {
-    expect(usdPerUnit({ base: 'USD', rates: { BAD: 0 }, metals: {} }, 'BAD')).toBeNull();
+    expect(
+      usdPerUnit({ base: 'USD', rates: { BAD: 0 }, parallel: {}, metals: {} }, 'BAD')
+    ).toBeNull();
+  });
+
+  it('uses the parallel value on the parallel basis', () => {
+    expect(usdPerUnit(lookup, 'SYP', 'parallel')).toBeCloseTo(1 / 13800);
+  });
+
+  it('falls back to the official rate when a code has no parallel value', () => {
+    expect(usdPerUnit(lookup, 'SAR', 'parallel')).toBeCloseTo(1 / 3.75);
+  });
+
+  it('ignores the basis for metals', () => {
+    expect(usdPerUnit(lookup, 'XAU', 'parallel')).toBeCloseTo(2000 / TROY_OUNCE_GRAMS);
+  });
+});
+
+describe('isParallelRate', () => {
+  it('is true only for codes with a positive parallel value', () => {
+    expect(isParallelRate(lookup, 'SYP')).toBe(true);
+    expect(isParallelRate(lookup, 'SAR')).toBe(false);
+    expect(isParallelRate(lookup, 'USD')).toBe(false);
   });
 });
 
@@ -51,6 +75,11 @@ describe('convertAmount', () => {
   it('cross-converts two non-base currencies', () => {
     const result = convertAmount(lookup, 'SAR', 'SYP', 1);
     expect(result?.result).toBeCloseTo(13000 / 3.75);
+  });
+
+  it('converts on the parallel basis', () => {
+    const result = convertAmount(lookup, 'SAR', 'SYP', 1, 'parallel');
+    expect(result?.result).toBeCloseTo(13800 / 3.75);
   });
 
   it('converts a gram of gold to USD', () => {

@@ -1,22 +1,25 @@
 import * as Sentry from '@sentry/nextjs';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
+import { createAlgeriaRateProvider } from '@/backend/clients/rates/algeria-rate-provider';
 import { createFrankfurterProvider } from '@/backend/clients/rates/fiat-rate-provider';
+import { createIraqRateProvider } from '@/backend/clients/rates/iraq-rate-provider';
 import { createGoldApiProvider } from '@/backend/clients/rates/metal-price-provider';
 import { createSpTodayProvider } from '@/backend/clients/rates/syp-market-provider';
-import { createSypAwareFiatProvider } from '@/backend/clients/rates/syp-aware-fiat-provider';
+import { createSypMarketVariantProvider } from '@/backend/clients/rates/syp-market-variant-provider';
+import { createCompositeVariantProvider } from '@/backend/clients/rates/variant-rate-provider';
 import { createRatesRepository } from '@/backend/repositories/rates';
 import { RatesService } from '@/backend/services/rates/rates-service';
 
 /**
- * Alerts when the SYP market read falls back to the ECB reference rate. A
- * `no_quote` reason means the feed answered but we could not parse a rate —
- * the scraper-drift case we must not discover from a wrong number on the page.
+ * Alerts when a rate variant source (central bank or parallel market) is
+ * unavailable. A missing value falls back to the reference rate, but a silent
+ * regression must surface rather than become a wrong number on the page.
  */
-function reportSypFallback(reason: 'fetch_failed' | 'no_quote', error?: unknown): void {
-  Sentry.captureMessage('SYP market rate unavailable — falling back to the reference rate', {
+function reportVariantFallback(source: string, error?: unknown): void {
+  Sentry.captureMessage(`Rate variant source unavailable: ${source}`, {
     level: 'warning',
-    tags: { feature: 'rates', currency: 'SYP', reason },
+    tags: { feature: 'rates', source },
     extra: error === undefined ? undefined : { error: String(error) },
   });
 }
@@ -24,9 +27,15 @@ function reportSypFallback(reason: 'fetch_failed' | 'no_quote', error?: unknown)
 export function createRatesService(supabase: SupabaseClient<Database>): RatesService {
   return new RatesService(
     createRatesRepository(supabase),
-    createSypAwareFiatProvider(createFrankfurterProvider(), createSpTodayProvider(), {
-      onFallback: reportSypFallback,
-    }),
-    createGoldApiProvider()
+    createFrankfurterProvider(),
+    createGoldApiProvider(),
+    createCompositeVariantProvider(
+      [
+        createSypMarketVariantProvider(createSpTodayProvider()),
+        createIraqRateProvider(),
+        createAlgeriaRateProvider(),
+      ],
+      { onFallback: reportVariantFallback }
+    )
   );
 }

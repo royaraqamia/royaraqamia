@@ -1043,6 +1043,8 @@ export type Database = {
           fetched_at: string;
           id: string;
           metals: Json;
+          official_rates: Json;
+          parallel_rates: Json;
           provider_quote_date: string;
           rates: Json;
         };
@@ -1052,6 +1054,8 @@ export type Database = {
           fetched_at?: string;
           id?: string;
           metals?: Json;
+          official_rates?: Json;
+          parallel_rates?: Json;
           provider_quote_date: string;
           rates?: Json;
         };
@@ -1061,6 +1065,8 @@ export type Database = {
           fetched_at?: string;
           id?: string;
           metals?: Json;
+          official_rates?: Json;
+          parallel_rates?: Json;
           provider_quote_date?: string;
           rates?: Json;
         };

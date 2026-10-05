@@ -1,3 +1,9 @@
+/** A single variant value: the rate (units per base) and its quote date. */
+export interface RateVariant {
+  rate: number;
+  date: string | null;
+}
+
 export interface RateSnapshot {
   id: string;
   base_currency: string;
@@ -5,6 +11,10 @@ export interface RateSnapshot {
   fetched_at: string;
   rates: Record<string, number>;
   metals: Record<string, number>;
+  /** Central-bank values by code; `rates` is the fallback. */
+  official_rates: Record<string, RateVariant>;
+  /** Parallel-market values by code; absent for single-rate currencies. */
+  parallel_rates: Record<string, RateVariant>;
 }
 
 export type RateSyncStatus = 'running' | 'success' | 'failure';
@@ -27,6 +37,8 @@ export interface InsertSnapshotInput {
   provider_quote_date: string;
   rates: Record<string, number>;
   metals: Record<string, number>;
+  official_rates?: Record<string, RateVariant>;
+  parallel_rates?: Record<string, RateVariant>;
 }
 
 export interface FinishSyncRunInput {

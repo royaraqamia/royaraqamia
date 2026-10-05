@@ -7,6 +7,7 @@ import type {
   RateSnapshot,
   RateSyncRun,
   RateSyncStatus,
+  RateVariant,
 } from '@/backend/repositories/rates/rates-repository';
 
 type SnapshotRow = Tables<'rate_snapshots'>;
@@ -21,6 +22,19 @@ function toNumberRecord(value: Json): Record<string, number> {
   return out;
 }
 
+function toVariantRecord(value: Json): Record<string, RateVariant> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const out: Record<string, RateVariant> = {};
+  for (const [key, entry] of Object.entries(value)) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const record = entry as Record<string, unknown>;
+    const rate = record.rate;
+    if (typeof rate !== 'number' || !Number.isFinite(rate)) continue;
+    out[key] = { rate, date: typeof record.date === 'string' ? record.date : null };
+  }
+  return out;
+}
+
 function mapSnapshot(row: SnapshotRow): RateSnapshot {
   return {
     id: row.id,
@@ -29,6 +43,8 @@ function mapSnapshot(row: SnapshotRow): RateSnapshot {
     fetched_at: row.fetched_at,
     rates: toNumberRecord(row.rates),
     metals: toNumberRecord(row.metals),
+    official_rates: toVariantRecord(row.official_rates),
+    parallel_rates: toVariantRecord(row.parallel_rates),
   };
 }
 
@@ -90,6 +106,8 @@ export function createRatesRepository(supabase: SupabaseClient<Database>): Rates
           provider_quote_date: input.provider_quote_date,
           rates: input.rates as Json,
           metals: input.metals as Json,
+          official_rates: (input.official_rates ?? {}) as unknown as Json,
+          parallel_rates: (input.parallel_rates ?? {}) as unknown as Json,
         })
         .select('*')
         .single();

@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { FiatRateProvider } from '@/backend/clients/rates/fiat-rate-provider';
 import type { MetalPriceProvider } from '@/backend/clients/rates/metal-price-provider';
+import type { RateVariantProvider } from '@/backend/clients/rates/variant-rate-provider';
 import type {
   RatesRepository,
   RateSnapshot,
@@ -19,6 +20,8 @@ function snapshot(overrides: Partial<RateSnapshot> = {}): RateSnapshot {
     fetched_at: '2026-10-04T06:00:00.000Z',
     rates: { SAR: 3.75, JPY: 150 },
     metals: { XAU: 2000 },
+    official_rates: {},
+    parallel_rates: {},
     ...overrides,
   };
 }
@@ -39,11 +42,15 @@ function makeRepo(overrides: Partial<RatesRepository> = {}): RatesRepository {
 function makeService(repository: RatesRepository) {
   const fiatProvider = { fetchRates: vi.fn() } as unknown as FiatRateProvider;
   const metalProvider = { fetchPrices: vi.fn() } as unknown as MetalPriceProvider;
-  const service = new RatesService(repository, fiatProvider, metalProvider, {
+  const variantProvider = {
+    name: 'test',
+    fetchVariants: vi.fn().mockResolvedValue([]),
+  } as unknown as RateVariantProvider;
+  const service = new RatesService(repository, fiatProvider, metalProvider, variantProvider, {
     now: () => NOW,
     logger: silentLogger,
   });
-  return { service, fiatProvider, metalProvider };
+  return { service, fiatProvider, metalProvider, variantProvider };
 }
 
 describe('RatesService.refresh', () => {
@@ -71,6 +78,8 @@ describe('RatesService.refresh', () => {
       provider_quote_date: '2026-10-04',
       rates: { SAR: 3.75, JPY: 150 },
       metals: { XAU: 2000 },
+      official_rates: {},
+      parallel_rates: {},
     });
     expect(repository.finishSyncRun).toHaveBeenCalledWith(
       'run-1',
@@ -82,6 +91,31 @@ describe('RatesService.refresh', () => {
       })
     );
     expect(result.snapshotId).toBe('snap-1');
+  });
+
+  it('stores official and parallel variants from the variant provider', async () => {
+    const repository = makeRepo({
+      startSyncRun: vi.fn().mockResolvedValue('run-v'),
+      insertSnapshot: vi.fn().mockResolvedValue(snapshot()),
+      finishSyncRun: vi.fn().mockResolvedValue(undefined),
+    });
+    const { service, fiatProvider, metalProvider, variantProvider } = makeService(repository);
+    (fiatProvider.fetchRates as ReturnType<typeof vi.fn>).mockResolvedValue({
+      quotes: [{ code: 'SYP', rate: 122.24, date: '2026-10-04' }],
+    });
+    (metalProvider.fetchPrices as ReturnType<typeof vi.fn>).mockResolvedValue({ prices: [] });
+    (variantProvider.fetchVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
+      { code: 'SYP', official: 122, parallel: 138, date: '2026-10-04' },
+    ]);
+
+    await service.refresh();
+
+    expect(repository.insertSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({
+        official_rates: { SYP: { rate: 122, date: '2026-10-04' } },
+        parallel_rates: { SYP: { rate: 138, date: '2026-10-04' } },
+      })
+    );
   });
 
   it('records a failed run and stores nothing when a provider throws', async () => {
@@ -154,6 +188,37 @@ describe('RatesService.getBoard', () => {
     expect(gold.pricePerGramUsd).toBeCloseTo(2000 / 31.1034768);
     expect(gold.karats).toHaveLength(4);
     expect(board!.isStale).toBe(false);
+  });
+
+  it('builds official and parallel variants for a dual-rate currency', async () => {
+    const repository = makeRepo({
+      getLatestSnapshot: vi.fn().mockResolvedValue(
+        snapshot({
+          rates: { SYP: 122.24 },
+          official_rates: { SYP: { rate: 122, date: '2026-10-04' } },
+          parallel_rates: { SYP: { rate: 138, date: '2026-10-04' } },
+        })
+      ),
+      getSnapshotBefore: vi.fn().mockResolvedValue(
+        snapshot({
+          id: 'snap-0',
+          fetched_at: '2026-10-03T06:00:00.000Z',
+          provider_quote_date: '2026-10-03',
+          rates: { SYP: 122.1 },
+          official_rates: { SYP: { rate: 121.9, date: '2026-10-03' } },
+          parallel_rates: { SYP: { rate: 136, date: '2026-10-03' } },
+        })
+      ),
+    });
+    const { service } = makeService(repository);
+
+    const board = await service.getBoard();
+    const syp = board!.currencies.find((currency) => currency.code === 'SYP')!;
+    expect(syp.rate).toBe(122);
+    expect(syp.asOf).toBe('2026-10-04');
+    expect(syp.changePct).toBeCloseTo(((122 - 121.9) / 121.9) * 100);
+    expect(syp.parallel?.rate).toBe(138);
+    expect(syp.parallel?.changePct).toBeCloseTo(((138 - 136) / 136) * 100);
   });
 
   it('flags staleness from the provider quote date', async () => {

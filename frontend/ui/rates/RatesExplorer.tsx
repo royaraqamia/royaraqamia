@@ -5,36 +5,13 @@ import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
+import { DualRatePanel } from '@/frontend/ui/rates/DualRatePanel';
+import { ChangeBadge, formatRate } from '@/frontend/ui/rates/rate-format';
 import { SearchableSelect } from '@/frontend/ui/shared/searchable-select';
 import { SECTION_TITLE_HIGHLIGHT } from '@/frontend/ui/shared/section-title';
 import { getCurrencyDisplaySymbol } from '@/shared/currency';
-import type { RatesBoard } from '@/shared/contracts/rates';
-import { convertAmount, isMetalCode, type RateLookup } from '@/shared/rates';
-
-function formatRate(value: number): string {
-  const abs = Math.abs(value);
-  const digits = abs >= 1 ? 2 : abs >= 0.01 ? 4 : 6;
-  return new Intl.NumberFormat('ar-SA-u-nu-latn', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: digits,
-  }).format(value);
-}
-
-function ChangeBadge({ changePct }: { changePct: number | null }) {
-  if (changePct === null) {
-    return <span className="text-xs text-muted-foreground">—</span>;
-  }
-  const up = changePct >= 0;
-  return (
-    <span
-      className={`inline-flex items-center gap-1 text-xs font-bold ${up ? 'text-success' : 'text-destructive'}`}
-      dir="ltr"
-    >
-      <span aria-hidden="true">{up ? '▲' : '▼'}</span>
-      {Math.abs(changePct).toFixed(2)}%
-    </span>
-  );
-}
+import { type RateBasis, type RatesBoard } from '@/shared/contracts/rates';
+import { convertAmount, isMetalCode, isParallelRate, type RateLookup } from '@/shared/rates';
 
 interface RatesExplorerProps {
   board: RatesBoard;
@@ -49,11 +26,17 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
   const [amount, setAmount] = useState('1');
   const [from, setFrom] = useState(board.base);
   const [to, setTo] = useState(defaultTo);
+  const [basis, setBasis] = useState<RateBasis>('parallel');
 
   const lookup: RateLookup = useMemo(
     () => ({
       base: board.base,
       rates: Object.fromEntries(board.currencies.map((currency) => [currency.code, currency.rate])),
+      parallel: Object.fromEntries(
+        board.currencies
+          .filter((currency) => currency.parallel !== null)
+          .map((currency) => [currency.code, currency.parallel!.rate])
+      ),
       metals: Object.fromEntries(board.metals.map((metal) => [metal.code, metal.pricePerOunceUsd])),
     }),
     [board]
@@ -73,11 +56,14 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
     [board]
   );
 
+  const basisRelevant = isParallelRate(lookup, from) || isParallelRate(lookup, to);
+  const effectiveBasis: RateBasis = basisRelevant ? basis : 'official';
+
   const numericAmount = Number(amount);
   const conversion = useMemo(() => {
     if (!Number.isFinite(numericAmount)) return null;
-    return convertAmount(lookup, from, to, numericAmount);
-  }, [lookup, from, to, numericAmount]);
+    return convertAmount(lookup, from, to, numericAmount, effectiveBasis);
+  }, [lookup, from, to, numericAmount, effectiveBasis]);
 
   const swap = () => {
     setFrom(to);
@@ -102,6 +88,34 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
             dir="ltr"
           />
         </div>
+
+        {basisRelevant ? (
+          <div className="mt-4">
+            <span className="mb-1.5 block text-sm font-medium text-foreground">سعر التحويل</span>
+            <div
+              className="inline-flex rounded-xl border border-border/60 bg-muted/30 p-1"
+              role="group"
+              aria-label="أساس سعر التحويل"
+            >
+              {(['parallel', 'official'] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  aria-pressed={basis === value}
+                  onClick={() => setBasis(value)}
+                  className={cn(
+                    'rounded-lg px-3 py-1.5 text-sm font-bold transition-colors',
+                    basis === value
+                      ? 'bg-card text-primary shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  )}
+                >
+                  {value === 'parallel' ? 'السوق الموازي' : 'السعر الرسمي'}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr] sm:items-end">
           <div className="form-field">
@@ -169,11 +183,18 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
               <span className="text-muted-foreground">—</span>
             )}
           </p>
+          {conversion && basisRelevant ? (
+            <p className="mt-2 text-xs text-muted-foreground">
+              {effectiveBasis === 'parallel' ? 'حسب سعر السوق الموازي' : 'حسب السعر الرسمي'}
+            </p>
+          ) : null}
           {conversion ? null : (
             <p className="mt-2 text-xs text-destructive">تعذَّر التَّحويل بين هذين العنصرين.</p>
           )}
         </div>
       </section>
+
+      <DualRatePanel board={board} />
 
       <section aria-label="أسعار المعادن">
         <h2 className="mb-4 text-xl font-bold text-foreground sm:text-2xl">الذَّهب والفِضَّة</h2>

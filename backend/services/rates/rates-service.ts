@@ -1,6 +1,11 @@
 import type { FiatRateProvider } from '@/backend/clients/rates/fiat-rate-provider';
 import type { MetalPriceProvider } from '@/backend/clients/rates/metal-price-provider';
-import type { RatesRepository, RateSnapshot } from '@/backend/repositories/rates/rates-repository';
+import type { RateVariantProvider } from '@/backend/clients/rates/variant-rate-provider';
+import type {
+  RatesRepository,
+  RateSnapshot,
+  RateVariant,
+} from '@/backend/repositories/rates/rates-repository';
 import { logger } from '@/backend/shared/logger';
 import {
   DISPLAY_CURRENCY_SET,
@@ -8,6 +13,7 @@ import {
   METALS,
   RATE_BASE_CURRENCY,
   type MetalQuote,
+  type RateBasis,
   type RateHealth,
   type RateRange,
   type RateSeries,
@@ -43,6 +49,14 @@ const RANGE_DAYS: Record<RateRange, number> = {
   '1Y': 365,
 };
 
+/** Resolves a currency's value on a basis, falling back to the reference feed. */
+function variantRate(snapshot: RateSnapshot, code: string, basis: RateBasis): number | undefined {
+  if (basis === 'parallel') {
+    return snapshot.parallel_rates[code]?.rate ?? snapshot.rates[code];
+  }
+  return snapshot.official_rates[code]?.rate ?? snapshot.rates[code];
+}
+
 export class RatesService {
   private readonly now: () => Date;
   private readonly staleAfterMs: number;
@@ -53,6 +67,7 @@ export class RatesService {
     private readonly repository: RatesRepository,
     private readonly fiatProvider: FiatRateProvider,
     private readonly metalProvider: MetalPriceProvider,
+    private readonly variantProvider: RateVariantProvider,
     options: RatesServiceOptions = {}
   ) {
     this.now = options.now ?? (() => new Date());
@@ -62,11 +77,12 @@ export class RatesService {
   }
 
   async refresh(): Promise<RefreshResult> {
-    const runId = await this.repository.startSyncRun('frankfurter+sp-today+gold-api');
+    const runId = await this.repository.startSyncRun('frankfurter+gold-api+variants');
     try {
-      const [fiat, metals] = await Promise.all([
+      const [fiat, metals, variants] = await Promise.all([
         this.fiatProvider.fetchRates(RATE_BASE_CURRENCY),
         this.metalProvider.fetchPrices(),
+        this.variantProvider.fetchVariants(),
       ]);
 
       const rates: Record<string, number> = {};
@@ -81,6 +97,18 @@ export class RatesService {
         metalPrices[price.code] = price.pricePerOunceUsd;
       }
 
+      const officialRates: Record<string, RateVariant> = {};
+      const parallelRates: Record<string, RateVariant> = {};
+      for (const quote of variants) {
+        const date = quote.date || null;
+        if (quote.official !== undefined) {
+          officialRates[quote.code] = { rate: quote.official, date };
+        }
+        if (quote.parallel !== undefined) {
+          parallelRates[quote.code] = { rate: quote.parallel, date };
+        }
+      }
+
       if (Object.keys(rates).length === 0) {
         throw new Error('fiat provider returned no rates');
       }
@@ -91,6 +119,8 @@ export class RatesService {
         provider_quote_date: quoteDate,
         rates,
         metals: metalPrices,
+        official_rates: officialRates,
+        parallel_rates: parallelRates,
       });
 
       const currencyCount = Object.keys(rates).length;
@@ -129,7 +159,11 @@ export class RatesService {
     return this.buildBoard(latest, previous);
   }
 
-  async getSeries(code: string, range: RateRange): Promise<RateSeries | null> {
+  async getSeries(
+    code: string,
+    range: RateRange,
+    basis: RateBasis = 'official'
+  ): Promise<RateSeries | null> {
     const upper = code.toUpperCase();
     const isMetal = METALS.some((metal) => metal.code === upper);
 
@@ -138,7 +172,10 @@ export class RatesService {
 
     const known = isMetal
       ? latest.metals[upper] !== undefined
-      : upper === latest.base_currency || latest.rates[upper] !== undefined;
+      : upper === latest.base_currency ||
+        latest.rates[upper] !== undefined ||
+        latest.official_rates[upper] !== undefined ||
+        latest.parallel_rates[upper] !== undefined;
     if (!known) return null;
 
     const since = new Date(
@@ -152,7 +189,7 @@ export class RatesService {
         ? snapshot.metals[upper]
         : upper === snapshot.base_currency
           ? 1
-          : snapshot.rates[upper];
+          : variantRate(snapshot, upper, basis);
       if (value !== undefined) byDate.set(snapshot.fetched_at.slice(0, 10), value);
     }
 
@@ -190,15 +227,32 @@ export class RatesService {
 
     const currencies = [...rateEntries.entries()]
       .filter(([code]) => DISPLAY_CURRENCY_SET.has(code))
-      .map(([code, rate]) => {
-        const previousRate = previous?.rates[code] ?? (code === latest.base_currency ? 1 : null);
+      .map(([code, referenceRate]) => {
+        const officialVariant = latest.official_rates[code];
+        const officialRate = officialVariant?.rate ?? referenceRate;
+        const previousReference =
+          previous?.rates[code] ?? (code === latest.base_currency ? 1 : null);
+        const previousOfficial = previous?.official_rates[code]?.rate ?? previousReference;
+
+        const parallelVariant = latest.parallel_rates[code];
+        const parallelPrevious = previous?.parallel_rates[code]?.rate ?? null;
+
         return {
           code,
           name: getCurrencyDisplayName(code),
           symbol: getCurrencyDisplaySymbol(code),
-          rate,
-          previousRate,
-          changePct: computeChangePct(rate, previousRate),
+          rate: officialRate,
+          previousRate: previousOfficial,
+          changePct: computeChangePct(officialRate, previousOfficial),
+          asOf: officialVariant?.date ?? latest.provider_quote_date,
+          parallel: parallelVariant
+            ? {
+                rate: parallelVariant.rate,
+                previousRate: parallelPrevious,
+                changePct: computeChangePct(parallelVariant.rate, parallelPrevious),
+                asOf: parallelVariant.date ?? latest.fetched_at.slice(0, 10),
+              }
+            : null,
         };
       })
       .sort((a, b) => a.code.localeCompare(b.code));

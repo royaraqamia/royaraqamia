@@ -41,16 +41,45 @@ export const DISPLAY_CURRENCY_CODES: readonly string[] = [
 
 export const DISPLAY_CURRENCY_SET = new Set<string>(DISPLAY_CURRENCY_CODES);
 
+/**
+ * Currencies shown with both an Official Rate and a Parallel Rate. Their cards
+ * render even when the market feed is unavailable, so a failed source degrades
+ * visibly instead of silently dropping the currency (ADR-0011, ADR-0013).
+ */
+export const DUAL_RATE_CURRENCY_CODES: readonly string[] = ['SYP', 'IQD', 'DZD'];
+
 export const RATE_RANGES = ['1W', '1M', '1Y'] as const;
 export type RateRange = (typeof RATE_RANGES)[number];
+
+/**
+ * Which price a dual-rate Currency is quoted on. `official` is the central-bank
+ * rate (or the reference feed when no central-bank source exists); `parallel`
+ * is the informal market rate. Metals ignore the basis.
+ */
+export const RATE_BASES = ['official', 'parallel'] as const;
+export type RateBasis = (typeof RATE_BASES)[number];
+
+export interface CurrencyRate {
+  rate: number;
+  previousRate: number | null;
+  changePct: number | null;
+  /** Quote date of this value (`YYYY-MM-DD`), or null when the source omits it. */
+  asOf: string | null;
+}
 
 export interface CurrencyQuote {
   code: string;
   name: string;
   symbol: string;
+  /** Official rate: the central-bank value when a dedicated source answered,
+   * otherwise the reference feed. Always present. */
   rate: number;
   previousRate: number | null;
   changePct: number | null;
+  /** Quote date of the official value (`YYYY-MM-DD`), or null. */
+  asOf: string | null;
+  /** Parallel-market rate; present only for a dual-rate Currency. */
+  parallel: CurrencyRate | null;
 }
 
 export interface MetalKaratQuote {
@@ -102,6 +131,7 @@ export const RateSeriesQuerySchema = z.object({
     .regex(/^[A-Za-z]{3}$/)
     .transform((value) => value.toUpperCase()),
   range: z.enum(RATE_RANGES).default('1M'),
+  basis: z.enum(RATE_BASES).default('official'),
 });
 
 export type RateSeriesQuery = z.infer<typeof RateSeriesQuerySchema>;

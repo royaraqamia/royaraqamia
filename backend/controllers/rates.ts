@@ -45,6 +45,7 @@ export async function getRateSeries(query: URLSearchParams): Promise<HttpResult>
   const parsed = RateSeriesQuerySchema.safeParse({
     code: query.get('code') ?? '',
     range: query.get('range') ?? undefined,
+    basis: query.get('basis') ?? undefined,
   });
   if (!parsed.success) {
     return jsonResult(400, { error: 'بيانات غير صحيحة' });
@@ -52,7 +53,8 @@ export async function getRateSeries(query: URLSearchParams): Promise<HttpResult>
 
   const series = await createRatesService(getAdminSupabase()).getSeries(
     parsed.data.code,
-    parsed.data.range
+    parsed.data.range,
+    parsed.data.basis
   );
   if (!series) {
     return jsonResult(404, { error: 'العملة غير معروفة' });
