@@ -8,6 +8,9 @@ interface InputProps extends React.ComponentProps<'input'> {
 
 const LATIN_DIGIT_TYPES = new Set(['number', 'time', 'date', 'datetime-local', 'month', 'week']);
 const LATIN_DIGIT_LANG = 'ar-u-nu-latn';
+// Chromium ignores the `nu` extension when rendering a number input's value and
+// spinner, so a Latin-primary locale is required to force Latin digits there.
+const NUMBER_INPUT_LANG = 'en';
 
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
   ({ className, type, error, ...props }, ref) => {
@@ -45,7 +48,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
             className
           )}
           {...props}
-          lang={type !== undefined && LATIN_DIGIT_TYPES.has(type) ? LATIN_DIGIT_LANG : props.lang}
+          lang={resolveInputLang(type, props.lang)}
         />
         {error && (
           <div
@@ -73,6 +76,13 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
     );
   }
 );
+
+// Picks the `lang` tag that forces Latin digits for native inputs.
+function resolveInputLang(type?: string, fallback?: string): string | undefined {
+  if (type === 'number') return NUMBER_INPUT_LANG;
+  if (type !== undefined && LATIN_DIGIT_TYPES.has(type)) return LATIN_DIGIT_LANG;
+  return fallback;
+}
 
 // Auto-complete helper for better UX and SEO
 function getAutoComplete(type?: string, name?: string): string {
