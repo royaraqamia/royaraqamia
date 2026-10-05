@@ -41,9 +41,6 @@ export class BlogpressPostsService {
     snapshot: RestorePostSnapshot,
     authorEmail = ''
   ): Promise<{ id: string }> {
-    if (!snapshot.title || !snapshot.title.trim()) {
-      throw new Error('عنوان المنشور مطلوب');
-    }
     if (!snapshot.slug || !snapshot.slug.trim()) {
       throw new Error('المعرّف (slug) مطلوب');
     }
@@ -71,7 +68,6 @@ export class BlogpressPostsService {
     const suffix = crypto.randomUUID().slice(0, 4);
 
     await this.repository.updatePost(id, authorId, {
-      title: source.title ? `نسخة من ${source.title}` : '',
       slug: `${baseSlug}-copy-${suffix}`,
       content: source.content ?? '',
       cover_image: source.cover_image ?? '',

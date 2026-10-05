@@ -100,9 +100,8 @@ describe('community tools', () => {
           {
             id: 'p1',
             author_id: 'u1',
-            title: 'My Post',
             slug: 'my-post',
-            content: null,
+            content: 'My Post',
             status: 'published',
             cover_image: null,
             meta_title: null,
@@ -124,7 +123,9 @@ describe('community tools', () => {
     const result = await listPostsHandler({ page_size: 10, offset: 0, format: 'json' }, userCtx);
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent?.total).toBe(1);
-    expect((result.structuredContent?.posts as Array<{ title: string }>)[0]?.title).toBe('My Post');
+    expect((result.structuredContent?.posts as Array<{ excerpt: string }>)[0]?.excerpt).toBe(
+      'My Post'
+    );
   });
 
   it('listPostsHandler rejects anonymous callers without community.read scope', async () => {

@@ -9,10 +9,10 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { id } = await props.params;
   const { repository } = await getBlogpressPosts();
-  const title = await repository.getPostTitleById(id);
+  const excerpt = await repository.getPostExcerptById(id);
 
   return {
-    title: title ? `تحرير: ${title}` : 'تحرير المنشور',
+    title: excerpt ? `تحرير: ${excerpt}` : 'تحرير المنشور',
     description: 'تحرير وتعديل المنشورات في BlogPress.',
   };
 }

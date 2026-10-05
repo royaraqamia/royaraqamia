@@ -55,6 +55,7 @@ import {
 import { downloadPostAsFile } from '@/frontend/shared/blogpress/export-post';
 import { useBulkPosts } from '@/frontend/state/blogpress/use-bulk-posts';
 import type { Post, PostTag, PostCategory, PostStatus } from '@/shared/contracts/blogpress';
+import { postExcerpt } from '@/shared/reading-time';
 import { cn } from '@/frontend/shared/cn';
 import {
   estimateWordCount,
@@ -360,6 +361,7 @@ const PostRow = memo(function PostRow({
   const router = useRouter();
   const wordCount = estimateWordCount(post.content);
   const readingTime = estimateReadingTime(post.content);
+  const label = postExcerpt(post.content, post.meta_desc ?? '') || 'بدون عنوان';
 
   return (
     <article
@@ -426,7 +428,7 @@ const PostRow = memo(function PostRow({
               href={`/blogpress/editor/${post.id}`}
               className="text-sm sm:text-base font-bold text-neutral-900 dark:text-neutral-100 hover:text-primary transition-colors truncate block focus-visible:outline-none focus-visible:underline"
             >
-              {post.title || 'بدون عنوان'}
+              {label}
             </Link>
           </div>
 
@@ -611,7 +613,7 @@ const PostRow = memo(function PostRow({
             <DropdownMenuItem
               onClick={async () => {
                 try {
-                  await downloadPostAsFile(post.title, post.content ?? '', 'markdown');
+                  await downloadPostAsFile(label, post.content ?? '', 'markdown');
                   toast.success('تم تصدير المنشور بصيغة Markdown');
                 } catch {
                   toast.error('فشل تصدير المنشور');
@@ -625,7 +627,7 @@ const PostRow = memo(function PostRow({
             <DropdownMenuItem
               onClick={async () => {
                 try {
-                  await downloadPostAsFile(post.title, post.content ?? '', 'html');
+                  await downloadPostAsFile(label, post.content ?? '', 'html');
                   toast.success('تم تصدير المنشور بصيغة HTML');
                 } catch {
                   toast.error('فشل تصدير المنشور');
@@ -653,8 +655,7 @@ const PostRow = memo(function PostRow({
                     حذف المنشور
                   </DialogTitle>
                   <DialogDescription className="text-xs text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                    هل أنت متأكِّد من حذف &ldquo;{post.title || 'بدون عنوان'}&rdquo;؟ لا يمكن
-                    التَّراجع عن هذا الإجراء.
+                    هل أنت متأكِّد من حذف &ldquo;{label}&rdquo;؟ لا يمكن التَّراجع عن هذا الإجراء.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex items-center justify-end gap-2.5 mt-6">
@@ -679,7 +680,6 @@ const PostRow = memo(function PostRow({
                               onClick: async () => {
                                 try {
                                   await restorePost({
-                                    title: post.title || '',
                                     slug: post.slug,
                                     content: post.content,
                                     status: post.status,
@@ -735,7 +735,7 @@ function filterPosts(posts: Post[], status: PostStatus | 'all', query: string): 
     const q = query.trim().toLowerCase();
     filtered = filtered.filter(
       (p) =>
-        p.title.toLowerCase().includes(q) ||
+        (p.content ?? '').toLowerCase().includes(q) ||
         p.slug.toLowerCase().includes(q) ||
         (p.meta_desc ?? '').toLowerCase().includes(q)
     );

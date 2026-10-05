@@ -3,13 +3,11 @@
 import { useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/frontend/ui/primitives/button';
-import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { createPost, saveAndPublishPost, updatePost } from '@/frontend/api/blogpress';
 
-const TITLE_MAX = 200;
 const BODY_MAX = 20000;
 const DESCRIPTION_PREVIEW = 160;
 
@@ -20,16 +18,14 @@ export interface PostComposerDialogProps {
   mode?: 'create' | 'edit';
   postId?: string;
   slug?: string;
-  initialTitle?: string;
   initialBody?: string;
   coverImage?: string;
   metaTitle?: string;
 }
 
 /**
- * Every community post gets the same URL-safe identifier shape —
- * `post-xxxxxxxx` — so English and Arabic titles share one slug system instead
- * of deriving a Latinised slug from the title.
+ * Every community post gets the same URL-safe identifier shape — `post-xxxxxxxx`
+ * — so the (title-less) post's slug never depends on its content language.
  */
 function buildSlug(): string {
   return `post-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2, 10)).slice(0, 8)}`;
@@ -47,29 +43,21 @@ export function PostComposerDialog({
   mode = 'create',
   postId,
   slug,
-  initialTitle = '',
   initialBody = '',
   coverImage = '',
   metaTitle = '',
 }: PostComposerDialogProps) {
   const isEdit = mode === 'edit';
-  const [title, setTitle] = useState(initialTitle);
   const [body, setBody] = useState(initialBody);
   const [pending, startTransition] = useTransition();
 
   useEffect(() => {
     if (!open) return;
-    setTitle(initialTitle);
     setBody(initialBody);
-  }, [open, initialTitle, initialBody]);
+  }, [open, initialBody]);
 
   const handleSubmit = () => {
-    const trimmedTitle = title.trim();
     const trimmedBody = body.trim();
-    if (!trimmedTitle) {
-      toast.error('العنوان مطلوب');
-      return;
-    }
     if (!trimmedBody) {
       toast.error('اكتب نص المنشور أولاً');
       return;
@@ -80,7 +68,6 @@ export function PostComposerDialog({
         if (isEdit) {
           if (!postId || !slug) return;
           const result = await updatePost(postId, {
-            title: trimmedTitle,
             slug,
             content: trimmedBody,
             cover_image: coverImage,
@@ -102,7 +89,6 @@ export function PostComposerDialog({
         const newSlug = buildSlug();
         const { id } = await createPost();
         await saveAndPublishPost(id, {
-          title: trimmedTitle,
           slug: newSlug,
           content: trimmedBody,
           cover_image: '',
@@ -128,22 +114,6 @@ export function PostComposerDialog({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="composer-title" required>
-              العنوان
-            </Label>
-            <Input
-              id="composer-title"
-              value={title}
-              maxLength={TITLE_MAX}
-              disabled={pending}
-              dir="auto"
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="عنوان جذَّاب لمنشورك"
-              className="placeholder-shown:[direction:rtl]"
-            />
-          </div>
-
           <div className="space-y-1.5">
             <Label htmlFor="composer-body" required>
               النَّص

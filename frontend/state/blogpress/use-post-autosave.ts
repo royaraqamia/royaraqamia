@@ -7,7 +7,6 @@ import type { Post } from '@/shared/contracts/blogpress';
 const AUTOSAVE_DEBOUNCE_MS = 1200;
 
 export function usePostAutosave(post: Post) {
-  const [title, setTitle] = useState(post.title);
   const [content, setContent] = useState(post.content ?? '');
   const [slug, setSlug] = useState(post.slug);
   const [coverImage, setCoverImage] = useState(post.cover_image ?? '');
@@ -18,7 +17,6 @@ export function usePostAutosave(post: Post) {
   const [isSaving, setIsSaving] = useState(false);
 
   const contentRef = useRef(content);
-  const titleRef = useRef(title);
   const slugRef = useRef(slug);
   const coverImageRef = useRef(coverImage);
   const metaTitleRef = useRef(metaTitle);
@@ -29,9 +27,6 @@ export function usePostAutosave(post: Post) {
   useEffect(() => {
     contentRef.current = content;
   }, [content]);
-  useEffect(() => {
-    titleRef.current = title;
-  }, [title]);
   useEffect(() => {
     slugRef.current = slug;
   }, [slug]);
@@ -55,14 +50,13 @@ export function usePostAutosave(post: Post) {
       setIsDirty(true);
     }
     hasEditedRef.current = true;
-  }, [title, content, slug, coverImage, metaTitle, metaDesc]);
+  }, [content, slug, coverImage, metaTitle, metaDesc]);
 
   const saveAllFields = useCallback(async () => {
     if (!isDirtyRef.current || isSavingRef.current) return;
     isSavingRef.current = true;
     setIsSaving(true);
     const fields = {
-      title: titleRef.current,
       slug: slugRef.current,
       content: contentRef.current,
       cover_image: coverImageRef.current,
@@ -97,7 +91,7 @@ export function usePostAutosave(post: Post) {
       saveAllFields();
     }, AUTOSAVE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [title, content, slug, coverImage, metaTitle, metaDesc, saveAllFields]);
+  }, [content, slug, coverImage, metaTitle, metaDesc, saveAllFields]);
 
   // Flush pending changes whenever the tab is hidden or the page is left.
   useEffect(() => {
@@ -132,8 +126,6 @@ export function usePostAutosave(post: Post) {
   }, [saveAllFields]);
 
   return {
-    title,
-    setTitle,
     content,
     setContent,
     slug,

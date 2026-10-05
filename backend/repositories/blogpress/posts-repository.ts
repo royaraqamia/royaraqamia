@@ -31,7 +31,7 @@ export interface PostsRepository {
   getPublishedPostCategories(postId: string): Promise<PostCategory[]>;
   incrementPostViewCount(postId: string): Promise<void>;
   listPostsByAuthor(authorId: string, categorySlug?: string): Promise<Post[]>;
-  getPostTitleById(id: string): Promise<string | null>;
+  getPostExcerptById(id: string): Promise<string | null>;
   getPostForUser(id: string, userId: string): Promise<Post | null>;
   createPost(authorId: string): Promise<{ id: string }>;
   updatePost(postId: string, authorId: string, data: PostInput): Promise<void>;

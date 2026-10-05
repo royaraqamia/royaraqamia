@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Calendar, User } from 'lucide-react';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
-import { stripMarkdown } from '@/shared/reading-time';
+import { postExcerpt, stripMarkdown } from '@/shared/reading-time';
 import type { PostSummary } from '@/shared/contracts/blogpress';
 import { SocialShare } from './social-share';
 import { PostActionsMenu } from './post-actions-menu';
@@ -18,6 +18,7 @@ interface PostCardProps {
 export function PostCard({ post, index }: PostCardProps) {
   const [removed, setRemoved] = useState(false);
   const body = post.content?.trim() ? stripMarkdown(post.content) : (post.meta_desc ?? '');
+  const label = postExcerpt(post.content, post.meta_desc ?? '');
 
   if (removed) return null;
 
@@ -32,7 +33,7 @@ export function PostCard({ post, index }: PostCardProps) {
           >
             <Image
               src={post.cover_image}
-              alt={post.title}
+              alt={label}
               fill
               priority={index < 2}
               sizes="(max-width: 768px) 100vw, 576px"
@@ -65,14 +66,11 @@ export function PostCard({ post, index }: PostCardProps) {
             </div>
           )}
 
-          <h2 className="text-lg sm:text-xl font-bold tracking-tight text-foreground group-hover/community:text-foreground transition-colors duration-300 leading-snug line-clamp-2">
-            <Link
-              href={`/community/${post.slug}`}
-              className="focus:outline-none before:absolute before:inset-0"
-            >
-              {post.title}
-            </Link>
-          </h2>
+          <Link
+            href={`/community/${post.slug}`}
+            aria-label={label}
+            className="absolute inset-0 z-10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          />
 
           {body && (
             <CollapsibleText
@@ -105,7 +103,7 @@ export function PostCard({ post, index }: PostCardProps) {
           )}
 
           <div className="flex items-center gap-2">
-            <SocialShare url={`/community/${post.slug}`} title={post.title} />
+            <SocialShare url={`/community/${post.slug}`} title={label} />
             <PostActionsMenu
               post={post}
               onRemoved={() => setRemoved(true)}

@@ -14,7 +14,6 @@ vi.mock('@/frontend/api/blogpress', () => ({
 const mockPost: Post = {
   id: 'post-1',
   author_id: 'author-1',
-  title: 'العنوان الأصلي',
   slug: 'post-1',
   content: '',
   status: 'draft',
@@ -32,12 +31,12 @@ const mockPost: Post = {
 };
 
 function Harness({ post }: { post: Post }) {
-  const { title, setTitle, isDirty } = usePostAutosave(post);
+  const { content, setContent, isDirty } = usePostAutosave(post);
   return (
     <div>
       <span data-testid="dirty">{String(isDirty)}</span>
-      <span data-testid="title">{title}</span>
-      <button onClick={() => setTitle('العنوان الجديد')}>edit</button>
+      <span data-testid="content">{content}</span>
+      <button onClick={() => setContent('النص الجديد')}>edit</button>
     </div>
   );
 }
@@ -64,7 +63,7 @@ describe('usePostAutosave (⌘/Ctrl+S shortcut)', () => {
     await waitFor(() => {
       expect(mocks.updatePost).toHaveBeenCalledWith(
         'post-1',
-        expect.objectContaining({ title: 'العنوان الجديد' })
+        expect.objectContaining({ content: 'النص الجديد' })
       );
     });
   });

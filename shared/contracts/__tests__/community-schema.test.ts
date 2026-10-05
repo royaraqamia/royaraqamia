@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { PostSchema, PostSlugSchema } from '@/shared/contracts/community';
 
 const validPost = {
-  title: 'منشور جديد',
   slug: 'new-post',
   content: 'المحتوى',
   cover_image: 'https://cdn.example.com/img.png',
@@ -17,30 +16,24 @@ describe('PostSchema', () => {
   });
 
   it('accepts only the required fields', () => {
-    const result = PostSchema.safeParse({ title: 'عنوان', slug: 'slug-1' });
+    const result = PostSchema.safeParse({ slug: 'slug-1' });
     expect(result.success).toBe(true);
   });
 
-  it('rejects an empty title', () => {
-    const result = PostSchema.safeParse({ title: '', slug: 'slug-1' });
-    expect(result.success).toBe(false);
-    expect(result.error?.issues[0]?.message).toBe('العنوان مطلوب');
-  });
-
   it('rejects an empty slug', () => {
-    const result = PostSchema.safeParse({ title: 'عنوان', slug: '' });
+    const result = PostSchema.safeParse({ slug: '' });
     expect(result.success).toBe(false);
   });
 
   it('rejects a slug with spaces or special characters', () => {
     for (const slug of ['bad slug', 'bad/slug', 'bad!slug', 'slug?x=1']) {
-      expect(PostSchema.safeParse({ title: 'عنوان', slug }).success).toBe(false);
+      expect(PostSchema.safeParse({ slug }).success).toBe(false);
     }
   });
 
   it('accepts slugs with Arabic characters and dashes', () => {
-    expect(PostSchema.safeParse({ title: 'عنوان', slug: 'منشور-عربي' }).success).toBe(true);
-    expect(PostSchema.safeParse({ title: 'عنوان', slug: 'my_article-123' }).success).toBe(true);
+    expect(PostSchema.safeParse({ slug: 'منشور-عربي' }).success).toBe(true);
+    expect(PostSchema.safeParse({ slug: 'my_article-123' }).success).toBe(true);
   });
 
   it('rejects a meta_title longer than 70 characters', () => {
@@ -65,7 +58,6 @@ describe('PostSchema', () => {
 
   it('accepts an optional content and cover_image', () => {
     const result = PostSchema.safeParse({
-      title: 'عنوان',
       slug: 'slug-1',
       content: undefined,
       cover_image: undefined,

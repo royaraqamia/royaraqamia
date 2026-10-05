@@ -27,7 +27,7 @@ describe('getPublishedPosts search sanitization', () => {
     await repo.getPublishedPosts(1, 'hello,world(test)', 10);
 
     expect(searchFilters).toContain(
-      'title.ilike.%hello world test%,meta_desc.ilike.%hello world test%'
+      'content.ilike.%hello world test%,meta_desc.ilike.%hello world test%'
     );
   });
 
@@ -46,6 +46,6 @@ describe('getPublishedPosts search sanitization', () => {
 
     await repo.getPublishedPosts(1, 'تقنية رقمية', 10);
 
-    expect(searchFilters).toContain('title.ilike.%تقنية رقمية%,meta_desc.ilike.%تقنية رقمية%');
+    expect(searchFilters).toContain('content.ilike.%تقنية رقمية%,meta_desc.ilike.%تقنية رقمية%');
   });
 });

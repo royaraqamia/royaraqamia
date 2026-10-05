@@ -847,7 +847,6 @@ export type Database = {
           reading_time_minutes: number;
           slug: string;
           status: Database['public']['Enums']['post_status'];
-          title: string;
           updated_at: string;
           view_count: number;
         };
@@ -866,7 +865,6 @@ export type Database = {
           reading_time_minutes?: number;
           slug: string;
           status?: Database['public']['Enums']['post_status'];
-          title: string;
           updated_at?: string;
           view_count?: number;
         };
@@ -885,7 +883,6 @@ export type Database = {
           reading_time_minutes?: number;
           slug?: string;
           status?: Database['public']['Enums']['post_status'];
-          title?: string;
           updated_at?: string;
           view_count?: number;
         };

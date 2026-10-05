@@ -11,7 +11,6 @@ import type { Post } from '@/shared/contracts/blogpress';
 const postFixture = {
   id: 'p-1',
   author_id: 'u-1',
-  title: 'منشور',
   slug: 'post-1',
   content: null,
   status: 'published',
@@ -43,7 +42,7 @@ function makeRepo(
     incrementPostViewCount: vi.fn(),
     listPostsByAuthor: vi.fn(),
     getPostForUser: vi.fn(),
-    getPostTitleById: vi.fn(),
+    getPostExcerptById: vi.fn(),
     createPost: vi.fn(),
     updatePost: vi.fn(),
     saveAndPublishPost: vi.fn(),
@@ -75,10 +74,9 @@ function makeRepo(
   };
 }
 
-const postData = { title: 'منشور', slug: 'post-1' };
+const postData = { slug: 'post-1' };
 
 const snapshotBase = {
-  title: 'منشور',
   slug: 'post-1',
   content: null,
   status: 'draft' as const,
@@ -202,12 +200,9 @@ describe('BlogpressPostsService publish notifier', () => {
 });
 
 describe('BlogpressPostsService.restorePost', () => {
-  it('rejects a snapshot without a title or slug', async () => {
+  it('rejects a snapshot without a slug', async () => {
     const { repository, service } = makeRepo();
 
-    await expect(service.restorePost('u-1', { ...snapshotBase, title: '  ' })).rejects.toThrow(
-      'عنوان المنشور مطلوب'
-    );
     await expect(service.restorePost('u-1', { ...snapshotBase, slug: ' ' })).rejects.toThrow(
       'المعرّف (slug) مطلوب'
     );
@@ -266,7 +261,6 @@ describe('BlogpressPostsService.duplicatePost', () => {
     const { repository, service } = makeRepo();
     (repository.getPostForUser as ReturnType<typeof vi.fn>).mockResolvedValue({
       ...postFixture,
-      title: 'منشور مميز',
       content: '# محتوى',
       cover_image: 'https://img/cover.png',
       meta_title: 'عنوان SEO',
@@ -291,7 +285,6 @@ describe('BlogpressPostsService.duplicatePost', () => {
       'p-copy',
       'u-1',
       expect.objectContaining({
-        title: 'نسخة من منشور مميز',
         content: '# محتوى',
         cover_image: 'https://img/cover.png',
         meta_title: 'عنوان SEO',

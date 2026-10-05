@@ -16,7 +16,7 @@ import sql from 'highlight.js/lib/languages/sql';
 import python from 'highlight.js/lib/languages/python';
 import markdown from 'highlight.js/lib/languages/markdown';
 import { Button } from '@/frontend/ui/primitives/button';
-import { ArrowRight, Calendar, BookOpen, User, ChevronLeft } from 'lucide-react';
+import { ArrowRight, Calendar, BookOpen, User } from 'lucide-react';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { PostViewTracker } from '../_components/post-view-tracker';
@@ -27,6 +27,7 @@ import {
   loadPublishedPostSlugs,
 } from '@/backend/loaders/community';
 import { env } from '@/backend/config/env';
+import { postExcerpt } from '@/shared/reading-time';
 import type { Metadata } from 'next';
 
 const highlightLanguages: Record<string, LanguageFn> = {
@@ -105,8 +106,8 @@ export async function generateMetadata(props: {
   }
 
   return {
-    title: post.meta_title || post.title,
-    description: post.meta_desc,
+    title: post.meta_title || postExcerpt(post.content, post.meta_desc ?? '') || 'منشور',
+    description: post.meta_desc || postExcerpt(post.content),
     openGraph: post.cover_image ? { images: [{ url: post.cover_image }] } : undefined,
     twitter: post.cover_image
       ? { card: 'summary_large_image', images: [{ url: post.cover_image }] }
@@ -128,6 +129,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
   const headings = extractHeadings(p.content ?? '');
   const postUrl = `${env.siteUrl}/community/${slug}`;
   const hasHeadings = headings.length > 0;
+  const excerpt = postExcerpt(p.content, p.meta_desc ?? '');
 
   const markdownComponents = {
     h2: (props: React.ComponentPropsWithoutRef<'h2'>) => {
@@ -172,43 +174,18 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
       <CodeBlockEnhancer />
 
       <div className="max-w-7xl mx-auto">
-        <article aria-label={p.title}>
-          {/* Navigation Breadcrumbs */}
-          <nav aria-label="مسار التَّنقُّل" className="mb-8 sm:mb-10">
-            <ol className="inline-flex items-center flex-wrap gap-2 px-3.5 py-1.5 rounded-full bg-muted/40 border border-border/40 text-xs sm:text-sm text-muted-foreground transition-safe duration-300 hover:border-border/80 shadow-2xs">
-              <li className="flex items-center">
-                <Link
-                  href="/"
-                  className="hover:text-foreground font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded-sm"
-                >
-                  الرَّئيسيَّة
-                </Link>
-              </li>
-              {p.community_visible && (
-                <>
-                  <li className="text-muted-foreground/40 select-none" aria-hidden="true">
-                    <ChevronLeft className="size-3.5" />
-                  </li>
-                  <li className="flex items-center">
-                    <Link
-                      href="/community"
-                      className="hover:text-foreground font-medium transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 rounded-sm"
-                    >
-                      المجتمع
-                    </Link>
-                  </li>
-                </>
-              )}
-              <li className="text-muted-foreground/40 select-none" aria-hidden="true">
-                <ChevronLeft className="size-3.5" />
-              </li>
-              <li
-                className="text-foreground font-medium truncate max-w-35 xs:max-w-[200px] sm:max-w-[320px] md:max-w-105"
-                title={p.title}
+        <article aria-label={excerpt}>
+          {/* Back Navigation */}
+          <nav aria-label="التَّنقُّل للخلف" className="mb-8 sm:mb-10">
+            <Link href="/community">
+              <Button
+                variant="ghost"
+                className="group rounded-full ps-3 pe-4 text-muted-foreground hover:text-foreground"
               >
-                {p.title}
-              </li>
-            </ol>
+                <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                العودة إلى المجتمع
+              </Button>
+            </Link>
           </nav>
 
           {/* Layout Grid: Article Body & Sticky Sidebar */}
@@ -226,7 +203,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                   <div className="group relative aspect-video overflow-hidden rounded-2xl sm:rounded-3xl mb-8 sm:mb-10 bg-muted/60 border border-border/50 shadow-xl shadow-foreground/3 transition-safe duration-500 hover:shadow-2xl hover:border-border/80">
                     <Image
                       src={p.cover_image}
-                      alt={p.title}
+                      alt={excerpt}
                       fill
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 800px"
                       className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02]"
@@ -235,10 +212,6 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                     <div className="absolute inset-0 ring-1 ring-inset ring-foreground/10 rounded-2xl sm:rounded-3xl pointer-events-none" />
                   </div>
                 )}
-
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight leading-tight text-foreground text-balance">
-                  {p.title}
-                </h1>
 
                 <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground border-y border-border/40 py-4 sm:py-4.5">
                   {author?.name && (
@@ -338,17 +311,8 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
             className="mt-16 sm:mt-20 space-y-12 sm:space-y-16"
             role="contentinfo"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-8 border-t border-border/50">
-              <Link href="/community">
-                <Button
-                  variant="outline"
-                  className="w-full sm:w-auto rounded-full px-5 py-2.5 transition-safe duration-300 hover:scale-[1.02] active:scale-[0.98] border-border/60 hover:bg-muted/80 shadow-2xs font-medium"
-                >
-                  <ArrowRight className="ms-2 size-4 text-primary" />
-                  العودة إلى المجتمع
-                </Button>
-              </Link>
-              <SocialShare url={postUrl} title={p.title} />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 pt-8 border-t border-border/50">
+              <SocialShare url={postUrl} title={excerpt} />
             </div>
           </footer>
         </article>

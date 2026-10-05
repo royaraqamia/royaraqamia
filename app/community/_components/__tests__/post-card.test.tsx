@@ -14,7 +14,6 @@ vi.mock('next/navigation', () => ({
 const post: PostSummary = {
   id: 'p1',
   author_id: 'a1',
-  title: 'منشور تجريبي',
   slug: 'test-post',
   content: 'هذا هو نص المنشور الكامل الذي يجب أن يظهر.',
   status: 'published',
@@ -32,9 +31,9 @@ const post: PostSummary = {
 };
 
 describe('PostCard', () => {
-  it('renders the title', () => {
+  it('does not render the post title inline', () => {
     render(<PostCard post={post} index={0} />);
-    expect(screen.getByText('منشور تجريبي')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
   });
 
   it('renders the post body text', () => {
@@ -65,7 +64,7 @@ describe('PostCard', () => {
 
   it('renders a cover image when the post has one', () => {
     render(<PostCard post={{ ...post, cover_image: '/cover.png' }} index={0} />);
-    expect(screen.getByAltText('منشور تجريبي')).toBeInTheDocument();
+    expect(screen.getByAltText('هذا هو نص المنشور الكامل الذي يجب أن يظهر.')).toBeInTheDocument();
   });
 
   it('renders the publisher name and avatar', () => {

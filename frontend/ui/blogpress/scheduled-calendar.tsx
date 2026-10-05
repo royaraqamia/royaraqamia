@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { m, useReducedMotion } from 'motion/react';
 import { ChevronRight, ChevronLeft, CalendarDays, FileText, Move, Pencil } from 'lucide-react';
 import type { Post } from '@/shared/contracts/blogpress';
+import { postExcerpt } from '@/shared/reading-time';
 import { cn } from '@/frontend/shared/cn';
 import { schedulePost } from '@/frontend/api/blogpress';
 import { toast } from 'sonner';
@@ -184,6 +185,7 @@ export function ScheduledCalendar({
                 <div className="mt-1 space-y-1">
                   {posts.map((post) => {
                     const isDragging = draggingId === post.id;
+                    const label = postExcerpt(post.content, post.meta_desc ?? '') || 'بدون عنوان';
                     return (
                       <m.div
                         key={post.id}
@@ -206,7 +208,7 @@ export function ScheduledCalendar({
                             : 'bg-amber-500/10 border-amber-500/25 text-amber-700 dark:text-amber-300',
                           isDragging && 'opacity-40'
                         )}
-                        title={post.title || 'بدون عنوان'}
+                        title={label}
                       >
                         <FileText className="size-3 shrink-0 opacity-70" />
                         <Link
@@ -214,7 +216,7 @@ export function ScheduledCalendar({
                           onClick={(e) => e.stopPropagation()}
                           className="truncate text-[11px] font-medium min-w-0 flex-1 hover:underline"
                         >
-                          {post.title || 'بدون عنوان'}
+                          {label}
                         </Link>
                         <Pencil className="size-3 shrink-0 opacity-50 group-hover:opacity-100 transition-opacity" />
                       </m.div>

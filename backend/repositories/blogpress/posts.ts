@@ -14,7 +14,7 @@ import type {
 import type { PostInput } from '@/shared/contracts/community';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
 import { decodeFeedCursor, encodeFeedCursor, feedCursorFilter } from './feed-cursor';
-import { estimateReadingTime } from '@/shared/reading-time';
+import { estimateReadingTime, postExcerpt } from '@/shared/reading-time';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-error';
 
@@ -23,7 +23,7 @@ const PUBLISHED_POSTS_FILTER =
 
 /** Card projection used by the public feed and related posts — includes `content`. */
 const POST_SUMMARY_COLUMNS =
-  'id, author_id, title, slug, content, status, cover_image, meta_title, meta_desc, published_at, publish_at, view_count, featured, community_visible, reading_time_minutes, created_at, updated_at';
+  'id, author_id, slug, content, status, cover_image, meta_title, meta_desc, published_at, publish_at, view_count, featured, community_visible, reading_time_minutes, created_at, updated_at';
 
 type Client = SupabaseClient<Database>;
 
@@ -121,7 +121,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
       const search = sanitizeOrFilterTerm(query);
       if (search) {
-        queryBuilder = queryBuilder.or(`title.ilike.%${search}%,meta_desc.ilike.%${search}%`);
+        queryBuilder = queryBuilder.or(`content.ilike.%${search}%,meta_desc.ilike.%${search}%`);
       }
 
       const {
@@ -169,7 +169,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
       const search = sanitizeOrFilterTerm(query);
       if (search) {
-        queryBuilder = queryBuilder.or(`title.ilike.%${search}%,meta_desc.ilike.%${search}%`);
+        queryBuilder = queryBuilder.or(`content.ilike.%${search}%,meta_desc.ilike.%${search}%`);
       }
 
       if (decoded) {
@@ -315,15 +315,19 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return (data as Post[]) ?? [];
     },
 
-    async getPostTitleById(id: string): Promise<string | null> {
-      const { data, error } = await supabase.from('posts').select('title').eq('id', id).single();
+    async getPostExcerptById(id: string): Promise<string | null> {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('content, meta_desc')
+        .eq('id', id)
+        .single();
 
       if (error) {
         if (isNotFoundError(error)) return null;
-        throw repositoryFailure('blogpress.getPostTitleById', error);
+        throw repositoryFailure('blogpress.getPostExcerptById', error);
       }
 
-      return data?.title ?? null;
+      return data ? postExcerpt(data.content, data.meta_desc ?? '') : null;
     },
 
     async getPostForUser(id: string, userId: string): Promise<Post | null> {
@@ -347,7 +351,6 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .from('posts')
         .insert({
           author_id: authorId,
-          title: '',
           slug: `post-${crypto.randomUUID().slice(0, 8)}`,
         })
         .select('id')
@@ -476,7 +479,6 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .from('posts')
         .insert({
           author_id: authorId,
-          title: snapshot.title,
           slug: snapshot.slug,
           content: snapshot.content,
           status: snapshot.status,

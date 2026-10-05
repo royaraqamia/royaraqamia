@@ -30,7 +30,7 @@ import {
 import { SITE_URL } from '@/frontend/shared/constants';
 
 interface PostSettingsDialogProps {
-  title: string;
+  excerpt: string;
   slug: string;
   onSlugChange: (slug: string) => void;
   coverImage: string;
@@ -47,7 +47,7 @@ interface PostSettingsDialogProps {
 }
 
 export const PostSettingsDialog = memo(function PostSettingsDialog({
-  title,
+  excerpt,
   slug,
   onSlugChange,
   coverImage,
@@ -305,7 +305,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                   name="meta_title"
                   value={metaTitle}
                   onChange={(e) => setMetaTitle(e.target.value)}
-                  placeholder={title || 'عنوان SEO مُخصَّص'}
+                  placeholder={excerpt || 'عنوان SEO مُخصَّص'}
                   maxLength={70}
                   className="text-sm transition-safe duration-200 min-h-11 rounded-xl bg-background border-border/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary"
                 />
@@ -411,7 +411,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
                     </div>
 
                     <p className="text-sm font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer leading-snug truncate">
-                      {metaTitle || title || 'عنوان المنشور'}
+                      {metaTitle || excerpt || 'عنوان المنشور'}
                     </p>
 
                     <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">

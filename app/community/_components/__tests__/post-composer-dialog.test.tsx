@@ -41,7 +41,6 @@ describe('PostComposerDialog', () => {
         mode="edit"
         postId="p1"
         slug="test-post"
-        initialTitle="منشور تجريبي"
         initialBody="النص الأصلي للمنشور."
       />
     );
@@ -54,7 +53,6 @@ describe('PostComposerDialog', () => {
 
     await waitFor(() => expect(mocks.updatePost).toHaveBeenCalledTimes(1));
     expect(mocks.updatePost).toHaveBeenCalledWith('p1', {
-      title: 'منشور تجريبي',
       slug: 'test-post',
       content: 'نص محدَّث طويل بما يكفي.',
       cover_image: '',
@@ -72,7 +70,6 @@ describe('PostComposerDialog', () => {
 
     render(<PostComposerDialog open onOpenChange={vi.fn()} onSaved={onSaved} />);
 
-    fireEvent.change(screen.getByLabelText(/العنوان/), { target: { value: 'عنوان جديد' } });
     fireEvent.change(screen.getByLabelText(/النَّص/), { target: { value: 'محتوى المنشور.' } });
     fireEvent.click(screen.getByRole('button', { name: 'نشر' }));
 
@@ -81,7 +78,6 @@ describe('PostComposerDialog', () => {
     expect(mocks.saveAndPublishPost).toHaveBeenCalledWith(
       'p9',
       expect.objectContaining({
-        title: 'عنوان جديد',
         content: 'محتوى المنشور.',
         slug: expect.stringMatching(/^post-/),
       })
@@ -90,13 +86,12 @@ describe('PostComposerDialog', () => {
     expect(mocks.updatePost).not.toHaveBeenCalled();
   });
 
-  it('rejects an empty title without calling the API', () => {
+  it('rejects an empty body without calling the API', () => {
     render(<PostComposerDialog open onOpenChange={vi.fn()} onSaved={vi.fn()} />);
 
-    fireEvent.change(screen.getByLabelText(/النَّص/), { target: { value: 'محتوى.' } });
     fireEvent.click(screen.getByRole('button', { name: 'نشر' }));
 
-    expect(mocks.toastError).toHaveBeenCalledWith('العنوان مطلوب');
+    expect(mocks.toastError).toHaveBeenCalledWith('اكتب نص المنشور أولاً');
     expect(mocks.createPost).not.toHaveBeenCalled();
   });
 });

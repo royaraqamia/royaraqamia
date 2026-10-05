@@ -15,6 +15,7 @@ import {
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { useSession } from '@/frontend/state/session-provider';
 import { deletePost, restorePost } from '@/frontend/api/blogpress';
+import { postExcerpt } from '@/shared/reading-time';
 import { PostComposerDialog } from './post-composer-dialog';
 import type { PostStatus } from '@/shared/contracts/blogpress';
 
@@ -22,7 +23,6 @@ import type { PostStatus } from '@/shared/contracts/blogpress';
 export interface ActionablePost {
   id: string;
   author_id: string;
-  title: string;
   slug: string;
   content: string | null;
   cover_image: string | null;
@@ -47,7 +47,6 @@ interface PostActionsMenuProps {
 
 function buildSnapshot(post: ActionablePost) {
   return {
-    title: post.title || '',
     slug: post.slug,
     content: post.content,
     status: post.status,
@@ -141,7 +140,6 @@ export function PostActionsMenu({ post, onRemoved, onRestored }: PostActionsMenu
         mode="edit"
         postId={post.id}
         slug={post.slug}
-        initialTitle={post.title}
         initialBody={post.content ?? ''}
         coverImage={post.cover_image ?? ''}
         metaTitle={post.meta_title ?? ''}
@@ -151,7 +149,7 @@ export function PostActionsMenu({ post, onRemoved, onRestored }: PostActionsMenu
       <ConfirmDialog
         open={confirmOpen}
         title="حذف المنشور"
-        message={`هل أنت متأكد من حذف «${post.title || 'بدون عنوان'}»؟ لا يمكن التراجع بعد انتهاء المهلة.`}
+        message={`هل أنت متأكد من حذف «${postExcerpt(post.content, post.meta_desc ?? '') || 'بدون عنوان'}»؟ لا يمكن التراجع بعد انتهاء المهلة.`}
         confirmLabel="حذف"
         cancelLabel="إلغاء"
         icon={Trash2}

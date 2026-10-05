@@ -28,6 +28,18 @@ export function stripMarkdown(text: string): string {
   return current;
 }
 
+/**
+ * A post has no title (social-media model). This is the human-readable label
+ * derived from the body: markdown stripped, whitespace collapsed, ellipsised.
+ * Falls back to `fallback` (e.g. meta_desc) when the body is empty.
+ */
+export function postExcerpt(content: string | null, fallback = '', max = 160): string {
+  const text = content ? stripMarkdown(content) : '';
+  const source = (text || fallback).trim();
+  if (source.length <= max) return source;
+  return `${source.slice(0, max - 1).trimEnd()}…`;
+}
+
 export function estimateWordCount(content: string | null): number {
   if (!content) return 0;
   const text = stripMarkdown(content);

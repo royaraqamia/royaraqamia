@@ -12,7 +12,6 @@ import {
 import { useRouter } from 'next/navigation';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
-import { Label } from '@/frontend/ui/primitives/label';
 import {
   Dialog,
   DialogContent,
@@ -25,6 +24,7 @@ import { updatePost, saveAndPublishPost, setPostTags, createTag } from '@/fronte
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
 import type { Post, PostTag } from '@/shared/contracts/blogpress';
+import { postExcerpt } from '@/shared/reading-time';
 import { estimateWordCount, formatReadingTimeLong } from '@/frontend/shared/reading-time';
 import { estimateContentStats } from '@/frontend/shared/blogpress/content-stats';
 import { usePostAutosave } from '@/frontend/state/blogpress/use-post-autosave';
@@ -46,8 +46,6 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
   const editorRef = useRef<TiptapEditorRef>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   const {
-    title,
-    setTitle,
     content,
     setContent,
     slug,
@@ -108,17 +106,23 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
       .slice(0, 200);
   }, []);
 
+  const excerpt = useMemo(() => postExcerpt(content, metaDesc), [content, metaDesc]);
+
+  const fallbackSlug = useCallback(
+    () => `post-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2, 10)).slice(0, 8)}`,
+    []
+  );
+
+  const resolveSlug = useCallback(
+    (candidate: string) => generateSlug(candidate) || fallbackSlug(),
+    [generateSlug, fallbackSlug]
+  );
+
   const handleSave = useCallback(async () => {
-    let finalSlug = generateSlug(slug);
-    if (!finalSlug) {
-      finalSlug =
-        generateSlug(title) ||
-        `post-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2, 10)).slice(0, 8)}`;
-    }
+    const finalSlug = resolveSlug(slug);
     if (finalSlug !== slug) setSlug(finalSlug);
     const currentContent = editorRef.current?.getMarkdown() ?? content;
     const fields = {
-      title,
       slug: finalSlug,
       content: currentContent,
       cover_image: coverImage,
@@ -138,23 +142,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
         toast.error('حدث خطأ في الحفظ');
       }
     });
-  }, [
-    post.id,
-    title,
-    slug,
-    setSlug,
-    content,
-    coverImage,
-    metaTitle,
-    metaDesc,
-    generateSlug,
-    markSaved,
-  ]);
-
-  const handleTitleBlur = useCallback(() => {
-    if (slug === '' || slug.startsWith('post-')) return;
-    if (title && slug === generateSlug(title)) setSlug(generateSlug(title));
-  }, [title, slug, setSlug, generateSlug]);
+  }, [post.id, slug, setSlug, content, coverImage, metaTitle, metaDesc, resolveSlug, markSaved]);
 
   const persistPostTags = useCallback(
     (next: PostTag[]) => {
@@ -200,7 +188,6 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
 
   const getPublishChecks = useCallback(
     () => [
-      { label: 'عنوان المنشور', passed: title.trim().length > 0 },
       { label: 'محتوى المنشور (أكثر من 50 كلمة)', passed: wordCount > 50 },
       {
         label: 'رابط URL (Slug)',
@@ -210,20 +197,14 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
       { label: 'صورة الغلاف', passed: coverImage.length > 0, optional: true },
       { label: 'وصف SEO', passed: metaDesc.length > 0, optional: true },
     ],
-    [title, wordCount, slug, coverImage, metaDesc]
+    [wordCount, slug, coverImage, metaDesc]
   );
 
   const handlePublish = useCallback(async () => {
-    let finalSlug = generateSlug(slug);
-    if (!finalSlug) {
-      finalSlug =
-        generateSlug(title) ||
-        `post-${(crypto.randomUUID?.() ?? Math.random().toString(36).slice(2, 10)).slice(0, 8)}`;
-    }
+    const finalSlug = resolveSlug(slug);
     if (finalSlug !== slug) setSlug(finalSlug);
     const currentContent = editorRef.current?.getMarkdown() ?? content;
     const fields = {
-      title,
       slug: finalSlug,
       content: currentContent,
       cover_image: coverImage,
@@ -247,14 +228,13 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
     });
   }, [
     post.id,
-    title,
     slug,
     setSlug,
     content,
     coverImage,
     metaTitle,
     metaDesc,
-    generateSlug,
+    resolveSlug,
     router,
     markSaved,
   ]);
@@ -308,18 +288,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
           >
             <ArrowRight className="size-4" />
           </Button>
-          <Label htmlFor="editor-title" className="sr-only">
-            عنوان المنشور
-          </Label>
-          <Input
-            id="editor-title"
-            name="title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            onBlur={handleTitleBlur}
-            placeholder="عنوان المنشور..."
-            className="border-0 text-lg font-bold bg-transparent px-0 h-auto placeholder:text-muted-foreground/50 transition-smooth focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
-          />
+          <span className="truncate text-sm font-bold text-muted-foreground">تحرير المنشور</span>
         </div>
         <div className="flex items-center gap-1">
           <input
@@ -346,7 +315,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
                 {isUploading ? 'جاري الرَّفع...' : 'صورة'}
               </Button>
               <PostSettingsDialog
-                title={title}
+                excerpt={excerpt}
                 slug={slug}
                 onSlugChange={(value) => setSlug(generateSlug(value))}
                 coverImage={coverImage}
@@ -387,7 +356,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
           </Button>
           <PostActionsMenu
             postId={post.id}
-            title={title}
+            excerpt={excerpt}
             getMarkdown={() => editorRef.current?.getMarkdown() ?? content}
             onDuplicated={(newId) => router.push(`/blogpress/editor/${newId}`)}
           />
@@ -434,7 +403,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
           <EditorSidePanel
             open={sidePanelOpen}
             onClose={() => setSidePanelOpen(false)}
-            title={title}
+            excerpt={excerpt}
             slug={slug}
             metaTitle={metaTitle}
             setMetaTitle={setMetaTitle}

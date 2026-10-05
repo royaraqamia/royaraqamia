@@ -16,14 +16,14 @@ import {
 
 interface PostActionsMenuProps {
   postId: string;
-  title: string;
+  excerpt: string;
   getMarkdown: () => string;
   onDuplicated: (newId: string) => void;
 }
 
 export const PostActionsMenu = memo(function PostActionsMenu({
   postId,
-  title,
+  excerpt,
   getMarkdown,
   onDuplicated,
 }: PostActionsMenuProps) {
@@ -45,7 +45,7 @@ export const PostActionsMenu = memo(function PostActionsMenu({
 
   const handleExport = async (format: 'markdown' | 'html') => {
     try {
-      await downloadPostAsFile(title, getMarkdown(), format);
+      await downloadPostAsFile(excerpt, getMarkdown(), format);
       setExported(format);
       toast.success(
         format === 'markdown' ? 'تم تصدير المنشور بصيغة Markdown' : 'تم تصدير المنشور بصيغة HTML'

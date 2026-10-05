@@ -2,7 +2,6 @@ import { request } from '@/frontend/transport/http';
 import type { Post, PostTag } from '@/shared/contracts/blogpress';
 
 export interface PostFields {
-  title: string;
   slug: string;
   content: string;
   cover_image: string;

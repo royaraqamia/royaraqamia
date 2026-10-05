@@ -34,7 +34,7 @@ import { TagPicker } from '@/frontend/ui/blogpress/tag-picker';
 interface EditorSidePanelProps {
   open: boolean;
   onClose: () => void;
-  title: string;
+  excerpt: string;
   slug: string;
   metaTitle: string;
   setMetaTitle: (value: string) => void;
@@ -189,7 +189,7 @@ function StatsRow({ label, value }: { label: string; value: React.ReactNode }) {
 export const EditorSidePanel = memo(function EditorSidePanel({
   open,
   onClose,
-  title,
+  excerpt,
   slug,
   metaTitle,
   setMetaTitle,
@@ -339,7 +339,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
                     name="meta_title"
                     value={metaTitle}
                     onChange={(e) => setMetaTitle(e.target.value)}
-                    placeholder={title || 'عنوان SEO مُخصَّص'}
+                    placeholder={excerpt || 'عنوان SEO مُخصَّص'}
                     maxLength={70}
                     className="text-xs min-h-10 rounded-xl bg-card border-border/70 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary transition-[border-color,box-shadow] duration-200 shadow-xs placeholder:text-muted-foreground/50"
                   />
@@ -438,7 +438,7 @@ export const EditorSidePanel = memo(function EditorSidePanel({
                         </div>
                       </div>
                       <p className="text-sm font-bold text-blue-600 hover:underline cursor-pointer leading-snug truncate">
-                        {metaTitle || title || 'عنوان المنشور'}
+                        {metaTitle || excerpt || 'عنوان المنشور'}
                       </p>
                       <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
                         {metaDesc || 'وصف تلقائي سيظهر هنا بناءً على محتوى المنشور...'}

@@ -48,7 +48,6 @@ beforeAll(() => {
 const post: PostSummary = {
   id: 'p1',
   author_id: 'a1',
-  title: 'منشور تجريبي',
   slug: 'test-post',
   content: 'هذا هو نص المنشور الكامل.',
   status: 'published',
@@ -122,7 +121,7 @@ describe('PostActionsMenu', () => {
     fireEvent.click(editItem);
 
     expect(await screen.findByText('تعديل المنشور')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('منشور تجريبي')).toBeInTheDocument();
+    expect(screen.queryByLabelText(/العنوان/)).not.toBeInTheDocument();
     expect(screen.getByDisplayValue('هذا هو نص المنشور الكامل.')).toBeInTheDocument();
   });
 });

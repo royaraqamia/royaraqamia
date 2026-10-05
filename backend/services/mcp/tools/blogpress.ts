@@ -6,6 +6,7 @@ import { jsonText, structuredResponse, toolErrorResponse, type ToolResult } from
 import { requireAnyScope, requireUserId } from './guards';
 import { createPostsRepository } from '@/backend/repositories/blogpress/posts';
 import type { PostSummary } from '@/shared/contracts/blogpress';
+import { postExcerpt } from '@/shared/reading-time';
 import {
   buildPaginationMeta,
   formatDate,
@@ -64,7 +65,7 @@ type ListTagsInput = z.infer<typeof ListTagsInputSchema>;
 function serializePost(post: PostSummary) {
   return {
     id: post.id,
-    title: post.title,
+    excerpt: postExcerpt(post.content, post.meta_desc ?? ''),
     slug: post.slug,
     status: post.status,
     cover_image: post.cover_image,
@@ -107,7 +108,7 @@ export async function listPostsHandler(
       ];
       for (const p of items) {
         lines.push(
-          `- **${p.title || '(untitled)'}** (${p.status}) — views: ${p.view_count}${
+          `- **${p.excerpt || '(untitled)'}** (${p.status}) — views: ${p.view_count}${
             p.community_visible ? ', visible' : ''
           } | \`${p.id}\``
         );
@@ -135,7 +136,7 @@ export async function listPostsHandler(
 
     const lines = ['# Published Posts', '', `Total pages: ${result.totalPages}.`, ''];
     for (const p of items) {
-      lines.push(`- **${p.title || '(untitled)'}** (${p.slug}) — views: ${p.view_count}`);
+      lines.push(`- **${p.excerpt || '(untitled)'}** (${p.slug}) — views: ${p.view_count}`);
     }
     return structuredResponse(lines.join('\n'), { posts: items, ...meta });
   } catch (error) {
@@ -167,7 +168,7 @@ export async function getPostHandler(
       const truncated = truncate(post.content ?? '');
       return structuredResponse(
         [
-          `# ${post.title || '(untitled)'}`,
+          `# ${postExcerpt(post.content, post.meta_desc ?? '') || '(untitled)'}`,
           '',
           `- **Status**: ${post.status}`,
           `- **Slug**: ${post.slug}`,
@@ -196,7 +197,7 @@ export async function getPostHandler(
       const truncated = truncate(post.content ?? '');
       return structuredResponse(
         [
-          `# ${post.title || '(untitled)'}`,
+          `# ${postExcerpt(post.content, post.meta_desc ?? '') || '(untitled)'}`,
           '',
           `- **Slug**: ${post.slug}`,
           `- **Views**: ${post.view_count}`,
@@ -392,7 +393,6 @@ const CreatePostInputSchema = z.object({ format: ResponseFormatSchema }).strict(
 const UpdatePostInputSchema = z
   .object({
     id: z.string().min(1).describe('The post id to update'),
-    title: z.string().min(1).optional(),
     slug: z
       .string()
       .min(1)
@@ -508,7 +508,6 @@ export async function updatePostHandler(
     const repo = createPostsRepository(ctx.supabase as never);
 
     const input: Record<string, string | undefined> = {};
-    if (params.title !== undefined) input.title = params.title;
     if (params.slug !== undefined) input.slug = params.slug;
     if (params.content !== undefined) input.content = params.content;
     if (params.cover_image !== undefined) input.cover_image = params.cover_image;
@@ -703,11 +702,10 @@ Examples:
     `${MCP_SERVER_NAME}_community_update_post`,
     {
       title: 'Update Community Post',
-      description: `Updates one of your community posts (title, slug, content, cover image, meta). Requires "community.write" and an authenticated session.
+      description: `Updates one of your community posts (slug, content, cover image, meta). Requires "community.write" and an authenticated session.
 
 Args:
   - id (string, required): the post id
-  - title (string, optional): post title
   - slug (string, optional): URL slug
   - content (string, optional): post body (HTML/markdown)
   - cover_image (string, optional): cover image URL
@@ -718,7 +716,7 @@ Args:
 Returns (JSON): { "id": string, "message": string }
 
 Examples:
-  - Use when: "set the title of post abc123 to 'New Title'" -> id="abc123", title="New Title"`,
+  - Use when: "set the body of post abc123" -> id="abc123", content="..."`,
       inputSchema: UpdatePostInputSchema,
       annotations: {
         readOnlyHint: false,
