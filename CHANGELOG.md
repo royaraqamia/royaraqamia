@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.44.0] - 2026-10-05
+
+### Changed
+- record the dual-rate decision, sources, and terms
+- drop the redundant read-more CTA from post cards
+- drop SDG, SOS, DJF and KMF from the displayed currencies
+- emphasize the converted amount and group karat prices
+
+### Added
+- show official and parallel prices for dual-rate currencies
+- add a share button to post cards
+- show the post body on feed cards
+- show post publisher on feed cards
+
 ## [1.43.1] - 2026-10-05
 
 ### Changed
