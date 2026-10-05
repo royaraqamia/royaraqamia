@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.43.1] - 2026-10-05
+
+### Changed
+- Fixed consultation reschedule owner check.
+
 ## [1.43.0] - 2026-10-05
 
 ### Changed
