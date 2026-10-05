@@ -470,9 +470,12 @@ describe('ConsultationService', () => {
         slot_ids: ['slot-3'],
       });
 
-      expect(repositories.bookings.reschedule).toHaveBeenCalledWith('booking-9', 'pkg-2', [
-        'slot-3',
-      ]);
+      expect(repositories.bookings.reschedule).toHaveBeenCalledWith(
+        'booking-9',
+        'user-1',
+        'pkg-2',
+        ['slot-3']
+      );
     });
 
     it('maps a SLOT_TAKEN reschedule to SlotTakenError', async () => {

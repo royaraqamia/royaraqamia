@@ -197,9 +197,15 @@ export function createSupabaseConsultationBookingsRepository(
       return booking ?? null;
     },
 
-    async reschedule(bookingId: string, packageId: string, slotIds: string[]): Promise<void> {
+    async reschedule(
+      bookingId: string,
+      userId: string,
+      packageId: string,
+      slotIds: string[]
+    ): Promise<void> {
       const { error } = await supabase.rpc('reschedule_consultation_booking', {
         p_booking_id: bookingId,
+        p_user_id: userId,
         p_package_id: packageId,
         p_slot_ids: slotIds,
       });

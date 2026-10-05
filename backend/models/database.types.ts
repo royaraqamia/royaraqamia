@@ -1436,7 +1436,12 @@ export type Database = {
         Returns: string;
       };
       reschedule_consultation_booking: {
-        Args: { p_booking_id: string; p_package_id: string; p_slot_ids: string[] };
+        Args: {
+          p_booking_id: string;
+          p_user_id: string;
+          p_package_id: string;
+          p_slot_ids: string[];
+        };
         Returns: undefined;
       };
       send_daily_habit_reminders: { Args: never; Returns: undefined };
