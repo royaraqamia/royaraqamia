@@ -1,7 +1,7 @@
 'use client';
 
 import { Controller, type Control } from 'react-hook-form';
-import { CalendarDays, CheckCircle, Users } from 'lucide-react';
+import { CalendarDays, CheckCircle } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
 import { formatHijriDate } from '@/frontend/shared/format';
 import { FieldError } from '@/frontend/ui/shared/field-error';
@@ -83,16 +83,7 @@ export function CohortStep({ control, cohorts, error }: CohortStepProps) {
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm font-bold text-muted-foreground">
                     <span className="inline-flex items-center gap-1.5">
                       <CalendarDays className="size-4" aria-hidden="true" />
-                      تبدأ {formatHijriDate(cohort.starts_at)}
-                    </span>
-                    <span
-                      className={cn(
-                        'inline-flex items-center gap-1.5',
-                        isFull ? 'text-destructive' : 'text-emerald-600 dark:text-emerald-400'
-                      )}
-                    >
-                      <Users className="size-4" aria-hidden="true" />
-                      {isFull ? 'اكتمل العدد' : `${seatsLeft} أماكن متبقية`}
+                      تبدأ {formatHijriDate(cohort.starts_at)} إن شاء الله
                     </span>
                   </div>
                 </button>

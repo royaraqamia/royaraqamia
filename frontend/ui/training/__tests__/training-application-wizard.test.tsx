@@ -55,7 +55,6 @@ describe('TrainingApplicationWizard', () => {
     render(<TrainingApplicationWizard />);
 
     expect(await screen.findByText('الدُّفعة الأولى')).toBeInTheDocument();
-    expect(screen.getByText('7 أماكن متبقية')).toBeInTheDocument();
 
     expect(nextButton()).toBeDisabled();
     fireEvent.click(screen.getByRole('radio', { name: /الدُّفعة الأولى/ }));
