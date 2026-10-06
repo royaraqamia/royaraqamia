@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { List, X, House, Package, Users } from 'lucide-react';
+import { List, X, House, Package, Users, Rocket, CalendarClock } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
@@ -128,16 +128,19 @@ export function Navbar() {
           href: '/request-project',
           label: 'طلب بناء مشروع',
           isRoute: true,
+          icon: Rocket,
         },
         {
           href: '/hire',
           label: 'طلب التَّعاقُد الشَّهري',
           isRoute: true,
+          icon: CalendarClock,
         },
         ...APP_PRODUCTS.filter((p) => !p.hidden).map((p) => ({
           href: p.landingPath,
           label: p.label,
           isRoute: true,
+          icon: p.icon,
         })),
       ],
     },

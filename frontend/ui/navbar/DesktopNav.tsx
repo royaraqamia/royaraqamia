@@ -237,7 +237,7 @@ export function DesktopNav({
                   {isDropdownOpen && (
                     <div
                       id={link.dropdownKey ? `${link.dropdownKey}-dropdown` : undefined}
-                      className="absolute inset-e-0 top-full mt-2.5 w-60 p-1.5 bg-neutral-900/95 rounded-2xl border border-neutral-800/80 shadow-2xl shadow-neutral-950/50 z-50 transition-transform duration-200 ease-out animate-in fade-in-0 zoom-in-95 origin-top-right will-change-[transform,opacity] contain-layout contain-style"
+                      className="absolute inset-e-0 top-full mt-2.5 max-h-[min(70vh,32rem)] w-60 overflow-y-auto overscroll-contain custom-scrollbar p-1.5 bg-neutral-900/95 rounded-2xl border border-neutral-800/80 shadow-2xl shadow-neutral-950/50 z-50 transition-transform duration-200 ease-out animate-in fade-in-0 zoom-in-95 origin-top-right will-change-[transform,opacity] contain-layout contain-style"
                       role="menu"
                       aria-orientation="vertical"
                       onMouseEnter={handleMouseEnter}
@@ -303,7 +303,12 @@ export function DesktopNav({
                                     : ''
                                 }`}
                               >
-                                <span>{sub.label}</span>
+                                <span className="flex min-w-0 items-center gap-2.5">
+                                  {sub.icon && (
+                                    <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/item:text-violet-400" />
+                                  )}
+                                  <span className="truncate">{sub.label}</span>
+                                </span>
                               </div>
                             );
                           }
@@ -319,7 +324,12 @@ export function DesktopNav({
                                   window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
                                 }}
                               >
-                                <span>{sub.label}</span>
+                                <span className="flex min-w-0 items-center gap-2.5">
+                                  {sub.icon && (
+                                    <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/item:text-violet-400" />
+                                  )}
+                                  <span className="truncate">{sub.label}</span>
+                                </span>
                                 <span className="text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
                                   ←
                                 </span>
@@ -340,7 +350,12 @@ export function DesktopNav({
                               className={itemClasses}
                               role="menuitem"
                             >
-                              <span>{sub.label}</span>
+                              <span className="flex min-w-0 items-center gap-2.5">
+                                {sub.icon && (
+                                  <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/item:text-violet-400" />
+                                )}
+                                <span className="truncate">{sub.label}</span>
+                              </span>
                               <span className="text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
                                 ←
                               </span>

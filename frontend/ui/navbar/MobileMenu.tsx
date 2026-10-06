@@ -38,6 +38,7 @@ interface SubItem {
   label: string;
   isRoute?: boolean;
   comingSoon?: boolean;
+  icon?: LucideIcon;
 }
 
 // ============================================================================
@@ -274,7 +275,12 @@ export const MobileMenu = memo(function MobileMenu({
                         text-sm font-medium text-neutral-500 cursor-not-allowed select-none
                       "
                     >
-                      <span className="truncate">{sub.label}</span>
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        {sub.icon && (
+                          <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/sub:text-violet-400" />
+                        )}
+                        <span className="truncate">{sub.label}</span>
+                      </span>
                     </div>
                   ) : sub.isRoute ? (
                     <Link
@@ -290,7 +296,12 @@ export const MobileMenu = memo(function MobileMenu({
                         active:scale-[0.98]
                       "
                     >
-                      <span className="truncate">{sub.label}</span>
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        {sub.icon && (
+                          <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/sub:text-violet-400" />
+                        )}
+                        <span className="truncate">{sub.label}</span>
+                      </span>
                       <span className="text-xs text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 group-hover/sub:opacity-100 group-hover/sub:translate-x-0">
                         ←
                       </span>
@@ -309,7 +320,12 @@ export const MobileMenu = memo(function MobileMenu({
                         active:scale-[0.98]
                       "
                     >
-                      <span className="truncate">{sub.label}</span>
+                      <span className="flex min-w-0 items-center gap-2.5">
+                        {sub.icon && (
+                          <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/sub:text-violet-400" />
+                        )}
+                        <span className="truncate">{sub.label}</span>
+                      </span>
                       <span className="text-xs text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 group-hover/sub:opacity-100 group-hover/sub:translate-x-0">
                         ←
                       </span>
