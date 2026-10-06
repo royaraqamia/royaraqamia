@@ -6,10 +6,10 @@ import { throttle } from '@/frontend/shared/throttle';
 import { scrollToTop } from '@/frontend/shared/scroll';
 
 export function GoUpButton() {
-  const { isMobileMenuOpen, isReviewSheetOpen } = useUI();
+  const { isReviewSheetOpen } = useUI();
   const [isVisible, setIsVisible] = useState(false);
 
-  const shouldHide = isMobileMenuOpen || isReviewSheetOpen;
+  const shouldHide = isReviewSheetOpen;
 
   useEffect(() => {
     const toggleVisibility = () => {

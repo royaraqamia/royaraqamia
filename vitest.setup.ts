@@ -11,6 +11,21 @@ afterEach(() => {
   window.sessionStorage.clear();
 });
 
+// jsdom has no `matchMedia`; responsive hooks (`useIsMobile`) and PWA queries
+// rely on it. Individual suites may still override it with a controlled mock.
+if (!window.matchMedia) {
+  window.matchMedia = ((query: string) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    addListener: () => {},
+    removeListener: () => {},
+    dispatchEvent: () => false,
+  })) as unknown as typeof window.matchMedia;
+}
+
 globalThis.IntersectionObserver = class IntersectionObserver {
   readonly root!: Element | Document | null;
   readonly rootMargin!: string;

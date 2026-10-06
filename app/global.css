@@ -1474,6 +1474,23 @@
   padding-right: env(safe-area-inset-right);
 }
 
+/* ========================================
+   MOBILE BOTTOM TAB BAR (< lg)
+   ======================================== */
+@media (max-width: 1023px) {
+  /* Reserve space so the fixed tab bar never occludes page content. */
+  body:has([data-mobile-tabbar]) {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  }
+
+  /* Lift the floating utilities above the tab bar. */
+  .whatsapp-float-btn,
+  .go-up-btn,
+  .compose-fab-btn {
+    bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem);
+  }
+}
+
 /* Form Validation Styles */
 .input-error {
   @apply border-destructive focus:ring-destructive/50;

@@ -33,10 +33,10 @@ describe('Navbar', () => {
     expect(screen.getByRole('navigation', { name: 'القائمة الرئيسية' })).toBeInTheDocument();
   });
 
-  it('renders the mobile menu button', () => {
+  it('renders the خدماتنا dropdown trigger and no mobile menu button', () => {
     renderWithProviders(<Navbar />);
-    const menuButton = screen.getByLabelText('فتح القائمة');
-    expect(menuButton).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'خدماتنا' }).length).toBeGreaterThan(0);
+    expect(screen.queryByLabelText('فتح القائمة')).not.toBeInTheDocument();
   });
 
   it('renders the main nav link', () => {

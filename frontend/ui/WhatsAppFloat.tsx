@@ -35,7 +35,7 @@ export function WhatsAppFloat({
   phone = WHATSAPP_PHONE,
   message = WHATSAPP_MESSAGE,
 }: WhatsAppFloatProps) {
-  const { isMobileMenuOpen, isReviewSheetOpen } = useUI();
+  const { isReviewSheetOpen } = useUI();
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
 
@@ -45,7 +45,7 @@ export function WhatsAppFloat({
     !!pathname &&
     (HIDDEN_ROUTE_EXACTS.includes(pathname) ||
       HIDDEN_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix)));
-  const shouldHide = isMobileMenuOpen || isReviewSheetOpen || onHiddenRoute;
+  const shouldHide = isReviewSheetOpen || onHiddenRoute;
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 1000);

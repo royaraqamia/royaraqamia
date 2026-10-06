@@ -14,6 +14,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
 import { FloatingActions } from '../frontend/ui/FloatingActions';
+import { BottomTabBar } from '../frontend/ui/navbar/BottomTabBar';
 import { SITE_NAME } from '@/frontend/shared/metadata';
 import { DIRECTION, getCanonicalOrigin } from '@/frontend/shared/constants';
 import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
@@ -126,6 +127,7 @@ export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 5,
+  viewportFit: 'cover',
   themeColor: [
     { media: '(prefers-color-scheme: dark)', color: '#0f172a' },
     { media: '(prefers-color-scheme: light)', color: '#0f172a' },
@@ -161,6 +163,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       <RouteChangeFocus />
                       {children}
                       <FloatingActions />
+                      <BottomTabBar />
                     </PWAProvider>
                     <RoyaToaster />
                   </NotificationProvider>

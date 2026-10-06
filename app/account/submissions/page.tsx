@@ -1,5 +1,12 @@
+import type { Metadata } from 'next';
+
 import { MySubmissionsView } from '@/frontend/ui/account/my-submissions-view';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
+
+export const metadata: Metadata = {
+  title: 'طلباتي',
+  description: 'طلباتك المرسلة من نماذج رؤيَة رَقَميَّة، مع إمكانيَّة تعديلها.',
+};
 
 export default function AccountSubmissionsPage() {
   return (

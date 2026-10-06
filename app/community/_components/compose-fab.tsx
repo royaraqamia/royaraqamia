@@ -14,7 +14,7 @@ import { PostComposerDialog } from './post-composer-dialog';
  */
 export function ComposeFab() {
   const { user, isLoading } = useSession();
-  const { isMobileMenuOpen, isReviewSheetOpen } = useUI();
+  const { isReviewSheetOpen } = useUI();
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -36,7 +36,7 @@ export function ComposeFab() {
     [router]
   );
 
-  if (isLoading || isMobileMenuOpen || isReviewSheetOpen) return null;
+  if (isLoading || isReviewSheetOpen) return null;
 
   return (
     <>

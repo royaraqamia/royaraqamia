@@ -2,11 +2,10 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { List, X, House, Package, Users, Rocket, CalendarClock } from 'lucide-react';
+import { House, Package, Users, Rocket, CalendarClock } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
-import { MobileMenu } from './navbar/MobileMenu';
 import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
 import { APP_PRODUCTS } from './app-shell/constants';
 
@@ -15,13 +14,8 @@ const NotificationDropdown = dynamic(
   { ssr: false, loading: () => null }
 );
 
-const UserDropdown = dynamic(() => import('./shared/user-dropdown').then((m) => m.UserDropdown), {
-  ssr: false,
-  loading: () => null,
-});
-
 export function Navbar() {
-  const { isMobileMenuOpen, setIsMobileMenuOpen, isReviewSheetOpen } = useUI();
+  const { isReviewSheetOpen } = useUI();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollYRef = useRef(0);
@@ -89,8 +83,6 @@ export function Navbar() {
         100
       );
     }
-
-    setIsMobileMenuOpen(false);
   };
 
   const isLinkActive = (href: string) => {
@@ -160,9 +152,6 @@ export function Navbar() {
   // while scrolling. Only the transient top-of-hero state keeps a light frost
   // (and it stops costing anything once the page scrolls past it).
   const getNavbarClass = () => {
-    if (isMobileMenuOpen) {
-      return 'bg-neutral-950/95 border-b border-neutral-800/80 shadow-lg shadow-black/20';
-    }
     if (isScrolled) {
       return 'bg-neutral-950/90 border-b border-neutral-800/70 shadow-sm shadow-neutral-950/30';
     }
@@ -192,7 +181,7 @@ export function Navbar() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 container-padding">
           <div
             className={`flex items-center justify-between transition-safe duration-300 ease-in-out motion-reduce:transition-none ${
-              isScrolled || isMobileMenuOpen ? 'h-16' : 'h-16 lg:h-20'
+              isScrolled ? 'h-16' : 'h-16 lg:h-20'
             }`}
           >
             <DesktopNav
@@ -203,52 +192,14 @@ export function Navbar() {
               handleHashClick={handleHashClick}
               logo="/logo.webp"
               isHomePage={isHomePage}
-              setIsMobileMenuOpen={setIsMobileMenuOpen}
             />
 
-            {/* Mobile Navigation Controls & Dropdowns */}
+            {/* Mobile Navigation Controls (tablet/mobile) */}
             <div className="flex items-center gap-1.5 sm:gap-2.5 lg:hidden">
               <NotificationDropdown />
-              <UserDropdown />
-              <button
-                type="button"
-                className="relative flex h-11 w-11 items-center justify-center rounded-xl text-neutral-200 transition-safe duration-200 ease-out hover:bg-neutral-800/80 active:scale-95 active:bg-neutral-700/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 motion-reduce:transition-none"
-                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                aria-label={isMobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
-                aria-expanded={isMobileMenuOpen}
-                aria-controls="mobile-menu"
-              >
-                <span className="sr-only">
-                  {isMobileMenuOpen ? 'إغلاق القائمة' : 'فتح القائمة'}
-                </span>
-                <div className="relative flex items-center justify-center">
-                  {isMobileMenuOpen ? (
-                    <X
-                      size={22}
-                      className="rotate-0 scale-100 transition-safe duration-200 ease-out"
-                    />
-                  ) : (
-                    <List
-                      size={22}
-                      className="rotate-0 scale-100 transition-safe duration-200 ease-out"
-                    />
-                  )}
-                </div>
-              </button>
             </div>
           </div>
         </div>
-
-        <MobileMenu
-          isOpen={isMobileMenuOpen}
-          setIsOpen={setIsMobileMenuOpen}
-          navLinks={navLinks}
-          isLinkActive={isLinkActive}
-          isSubItemActive={isSubItemActive}
-          handleHashClick={handleHashClick}
-          isHomePage={isHomePage}
-          logo="/logo.webp"
-        />
       </nav>
     </>
   );
