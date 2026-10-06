@@ -17,10 +17,22 @@ import { whatsappPhoneRegex } from './phone';
 export const PROJECT_REQUEST_TYPES = ['website', 'app'] as const;
 export type ProjectRequestType = (typeof PROJECT_REQUEST_TYPES)[number];
 
+/** The advertised tiers: a plain website or an app with a Backend. */
+export const PROJECT_REQUEST_TYPE_NAMES: Record<ProjectRequestType, string> = {
+  website: 'موقع',
+  app: 'تطبيق',
+};
+
+/** The Backend qualifier shown beneath each tier's name. */
+export const PROJECT_REQUEST_TYPE_BACKEND_LABELS: Record<ProjectRequestType, string> = {
+  website: 'بدون Backend',
+  app: 'مع Backend',
+};
+
 /** The labels the advertised tiers are sold under in the البناء section. */
 export const PROJECT_REQUEST_TYPE_LABELS: Record<ProjectRequestType, string> = {
-  website: 'موقع (بدون Backend)',
-  app: 'تطبيق (مع Backend)',
+  website: `${PROJECT_REQUEST_TYPE_NAMES.website} (${PROJECT_REQUEST_TYPE_BACKEND_LABELS.website})`,
+  app: `${PROJECT_REQUEST_TYPE_NAMES.app} (${PROJECT_REQUEST_TYPE_BACKEND_LABELS.app})`,
 };
 
 /**

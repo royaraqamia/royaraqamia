@@ -6,8 +6,9 @@ import { cn } from '@/frontend/shared/cn';
 import { FieldError } from '@/frontend/ui/shared/field-error';
 import {
   PROJECT_REQUEST_APP_START_PRICE_USD,
+  PROJECT_REQUEST_TYPE_BACKEND_LABELS,
+  PROJECT_REQUEST_TYPE_NAMES,
   PROJECT_REQUEST_TYPES,
-  PROJECT_REQUEST_TYPE_LABELS,
   PROJECT_REQUEST_WEBSITE_START_PRICE_USD,
   type ProjectRequestType,
 } from '@/shared/contracts/project-requests';
@@ -55,9 +56,14 @@ export function ProjectTypeStep({ control, error }: ProjectTypeStepProps) {
                   )}
                 >
                   <div className="flex items-start justify-between gap-3 mb-3">
-                    <h3 className="font-bold text-lg text-foreground">
-                      {PROJECT_REQUEST_TYPE_LABELS[type]}
-                    </h3>
+                    <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-start">
+                      <h3 className="font-bold text-lg text-foreground">
+                        {PROJECT_REQUEST_TYPE_NAMES[type]}
+                      </h3>
+                      <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/50 px-2 py-0.5 text-[11px] font-bold text-muted-foreground">
+                        {PROJECT_REQUEST_TYPE_BACKEND_LABELS[type]}
+                      </span>
+                    </div>
                     <span
                       className={cn(
                         'flex items-center justify-center size-6 rounded-full border-2 shrink-0 mt-1',
