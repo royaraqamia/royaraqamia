@@ -4,6 +4,7 @@ import type { Database } from '@/backend/models/database.types';
 import { createAlgeriaRateProvider } from '@/backend/clients/rates/algeria-rate-provider';
 import { createFrankfurterProvider } from '@/backend/clients/rates/fiat-rate-provider';
 import { createIraqRateProvider } from '@/backend/clients/rates/iraq-rate-provider';
+import { createIraqSmRateProvider } from '@/backend/clients/rates/iraqsm-rate-provider';
 import { createLirascopeProvider } from '@/backend/clients/rates/lirascope-market-provider';
 import { createGoldApiProvider } from '@/backend/clients/rates/metal-price-provider';
 import { createSpTodayProvider } from '@/backend/clients/rates/syp-market-provider';
@@ -36,6 +37,7 @@ export function createRatesService(supabase: SupabaseClient<Database>): RatesSer
         createSypMarketVariantProvider(createSpTodayProvider()),
         createSypMarketVariantProvider(createLirascopeProvider(), 'lirascope'),
         createIraqRateProvider(),
+        createIraqSmRateProvider(),
         createAlgeriaRateProvider(),
         createYemenRateProvider(),
       ],
