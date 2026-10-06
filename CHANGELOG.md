@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.54.0] - 2026-10-06
+
+### Changed
+- hide the float on privacy, terms, and security pages
+- drop the page heading
+- show the user icon in the user menu trigger
+- center the serviços dropdown on tablet/mobile
+
+### Added
+- show the bell to visitors with a sign-in prompt
+
 ## [1.53.1] - 2026-10-06
 
 ### Fixed
