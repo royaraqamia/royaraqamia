@@ -180,7 +180,7 @@ export function Navbar() {
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 container-padding">
           <div
-            className={`flex items-center justify-between transition-safe duration-300 ease-in-out motion-reduce:transition-none ${
+            className={`relative flex items-center justify-between transition-safe duration-300 ease-in-out motion-reduce:transition-none ${
               isScrolled ? 'h-16' : 'h-16 lg:h-20'
             }`}
           >

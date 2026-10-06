@@ -80,20 +80,20 @@ export function DesktopNav({
             رؤيَة رقَميَّة
           </span>
         </Link>
-
-        {/* خدماتنا dropdown replaces the brand text on tablet/mobile */}
-        {servicesLink && (
-          <NavDropdown
-            link={servicesLink}
-            isActive={isLinkActive(servicesLink.href) || isSubItemActive(servicesLink.subItems)}
-            handleHashClick={handleHashClick}
-            align="start"
-            idPrefix="brand-"
-            className="lg:hidden"
-            overlay
-          />
-        )}
       </div>
+
+      {/* خدماتنا dropdown replaces the brand text on tablet/mobile; centered in the bar */}
+      {servicesLink && (
+        <NavDropdown
+          link={servicesLink}
+          isActive={isLinkActive(servicesLink.href) || isSubItemActive(servicesLink.subItems)}
+          handleHashClick={handleHashClick}
+          align="start"
+          idPrefix="brand-"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 lg:hidden"
+          overlay
+        />
+      )}
 
       {/* Navigation Links - Floating Pill Container */}
       <nav
