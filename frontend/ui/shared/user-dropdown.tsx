@@ -132,7 +132,7 @@ export const UserDropdown = memo(function UserDropdown() {
             {user ? (
               <div className="space-y-1">
                 {/* Profile Card Header */}
-                <div className="px-3 py-2.5 mb-1 rounded-xl bg-muted/40 border border-border/40 flex items-center gap-3">
+                <div className="px-3 py-2.5 rounded-xl bg-muted/40 border border-border/40 flex items-center gap-3">
                   <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-xs">
                     {userName ? userName.charAt(0).toUpperCase() : <User size={16} />}
                     {showAvatar && (
@@ -159,55 +159,57 @@ export const UserDropdown = memo(function UserDropdown() {
                   </div>
                 </div>
 
-                {/* My Submissions — the account-based edit path */}
-                <Link
-                  href="/account/submissions"
-                  onClick={() => setIsOpen(false)}
-                  className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                  role="menuitem"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
-                      <ClipboardList size={16} />
-                    </div>
-                    <span>طلباتي</span>
-                  </div>
-                </Link>
-
-                {/* Admin Console (Admins only — the flag defaults to false) */}
-                {isAdmin && (
+                <div className="divide-y divide-border/40">
+                  {/* My Submissions — the account-based edit path */}
                   <Link
-                    href="/admin"
+                    href="/account/submissions"
                     onClick={() => setIsOpen(false)}
                     className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                     role="menuitem"
                   >
                     <div className="flex items-center gap-2.5">
                       <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
-                        <ShieldCheck size={16} />
+                        <ClipboardList size={16} />
                       </div>
-                      <span>الإدارة</span>
+                      <span>طلباتي</span>
                     </div>
                   </Link>
-                )}
 
-                {/* Sign Out Item */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsOpen(false);
-                    setIsLogoutDialogOpen(true);
-                  }}
-                  className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-destructive/90 hover:text-destructive hover:bg-destructive/10 active:bg-destructive/15 rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
-                  role="menuitem"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/10 text-destructive group-hover:scale-105 transition-transform">
-                      <LogOut size={16} />
+                  {/* Admin Console (Admins only — the flag defaults to false) */}
+                  {isAdmin && (
+                    <Link
+                      href="/admin"
+                      onClick={() => setIsOpen(false)}
+                      className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      role="menuitem"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
+                          <ShieldCheck size={16} />
+                        </div>
+                        <span>الإدارة</span>
+                      </div>
+                    </Link>
+                  )}
+
+                  {/* Sign Out Item */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOpen(false);
+                      setIsLogoutDialogOpen(true);
+                    }}
+                    className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-destructive/90 hover:text-destructive hover:bg-destructive/10 active:bg-destructive/15 rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
+                    role="menuitem"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/10 text-destructive group-hover:scale-105 transition-transform">
+                        <LogOut size={16} />
+                      </div>
+                      <span>تسجيل الخروج</span>
                     </div>
-                    <span>تسجيل الخروج</span>
-                  </div>
-                </button>
+                  </button>
+                </div>
               </div>
             ) : (
               /* Login Link */
