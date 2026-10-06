@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.51.1] - 2026-10-06
+
+### Changed
+- even out converter result weights
+
+### Fixed
+- retire the unlayered dark-theme-override stylesheet
+
 ## [1.51.0] - 2026-10-06
 
 ### Added
