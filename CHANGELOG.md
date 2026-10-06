@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.52.0] - 2026-10-06
+
+### Changed
+- add separators to the user menu
+- center page titles with the section title pattern
+
+### Added
+- index community posts and harden robots/sitemap
+- refresh the request summary copy
+- separate the tier name from its backend qualifier
+- add icons and scrolling to the services dropdown
+- align card and booking summary copy
+- trim the apply cohort card
+- share one course summary across the card and apply page
+
 ## [1.51.1] - 2026-10-06
 
 ### Changed
