@@ -52,10 +52,6 @@ export function AccountView() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground text-center">
-        حسابي
-      </h1>
-
       {/* Profile card */}
       <section className="flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5">
         <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-lg">
