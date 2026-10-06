@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.51.0] - 2026-10-06
+
+### Added
+- polish converter result captions and typography
+- add IQWealth as a keyless IQD market source
+
+### Fixed
+- pin proxy-addr, source-map-js and postcss-selector-parser to patched versions
+
 ## [1.50.0] - 2026-10-06
 
 ### Added
