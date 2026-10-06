@@ -1,6 +1,7 @@
 import { GraduationCap, MessageCircle, Wallet } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { TrainingApplyFlow } from '@/frontend/ui/training/training-apply-flow';
+import { CourseSummaryText } from '@/frontend/ui/training/course-summary';
 import { CollapsibleText } from '@/frontend/ui/shared/collapsible-text';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
@@ -57,10 +58,7 @@ export default async function TrainingApplyPage() {
             className="mt-2 text-sm text-muted-foreground leading-relaxed"
             buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
           >
-            {[
-              TRAINING_COURSE.description,
-              `المدرِّب: ${TRAINING_COURSE.trainer} • عدد السَّاعات: ${TRAINING_COURSE.duration} • عدد الجلسات: ${TRAINING_COURSE.sessions}`,
-            ].join('\n\n')}
+            <CourseSummaryText />
           </CollapsibleText>
 
           <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-2 border-t border-border/50 pt-5">

@@ -37,8 +37,8 @@ export const TRAINING_COURSE: TrainingCourse = {
     'التَّدريب Online.\n' +
     'شروط الانضمام: توفُّر الإنترنت واللابتوب وخلفيَّة تقنيَّة.',
   trainer: 'م. أيْهَم العَلي',
-  duration: '18 ساعة',
-  sessions: '12 جلسة',
+  duration: '22 ساعة',
+  sessions: '15 جلسة',
   price: '$50',
   isOpen: true,
 };

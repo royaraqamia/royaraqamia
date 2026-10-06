@@ -3,6 +3,7 @@ import { Trophy, Clock, Target, Sparkle, User, Wallet } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 import { CollapsibleText } from './shared/collapsible-text';
+import { CourseSummaryText } from './training/course-summary';
 import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 import { TRAINING_COURSE } from '@/shared/contracts/training';
 
@@ -79,7 +80,7 @@ export function TrainingCourses() {
                       className="text-purple-100/80 text-sm sm:text-base leading-relaxed max-w-xl font-normal"
                       buttonClassName="text-purple-200 hover:text-white"
                     >
-                      {course.description}
+                      <CourseSummaryText />
                     </CollapsibleText>
                   </div>
 

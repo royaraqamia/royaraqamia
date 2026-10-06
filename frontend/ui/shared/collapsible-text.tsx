@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
 
@@ -15,8 +15,8 @@ const CLAMP_CLASSES = {
 export type CollapsibleTextLines = keyof typeof CLAMP_CLASSES;
 
 interface CollapsibleTextProps {
-  /** May contain `\n`; newlines are preserved (rendered as line breaks). */
-  children: string;
+  /** May contain `\n` (rendered as line breaks) and inline markup such as `<strong>`. */
+  children: ReactNode;
   /** Lines shown while collapsed. */
   lines?: CollapsibleTextLines;
   className?: string;
