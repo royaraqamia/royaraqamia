@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import {
   X,
   Check,
@@ -35,8 +37,17 @@ const typeIcons: Record<string, React.ReactNode> = {
   consultation_booking: <CalendarCheck2 size={18} />,
 };
 
+const AUTH_PATHS = [
+  '/auth/login',
+  '/auth/signup',
+  '/auth/verify-otp',
+  '/auth/reset-password',
+  '/auth/update-password',
+];
+
 export const NotificationDropdown = memo(function NotificationDropdown() {
   const { user } = useSession();
+  const pathname = usePathname();
   const { notifications, unreadCount, isLoading, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
   const [isOpen, setIsOpen] = useState(false);
@@ -84,7 +95,11 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
     }
   }
 
-  if (!user) return null;
+  // Guests see the bell too (consistent chrome); the panel nudges them to sign in.
+  const loginHref =
+    pathname && !AUTH_PATHS.some((p) => pathname.startsWith(p)) && pathname !== '/'
+      ? `/auth/login?redirect=${encodeURIComponent(pathname)}`
+      : '/auth/login';
 
   return (
     <div ref={ref} className="relative inline-block text-start">
@@ -151,7 +166,26 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                 the overflow-hidden root) or tall lists get clipped instead of
                 scrolled. */}
             <ScrollArea className="max-h-95 min-h-40 *:data-[slot=scroll-area-viewport]:max-h-95">
-              {isLoading ? (
+              {!user ? (
+                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                  <div className="p-3.5 rounded-full bg-muted/60 text-muted-foreground/80 mb-3 border border-border/40 shadow-inner">
+                    <Bell size={24} />
+                  </div>
+                  <p className="text-sm font-bold text-foreground">
+                    سجِّل الدُّخول لمتابعة إشعاراتك
+                  </p>
+                  <p className="text-xs text-muted-foreground/70 mt-1">
+                    تابع التَّنبيهات الخاصَّة بحسابك بعد تسجيل الدُّخول
+                  </p>
+                  <Link
+                    href={loginHref}
+                    onClick={() => setIsOpen(false)}
+                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-xs transition-safe duration-150 ease-out hover:bg-primary/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                  >
+                    تسجيل الدُّخول
+                  </Link>
+                </div>
+              ) : isLoading ? (
                 <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                   <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
                   <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
@@ -259,10 +293,12 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
               )}
             </ScrollArea>
 
-            {/* Footer: OS-level push toggle */}
-            <div className="border-t border-border/60">
-              <PushNotificationToggle />
-            </div>
+            {/* Footer: OS-level push toggle (signed-in users only) */}
+            {user && (
+              <div className="border-t border-border/60">
+                <PushNotificationToggle />
+              </div>
+            )}
           </div>,
           document.body
         )}
