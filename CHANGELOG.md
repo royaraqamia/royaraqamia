@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.53.1] - 2026-10-06
+
+### Fixed
+- bump sharp to 0.35.5 (CVE-2026-96889)
+
 ## [1.53.0] - 2026-10-06
 
 ### Added
