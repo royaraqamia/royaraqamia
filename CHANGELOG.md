@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.50.0] - 2026-10-06
+
+### Added
+- display converted amounts as whole numbers
+- hold the last known parallel rate and flag it in health
+- add Lira Scope as a keyless SYP market source
+
 ## [1.49.1] - 2026-10-05
 
 ### Fixed
