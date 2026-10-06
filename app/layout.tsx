@@ -15,7 +15,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
 import { FloatingActions } from '../frontend/ui/FloatingActions';
 import { SITE_NAME } from '@/frontend/shared/metadata';
-import { DIRECTION } from '@/frontend/shared/constants';
+import { DIRECTION, getCanonicalOrigin } from '@/frontend/shared/constants';
 import { ASSET_VERSION } from '@/backend/config/generated/asset-version';
 import { ibmPlexSansArabic, arefRuqaa } from '@/frontend/shared/fonts';
 import { RouteChangeFocus } from '@/frontend/ui/RouteChangeFocus';
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'رؤيَة رقَميَّة' }],
   creator: 'رؤيَة رقَميَّة',
   publisher: 'رؤيَة رقَميَّة',
-  metadataBase: new URL('https://royaraqamia.com'),
+  metadataBase: new URL(getCanonicalOrigin()),
   alternates: {
     canonical: '/',
   },

@@ -26,7 +26,7 @@ import {
   loadCommunityPost,
   loadPublishedPostSlugs,
 } from '@/backend/loaders/community';
-import { env } from '@/backend/config/env';
+import { getCanonicalOrigin } from '@/frontend/shared/constants';
 import { postExcerpt } from '@/shared/reading-time';
 import type { Metadata } from 'next';
 
@@ -127,7 +127,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
   const { post: p, author, postTags } = loaded;
 
   const headings = extractHeadings(p.content ?? '');
-  const postUrl = `${env.siteUrl}/community/${slug}`;
+  const postUrl = `${getCanonicalOrigin()}/community/${slug}`;
   const hasHeadings = headings.length > 0;
   const excerpt = postExcerpt(p.content, p.meta_desc ?? '');
 

@@ -41,6 +41,12 @@ export const loadPublishedPostSlugs = unstable_cache(
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.slugs] }
 );
 
+export const loadPublishedPostSitemapEntries = unstable_cache(
+  () => pub().getPublishedPostSitemapEntries(),
+  ['community-sitemap'],
+  { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.slugs] }
+);
+
 export const loadPublishedCategories = unstable_cache(
   () => pub().getPublishedCategories(),
   ['community-categories'],

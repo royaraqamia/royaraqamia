@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { loadCertificateByCode, loadCertificateCodes } from '@/backend/loaders/certificates';
 import { formatDateArabic } from '@/frontend/shared/format';
+import { getCanonicalOrigin } from '@/frontend/shared/constants';
 import { VerifyClient } from './verify-client';
 
 // Certificate pages are the most-shared public links (printed on physical
@@ -29,6 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!certificate) {
     return {
+      robots: { index: false, follow: true },
       title: 'شهادة غير موجودة',
       description: 'لم يتمَّ العثور على شهادة بهذا الرَّمز.',
     };
@@ -40,10 +42,14 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   return {
     title,
     description,
+    // Per-student pages are thin and near-duplicate; keep them out of the index
+    // while still allowing crawlers to follow links. OG tags are unaffected, so
+    // shared certificate links still render rich cards.
+    robots: { index: false, follow: true },
     openGraph: {
       title: `التَّحقُّق من شهادة ${certificate.student_name} | رؤيَة رقَميَّة`,
       description,
-      url: `https://royaraqamia.com/verify/${certificate.certificate_code}`,
+      url: `${getCanonicalOrigin()}/verify/${certificate.certificate_code}`,
       siteName: 'رؤيَة رقَميَّة',
       locale: 'ar_SY',
       type: 'website',

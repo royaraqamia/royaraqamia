@@ -34,6 +34,7 @@ function makeRepo(
     getPublishedPosts: vi.fn(),
     getPublishedFeed: vi.fn(),
     getPublishedPostSlugs: vi.fn(),
+    getPublishedPostSitemapEntries: vi.fn(),
     getPublishedPostBySlug: vi.fn(),
     getPostAuthor: vi.fn(),
     getPostAuthors: vi.fn(),

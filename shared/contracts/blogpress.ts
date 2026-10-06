@@ -79,3 +79,9 @@ export interface PublishedFeedResult {
   posts: PostSummary[];
   nextCursor: string | null;
 }
+
+/** Lightweight projection used to build the XML sitemap, one entry per published post. */
+export interface PostSitemapEntry {
+  slug: string;
+  updated_at: string | null;
+}

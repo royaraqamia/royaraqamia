@@ -10,6 +10,7 @@ import type {
   PublishedPostsResult,
   PublishedFeedResult,
   RestorePostSnapshot,
+  PostSitemapEntry,
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
 import type { PostsRepository } from '@/backend/repositories/blogpress/posts-repository';
@@ -208,6 +209,18 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       if (error) throw repositoryFailure('blogpress.getPublishedPostSlugs', error);
 
       return (data ?? []).map((row) => row.slug);
+    },
+
+    async getPublishedPostSitemapEntries(): Promise<PostSitemapEntry[]> {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('slug, updated_at')
+        .or(PUBLISHED_POSTS_FILTER)
+        .eq('community_visible', true);
+
+      if (error) throw repositoryFailure('blogpress.getPublishedPostSitemapEntries', error);
+
+      return data ?? [];
     },
 
     async getPublishedPostBySlug(slug: string): Promise<Post | null> {

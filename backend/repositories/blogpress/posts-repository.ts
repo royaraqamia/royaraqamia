@@ -7,6 +7,7 @@ import type {
   PublishedPostsResult,
   PublishedFeedResult,
   RestorePostSnapshot,
+  PostSitemapEntry,
 } from '@/shared/contracts/blogpress';
 import type { PostInput } from '@/shared/contracts/community';
 
@@ -24,6 +25,7 @@ export interface PostsRepository {
     categorySlug?: string
   ): Promise<PublishedFeedResult>;
   getPublishedPostSlugs(): Promise<string[]>;
+  getPublishedPostSitemapEntries(): Promise<PostSitemapEntry[]>;
   getPublishedPostBySlug(slug: string): Promise<Post | null>;
   getPostAuthor(authorId: string): Promise<PostAuthor | null>;
   getPostAuthors(authorIds: string[]): Promise<Record<string, PostAuthorSummary>>;
