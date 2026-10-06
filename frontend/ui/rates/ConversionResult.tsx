@@ -31,7 +31,7 @@ export function ConversionResult({
             dir="ltr"
             className={cn(SECTION_TITLE_HIGHLIGHT, 'inline-flex items-baseline gap-2')}
           >
-            <span className="text-[0.55em] font-bold opacity-80">
+            <span className="text-[0.55em] font-normal opacity-80">
               {targetCode === 'SYP' ? 'ل.س جديدة' : getCurrencyDisplaySymbol(targetCode)}
             </span>
             <span>{formatRate(result)}</span>
@@ -44,7 +44,8 @@ export function ConversionResult({
         <>
           {oldLiraAmount !== null ? (
             <p className="mt-2 text-xs text-muted-foreground">
-              {formatRate(oldLiraAmount)} ل.س قديمة
+              <span className="font-extrabold">{formatRate(oldLiraAmount)}</span>{' '}
+              <span className="font-normal">ل.س قديمة</span>
             </p>
           ) : basisCaption !== null ? (
             <p className="mt-2 text-xs text-muted-foreground">{basisCaption}</p>
