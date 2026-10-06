@@ -22,4 +22,16 @@ describe('createSypMarketVariantProvider', () => {
 
     await expect(provider.fetchVariants()).rejects.toThrow('unavailable');
   });
+
+  it('labels the source with the given name for failover reporting', async () => {
+    const provider = createSypMarketVariantProvider(
+      marketProvider({ rate: 138, date: '2026-10-05' }),
+      'lirascope'
+    );
+
+    expect(provider.name).toBe('lirascope');
+    await expect(
+      createSypMarketVariantProvider(marketProvider(null), 'lirascope').fetchVariants()
+    ).rejects.toThrow('lirascope');
+  });
 });
