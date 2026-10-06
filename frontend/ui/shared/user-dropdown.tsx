@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/frontend/shared/cn';
-import { User, LogOut, Download, ShieldCheck, ClipboardList } from 'lucide-react';
+import { User, UserRound, LogOut, Download, ShieldCheck, ClipboardList } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
 import { usePWAContext } from '../PWAProvider';
 import { ConfirmDialog } from './confirm-dialog';
@@ -91,23 +91,10 @@ export const UserDropdown = memo(function UserDropdown() {
         aria-haspopup="menu"
         aria-expanded={isOpen}
       >
-        <User
+        <UserRound
           size={20}
           className="text-foreground/90 transition-transform duration-200 group-hover:scale-110"
         />
-        {showAvatar && (
-          <Image
-            src={avatarUrl!}
-            alt=""
-            width={40}
-            height={40}
-            unoptimized
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-            className="absolute inset-0 h-full w-full rounded-full object-cover"
-          />
-        )}
         {user && (
           <span className="absolute bottom-0.5 inset-e-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 ring-2 ring-background" />
         )}
