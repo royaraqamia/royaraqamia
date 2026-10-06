@@ -94,15 +94,10 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
     return null;
   }, [conversion, to, from, numericAmount]);
 
-  const basisCaption = basisRelevant
-    ? effectiveBasis === 'parallel'
-      ? `حسب سعر السُّوق الموازي${
-          marketRelevant
-            ? ` — ${marketOptions.find((option) => option.key === activeMarket)?.name ?? ''}`
-            : ''
-        }`
-      : 'حسب السِّعر الرَّسمي'
-    : null;
+  const basisCaption =
+    basisRelevant && effectiveBasis === 'parallel' && marketRelevant
+      ? (marketOptions.find((option) => option.key === activeMarket)?.name ?? null)
+      : null;
 
   const marketAsOf = basisRelevant ? oldestParallelAsOf(board, [from, to]) : null;
   const staleMarketAsOf =

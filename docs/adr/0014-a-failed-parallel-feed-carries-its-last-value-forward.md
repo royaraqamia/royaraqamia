@@ -32,8 +32,8 @@ that a feed is down, it only stops the outage from emptying the page.
 
 The parallel variant keeps its own `asOf` — the carried value's original date — and a surface
 flags it: when the shown basis is parallel and its value predates the board's provider quote
-date, the converter notes the market date (`بيانات السوق بتاريخ …`) so a carried number is
-never read as live. `/api/rates/health` lists the codes being held this way under
+date, the converter notes the last-update date (`آخر تحديث: …`) so a carried number is never
+read as live. `/api/rates/health` lists the codes being held this way under
 `staleParallels`. The window is a named option (`parallelLastKnownMs`, default 30 days) so it
 can be tuned or pinned in tests. `refresh` and the stored snapshots are untouched; only
 `getBoard` carries, so `getSeries` continues to plot exactly what each sync knew.

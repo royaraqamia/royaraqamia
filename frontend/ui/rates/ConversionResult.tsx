@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@/frontend/shared/cn';
-import { formatDateLabel, formatRate } from '@/frontend/ui/rates/rate-format';
+import { formatDateLabel, formatHijriDateLabel, formatRate } from '@/frontend/ui/rates/rate-format';
 import { SECTION_TITLE_HIGHLIGHT } from '@/frontend/ui/shared/section-title';
 import { getCurrencyDisplaySymbol } from '@/shared/currency';
 
@@ -10,7 +10,7 @@ interface ConversionResultProps {
   targetCode: string;
   /** The SYP side restated in old lira (100 old = 1 new), when the target is SYP. */
   oldLiraAmount: number | null;
-  /** The parallel/official note shown when the target is not SYP. */
+  /** The market name note shown when the target is not SYP. */
   basisCaption: string | null;
   /** Quote date of the market value when it lags the board (carried forward). */
   staleMarketAsOf: string | null;
@@ -31,7 +31,9 @@ export function ConversionResult({
             dir="ltr"
             className={cn(SECTION_TITLE_HIGHLIGHT, 'inline-flex items-baseline gap-2')}
           >
-            <span>{getCurrencyDisplaySymbol(targetCode)}</span>
+            <span className="text-[0.55em] font-bold opacity-80">
+              {targetCode === 'SYP' ? 'ل.س جديدة' : getCurrencyDisplaySymbol(targetCode)}
+            </span>
             <span>{formatRate(result)}</span>
           </span>
         ) : (
@@ -42,14 +44,15 @@ export function ConversionResult({
         <>
           {oldLiraAmount !== null ? (
             <p className="mt-2 text-xs text-muted-foreground">
-              {formatRate(oldLiraAmount)} {getCurrencyDisplaySymbol('SYP')}
+              {formatRate(oldLiraAmount)} ل.س قديمة
             </p>
           ) : basisCaption !== null ? (
             <p className="mt-2 text-xs text-muted-foreground">{basisCaption}</p>
           ) : null}
           {staleMarketAsOf !== null ? (
             <p className="mt-1 text-xs font-medium text-warning">
-              بيانات السوق بتاريخ {formatDateLabel(staleMarketAsOf)}
+              آخر تحديث: {formatHijriDateLabel(staleMarketAsOf)}—{formatDateLabel(staleMarketAsOf)}{' '}
+              م
             </p>
           ) : null}
         </>

@@ -8,7 +8,7 @@ export const GOLD_KARATS = [24, 22, 21, 18] as const;
 export type GoldKarat = (typeof GOLD_KARATS)[number];
 
 export const METALS = [
-  { code: 'XAU', name: 'الذَّهَب', nameEn: 'Gold' },
+  { code: 'XAU', name: 'الذَّهب', nameEn: 'Gold' },
   { code: 'XAG', name: 'الفِضَّة', nameEn: 'Silver' },
 ] as const;
 

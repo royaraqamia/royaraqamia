@@ -102,15 +102,10 @@ export function MetalConverter({ board }: MetalConverterProps) {
 
   const oldLiraAmount = conversion && to === 'SYP' ? conversion.result * OLD_SYP_PER_NEW_SYP : null;
 
-  const basisCaption = basisRelevant
-    ? effectiveBasis === 'parallel'
-      ? `حسب سعر السُّوق الموازي${
-          marketRelevant
-            ? ` — ${marketOptions.find((option) => option.key === activeMarket)?.name ?? ''}`
-            : ''
-        }`
-      : 'حسب السِّعر الرَّسمي'
-    : null;
+  const basisCaption =
+    basisRelevant && effectiveBasis === 'parallel' && marketRelevant
+      ? (marketOptions.find((option) => option.key === activeMarket)?.name ?? null)
+      : null;
 
   const marketAsOf = basisRelevant ? oldestParallelAsOf(board, [to]) : null;
   const staleMarketAsOf =
@@ -120,7 +115,9 @@ export function MetalConverter({ board }: MetalConverterProps) {
 
   return (
     <section aria-label="محوِّل الذَّهب والفِضَّة">
-      <h2 className="mb-4 text-xl font-bold text-foreground sm:text-2xl">الذَّهب والفِضَّة</h2>
+      <h2 className="mb-4 text-center text-xl font-bold text-foreground sm:text-2xl">
+        الذَّهب والفِضَّة
+      </h2>
       <div className="rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs sm:p-8">
         <div>
           <span className="mb-1.5 block text-sm font-medium text-foreground">المعدن</span>
@@ -186,7 +183,7 @@ export function MetalConverter({ board }: MetalConverterProps) {
           <div className="mt-4">
             <span className="mb-1.5 block text-sm font-medium text-foreground">العِيار</span>
             <SegmentedControl
-              label="عيار الذَّهَب"
+              label="عيار الذَّهب"
               value={karat}
               options={KARAT_OPTIONS}
               onValueChange={setKarat}
