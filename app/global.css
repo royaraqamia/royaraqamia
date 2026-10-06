@@ -10,7 +10,7 @@
 @source not '../docs';
 
 /* Class-based dark mode: the site renders its dark theme unconditionally
-   (see :root tokens and dark-theme-override.css), so `dark:` variants must key
+   (see the :root tokens in `@layer base`), so `dark:` variants must key
    off an always-present class rather than the OS color scheme. */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -251,6 +251,76 @@
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
     }
+  }
+}
+
+/* Element fallbacks for surfaces that do not declare their own styling.
+   These used to live in an unlayered `dark-theme-override.css`, which meant
+   they silently outranked every Tailwind utility (unlayered CSS beats layered
+   CSS) — clobbering `bg-transparent` search inputs, `bg-background/80` form
+   controls, `bg-popover` select/dialog content, and more. Placed in `base`,
+   utilities always win and these rules act only as defaults. */
+@layer base {
+  /* Raw form controls without a background utility of their own. */
+  input,
+  textarea,
+  select,
+  [data-slot='select-trigger'] {
+    background-color: hsl(var(--card));
+    color: hsl(var(--foreground));
+    border-color: hsl(var(--border));
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: hsl(var(--muted-foreground));
+  }
+
+  [data-slot='select-content'] {
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--border));
+  }
+
+  [data-slot='select-item'] {
+    color: hsl(var(--foreground));
+  }
+
+  [data-slot='select-item']:hover {
+    background-color: hsl(var(--accent));
+  }
+
+  [data-slot='dialog-content'] {
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--border));
+  }
+
+  [data-slot='button'] {
+    border-color: hsl(var(--border));
+  }
+
+  /* Catch-all nav/footer chrome. Excludes the app navbars, the mobile menu and
+     react-day-picker's `<nav>` (`.rdp-nav`), which sits over the month caption. */
+  nav:not([data-app-navbar]):not([data-mobile-menu]):not([data-flat-nav]):not(.rdp-nav) {
+    background-color: hsl(var(--background) / 0.95);
+  }
+  footer:not([data-mobile-menu]) {
+    background-color: hsl(var(--card) / 0.5);
+  }
+
+  /* Legacy `*card*` class fallback for card-like containers that predate the
+     `bg-card` utility. Utilities still win. */
+  [class*='card']:not([class*='/card']):not([class*='card:']):not([class*='card-']):not(
+      [class*='bg-card']
+    ):not([class*='from-card']):not([class*='via-card']):not([class*='to-card']):not(
+      [class*='ring-offset-card']
+    ),
+  [class*='Card']:not([class*='/Card']):not([class*='Card:']):not([class*='Card-']):not(
+      [class*='bg-Card']
+    ):not([class*='from-Card']):not([class*='via-Card']):not([class*='to-Card']):not(
+      [class*='ring-offset-Card']
+    ) {
+    background-color: hsl(var(--card));
+    border-color: hsl(var(--border));
   }
 }
 

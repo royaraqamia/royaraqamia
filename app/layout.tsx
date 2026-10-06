@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import './global.css';
-import './dark-theme-override.css';
 import './toast.css';
 import { RoyaToaster } from '@/frontend/ui/shared/toaster';
 import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';

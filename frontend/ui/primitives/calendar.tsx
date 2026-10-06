@@ -78,7 +78,7 @@ const calendarClassNames: Partial<ClassNames> = {
   month: 'relative w-full space-y-4',
   /* Overriding `classNames` replaces react-day-picker's defaults rather than
      merging them, so the nav loses its built-in `rdp-nav` hook. That hook is
-     what `app/dark-theme-override.css` excludes from its global
+     what `app/global.css` excludes from its base-layer
      `nav { background-color: hsl(var(--background) / 0.95) }` rule; without it
      the nav paints an opaque slab over the month caption. Keep `rdp-nav`
      explicitly. */
