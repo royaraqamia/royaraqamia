@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Navbar } from '../../frontend/ui/Navbar';
 import { Footer } from '../../frontend/ui/Footer';
+import { SectionTitle, SectionTitleHighlight } from '../../frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
   title: 'سياسة الأمان',
@@ -34,10 +35,10 @@ export default function SecurityPage() {
       <main id="main-content" className="flex-1 pt-24 pb-16 md:pt-32 md:pb-24" dir="rtl">
         <div className="cv-auto mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Hero Header Section */}
-          <header className="mb-12 text-start">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4 leading-tight">
-              سياسة الأمان
-            </h1>
+          <header className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
+            <SectionTitle as="h1">
+              سياسة <SectionTitleHighlight>الأمان</SectionTitleHighlight>
+            </SectionTitle>
           </header>
 
           {/* SLA Performance Metrics Section */}

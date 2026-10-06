@@ -1,4 +1,5 @@
 ﻿import type { Metadata } from 'next';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
   title: 'سياسة الخصوصيَّة',
@@ -35,10 +36,10 @@ export default function PrivacyPage() {
 
       <main className="cv-auto max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-16 lg:py-20">
         {/* Hero Header */}
-        <header className="mb-10 sm:mb-14 pb-8 sm:pb-12">
-          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-foreground mb-4 leading-tight">
-            سياسة الخصوصيَّة
-          </h1>
+        <header className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
+          <SectionTitle as="h1">
+            سياسة <SectionTitleHighlight>الخصوصيَّة</SectionTitleHighlight>
+          </SectionTitle>
         </header>
 
         {/* Content Stream */}
