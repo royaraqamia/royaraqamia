@@ -138,6 +138,8 @@ export interface RateHealth {
   lastSuccessAt: string | null;
   providerQuoteDate: string | null;
   stale: boolean;
+  /** Dual-rate codes whose market value the board is holding from an earlier sync. */
+  staleParallels: string[];
 }
 
 export const RateSeriesQuerySchema = z.object({

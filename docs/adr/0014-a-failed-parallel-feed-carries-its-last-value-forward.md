@@ -10,12 +10,13 @@ snapshot held a perfectly good number. That is the wrong failure mode for a page
 point is the market rate.
 
 We decided that when a sync omits a currency's parallel variant, `buildBoard` falls back to
-the previous snapshot's variant, keeping its **original quote date**, as long as that value is
-no older than **48 hours**. A single missed scrape therefore no longer blanks the page, while
-a second consecutive miss — or a value already older than the window — still degrades to the
-official rate, so ADR-0013 remains the terminal state rather than the immediate one. The
-source failure still raises the Sentry alert it always did — carrying the value forward does
-not hide that a feed is down, it only stops one missed scrape from emptying the page.
+the **most recent value any snapshot in the last 30 days carried**, keeping its **original
+quote date**. The fallback is no longer tied to the immediately preceding snapshot, so a run
+of failed scrapes — the normal shape of a blocked source — keeps the market figure on the
+page instead of blanking it. Only when nothing in the window carries a value does the
+currency degrade to the official rate, so ADR-0013 remains the terminal state. The source
+failure still raises the Sentry alert it always did — holding the last value does not hide
+that a feed is down, it only stops the outage from emptying the page.
 
 ## Considered options
 
@@ -32,6 +33,7 @@ not hide that a feed is down, it only stops one missed scrape from emptying the 
 The parallel variant keeps its own `asOf` — the carried value's original date — and a surface
 flags it: when the shown basis is parallel and its value predates the board's provider quote
 date, the converter notes the market date (`بيانات السوق بتاريخ …`) so a carried number is
-never read as live. The window is a named option (`parallelCarryForwardMs`, default 48h) so it
+never read as live. `/api/rates/health` lists the codes being held this way under
+`staleParallels`. The window is a named option (`parallelLastKnownMs`, default 30 days) so it
 can be tuned or pinned in tests. `refresh` and the stored snapshots are untouched; only
 `getBoard` carries, so `getSeries` continues to plot exactly what each sync knew.

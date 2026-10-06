@@ -19,6 +19,12 @@ export interface RateSnapshot {
   parallel_rates: Record<string, RateVariant>;
 }
 
+/** Just the parallel channel of a snapshot, for the last-known lookup (ADR-0014). */
+export interface ParallelSnapshot {
+  fetched_at: string;
+  parallel_rates: Record<string, RateVariant>;
+}
+
 export type RateSyncStatus = 'running' | 'success' | 'failure';
 
 export interface RateSyncRun {
@@ -56,6 +62,8 @@ export interface RatesRepository {
   getLatestSnapshot(): Promise<RateSnapshot | null>;
   getSnapshotBefore(fetchedAt: string): Promise<RateSnapshot | null>;
   getSnapshotsSince(sinceIso: string): Promise<RateSnapshot[]>;
+  /** The parallel channel of every snapshot since `sinceIso`, newest first. */
+  getParallelsSince(sinceIso: string): Promise<ParallelSnapshot[]>;
   insertSnapshot(input: InsertSnapshotInput): Promise<RateSnapshot>;
   startSyncRun(provider: string): Promise<string>;
   finishSyncRun(runId: string, input: FinishSyncRunInput): Promise<void>;

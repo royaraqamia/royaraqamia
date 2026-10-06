@@ -3,6 +3,7 @@ import type { MetalPriceProvider } from '@/backend/clients/rates/metal-price-pro
 import type { RateVariantProvider } from '@/backend/clients/rates/variant-rate-provider';
 import type {
   RatesRepository,
+  ParallelSnapshot,
   RateSnapshot,
   RateVariant,
 } from '@/backend/repositories/rates/rates-repository';
@@ -31,8 +32,8 @@ export interface RatesServiceOptions {
   now?: () => Date;
   staleAfterMs?: number;
   staleQuoteAfterMs?: number;
-  /** How long a currency keeps its last parallel value when a sync omits it. */
-  parallelCarryForwardMs?: number;
+  /** How far back the board looks for a currency's last known parallel value. */
+  parallelLastKnownMs?: number;
   logger?: RatesLogger;
 }
 
@@ -49,11 +50,11 @@ const DEFAULT_STALE_QUOTE_AFTER_MS = 96 * 60 * 60 * 1000;
 
 /**
  * A parallel feed is an unversioned third-party source that can fail on any
- * sync. Rather than blank the market value the moment one scrape misses, the
- * board carries the previous snapshot's value forward for this long before
- * degrading to the official rate (ADR-0014).
+ * sync, so rather than blank the market value the board falls back to the last
+ * value it ever received, as long as it is within this window (ADR-0014). The
+ * value keeps its original quote date so the page can age it honestly.
  */
-const DEFAULT_PARALLEL_CARRY_FORWARD_MS = 48 * 60 * 60 * 1000;
+const DEFAULT_PARALLEL_LAST_KNOWN_MS = 30 * 24 * 60 * 60 * 1000;
 
 const RANGE_DAYS: Record<RateRange, number> = {
   '1W': 7,
@@ -105,7 +106,7 @@ export class RatesService {
   private readonly now: () => Date;
   private readonly staleAfterMs: number;
   private readonly staleQuoteAfterMs: number;
-  private readonly parallelCarryForwardMs: number;
+  private readonly parallelLastKnownMs: number;
   private readonly log: RatesLogger;
 
   constructor(
@@ -118,8 +119,7 @@ export class RatesService {
     this.now = options.now ?? (() => new Date());
     this.staleAfterMs = options.staleAfterMs ?? DEFAULT_STALE_AFTER_MS;
     this.staleQuoteAfterMs = options.staleQuoteAfterMs ?? DEFAULT_STALE_QUOTE_AFTER_MS;
-    this.parallelCarryForwardMs =
-      options.parallelCarryForwardMs ?? DEFAULT_PARALLEL_CARRY_FORWARD_MS;
+    this.parallelLastKnownMs = options.parallelLastKnownMs ?? DEFAULT_PARALLEL_LAST_KNOWN_MS;
     this.log = options.logger ?? logger;
   }
 
@@ -211,8 +211,12 @@ export class RatesService {
   async getBoard(): Promise<RatesBoard | null> {
     const latest = await this.repository.getLatestSnapshot();
     if (!latest) return null;
-    const previous = await this.repository.getSnapshotBefore(latest.fetched_at);
-    return this.buildBoard(latest, previous);
+    const since = new Date(this.now().getTime() - this.parallelLastKnownMs).toISOString();
+    const [previous, parallels] = await Promise.all([
+      this.repository.getSnapshotBefore(latest.fetched_at),
+      this.repository.getParallelsSince(since),
+    ]);
+    return this.buildBoard(latest, previous, this.lastKnownParallels(parallels));
   }
 
   async getSeries(
@@ -257,9 +261,11 @@ export class RatesService {
   }
 
   async getHealth(): Promise<RateHealth> {
-    const [lastRun, latest] = await Promise.all([
+    const since = new Date(this.now().getTime() - this.parallelLastKnownMs).toISOString();
+    const [lastRun, latest, parallels] = await Promise.all([
       this.repository.getLastSuccessfulRun(),
       this.repository.getLatestSnapshot(),
+      this.repository.getParallelsSince(since),
     ]);
 
     const fetchedAt = latest?.fetched_at ?? lastRun?.finished_at ?? null;
@@ -267,41 +273,62 @@ export class RatesService {
       fetchedAt === null ||
       this.now().getTime() - new Date(fetchedAt).getTime() > this.staleAfterMs;
 
+    const lastKnown = this.lastKnownParallels(parallels);
+    const codes = new Set([...Object.keys(latest?.parallel_rates ?? {}), ...lastKnown.keys()]);
+    const staleParallels = latest
+      ? [...codes].filter((code) => {
+          const effective = this.effectiveParallel(latest, lastKnown, code);
+          return effective !== undefined && effective.date < latest.provider_quote_date;
+        })
+      : [];
+
     return {
       ok: lastRun !== null && !stale,
       lastSuccessAt: lastRun?.finished_at ?? null,
       providerQuoteDate: latest?.provider_quote_date ?? null,
       stale,
+      staleParallels,
     };
   }
 
   /**
    * The parallel variant to show for a currency, with the date to display for
-   * it. Normally that is this snapshot's own value; when a sync omitted it — the
-   * market source failed — the previous snapshot's value is carried forward,
-   * keeping its original quote date, until it leaves the carry-forward window.
+   * it. Normally this snapshot's own value; when a sync omitted it — the market
+   * source failed — the last known value from a recent snapshot, keeping its
+   * original quote date (ADR-0014).
    */
   private effectiveParallel(
     latest: RateSnapshot,
-    previous: RateSnapshot | null,
+    lastKnown: Map<string, { variant: RateVariant; date: string }>,
     code: string
   ): { variant: RateVariant; date: string } | undefined {
     const current = latest.parallel_rates[code];
     if (current) {
       return { variant: current, date: current.date ?? latest.fetched_at.slice(0, 10) };
     }
-
-    const prior = previous?.parallel_rates[code];
-    if (!prior || !previous) return undefined;
-
-    const date = prior.date ?? previous.fetched_at.slice(0, 10);
-    const age = this.now().getTime() - new Date(date).getTime();
-    if (!Number.isFinite(age) || age > this.parallelCarryForwardMs) return undefined;
-
-    return { variant: prior, date };
+    return lastKnown.get(code);
   }
 
-  private buildBoard(latest: RateSnapshot, previous: RateSnapshot | null): RatesBoard {
+  /** The newest parallel value per code across recent snapshots, with its date. */
+  private lastKnownParallels(
+    snapshots: ParallelSnapshot[]
+  ): Map<string, { variant: RateVariant; date: string }> {
+    const byCode = new Map<string, { variant: RateVariant; date: string }>();
+    const ordered = [...snapshots].sort((a, b) => b.fetched_at.localeCompare(a.fetched_at));
+    for (const snapshot of ordered) {
+      for (const [code, variant] of Object.entries(snapshot.parallel_rates)) {
+        if (byCode.has(code)) continue;
+        byCode.set(code, { variant, date: variant.date ?? snapshot.fetched_at.slice(0, 10) });
+      }
+    }
+    return byCode;
+  }
+
+  private buildBoard(
+    latest: RateSnapshot,
+    previous: RateSnapshot | null,
+    lastKnown: Map<string, { variant: RateVariant; date: string }>
+  ): RatesBoard {
     const rateEntries = new Map<string, number>([
       [latest.base_currency, 1],
       ...Object.entries(latest.rates),
@@ -316,7 +343,7 @@ export class RatesService {
           previous?.rates[code] ?? (code === latest.base_currency ? 1 : null);
         const previousOfficial = previous?.official_rates[code]?.rate ?? previousReference;
 
-        const effectiveParallel = this.effectiveParallel(latest, previous, code);
+        const effectiveParallel = this.effectiveParallel(latest, lastKnown, code);
         const parallelPrevious = previous?.parallel_rates[code]?.rate ?? null;
 
         return {

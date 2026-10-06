@@ -31,6 +31,7 @@ function makeRepo(overrides: Partial<RatesRepository> = {}): RatesRepository {
     getLatestSnapshot: vi.fn(),
     getSnapshotBefore: vi.fn(),
     getSnapshotsSince: vi.fn(),
+    getParallelsSince: vi.fn().mockResolvedValue([]),
     insertSnapshot: vi.fn(),
     startSyncRun: vi.fn(),
     finishSyncRun: vi.fn(),
@@ -221,7 +222,7 @@ describe('RatesService.getBoard', () => {
     expect(syp.parallel?.changePct).toBeCloseTo(((138 - 136) / 136) * 100);
   });
 
-  it('carries the previous parallel forward when a sync omits it', async () => {
+  it('falls back to the last known parallel when a sync omits it', async () => {
     const repository = makeRepo({
       getLatestSnapshot: vi.fn().mockResolvedValue(
         snapshot({
@@ -230,16 +231,13 @@ describe('RatesService.getBoard', () => {
           parallel_rates: {},
         })
       ),
-      getSnapshotBefore: vi.fn().mockResolvedValue(
-        snapshot({
-          id: 'snap-0',
+      getSnapshotBefore: vi.fn().mockResolvedValue(null),
+      getParallelsSince: vi.fn().mockResolvedValue([
+        {
           fetched_at: '2026-10-03T06:00:00.000Z',
-          provider_quote_date: '2026-10-03',
-          rates: { SYP: 122.1 },
-          official_rates: { SYP: { rate: 121.9, date: '2026-10-03' } },
           parallel_rates: { SYP: { rate: 138, date: '2026-10-03' } },
-        })
-      ),
+        },
+      ]),
     });
     const { service } = makeService(repository);
 
@@ -249,7 +247,7 @@ describe('RatesService.getBoard', () => {
     expect(syp.parallel?.asOf).toBe('2026-10-03');
   });
 
-  it('drops a carried parallel once it leaves the window', async () => {
+  it('leaves the parallel null when no recent snapshot has one', async () => {
     const repository = makeRepo({
       getLatestSnapshot: vi.fn().mockResolvedValue(
         snapshot({
@@ -258,15 +256,8 @@ describe('RatesService.getBoard', () => {
           parallel_rates: {},
         })
       ),
-      getSnapshotBefore: vi.fn().mockResolvedValue(
-        snapshot({
-          id: 'snap-0',
-          fetched_at: '2026-09-01T06:00:00.000Z',
-          provider_quote_date: '2026-09-01',
-          rates: { SYP: 122.1 },
-          parallel_rates: { SYP: { rate: 138, date: '2026-09-01' } },
-        })
-      ),
+      getSnapshotBefore: vi.fn().mockResolvedValue(null),
+      getParallelsSince: vi.fn().mockResolvedValue([]),
     });
     const { service } = makeService(repository);
 
@@ -355,5 +346,30 @@ describe('RatesService.getHealth', () => {
     const health = await service.getHealth();
     expect(health.ok).toBe(false);
     expect(health.stale).toBe(true);
+  });
+
+  it('lists market values held from an earlier sync', async () => {
+    const repository = makeRepo({
+      getLastSuccessfulRun: vi
+        .fn()
+        .mockResolvedValue({ finished_at: '2026-10-04T06:00:00.000Z' } as RateSyncRun),
+      getLatestSnapshot: vi.fn().mockResolvedValue(
+        snapshot({
+          provider_quote_date: '2026-10-04',
+          official_rates: {},
+          parallel_rates: {},
+        })
+      ),
+      getParallelsSince: vi.fn().mockResolvedValue([
+        {
+          fetched_at: '2026-10-03T06:00:00.000Z',
+          parallel_rates: { SYP: { rate: 138, date: '2026-10-03' } },
+        },
+      ]),
+    });
+    const { service } = makeService(repository);
+
+    const health = await service.getHealth();
+    expect(health.staleParallels).toEqual(['SYP']);
   });
 });

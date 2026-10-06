@@ -3,6 +3,7 @@ import type { Database, Json, Tables } from '@/backend/models/database.types';
 import type {
   FinishSyncRunInput,
   InsertSnapshotInput,
+  ParallelSnapshot,
   RatesRepository,
   RateSnapshot,
   RateSyncRun,
@@ -107,6 +108,19 @@ export function createRatesRepository(supabase: SupabaseClient<Database>): Rates
         .order('fetched_at', { ascending: true });
       if (error) throw new Error(error.message);
       return (data ?? []).map(mapSnapshot);
+    },
+
+    async getParallelsSince(sinceIso: string): Promise<ParallelSnapshot[]> {
+      const { data, error } = await supabase
+        .from('rate_snapshots')
+        .select('fetched_at, parallel_rates')
+        .gte('fetched_at', sinceIso)
+        .order('fetched_at', { ascending: false });
+      if (error) throw new Error(error.message);
+      return (data ?? []).map((row) => ({
+        fetched_at: row.fetched_at,
+        parallel_rates: toVariantRecord(row.parallel_rates),
+      }));
     },
 
     async insertSnapshot(input: InsertSnapshotInput): Promise<RateSnapshot> {
