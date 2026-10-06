@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.53.0] - 2026-10-06
+
+### Added
+- replace the tablet/mobile menu with an app-style bottom tab bar
+
 ## [1.52.0] - 2026-10-06
 
 ### Changed
