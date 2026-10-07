@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.55.0] - 2026-10-07
+
+### Changed
+- use a single logo and brand text size
+- drop the active bottom tab indicator
+- remove the WhatsApp contact CTA
+- add project opencode config and verify command
+
+### Added
+- link the secondary CTA to the community
+- browse services from the hero CTA
+- show the bottom tab bar on auth pages
+
 ## [1.54.0] - 2026-10-06
 
 ### Changed
