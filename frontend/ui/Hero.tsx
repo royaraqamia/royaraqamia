@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { ChevronDown, Star } from 'lucide-react';
 import { LazySection } from './shared/LazySection';
 import { ServicesMenu } from './navbar/ServicesMenu';
@@ -93,13 +94,12 @@ export function Hero() {
                   }
                 />
 
-                <a
-                  href="#portfolio"
+                <Link
+                  href="/community"
                   className="group relative h-13 sm:h-14 w-auto px-6 sm:px-8 rounded-full border border-white/15 hover:border-white/30 bg-white/8 hover:bg-white/8 text-white text-base sm:text-lg font-bold transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-xs flex items-center justify-center gap-3 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
                 >
-                  <span className="relative z-10">نبذة عن أعمالنا</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-white/55 group-hover:bg-white transition-colors" />
-                </a>
+                  <span className="relative z-10">انضم للمجتمع</span>
+                </Link>
               </div>
             </div>
 
