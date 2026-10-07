@@ -65,13 +65,6 @@ export function BottomTabBar() {
                     : 'text-neutral-400 hover:text-neutral-100 active:scale-95'
                 )}
               >
-                <span
-                  aria-hidden="true"
-                  className={cn(
-                    'absolute top-0 h-0.5 w-8 rounded-full bg-violet-400 transition-opacity duration-200',
-                    isActive ? 'opacity-100' : 'opacity-0'
-                  )}
-                />
                 <Icon
                   className={cn(
                     'h-5 w-5 transition-transform duration-200',
