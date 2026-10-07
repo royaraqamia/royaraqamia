@@ -47,6 +47,13 @@ export function maxDownloadBytes(format: DownloadFormat): number {
   return format === 'audio' ? MAX_DOWNLOAD_AUDIO_BYTES : MAX_DOWNLOAD_VIDEO_BYTES;
 }
 
+/**
+ * How long the Media Provider's signed file link stays valid. The provider sets
+ * `DownloadJobFile.expiresAt` from this, and the app treats a ready job as
+ * `expired` once that moment passes — the link is never handed out again.
+ */
+export const DOWNLOAD_LINK_TTL_SECONDS = 5 * 60;
+
 /** The one definition of "a link a Download may target"; shared by the schema and the provider. */
 export function isHttpUrl(value: string): boolean {
   try {

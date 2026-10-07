@@ -1,4 +1,8 @@
-import { isHttpUrl, type DownloadJobFile } from '@/shared/contracts/downloader';
+import {
+  DOWNLOAD_LINK_TTL_SECONDS,
+  isHttpUrl,
+  type DownloadJobFile,
+} from '@/shared/contracts/downloader';
 import {
   MediaProviderError,
   type MediaFetchInput,
@@ -6,7 +10,7 @@ import {
   type MediaProvider,
 } from './media-provider';
 
-const MEDIA_TTL_MS = 5 * 60 * 1000;
+const MEDIA_TTL_MS = DOWNLOAD_LINK_TTL_SECONDS * 1000;
 
 /**
  * Tracer scaffolding (#150). The self-hosted Cobalt provider arrives in #151,

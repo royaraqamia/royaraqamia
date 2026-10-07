@@ -10,12 +10,16 @@ export interface CreateDownloadJobCommand {
   format: DownloadFormat;
 }
 
-/** The mutable half of a Download Job; every call also records an event. */
+/**
+ * The mutable half of a Download Job; every call also records an event.
+ * `file: null` clears a stored link (the `expired` transition), while leaving it
+ * out leaves the existing fields untouched.
+ */
 export interface DownloadJobUpdate {
   status: DownloadStatus;
   platform?: string | null;
   error?: string | null;
-  file?: DownloadJobFile;
+  file?: DownloadJobFile | null;
 }
 
 /**

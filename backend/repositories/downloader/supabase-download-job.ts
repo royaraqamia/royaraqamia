@@ -58,16 +58,17 @@ export class SupabaseDownloadJobRepository implements DownloadJobRepository {
   }
 
   async updateStatus(id: string, patch: DownloadJobUpdate): Promise<DownloadJob> {
+    const clearFile = patch.file === null;
     const { data, error } = await this.supabase
       .from('download_jobs')
       .update({
         status: patch.status,
         platform: patch.platform ?? undefined,
         error: patch.error ?? undefined,
-        file_url: patch.file?.url ?? undefined,
-        file_filename: patch.file?.filename ?? undefined,
-        file_size_bytes: patch.file?.sizeBytes ?? undefined,
-        file_expires_at: patch.file?.expiresAt ?? undefined,
+        file_url: clearFile ? null : (patch.file?.url ?? undefined),
+        file_filename: clearFile ? null : (patch.file?.filename ?? undefined),
+        file_size_bytes: clearFile ? null : (patch.file?.sizeBytes ?? undefined),
+        file_expires_at: clearFile ? null : (patch.file?.expiresAt ?? undefined),
         updated_at: new Date().toISOString(),
       })
       .eq('id', id)

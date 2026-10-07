@@ -59,7 +59,7 @@ class InMemoryDownloadJobRepository implements DownloadJobRepository {
       status: patch.status,
       platform: patch.platform !== undefined ? patch.platform : prev.platform,
       error: patch.error !== undefined ? patch.error : prev.error,
-      file: patch.file ?? prev.file,
+      file: patch.file !== undefined ? patch.file : prev.file,
       updatedAt: new Date().toISOString(),
     };
     this.jobs.set(id, next);
@@ -230,6 +230,7 @@ describe('DownloaderService.get', () => {
 
     const job = await later.get(created.id);
     expect(job.status).toBe('expired');
+    expect(job.file).toBeNull();
     expect(repository.events.map((event) => event.status)).toContain('expired');
   });
 });

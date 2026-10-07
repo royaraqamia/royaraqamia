@@ -109,7 +109,7 @@ export class DownloaderService {
     if (!job) throw new DownloadJobNotFoundError();
 
     if (job.status === 'ready' && job.file && new Date(job.file.expiresAt) <= this.now()) {
-      return this.repository.updateStatus(job.id, { status: 'expired' });
+      return this.repository.updateStatus(job.id, { status: 'expired', file: null });
     }
     return job;
   }
