@@ -8,11 +8,10 @@ describe('Hero', () => {
     expect(screen.getByText('شريكك الاستراتيجي')).toBeInTheDocument();
   });
 
-  it('renders the CTA button with WhatsApp link', () => {
+  it('renders the browse-services CTA that opens the services menu', () => {
     render(<Hero />);
-    const link = screen.getByText('تواصل معنا الآن');
-    expect(link).toBeInTheDocument();
-    expect(link.closest('a')).toHaveAttribute('href', expect.stringContaining('wa.me'));
+    const trigger = screen.getByRole('button', { name: /تصفَّح خدماتنا/ });
+    expect(trigger).toBeInTheDocument();
   });
 
   it('renders the description text', () => {

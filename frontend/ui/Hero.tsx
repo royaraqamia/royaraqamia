@@ -1,6 +1,6 @@
-import { Star } from 'lucide-react';
+import { ChevronDown, Star } from 'lucide-react';
 import { LazySection } from './shared/LazySection';
-import { getWhatsAppUrl } from '@/frontend/shared/constants';
+import { ServicesMenu } from './navbar/ServicesMenu';
 
 export function Hero() {
   return (
@@ -77,18 +77,21 @@ export function Hero() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row gap-3.5 justify-center lg:justify-start pt-3 items-center w-full sm:w-auto">
-                <a
-                  href={getWhatsAppUrl()}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="تواصل معنا عبر واتساب"
-                  className="group relative h-13 sm:h-14 w-auto min-w-44 sm:min-w-50 flex items-center justify-center px-6 sm:px-8 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white text-base sm:text-lg font-bold transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)] hover:shadow-[0_15px_35px_-5px_rgba(147,51,234,0.7)] border border-white/20 overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-                >
-                  {/* Sheen effect on hover */}
-                  <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+                <ServicesMenu
+                  trigger={
+                    <button
+                      type="button"
+                      aria-haspopup="menu"
+                      className="group relative h-13 sm:h-14 w-auto min-w-44 sm:min-w-50 flex items-center justify-center gap-2.5 px-6 sm:px-8 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white text-base sm:text-lg font-bold transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)] hover:shadow-[0_15px_35px_-5px_rgba(147,51,234,0.7)] border border-white/20 overflow-hidden cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+                    >
+                      {/* Sheen effect on hover */}
+                      <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
 
-                  <span className="relative z-10 flex items-center gap-3">تواصل معنا الآن</span>
-                </a>
+                      <span className="relative z-10 flex items-center gap-3">تصفَّح خدماتنا</span>
+                      <ChevronDown className="relative z-10 h-5 w-5 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                    </button>
+                  }
+                />
 
                 <a
                   href="#portfolio"

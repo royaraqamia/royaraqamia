@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useState, useEffect } from 'react';
-import Link from 'next/link';
 import { ChevronDown, type LucideIcon } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
@@ -14,7 +13,10 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/frontend/ui/primitives/sheet';
-import { useIsMobile } from '@/frontend/ui/shared/use-is-mobile';
+import { BELOW_LG_MEDIA_QUERY } from '@/frontend/ui/shared/breakpoints';
+import { useMediaQuery } from '@/frontend/ui/shared/use-media-query';
+
+import { ServicesMenuItems } from './ServicesMenuItems';
 
 export interface NavLink {
   visible?: boolean;
@@ -37,8 +39,9 @@ interface NavDropdownProps {
   className?: string;
   /**
    * Renders the menu as an overlay instead of an inline hover panel: a bottom
-   * `Sheet` below `sm` and a `Popover` above it — the same pattern as the
-   * country-code and currency selectors. Used by the tablet/mobile brand menu.
+   * `Sheet` below `lg` (phone + tablet) and a `Popover` above it — the same
+   * pattern as the country-code and currency selectors. Used by the
+   * tablet/mobile brand menu.
    */
   overlay?: boolean;
 }
@@ -53,7 +56,7 @@ export function NavDropdown({
   overlay = false,
 }: NavDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const isMobile = useIsMobile();
+  const isSheetViewport = useMediaQuery(BELOW_LG_MEDIA_QUERY);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -119,88 +122,14 @@ export function NavDropdown({
     : null;
 
   const subItemsList = (
-    <div className="flex flex-col space-y-0.5">
-      {link.subItems?.map((sub: NavLink, subIndex: number) => {
-        const itemClasses = `group/item relative flex items-center justify-between w-full text-start text-sm font-medium rounded-xl px-4 py-3 transition-safe duration-150 ease-out text-neutral-200 hover:bg-violet-950/40 hover:text-violet-300 focus-visible:bg-violet-950/40 focus-visible:text-violet-300 focus-visible:outline-none select-none ${
-          subIndex < (link.subItems?.length || 0) - 1 ? 'border-b border-neutral-800/60' : ''
-        }`;
-
-        if (sub.comingSoon) {
-          return (
-            <div
-              key={sub.href}
-              role="menuitem"
-              aria-disabled="true"
-              aria-label={`${sub.label} - غير متاح بعد`}
-              className={`group/item relative flex items-center justify-between w-full text-start text-sm font-medium rounded-xl px-4 py-3 text-neutral-500 cursor-not-allowed select-none ${
-                subIndex < (link.subItems?.length || 0) - 1 ? 'border-b border-neutral-800/60' : ''
-              }`}
-            >
-              <span className="flex min-w-0 items-center gap-2.5">
-                {sub.icon && (
-                  <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/item:text-violet-400" />
-                )}
-                <span className="truncate">{sub.label}</span>
-              </span>
-            </div>
-          );
-        }
-
-        if (sub.isRoute) {
-          return (
-            <Link
-              key={sub.href}
-              href={sub.href}
-              className={itemClasses}
-              role="menuitem"
-              onClick={() => {
-                setIsOpen(false);
-                window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-              }}
-            >
-              <span className="flex min-w-0 items-center gap-2.5">
-                {sub.icon && (
-                  <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/item:text-violet-400" />
-                )}
-                <span className="truncate">{sub.label}</span>
-              </span>
-              <span className="text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
-                ←
-              </span>
-            </Link>
-          );
-        }
-
-        return (
-          <a
-            key={sub.href}
-            href={sub.href}
-            onClick={(e) => {
-              setIsOpen(false);
-              const hashMatch = sub.href.match(/#(.+)$/);
-              if (hashMatch) {
-                handleHashClick(e, `#${hashMatch[1]}`);
-              }
-            }}
-            className={itemClasses}
-            role="menuitem"
-          >
-            <span className="flex min-w-0 items-center gap-2.5">
-              {sub.icon && (
-                <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/item:text-violet-400" />
-              )}
-              <span className="truncate">{sub.label}</span>
-            </span>
-            <span className="text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
-              ←
-            </span>
-          </a>
-        );
-      })}
-    </div>
+    <ServicesMenuItems
+      subItems={link.subItems}
+      onSelect={() => setIsOpen(false)}
+      handleHashClick={handleHashClick}
+    />
   );
 
-  // Overlay presentation: bottom sheet below `sm`, popover on larger screens.
+  // Overlay presentation: bottom sheet below `lg` (phone + tablet), popover above.
   if (overlay) {
     const overlayTrigger = (
       <button
@@ -214,7 +143,7 @@ export function NavDropdown({
       </button>
     );
 
-    if (isMobile) {
+    if (isSheetViewport) {
       return (
         <Sheet open={isOpen} onOpenChange={setIsOpen}>
           <SheetTrigger asChild>{overlayTrigger}</SheetTrigger>

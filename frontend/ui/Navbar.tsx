@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
-import { House, Package, Users, Rocket, CalendarClock } from 'lucide-react';
+import { House, Users } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
 import { DesktopNav } from './navbar/DesktopNav';
+import { SERVICES_LINK } from './navbar/services-link';
 import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
-import { APP_PRODUCTS } from './app-shell/constants';
 
 const NotificationDropdown = dynamic(
   () => import('./shared/notification-dropdown').then((m) => m.NotificationDropdown),
@@ -107,35 +107,7 @@ export function Navbar() {
       isRoute: false,
       visible: true,
     },
-    {
-      href: '#projects',
-      label: 'خدماتنا',
-      icon: Package,
-      isRoute: false,
-      visible: true,
-      hasDropdown: true,
-      dropdownKey: 'projects',
-      subItems: [
-        {
-          href: '/request-project',
-          label: 'طلب بناء مشروع',
-          isRoute: true,
-          icon: Rocket,
-        },
-        {
-          href: '/hire',
-          label: 'طلب التَّعاقُد الشَّهري',
-          isRoute: true,
-          icon: CalendarClock,
-        },
-        ...APP_PRODUCTS.filter((p) => !p.hidden).map((p) => ({
-          href: p.landingPath,
-          label: p.label,
-          isRoute: true,
-          icon: p.icon,
-        })),
-      ],
-    },
+    SERVICES_LINK,
     {
       href: '/community',
       label: 'المجتمع',
