@@ -77,4 +77,20 @@ describe('CobaltMediaProvider.dispatch', () => {
 
     await expect(provider.dispatch(INPUT)).rejects.toBeInstanceOf(MediaProviderError);
   });
+
+  it('reports unavailable when the host does not acknowledge in time', async () => {
+    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(
+      (_input, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+        })
+    );
+    const provider = new CobaltMediaProvider({
+      url: 'https://host.example/job',
+      timeoutMs: 5,
+      fetchImpl,
+    });
+
+    await expect(provider.dispatch(INPUT)).rejects.toThrow('غير متاحة');
+  });
 });

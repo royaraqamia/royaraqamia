@@ -13,7 +13,13 @@ export interface CobaltMediaProviderConfig {
   fetchImpl?: typeof fetch;
 }
 
-const DEFAULT_TIMEOUT_MS = 10000;
+/**
+ * How long the app waits for the host to *acknowledge* a job (not to finish it).
+ * Generous on purpose: a free host that sleeps between visits needs time to cold
+ * start, and a late acknowledgement should delay a job rather than fail it. Keep
+ * it under the create route's `maxDuration` so the `after()` dispatch can finish.
+ */
+const DEFAULT_TIMEOUT_MS = 55000;
 
 /**
  * Adapter for the self-hosted Cobalt host that actually extracts and converts

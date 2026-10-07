@@ -1,10 +1,11 @@
 # Media Downloader provider wire contract
 
 The Next app never extracts or converts media (ADR-0017). It owns the **Download Job**
-and delegates the work to a self-hosted **Cobalt** host over two HTTPS calls. This
+and delegates the work to a self-hosted **media host** over two HTTPS calls. This
 document is the seam's external contract: the host lives outside the monorepo, so its
 implementer (and any future hosted fallback behind the same `MediaProvider` port)
-must match it exactly.
+must match it exactly. A reference implementation (yt-dlp) lives at
+<https://github.com/royaraqamia/downloader-host>.
 
 The app picks the real host when `DOWNLOADER_PROVIDER_URL` is set; otherwise it uses
 the in-repo stub, which performs the callback below against itself so the whole path
@@ -32,7 +33,10 @@ Content-Type: application/json
 
 The host acknowledges with any `2xx` (e.g. `202 Accepted`) once it has accepted the
 job. It must then do the work **off the request path** and report back via the
-callback — the app does not wait for the file.
+callback — the app does not wait for the file. Reply `202` immediately, before
+doing the work: the app waits up to 55s for this acknowledgement (so a cold or
+sleeping host is tolerated), but a host that answers later than that, or not at
+all, makes the app record the job as `failed` with "خدمة التنزيل غير متاحة الآن.".
 
 A `4xx` means the link cannot be handled (surfaced to the visitor as a `failed` job
 with "هذا الرابط غير مدعوم."); any other failure or a timeout surfaces as
