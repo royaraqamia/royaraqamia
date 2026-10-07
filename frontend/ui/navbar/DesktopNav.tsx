@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Button } from '../primitives/button';
-import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import NextImage from 'next/image';
 import { NavDropdown, type NavLink } from './NavDropdown';
 
@@ -180,26 +178,6 @@ export function DesktopNav({
       <div className="hidden lg:flex items-center gap-2 xl:gap-3 shrink-0">
         <NotificationDropdown />
         <UserDropdown />
-        <a
-          href={getWhatsAppUrl()}
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label="احجز مكالمة مجانية عبر واتساب"
-          className="group/cta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 rounded-full"
-        >
-          <Button
-            className={`relative overflow-hidden font-bold transition-safe duration-300 cubic-bezier(0.16,1,0.3,1) motion-reduce:transition-none rounded-full btn-hover-lift btn-scale-hover bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white cursor-pointer active:scale-[0.98] border-0 ${
-              isScrolled
-                ? 'h-10 text-xs xl:text-sm px-5 shadow-sm shadow-violet-600/20'
-                : 'h-11 text-sm xl:text-base px-6 shadow-lg shadow-violet-600/25 hover:shadow-violet-600/40'
-            }`}
-          >
-            <span className="relative z-10 flex items-center gap-2 tracking-tight">
-              تواصل معنا الآن
-            </span>
-            <span className="absolute inset-0 -translate-x-full group-hover/cta:translate-x-full transition-transform duration-1000 ease-in-out motion-reduce:hidden bg-linear-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
-          </Button>
-        </a>
       </div>
     </>
   );
