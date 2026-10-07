@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { LazyImage } from '../../frontend/ui/LazyImage';
 import { Navbar } from '../../frontend/ui/Navbar';
-import { Footer } from '../../frontend/ui/Footer';
 
 export const metadata: Metadata = {
   title: 'معلومات الشَّركة',
@@ -145,7 +144,6 @@ export default function AppInfoPage() {
           </div>
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

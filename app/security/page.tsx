@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { Navbar } from '../../frontend/ui/Navbar';
-import { Footer } from '../../frontend/ui/Footer';
 import { SectionTitle, SectionTitleHighlight } from '../../frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
@@ -438,8 +437,6 @@ export default function SecurityPage() {
           </div>
         </div>
       </main>
-
-      <Footer />
     </div>
   );
 }
