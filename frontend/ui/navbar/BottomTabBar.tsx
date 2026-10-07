@@ -37,12 +37,10 @@ const TABS: BottomTab[] = [
 /**
  * App-style bottom tab bar for tablet/mobile (`< lg`). Pairs with the fixed
  * top navbar; the top inline nav links and desktop action cluster take over at
- * `lg`. Auth flows opt out so the sign-in screens keep a clear canvas.
+ * `lg`.
  */
 export function BottomTabBar() {
   const pathname = usePathname();
-
-  if (pathname?.startsWith('/auth')) return null;
 
   return (
     <nav

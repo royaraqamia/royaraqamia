@@ -34,9 +34,11 @@ describe('BottomTabBar', () => {
     expect(screen.getByRole('link', { name: 'حسابي' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('hides on auth routes', () => {
+  it('renders on auth routes', () => {
     mockPathname.mockReturnValue('/auth/login');
-    const { container } = render(<BottomTabBar />);
-    expect(container).toBeEmptyDOMElement();
+    render(<BottomTabBar />);
+    expect(screen.getByRole('link', { name: 'الرَّئيسيَّة' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('link', { name: 'المجتمع' })).toHaveAttribute('href', '/community');
+    expect(screen.getByRole('link', { name: 'حسابي' })).toHaveAttribute('href', '/account');
   });
 });
