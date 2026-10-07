@@ -32,6 +32,6 @@ export class StubMediaProvider implements MediaProvider {
       expiresAt,
     };
 
-    return { platform: hostname, file };
+    return { platform: hostname, durationSeconds: 0, file };
   }
 }

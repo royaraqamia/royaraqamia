@@ -83,6 +83,17 @@ export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
   };
 }
 
+const DOWNLOAD_WINDOW_MS = 10 * 60 * 1000;
+
+export function downloaderRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `downloader:${ip}`,
+    limit: 10,
+    windowMs: DOWNLOAD_WINDOW_MS,
+    message: 'تم تجاوز حدّ الطلب: تنزيل الوسائط محدود بـ 10 طلبات كل 10 دقائق.',
+  };
+}
+
 export function adminEmailBroadcastRateLimitPolicy(adminEmail: string): RateLimitPolicy {
   return {
     key: `admin-email-broadcast:${adminEmail}`,

@@ -7,10 +7,15 @@ interface RateLimitConfig {
   limit: number;
   windowMs: number;
   message: string;
+  /** Deny on a limiter outage instead of allowing through. Use for security-sensitive paths. */
+  failClosed?: boolean;
 }
 
 export async function checkRateLimitApi(config: RateLimitConfig): Promise<HttpResult | null> {
-  if (!(await checkRateLimit(config.key, config.limit, config.windowMs))) {
+  const allowed = await checkRateLimit(config.key, config.limit, config.windowMs, {
+    failClosed: config.failClosed,
+  });
+  if (!allowed) {
     return jsonResult(429, { success: false, error: config.message });
   }
   return null;

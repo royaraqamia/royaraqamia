@@ -8,6 +8,7 @@ import {
   DOWNLOAD_STATUS_LABELS,
   type DownloadFormat,
 } from '@/shared/contracts/downloader';
+import { TURNSTILE_SITE_KEY } from '@/frontend/shared/constants';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import {
@@ -24,7 +25,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/frontend/ui/primitives/select';
+import { Turnstile } from '@/frontend/ui/shared/turnstile';
 import { useDownloadJob } from '@/frontend/state/downloader/use-download-job';
+
+const REQUIRES_TURNSTILE = TURNSTILE_SITE_KEY.length > 0;
 
 const ACCEPTABLE_USE_POINTS = [
   'روابط عامة فقط — لا محتوى محميًّا بـ DRM أو مدفوعًا أو خاصًّا.',
@@ -35,13 +39,18 @@ const ACCEPTABLE_USE_POINTS = [
 export function DownloaderPage() {
   const [url, setUrl] = useState('');
   const [format, setFormat] = useState<DownloadFormat>('video-720p');
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileKey, setTurnstileKey] = useState(0);
   const { job, loading, error, start, reset } = useDownloadJob();
 
   const submitted = job !== null;
+  const blockedByTurnstile = REQUIRES_TURNSTILE && !turnstileToken;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await start(url.trim(), format);
+    await start(url.trim(), format, turnstileToken ?? undefined);
+    setTurnstileToken(null);
+    setTurnstileKey((key) => key + 1);
   }
 
   return (
@@ -58,7 +67,7 @@ export function DownloaderPage() {
       <Card>
         <CardHeader>
           <CardTitle>رابط الوسائط</CardTitle>
-          <CardDescription>ألصق رابطًا عامًّا، اختر الصيغة، ثم ابدأ التنزيل.</CardDescription>
+          <CardDescription>ألصق رابطًا عامًّا، اختر الصيغة، ثم ابدأ التنزيل.</CardDescription>
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -99,8 +108,14 @@ export function DownloaderPage() {
               </Select>
             </div>
 
+            {REQUIRES_TURNSTILE && <Turnstile key={turnstileKey} onToken={setTurnstileToken} />}
+
             <div className="flex flex-wrap items-center gap-3">
-              <Button type="submit" isLoading={loading} disabled={url.trim().length === 0}>
+              <Button
+                type="submit"
+                isLoading={loading}
+                disabled={url.trim().length === 0 || blockedByTurnstile}
+              >
                 ابدأ التنزيل
               </Button>
               {submitted && (
@@ -155,6 +170,16 @@ export function DownloaderPage() {
             <li key={point}>{point}</li>
           ))}
         </ul>
+        <p className="mt-3 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+          لطلبات إزالة المحتوى، يُرجَى التّواصل عبر{' '}
+          <a
+            href="mailto:contact@royaraqamia.com"
+            className="font-medium text-primary underline-offset-4 hover:underline"
+          >
+            contact@royaraqamia.com
+          </a>
+          .
+        </p>
       </section>
     </main>
   );

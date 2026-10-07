@@ -38,6 +38,15 @@ export const TERMINAL_DOWNLOAD_STATUSES: readonly DownloadStatus[] = ['ready', '
 
 export const MAX_SOURCE_URL_LENGTH = 2048;
 
+/** Hard caps enforced server-side; the visitor sees them from the copy on the tool page. */
+export const MAX_DOWNLOAD_DURATION_SECONDS = 15 * 60;
+export const MAX_DOWNLOAD_AUDIO_BYTES = 50 * 1024 * 1024;
+export const MAX_DOWNLOAD_VIDEO_BYTES = 200 * 1024 * 1024;
+
+export function maxDownloadBytes(format: DownloadFormat): number {
+  return format === 'audio' ? MAX_DOWNLOAD_AUDIO_BYTES : MAX_DOWNLOAD_VIDEO_BYTES;
+}
+
 /** The one definition of "a link a Download may target"; shared by the schema and the provider. */
 export function isHttpUrl(value: string): boolean {
   try {
@@ -46,6 +55,44 @@ export function isHttpUrl(value: string): boolean {
   } catch {
     return false;
   }
+}
+
+const PRIVATE_IPV4 = (a: number, b: number): boolean => {
+  if (a === 0 || a === 10 || a === 127) return true;
+  if (a === 192 && b === 168) return true;
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 169 && b === 254) return true;
+  return false;
+};
+
+/**
+ * SSRF guard: an http(s) URL whose host is a public name or address. Rejects
+ * loopback and the private/link-local IPv4 ranges, and refuses every IPv6
+ * literal (including IPv4-mapped forms like `::ffff:127.0.0.1`) rather than
+ * trying to classify them. Hostnames that *resolve* to a private address are
+ * the provider host's concern, not this client-side check.
+ */
+export function isPublicHttpUrl(value: string): boolean {
+  if (!isHttpUrl(value)) return false;
+
+  let host: string;
+  try {
+    host = new URL(value).hostname.toLowerCase().replace(/^\[|\]$/g, '');
+  } catch {
+    return false;
+  }
+
+  if (host.length === 0) return false;
+  if (host === 'localhost' || host.endsWith('.localhost')) return false;
+  if (host.includes(':')) return false;
+
+  const octets = host.split('.');
+  if (octets.length === 4 && octets.every((octet) => /^\d+$/.test(octet))) {
+    const [a = -1, b = -1] = octets.map(Number);
+    if (PRIVATE_IPV4(a, b)) return false;
+  }
+
+  return true;
 }
 
 // ------------------------------------------------------------
@@ -60,11 +107,16 @@ export const CreateDownloadJobSchema = z.object({
     .trim()
     .min(1, 'أدخل رابط الوسائط.')
     .max(MAX_SOURCE_URL_LENGTH, 'الرابط طويل جدًّا.')
-    .refine(isHttpUrl, 'الرابط غير صحيح؛ يجب أن يبدأ بـ http أو https.'),
+    .refine(isPublicHttpUrl, 'الرابط غير مدعوم؛ يجب أن يكون رابطًا عامًّا يبدأ بـ http أو https.'),
   format: DownloadFormatSchema,
+  /** Cloudflare Turnstile token; required when the server has a secret configured. */
+  turnstileToken: z.string().trim().max(4096).optional(),
 });
 
 export type CreateDownloadJobInput = z.infer<typeof CreateDownloadJobSchema>;
+
+/** The part of a create request the download pipeline itself needs. */
+export type DownloadRequest = Pick<CreateDownloadJobInput, 'url' | 'format'>;
 
 // ------------------------------------------------------------
 // Entities

@@ -452,14 +452,63 @@ export default function TermsPage() {
             </p>
           </section>
 
-          {/* 11. التَّواصل معنا */}
+          {/* 11. مُنزِّل الوسائط */}
           <section
             id="section-11"
+            className="group rounded-3xl border border-border/60 bg-card/85 p-6 shadow-xs transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:border-primary/30 hover:shadow-md sm:p-8"
+          >
+            <div className="mb-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 font-bold text-primary">
+                11
+              </div>
+              <h2 className="text-xl font-bold text-foreground sm:text-2xl">. مُنزِّل الوسائط</h2>
+            </div>
+            <ul className="space-y-2.5">
+              <li className="flex items-start gap-3">
+                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                <span>
+                  يُتيح مُنزِّل الوسائط حفظ ملفٍّ واحد من رابطٍ عام على منصَّات التَّواصل الاجتماعي،
+                  بحدٍّ أقصى للمدة (15 دقيقة) والحجم.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                <span>
+                  يقتصر على المحتوى العام غير المحميِّ بـ DRM؛ ويُحرَّم استخدامه لتنزيل محتوى لا
+                  تملك حقَّ تنزيله.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                <span>
+                  أنت وحدك المسؤول عن التزامك بشروط المنصَّة المصدر وبحقوق الملكيَّة الفكريَّة.
+                </span>
+              </li>
+              <li className="flex items-start gap-3">
+                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                <span>نحتفظ بالحقِّ في رفض أيِّ رابط أو تعليق الخدمة دون إشعار مُسبَق.</span>
+              </li>
+            </ul>
+            <p className="mt-4 text-muted-foreground">
+              لطلبات إزالة المحتوى، يُرجَى التَّواصل عبر{' '}
+              <a
+                href="mailto:contact@royaraqamia.com"
+                className="font-bold text-primary underline-offset-4 hover:underline"
+              >
+                contact@royaraqamia.com
+              </a>
+              .
+            </p>
+          </section>
+
+          {/* 12. التَّواصل معنا */}
+          <section
+            id="section-12"
             className="group rounded-3xl border border-primary/30 bg-linear-to-br from-primary/10 via-card to-primary/5 p-6 shadow-sm transition-[color,background-color,border-color,box-shadow,transform,opacity] duration-300 hover:shadow-md sm:p-8"
           >
             <div className="mb-4 flex items-center gap-3">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-primary font-bold text-primary-foreground shadow-sm">
-                11
+                12
               </div>
               <h2 className="text-xl font-bold text-foreground sm:text-2xl">. التَّواصل معنا</h2>
             </div>

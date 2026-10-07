@@ -3,11 +3,15 @@ import type { DownloadFormat, DownloadJobFile } from '@/shared/contracts/downloa
 export interface MediaFetchInput {
   url: string;
   format: DownloadFormat;
+  /** Caps the provider must honour, mirrored from the server-side limits. */
+  maxDurationSeconds: number;
+  maxSizeBytes: number;
 }
 
 /** What a Media Provider hands back once a Download is ready. */
 export interface MediaFetchResult {
   platform: string | null;
+  durationSeconds: number;
   file: DownloadJobFile;
 }
 

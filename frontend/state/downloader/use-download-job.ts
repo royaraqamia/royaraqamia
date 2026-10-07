@@ -52,13 +52,13 @@ export function useDownloadJob() {
   );
 
   const start = useCallback(
-    async (url: string, format: DownloadFormat) => {
+    async (url: string, format: DownloadFormat, turnstileToken?: string) => {
       setLoading(true);
       setError(null);
       setJob(null);
       stopPolling();
       try {
-        const created = await createDownloadJob({ url, format });
+        const created = await createDownloadJob({ url, format, turnstileToken });
         setJob(created);
         if (isTerminal(created)) {
           setLoading(false);

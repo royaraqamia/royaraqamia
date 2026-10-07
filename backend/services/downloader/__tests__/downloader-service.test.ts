@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { DownloadJob, DownloadStatus } from '@/shared/contracts/downloader';
+import {
+  MAX_DOWNLOAD_DURATION_SECONDS,
+  MAX_DOWNLOAD_VIDEO_BYTES,
+  type DownloadJob,
+  type DownloadStatus,
+} from '@/shared/contracts/downloader';
 import type {
   CreateDownloadJobCommand,
   DownloadJobRepository,
@@ -13,7 +18,9 @@ import {
 import {
   DownloaderService,
   DownloadJobNotFoundError,
+  type DownloaderServiceDeps,
 } from '@/backend/services/downloader/downloader-service';
+import type { ConcurrencyGate, SlotReleaser } from '@/backend/clients/concurrency-gate';
 
 class InMemoryDownloadJobRepository implements DownloadJobRepository {
   private seq = 0;
@@ -74,6 +81,7 @@ const INPUT = { url: 'https://example.com/v/1', format: 'video-720p' } as const;
 
 const READY_RESULT: MediaFetchResult = {
   platform: 'example.com',
+  durationSeconds: 120,
   file: {
     url: 'https://media.example.com/x.mp4',
     filename: 'x.mp4',
@@ -82,9 +90,22 @@ const READY_RESULT: MediaFetchResult = {
   },
 };
 
-function makeService(outcome: MediaFetchResult | Error, now?: () => Date) {
+class StubGate implements ConcurrencyGate {
+  releaseCalls = 0;
+
+  constructor(private readonly available: boolean) {}
+
+  async acquire(): Promise<SlotReleaser | null> {
+    if (!this.available) return null;
+    return async () => {
+      this.releaseCalls += 1;
+    };
+  }
+}
+
+function makeService(outcome: MediaFetchResult | Error, deps: DownloaderServiceDeps = {}) {
   const repository = new InMemoryDownloadJobRepository();
-  const service = new DownloaderService(repository, new StubProvider(outcome), now);
+  const service = new DownloaderService(repository, new StubProvider(outcome), deps);
   return { repository, service };
 }
 
@@ -136,6 +157,57 @@ describe('DownloaderService.process', () => {
     expect(job.status).toBe('failed');
     expect(job.error).not.toContain('boom');
   });
+
+  it('fails a job whose file exceeds the size cap', async () => {
+    const oversized: MediaFetchResult = {
+      ...READY_RESULT,
+      file: { ...READY_RESULT.file, sizeBytes: MAX_DOWNLOAD_VIDEO_BYTES + 1 },
+    };
+    const { service } = makeService(oversized);
+    const created = await service.create(INPUT);
+
+    await service.process(created.id, INPUT);
+
+    const job = await service.get(created.id);
+    expect(job.status).toBe('failed');
+    expect(job.error).toContain('حجم');
+  });
+
+  it('fails a job whose duration exceeds the cap', async () => {
+    const tooLong: MediaFetchResult = {
+      ...READY_RESULT,
+      durationSeconds: MAX_DOWNLOAD_DURATION_SECONDS + 1,
+    };
+    const { service } = makeService(tooLong);
+    const created = await service.create(INPUT);
+
+    await service.process(created.id, INPUT);
+
+    const job = await service.get(created.id);
+    expect(job.status).toBe('failed');
+    expect(job.error).toContain('مدة الوسائط');
+  });
+
+  it('fails with a busy reason when the capacity gate is full', async () => {
+    const { service } = makeService(READY_RESULT, { capacity: new StubGate(false) });
+    const created = await service.create(INPUT);
+
+    await service.process(created.id, INPUT);
+
+    const job = await service.get(created.id);
+    expect(job.status).toBe('failed');
+    expect(job.error).toContain('مزدحمة');
+  });
+
+  it('releases its capacity slot after processing', async () => {
+    const gate = new StubGate(true);
+    const { service } = makeService(READY_RESULT, { capacity: gate });
+    const created = await service.create(INPUT);
+
+    await service.process(created.id, INPUT);
+
+    expect(gate.releaseCalls).toBe(1);
+  });
 });
 
 describe('DownloaderService.get', () => {
@@ -152,11 +224,9 @@ describe('DownloaderService.get', () => {
     const created = await service.create(INPUT);
     await service.process(created.id, INPUT);
 
-    const later = new DownloaderService(
-      repository,
-      new StubProvider(READY_RESULT),
-      () => new Date('2031-01-01T00:00:00.000Z')
-    );
+    const later = new DownloaderService(repository, new StubProvider(READY_RESULT), {
+      now: () => new Date('2031-01-01T00:00:00.000Z'),
+    });
 
     const job = await later.get(created.id);
     expect(job.status).toBe('expired');
