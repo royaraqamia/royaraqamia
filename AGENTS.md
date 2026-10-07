@@ -12,6 +12,23 @@ Next.js 16 (App Router) + React 19 + TypeScript 7 (strict) + Tailwind CSS 4. Mul
 - `npm test` — unit tests (Vitest)
 - `npm run build` — full build (requires `NEXT_PUBLIC_WHATSAPP_PHONE`)
 
+**Dev server (agents): `npm run dev` (→ `scripts/dev.mjs`) never exits — never run it as a foreground/blocking shell command.**
+
+1. **Prefer Playwright.** Its `webServer` (`playwright.config.ts:73`) starts the server, waits for port `3000`, and tears it down for you. Run browser work as a Playwright test instead of hand-managing the server. (`reuseExistingServer: false` means a stale server on `3000` will fail the run — free the port first.)
+2. **One-off scripts hitting the real server:** use a **single bounded command** that frees port 3000 (a stale server serves old code), starts detached, waits on the port with a deadline, runs your work, then always kills the tree. Shell state does **not** survive between tool calls, so keep it in one call (or persist the PID to a file):
+
+```powershell
+# free port 3000 + clear stale logs (avoids stale code / false readiness); run from the repo root
+Get-NetTCPConnection -LocalPort 3000 -State Listen -EA SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -EA SilentlyContinue }
+$log = "$env:TEMP\dev.log"; Remove-Item $log -EA SilentlyContinue
+$p = Start-Process node -ArgumentList 'scripts/dev.mjs' -WorkingDirectory . -RedirectStandardOutput $log -RedirectStandardError "$env:TEMP\dev.err" -PassThru
+# wait for HTTP readiness, capped so the call always returns (poll the port, not the log)
+$deadline = (Get-Date).AddSeconds(90)
+do { Start-Sleep 2 } while (-not (Get-NetTCPConnection -LocalPort 3000 -State Listen -EA SilentlyContinue) -and (Get-Date) -lt $deadline)
+# <your node/playwright command against http://localhost:3000>
+taskkill /PID $p.Id /T /F
+```
+
 **Core architecture rule:** `controller → service → repository/client`. Controllers are thin. Repositories are the only code that knows the DB. All DI wiring in `backend/config/`.
 
 ## Detailed references
