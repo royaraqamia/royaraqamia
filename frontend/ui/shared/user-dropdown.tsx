@@ -155,9 +155,7 @@ export const UserDropdown = memo(function UserDropdown() {
                     role="menuitem"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
-                        <ClipboardList size={16} />
-                      </div>
+                      <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
                       <span>طلباتي</span>
                     </div>
                   </Link>
@@ -171,9 +169,7 @@ export const UserDropdown = memo(function UserDropdown() {
                       role="menuitem"
                     >
                       <div className="flex items-center gap-2.5">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
-                          <ShieldCheck size={16} />
-                        </div>
+                        <ShieldCheck className="w-4 h-4 shrink-0 text-primary" />
                         <span>الإدارة</span>
                       </div>
                     </Link>
@@ -190,9 +186,7 @@ export const UserDropdown = memo(function UserDropdown() {
                     role="menuitem"
                   >
                     <div className="flex items-center gap-2.5">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-destructive/10 text-destructive group-hover:scale-105 transition-transform">
-                        <LogOut size={16} />
-                      </div>
+                      <LogOut className="w-4 h-4 shrink-0 text-destructive" />
                       <span>تسجيل الخروج</span>
                     </div>
                   </button>
@@ -211,9 +205,7 @@ export const UserDropdown = memo(function UserDropdown() {
                 role="menuitem"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:scale-105 transition-transform">
-                    <User size={16} />
-                  </div>
+                  <User className="w-4 h-4 shrink-0 text-primary" />
                   <span>تسجيل الدُّخول</span>
                 </div>
               </a>
@@ -232,9 +224,7 @@ export const UserDropdown = memo(function UserDropdown() {
                   role="menuitem"
                 >
                   <div className="flex items-center gap-2.5">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 group-hover:scale-105 transition-transform">
-                      <Download size={16} />
-                    </div>
+                    <Download className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
                     <span>تثبيت التَّطبيق</span>
                   </div>
                   <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
