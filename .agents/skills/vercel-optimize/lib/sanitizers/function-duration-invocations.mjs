@@ -4,11 +4,17 @@
 
 export const metadata = {
   id: 'function-duration-invocations',
-  description:
-    'Remove false claims that slow-route data-cache fixes reduce function invocation count.',
+  description: 'Remove false claims that slow-route data-cache fixes reduce function invocation count.',
 };
 
-const STRING_FIELDS = ['what', 'why', 'fix', 'currentBehavior', 'desiredBehavior', 'verify'];
+const STRING_FIELDS = [
+  'what',
+  'why',
+  'fix',
+  'currentBehavior',
+  'desiredBehavior',
+  'verify',
+];
 
 const BAD_INVOCATION_CLAIM =
   /\bfunction invocations?\b[^.!?\n]{0,120}\b(?:drop|drops|fall|falls|decrease|decreases|decline|declines|reduce|reduces|reduced|cut|cuts)\b[^.!?\n]*(?:[.!?]|$)|\b(?:drop|drops|fall|falls|decrease|decreases|decline|declines|reduce|reduces|reduced|cut|cuts)\b[^.!?\n]{0,120}\bfunction invocations?\b[^.!?\n]*(?:[.!?]|$)/gi;

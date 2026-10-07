@@ -44,21 +44,13 @@ export async function applySanitizers(rec, ctx = {}) {
     for (const t of tags) recordSanitizer(rec, t);
     if (result.needsReview) rec.needsReview = true;
     if (result.dropped) {
-      return {
-        kept: false,
-        rec,
-        dropReason: tags[0] ?? `dropped-by:${s.metadata?.id ?? 'unknown'}`,
-      };
+      return { kept: false, rec, dropReason: tags[0] ?? `dropped-by:${s.metadata?.id ?? 'unknown'}` };
     }
   }
 
   if (ctx.framework && ctx.version) {
     const before = (rec.citations ?? []).slice();
-    const { strippedUnknown, strippedVersion } = await sanitizeCitations(
-      rec,
-      ctx.framework,
-      ctx.version
-    );
+    const { strippedUnknown, strippedVersion } = await sanitizeCitations(rec, ctx.framework, ctx.version);
     for (const u of strippedUnknown) recordSanitizer(rec, `unknown-citation:${u}`);
     for (const u of strippedVersion) recordSanitizer(rec, `version-mismatch:${u}`);
     const lostAny = strippedUnknown.length > 0 || strippedVersion.length > 0;

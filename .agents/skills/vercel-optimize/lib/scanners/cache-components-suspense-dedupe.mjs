@@ -22,20 +22,14 @@ export const metadata = {
   trafficIndependent: false,
   description:
     "Default `'use cache'` does not dedupe identical calls across separate `<Suspense>` boundaries on the same render. Each boundary re-invokes the cached function, multiplying function-duration cost and inflating ISR write churn when the output is large.",
-  fix: "Hoist the promise to the page level (`const dataPromise = fetchData()` at the top, passed down to each Suspense child) OR move the shared fetch into a `'use cache: remote'` data-access layer so cross-request and cross-boundary dedupe applies.",
+  fix:
+    "Hoist the promise to the page level (`const dataPromise = fetchData()` at the top, passed down to each Suspense child) OR move the shared fetch into a `'use cache: remote'` data-access layer so cross-request and cross-boundary dedupe applies.",
   citations: [
     'https://nextjs.org/docs/app/api-reference/directives/use-cache',
     'https://nextjs.org/docs/app/api-reference/config/next-config-js/cacheComponents',
     'https://nextjs.org/docs/app/guides/migrating-to-cache-components',
   ],
-  excludeGlobs: [
-    'node_modules/**',
-    '.next/**',
-    'dist/**',
-    '__tests__/**',
-    '**/*.test.*',
-    '**/*.spec.*',
-  ],
+  excludeGlobs: ['node_modules/**', '.next/**', 'dist/**', '__tests__/**', '**/*.test.*', '**/*.spec.*'],
   includeGlobs: [
     '**/page.{ts,tsx,js,jsx}',
     '**/layout.{ts,tsx,js,jsx}',
@@ -67,10 +61,9 @@ export function scan({ files }) {
       pattern: metadata.id,
       file: path,
       line: lineOf(content, first.firstIdx),
-      evidence:
-        first.kind === 'fetch'
-          ? `fetch("${truncate(first.token, 60)}") called ${first.count}× across Suspense boundaries`
-          : `${first.token}() called ${first.count}× across Suspense boundaries`,
+      evidence: first.kind === 'fetch'
+        ? `fetch("${truncate(first.token, 60)}") called ${first.count}× across Suspense boundaries`
+        : `${first.token}() called ${first.count}× across Suspense boundaries`,
       trafficIndependent: metadata.trafficIndependent,
       subtype: first.kind === 'fetch' ? 'fetch-literal' : 'helper-call',
     });
@@ -97,7 +90,9 @@ function findRepeated(content) {
     const name = m[0].replace(/\s*\($/, '').trim();
     record(tokens, name, 'helper', m.index);
   }
-  return [...tokens.values()].filter((t) => t.count >= 2).sort((a, b) => b.count - a.count);
+  return [...tokens.values()]
+    .filter((t) => t.count >= 2)
+    .sort((a, b) => b.count - a.count);
 }
 
 function record(map, token, kind, idx) {

@@ -60,9 +60,7 @@ export function classifyFrameworkSupport(stack = {}) {
 }
 
 function normalizeFramework(value) {
-  const raw = String(value ?? 'unknown')
-    .trim()
-    .toLowerCase();
+  const raw = String(value ?? 'unknown').trim().toLowerCase();
   if (raw === 'nextjs' || raw === 'next.js') return 'next';
   if (raw === 'svelte' || raw === 'svelte-kit') return 'sveltekit';
   return raw || 'unknown';

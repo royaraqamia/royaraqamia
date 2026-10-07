@@ -6,7 +6,7 @@ import { join, dirname, resolve, normalize } from 'node:path';
 
 // Prefer affectedFiles[0] over findingRefs — findingRefs often share the same file.
 export function pickProbeFile(recs) {
-  for (const r of recs ?? []) {
+  for (const r of (recs ?? [])) {
     if (r?.abstain) continue;
     const af = Array.isArray(r?.affectedFiles) ? r.affectedFiles[0] : null;
     if (typeof af === 'string' && af.length > 0) return af;
@@ -43,9 +43,7 @@ export async function detectRepoRoot(probeFile, startDir, maxDepth = 10) {
 export function deriveRootFromSignals(signals, cwd = process.cwd()) {
   const dir = signals?.project?.rootDirectory;
   if (!dir || typeof dir !== 'string') return null;
-  const offset = normalize(dir)
-    .replace(/^\.\/?/, '')
-    .replace(/\/$/, '');
+  const offset = normalize(dir).replace(/^\.\/?/, '').replace(/\/$/, '');
   if (!offset) return null;
   const cwdAbs = resolve(cwd);
   // Match `<root>/<offset>` OR `<root>/<offset>/<more>` — orchestrator may run from a subdir.
@@ -65,24 +63,15 @@ export async function resolveRepoRoot(recs, suppliedRoot, cwd = process.cwd(), s
   if (signals) {
     const apiRoot = deriveRootFromSignals(signals, cwd);
     if (apiRoot) {
-      return {
-        root: apiRoot,
-        source: 'api',
-        probe: null,
-        apiOffset: signals?.project?.rootDirectory ?? null,
-      };
+      return { root: apiRoot, source: 'api', probe: null, apiOffset: signals?.project?.rootDirectory ?? null };
     }
   }
 
   const probe = pickProbeFile(recs);
   if (!probe) {
-    return {
-      root: suppliedRoot ?? '.',
-      source: suppliedRoot ? 'supplied' : 'default',
-      probe: null,
-    };
+    return { root: suppliedRoot ?? '.', source: suppliedRoot ? 'supplied' : 'default', probe: null };
   }
-  if (suppliedRoot && (await fileResolvesAt(suppliedRoot, probe))) {
+  if (suppliedRoot && await fileResolvesAt(suppliedRoot, probe)) {
     return { root: suppliedRoot, source: 'supplied', probe };
   }
   const detected = await detectRepoRoot(probe, suppliedRoot ?? cwd);

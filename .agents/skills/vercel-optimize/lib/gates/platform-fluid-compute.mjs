@@ -16,34 +16,29 @@ export function gate(signals) {
   if (signals.project?.error) return [];
 
   const fluidEnabled =
-    signals.project?.resourceConfig?.fluid === true ||
-    signals.project?.defaultResourceConfig?.fluid === true;
+    signals.project?.resourceConfig?.fluid === true
+    || signals.project?.defaultResourceConfig?.fluid === true;
   if (fluidEnabled) return [];
 
   const cold = extractHighColdRoutes(signals);
   const slow = extractSlowHotRoutes(signals);
   if (cold.length === 0 && slow.length === 0) return [];
 
-  return [
-    {
-      kind: metadata.id,
-      scope: 'account',
-      files: [],
-      priority: 50,
-      confidence: cold.length > 0 ? 0.85 : 0.65,
-      o11ySignal:
-        cold.length > 0
-          ? `${cold.length} route(s) with high cold-start rate`
-          : `${slow.length} hot route(s) with p95>1s; cold-start not directly observable`,
-      reason:
-        cold.length > 0
-          ? 'cold starts observed and Fluid Compute is disabled'
-          : 'slow hot routes and Fluid Compute is disabled',
-      question:
-        'Would enabling Fluid Compute reduce cold-start and warm-instance reuse overhead for the observed hot routes?',
-      evidence: { fluidEnabled, highColdRoutes: cold.slice(0, 5), slowHotRoutes: slow.slice(0, 5) },
-    },
-  ];
+  return [{
+    kind: metadata.id,
+    scope: 'account',
+    files: [],
+    priority: 50,
+    confidence: cold.length > 0 ? 0.85 : 0.65,
+    o11ySignal: cold.length > 0
+      ? `${cold.length} route(s) with high cold-start rate`
+      : `${slow.length} hot route(s) with p95>1s; cold-start not directly observable`,
+    reason: cold.length > 0
+      ? 'cold starts observed and Fluid Compute is disabled'
+      : 'slow hot routes and Fluid Compute is disabled',
+    question: 'Would enabling Fluid Compute reduce cold-start and warm-instance reuse overhead for the observed hot routes?',
+    evidence: { fluidEnabled, highColdRoutes: cold.slice(0, 5), slowHotRoutes: slow.slice(0, 5) },
+  }];
 }
 
 function extractHighColdRoutes(signals) {
@@ -76,19 +71,13 @@ function extractSlowHotRoutes(signals) {
 
   // Sum requests per route across cache_result.
   const inv = new Map();
-  for (const r of cache ?? []) {
+  for (const r of (cache ?? [])) {
     if (!r.route) continue;
     inv.set(r.route, (inv.get(r.route) ?? 0) + (r.value ?? 0));
   }
-  return (
-    dur
-      .filter((r) => r.route)
-      .map((r) => ({
-        route: r.route,
-        p95Ms: Math.round(r.value ?? 0),
-        invocations: inv.get(r.route) ?? 0,
-      }))
-      // inv>500 floor is the 14d-window equivalent of the old 1000/30d.
-      .filter((r) => r.p95Ms > 1000 && r.invocations > 500)
-  );
+  return dur
+    .filter((r) => r.route)
+    .map((r) => ({ route: r.route, p95Ms: Math.round(r.value ?? 0), invocations: inv.get(r.route) ?? 0 }))
+    // inv>500 floor is the 14d-window equivalent of the old 1000/30d.
+    .filter((r) => r.p95Ms > 1000 && r.invocations > 500);
 }

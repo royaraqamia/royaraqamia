@@ -3,7 +3,7 @@ name: writing-guidelines
 description: Review docs/prose for Writing Guidelines compliance. Use when asked to "review my docs", "check writing style", "audit prose", "review docs voice and tone", or "check this page against the writing handbook".
 metadata:
   author: vercel
-  version: '1.0.0'
+  version: "1.0.0"
   argument-hint: <file-or-pattern>
 ---
 
@@ -31,7 +31,6 @@ Use WebFetch to retrieve the latest rules. The fetched content contains all the 
 ## Usage
 
 When a user provides a file or pattern argument:
-
 1. Fetch guidelines from the source URL above
 2. Read the specified files
 3. Apply all rules from the fetched guidelines

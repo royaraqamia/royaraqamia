@@ -12,8 +12,7 @@ const ERROR_RATE_DISQUALIFY_THRESHOLD = 0.5;
 
 export const metadata = {
   id: 'slow_route',
-  threshold:
-    '(p95 > 500 AND inv >= 1400) OR (p95 > 1500 AND inv >= 250); disqualified when 5xx rate > 50%; Vercel Workflow runtime endpoints are hard-gated',
+  threshold: '(p95 > 500 AND inv >= 1400) OR (p95 > 1500 AND inv >= 250); disqualified when 5xx rate > 50%; Vercel Workflow runtime endpoints are hard-gated',
   billingDimension: 'function-duration',
   scope: 'route',
   sourceCitation: 'vercel-optimize gate threshold',
@@ -25,9 +24,7 @@ export function gate(signals) {
   const routes = extractFunctionRoutes(signals);
   const errorRates = extractErrorRatesByRoute(signals);
   return routes
-    .filter(
-      (r) => (r.p95Ms > 500 && r.invocations >= 1400) || (r.p95Ms > 1500 && r.invocations >= 250)
-    )
+    .filter((r) => (r.p95Ms > 500 && r.invocations >= 1400) || (r.p95Ms > 1500 && r.invocations >= 250))
     .map((r) => {
       const errorRate = errorRates.get(r.route);
       const candidate = {
@@ -35,18 +32,12 @@ export function gate(signals) {
         scope: 'route',
         route: r.route,
         files: [],
-        priority: Math.round((r.p95Ms * Math.max(r.invocations, 1)) / 1000),
+        priority: Math.round(r.p95Ms * Math.max(r.invocations, 1) / 1000),
         confidence: 0.94,
         o11ySignal: `inv=${r.invocations},p95=${r.p95Ms}ms${errorRate != null ? `,5xx=${(errorRate * 100).toFixed(0)}%` : ''}`,
         reason: 'slow high-traffic route',
         question: `What is the concrete bottleneck in ${r.route} (p95=${r.p95Ms}ms over ${r.invocations} invocations), and which file-level change would reduce it?`,
-        evidence: {
-          metric: 'fnDurationP95ByRoute',
-          route: r.route,
-          p95Ms: r.p95Ms,
-          invocations: r.invocations,
-          errorRate,
-        },
+        evidence: { metric: 'fnDurationP95ByRoute', route: r.route, p95Ms: r.p95Ms, invocations: r.invocations, errorRate },
       };
       if (errorRate != null && errorRate > ERROR_RATE_DISQUALIFY_THRESHOLD) {
         candidate.disqualified = true;
@@ -82,7 +73,7 @@ function extractFunctionRoutes(signals) {
   const req = signals.metrics?.requestsByRouteCache;
 
   const invByRoute = new Map();
-  for (const row of req?.rows ?? []) {
+  for (const row of (req?.rows ?? [])) {
     if (!row.route) continue;
     invByRoute.set(row.route, (invByRoute.get(row.route) ?? 0) + (row.value ?? 0));
   }

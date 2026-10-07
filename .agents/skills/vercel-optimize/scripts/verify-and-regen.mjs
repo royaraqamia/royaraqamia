@@ -26,9 +26,7 @@ const log = (...a) => console.error('[verify-and-regen]', ...a);
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.recsPath) {
-    console.error(
-      'usage: node scripts/verify-and-regen.mjs <recommendations.json> [--signals merged.json] [--repo-root DIR] [--out FILE]'
-    );
+    console.error('usage: node scripts/verify-and-regen.mjs <recommendations.json> [--signals merged.json] [--repo-root DIR] [--out FILE]');
     process.exit(1);
   }
 
@@ -38,12 +36,7 @@ async function main() {
     process.exit(2);
   }
 
-  let framework,
-    version,
-    cacheComponents,
-    knownFindings = [],
-    projectFacts = [],
-    signals = null;
+  let framework, version, cacheComponents, knownFindings = [], projectFacts = [], signals = null;
   if (args.signalsPath) {
     signals = JSON.parse(await readFile(args.signalsPath, 'utf-8'));
     const stack = signals.stack ?? signals.codebase?.stack ?? {};
@@ -51,7 +44,7 @@ async function main() {
     version = stack.frameworkVersion;
     cacheComponents = stack.cacheComponents;
     knownFindings = (signals.codebase?.findings ?? signals.findings ?? [])
-      .filter((f) => f.file && f.line != null)
+      .filter((f) => f.file && (f.line != null))
       .map((f) => ({ file: f.file, line: f.line }));
     projectFacts = deriveProjectFacts(signals);
     if (projectFacts.length > 0) {
@@ -69,13 +62,9 @@ async function main() {
   } else if (rootResult.source === 'auto-detected') {
     log(`repo-root auto-detected: '${repoRoot}' (probe: ${rootResult.probe})`);
   } else if (rootResult.source === 'corrected') {
-    log(
-      `repo-root auto-corrected: '${args.repoRoot}' → '${repoRoot}' (sub-agent paths resolve there)`
-    );
+    log(`repo-root auto-corrected: '${args.repoRoot}' → '${repoRoot}' (sub-agent paths resolve there)`);
   }
-  log(
-    `verifying ${recs.length} rec(s) — framework=${framework ?? '?'}@${version ?? '?'} repoRoot=${repoRoot}`
-  );
+  log(`verifying ${recs.length} rec(s) — framework=${framework ?? '?'}@${version ?? '?'} repoRoot=${repoRoot}`);
 
   // knownFindings MUST combine scanner findings + sub-agent's verified
   // findingRefs — scanner-only grounding would miss every metric-gate rec.
@@ -183,53 +172,48 @@ async function main() {
     const contradictions = claimsWithResults.filter(
       (r) => r.disposition === 'failed' && r.claim?.type === 'does_not_contradict_project_config'
     );
-    const triggeredByPassRate =
-      verifiable >= REGEN_MIN_CLAIMS && passRate < REGEN_PASS_RATE_THRESHOLD;
+    const triggeredByPassRate = verifiable >= REGEN_MIN_CLAIMS && passRate < REGEN_PASS_RATE_THRESHOLD;
     const cacheSafetyFailures = claimsWithResults.filter(
-      (r) =>
-        r.disposition === 'failed' &&
-        (r.claim?.type === 'cache_vary_matches_dynamic_inputs' ||
-          r.claim?.type === 'cache_vary_cardinality_safe')
+      (r) => r.disposition === 'failed' && (
+        r.claim?.type === 'cache_vary_matches_dynamic_inputs' ||
+        r.claim?.type === 'cache_vary_cardinality_safe'
+      )
     );
     const semanticSafetyFailures = claimsWithResults.filter(
-      (r) =>
-        r.disposition === 'failed' &&
-        (r.claim?.type === 'next_cached_not_found_causal_support' ||
-          r.claim?.type === 'next_stable_cache_api_for_version' ||
-          r.claim?.type === 'next_runtime_cache_api_for_version' ||
-          r.claim?.type === 'next_cache_life_single_execution' ||
-          r.claim?.type === 'next_cache_lifetime_freshness_supported' ||
-          r.claim?.type === 'next_cache_components_route_chain_file' ||
-          r.claim?.type === 'next_cache_life_cdn_header_semantics' ||
-          r.claim?.type === 'image_response_headers_citation' ||
-          r.claim?.type === 'next_image_priority_api_for_version' ||
-          r.claim?.type === 'next_cache_components_route_segment_config' ||
-          r.claim?.type === 'next_route_revalidate_static_prereq' ||
-          r.claim?.type === 'next_cache_tag_invalidation_supported' ||
-          r.claim?.type === 'cache_rec_not_error_dominated_or_acknowledged' ||
-          r.claim?.type === 'cache_control_header_syntax' ||
-          r.claim?.type === 'cache_control_headers_citation' ||
-          r.claim?.type === 'cache_404_long_ttl_safety' ||
-          r.claim?.type === 'route_error_not_found_status_and_scope' ||
-          r.claim?.type === 'immutable_dynamic_route_safety' ||
-          r.claim?.type === 'auth_guard_parallelization_safety' ||
-          r.claim?.type === 'parallelization_impact_not_overclaimed' ||
-          r.claim?.type === 'parallelization_not_cpu_bound_work' ||
-          r.claim?.type === 'runtime_error_cause_supported' ||
-          r.claim?.type === 'vercel_ignore_command_project_state')
+      (r) => r.disposition === 'failed' && (
+        r.claim?.type === 'next_cached_not_found_causal_support' ||
+        r.claim?.type === 'next_stable_cache_api_for_version' ||
+        r.claim?.type === 'next_runtime_cache_api_for_version' ||
+        r.claim?.type === 'next_cache_life_single_execution' ||
+        r.claim?.type === 'next_cache_lifetime_freshness_supported' ||
+        r.claim?.type === 'next_cache_components_route_chain_file' ||
+        r.claim?.type === 'next_cache_life_cdn_header_semantics' ||
+        r.claim?.type === 'image_response_headers_citation' ||
+        r.claim?.type === 'next_image_priority_api_for_version' ||
+        r.claim?.type === 'next_cache_components_route_segment_config' ||
+        r.claim?.type === 'next_route_revalidate_static_prereq' ||
+        r.claim?.type === 'next_cache_tag_invalidation_supported' ||
+        r.claim?.type === 'cache_rec_not_error_dominated_or_acknowledged' ||
+        r.claim?.type === 'cache_control_header_syntax' ||
+        r.claim?.type === 'cache_control_headers_citation' ||
+        r.claim?.type === 'cache_404_long_ttl_safety' ||
+        r.claim?.type === 'route_error_not_found_status_and_scope' ||
+        r.claim?.type === 'immutable_dynamic_route_safety' ||
+        r.claim?.type === 'auth_guard_parallelization_safety' ||
+        r.claim?.type === 'parallelization_impact_not_overclaimed' ||
+        r.claim?.type === 'parallelization_not_cpu_bound_work' ||
+        r.claim?.type === 'runtime_error_cause_supported' ||
+        r.claim?.type === 'vercel_ignore_command_project_state'
+      )
     );
     const triggeredByContradiction = contradictions.length > 0;
     const triggeredByCacheSafety = cacheSafetyFailures.length > 0;
     const triggeredBySemanticSafety = semanticSafetyFailures.length > 0;
-    if (
-      !triggeredByPassRate &&
-      !triggeredByContradiction &&
-      !triggeredByCacheSafety &&
-      !triggeredBySemanticSafety
-    )
-      continue;
+    if (!triggeredByPassRate && !triggeredByContradiction && !triggeredByCacheSafety && !triggeredBySemanticSafety) continue;
 
-    const failures = claimsWithResults.filter((r) => r.disposition === 'failed').slice(0, 5);
+    const failures = claimsWithResults
+      .filter((r) => r.disposition === 'failed')
+      .slice(0, 5);
     regenPlan.push({
       index: g.index,
       candidateRef: g.rec.candidateRef ?? null,
@@ -242,7 +226,7 @@ async function main() {
           ? 'cache_vary_safety'
           : triggeredBySemanticSafety
             ? 'semantic_safety'
-            : 'pass_rate_below_threshold',
+        : 'pass_rate_below_threshold',
       topFailures: failures.map((f) => ({
         claimType: f.claim?.type,
         field: f.claim?.sourceField,
@@ -257,14 +241,11 @@ async function main() {
           ? 'Sub-agent recommended CDN caching with unsafe or missing Vary behavior. Re-spawn with the cache safety failure highlighted; the rec must use a low-cardinality Vary header that matches the dynamic inputs, or abstain.'
           : triggeredBySemanticSafety
             ? 'Sub-agent made a framework-semantic claim that failed deterministic checks. Re-spawn with the failure highlighted; the rec must either add version-correct code/citations/runtime evidence or abstain.'
-            : "Re-spawn the sub-agent with this rec's topFailures injected as feedback. Re-emit the rec only if regenPassRate >= originalPassRate AND citation count not gutted.",
+        : 'Re-spawn the sub-agent with this rec\'s topFailures injected as feedback. Re-emit the rec only if regenPassRate >= originalPassRate AND citation count not gutted.',
     });
   }
 
-  const qualityCheck = applyQualityFloor(
-    recsGraded.map((g) => g.rec),
-    QUALITY_FLOOR
-  );
+  const qualityCheck = applyQualityFloor(recsGraded.map((g) => g.rec), QUALITY_FLOOR);
   const hardRegenIndexes = new Set(regenPlan.map((p) => p.index));
   const qualityDroppedIndexes = new Set(
     qualityCheck.dropped
@@ -272,23 +253,15 @@ async function main() {
       .filter((i) => i >= 0)
   );
   const needsReviewIndexes = new Set(
-    recsGraded.filter((g) => g.rec.needsReview === true).map((g) => g.index)
+    recsGraded
+      .filter((g) => g.rec.needsReview === true)
+      .map((g) => g.index)
   );
   const verifiedRecommendations = recsGraded
-    .filter(
-      (g) =>
-        !hardRegenIndexes.has(g.index) &&
-        !qualityDroppedIndexes.has(g.index) &&
-        !needsReviewIndexes.has(g.index)
-    )
+    .filter((g) => !hardRegenIndexes.has(g.index) && !qualityDroppedIndexes.has(g.index) && !needsReviewIndexes.has(g.index))
     .map((g) => g.rec);
   const withheldRecommendations = recsGraded
-    .filter(
-      (g) =>
-        hardRegenIndexes.has(g.index) ||
-        qualityDroppedIndexes.has(g.index) ||
-        needsReviewIndexes.has(g.index)
-    )
+    .filter((g) => hardRegenIndexes.has(g.index) || qualityDroppedIndexes.has(g.index) || needsReviewIndexes.has(g.index))
     .map((g) => ({
       index: g.index,
       candidateRef: g.rec.candidateRef ?? null,
@@ -310,14 +283,12 @@ async function main() {
     needsReview: needsReviewIndexes.size,
     verifiedRecommendations: verifiedRecommendations.length,
     withheldRecommendations: withheldRecommendations.length,
-    averagePassRate:
-      recsGraded.length > 0
-        ? round4(recsGraded.reduce((s, g) => s + g.verification.passRate, 0) / recsGraded.length)
-        : null,
-    averageQuality:
-      recsGraded.length > 0
-        ? round4(recsGraded.reduce((s, g) => s + g.quality.overall, 0) / recsGraded.length)
-        : null,
+    averagePassRate: recsGraded.length > 0
+      ? round4(recsGraded.reduce((s, g) => s + g.verification.passRate, 0) / recsGraded.length)
+      : null,
+    averageQuality: recsGraded.length > 0
+      ? round4(recsGraded.reduce((s, g) => s + g.quality.overall, 0) / recsGraded.length)
+      : null,
   };
 
   const output = {
@@ -347,9 +318,7 @@ async function main() {
   } else {
     process.stdout.write(serialized);
   }
-  log(
-    `done: ${summary.totalRecs} records checked; ${summary.verifiedRecommendations} ready, ${summary.withheldRecommendations} held back, ${summary.abstentions} found no supported change, ${summary.sanitizerDropped} dropped by safety checks`
-  );
+  log(`done: ${summary.totalRecs} records checked; ${summary.verifiedRecommendations} ready, ${summary.withheldRecommendations} held back, ${summary.abstentions} found no supported change, ${summary.sanitizerDropped} dropped by safety checks`);
 }
 
 function parseArgs(argv) {
@@ -368,9 +337,7 @@ function parseArgs(argv) {
   return out;
 }
 
-function round4(n) {
-  return Math.round(n * 10000) / 10000;
-}
+function round4(n) { return Math.round(n * 10000) / 10000; }
 
 main().catch((err) => {
   console.error('[verify-and-regen] FAILED:', err.message);

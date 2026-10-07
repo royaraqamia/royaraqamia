@@ -10,19 +10,13 @@ export const metadata = {
   trafficIndependent: false,
   description:
     'Four shapes of image-cost waste: raw <img> tags bypass the framework Image component; `images.unoptimized: true` disables Vercel image optimization globally; <Image fill> without `sizes` forces serving the largest source variant; <Image src=".svg"> without `unoptimized` routes vector data through the raster pipeline.',
-  fix: 'For raw <img>: switch to next/image, enhanced-img (SvelteKit), <Image /> (Astro), or NuxtImg. For global unoptimized:true: remove the flag unless the project is hosted outside Vercel. For fill without sizes: add `sizes="(max-width: 768px) 100vw, 50vw"` or whatever matches your layout. For SVG: add `unoptimized` so the raw SVG ships instead of rastering it.',
+  fix:
+    'For raw <img>: switch to next/image, enhanced-img (SvelteKit), <Image /> (Astro), or NuxtImg. For global unoptimized:true: remove the flag unless the project is hosted outside Vercel. For fill without sizes: add `sizes="(max-width: 768px) 100vw, 50vw"` or whatever matches your layout. For SVG: add `unoptimized` so the raw SVG ships instead of rastering it.',
   citations: [
     'https://nextjs.org/docs/app/api-reference/components/image',
     'https://vercel.com/docs/image-optimization',
   ],
-  excludeGlobs: [
-    'node_modules/**',
-    '.next/**',
-    'dist/**',
-    '__tests__/**',
-    'cypress/**',
-    '*.test.*',
-  ],
+  excludeGlobs: ['node_modules/**', '.next/**', 'dist/**', '__tests__/**', 'cypress/**', '*.test.*'],
   includeGlobs: ['**/*.{tsx,jsx,html,svelte,astro,vue,js,mjs,ts}'],
 };
 
@@ -57,8 +51,7 @@ export function scan({ files }) {
           subtype: 'global-unoptimized',
           file: path,
           line: lineOf(content, match.index),
-          evidence:
-            'images: { unoptimized: true } — disables Vercel image optimization for the entire project',
+          evidence: 'images: { unoptimized: true } — disables Vercel image optimization for the entire project',
           // Config-level flag affects every image regardless of route.
           trafficIndependent: true,
         });
@@ -88,11 +81,7 @@ export function scan({ files }) {
         const srcMatch = /\bsrc\s*=\s*["']([^"']+)["']/.exec(tag);
         if (srcMatch) {
           const src = srcMatch[1];
-          if (
-            /\.svg(\?|$)/i.test(src) &&
-            !src.startsWith('data:') &&
-            !/\bunoptimized\b/.test(tag)
-          ) {
+          if (/\.svg(\?|$)/i.test(src) && !src.startsWith('data:') && !/\bunoptimized\b/.test(tag)) {
             out.push({
               pattern: metadata.id,
               subtype: 'image-svg-no-unoptimized',
@@ -120,8 +109,5 @@ function isNextConfig(path) {
 function snippet(text, idx) {
   const start = text.lastIndexOf('\n', idx) + 1;
   const end = text.indexOf('\n', idx);
-  return text
-    .slice(start, end === -1 ? text.length : end)
-    .trim()
-    .slice(0, 160);
+  return text.slice(start, end === -1 ? text.length : end).trim().slice(0, 160);
 }

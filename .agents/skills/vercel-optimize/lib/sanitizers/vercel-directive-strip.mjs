@@ -8,7 +8,7 @@ const STRIP_DIRECTIVES = ['stale-if-error', 'proxy-revalidate', 'must-revalidate
 
 export const metadata = {
   id: 'vercel-directive-strip',
-  description: "Strip cache-control directives Vercel's CDN does not honor.",
+  description: 'Strip cache-control directives Vercel\'s CDN does not honor.',
 };
 
 export function apply(rec, _ctx = {}) {

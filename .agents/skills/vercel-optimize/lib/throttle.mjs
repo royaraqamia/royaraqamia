@@ -20,11 +20,8 @@ export function resolveConcurrency() {
 // Format: VERCEL_OPTIMIZE_METRIC_RATE=N or N/60s.
 export function resolveRateLimit() {
   const env = process.env.VERCEL_OPTIMIZE_METRIC_RATE;
-  if (env == null || env === '')
-    return { maxCalls: DEFAULT_RATE_LIMIT, windowMs: DEFAULT_RATE_WINDOW_MS };
-  const m = String(env)
-    .trim()
-    .match(/^(\d+)(?:\/(\d+)([sm])?)?$/);
+  if (env == null || env === '') return { maxCalls: DEFAULT_RATE_LIMIT, windowMs: DEFAULT_RATE_WINDOW_MS };
+  const m = String(env).trim().match(/^(\d+)(?:\/(\d+)([sm])?)?$/);
   if (!m) return { maxCalls: DEFAULT_RATE_LIMIT, windowMs: DEFAULT_RATE_WINDOW_MS };
   const maxCalls = Number(m[1]);
   if (!Number.isInteger(maxCalls) || maxCalls < 1) {
@@ -156,12 +153,10 @@ export function getMetricThrottle() {
         if (cached) return dailyQuotaResult(cached);
         let release;
         try {
-          release = await semaphore.acquire({
-            abortIf: () => {
-              const block = getDailyQuotaBlock();
-              return block ? dailyQuotaResult(block) : null;
-            },
-          });
+          release = await semaphore.acquire({ abortIf: () => {
+            const block = getDailyQuotaBlock();
+            return block ? dailyQuotaResult(block) : null;
+          } });
         } catch (err) {
           if (err instanceof SemaphoreAbortError) return err.result;
           throw err;
@@ -220,11 +215,7 @@ export function isRateLimited(result) {
   const code = String(result.code ?? '').toLowerCase();
   if (code === 'rate_limited' || code === '429') return true;
   const stderr = String(result.stderr ?? '').toLowerCase();
-  if (
-    stderr.includes('rate limit') ||
-    stderr.includes('rate_limited') ||
-    stderr.includes('too many requests')
-  ) {
+  if (stderr.includes('rate limit') || stderr.includes('rate_limited') || stderr.includes('too many requests')) {
     return true;
   }
   return false;
@@ -234,9 +225,12 @@ export function isDailyQuotaExceeded(result) {
   if (!result || result.ok !== false) return false;
   const code = String(result.code ?? '');
   if (code.toUpperCase() === 'DAILY_QUOTA_EXCEEDED') return true;
-  const haystack = [result.message, result.stderr, result.stdout, result.detail]
-    .filter(Boolean)
-    .join('\n');
+  const haystack = [
+    result.message,
+    result.stderr,
+    result.stdout,
+    result.detail,
+  ].filter(Boolean).join('\n');
   return DAILY_OBSERVABILITY_LIMIT_RE.test(haystack);
 }
 
@@ -270,8 +264,7 @@ function dailyQuotaResult(block, sourceResult = null) {
     code: 'DAILY_QUOTA_EXCEEDED',
     message: block.message,
     cachedUntil: new Date(block.untilMs).toISOString(),
-    originalCode:
-      sourceResult?.originalCode ?? sourceResult?.code ?? block.originalCode ?? undefined,
+    originalCode: sourceResult?.originalCode ?? sourceResult?.code ?? block.originalCode ?? undefined,
   };
 }
 

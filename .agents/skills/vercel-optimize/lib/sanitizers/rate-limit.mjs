@@ -2,11 +2,7 @@
 // rec prescribes concurrency above a known provider rate limit.
 
 const PROVIDER_LIMITS = {
-  notion: {
-    rps: 3,
-    label: 'Notion',
-    doc: 'https://developers.notion.com/reference/request-limits',
-  },
+  notion: { rps: 3, label: 'Notion', doc: 'https://developers.notion.com/reference/request-limits' },
   openai: { rps: 30, label: 'OpenAI', doc: 'https://platform.openai.com/docs/guides/rate-limits' },
   stripe: { rps: 100, label: 'Stripe', doc: 'https://docs.stripe.com/rate-limits' },
   anthropic: { rps: 10, label: 'Anthropic', doc: 'https://docs.anthropic.com/en/api/rate-limits' },
@@ -14,13 +10,11 @@ const PROVIDER_LIMITS = {
 
 export const metadata = {
   id: 'rate-limit',
-  description:
-    'Prepend caveat when a rec prescribes concurrency above a known provider rate limit.',
+  description: 'Prepend caveat when a rec prescribes concurrency above a known provider rate limit.',
 };
 
 const PROVIDER_RE = new RegExp(`\\b(${Object.keys(PROVIDER_LIMITS).join('|')})\\b`, 'gi');
-const CONCURRENCY_RE =
-  /\b(?:concurrency|parallel|in\s+parallel|simultaneous|simultaneously|fan[- ]?out|Promise\.all)\b[^\d]{0,40}(\d{1,4})\b/gi;
+const CONCURRENCY_RE = /\b(?:concurrency|parallel|in\s+parallel|simultaneous|simultaneously|fan[- ]?out|Promise\.all)\b[^\d]{0,40}(\d{1,4})\b/gi;
 const CONCURRENCY_RE_REVERSE = /\b(\d{1,4})\s*(?:concurrent|parallel|simultaneous|in flight)\b/gi;
 
 export function apply(rec, _ctx = {}) {

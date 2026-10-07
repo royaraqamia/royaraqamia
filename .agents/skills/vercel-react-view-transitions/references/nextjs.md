@@ -24,7 +24,7 @@ When following [implementation.md](implementation.md), apply these additions:
 
 ## Layout-Level ViewTransition
 
-**Do NOT add a layout-level VT wrapping `{children}` if pages have their own VTs.** A nested VT skips its own enter/exit only when it mounts or unmounts _as one unit_ with a parent VT, which is exactly what a layout VT wrapping `{children}` causes — page-level enter/exit will silently not work. Remove the layout VT entirely. Nesting is otherwise fine and sometimes required: a child VT inside a _persistent_ parent VT fires enter/exit normally, and two nested boundaries are the intended shape for [shared elements inside list items](../SKILL.md#composing-shared-elements-with-list-identity).
+**Do NOT add a layout-level VT wrapping `{children}` if pages have their own VTs.** A nested VT skips its own enter/exit only when it mounts or unmounts *as one unit* with a parent VT, which is exactly what a layout VT wrapping `{children}` causes — page-level enter/exit will silently not work. Remove the layout VT entirely. Nesting is otherwise fine and sometimes required: a child VT inside a *persistent* parent VT fires enter/exit normally, and two nested boundaries are the intended shape for [shared elements inside list items](../SKILL.md#composing-shared-elements-with-list-identity).
 
 A bare `<ViewTransition>` in layout works only if pages have **no** VTs of their own.
 
@@ -79,7 +79,9 @@ function DetailButton({ href }: { href: string }) {
   const router = useRouter();
 
   return (
-    <button onClick={() => router.push(href, { transitionTypes: ['nav-forward'] })}>Open</button>
+    <button onClick={() => router.push(href, { transitionTypes: ['nav-forward'] })}>
+      Open
+    </button>
   );
 }
 ```
@@ -131,14 +133,10 @@ export function Tabs({ tabs, active, indicatorName = 'tab-indicator' }) {
   const [, startTransition] = useTransition();
   return (
     <nav>
-      {tabs.map((t) => (
-        <Link
-          key={t.value}
-          href={t.href}
-          scroll={false}
+      {tabs.map(t => (
+        <Link key={t.value} href={t.href} scroll={false}
           aria-current={optimisticActive === t.value ? 'page' : undefined}
-          onNavigate={() => startTransition(() => setOptimisticActive(t.value))}
-        >
+          onNavigate={() => startTransition(() => setOptimisticActive(t.value))}>
           <span>{t.label}</span>
           {active === t.value && (
             <ViewTransition name={indicatorName} share="tab-underline">
@@ -160,21 +158,13 @@ Directional slides + Suspense reveals coexist because they fire at different mom
 
 ```tsx
 <ViewTransition
-  enter={{ 'nav-forward': 'slide-from-right', default: 'none' }}
-  exit={{ 'nav-forward': 'slide-to-left', default: 'none' }}
+  enter={{ "nav-forward": "slide-from-right", default: "none" }}
+  exit={{ "nav-forward": "slide-to-left", default: "none" }}
   default="none"
 >
   <div>
-    <Suspense
-      fallback={
-        <ViewTransition exit="slide-down">
-          <Skeleton />
-        </ViewTransition>
-      }
-    >
-      <ViewTransition enter="slide-up" default="none">
-        <Content />
-      </ViewTransition>
+    <Suspense fallback={<ViewTransition exit="slide-down"><Skeleton /></ViewTransition>}>
+      <ViewTransition enter="slide-up" default="none"><Content /></ViewTransition>
     </Suspense>
   </div>
 </ViewTransition>
@@ -202,20 +192,18 @@ Same rules as explicit `<Suspense>`: use simple string props (not type maps) sin
 
 ```tsx
 // List page
-{
-  products.map((product) => (
-    <Link key={product.id} href={`/products/${product.id}`} transitionTypes={['nav-forward']}>
-      <ViewTransition name={`product-${product.id}`}>
-        <Image src={product.image} alt={product.name} width={400} height={300} />
-      </ViewTransition>
-    </Link>
-  ));
-}
+{products.map((product) => (
+  <Link key={product.id} href={`/products/${product.id}`} transitionTypes={['nav-forward']}>
+    <ViewTransition name={`product-${product.id}`}>
+      <Image src={product.image} alt={product.name} width={400} height={300} />
+    </ViewTransition>
+  </Link>
+))}
 
 // Detail page — same name
 <ViewTransition name={`product-${product.id}`}>
   <Image src={product.image} alt={product.name} width={800} height={600} />
-</ViewTransition>;
+</ViewTransition>
 ```
 
 If the pair's `share` is type-keyed (or classed via CSS that expects a type), every `<Link>` between the two views must carry the type via `transitionTypes` — a plain link click resolves the share map's `default`, and if that's `none` the morph silently never fires.

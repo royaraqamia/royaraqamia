@@ -33,41 +33,33 @@ export function gate(signals) {
     const inp = inpBy.get(route);
     const cls = clsBy.get(route);
     const issues = [];
-    if (lcp != null && lcp > 2500)
-      issues.push({ metric: 'LCP', value: Math.round(lcp), threshold: 2500, unit: 'ms' });
-    if (inp != null && inp > 200)
-      issues.push({ metric: 'INP', value: Math.round(inp), threshold: 200, unit: 'ms' });
-    if (cls != null && cls > 0.1)
-      issues.push({ metric: 'CLS', value: round2(cls), threshold: 0.1, unit: '' });
+    if (lcp != null && lcp > 2500) issues.push({ metric: 'LCP', value: Math.round(lcp), threshold: 2500, unit: 'ms' });
+    if (inp != null && inp > 200) issues.push({ metric: 'INP', value: Math.round(inp), threshold: 200, unit: 'ms' });
+    if (cls != null && cls > 0.1) issues.push({ metric: 'CLS', value: round2(cls), threshold: 0.1, unit: '' });
     if (issues.length === 0) continue;
 
     const summary = issues.map((i) => `${i.metric}=${i.value}${i.unit}`).join(',');
-    out.push(
-      withRouteShapeWarnings(
-        {
-          kind: metadata.id,
-          scope: 'route',
-          route,
-          files: [],
-          priority: issues.reduce((s, i) => s + ratioOverThreshold(i), 0) * 10,
-          confidence: 0.82,
-          o11ySignal: summary,
-          reason: 'real-user Core Web Vitals in poor band',
-          question: `On ${route}, ${summary}. Which client-side work (bundle weight, blocking scripts, layout shifts, hydration) is responsible, and which change would land first?`,
-          evidence: {
-            metric: 'cwv',
-            route,
-            lcpMs: lcp != null ? Math.round(lcp) : null,
-            inpMs: inp != null ? Math.round(inp) : null,
-            cls: cls != null ? round2(cls) : null,
-            issues,
-            totalSpeedInsightsSamples: totalSamples,
-            routeSpeedInsightsSamples: routeSamples,
-          },
-        },
-        signals
-      )
-    );
+    out.push(withRouteShapeWarnings({
+      kind: metadata.id,
+      scope: 'route',
+      route,
+      files: [],
+      priority: issues.reduce((s, i) => s + ratioOverThreshold(i), 0) * 10,
+      confidence: 0.82,
+      o11ySignal: summary,
+      reason: 'real-user Core Web Vitals in poor band',
+      question: `On ${route}, ${summary}. Which client-side work (bundle weight, blocking scripts, layout shifts, hydration) is responsible, and which change would land first?`,
+      evidence: {
+        metric: 'cwv',
+        route,
+        lcpMs: lcp != null ? Math.round(lcp) : null,
+        inpMs: inp != null ? Math.round(inp) : null,
+        cls: cls != null ? round2(cls) : null,
+        issues,
+        totalSpeedInsightsSamples: totalSamples,
+        routeSpeedInsightsSamples: routeSamples,
+      },
+    }, signals));
   }
   return out;
 }

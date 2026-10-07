@@ -2,18 +2,15 @@
 // Account-scope (platform_*) recs use a separate grounding/evidence pair — they structurally cannot produce file:line.
 
 const HEDGE_WORDS = /\b(consider|might|may|could|perhaps|maybe|likely|probably)\b/gi;
-const VERB_OPENERS =
-  /^\s*(?:[-*]\s+|\d+[.)]\s+|[*_]+)?(?:add|set|enable|disable|replace|remove|move|wrap|cache|defer|parallelize|introduce|configure|update|change|switch|opt[-\s]?in|opt[-\s]?out|export|import|install|run|delete|rename)/im;
-const COUNT_WORDS_RE =
-  /\b(errors?|queries|invocations|requests|reads|writes|bytes|fetch(?:es)?|calls?|hits?|misses?|seconds?|images?|deployments?|cold[- ]?starts?|users?)\b/gi;
-const UNIT_RE =
-  /\b\d[\d.,]*\s*(?:%|ms|s|sec|seconds?|min|minutes?|h|hours?|GB|MB|KB|K|M|B|rps|qps|req\/s|reqs?\/min)\b/gi;
+const VERB_OPENERS = /^\s*(?:[-*]\s+|\d+[.)]\s+|[*_]+)?(?:add|set|enable|disable|replace|remove|move|wrap|cache|defer|parallelize|introduce|configure|update|change|switch|opt[-\s]?in|opt[-\s]?out|export|import|install|run|delete|rename)/im;
+const COUNT_WORDS_RE = /\b(errors?|queries|invocations|requests|reads|writes|bytes|fetch(?:es)?|calls?|hits?|misses?|seconds?|images?|deployments?|cold[- ]?starts?|users?)\b/gi;
+const UNIT_RE = /\b\d[\d.,]*\s*(?:%|ms|s|sec|seconds?|min|minutes?|h|hours?|GB|MB|KB|K|M|B|rps|qps|req\/s|reqs?\/min)\b/gi;
 const CODE_FENCE_RE = /```[\s\S]*?```/g;
 const INLINE_CODE_RE = /`[^`\n]{10,}`/g;
 const FILE_LINE_RE = /[\w/.\-()\[\]]+\.\w+:\d+/g;
 
 // Grounding + evidence are lie-detectors — weighted higher than specificity/actionability, which LLMs can game with fluff.
-const W = { grounding: 0.35, evidence: 0.3, specificity: 0.2, actionability: 0.15 };
+const W = { grounding: 0.35, evidence: 0.30, specificity: 0.20, actionability: 0.15 };
 
 export function gradeRecommendation(rec, ctx = {}) {
   const accountScope = isAccountScope(rec);
@@ -22,18 +19,11 @@ export function gradeRecommendation(rec, ctx = {}) {
   const grounding = accountScope ? scoreGroundingAccount(rec) : scoreGrounding(rec, ctx);
   const evidence = accountScope ? scoreEvidenceAccount(rec) : scoreEvidence(rec);
   const overall = roundTo(
-    grounding * W.grounding +
-      evidence * W.evidence +
-      specificity * W.specificity +
-      actionability * W.actionability,
-    4
+    grounding * W.grounding + evidence * W.evidence + specificity * W.specificity + actionability * W.actionability,
+    4,
   );
   return {
-    specificity,
-    actionability,
-    grounding,
-    evidence,
-    overall,
+    specificity, actionability, grounding, evidence, overall,
     grade: grade(overall),
     scope: accountScope ? 'account' : 'route',
   };
@@ -48,16 +38,14 @@ function isAccountScope(rec) {
 
 function grade(overall) {
   if (overall >= 0.85) return 'Excellent';
-  if (overall >= 0.7) return 'Good';
+  if (overall >= 0.70) return 'Good';
   if (overall >= 0.55) return 'Fair';
   return 'Poor';
 }
 
 function scoreSpecificity(rec) {
   let s = 0;
-  const codeText = [rec.fix, rec.currentBehavior, rec.desiredBehavior]
-    .filter((x) => typeof x === 'string')
-    .join('\n');
+  const codeText = [rec.fix, rec.currentBehavior, rec.desiredBehavior].filter((x) => typeof x === 'string').join('\n');
   const hasFence = CODE_FENCE_RE.test(codeText);
   CODE_FENCE_RE.lastIndex = 0;
   if (hasFence) s += 0.5;
@@ -93,9 +81,7 @@ function scoreGrounding(rec, ctx) {
   if (matched.length > 0) s += 0.5;
   else if (refs.length > 0) s += 0.25;
   if (Array.isArray(rec.affectedFiles) && rec.affectedFiles.length > 0) s += 0.25;
-  const fenceText = [rec.currentBehavior, rec.desiredBehavior]
-    .filter((x) => typeof x === 'string')
-    .join('\n');
+  const fenceText = [rec.currentBehavior, rec.desiredBehavior].filter((x) => typeof x === 'string').join('\n');
   if (CODE_FENCE_RE.test(fenceText)) s += 0.25;
   CODE_FENCE_RE.lastIndex = 0;
   if (typeof rec.candidateRef === 'string' && rec.candidateRef.length > 0) s += 0.1;
@@ -104,8 +90,7 @@ function scoreGrounding(rec, ctx) {
 
 function scoreEvidence(rec) {
   const text = [rec.what, rec.why, rec.fix, rec.verify]
-    .filter((x) => typeof x === 'string')
-    .join('\n');
+    .filter((x) => typeof x === 'string').join('\n');
   if (!text) return 0;
   const counts = (text.match(COUNT_WORDS_RE) ?? []).length;
   COUNT_WORDS_RE.lastIndex = 0;
@@ -114,8 +99,9 @@ function scoreEvidence(rec) {
   const filelines = (text.match(FILE_LINE_RE) ?? []).length;
   FILE_LINE_RE.lastIndex = 0;
   // file:line is the gold standard.
-  let s =
-    Math.min(0.5, filelines * 0.2) + Math.min(0.3, units * 0.075) + Math.min(0.2, counts * 0.05);
+  let s = Math.min(0.5, filelines * 0.2)
+        + Math.min(0.3, units * 0.075)
+        + Math.min(0.2, counts * 0.05);
   return Math.min(1, roundTo(s, 4));
 }
 
@@ -139,8 +125,7 @@ function scoreGroundingAccount(rec) {
 // Heavily weighted toward magnitude quoting — vague platform recs should score low.
 function scoreEvidenceAccount(rec) {
   const text = [rec.what, rec.why, rec.fix, rec.verify]
-    .filter((x) => typeof x === 'string')
-    .join('\n');
+    .filter((x) => typeof x === 'string').join('\n');
   if (!text) return 0;
   const counts = (text.match(COUNT_WORDS_RE) ?? []).length;
   COUNT_WORDS_RE.lastIndex = 0;

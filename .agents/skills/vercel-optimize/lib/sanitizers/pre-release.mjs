@@ -26,8 +26,7 @@ const PRE_RELEASE_FEATURES = [
   },
 ];
 
-const SEMVER_PRE_RELEASE_RE =
-  /\b([\w-]+)@(\d+\.\d+\.\d+-(?:rc|beta|canary|alpha|next|exp)[\w.-]*)/g;
+const SEMVER_PRE_RELEASE_RE = /\b([\w-]+)@(\d+\.\d+\.\d+-(?:rc|beta|canary|alpha|next|exp)[\w.-]*)/g;
 
 export const metadata = {
   id: 'pre-release',

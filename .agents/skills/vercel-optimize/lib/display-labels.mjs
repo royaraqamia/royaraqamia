@@ -52,7 +52,9 @@ const SIGNAL_LABELS = new Map([
   ['CLS', 'Cumulative Layout Shift (CLS)'],
 ]);
 
-const REQUEST_COUNT_KINDS = new Set(['uncached_route']);
+const REQUEST_COUNT_KINDS = new Set([
+  'uncached_route',
+]);
 
 const PUBLIC_ASSIGNMENT_LABELS = new Map([
   ...SIGNAL_LABELS,
@@ -72,13 +74,11 @@ const PUBLIC_ASSIGNMENT_LABELS = new Map([
 export function formatKind(kind) {
   if (!kind) return 'Candidate';
   if (KIND_LABELS.has(kind)) return KIND_LABELS.get(kind);
-  return (
-    String(kind)
-      .split(/[_-]+/g)
-      .filter(Boolean)
-      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-      .join(' ') || 'Candidate'
-  );
+  return String(kind)
+    .split(/[_-]+/g)
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ') || 'Candidate';
 }
 
 export function formatRoute(candidate) {
@@ -116,19 +116,12 @@ export function formatPublicText(value) {
       if (!label) return match;
       return `${label}: ${formatSignalValue(key, rawValue)}`;
     })
-    .replace(
-      /\b(cache breakdown[^.!?\n;]{0,160}?)\b(?:function\s+)?invocations\b/gi,
-      (match, prefix) => (/\bstatus distribution\b/i.test(prefix) ? match : `${prefix}requests`)
+    .replace(/\b(cache breakdown[^.!?\n;]{0,160}?)\b(?:function\s+)?invocations\b/gi, (match, prefix) =>
+      /\bstatus distribution\b/i.test(prefix) ? match : `${prefix}requests`
     )
-    .replace(
-      /\b(cache breakdown[^.!?\n;]{0,220}?\bout of\s+[\d,]+)\s+invocations\b/gi,
-      '$1 requests'
-    )
+    .replace(/\b(cache breakdown[^.!?\n;]{0,220}?\bout of\s+[\d,]+)\s+invocations\b/gi, '$1 requests')
     .replace(/\b(cache hits over\s+[\d,.]+(?:\s?(?:K|M|B))?)\s+invocations\b/gi, '$1 requests')
-    .replace(
-      /\b(?:function\s+)?invocations\b([^.!?\n;]{0,120}\b(?:empty\s+)?cache result(?: label)?\b)/gi,
-      'requests$1'
-    );
+    .replace(/\b(?:function\s+)?invocations\b([^.!?\n;]{0,120}\b(?:empty\s+)?cache result(?: label)?\b)/gi, 'requests$1');
 }
 
 export function normalizeObservedWindowUnits(value) {
@@ -136,35 +129,14 @@ export function normalizeObservedWindowUnits(value) {
   return String(value)
     .replace(/(?<!\$)\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\/mo\b/gi, '$1/window')
     .replace(/\bmonthly\s+function\s+invocations\b/gi, 'function invocations/window')
-    .replace(
-      /\b(requests?|invocations?|GETs|bytes|egress|bandwidth|writes?|reads?|errors?)\/mo\b/gi,
-      '$1/window'
-    )
-    .replace(
-      /\bmonthly\s+(requests?|invocations?|GETs|bytes|egress|bandwidth|writes?|reads?|errors?)\b/gi,
-      '$1/window'
-    )
-    .replace(
-      /\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\s+function\s+invocations\s+per month\b/gi,
-      '$1 function invocations/window'
-    )
-    .replace(
-      /\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\s+(requests?|GETs|invocations?|bytes|writes?|reads?|errors?)\s+per month\b/gi,
-      '$1 $2/window'
-    )
-    .replace(
-      /\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\/window\s+(requests?|GETs|(?:function\s+)?invocations?|bytes|egress|bandwidth|writes?|reads?|errors?)\b/gi,
-      '$1 $2 in this window'
-    )
-    .replace(
-      /\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\s+(requests?|GETs|(?:function\s+)?invocations?|bytes|egress|bandwidth|writes?|reads?|errors?)\/window\b/gi,
-      '$1 $2 in this window'
-    )
+    .replace(/\b(requests?|invocations?|GETs|bytes|egress|bandwidth|writes?|reads?|errors?)\/mo\b/gi, '$1/window')
+    .replace(/\bmonthly\s+(requests?|invocations?|GETs|bytes|egress|bandwidth|writes?|reads?|errors?)\b/gi, '$1/window')
+    .replace(/\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\s+function\s+invocations\s+per month\b/gi, '$1 function invocations/window')
+    .replace(/\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\s+(requests?|GETs|invocations?|bytes|writes?|reads?|errors?)\s+per month\b/gi, '$1 $2/window')
+    .replace(/\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\/window\s+(requests?|GETs|(?:function\s+)?invocations?|bytes|egress|bandwidth|writes?|reads?|errors?)\b/gi, '$1 $2 in this window')
+    .replace(/\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\s+(requests?|GETs|(?:function\s+)?invocations?|bytes|egress|bandwidth|writes?|reads?|errors?)\/window\b/gi, '$1 $2 in this window')
     .replace(/\b(\d[\d,.]*(?:\s?(?:K|M|B|KB|MB|GB|TB))?)\/window\b/gi, '$1 in this window')
-    .replace(
-      /\b(requests?|invocations?|GETs|bytes|egress|bandwidth|writes?|reads?|errors?)\/window\b/gi,
-      '$1 in this window'
-    );
+    .replace(/\b(requests?|invocations?|GETs|bytes|egress|bandwidth|writes?|reads?|errors?)\/window\b/gi, '$1 in this window');
 }
 
 export function formatCandidateLine(candidate) {
@@ -192,21 +164,15 @@ function signalLabel(key, context = {}) {
 }
 
 function humanizeKey(key) {
-  return String(key).replaceAll('.', ' ').replaceAll('_', ' ').replaceAll('-', ' ').trim();
+  return String(key)
+    .replaceAll('.', ' ')
+    .replaceAll('_', ' ')
+    .replaceAll('-', ' ')
+    .trim();
 }
 
 function formatSignalValue(key, value) {
-  if (
-    key === 'inv' ||
-    key === 'runs' ||
-    key === 'middleware_inv' ||
-    key === 'total_req' ||
-    key === 'requests' ||
-    key === 'calls' ||
-    key === 'errs' ||
-    key === 'writes' ||
-    key === 'reads'
-  ) {
+  if (key === 'inv' || key === 'runs' || key === 'middleware_inv' || key === 'total_req' || key === 'requests' || key === 'calls' || key === 'errs' || key === 'writes' || key === 'reads') {
     return formatNumberLike(value);
   }
   return value;

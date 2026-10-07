@@ -47,11 +47,7 @@ export const SPEC_GENERATORS = {
         aggregation: 'sum',
         groupBy: ['function_start_type'],
         filter: f,
-        broadPassEquivalent: {
-          key: 'fnStartTypeByRoute',
-          routeFilter: route,
-          projectDims: ['function_start_type'],
-        },
+        broadPassEquivalent: { key: 'fnStartTypeByRoute', routeFilter: route, projectDims: ['function_start_type'] },
       },
       // function-invocation status (5xx from function) — distinct from request-level status, can't reuse broad-pass.
       {
@@ -75,11 +71,7 @@ export const SPEC_GENERATORS = {
         aggregation: 'sum',
         groupBy: ['cache_result'],
         filter: f,
-        broadPassEquivalent: {
-          key: 'requestsByRouteCache',
-          routeFilter: route,
-          projectDims: ['cache_result'],
-        },
+        broadPassEquivalent: { key: 'requestsByRouteCache', routeFilter: route, projectDims: ['cache_result'] },
       },
       // broad-pass bandwidthByCacheResult is account-wide, so per-route still required.
       {
@@ -103,11 +95,7 @@ export const SPEC_GENERATORS = {
         aggregation: 'sum',
         groupBy: ['cache_result'],
         filter: f,
-        broadPassEquivalent: {
-          key: 'requestsByRouteCache',
-          routeFilter: route,
-          projectDims: ['cache_result'],
-        },
+        broadPassEquivalent: { key: 'requestsByRouteCache', routeFilter: route, projectDims: ['cache_result'] },
       },
       {
         id: 'methodDistribution',
@@ -115,11 +103,7 @@ export const SPEC_GENERATORS = {
         aggregation: 'sum',
         groupBy: ['request_method'],
         filter: f,
-        broadPassEquivalent: {
-          key: 'requestsByRouteMethod',
-          routeFilter: route,
-          projectDims: ['request_method'],
-        },
+        broadPassEquivalent: { key: 'requestsByRouteMethod', routeFilter: route, projectDims: ['request_method'] },
       },
       {
         id: 'botShare',
@@ -327,12 +311,7 @@ export function specsForCandidate(candidate) {
 }
 
 // One spec per percentile — CLI does not support `-a p50 -a p95` multi-aggregation.
-function latencyPercentiles(
-  idPrefix,
-  metricId,
-  filter,
-  percentiles = ['p50', 'p75', 'p95', 'p99']
-) {
+function latencyPercentiles(idPrefix, metricId, filter, percentiles = ['p50', 'p75', 'p95', 'p99']) {
   return percentiles.map((p) => ({
     id: `${idPrefix}.${p}`,
     metricId,

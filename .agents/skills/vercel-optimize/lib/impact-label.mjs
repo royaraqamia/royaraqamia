@@ -23,18 +23,19 @@ export function computeImpactLabel(rec, signals = {}) {
 
 export function synthesizeImpactFromSignal(rec, signals = {}) {
   const tier = rec?.impactTier;
-  const sig =
-    [rec?.o11ySignal, rec?.evidence?.o11ySignal, rec?.why, rec?.what]
-      .filter((v) => typeof v === 'string' && v.trim())
-      .join('\n') || null;
+  const sig = [
+    rec?.o11ySignal,
+    rec?.evidence?.o11ySignal,
+    rec?.why,
+    rec?.what,
+  ].filter((v) => typeof v === 'string' && v.trim()).join('\n') || null;
   if (!sig || !tier) return null;
   const m = String(sig);
   const inv = parseSigNumber(m, /inv=([\d,]+)/);
   const p95 = parseSigNumber(m, /p95=([\d,]+)ms/);
   const cachePct = parseSigNumber(m, /cache=([\d.]+)%/);
   const coldPct = parseSigNumber(m, /cold=([\d.]+)%/);
-  const buildSharePct =
-    parseSigNumber(m, /build_minutes_share=([\d.]+)%/i) ??
+  const buildSharePct = parseSigNumber(m, /build_minutes_share=([\d.]+)%/i) ??
     parseSigNumber(m, /build(?: CPU)? minutes share:?\s*([\d.]+)%/i);
   const errors = parseSigNumber(m, /errs=([\d,]+)/);
   const errorRatePct = parseSigNumber(m, /rate=([\d.]+)%/);
@@ -50,7 +51,7 @@ export function synthesizeImpactFromSignal(rec, signals = {}) {
     return `${tier} impact — bring ${joinEnglish(cwvIssues.map(formatCwvIssue))}.`;
   }
   if (errors != null && errorRatePct != null) {
-    const reductionPct = Math.ceil(Math.max(0, (1 - RELIABILITY_TARGET_PCT / errorRatePct) * 100));
+    const reductionPct = Math.ceil(Math.max(0, (1 - (RELIABILITY_TARGET_PCT / errorRatePct)) * 100));
     return `${tier} impact — cut 5xx rate by ~${reductionPct}% to get below ${RELIABILITY_TARGET_PCT}% (current ${errorRatePct}%, ${formatInteger(errors)} errors in this window).`;
   }
   if (errors != null) {
@@ -77,10 +78,7 @@ export function synthesizeImpactFromSignal(rec, signals = {}) {
   if (coldPct != null) {
     return `${tier} impact — current cold-start share is ${coldPct}%; the gate fires above ${COLD_START_THRESHOLD_PCT}%.`;
   }
-  if (
-    rec?.candidateRef?.startsWith('build_minutes_fanout:') ||
-    rec?.kind === 'build_minutes_fanout'
-  ) {
+  if (rec?.candidateRef?.startsWith('build_minutes_fanout:') || rec?.kind === 'build_minutes_fanout') {
     return buildSharePct != null
       ? `${tier} impact — Build CPU Minutes account for ${buildSharePct}% of observed billed cost in this window.`
       : `${tier} impact — Build CPU Minutes exceeded the gate threshold in this window.`;

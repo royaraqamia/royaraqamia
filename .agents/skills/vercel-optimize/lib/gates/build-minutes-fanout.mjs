@@ -35,37 +35,33 @@ export function gate(signals) {
   const subtypes = unique(findings.map((f) => f.subtype).filter(Boolean));
   const sampleFiles = unique(findings.map((f) => f.file).filter(Boolean)).slice(0, 4);
 
-  const reason =
-    findings.length > 0
-      ? buildShare > SHARE_FLOOR
+  const reason = findings.length > 0
+    ? (buildShare > SHARE_FLOOR
         ? 'Build Minutes share is high and Turborepo cache bypass detected in repo'
-        : 'Turborepo cache bypass detected in repo'
-      : 'Build Minutes line exceeds 15% of total billed cost';
+        : 'Turborepo cache bypass detected in repo')
+    : 'Build Minutes line exceeds 15% of total billed cost';
 
-  return [
-    {
-      kind: metadata.id,
-      scope: 'account',
-      files: sampleFiles,
-      priority: findings.length > 0 ? 65 : 50,
-      confidence: findings.length > 0 ? 0.86 : 0.74,
-      o11ySignal: `build_minutes_share=${(buildShare * 100).toFixed(0)}% scanner_findings=${findings.length}`,
-      reason,
-      question:
-        findings.length > 0
-          ? `Turborepo cache bypass detected (${subtypes.join(', ')}). Which build pipeline forces a rebuild on every commit, and can Ignored Build Step + cache re-enable cut the project fan-out?`
-          : 'Build Minutes exceed 15% of the bill. Is Ignored Build Step configured? Is Turborepo cache active across builds? Would Elastic Build Machines reduce duration on hot builds?',
-      evidence: {
-        metric: 'usage.services',
-        buildBilled,
-        totalBilled: total,
-        buildShare,
-        scannerFindings: findings.length,
-        scannerSubtypes: subtypes,
-        sampleFiles,
-      },
+  return [{
+    kind: metadata.id,
+    scope: 'account',
+    files: sampleFiles,
+    priority: findings.length > 0 ? 65 : 50,
+    confidence: findings.length > 0 ? 0.86 : 0.74,
+    o11ySignal: `build_minutes_share=${(buildShare * 100).toFixed(0)}% scanner_findings=${findings.length}`,
+    reason,
+    question: findings.length > 0
+      ? `Turborepo cache bypass detected (${subtypes.join(', ')}). Which build pipeline forces a rebuild on every commit, and can Ignored Build Step + cache re-enable cut the project fan-out?`
+      : 'Build Minutes exceed 15% of the bill. Is Ignored Build Step configured? Is Turborepo cache active across builds? Would Elastic Build Machines reduce duration on hot builds?',
+    evidence: {
+      metric: 'usage.services',
+      buildBilled,
+      totalBilled: total,
+      buildShare,
+      scannerFindings: findings.length,
+      scannerSubtypes: subtypes,
+      sampleFiles,
     },
-  ];
+  }];
 }
 
 function unique(values) {

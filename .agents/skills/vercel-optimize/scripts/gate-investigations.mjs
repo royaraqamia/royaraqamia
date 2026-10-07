@@ -18,9 +18,7 @@ const SCHEMA_VERSION = '1.1';
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.signalsPath) {
-    console.error(
-      'usage: node scripts/gate-investigations.mjs <signals.json> [--max-candidates N|all]'
-    );
+    console.error('usage: node scripts/gate-investigations.mjs <signals.json> [--max-candidates N|all]');
     console.error('       VERCEL_OPTIMIZE_MAX_CANDIDATES env var supported (same values)');
     process.exit(1);
   }
@@ -73,31 +71,25 @@ async function main() {
     })),
   ];
 
-  process.stdout.write(
-    JSON.stringify(
-      {
-        schemaVersion: SCHEMA_VERSION,
-        gateVersion: GATE_VERSION,
-        appliedAt: new Date().toISOString(),
-        budget: {
-          maxCandidates: budget === Infinity ? 'all' : budget,
-          source: args.budgetSource,
-          selection: selection.selectionMode,
-        },
-        toLaunch,
-        platform: platformScoped,
-        gated,
-        gateMetadata: gates.map((g) => ({
-          id: g.metadata?.id,
-          threshold: g.metadata?.threshold,
-          billingDimension: g.metadata?.billingDimension,
-          sourceCitation: g.metadata?.sourceCitation,
-        })),
-      },
-      null,
-      2
-    ) + '\n'
-  );
+  process.stdout.write(JSON.stringify({
+    schemaVersion: SCHEMA_VERSION,
+    gateVersion: GATE_VERSION,
+    appliedAt: new Date().toISOString(),
+    budget: {
+      maxCandidates: budget === Infinity ? 'all' : budget,
+      source: args.budgetSource,
+      selection: selection.selectionMode,
+    },
+    toLaunch,
+    platform: platformScoped,
+    gated,
+    gateMetadata: gates.map((g) => ({
+      id: g.metadata?.id,
+      threshold: g.metadata?.threshold,
+      billingDimension: g.metadata?.billingDimension,
+      sourceCitation: g.metadata?.sourceCitation,
+    })),
+  }, null, 2) + '\n');
 }
 
 function parseArgs(argv) {
@@ -105,8 +97,7 @@ function parseArgs(argv) {
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--max-candidates') out.maxCandidatesArg = argv[++i];
-    else if (a.startsWith('--max-candidates='))
-      out.maxCandidatesArg = a.slice('--max-candidates='.length);
+    else if (a.startsWith('--max-candidates=')) out.maxCandidatesArg = a.slice('--max-candidates='.length);
     else out.positional.push(a);
   }
   out.signalsPath = out.positional[0];
@@ -126,9 +117,7 @@ function resolveBudget(args) {
   }
   const n = Number(trimmed);
   if (!Number.isFinite(n) || n < 1 || !Number.isInteger(n)) {
-    console.error(
-      `[gate-investigations] bad budget value '${raw}'; expected positive integer or 'all'`
-    );
+    console.error(`[gate-investigations] bad budget value '${raw}'; expected positive integer or 'all'`);
     process.exit(2);
   }
   args.budgetSource = args.maxCandidatesArg != null ? 'flag' : 'env';
@@ -149,8 +138,7 @@ function stableCompare(a, b) {
 }
 
 function attachDisplayRoute(candidate, signals) {
-  if (!candidate || candidate.scope !== 'route' || typeof candidate.route !== 'string')
-    return candidate;
+  if (!candidate || candidate.scope !== 'route' || typeof candidate.route !== 'string') return candidate;
   if (!candidate.route.includes('[*]')) return candidate;
 
   const routes = (signals.codebase?.routes ?? [])

@@ -26,31 +26,29 @@ export function gate(signals) {
   if (eventsBilled <= 0) return [];
 
   const share = eventsBilled / total;
-  if (share <= 0.2) return [];
+  if (share <= 0.20) return [];
 
-  const critical = share > 0.3;
+  const critical = share > 0.30;
 
-  return [
-    {
-      kind: metadata.id,
-      scope: 'account',
-      files: [],
-      priority: critical ? 70 : 55,
-      confidence: 0.82,
-      o11ySignal: `observability_events_share=${(share * 100).toFixed(0)}%`,
-      reason: critical
-        ? 'observability events exceed 30% of total billed cost'
-        : 'observability events exceed 20% of total billed cost',
-      question: `Observability Events are ${(share * 100).toFixed(0)}% of the bill. Which routes drive event volume — low-cache-hit traffic, broad middleware invocation, or high custom-span cardinality — and can event volume be reduced upstream of the meter?`,
-      evidence: {
-        metric: 'usage.services',
-        eventsBilled,
-        totalBilled: total,
-        observabilityEventsShare: share,
-        critical,
-      },
+  return [{
+    kind: metadata.id,
+    scope: 'account',
+    files: [],
+    priority: critical ? 70 : 55,
+    confidence: 0.82,
+    o11ySignal: `observability_events_share=${(share * 100).toFixed(0)}%`,
+    reason: critical
+      ? 'observability events exceed 30% of total billed cost'
+      : 'observability events exceed 20% of total billed cost',
+    question: `Observability Events are ${(share * 100).toFixed(0)}% of the bill. Which routes drive event volume — low-cache-hit traffic, broad middleware invocation, or high custom-span cardinality — and can event volume be reduced upstream of the meter?`,
+    evidence: {
+      metric: 'usage.services',
+      eventsBilled,
+      totalBilled: total,
+      observabilityEventsShare: share,
+      critical,
     },
-  ];
+  }];
 }
 
 function sumBilled(services) {

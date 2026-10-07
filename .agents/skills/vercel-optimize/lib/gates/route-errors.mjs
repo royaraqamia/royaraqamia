@@ -16,35 +16,21 @@ export const metadata = {
 export function gate(signals) {
   const errors = extractErrors(signals);
   return errors
-    .filter(
-      (e) => e.count > 250 || (e.total >= MIN_VOLUME_FOR_RATE_EMISSION && (e.errorRate ?? 0) > 0.01)
-    )
-    .map((e) =>
-      withRouteShapeWarnings(
-        {
-          kind: metadata.id,
-          scope: 'route',
-          route: e.route,
-          files: [],
-          priority: e.count,
-          confidence: 0.93,
-          o11ySignal:
-            e.errorRate != null
-              ? `errs=${e.count},rate=${(e.errorRate * 100).toFixed(1)}%`
-              : `errs=${e.count}`,
-          reason: 'concentrated 5xx errors',
-          question: `Why does ${e.route} produce ${e.count} 5xx errors over the window, and what code path is failing?`,
-          evidence: {
-            metric: e.metric,
-            route: e.route,
-            count: e.count,
-            totalRequests: e.total,
-            errorRate: e.errorRate,
-          },
-        },
-        signals
-      )
-    );
+    .filter((e) => e.count > 250 || (e.total >= MIN_VOLUME_FOR_RATE_EMISSION && (e.errorRate ?? 0) > 0.01))
+    .map((e) => withRouteShapeWarnings({
+      kind: metadata.id,
+      scope: 'route',
+      route: e.route,
+      files: [],
+      priority: e.count,
+      confidence: 0.93,
+      o11ySignal: e.errorRate != null
+        ? `errs=${e.count},rate=${(e.errorRate * 100).toFixed(1)}%`
+        : `errs=${e.count}`,
+      reason: 'concentrated 5xx errors',
+      question: `Why does ${e.route} produce ${e.count} 5xx errors over the window, and what code path is failing?`,
+      evidence: { metric: e.metric, route: e.route, count: e.count, totalRequests: e.total, errorRate: e.errorRate },
+    }, signals));
 }
 
 function extractErrors(signals) {
@@ -59,7 +45,7 @@ function extractErrors(signals) {
 
   // cache rollup is summed across cache_result, giving per-route total request count.
   const totalByRoute = new Map();
-  for (const row of cache?.rows ?? []) {
+  for (const row of (cache?.rows ?? [])) {
     if (!row.route) continue;
     totalByRoute.set(row.route, (totalByRoute.get(row.route) ?? 0) + (row.value ?? 0));
   }

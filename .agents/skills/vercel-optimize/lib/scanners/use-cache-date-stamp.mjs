@@ -18,19 +18,13 @@ export const metadata = {
   trafficIndependent: false,
   description:
     "`'use cache'` memoizes by argument identity AND prerender output. A timestamp baked into the cached output (`new Date().getFullYear()` in a footer, `Date.now()` in a payload field) forces a fresh ISR write on every regeneration even when the underlying data is unchanged. Random values have the same failure mode.",
-  fix: "Replace module-scope `new Date()` with a build-time constant (`const buildYear = new Date().getFullYear()`) or move per-request timestamps into a client component inside `useEffect`. Do not pass dates as arguments to `'use cache'` functions — they invalidate the cache every call.",
+  fix:
+    "Replace module-scope `new Date()` with a build-time constant (`const buildYear = new Date().getFullYear()`) or move per-request timestamps into a client component inside `useEffect`. Do not pass dates as arguments to `'use cache'` functions — they invalidate the cache every call.",
   citations: [
     'https://nextjs.org/docs/app/api-reference/directives/use-cache',
     'https://nextjs.org/docs/app/api-reference/functions/cacheLife',
   ],
-  excludeGlobs: [
-    'node_modules/**',
-    '.next/**',
-    'dist/**',
-    '__tests__/**',
-    '**/*.test.*',
-    '**/*.spec.*',
-  ],
+  excludeGlobs: ['node_modules/**', '.next/**', 'dist/**', '__tests__/**', '**/*.test.*', '**/*.spec.*'],
   includeGlobs: [
     '**/page.{ts,tsx,js,jsx}',
     '**/layout.{ts,tsx,js,jsx}',

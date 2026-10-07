@@ -1,14 +1,13 @@
 // Recommend BotID only when there's EVIDENCE of bot traffic or scale large enough that the rec is defensible.
 // Without an evidence gate the rec fires on quiet hobby sites and erodes trust.
 const MIN_BOT_PCT = 0.05;
-const MIN_EDGE_COST = 25; // halved for 14d window
+const MIN_EDGE_COST = 25;          // halved for 14d window
 const MIN_TOTAL_REQUESTS = 14_000; // ~14k/14d matches the prior 30k/30d rate
 const MIN_TOTAL_FDT_BYTES = 1_000_000;
 
 export const metadata = {
   id: 'platform_bot_protection',
-  threshold:
-    'botIdEnabled=false AND (botPct >= 0.05 OR edge_cost >= $25/window OR requests >= 14k/14d)',
+  threshold: 'botIdEnabled=false AND (botPct >= 0.05 OR edge_cost >= $25/window OR requests >= 14k/14d)',
   billingDimension: 'edge-requests',
   scope: 'account',
   sourceCitation: 'vercel-optimize gate threshold',
@@ -19,10 +18,10 @@ export const metadata = {
 export function gate(signals) {
   // BotID surfaces under several legacy fields; check all.
   const botEnabled =
-    signals.project?.security?.botIdEnabled === true ||
-    signals.project?.security?.botProtection === true ||
-    signals.project?.botProtection?.enabled === true ||
-    signals.project?.delegatedProtection?.bot === true;
+    signals.project?.security?.botIdEnabled === true
+    || signals.project?.security?.botProtection === true
+    || signals.project?.botProtection?.enabled === true
+    || signals.project?.delegatedProtection?.bot === true;
   if (botEnabled) return [];
 
   // Project config failed — we can't tell if BotID is on, so stay silent.
@@ -30,8 +29,8 @@ export function gate(signals) {
 
   const totalRequests = totalRequestsFromSignals(signals);
   const botShare = computeBotShare(signals);
-  const edgeService = (signals.usage?.services ?? []).find((s) =>
-    /edge.request/i.test(s.name ?? '')
+  const edgeService = (signals.usage?.services ?? []).find(
+    (s) => /edge.request/i.test(s.name ?? '')
   );
   const edgeCost = edgeService?.billedCost ?? null;
 
@@ -52,42 +51,35 @@ export function gate(signals) {
 
   // Confidence bumps when we can SEE bot traffic, not just infer from config.
   let confidence = edgeCost != null ? 0.85 : 0.6;
-  if (botShare?.botPct != null && botShare.botPct > 0.2)
-    confidence = Math.min(0.95, confidence + 0.05);
+  if (botShare?.botPct != null && botShare.botPct > 0.2) confidence = Math.min(0.95, confidence + 0.05);
 
-  const botShareNote =
-    botShare?.botPct != null
-      ? `bot_fdt_pct=${(botShare.botPct * 100).toFixed(0)}%`
-      : 'bot_fdt_pct=unknown';
+  const botShareNote = botShare?.botPct != null
+    ? `bot_fdt_pct=${(botShare.botPct * 100).toFixed(0)}%`
+    : 'bot_fdt_pct=unknown';
 
-  return [
-    {
-      kind: metadata.id,
-      scope: 'account',
-      files: [],
-      priority,
-      confidence,
-      o11ySignal:
-        edgeCost != null
-          ? `edge_cost=${edgeCost.toFixed(0)},bot_protection=disabled,${botShareNote},${ruleNote}`
-          : `requests=${totalRequests},bot_protection=disabled,${botShareNote},${ruleNote}`,
-      reason:
-        botShare?.botPct != null && botShare.botPct > 0.2
-          ? 'BotID disabled with observable bot bandwidth share'
-          : 'BotID disabled with observable traffic',
-      question:
-        botShare?.botPct != null && botShare.botPct > 0.2
-          ? `Bot traffic accounts for ${(botShare.botPct * 100).toFixed(0)}% of FDT bytes (top category: ${botShare.topCategory ?? 'unknown'}). Would enabling BotID + a challenge rule reduce that share?`
-          : 'Would enabling BotID (Bot Protection) reduce edge request volume from automated traffic?',
-      evidence: {
-        botEnabled: false,
-        edgeCost,
-        totalRequests,
-        managedRules: challengeRule ?? null,
-        botShare: botShare ?? null,
-      },
+  return [{
+    kind: metadata.id,
+    scope: 'account',
+    files: [],
+    priority,
+    confidence,
+    o11ySignal: edgeCost != null
+      ? `edge_cost=${edgeCost.toFixed(0)},bot_protection=disabled,${botShareNote},${ruleNote}`
+      : `requests=${totalRequests},bot_protection=disabled,${botShareNote},${ruleNote}`,
+    reason: botShare?.botPct != null && botShare.botPct > 0.2
+      ? 'BotID disabled with observable bot bandwidth share'
+      : 'BotID disabled with observable traffic',
+    question: botShare?.botPct != null && botShare.botPct > 0.2
+      ? `Bot traffic accounts for ${(botShare.botPct * 100).toFixed(0)}% of FDT bytes (top category: ${botShare.topCategory ?? 'unknown'}). Would enabling BotID + a challenge rule reduce that share?`
+      : 'Would enabling BotID (Bot Protection) reduce edge request volume from automated traffic?',
+    evidence: {
+      botEnabled: false,
+      edgeCost,
+      totalRequests,
+      managedRules: challengeRule ?? null,
+      botShare: botShare ?? null,
     },
-  ];
+  }];
 }
 
 function totalRequestsFromSignals(signals) {

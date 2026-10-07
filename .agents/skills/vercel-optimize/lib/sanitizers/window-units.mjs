@@ -5,11 +5,17 @@ import { normalizeObservedWindowUnits } from '../display-labels.mjs';
 
 export const metadata = {
   id: 'window-units',
-  description:
-    'Rewrite observed /mo or monthly count units to /window so reports do not imply extrapolated monthly data.',
+  description: 'Rewrite observed /mo or monthly count units to /window so reports do not imply extrapolated monthly data.',
 };
 
-const STRING_FIELDS = ['what', 'why', 'fix', 'currentBehavior', 'desiredBehavior', 'verify'];
+const STRING_FIELDS = [
+  'what',
+  'why',
+  'fix',
+  'currentBehavior',
+  'desiredBehavior',
+  'verify',
+];
 
 export function apply(rec) {
   const tags = [];

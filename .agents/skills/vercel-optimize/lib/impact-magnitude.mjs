@@ -24,26 +24,20 @@ export function stripDollarLiterals(text) {
   if (!text || typeof text !== 'string') return { text, stripped: 0 };
 
   let count = 0;
-  const cleaned = text.replace(/\$[\d][\d.,]*(?:[kKmMbB])?(?:\/[\dA-Za-z]+)?/g, (m) => {
-    if (/^\$\d+$/.test(m)) return m;
-    count++;
-    return 'the billed cost';
-  });
+  const cleaned = text.replace(
+    /\$[\d][\d.,]*(?:[kKmMbB])?(?:\/[\dA-Za-z]+)?/g,
+    (m) => {
+      if (/^\$\d+$/.test(m)) return m;
+      count++;
+      return 'the billed cost';
+    }
+  );
 
   return { text: cleaned, stripped: count };
 }
 
 export function applyDollarStrip(rec) {
-  const fields = [
-    'what',
-    'why',
-    'fix',
-    'impact',
-    'currentBehavior',
-    'desiredBehavior',
-    'before',
-    'after',
-  ];
+  const fields = ['what', 'why', 'fix', 'impact', 'currentBehavior', 'desiredBehavior', 'before', 'after'];
   let totalStripped = 0;
   for (const f of fields) {
     if (typeof rec[f] !== 'string') continue;

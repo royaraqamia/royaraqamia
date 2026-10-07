@@ -27,8 +27,7 @@ async function main() {
     if (BANNED_STALE_URLS.has(entry?.url)) {
       errors.push(`${label}.url uses a stale Next.js docs path: ${entry.url}`);
     }
-    if (typeof entry.topic !== 'string' || entry.topic.trim() === '')
-      errors.push(`${label}.topic is required`);
+    if (typeof entry.topic !== 'string' || entry.topic.trim() === '') errors.push(`${label}.topic is required`);
     if (!Array.isArray(entry.appliesTo)) errors.push(`${label}.appliesTo must be an array`);
     validateFrameworks(entry.applicableFrameworks, `${label}.applicableFrameworks`, errors);
   }
@@ -40,10 +39,7 @@ async function main() {
     if (!SKILL_REF_RE.test(ref)) errors.push(`${label} must contain skill + rule identifiers`);
     if (seenRules.has(ref)) errors.push(`${label} duplicate: ${ref}`);
     seenRules.add(ref);
-    if (
-      typeof (entry.description ?? entry.topic) !== 'string' ||
-      (entry.description ?? entry.topic).trim() === ''
-    ) {
+    if (typeof (entry.description ?? entry.topic) !== 'string' || (entry.description ?? entry.topic).trim() === '') {
       errors.push(`${label}.topic or .description is required`);
     }
     validateFrameworks(entry.applicableFrameworks, `${label}.applicableFrameworks`, errors);
@@ -54,9 +50,7 @@ async function main() {
     process.exit(1);
   }
 
-  console.error(
-    `[check-citations] OK — ${lib.urls.length} URLs, ${lib.ruleSkillRefs.length} skill-rule refs`
-  );
+  console.error(`[check-citations] OK — ${lib.urls.length} URLs, ${lib.ruleSkillRefs.length} skill-rule refs`);
 }
 
 function validateFrameworks(patterns, label, errors) {
@@ -72,11 +66,7 @@ function validateFrameworks(patterns, label, errors) {
     if (pattern === '*') continue;
     // Smoke-check parser coverage with a modern Next version. Unknown framework
     // patterns are still valid as long as the syntax is recognizable.
-    if (
-      !/^[\w-]+@(?:\*|\d+(?:\.\d+){0,2}|[<>]=?\s*\d+(?:\.\d+){0,2})(?:\s*\|\|\s*[\w-]+@(?:\*|\d+(?:\.\d+){0,2}|[<>]=?\s*\d+(?:\.\d+){0,2}))*$/.test(
-        pattern
-      )
-    ) {
+    if (!/^[\w-]+@(?:\*|\d+(?:\.\d+){0,2}|[<>]=?\s*\d+(?:\.\d+){0,2})(?:\s*\|\|\s*[\w-]+@(?:\*|\d+(?:\.\d+){0,2}|[<>]=?\s*\d+(?:\.\d+){0,2}))*$/.test(pattern)) {
       errors.push(`${label} has unsupported pattern: ${pattern}`);
       continue;
     }

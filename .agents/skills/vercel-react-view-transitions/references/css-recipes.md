@@ -20,30 +20,18 @@ This file contains the complete CSS recipe set for the patterns in this skill. C
 
 ```css
 @keyframes fade {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @keyframes slide {
-  from {
-    translate: var(--slide-offset);
-  }
-  to {
-    translate: 0;
-  }
+  from { translate: var(--slide-offset); }
+  to { translate: 0; }
 }
 
 @keyframes slide-y {
-  from {
-    transform: translateY(var(--slide-y-offset, 10px));
-  }
-  to {
-    transform: translateY(0);
-  }
+  from { transform: translateY(var(--slide-y-offset, 10px)); }
+  to { transform: translateY(0); }
 }
 ```
 
@@ -82,18 +70,9 @@ Keep the shared fade keyframe opacity-only. If a specific morph needs softness, 
 ```
 
 Usage:
-
 ```jsx
-<Suspense
-  fallback={
-    <ViewTransition exit="slide-down">
-      <Skeleton />
-    </ViewTransition>
-  }
->
-  <ViewTransition default="none" enter="slide-up">
-    <Content />
-  </ViewTransition>
+<Suspense fallback={<ViewTransition exit="slide-down"><Skeleton /></ViewTransition>}>
+  <ViewTransition default="none" enter="slide-up"><Content /></ViewTransition>
 </Suspense>
 ```
 
@@ -175,9 +154,7 @@ Usage:
 }
 
 @keyframes via-blur {
-  30% {
-    filter: blur(3px);
-  }
+  30% { filter: blur(3px); }
 }
 ```
 
@@ -218,24 +195,12 @@ Usage: `<ViewTransition name={`title-${id}`} share="text-morph" />`
 }
 
 @keyframes scale-down {
-  from {
-    transform: scale(1);
-    opacity: 1;
-  }
-  to {
-    transform: scale(0.85);
-    opacity: 0;
-  }
+  from { transform: scale(1); opacity: 1; }
+  to { transform: scale(0.85); opacity: 0; }
 }
 @keyframes scale-up {
-  from {
-    transform: scale(0.85);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 ```
 

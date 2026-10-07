@@ -13,9 +13,7 @@ const log = (...a) => console.error('[reconcile-candidates]', ...a);
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.investigationPath) {
-    console.error(
-      'usage: node scripts/reconcile-candidates.mjs <investigation-evidence.json> [--gate gate.json] [--out reconciled-investigation.json]'
-    );
+    console.error('usage: node scripts/reconcile-candidates.mjs <investigation-evidence.json> [--gate gate.json] [--out reconciled-investigation.json]');
     process.exit(1);
   }
 
@@ -25,15 +23,10 @@ async function main() {
   ]);
 
   const reconciled = reconcileInvestigation(investigation, { gate });
-  const serialized =
-    JSON.stringify(
-      {
-        ...reconciled,
-        reconciledAt: args.noTimestamp ? null : new Date().toISOString(),
-      },
-      null,
-      2
-    ) + '\n';
+  const serialized = JSON.stringify({
+    ...reconciled,
+    reconciledAt: args.noTimestamp ? null : new Date().toISOString(),
+  }, null, 2) + '\n';
 
   if (args.outPath) {
     await mkdir(dirname(args.outPath), { recursive: true });

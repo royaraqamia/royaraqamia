@@ -15,27 +15,23 @@ The filename must match the `id`. Frontmatter uses a strict subset of YAML: one 
 id: cdn-cache-auth-safety
 title: CDN cache auth safety
 status: active
-candidateKinds: ['uncached_route', 'cache_header_gap']
-frameworks: ['*']
+candidateKinds: ["uncached_route", "cache_header_gap"]
+frameworks: ["*"]
 priority: 90
-citations: ['https://vercel.com/docs/caching/cdn-cache']
+citations: ["https://vercel.com/docs/caching/cdn-cache"]
 maxBriefChars: 900
 ---
 
 ## Investigation Brief
-
 ...
 
 ## Evidence To Check
-
 ...
 
 ## Do Not Recommend When
-
 ...
 
 ## Verification
-
 ...
 ```
 

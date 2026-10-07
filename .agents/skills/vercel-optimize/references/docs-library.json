@@ -524,26 +524,13 @@
     {
       "url": "https://docs.astro.build/en/guides/integrations-guide/vercel/",
       "topic": "Astro Vercel adapter — ISR, image services, edge middleware, runtime config",
-      "appliesTo": [
-        "slow_route",
-        "cold_start",
-        "uncached_route",
-        "isr_overrevalidation",
-        "rendering_candidate",
-        "middleware_heavy"
-      ],
+      "appliesTo": ["slow_route", "cold_start", "uncached_route", "isr_overrevalidation", "rendering_candidate", "middleware_heavy"],
       "applicableFrameworks": ["astro@*"]
     },
     {
       "url": "https://vercel.com/docs/frameworks/frontend/astro",
       "topic": "Astro on Vercel — output modes, ISR, edge middleware, and image optimization",
-      "appliesTo": [
-        "uncached_route",
-        "isr_overrevalidation",
-        "rendering_candidate",
-        "middleware_heavy",
-        "image_optimization"
-      ],
+      "appliesTo": ["uncached_route", "isr_overrevalidation", "rendering_candidate", "middleware_heavy", "image_optimization"],
       "applicableFrameworks": ["astro@*"]
     },
     {

@@ -19,14 +19,11 @@ const DIVERSITY_ELIGIBILITY = new Map([
   // Scanner-driven cache findings are valuable, but the default pass should
   // spend a slot only when observability shows meaningful route traffic or a
   // very slow route handler.
-  [
-    'cache_header_gap',
-    (candidate) => {
-      const invocations = numberFromSignal(candidate?.o11ySignal, 'inv');
-      const p95Ms = durationMsFromSignal(candidate?.o11ySignal, 'p95');
-      return invocations >= 50_000 || p95Ms >= 2000;
-    },
-  ],
+  ['cache_header_gap', (candidate) => {
+    const invocations = numberFromSignal(candidate?.o11ySignal, 'inv');
+    const p95Ms = durationMsFromSignal(candidate?.o11ySignal, 'p95');
+    return invocations >= 50_000 || p95Ms >= 2000;
+  }],
   ['rendering_candidate', (candidate) => numberFromSignal(candidate?.o11ySignal, 'inv') >= 50_000],
 ]);
 

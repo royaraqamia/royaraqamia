@@ -9,9 +9,7 @@ import { buildBudgetSummary, renderBudgetSummaryMarkdown } from '../lib/budget-s
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (!args.gatePath) {
-    console.error(
-      'usage: node scripts/budget-summary.mjs <gate.json> [--format json|markdown] [--no-prompt]'
-    );
+    console.error('usage: node scripts/budget-summary.mjs <gate.json> [--format json|markdown] [--no-prompt]');
     process.exit(1);
   }
   const gate = JSON.parse(await readFile(args.gatePath, 'utf-8'));

@@ -24,13 +24,7 @@ function normalizeColdStart(metricId, aggregation) {
     const byRoute = new Map();
     for (const r of rows) {
       if (!r.route) continue;
-      const prior = byRoute.get(r.route) ?? {
-        route: r.route,
-        total: 0,
-        coldCount: 0,
-        warmCount: 0,
-        prewarmedCount: 0,
-      };
+      const prior = byRoute.get(r.route) ?? { route: r.route, total: 0, coldCount: 0, warmCount: 0, prewarmedCount: 0 };
       const v = r.value ?? 0;
       prior.total += v;
       if (r.function_start_type === 'cold') prior.coldCount += v;
@@ -54,8 +48,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['route', 'cache_result'],
     limit: ROUTE_LIMIT,
-    description:
-      'Request count per route × cache_result. Source of cache hit rate; total invocations folds across cache_result.',
+    description: 'Request count per route × cache_result. Source of cache hit rate; total invocations folds across cache_result.',
   },
   {
     id: 'fnDurationP95ByRoute',
@@ -71,8 +64,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['route', 'http_status'],
     limit: ROUTE_LIMIT,
-    description:
-      'Request count per route × http_status. Compatibility fallback for older route_errors fixtures.',
+    description: 'Request count per route × http_status. Compatibility fallback for older route_errors fixtures.',
   },
   {
     id: 'fnStatusByRoute',
@@ -80,8 +72,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['route', 'http_status'],
     limit: ROUTE_LIMIT,
-    description:
-      'Function invocation count per route × http_status. Canonical 5xx source for slow_route disqualification and route_errors.',
+    description: 'Function invocation count per route × http_status. Canonical 5xx source for slow_route disqualification and route_errors.',
   },
   {
     id: 'requestsByRouteMethod',
@@ -89,8 +80,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['route', 'request_method'],
     limit: ROUTE_LIMIT,
-    description:
-      'Request count per route × request_method. Uncached_route gate uses this to skip mostly-POST routes (Server Actions, mutations) where 0% cache is correct behavior.',
+    description: 'Request count per route × request_method. Uncached_route gate uses this to skip mostly-POST routes (Server Actions, mutations) where 0% cache is correct behavior.',
   },
   {
     id: 'externalApiP75',
@@ -107,8 +97,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['route', 'function_start_type'],
     limit: ROUTE_LIMIT,
-    description:
-      'Function invocation count split by cold | hot | prewarmed. Feeds cold_start gate.',
+    description: 'Function invocation count split by cold | hot | prewarmed. Feeds cold_start gate.',
     normalizer: normalizeColdStart('vercel.function_invocation.count', 'sum'),
   },
   {
@@ -125,8 +114,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['route'],
     limit: ROUTE_LIMIT,
-    description:
-      'Active CPU time per route. Fluid Compute bills on this; high CPU = expensive route.',
+    description: 'Active CPU time per route. Fluid Compute bills on this; high CPU = expensive route.',
   },
   {
     id: 'fnPeakMemoryByRoute',
@@ -150,8 +138,7 @@ export const QUERIES = [
     aggregation: 'p95',
     groupBy: ['route'],
     limit: ROUTE_LIMIT,
-    description:
-      'Server-measured time-to-first-byte per route. Complements function_duration_ms p95.',
+    description: 'Server-measured time-to-first-byte per route. Complements function_duration_ms p95.',
   },
 
   {
@@ -168,8 +155,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['bot_category'],
     limit: DIM_LIMIT,
-    description:
-      'FDT bytes by bot category. Empty `bot_category` = human traffic; non-empty = bots.',
+    description: 'FDT bytes by bot category. Empty `bot_category` = human traffic; non-empty = bots.',
   },
   {
     id: 'fdtByCache',
@@ -186,8 +172,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['request_path'],
     limit: ROUTE_LIMIT,
-    description:
-      'Middleware invocations per request_path. Heavy middleware traffic = missing matcher.',
+    description: 'Middleware invocations per request_path. Heavy middleware traffic = missing matcher.',
   },
   {
     id: 'middlewareDurationP95',
@@ -229,8 +214,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['source_image_hostname'],
     limit: HOST_LIMIT,
-    description:
-      'Image transformations per source hostname. Identify which hosts dominate the bill.',
+    description: 'Image transformations per source hostname. Identify which hosts dominate the bill.',
   },
   {
     id: 'imageSourceBytes',
@@ -279,8 +263,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: [],
     limit: 1,
-    description:
-      'Total Speed Insights measurements. Use to decide whether CWV gates have enough signal.',
+    description: 'Total Speed Insights measurements. Use to decide whether CWV gates have enough signal.',
   },
   {
     id: 'cwvCountByRoute',
@@ -288,8 +271,7 @@ export const QUERIES = [
     aggregation: 'sum',
     groupBy: ['route'],
     limit: ROUTE_LIMIT,
-    description:
-      'Speed Insights measurements per route. CWV route gates require at least 50 samples on the specific route.',
+    description: 'Speed Insights measurements per route. CWV route gates require at least 50 samples on the specific route.',
   },
 
   {

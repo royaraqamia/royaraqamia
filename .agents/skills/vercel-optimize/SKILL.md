@@ -1,8 +1,8 @@
 ---
 name: vercel-optimize
-description: 'Use for Vercel cost and performance optimization on deployed projects, especially Next.js, SvelteKit, Nuxt, and limited Astro apps. Collect Vercel metrics, usage, project config, and code scan results first; investigate only metric-backed candidates; produce ranked recommendations grounded in verified files and version-aware Vercel/framework docs. Trigger for Vercel bill reduction, slow or expensive routes, caching opportunities, Function Invocations, Build Minutes, Fast Data Transfer, Core Web Vitals, Bot Management, Fluid compute, or cost breakdown requests.'
+description: "Use for Vercel cost and performance optimization on deployed projects, especially Next.js, SvelteKit, Nuxt, and limited Astro apps. Collect Vercel metrics, usage, project config, and code scan results first; investigate only metric-backed candidates; produce ranked recommendations grounded in verified files and version-aware Vercel/framework docs. Trigger for Vercel bill reduction, slow or expensive routes, caching opportunities, Function Invocations, Build Minutes, Fast Data Transfer, Core Web Vitals, Bot Management, Fluid compute, or cost breakdown requests."
 metadata:
-  version: '1.2.0'
+  version: "1.2.0"
 ---
 
 # Vercel Optimize
@@ -31,14 +31,14 @@ Never put auth tokens in shell commands. Do not type `VERCEL_TOKEN=...`, `--toke
 
 The preflight reads `package.json` and sets expectations before metric fan-out.
 
-| Framework              | Status             | Notes                                                                     |
-| ---------------------- | ------------------ | ------------------------------------------------------------------------- |
-| Next.js App Router     | supported          | strongest route mapping, scanners, playbooks, citations                   |
-| Next.js Pages Router   | supported          | scoped to Pages Router idioms when detected                               |
-| SvelteKit              | supported          | route mapping for `src/routes` files and SvelteKit scanner                |
-| Nuxt                   | supported          | route mapping plus generic/platform checks; fewer framework-specific recs |
-| Astro                  | limited            | route mapping plus generic checks; fewer framework-specific recs          |
-| Hono / Remix / unknown | blocked by default | continue only if the user accepts a limited platform/code-only audit      |
+| Framework | Status | Notes |
+|---|---|---|
+| Next.js App Router | supported | strongest route mapping, scanners, playbooks, citations |
+| Next.js Pages Router | supported | scoped to Pages Router idioms when detected |
+| SvelteKit | supported | route mapping for `src/routes` files and SvelteKit scanner |
+| Nuxt | supported | route mapping plus generic/platform checks; fewer framework-specific recs |
+| Astro | limited | route mapping plus generic checks; fewer framework-specific recs |
+| Hono / Remix / unknown | blocked by default | continue only if the user accepts a limited platform/code-only audit |
 
 If unsupported, stop and ask before scanning or gating:
 

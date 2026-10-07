@@ -80,9 +80,7 @@ function normalizeWindowsShimTarget(target, dir) {
 async function runVercel(args, opts = {}) {
   const command = resolveVercelCommand({ env: opts.env });
   if (command.missing) {
-    const err = new Error(
-      'VERCEL_NOT_INSTALLED: `vercel` CLI not found in PATH. Install with `npm i -g vercel@latest`.'
-    );
+    const err = new Error('VERCEL_NOT_INSTALLED: `vercel` CLI not found in PATH. Install with `npm i -g vercel@latest`.');
     err.code = 'ENOENT';
     throw err;
   }
@@ -98,9 +96,7 @@ export async function checkCliVersion() {
     const { stdout } = await runVercel(['--version']);
     raw = stdout.trim();
   } catch (err) {
-    throw new Error(
-      'VERCEL_NOT_INSTALLED: `vercel` CLI not found in PATH. Install with `npm i -g vercel@latest`.'
-    );
+    throw new Error('VERCEL_NOT_INSTALLED: `vercel` CLI not found in PATH. Install with `npm i -g vercel@latest`.');
   }
   const m = raw.match(/(\d+)\.(\d+)\.(\d+)/);
   if (!m) throw new Error(`VERCEL_VERSION_UNPARSEABLE: ${raw}`);
@@ -136,9 +132,7 @@ export async function readProjectJson(cwd = process.cwd()) {
     const parsed = JSON.parse(raw);
     const projects = Array.isArray(parsed?.projects) ? parsed.projects.filter((p) => p?.id) : [];
     if (projects.length > 1) {
-      throw new Error(
-        'AMBIGUOUS_PROJECT_LINK: `.vercel/repo.json` contains multiple projects. Run from the linked app directory, or pass the intended projectId together with VERCEL_ORG_ID.'
-      );
+      throw new Error('AMBIGUOUS_PROJECT_LINK: `.vercel/repo.json` contains multiple projects. Run from the linked app directory, or pass the intended projectId together with VERCEL_ORG_ID.');
     }
     const first = projects[0];
     if (first?.id) {
@@ -156,9 +150,7 @@ export async function readProjectJson(cwd = process.cwd()) {
     if (parsed?.projectId) {
       return { projectId: parsed.projectId, orgId: parsed.orgId ?? null, source: 'project.json' };
     }
-  } catch {
-    /* fall through */
-  }
+  } catch { /* fall through */ }
 
   return null;
 }
@@ -192,13 +184,10 @@ async function readLinkedOwnerForProjectId(projectId, cwd = process.cwd()) {
   try {
     const raw = await readFile(join(cwd, '.vercel', 'repo.json'), 'utf-8');
     const parsed = JSON.parse(raw);
-    const matches = (Array.isArray(parsed?.projects) ? parsed.projects : []).filter(
-      (p) => p?.id && String(p.id) === String(projectId)
-    );
+    const matches = (Array.isArray(parsed?.projects) ? parsed.projects : [])
+      .filter((p) => p?.id && String(p.id) === String(projectId));
     if (matches.length > 1) {
-      throw new Error(
-        'AMBIGUOUS_PROJECT_LINK: `.vercel/repo.json` contains multiple entries for the requested projectId. Ask the user to confirm the intended Vercel team/personal scope.'
-      );
+      throw new Error('AMBIGUOUS_PROJECT_LINK: `.vercel/repo.json` contains multiple entries for the requested projectId. Ask the user to confirm the intended Vercel team/personal scope.');
     }
     const match = matches[0];
     if (match?.orgId) return { orgId: match.orgId, source: 'repo.json' };
@@ -213,9 +202,7 @@ async function readLinkedOwnerForProjectId(projectId, cwd = process.cwd()) {
     if (String(parsed?.projectId ?? '') === String(projectId) && parsed?.orgId) {
       return { orgId: parsed.orgId, source: 'project.json' };
     }
-  } catch {
-    /* fall through */
-  }
+  } catch { /* fall through */ }
 
   return null;
 }
@@ -230,8 +217,7 @@ export async function resolveCommandScope(project = {}) {
       source: 'missing-org-scope',
       required: true,
       error: 'PROJECT_SCOPE_UNRESOLVED',
-      detail:
-        'The project was resolved without an owner account, so the collector cannot prove which Vercel scope to query.',
+      detail: 'The project was resolved without an owner account, so the collector cannot prove which Vercel scope to query.',
     };
   }
 
@@ -364,9 +350,7 @@ export async function runVercelJson(args, opts = {}) {
     try {
       const data = JSON.parse(stdout);
       if (exitCode === 0) return { ok: true, data };
-    } catch {
-      /* fall through */
-    }
+    } catch { /* fall through */ }
   }
 
   return {
@@ -381,10 +365,7 @@ export function redactSensitiveText(value) {
     .replace(/\b(Bearer)\s+[A-Za-z0-9._~+/=-]{12,}/gi, '$1 [REDACTED]')
     .replace(/\b(Authorization:\s*)[^\r\n]+/gi, '$1[REDACTED]')
     .replace(/\b(x-vercel-id:\s*)[^\r\n]+/gi, '$1[REDACTED]')
-    .replace(
-      /\b(VERCEL_TOKEN|TURBO_TOKEN|NPM_TOKEN|NODE_AUTH_TOKEN|GITHUB_TOKEN)=("[^"]+"|'[^']+'|[^\s"'`]+)/g,
-      '$1=[REDACTED]'
-    )
+    .replace(/\b(VERCEL_TOKEN|TURBO_TOKEN|NPM_TOKEN|NODE_AUTH_TOKEN|GITHUB_TOKEN)=("[^"]+"|'[^']+'|[^\s"'`]+)/g, '$1=[REDACTED]')
     .replace(/(--token(?:=|\s+))("[^"]+"|'[^']+'|[^\s"'`]+)/gi, '$1[REDACTED]')
     .replace(/\b(prj|team|usr)_[A-Za-z0-9]{8,}\b/g, '$1_[REDACTED]')
     .replace(/("token"\s*:\s*")[^"]{8,}(")/gi, '$1[REDACTED]$2');
@@ -431,8 +412,7 @@ export async function checkObservabilityPlusConfiguration({ orgId, projectId } =
       source: 'observability-configuration-api',
       access: null,
       blocker: 'unknown',
-      detail:
-        'The Observability Plus team configuration preflight is not available for a user-owned project; falling back to the scoped metrics probe.',
+      detail: 'The Observability Plus team configuration preflight is not available for a user-owned project; falling back to the scoped metrics probe.',
     };
   }
   const qs = `?teamId=${encodeURIComponent(orgId)}`;
@@ -443,9 +423,7 @@ export async function checkObservabilityPlusConfiguration({ orgId, projectId } =
 export function classifyObservabilityPlusConfiguration(result, { projectId } = {}) {
   const source = 'observability-configuration-api';
   if (result?.ok) {
-    const disabledProjects = Array.isArray(result.data?.disabledProjects)
-      ? result.data.disabledProjects
-      : [];
+    const disabledProjects = Array.isArray(result.data?.disabledProjects) ? result.data.disabledProjects : [];
     const disabled = projectId
       ? disabledProjects.find((p) => String(p?.id ?? '') === String(projectId))
       : null;
@@ -478,30 +456,22 @@ export function classifyObservabilityPlusConfiguration(result, { projectId } = {
     /observability plus[\s\S]{0,160}not enabled/.test(text) ||
     /not enabled[\s\S]{0,160}observability plus/.test(text) ||
     /subscription to observability plus[\s\S]{0,160}required/.test(text);
-  if (
-    code === 'oplus_required' ||
-    ((code === 'not_found' || code === '404') && mentionsObservabilityPlusNotEnabled)
-  ) {
+  if (code === 'oplus_required' || ((code === 'not_found' || code === '404') && mentionsObservabilityPlusNotEnabled)) {
     return {
       ok: true,
       source,
       access: false,
       blocker: 'no_oplus_probe',
-      detail:
-        'Route-level metrics are unavailable because Observability Plus is not enabled for this team.',
+      detail: 'Route-level metrics are unavailable because Observability Plus is not enabled for this team.',
     };
   }
-  if (
-    /forbidden|not_authorized|403/.test(code) ||
-    /forbidden|not authorized|permission|403/.test(text)
-  ) {
+  if (/forbidden|not_authorized|403/.test(code) || /forbidden|not authorized|permission|403/.test(text)) {
     return {
       ok: false,
       source,
       access: null,
       blocker: 'forbidden',
-      detail:
-        'Could not read Observability Plus configuration for this team. Run `vercel switch <team>` and verify access.',
+      detail: 'Could not read Observability Plus configuration for this team. Run `vercel switch <team>` and verify access.',
     };
   }
   if (/not_auth|unauthorized|401/.test(code) || /unauthorized|log in|credentials|401/.test(text)) {
@@ -510,8 +480,7 @@ export function classifyObservabilityPlusConfiguration(result, { projectId } = {
       source,
       access: null,
       blocker: 'forbidden',
-      detail:
-        'Could not read Observability Plus configuration because the Vercel CLI is not authenticated.',
+      detail: 'Could not read Observability Plus configuration because the Vercel CLI is not authenticated.',
     };
   }
   return {
@@ -536,9 +505,7 @@ export async function queryMetric(metricId, opts = {}) {
   // 3-layer protection: semaphore (8 concurrent) + sliding-window (80/60s) + retryOnRateLimit (3× 60-90s jitter). payment_required is terminal.
   const throttle = getMetricThrottle();
   const onRetry = (attempt, delayMs) => {
-    console.error(
-      `[queryMetric] ${metricId} hit RATE_LIMITED; retry ${attempt}/3 after ${(delayMs / 1000).toFixed(0)}s`
-    );
+    console.error(`[queryMetric] ${metricId} hit RATE_LIMITED; retry ${attempt}/3 after ${(delayMs / 1000).toFixed(0)}s`);
   };
   return await throttle.run(() =>
     retryOnRateLimit(() => runVercelJson(scopedArgs(args, opts.scope)), { onRetry })
@@ -548,8 +515,9 @@ export async function queryMetric(metricId, opts = {}) {
 // Team-owned projects need `?teamId=<orgId>` to avoid current-team drift. User-
 // owned projects use the authenticated user context and should not pass teamId.
 export async function getProjectConfig(projectId, orgId) {
-  const qs =
-    orgId && !String(orgId).startsWith('usr_') ? `?teamId=${encodeURIComponent(orgId)}` : '';
+  const qs = orgId && !String(orgId).startsWith('usr_')
+    ? `?teamId=${encodeURIComponent(orgId)}`
+    : '';
   const r = await runVercelJson(['api', `/v9/projects/${projectId}${qs}`]);
   return r.ok ? r.data : { error: r.code, stderr: r.stderr };
 }
@@ -559,7 +527,12 @@ export async function getUsage({ days = 14, scope, groupByProject = true } = {})
   const toDate = new Date();
   const fromDate = new Date(toDate.getTime() - days * 86400000);
   const fmt = (d) => d.toISOString().slice(0, 10);
-  const args = ['usage', '--format', 'json', '--from', fmt(fromDate), '--to', fmt(toDate)];
+  const args = [
+    'usage',
+    '--format', 'json',
+    '--from', fmt(fromDate),
+    '--to', fmt(toDate),
+  ];
   // The CLI rejects --breakdown with --group-by. Project grouping is higher
   // value for this skill because every recommendation must be project-scoped.
   if (groupByProject) args.push('--group-by', 'project');
@@ -572,9 +545,7 @@ export async function getUsage({ days = 14, scope, groupByProject = true } = {})
 export function filterUsageByProject(usage, projectId, projectName = null) {
   if (!usage || !projectId) return { filtered: null, matched: false, unattributedTotal: 0 };
   if (usage.groupBy?.dimension === 'project' && Array.isArray(usage.groupBy.data)) {
-    const project = usage.groupBy.data.find((entry) =>
-      projectMatches(entry, projectId, projectName)
-    );
+    const project = usage.groupBy.data.find((entry) => projectMatches(entry, projectId, projectName));
     if (!project) return { filtered: null, matched: false, unattributedTotal: 0 };
     return {
       filtered: {
@@ -582,10 +553,7 @@ export function filterUsageByProject(usage, projectId, projectName = null) {
         groupBy: { ...usage.groupBy, data: [project] },
         services: Array.isArray(project.services) ? project.services : [],
         totals: project.totals ?? null,
-        project: {
-          name: project.name ?? projectName ?? null,
-          projectId: project.projectId ?? projectId,
-        },
+        project: { name: project.name ?? projectName ?? null, projectId: project.projectId ?? projectId },
       },
       matched: true,
       unattributedTotal: 0,
@@ -607,8 +575,8 @@ export function filterUsageByProject(usage, projectId, projectName = null) {
     const services = Array.isArray(day.services) ? day.services : [];
     const projectRows = services.filter((s) => projectMatches(s, projectId, projectName));
     const unattributedRows = services.filter((s) => !s.projectId && !s.project);
-    for (const r of projectRows) projectTotal += r.billedCost ?? r.cost ?? 0;
-    for (const r of unattributedRows) unattributedTotal += r.billedCost ?? r.cost ?? 0;
+    for (const r of projectRows) projectTotal += (r.billedCost ?? r.cost ?? 0);
+    for (const r of unattributedRows) unattributedTotal += (r.billedCost ?? r.cost ?? 0);
     if (projectRows.length === 0) continue;
     matchedAny = true;
     out.breakdown.data.push({ ...day, services: projectRows });
@@ -627,29 +595,18 @@ function projectMatches(serviceRow, projectId, projectName = null) {
   if (projectName && serviceRow.name === projectName) return true;
   if (projectName && serviceRow.project === projectName) return true;
   if (serviceRow.project === projectId) return true;
-  if (
-    serviceRow.project &&
-    (serviceRow.project.id === projectId ||
-      serviceRow.project.projectId === projectId ||
-      serviceRow.project.name === projectName)
-  )
-    return true;
+  if (serviceRow.project && (serviceRow.project.id === projectId || serviceRow.project.projectId === projectId || serviceRow.project.name === projectName)) return true;
   return false;
 }
 
 function aggregateServicesByName(days) {
   const byName = new Map();
   for (const day of days) {
-    for (const s of day.services ?? []) {
+    for (const s of (day.services ?? [])) {
       const key = s.name ?? '(unnamed)';
-      const prev = byName.get(key) ?? {
-        name: key,
-        billedCost: 0,
-        pricingQuantity: 0,
-        pricingUnit: s.pricingUnit ?? null,
-      };
-      prev.billedCost += s.billedCost ?? s.cost ?? 0;
-      prev.pricingQuantity += s.pricingQuantity ?? 0;
+      const prev = byName.get(key) ?? { name: key, billedCost: 0, pricingQuantity: 0, pricingUnit: s.pricingUnit ?? null };
+      prev.billedCost += (s.billedCost ?? s.cost ?? 0);
+      prev.pricingQuantity += (s.pricingQuantity ?? 0);
       byName.set(key, prev);
     }
   }
@@ -666,10 +623,7 @@ export async function getAccountPlan(scope) {
   const teamScope = scope || currentTeamId;
 
   if (teamScope && !String(teamScope).startsWith('usr_')) {
-    const team = await getBillingPlanFromPath(
-      `/v2/teams/${encodeURIComponent(teamScope)}`,
-      'team.billing.plan'
-    );
+    const team = await getBillingPlanFromPath(`/v2/teams/${encodeURIComponent(teamScope)}`, 'team.billing.plan');
     if (team.plan !== 'unknown' || !/not_found|404/i.test(String(team.error ?? ''))) {
       return team;
     }
@@ -713,15 +667,17 @@ async function getBillingPlanFromPath(path, source) {
 }
 
 export function extractBillingPlan(data) {
-  const raw = data?.billing?.plan ?? data?.team?.billing?.plan ?? data?.user?.billing?.plan ?? null;
+  const raw =
+    data?.billing?.plan ??
+    data?.team?.billing?.plan ??
+    data?.user?.billing?.plan ??
+    null;
   const plan = normalizeBillingPlan(raw);
   return plan ? { plan, rawPlan: raw } : null;
 }
 
 function normalizeBillingPlan(raw) {
-  const value = String(raw ?? '')
-    .trim()
-    .toLowerCase();
+  const value = String(raw ?? '').trim().toLowerCase();
   if (value === 'hobby' || value === 'pro' || value === 'enterprise') return value;
   return null;
 }
@@ -762,10 +718,9 @@ export function inferPlan(contract, opts = {}) {
 
   return {
     plan: 'uncertain',
-    reason:
-      typeof totalCost === 'number' && totalCost === 0
-        ? 'no commitments and no billed usage in window (could be Hobby, or Pro with no recent billing)'
-        : 'no commitments on contract; usage unavailable',
+    reason: typeof totalCost === 'number' && totalCost === 0
+      ? 'no commitments and no billed usage in window (could be Hobby, or Pro with no recent billing)'
+      : 'no commitments on contract; usage unavailable',
   };
 }
 
@@ -780,9 +735,11 @@ function extractPlanOption(accountPlan) {
   if (!plan) return null;
   return {
     plan,
-    reason:
-      accountPlan.reason ??
-      (accountPlan.source ? `${accountPlan.source}=${plan}` : `billing.plan=${plan}`),
+    reason: accountPlan.reason ?? (
+      accountPlan.source
+        ? `${accountPlan.source}=${plan}`
+        : `billing.plan=${plan}`
+    ),
     source: accountPlan.source ?? null,
   };
 }
@@ -797,49 +754,34 @@ export async function detectStack(cwd = process.cwd()) {
   }
   const deps = { ...pkg.dependencies, ...pkg.devDependencies };
 
-  const framework = deps.next
-    ? 'next'
-    : deps.nuxt
-      ? 'nuxt'
-      : deps.astro
-        ? 'astro'
-        : deps['@sveltejs/kit']
-          ? 'sveltekit'
-          : deps['@remix-run/react']
-            ? 'remix'
-            : deps.hono
-              ? 'hono'
-              : 'unknown';
+  const framework =
+    deps.next ? 'next' :
+    deps.nuxt ? 'nuxt' :
+    deps.astro ? 'astro' :
+    deps['@sveltejs/kit'] ? 'sveltekit' :
+    deps['@remix-run/react'] ? 'remix' :
+    deps.hono ? 'hono' :
+    'unknown';
 
   const frameworkVersion = (() => {
-    const m = {
-      next: 'next',
-      nuxt: 'nuxt',
-      astro: 'astro',
-      sveltekit: '@sveltejs/kit',
-      remix: '@remix-run/react',
-      hono: 'hono',
-    };
+    const m = { next: 'next', nuxt: 'nuxt', astro: 'astro', sveltekit: '@sveltejs/kit', remix: '@remix-run/react', hono: 'hono' };
     const dep = m[framework];
     if (!dep) return null;
     return (deps[dep] || '').replace(/^[\^~]/, '') || null;
   })();
 
-  const hasAppRouter =
-    (await pathExists(join(cwd, 'app'))) || (await pathExists(join(cwd, 'src/app')));
-  const hasPagesRouter =
-    (await pathExists(join(cwd, 'pages'))) || (await pathExists(join(cwd, 'src/pages')));
+  const hasAppRouter = await pathExists(join(cwd, 'app')) || await pathExists(join(cwd, 'src/app'));
+  const hasPagesRouter = await pathExists(join(cwd, 'pages')) || await pathExists(join(cwd, 'src/pages'));
   const typescript = await pathExists(join(cwd, 'tsconfig.json'));
-  const cacheComponents = framework === 'next' ? await detectNextCacheComponents(cwd) : null;
+  const cacheComponents = framework === 'next'
+    ? await detectNextCacheComponents(cwd)
+    : null;
 
   const orm =
-    deps.prisma || deps['@prisma/client']
-      ? 'prisma'
-      : deps['drizzle-orm']
-        ? 'drizzle'
-        : deps.kysely
-          ? 'kysely'
-          : 'none';
+    deps.prisma || deps['@prisma/client'] ? 'prisma' :
+    deps['drizzle-orm'] ? 'drizzle' :
+    deps.kysely ? 'kysely' :
+    'none';
   const vercelFlagsPackages = [
     '@vercel/flags',
     '@vercel/flags/next',
@@ -852,8 +794,8 @@ export async function detectStack(cwd = process.cwd()) {
 
   const isMonorepo =
     !!pkg.workspaces ||
-    (await pathExists(join(cwd, 'pnpm-workspace.yaml'))) ||
-    (await pathExists(join(cwd, 'lerna.json')));
+    await pathExists(join(cwd, 'pnpm-workspace.yaml')) ||
+    await pathExists(join(cwd, 'lerna.json'));
 
   return {
     framework,
@@ -874,19 +816,11 @@ export async function detectStack(cwd = process.cwd()) {
 
 function baselineStack() {
   return {
-    framework: 'unknown',
-    frameworkVersion: null,
-    hasAppRouter: false,
-    hasPagesRouter: false,
-    cacheComponents: null,
-    typescript: false,
-    orm: 'none',
-    isMonorepo: false,
-    rootDirectory: null,
-    hasVercelFlagsPackage: false,
-    vercelFlagsPackages: [],
-    hasWorkflowPackage: false,
-    workflowPackages: [],
+    framework: 'unknown', frameworkVersion: null,
+    hasAppRouter: false, hasPagesRouter: false, cacheComponents: null, typescript: false,
+    orm: 'none', isMonorepo: false, rootDirectory: null,
+    hasVercelFlagsPackage: false, vercelFlagsPackages: [],
+    hasWorkflowPackage: false, workflowPackages: [],
   };
 }
 
@@ -902,12 +836,7 @@ async function detectNextCacheComponents(cwd) {
 }
 
 async function pathExists(p) {
-  try {
-    await access(p);
-    return true;
-  } catch {
-    return false;
-  }
+  try { await access(p); return true; } catch { return false; }
 }
 
 // `--scope <teamId>` is buggy on several subcommands (silently falls back to
@@ -915,9 +844,7 @@ async function pathExists(p) {
 function scopedArgs(args, scope) {
   if (!scope) return args;
   if (typeof scope === 'string' && /^(team|usr)_/.test(scope)) {
-    throw new Error(
-      'RAW_ID_SCOPE_UNRESOLVED: resolve the linked org/user ID to a CLI scope slug before running Vercel commands.'
-    );
+    throw new Error('RAW_ID_SCOPE_UNRESOLVED: resolve the linked org/user ID to a CLI scope slug before running Vercel commands.');
   }
   return [...args, '--scope', scope];
 }

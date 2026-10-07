@@ -42,8 +42,7 @@ export function reconcileInvestigation(investigation, { gate = null } = {}) {
         continue;
       }
       reconciliation.droppedBeforeInvestigation++;
-      reconciliation.reasons[decision.reasonCode] =
-        (reconciliation.reasons[decision.reasonCode] ?? 0) + 1;
+      reconciliation.reasons[decision.reasonCode] = (reconciliation.reasons[decision.reasonCode] ?? 0) + 1;
       preResolvedRecords.push(decision.record);
     }
     return kept;
@@ -107,14 +106,12 @@ function scannerOnlyDecision(candidate, ctx) {
   if (candidate.o11ySignal !== 'scanner-only') return null;
   return dropWithObservation(candidate, ctx, {
     reasonCode: 'scanner_only_no_metric',
-    reason:
-      'Static scanner found a possible optimization, but no Vercel metric tied traffic or cost to this target.',
+    reason: 'Static scanner found a possible optimization, but no Vercel metric tied traffic or cost to this target.',
     observation: {
       kind: 'scanner_only_no_metric',
       summary: `${targetLabel(candidate)} has a static scanner finding, but no route-level Vercel metric signal.`,
       evidence: `gate signal=${candidate.o11ySignal}`,
-      suggestedAction:
-        'Do not ship a recommendation from this finding unless a Vercel metric shows material traffic, cost, or latency for the same target.',
+      suggestedAction: 'Do not ship a recommendation from this finding unless a Vercel metric shows material traffic, cost, or latency for the same target.',
     },
   });
 }
@@ -130,8 +127,7 @@ function slowRouteMetricMismatchDecision(candidate, ctx) {
       kind: 'metric_mismatch',
       summary: `${targetLabel(candidate)} was flagged as slow in the broad pass, but follow-up p95 is below threshold.`,
       evidence: `${candidate.o11ySignal ?? 'gate signal unavailable'}; deepDive.latency.p95=${formatMs(p95)}`,
-      suggestedAction:
-        'Skip code investigation for this run. Re-check only if the broad and follow-up windows converge in a later run.',
+      suggestedAction: 'Skip code investigation for this run. Re-check only if the broad and follow-up windows converge in a later run.',
     },
   });
 }
@@ -157,8 +153,7 @@ function slowRouteErrorDecision(candidate, ctx) {
       kind: 'error_storm',
       summary: `${targetLabel(candidate)} latency is dominated by function-level 5xx responses.`,
       evidence: `deepDive.statusDistribution: ${formatInteger(errors)} 5xx of ${formatInteger(total)} function invocations (${formatPct(rate)})`,
-      suggestedAction:
-        'Investigate as route_errors with runtime logs and error classification before making performance recommendations.',
+      suggestedAction: 'Investigate as route_errors with runtime logs and error classification before making performance recommendations.',
     },
   });
 }
@@ -181,15 +176,13 @@ function deploymentRegressionDecision(candidate, ctx) {
       kind: 'deployment_regression',
       summary: `${targetLabel(candidate)} p95 is concentrated in one deployment.`,
       evidence: `${worst.deploymentId} p95=${formatMs(worst.p95)} vs next highest ${second.deploymentId} p95=${formatMs(second.p95)}`,
-      suggestedAction:
-        'Compare the outlier deployment against the prior deployment and inspect runtime logs before recommending a code-level performance change.',
+      suggestedAction: 'Compare the outlier deployment against the prior deployment and inspect runtime logs before recommending a code-level performance change.',
     },
   });
 }
 
 function routeErrorsMetricMismatchDecision(candidate, ctx) {
-  const broadErrors =
-    numberAt(candidate, ['evidence', 'count']) ?? parseSignalNumber(candidate.o11ySignal, 'errs');
+  const broadErrors = numberAt(candidate, ['evidence', 'count']) ?? parseSignalNumber(candidate.o11ySignal, 'errs');
   if (broadErrors == null || broadErrors < 1000) return null;
   const rows = [
     ...arrayAt(candidate, ['evidence', 'deepDive', 'errorStatusPattern']),
@@ -215,8 +208,7 @@ function routeErrorsMetricMismatchDecision(candidate, ctx) {
       kind: 'metric_mismatch',
       summary: `${targetLabel(candidate)} was flagged for 5xx errors, but follow-up status data did not confirm the volume.`,
       evidence: `${candidate.o11ySignal ?? 'gate signal unavailable'}; deepDive.confirmed5xx=${formatInteger(confirmed5xx)}`,
-      suggestedAction:
-        'Skip code recommendations from this run. Re-run with refreshed status metrics or runtime logs if the route is still suspected.',
+      suggestedAction: 'Skip code recommendations from this run. Re-run with refreshed status metrics or runtime logs if the route is still suspected.',
     },
   });
 }
@@ -226,9 +218,7 @@ function uncachedRouteCacheDecision(candidate, ctx) {
   if (rows.length === 0) return null;
   const total = sumRows(rows);
   if (total <= 0) return null;
-  const hits = sumRows(rows, (row) =>
-    ['HIT', 'STALE'].includes(String(row?.cache_result ?? '').toUpperCase())
-  );
+  const hits = sumRows(rows, (row) => ['HIT', 'STALE'].includes(String(row?.cache_result ?? '').toUpperCase()));
   const hitRate = hits / total;
   if (hitRate < UNCACHED_HEALTHY_HIT_RATE) return null;
   return dropWithObservation(candidate, ctx, {
@@ -238,8 +228,7 @@ function uncachedRouteCacheDecision(candidate, ctx) {
       kind: 'metric_mismatch',
       summary: `${targetLabel(candidate)} was flagged as low-cache, but follow-up cache data is already healthy.`,
       evidence: `${candidate.o11ySignal ?? 'gate signal unavailable'}; deepDive.cacheHitRate=${formatPct(hitRate)}`,
-      suggestedAction:
-        'Skip cache recommendations for this candidate unless a later run shows sustained MISS/BYPASS traffic.',
+      suggestedAction: 'Skip cache recommendations for this candidate unless a later run shows sustained MISS/BYPASS traffic.',
     },
   });
 }
@@ -259,8 +248,7 @@ function uncachedRouteMethodDecision(candidate, ctx) {
       kind: 'protocol_mismatch',
       summary: `${targetLabel(candidate)} is not GET-heavy enough for a shared-cache recommendation.`,
       evidence: `${candidate.o11ySignal ?? 'gate signal unavailable'}; deepDive.getShare=${formatPct(getShare)}`,
-      suggestedAction:
-        'Do not recommend CDN caching for this route from aggregate traffic alone. Investigate write-path cost only if another metric gate fires.',
+      suggestedAction: 'Do not recommend CDN caching for this route from aggregate traffic alone. Investigate write-path cost only if another metric gate fires.',
     },
   });
 }
@@ -271,18 +259,16 @@ function isrOverrevalidationDecision(candidate, ctx) {
   if (writeRows.length === 0 && readRows.length === 0) return null;
   const writes = sumRows(writeRows);
   const reads = sumRows(readRows);
-  const ratio = reads > 0 ? writes / reads : writes > 0 ? Infinity : 0;
+  const ratio = reads > 0 ? writes / reads : (writes > 0 ? Infinity : 0);
   if (reads <= 0) {
     return dropWithObservation(candidate, ctx, {
       reasonCode: 'metric_mismatch',
-      reason:
-        'Deep-dive ISR read units were not present, so the write/read over-revalidation signal was not confirmed.',
+      reason: 'Deep-dive ISR read units were not present, so the write/read over-revalidation signal was not confirmed.',
       observation: {
         kind: 'metric_mismatch',
         summary: `${targetLabel(candidate)} was flagged for ISR over-revalidation, but follow-up ISR read data was empty.`,
         evidence: `${candidate.o11ySignal ?? 'gate signal unavailable'}; deepDive.isrWrites=${formatInteger(writes)}; deepDive.isrReads=${formatInteger(reads)}`,
-        suggestedAction:
-          'Skip ISR recommendations for this candidate unless a later run confirms both ISR writes and reads for the same route.',
+        suggestedAction: 'Skip ISR recommendations for this candidate unless a later run confirms both ISR writes and reads for the same route.',
       },
     });
   }
@@ -295,8 +281,7 @@ function isrOverrevalidationDecision(candidate, ctx) {
       kind: 'metric_mismatch',
       summary: `${targetLabel(candidate)} was flagged for ISR over-revalidation, but follow-up ISR data did not confirm it.`,
       evidence: `${candidate.o11ySignal ?? 'gate signal unavailable'}; deepDive.isrWrites=${formatInteger(writes)}; deepDive.isrReads=${formatInteger(reads)}; ratio=${ratioLabel}`,
-      suggestedAction:
-        'Skip ISR recommendations for this candidate unless a later run shows sustained write amplification.',
+      suggestedAction: 'Skip ISR recommendations for this candidate unless a later run shows sustained write amplification.',
     },
   });
 }
@@ -322,10 +307,9 @@ function dropWithObservation(candidate, ctx, { reasonCode, reason, observation }
 
 export function candidateRefFor(candidate, files = candidate?.files) {
   if (!candidate || typeof candidate !== 'object') return 'unknown:<unknown>';
-  const target =
-    candidate.route ??
-    candidate.hostname ??
-    (Array.isArray(files) && files.length > 0 ? `<account>#${files[0]}` : '<account>');
+  const target = candidate.route
+    ?? candidate.hostname
+    ?? (Array.isArray(files) && files.length > 0 ? `<account>#${files[0]}` : '<account>');
   return `${candidate.kind ?? 'unknown'}:${target}`;
 }
 

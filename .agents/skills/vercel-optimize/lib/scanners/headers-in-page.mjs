@@ -8,7 +8,8 @@ export const metadata = {
   trafficIndependent: false,
   description:
     'headers(), cookies(), and draftMode() are dynamic APIs. Reading them in a page/layout makes the entire segment dynamic — no ISR, no static generation, and a function invocation on every request.',
-  fix: 'Move the dynamic API call into a child Server Component that lives inside a Suspense boundary. The parent can stay static; only the leaf re-renders dynamically.',
+  fix:
+    'Move the dynamic API call into a child Server Component that lives inside a Suspense boundary. The parent can stay static; only the leaf re-renders dynamically.',
   citations: [
     'https://nextjs.org/docs/app/api-reference/file-conventions/route-segment-config',
     'https://nextjs.org/docs/app/building-your-application/caching',

@@ -17,8 +17,9 @@ export const metadata = {
   billingDimension: 'function-duration',
   trafficIndependent: true,
   description:
-    'vercel.json `regions` or per-route `preferredRegion` is set. If the pinned region is far from the dominant user geo (or far from a data source) p95 TTFB suffers. This scanner provides the configured-region signal so the region-misconfig gate can recommend an audit.',
-  fix: 'Audit the pinned region against traffic geography (Speed Insights or Web Analytics by country) and data-source location. Consider multi-region if data lives in a fixed location and users are global; consider relocating if users are concentrated in one geography.',
+    "vercel.json `regions` or per-route `preferredRegion` is set. If the pinned region is far from the dominant user geo (or far from a data source) p95 TTFB suffers. This scanner provides the configured-region signal so the region-misconfig gate can recommend an audit.",
+  fix:
+    "Audit the pinned region against traffic geography (Speed Insights or Web Analytics by country) and data-source location. Consider multi-region if data lives in a fixed location and users are global; consider relocating if users are concentrated in one geography.",
   citations: [
     'https://vercel.com/docs/functions/configuring-functions/region',
     'https://vercel.com/docs/functions/configuring-functions/region',
@@ -64,9 +65,7 @@ export function scan({ files }) {
     const m = PREFERRED_REGION_RE.exec(content);
     if (m) {
       const raw = m[1];
-      const regions = raw.startsWith('[')
-        ? parseRegionList(raw.slice(1, -1))
-        : [raw.replace(/['"]/g, '')];
+      const regions = raw.startsWith('[') ? parseRegionList(raw.slice(1, -1)) : [raw.replace(/['"]/g, '')];
       out.push({
         pattern: metadata.id,
         file: path,

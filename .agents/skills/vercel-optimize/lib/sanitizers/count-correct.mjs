@@ -5,8 +5,7 @@ import { escapeRegex } from '../util.mjs';
 
 export const metadata = {
   id: 'count-correct',
-  description:
-    'Rewrite count claims to verified ground truth (count-correct) or "a number of" (count-strip) when verifier disagrees.',
+  description: 'Rewrite count claims to verified ground truth (count-correct) or "a number of" (count-strip) when verifier disagrees.',
 };
 
 const COUNT_CLAIM_TYPES = new Set(['pattern_count', 'repo_count', 'cited_count_literal']);

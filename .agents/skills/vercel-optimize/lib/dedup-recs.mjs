@@ -26,13 +26,20 @@ export function dedupeRecommendations(recommendations = []) {
     byKey.set(key, merged);
   }
 
-  return order.map((entry) => (entry?.__dedupKey ? byKey.get(entry.__dedupKey) : entry));
+  return order.map((entry) => entry?.__dedupKey ? byKey.get(entry.__dedupKey) : entry);
 }
 
 export function recommendationKey(rec) {
   const intent = dedupIntent(rec);
-  const bucket = intent === 'cache-control:s-maxage' ? NO_VALUE : String(rec?.bucket ?? NO_VALUE);
-  return JSON.stringify([bucket, dedupEditTarget(rec), primarySkillRule(rec), intent]);
+  const bucket = intent === 'cache-control:s-maxage'
+    ? NO_VALUE
+    : String(rec?.bucket ?? NO_VALUE);
+  return JSON.stringify([
+    bucket,
+    dedupEditTarget(rec),
+    primarySkillRule(rec),
+    intent,
+  ]);
 }
 
 export function normalizePath(path) {
@@ -47,10 +54,7 @@ export function normalizePath(path) {
 
 export function primarySkillRule(rec) {
   const citations = Array.isArray(rec?.citations) ? rec.citations : [];
-  return (
-    citations.find((c) => typeof c === 'string' && /^[A-Za-z][\w-]*:[A-Za-z][\w-]*$/.test(c)) ??
-    NO_VALUE
-  );
+  return citations.find((c) => typeof c === 'string' && /^[A-Za-z][\w-]*:[A-Za-z][\w-]*$/.test(c)) ?? NO_VALUE;
 }
 
 export function fixShape(rec) {
@@ -80,7 +84,8 @@ function firstAffectedFile(rec) {
   const direct = affectedFiles(rec);
   const editTarget = referencedCodeFiles(rec, ['fix', 'desiredBehavior', 'currentBehavior'])[0];
   if (editTarget) return editTarget;
-  const referenced = referencedCodeFiles(rec).find((file) => direct.includes(file));
+  const referenced = referencedCodeFiles(rec)
+    .find((file) => direct.includes(file));
   if (referenced) return referenced;
   return Array.isArray(rec?.affectedFiles) ? rec.affectedFiles[0] : null;
 }
@@ -91,23 +96,15 @@ function affectedFiles(rec) {
     : [];
 }
 
-function referencedCodeFiles(
-  rec,
-  fields = ['what', 'why', 'fix', 'currentBehavior', 'desiredBehavior', 'verify']
-) {
+function referencedCodeFiles(rec, fields = ['what', 'why', 'fix', 'currentBehavior', 'desiredBehavior', 'verify']) {
   const text = fields
     .map((field) => rec?.[field])
     .filter((v) => typeof v === 'string' && v.trim())
     .join('\n');
-  const matches =
-    text.match(
-      /(?:^|[\s`'"(])((?:\.{1,2}\/|[A-Za-z0-9_.@-]+\/)[A-Za-z0-9_./@[\]()-]+\.(?:mjs|cjs|js|jsx|ts|tsx))/g
-    ) ?? [];
-  return unique(
-    matches
-      .map((m) => normalizePath(m.replace(/^[\s`'"(]+/, '')))
-      .filter((file) => file !== NO_VALUE)
-  );
+  const matches = text.match(/(?:^|[\s`'"(])((?:\.{1,2}\/|[A-Za-z0-9_.@-]+\/)[A-Za-z0-9_./@[\]()-]+\.(?:mjs|cjs|js|jsx|ts|tsx))/g) ?? [];
+  return unique(matches.map((m) =>
+    normalizePath(m.replace(/^[\s`'"(]+/, ''))
+  ).filter((file) => file !== NO_VALUE));
 }
 
 function isSMaxageCacheHeaderRec(rec) {
@@ -117,13 +114,9 @@ function isSMaxageCacheHeaderRec(rec) {
     rec?.fix,
     rec?.desiredBehavior,
     ...(Array.isArray(rec?.citations) ? rec.citations : []),
-  ]
-    .filter(Boolean)
-    .join('\n');
-  return (
-    /\bs-maxage\b/i.test(text) &&
-    /\b(?:Cache-Control|CDN cache|cdn-cache|caching\/cdn-cache)\b/i.test(text)
-  );
+  ].filter(Boolean).join('\n');
+  return /\bs-maxage\b/i.test(text) &&
+    /\b(?:Cache-Control|CDN cache|cdn-cache|caching\/cdn-cache)\b/i.test(text);
 }
 
 function isCacheLifeRec(rec) {
@@ -134,31 +127,25 @@ function isCacheLifeRec(rec) {
     rec?.fix,
     rec?.desiredBehavior,
     ...(Array.isArray(rec?.citations) ? rec.citations : []),
-  ]
-    .filter(Boolean)
-    .join('\n');
-  return (
-    /^isr_overrevalidation:/.test(String(rec?.candidateRef ?? '')) &&
-    /\bcacheLife\s*\(|\bcacheLife\b/i.test(text)
-  );
+  ].filter(Boolean).join('\n');
+  return /^isr_overrevalidation:/.test(String(rec?.candidateRef ?? '')) &&
+    /\bcacheLife\s*\(|\bcacheLife\b/i.test(text);
 }
 
 function sharedFunctionTarget(rec) {
   const rule = primarySkillRule(rec);
-  if (
-    !/(?:^|:)async-parallel$|(?:^|:)server-parallel-fetching$|(?:^|:)async-suspense-boundaries$/.test(
-      rule
-    )
-  ) {
+  if (!/(?:^|:)async-parallel$|(?:^|:)server-parallel-fetching$|(?:^|:)async-suspense-boundaries$/.test(rule)) {
     return null;
   }
-  const text = [rec?.what, rec?.why, rec?.fix, rec?.currentBehavior, rec?.desiredBehavior]
-    .filter((v) => typeof v === 'string' && v.trim())
-    .join('\n');
+  const text = [
+    rec?.what,
+    rec?.why,
+    rec?.fix,
+    rec?.currentBehavior,
+    rec?.desiredBehavior,
+  ].filter((v) => typeof v === 'string' && v.trim()).join('\n');
   const names = [
-    ...text.matchAll(
-      /\b(?:get|fetch|load|read|render|create|generate|filter|resolve)[A-Z][A-Za-z0-9_]*\b/g
-    ),
+    ...text.matchAll(/\b(?:get|fetch|load|read|render|create|generate|filter|resolve)[A-Z][A-Za-z0-9_]*\b/g),
   ].map((m) => m[0]);
   const stop = new Set([
     'getPayload',
@@ -175,34 +162,33 @@ function sharedFunctionTarget(rec) {
   for (const name of candidates) {
     score.set(name, (score.get(name) ?? 0) + 1);
   }
-  return (
-    [...score.entries()]
-      .sort((a, b) => b[1] - a[1] || text.indexOf(a[0]) - text.indexOf(b[0]))
-      .map(([name]) => `function:${name}`)[0] ?? null
-  );
+  return [...score.entries()]
+    .sort((a, b) => b[1] - a[1] || text.indexOf(a[0]) - text.indexOf(b[0]))
+    .map(([name]) => `function:${name}`)[0] ?? null;
 }
 
 function cacheLifeIntent(rec) {
-  const text = [rec?.what, rec?.why, rec?.fix, rec?.desiredBehavior, rec?.verify]
-    .filter(Boolean)
-    .join('\n');
+  const text = [
+    rec?.what,
+    rec?.why,
+    rec?.fix,
+    rec?.desiredBehavior,
+    rec?.verify,
+  ].filter(Boolean).join('\n');
   const profiles = unique(
-    [...text.matchAll(/\bcacheLife\s*\(\s*['"`]([^'"`]+)['"`]/g)].map((m) => m[1])
+    [...text.matchAll(/\bcacheLife\s*\(\s*['"`]([^'"`]+)['"`]/g)]
+      .map((m) => m[1])
   );
   const tags = unique([
     ...[...text.matchAll(/\bcacheTag\s*\(([^)]*)\)/gs)].flatMap((m) => {
       const args = m[1] ?? '';
       return [
         ...[...args.matchAll(/['"]([^'"]+)['"]/g)].map((x) => x[1]),
-        ...[...args.matchAll(/`([^`]+)`/g)].map((x) =>
-          x[1].includes('${') ? `${x[1].split('${')[0]}*` : x[1]
-        ),
+        ...[...args.matchAll(/`([^`]+)`/g)].map((x) => x[1].includes('${') ? `${x[1].split('${')[0]}*` : x[1]),
       ];
     }),
   ]);
-  const invalidation = /\b(?:revalidateTag|updateTag)\s*\(/.test(text)
-    ? 'with-invalidation-api'
-    : 'no-invalidation-api';
+  const invalidation = /\b(?:revalidateTag|updateTag)\s*\(/.test(text) ? 'with-invalidation-api' : 'no-invalidation-api';
   return [
     'next-cache:cache-life',
     profiles.join('|') || NO_VALUE,
@@ -212,30 +198,29 @@ function cacheLifeIntent(rec) {
 }
 
 function unique(values) {
-  return Array.from(
-    new Set(values.filter((v) => typeof v === 'string' && v.trim()).map((v) => v.trim()))
-  ).sort();
+  return Array.from(new Set(values.filter((v) => typeof v === 'string' && v.trim()).map((v) => v.trim()))).sort();
 }
 
 function normalizeFixText(text) {
   if (typeof text !== 'string' || text.trim() === '') return NO_VALUE;
-  return (
-    text
-      .toLowerCase()
-      .replace(/```[\s\S]*?```/g, ' codeblock ')
-      .replace(/`[^`]*`/g, ' code ')
-      .replace(/\b\d+(?:\.\d+)?(?:ms|s|%|kb|mb|gb|k|m)?\b/g, '#')
-      .replace(/[^a-z0-9#]+/g, ' ')
-      .trim()
-      .split(/\s+/)
-      .slice(0, 80)
-      .join(' ') || NO_VALUE
-  );
+  return text
+    .toLowerCase()
+    .replace(/```[\s\S]*?```/g, ' codeblock ')
+    .replace(/`[^`]*`/g, ' code ')
+    .replace(/\b\d+(?:\.\d+)?(?:ms|s|%|kb|mb|gb|k|m)?\b/g, '#')
+    .replace(/[^a-z0-9#]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .slice(0, 80)
+    .join(' ') || NO_VALUE;
 }
 
 function withDedupMetadata(rec) {
   const existing = normalizedAppliesAlsoTo(rec.appliesAlsoTo);
-  const count = Math.max(numericCount(rec.corroborationCount), 1 + existing.length);
+  const count = Math.max(
+    numericCount(rec.corroborationCount),
+    1 + existing.length,
+  );
   return existing.length > 0 || count > 1
     ? { ...rec, appliesAlsoTo: existing, corroborationCount: count }
     : { ...rec };
@@ -265,17 +250,17 @@ function mergeDuplicateRecs(a, b) {
 function recScore(rec) {
   const priority = typeof rec?.priority === 'number' ? rec.priority : 0;
   const quality = typeof rec?.quality?.overall === 'number' ? rec.quality.overall : 0;
-  return priority * 1_000_000_000_000 + signalMagnitude(rec) + quality;
+  return (priority * 1_000_000_000_000) + signalMagnitude(rec) + quality;
 }
 
 function signalMagnitude(rec) {
-  const text = [rec?.o11ySignal, rec?.why, rec?.what, rec?.impact]
-    .filter((v) => typeof v === 'string' && v.trim())
-    .join('\n');
-  const inv = parseNumber(
-    text,
-    /(?:inv|invocations?|function invocations?|requests?)[:=]\s*([\d,]+)/i
-  );
+  const text = [
+    rec?.o11ySignal,
+    rec?.why,
+    rec?.what,
+    rec?.impact,
+  ].filter((v) => typeof v === 'string' && v.trim()).join('\n');
+  const inv = parseNumber(text, /(?:inv|invocations?|function invocations?|requests?)[:=]\s*([\d,]+)/i);
   const p95 = parseNumber(text, /(?:p95|95th percentile(?: duration)?)[:=]?\s*([\d,]+)\s*ms/i);
   const errors = parseNumber(text, /(?:errs|errors?)[:=]\s*([\d,]+)/i);
   const writes = parseNumber(text, /writes[:=]\s*([\d,]+)/i);

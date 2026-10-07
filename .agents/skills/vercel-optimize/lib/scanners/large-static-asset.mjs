@@ -19,7 +19,8 @@ export const metadata = {
   trafficIndependent: true,
   description:
     'Static assets in `public/` over 500 KB ship as-is from the CDN. Whether the cost is meaningful depends on traffic, but the candidate is binary — the file is either needed at that size or it can be optimized (compressed image, video transcode, or moved off the critical path).',
-  fix: 'Verify the asset is reachable on the customer-facing hot path. Then choose: (a) compress (convert PNG → AVIF/WebP; transcode MP4 to lower bitrate); (b) host externally (Vercel Blob, S3, or a media CDN with per-asset signed URLs); (c) lazy-load (defer to client-side fetch instead of bundling into initial HTML).',
+  fix:
+    'Verify the asset is reachable on the customer-facing hot path. Then choose: (a) compress (convert PNG → AVIF/WebP; transcode MP4 to lower bitrate); (b) host externally (Vercel Blob, S3, or a media CDN with per-asset signed URLs); (c) lazy-load (defer to client-side fetch instead of bundling into initial HTML).',
   citations: [
     'https://vercel.com/docs/manage-cdn-usage',
     'https://vercel.com/docs/image-optimization',
@@ -72,9 +73,7 @@ async function* walk(dir, base = '') {
     try {
       const s = await stat(full);
       yield { relPath: rel, size: s.size };
-    } catch {
-      /* skip unreadable */
-    }
+    } catch { /* skip unreadable */ }
   }
 }
 

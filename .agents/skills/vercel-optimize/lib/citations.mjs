@@ -18,19 +18,19 @@ export async function loadLibrary() {
 
 export async function isKnownUrl(url) {
   const lib = await loadLibrary();
-  return lib.urls.some((e) => e.url === url);
+  return lib.urls.some(e => e.url === url);
 }
 
 export async function lookupUrl(url) {
   const lib = await loadLibrary();
-  return lib.urls.find((e) => e.url === url);
+  return lib.urls.find(e => e.url === url);
 }
 
 export async function lookupSkillRule(ref) {
   const lib = await loadLibrary();
   const m = ref.match(/^([\w-]+):([\w-]+)$/);
   if (!m) return undefined;
-  return lib.ruleSkillRefs.find((r) => r.skill === m[1] && r.rule === m[2]);
+  return lib.ruleSkillRefs.find(r => r.skill === m[1] && r.rule === m[2]);
 }
 
 // Narrow semver subset: "*", "fw@*", "fw@14", "fw@>=15.0.0", "fw@<X", "fw@X.Y", "fw@X.Y.Z", "a || b".
@@ -38,10 +38,9 @@ export function matchesFrameworkVersion(pattern, framework, version) {
   if (pattern === '*') return true;
 
   if (pattern.includes('||')) {
-    return pattern
-      .split('||')
-      .map((p) => p.trim())
-      .some((p) => matchesFrameworkVersion(p, framework, version));
+    return pattern.split('||').map(p => p.trim()).some(p =>
+      matchesFrameworkVersion(p, framework, version)
+    );
   }
 
   const m = pattern.match(/^([\w-]+)@(.+)$/);
@@ -82,9 +81,7 @@ export function matchesFrameworkVersion(pattern, framework, version) {
 }
 
 function parseVersion(v) {
-  const m = String(v)
-    .replace(/^[v^~]+/, '')
-    .match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+  const m = String(v).replace(/^[v^~]+/, '').match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
   if (!m) return null;
   return [Number(m[1]) || 0, Number(m[2]) || 0, Number(m[3]) || 0];
 }
@@ -100,10 +97,10 @@ function compareVersion(a, b) {
 export async function libraryForStack(framework, version) {
   const lib = await loadLibrary();
   const matches = (frameworks) =>
-    frameworks.some((p) => matchesFrameworkVersion(p, framework, version) || p === '*');
+    frameworks.some(p => matchesFrameworkVersion(p, framework, version) || p === '*');
   return {
-    urls: lib.urls.filter((e) => matches(e.applicableFrameworks)),
-    ruleSkillRefs: lib.ruleSkillRefs.filter((r) => matches(r.applicableFrameworks)),
+    urls: lib.urls.filter(e => matches(e.applicableFrameworks)),
+    ruleSkillRefs: lib.ruleSkillRefs.filter(r => matches(r.applicableFrameworks)),
   };
 }
 
@@ -116,10 +113,7 @@ export async function sanitizeCitations(rec, framework, version) {
   for (const cite of rec.citations ?? []) {
     const ruleRef = await lookupSkillRule(cite);
     if (ruleRef) {
-      if (
-        matchesFrameworkVersion(ruleRef.applicableFrameworks.join(' || '), framework, version) ||
-        ruleRef.applicableFrameworks.includes('*')
-      ) {
+      if (matchesFrameworkVersion(ruleRef.applicableFrameworks.join(' || '), framework, version) || ruleRef.applicableFrameworks.includes('*')) {
         kept.push(cite);
       } else {
         strippedVersion.push(cite);
@@ -127,15 +121,13 @@ export async function sanitizeCitations(rec, framework, version) {
       continue;
     }
 
-    const entry = lib.urls.find((e) => e.url === cite);
+    const entry = lib.urls.find(e => e.url === cite);
     if (!entry) {
       strippedUnknown.push(cite);
       continue;
     }
-    if (
-      entry.applicableFrameworks.includes('*') ||
-      entry.applicableFrameworks.some((p) => matchesFrameworkVersion(p, framework, version))
-    ) {
+    if (entry.applicableFrameworks.includes('*') ||
+        entry.applicableFrameworks.some(p => matchesFrameworkVersion(p, framework, version))) {
       kept.push(cite);
     } else {
       strippedVersion.push(cite);

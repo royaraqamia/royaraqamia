@@ -8,7 +8,7 @@ export const metadata = {
   scope: 'route',
   sourceCitation: 'vercel-optimize gate threshold',
   description:
-    "External API hostnames with p75 latency above 2 seconds AND at least 500 calls in the window. External API latency is a primary driver of function duration cost when the upstream is on a hot path; a single slow stale call isn't worth recommending against.",
+    'External API hostnames with p75 latency above 2 seconds AND at least 500 calls in the window. External API latency is a primary driver of function duration cost when the upstream is on a hot path; a single slow stale call isn\'t worth recommending against.',
 };
 
 export function gate(signals) {
@@ -29,12 +29,7 @@ export function gate(signals) {
       o11ySignal: `host=${a.hostname},p75=${a.p75Ms}ms,calls=${a.callCount}`,
       reason: 'slow external dependency on hot path',
       question: `Which routes call ${a.hostname} (p75=${a.p75Ms}ms across ${a.callCount} calls), and can the call be parallelized, cached, or moved off the critical path?`,
-      evidence: {
-        metric: 'externalApiP75',
-        hostname: a.hostname,
-        p75Ms: a.p75Ms,
-        callCount: a.callCount,
-      },
+      evidence: { metric: 'externalApiP75', hostname: a.hostname, p75Ms: a.p75Ms, callCount: a.callCount },
     }));
 }
 

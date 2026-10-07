@@ -4,8 +4,7 @@
 //
 // This module is the ONLY place we touch Next.js metric path encoding — every gate calls canonicalizeRoute before aggregating.
 
-export const ROUTE_SHAPE_RE =
-  /(?:^.{200,}$)|[\s'"`,;&=<>(){}!\\^|\u0000-\u001F]|%(?:22|5B|5C|7B|7D|20|3C|3E|26)|localhost:|https?:\/|\/\/(?!$)|[:,\$\s]$|\.segments?\/|__PAGE__|@[a-z]/i;
+export const ROUTE_SHAPE_RE = /(?:^.{200,}$)|[\s'"`,;&=<>(){}!\\^|\u0000-\u001F]|%(?:22|5B|5C|7B|7D|20|3C|3E|26)|localhost:|https?:\/|\/\/(?!$)|[:,\$\s]$|\.segments?\/|__PAGE__|@[a-z]/i;
 
 export function isSegmentTreePath(route) {
   if (typeof route !== 'string') return false;
@@ -38,7 +37,9 @@ function canonicalizeBranchPrefix(route, segmentsIdx) {
   const prefix = route.slice(0, segmentsIdx);
   const parts = prefix.split('/').filter(Boolean);
   // Drop trailing dynamic value (e.g. "london") and base64 flag-state — neither is a route segment.
-  const cleaned = parts.filter((p) => !isBase64FlagState(p)).slice(0, -1);
+  const cleaned = parts
+    .filter((p) => !isBase64FlagState(p))
+    .slice(0, -1);
   if (cleaned.length === 0) return prefix || '/';
   return '/' + cleaned.join('/');
 }
@@ -49,7 +50,7 @@ function isMetricLeaf(token) {
     token === '_tree.segment' ||
     token === '_index.segment' ||
     token === '__page__.segment' ||
-    (token.endsWith('.segment') && token.startsWith('_'))
+    token.endsWith('.segment') && token.startsWith('_')
   );
 }
 
@@ -67,10 +68,7 @@ function replaceBase64WithDynamic(route) {
   let mutated = false;
   const replaced = parts.map((p, i) => {
     if (i === 0) return p;
-    if (isBase64FlagState(p)) {
-      mutated = true;
-      return '[*]';
-    }
+    if (isBase64FlagState(p)) { mutated = true; return '[*]'; }
     return p;
   });
   if (!mutated) return route;
@@ -83,7 +81,7 @@ function stripRouteGroups(route) {
   const parts = route.split('/');
   const kept = parts.filter((p) => !/^\([^)]+\)$/.test(p));
   const joined = kept.join('/');
-  return joined.startsWith('/') ? joined || '/' : '/' + joined;
+  return joined.startsWith('/') ? (joined || '/') : '/' + joined;
 }
 
 // $d$X → [X] · $oc$X → [[...X]] · $c$X → [...X] · !K…p → (group) · metric-leaves → dropped.
@@ -189,9 +187,7 @@ export function withRouteShapeWarnings(candidate, signals = {}) {
   if (warnings.length === 0) return candidate;
   return {
     ...candidate,
-    warnings: [
-      ...new Set([...(Array.isArray(candidate.warnings) ? candidate.warnings : []), ...warnings]),
-    ],
+    warnings: [...new Set([...(Array.isArray(candidate.warnings) ? candidate.warnings : []), ...warnings])],
   };
 }
 

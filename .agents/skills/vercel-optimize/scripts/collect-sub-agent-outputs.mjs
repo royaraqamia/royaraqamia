@@ -11,9 +11,7 @@ const log = (...a) => console.error('[collect-sub-agent-outputs]', ...a);
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.inputs.length === 0 && !args.manifestPath) {
-    console.error(
-      'usage: node scripts/collect-sub-agent-outputs.mjs [--manifest briefs/manifest.json] <output-file-or-dir...> [--out recommendations.json] [--strict]'
-    );
+    console.error('usage: node scripts/collect-sub-agent-outputs.mjs [--manifest briefs/manifest.json] <output-file-or-dir...> [--out recommendations.json] [--strict]');
     process.exit(1);
   }
 
@@ -55,8 +53,7 @@ async function main() {
     }
 
     for (const record of records) {
-      const candidateRef =
-        record.candidateRef ?? inferCandidateRefFromFile(file, expected, records.length);
+      const candidateRef = record.candidateRef ?? inferCandidateRefFromFile(file, expected, records.length);
       if (!candidateRef) {
         summary.missingCandidateRef++;
         errors.push(`${file}: output is missing candidateRef`);
@@ -112,9 +109,7 @@ async function main() {
   } else {
     process.stdout.write(serialized);
   }
-  log(
-    `done: ${summary.files} files, ${summary.kept} recommendation draft(s), ${summary.abstained} found no supported change, ${summary.parseFailed} parse failed, ${summary.nonObject} invalid output(s)`
-  );
+  log(`done: ${summary.files} files, ${summary.kept} recommendation draft(s), ${summary.abstained} found no supported change, ${summary.parseFailed} parse failed, ${summary.nonObject} invalid output(s)`);
 }
 
 function parseArgs(argv) {
@@ -135,7 +130,7 @@ async function collectInputFiles(paths) {
   const out = [];
   for (const p of paths) {
     const s = await stat(p);
-    if (s.isDirectory()) out.push(...(await walkDir(p)));
+    if (s.isDirectory()) out.push(...await walkDir(p));
     else if (s.isFile()) out.push(p);
   }
   return out.sort((a, b) => a.localeCompare(b));
@@ -147,7 +142,7 @@ async function walkDir(dir) {
   for (const e of entries.sort((a, b) => a.name.localeCompare(b.name))) {
     if (e.name.startsWith('.')) continue;
     const p = resolve(dir, e.name);
-    if (e.isDirectory()) out.push(...(await walkDir(p)));
+    if (e.isDirectory()) out.push(...await walkDir(p));
     else if (e.isFile()) out.push(p);
   }
   return out;
@@ -171,9 +166,7 @@ function readPreResolvedRecords(manifest) {
   if (!manifest || !Array.isArray(manifest.preResolvedRecords)) return [];
   return manifest.preResolvedRecords.map((r, i) => {
     if (!isRecordObject(r)) {
-      throw new TypeError(
-        `manifest.preResolvedRecords[${i}] must be a recommendation or no-recommendation record`
-      );
+      throw new TypeError(`manifest.preResolvedRecords[${i}] must be a recommendation or no-recommendation record`);
     }
     if (!r.candidateRef) {
       throw new TypeError(`manifest.preResolvedRecords[${i}].candidateRef is required`);
@@ -255,8 +248,7 @@ function normalizeOutput(value) {
   if (isRecordObject(unwrapped)) return [unwrapped];
   if (unwrapped && typeof unwrapped === 'object') {
     if (isRecordObject(unwrapped.recommendation)) return [unwrapped.recommendation];
-    if (Array.isArray(unwrapped.recommendations))
-      return unwrapped.recommendations.filter(isRecordObject);
+    if (Array.isArray(unwrapped.recommendations)) return unwrapped.recommendations.filter(isRecordObject);
   }
   return [];
 }
@@ -267,9 +259,7 @@ function unwrapEnvelope(value) {
     if (!current || typeof current !== 'object' || Array.isArray(current)) return current;
     if (Array.isArray(current.recommendations) || current.recommendation) return current;
     const keys = Object.keys(current);
-    const envelopeKey = ['data', 'result', 'insights'].find(
-      (k) => keys.length === 1 && k in current
-    );
+    const envelopeKey = ['data', 'result', 'insights'].find((k) => keys.length === 1 && k in current);
     if (!envelopeKey) return current;
     current = current[envelopeKey];
   }

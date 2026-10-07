@@ -28,9 +28,7 @@ export function gate(signals) {
   const routes = signals?.codebase?.routes ?? [];
   if (routes.length < ROUTE_FLOOR) return [];
 
-  const singleRegionFindings = findings.filter(
-    (f) => Array.isArray(f.regions) && f.regions.length === 1
-  );
+  const singleRegionFindings = findings.filter((f) => Array.isArray(f.regions) && f.regions.length === 1);
   if (singleRegionFindings.length === 0) return [];
 
   const allPinned = new Set();
@@ -43,29 +41,24 @@ export function gate(signals) {
   // multi-region by accident; that's noteworthy but lower priority.
   const homogeneous = regionList.length === 1;
 
-  return [
-    {
-      kind: metadata.id,
-      scope: 'account',
-      files: singleRegionFindings.map((f) => f.file).slice(0, 6),
-      priority: homogeneous ? 42 : 38,
-      confidence: 0.6, // low — no per-region TTFB data
-      o11ySignal: `pinned_regions=${regionList.join(',')} routes=${routes.length}`,
-      reason: homogeneous
-        ? `all functions pinned to a single region (${regionList[0]}) on a project with ${routes.length} routes`
-        : `${regionList.length} different single-region pins across files`,
-      question:
-        'Are the pinned function regions aligned with the dominant user geography and the data source location? Speed Insights TTFB-by-country can ground the comparison.',
-      evidence: {
-        metric: 'codebase.findings',
-        pinnedRegions: regionList,
-        findingsCount: singleRegionFindings.length,
-        routeCount: routes.length,
-        sampleFiles: singleRegionFindings
-          .slice(0, 3)
-          .map((f) => ({ file: f.file, regions: f.regions, subtype: f.subtype })),
-        dataGap: 'region-grouped-TTFB-unavailable',
-      },
+  return [{
+    kind: metadata.id,
+    scope: 'account',
+    files: singleRegionFindings.map((f) => f.file).slice(0, 6),
+    priority: homogeneous ? 42 : 38,
+    confidence: 0.6, // low — no per-region TTFB data
+    o11ySignal: `pinned_regions=${regionList.join(',')} routes=${routes.length}`,
+    reason: homogeneous
+      ? `all functions pinned to a single region (${regionList[0]}) on a project with ${routes.length} routes`
+      : `${regionList.length} different single-region pins across files`,
+    question: 'Are the pinned function regions aligned with the dominant user geography and the data source location? Speed Insights TTFB-by-country can ground the comparison.',
+    evidence: {
+      metric: 'codebase.findings',
+      pinnedRegions: regionList,
+      findingsCount: singleRegionFindings.length,
+      routeCount: routes.length,
+      sampleFiles: singleRegionFindings.slice(0, 3).map((f) => ({ file: f.file, regions: f.regions, subtype: f.subtype })),
+      dataGap: 'region-grouped-TTFB-unavailable',
     },
-  ];
+  }];
 }

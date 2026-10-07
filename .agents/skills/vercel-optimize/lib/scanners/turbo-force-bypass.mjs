@@ -19,21 +19,15 @@ export const metadata = {
   trafficIndependent: true, // build-time, fires regardless of route traffic
   description:
     "Turborepo's per-task cache can be bypassed by an explicit force flag, a `cache: false` config, or missing build-skip configuration. Every commit can rebuild unchanged work; Build Minutes climb with project count.",
-  fix: "Remove `TURBO_FORCE=true` from build env/scripts unless intentional. Set `tasks.build.cache: true` in `turbo.json` (or remove the override), and include generated outputs in Turbo's cache contract. Prefer Vercel's skip-unaffected monorepo behavior when available; use `ignoreCommand` only when that setting cannot cover the project.",
+  fix:
+    "Remove `TURBO_FORCE=true` from build env/scripts unless intentional. Set `tasks.build.cache: true` in `turbo.json` (or remove the override), and include generated outputs in Turbo's cache contract. Prefer Vercel's skip-unaffected monorepo behavior when available; use `ignoreCommand` only when that setting cannot cover the project.",
   citations: [
     'https://vercel.com/docs/monorepos',
     'https://vercel.com/docs/builds',
     'https://turborepo.dev/docs/crafting-your-repository/caching',
   ],
   excludeGlobs: ['node_modules/**', '.next/**', 'dist/**'],
-  includeGlobs: [
-    'turbo.json',
-    '**/turbo.json',
-    'package.json',
-    '**/package.json',
-    'vercel.json',
-    '**/vercel.json',
-  ],
+  includeGlobs: ['turbo.json', '**/turbo.json', 'package.json', '**/package.json', 'vercel.json', '**/vercel.json'],
 };
 
 const FORCE_ENV_RE = /TURBO_FORCE\s*=\s*(?:true|1)\b/;
@@ -95,8 +89,7 @@ export function scan({ files }) {
       pattern: metadata.id,
       file: vercelJsonFile,
       line: 1,
-      evidence:
-        'turbo repo without ignoreCommand in vercel.json; verify Vercel skip-unaffected setting',
+      evidence: 'turbo repo without ignoreCommand in vercel.json; verify Vercel skip-unaffected setting',
       trafficIndependent: metadata.trafficIndependent,
       subtype: 'no-ignore-step',
     });

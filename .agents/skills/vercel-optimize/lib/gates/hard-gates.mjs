@@ -7,7 +7,10 @@ export const VERCEL_FLAGS_PACKAGES = [
   '@vercel/flags/sveltekit',
   '@vercel/flags/nuxt',
 ];
-export const WORKFLOW_ENDPOINT_PREFIXES = ['/.well-known/workflow', '/api/.well-known/workflow'];
+export const WORKFLOW_ENDPOINT_PREFIXES = [
+  '/.well-known/workflow',
+  '/api/.well-known/workflow',
+];
 
 export function applyHardGates(candidates, signals = {}) {
   const allowed = [];
@@ -42,9 +45,9 @@ export function isWorkflowRuntimeEndpointCandidate(candidate) {
   if (!candidate || candidate.scope === 'account') return false;
   const route = normalizeRoute(candidate.route);
   if (!route) return false;
-  return WORKFLOW_ENDPOINT_PREFIXES.some(
-    (prefix) => route === prefix || route.startsWith(`${prefix}/`)
-  );
+  return WORKFLOW_ENDPOINT_PREFIXES.some((prefix) => (
+    route === prefix || route.startsWith(`${prefix}/`)
+  ));
 }
 
 function normalizeRoute(route) {

@@ -21,38 +21,28 @@ export function inferPlaybook(signals) {
   const hasPrefix = (prefix) => Object.keys(deps).some((k) => k === prefix || k.startsWith(prefix));
   const anyRouteMatches = (re) => routePaths.some((p) => re.test(p));
   const usageHas = (re, minBilled = 0) =>
-    services.some(
-      (s) => re.test(String(s?.name ?? '')) && Number(s?.billedCost ?? s?.cost ?? 0) > minBilled
-    );
+    services.some((s) => re.test(String(s?.name ?? '')) && Number(s?.billedCost ?? s?.cost ?? 0) > minBilled);
 
   // AI app first — billing shape (AI Gateway > Sandbox > Function Duration) overrides
   // the ecommerce/saas tilt when both apply (an "AI shopping assistant" lives in ai-application's
   // priority patterns, not the cart-checkout ones).
   const aiDep =
-    has('@vercel/sandbox') ||
-    has('@vercel/ai-gateway') ||
-    has('ai') ||
-    has('openai') ||
-    has('@anthropic-ai/sdk') ||
-    hasPrefix('@ai-sdk/');
+    has('@vercel/sandbox')
+    || has('@vercel/ai-gateway')
+    || has('ai')
+    || has('openai')
+    || has('@anthropic-ai/sdk')
+    || hasPrefix('@ai-sdk/');
   const aiUsage = usageHas(/^AI Gateway$/i) || usageHas(/^Sandbox/i);
   if (aiDep || aiUsage) {
     return 'ai-application';
   }
-  if (
-    has('stripe') ||
-    has('@stripe/stripe-js') ||
-    has('react-stripe-js') ||
-    anyRouteMatches(/^\/(cart|checkout|products?)\b/i)
-  ) {
+  if (has('stripe') || has('@stripe/stripe-js') || has('react-stripe-js') ||
+      anyRouteMatches(/^\/(cart|checkout|products?)\b/i)) {
     return 'ecommerce';
   }
-  if (
-    has('next-auth') ||
-    has('@clerk/nextjs') ||
-    has('@workos-inc/authkit-nextjs') ||
-    anyRouteMatches(/^\/(admin|dashboard|settings|account|billing)\b/i)
-  ) {
+  if (has('next-auth') || has('@clerk/nextjs') || has('@workos-inc/authkit-nextjs') ||
+      anyRouteMatches(/^\/(admin|dashboard|settings|account|billing)\b/i)) {
     return 'saas';
   }
   if (routes.length > 0 && routes.every((r) => /^\/api\//.test(r.routePath ?? ''))) {
@@ -69,10 +59,8 @@ export function inferPlaybook(signals) {
 export function inferFrameworkPlaybook(signals) {
   const stack = signals?.stack ?? signals?.codebase?.stack ?? {};
   switch (stack.framework) {
-    case 'sveltekit':
-      return 'sveltekit';
-    default:
-      return null;
+    case 'sveltekit': return 'sveltekit';
+    default: return null;
   }
 }
 
@@ -82,11 +70,7 @@ export function resolveFiles(candidate, signals) {
   const route = candidate.route;
   const routes = signals?.codebase?.routes ?? [];
   if (Array.isArray(candidate.files) && candidate.files.length > 0) {
-    return capBriefFiles(
-      candidate.files,
-      route ? closestAncestorLayoutFiles(route, routes) : [],
-      routes
-    );
+    return capBriefFiles(candidate.files, route ? closestAncestorLayoutFiles(route, routes) : [], routes);
   }
   if (!route) return [];
   const nonLayoutRoutes = routes.filter((r) => r.type !== 'layout');
@@ -103,7 +87,7 @@ export function resolveFiles(candidate, signals) {
   }
   const direct = matched.map((r) => r.file).filter(Boolean);
   const workspaceImports = matched
-    .flatMap((r) => (Array.isArray(r.workspaceImports) ? r.workspaceImports : []))
+    .flatMap((r) => Array.isArray(r.workspaceImports) ? r.workspaceImports : [])
     .filter(Boolean);
   return capBriefFiles(uniq([...direct, ...workspaceImports]), layoutFiles, routes);
 }
@@ -114,37 +98,20 @@ export function routePathMatchScore(routePath, metricPath) {
   if (routePath === metricPath) return 1000 + routePath.split('/').filter(Boolean).length;
   const rTokens = routePath.split('/').filter(Boolean);
   const mTokens = metricPath.split('/').filter(Boolean);
-  let ri = 0,
-    mi = 0,
-    literals = 0,
-    dynamicMatches = 0;
+  let ri = 0, mi = 0, literals = 0, dynamicMatches = 0;
   while (ri < rTokens.length && mi < mTokens.length) {
     const r = rTokens[ri];
     const m = mTokens[mi];
     if (isCatchAllPlaceholder(r)) return 1 + literals * 10 + dynamicMatches;
-    if (r === m) {
-      literals++;
-      ri++;
-      mi++;
-      continue;
-    }
+    if (r === m) { literals++; ri++; mi++; continue; }
     // Route patterns may match concrete metric paths, and route/metric dynamic
     // placeholders may match each other. A metric-side placeholder must not
     // match a static route literal: that would let `/docs/[...slug]` traffic
     // attach to an unrelated static scanner route like `/docs/llms.txt`.
-    if (isDynamicPlaceholder(r) && !isCatchAllPlaceholder(m)) {
-      dynamicMatches++;
-      ri++;
-      mi++;
-      continue;
-    }
+    if (isDynamicPlaceholder(r) && !isCatchAllPlaceholder(m)) { dynamicMatches++; ri++; mi++; continue; }
     return 0;
   }
-  if (
-    ri === rTokens.length - 1 &&
-    /^\[\[\.\.\..+\]\]$/.test(rTokens[ri]) &&
-    mi === mTokens.length
-  ) {
+  if (ri === rTokens.length - 1 && /^\[\[\.\.\..+\]\]$/.test(rTokens[ri]) && mi === mTokens.length) {
     return 1 + literals * 10 + dynamicMatches;
   }
   if (ri !== rTokens.length || mi !== mTokens.length) {
@@ -164,11 +131,7 @@ function isSingleDynamicPlaceholder(token) {
   return /^\[[^[.\].][^\]]*\]$/.test(token);
 }
 function isCatchAllPlaceholder(token) {
-  return (
-    /^\[(?:\[\.\.\..+\]|\.\.\..+)\]$/.test(token) ||
-    /^\[\.\.\..+\]$/.test(token) ||
-    /^\[\[\.\.\..+\]\]$/.test(token)
-  );
+  return /^\[(?:\[\.\.\..+\]|\.\.\..+)\]$/.test(token) || /^\[\.\.\..+\]$/.test(token) || /^\[\[\.\.\..+\]\]$/.test(token);
 }
 
 function trailingSingleDynamicPartialScore(rTokens, mTokens, ri, mi, literals, dynamicMatches) {
@@ -178,25 +141,20 @@ function trailingSingleDynamicPartialScore(rTokens, mTokens, ri, mi, literals, d
   if (rRemaining !== 0 && mRemaining !== 0) return 0;
   const lastRouteToken = rTokens[ri - 1];
   const lastMetricToken = mTokens[mi - 1];
-  if (!isSingleDynamicPlaceholder(lastRouteToken) && !isSingleDynamicPlaceholder(lastMetricToken))
-    return 0;
+  if (!isSingleDynamicPlaceholder(lastRouteToken) && !isSingleDynamicPlaceholder(lastMetricToken)) return 0;
   return literals * 10 + dynamicMatches;
 }
 
-function uniq(xs) {
-  return Array.from(new Set(xs));
-}
+function uniq(xs) { return Array.from(new Set(xs)); }
 
 function briefRoots(signals) {
   const codebase = signals?.codebase ?? {};
-  const appRoot =
-    typeof codebase.rootDir === 'string' && codebase.rootDir.length > 0
-      ? normalize(codebase.rootDir)
-      : null;
-  const repoRoot =
-    typeof codebase.monorepoRoot === 'string' && codebase.monorepoRoot.length > 0
-      ? normalize(codebase.monorepoRoot)
-      : appRoot;
+  const appRoot = typeof codebase.rootDir === 'string' && codebase.rootDir.length > 0
+    ? normalize(codebase.rootDir)
+    : null;
+  const repoRoot = typeof codebase.monorepoRoot === 'string' && codebase.monorepoRoot.length > 0
+    ? normalize(codebase.monorepoRoot)
+    : appRoot;
   return { appRoot, repoRoot };
 }
 
@@ -222,12 +180,7 @@ function isRepoRelativePath(file) {
 }
 
 function capBriefFiles(nonLayoutCandidates, layoutCandidates, routes) {
-  const knownLayoutFiles = new Set(
-    routes
-      .filter((r) => r.type === 'layout')
-      .map((r) => r.file)
-      .filter(Boolean)
-  );
+  const knownLayoutFiles = new Set(routes.filter((r) => r.type === 'layout').map((r) => r.file).filter(Boolean));
   const nonLayout = [];
   const layouts = [];
   for (const f of uniq(nonLayoutCandidates)) {
@@ -245,8 +198,9 @@ function closestAncestorLayoutFiles(route, routes) {
   if (!route) return [];
   return routes
     .filter((r) => r.type === 'layout' && r.file && layoutAppliesToRoute(r.routePath, route))
-    .sort(
-      (a, b) => routeDepth(b.routePath) - routeDepth(a.routePath) || a.file.localeCompare(b.file)
+    .sort((a, b) =>
+      routeDepth(b.routePath) - routeDepth(a.routePath)
+      || a.file.localeCompare(b.file)
     )
     .map((r) => r.file);
 }
@@ -269,9 +223,7 @@ function layoutAppliesToRoute(layoutPath, routePath) {
 }
 
 function routeDepth(routePath) {
-  return String(routePath ?? '')
-    .split('/')
-    .filter(Boolean).length;
+  return String(routePath ?? '').split('/').filter(Boolean).length;
 }
 
 function isLayoutPath(file) {
@@ -287,13 +239,8 @@ export function summarizeDeepDiveFailures(deepDive) {
   if (failures.length === 0) return null;
   // Surface when ≥50% failed OR ≥3 distinct signals failed.
   if (failures.length / entries.length < 0.5 && failures.length < 3) return null;
-  const failedIds = failures
-    .map(([k]) => k)
-    .slice(0, 6)
-    .join(', ');
-  const codes = uniq(failures.map(([, v]) => v?.code ?? v?.error ?? 'unknown'))
-    .slice(0, 3)
-    .join(' / ');
+  const failedIds = failures.map(([k]) => k).slice(0, 6).join(', ');
+  const codes = uniq(failures.map(([, v]) => v?.code ?? v?.error ?? 'unknown')).slice(0, 3).join(' / ');
   return `${failures.length} of ${entries.length} deep-dive signals failed (${failedIds}${failures.length > 6 ? ', …' : ''}) — error: ${codes}.`;
 }
 
@@ -329,7 +276,7 @@ export const KIND_INTERPRETATION_HINTS = {
     'Inspect `perDeployment`: a 2x step between deployments points to a regression introduced in the newer deployment. Frame the rec as "regression introduced in <deployment_id>" rather than a generic perf claim.',
     'Inspect `startTypeSplit.cold` share. >5% cold means cold starts contribute meaningfully — Fluid Compute or warmer keep-alive is on the table.',
     'Inspect `statusDistribution`. A non-trivial 3xx/4xx slice may be inflating p95 because redirects/auth bounces still count as invocations.',
-    "Inspect `cacheBreakdown`. If the route uses Next.js `dynamic = 'error'` (or otherwise static) but the breakdown shows substantial MISS/BYPASS counts, the latency lives on the cache-miss path — investigate the origin fetch / ISR revalidation cost, NOT in-handler compute. `bandwidthByCache` tells you the byte cost of those misses.",
+    'Inspect `cacheBreakdown`. If the route uses Next.js `dynamic = \'error\'` (or otherwise static) but the breakdown shows substantial MISS/BYPASS counts, the latency lives on the cache-miss path — investigate the origin fetch / ISR revalidation cost, NOT in-handler compute. `bandwidthByCache` tells you the byte cost of those misses.',
   ],
   uncached_route: [
     '`cacheBreakdown` tells you what fraction is BYPASS vs HIT vs MISS. BYPASS without explicit `Cache-Control` directives in the response is the canonical fix.',
@@ -350,7 +297,7 @@ export const KIND_INTERPRETATION_HINTS = {
   ],
   external_api_slow: [
     '`latency.p95` vs `latency.p99`: spreads point to flaky upstream; narrow gap points to slow-by-design.',
-    "`callersByRoute` (`origin_route` dim): which of OUR routes call this upstream — that's where the rec should land.",
+    '`callersByRoute` (`origin_route` dim): which of OUR routes call this upstream — that\'s where the rec should land.',
     '`transferBytes`: large payloads suggest caching or partial-response opportunities at our edge.',
   ],
   isr_overrevalidation: [
@@ -399,13 +346,9 @@ export function buildBrief({
   const lines = [];
   lines.push(`# Investigation brief — ${kind}${routeOrHost ? ` — ${routeOrHost}` : ''}`);
   lines.push('');
-  lines.push(
-    'You are a Vercel-optimize investigation sub-agent. Your job is to investigate ONE evidence-backed candidate and emit ONE recommendation JSON. Stay narrow. Stay grounded. Do NOT widen the search.'
-  );
+  lines.push('You are a Vercel-optimize investigation sub-agent. Your job is to investigate ONE evidence-backed candidate and emit ONE recommendation JSON. Stay narrow. Stay grounded. Do NOT widen the search.');
   lines.push('');
-  lines.push(
-    `Brief id: \`${candidateGroup}#${candidateIndex}\` · candidateRef: \`${candidateRef}\``
-  );
+  lines.push(`Brief id: \`${candidateGroup}#${candidateIndex}\` · candidateRef: \`${candidateRef}\``);
   if (generatedAt) lines.push(`Generated: ${generatedAt}`);
   lines.push('');
 
@@ -416,50 +359,34 @@ export function buildBrief({
   if (routeOrHost) lines.push(`- **Target:** \`${routeOrHost}\``);
   if (roots.repoRoot) lines.push(`- **Repo root:** \`${roots.repoRoot}\``);
   if (roots.appRoot) lines.push(`- **App root:** \`${roots.appRoot}\``);
-  if (candidate.o11ySignal)
-    lines.push(`- **o11y signal at gate-time:** \`${candidate.o11ySignal}\``);
+  if (candidate.o11ySignal) lines.push(`- **o11y signal at gate-time:** \`${candidate.o11ySignal}\``);
   lines.push(`- **Confidence:** ${candidate.confidence ?? 'n/a'}`);
   lines.push(`- **Priority:** ${candidate.priority ?? 'n/a'}`);
   if (candidate.disqualified) {
     lines.push(`- **⚠ Disqualifier present:** ${candidate.disqualifyReason ?? 'disqualified'}`);
   }
   lines.push('');
-  lines.push(
-    `**Gate question (the hypothesis you're verifying):** ${candidate.question ?? '(no question)'}`
-  );
+  lines.push(`**Gate question (the hypothesis you're verifying):** ${candidate.question ?? '(no question)'}`);
   lines.push('');
   if (Array.isArray(files) && files.length > 0) {
-    lines.push(
-      '**Files you may read (read ONLY these — open each one directly, NOT a repo-wide grep):**'
-    );
-    lines.push(
-      `_Capped at ${NON_LAYOUT_FILE_CAP} non-layout files + up to ${LAYOUT_FILE_CAP} layouts._`
-    );
+    lines.push('**Files you may read (read ONLY these — open each one directly, NOT a repo-wide grep):**');
+    lines.push(`_Capped at ${NON_LAYOUT_FILE_CAP} non-layout files + up to ${LAYOUT_FILE_CAP} layouts._`);
     // Tag route vs workspace-import — workspace files are usually where the bottleneck lives.
     const routes = signals?.codebase?.routes ?? [];
-    const routeScores = routes
-      .filter((r) => r.type !== 'layout')
-      .map((r) => ({
-        r,
-        score: routePathMatchScore(r.routePath, routeOrHost),
-      }))
-      .filter((x) => x.score > 0);
+    const routeScores = routes.filter((r) => r.type !== 'layout').map((r) => ({
+      r,
+      score: routePathMatchScore(r.routePath, routeOrHost),
+    })).filter((x) => x.score > 0);
     const topScore = routeScores.length > 0 ? Math.max(...routeScores.map((x) => x.score)) : 0;
     const routeFiles = new Set(
-      routeScores
-        .filter((x) => x.score === topScore)
-        .map((x) => x.r.file)
-        .filter(Boolean)
+      routeScores.filter((x) => x.score === topScore).map((x) => x.r.file).filter(Boolean)
     );
     const layoutFiles = new Set(closestAncestorLayoutFiles(routeOrHost, routes));
     const workspaceImportFiles = [];
     for (const f of files) {
-      const tag =
-        layoutFiles.has(f) || isLayoutPath(f)
-          ? '(layout)'
-          : routeFiles.has(f)
-            ? '(route)'
-            : '(workspace import)';
+      const tag = layoutFiles.has(f) || isLayoutPath(f)
+        ? '(layout)'
+        : routeFiles.has(f) ? '(route)' : '(workspace import)';
       if (tag === '(workspace import)') workspaceImportFiles.push(f);
       const repoRel = repoRelativeBriefPath(f, roots) ?? f;
       const abs = absoluteBriefPath(f, roots);
@@ -469,14 +396,10 @@ export function buildBrief({
     }
     if ([...routeFiles].length > 0 && workspaceImportFiles.length > 0) {
       lines.push('');
-      lines.push(
-        '_The route file is often a thin shell that re-exports from a workspace package. If the route file has no awaits / heavy imports / data fetching of its own, the bottleneck almost certainly lives in one of the (workspace import) files above — read those._'
-      );
+      lines.push('_The route file is often a thin shell that re-exports from a workspace package. If the route file has no awaits / heavy imports / data fetching of its own, the bottleneck almost certainly lives in one of the (workspace import) files above — read those._');
     }
   } else {
-    lines.push(
-      '**Files:** none mapped to this candidate. Either the gate is account-scope (platform_*) or the scanner could not resolve a route→file mapping (legitimate data gap). Work from the deep-dive evidence alone.'
-    );
+    lines.push('**Files:** none mapped to this candidate. Either the gate is account-scope (platform_*) or the scanner could not resolve a route→file mapping (legitimate data gap). Work from the deep-dive evidence alone.');
   }
   lines.push('');
 
@@ -494,9 +417,7 @@ export function buildBrief({
   if (projectFacts.length > 0) {
     lines.push('## Project config (already on — do NOT recommend toggling)');
     lines.push('');
-    lines.push(
-      'These settings are already enabled on the project. A recommendation that says "enable X" or "turn on X" for any of these is wrong and will be rejected by the verifier. Treat them as the starting state for your investigation.'
-    );
+    lines.push('These settings are already enabled on the project. A recommendation that says "enable X" or "turn on X" for any of these is wrong and will be rejected by the verifier. Treat them as the starting state for your investigation.');
     lines.push('');
     for (const f of projectFacts) lines.push(`- ${f.briefLine}`);
     lines.push('');
@@ -509,18 +430,12 @@ export function buildBrief({
   if (failureNotice) {
     lines.push(`> ⚠ **Deep-dive partly incomplete.** ${failureNotice}`);
     lines.push('>');
-    lines.push(
-      `> The base evidence below is still valid — \`o11ySignal=${candidate.o11ySignal ?? '(unset)'}\` came directly from the gate's broad-pass query and is unaffected. Investigate against that signal and any deep-dive keys that DID populate. Do not conflate "missing data" with "no bottleneck": if the data didn't come back, abstain on the missing dimensions, not on the candidate as a whole.`
-    );
+    lines.push(`> The base evidence below is still valid — \`o11ySignal=${candidate.o11ySignal ?? '(unset)'}\` came directly from the gate's broad-pass query and is unaffected. Investigate against that signal and any deep-dive keys that DID populate. Do not conflate "missing data" with "no bottleneck": if the data didn't come back, abstain on the missing dimensions, not on the candidate as a whole.`);
     lines.push('');
   }
-  lines.push(
-    'Treat these as ground truth. Cite the specific paths and values verbatim in `why` and `verify`. Numeric values are rounded to 4 decimal places.'
-  );
+  lines.push('Treat these as ground truth. Cite the specific paths and values verbatim in `why` and `verify`. Numeric values are rounded to 4 decimal places.');
   lines.push('');
-  lines.push(
-    '**Units legend** — all duration/timing fields below are in **milliseconds** (`latency.*`, `ttfb.*`, `cpu.p95`, `memory.*`). All `value` fields under `startTypeSplit` / `statusDistribution` / `methodDistribution` / `cacheBreakdown` are **invocation counts**. `botShare` / `bandwidthByCache` values are **bytes**. `perDeployment.value` is **p95 latency in ms** for that deployment.'
-  );
+  lines.push('**Units legend** — all duration/timing fields below are in **milliseconds** (`latency.*`, `ttfb.*`, `cpu.p95`, `memory.*`). All `value` fields under `startTypeSplit` / `statusDistribution` / `methodDistribution` / `cacheBreakdown` are **invocation counts**. `botShare` / `bandwidthByCache` values are **bytes**. `perDeployment.value` is **p95 latency in ms** for that deployment.');
   lines.push('');
   lines.push('```json');
   lines.push(JSON.stringify(deepDive, null, 2));
@@ -537,9 +452,7 @@ export function buildBrief({
   if (cachePolicyHints.length > 0) {
     lines.push('## Cache-policy decision');
     lines.push('');
-    lines.push(
-      'Pick the narrowest cache mechanism that matches the source. Do not default to `no-store`; if data is unsafe to cache, abstain or emit a no-change observation.'
-    );
+    lines.push('Pick the narrowest cache mechanism that matches the source. Do not default to `no-store`; if data is unsafe to cache, abstain or emit a no-change observation.');
     lines.push('');
     for (const h of cachePolicyHints) lines.push(`- ${h}`);
     lines.push('');
@@ -550,15 +463,11 @@ export function buildBrief({
 
   lines.push('## Citation library (USE ONLY THESE)');
   lines.push('');
-  lines.push(
-    `You may cite ONLY these URLs and skill-rule references. They are filtered for \`${framework}@${version}\` and the candidate kind \`${kind}\`. Any other URL will be stripped by the \`unknown-citation\` sanitizer; any URL whose version range doesn't cover \`${framework}@${version}\` will be stripped by \`version-mismatch\`.`
-  );
+  lines.push(`You may cite ONLY these URLs and skill-rule references. They are filtered for \`${framework}@${version}\` and the candidate kind \`${kind}\`. Any other URL will be stripped by the \`unknown-citation\` sanitizer; any URL whose version range doesn't cover \`${framework}@${version}\` will be stripped by \`version-mismatch\`.`);
   lines.push('');
   lines.push('### URLs');
   if (citations.urls.length === 0) {
-    lines.push(
-      '_(no URLs match this kind + version — investigate, but the rec may fail `missing-citation`; consider abstaining)_'
-    );
+    lines.push('_(no URLs match this kind + version — investigate, but the rec may fail `missing-citation`; consider abstaining)_');
   } else {
     for (const e of citations.urls) {
       lines.push(`- \`${e.url}\` — ${e.topic}`);
@@ -580,9 +489,7 @@ export function buildBrief({
     lines.push('');
     lines.push(playbookBody.trim());
     lines.push('');
-    lines.push(
-      '_Use the playbook to tilt phrasing and pattern priority. NEVER invent a claim because the playbook mentions a pattern — only emit it if the evidence supports it._'
-    );
+    lines.push('_Use the playbook to tilt phrasing and pattern priority. NEVER invent a claim because the playbook mentions a pattern — only emit it if the evidence supports it._');
     lines.push('');
   }
   if (frameworkPlaybookId && frameworkPlaybookBody) {
@@ -596,29 +503,17 @@ export function buildBrief({
 
   lines.push('## Two valid outcomes');
   lines.push('');
-  lines.push(
-    'Your job is to answer the gate question above. There are exactly two valid outcomes:'
-  );
+  lines.push('Your job is to answer the gate question above. There are exactly two valid outcomes:');
   lines.push('');
-  lines.push(
-    '**A. Emit a recommendation** (schema below) — ONLY when you found a verifiable file:line cause that the deep-dive evidence supports.'
-  );
+  lines.push('**A. Emit a recommendation** (schema below) — ONLY when you found a verifiable file:line cause that the deep-dive evidence supports.');
   lines.push('');
-  lines.push(
-    "**B. Abstain** — when the gate's hypothesis does not survive contact with the source. Emit:"
-  );
+  lines.push('**B. Abstain** — when the gate\'s hypothesis does not survive contact with the source. Emit:');
   lines.push('```json');
-  lines.push(
-    `{"abstain": true, "candidateRef": "${candidateRef}", "reason": "<one-sentence explanation grounded in what you found vs what the gate assumed>"}`
-  );
+  lines.push(`{"abstain": true, "candidateRef": "${candidateRef}", "reason": "<one-sentence explanation grounded in what you found vs what the gate assumed>"}`);
   lines.push('```');
-  lines.push(
-    'Abstaining is the RIGHT call when evidence is ambiguous, when the bottleneck isn\'t in the resolved files, or when the gate\'s hypothesis was wrong (e.g. an "uncached_route" candidate where the route is mostly POST traffic and uncacheable by protocol). Abstention is preferred over a speculative rec. The orchestrator surfaces abstentions in the trust section of the final report.'
-  );
+  lines.push('Abstaining is the RIGHT call when evidence is ambiguous, when the bottleneck isn\'t in the resolved files, or when the gate\'s hypothesis was wrong (e.g. an "uncached_route" candidate where the route is mostly POST traffic and uncacheable by protocol). Abstention is preferred over a speculative rec. The orchestrator surfaces abstentions in the trust section of the final report.');
   lines.push('');
-  lines.push(
-    "**B1. Abstain with an observation** — when you find something real while abstaining (e.g., perDeployment regression, error-rate spike, infrastructure config gap) that the customer should know about but isn't a perf rec in the gate's framing. Emit:"
-  );
+  lines.push('**B1. Abstain with an observation** — when you find something real while abstaining (e.g., perDeployment regression, error-rate spike, infrastructure config gap) that the customer should know about but isn\'t a perf rec in the gate\'s framing. Emit:');
   lines.push('```json');
   lines.push(`{
   "abstain": true,
@@ -632,43 +527,25 @@ export function buildBrief({
   }
 }`);
   lines.push('```');
-  lines.push(
-    'Use `observation` ONLY when the finding is grounded in specific evidence the gate already gave you. Do NOT invent observations to fill the slot. The renderer surfaces these in a separate "Observations from investigation" section.'
-  );
+  lines.push('Use `observation` ONLY when the finding is grounded in specific evidence the gate already gave you. Do NOT invent observations to fill the slot. The renderer surfaces these in a separate "Observations from investigation" section.');
   lines.push('');
 
   lines.push('## Investigation protocol');
   lines.push('');
-  lines.push(
-    '1. **Read ONLY the files listed under "Files you may read".** Do NOT `grep -r` the repo. If you find yourself wanting to widen the search, stop and re-read the gate question. If it doesn\'t constrain the search, abstain.'
-  );
-  lines.push(
-    '2. Read each file, then run targeted `grep` / `ast-grep` inside it to count patterns. Verify line numbers exactly.'
-  );
-  lines.push(
-    '3. Follow imports within the chain only when relevant to the gate question (one level deep max).'
-  );
+  lines.push('1. **Read ONLY the files listed under "Files you may read".** Do NOT `grep -r` the repo. If you find yourself wanting to widen the search, stop and re-read the gate question. If it doesn\'t constrain the search, abstain.');
+  lines.push('2. Read each file, then run targeted `grep` / `ast-grep` inside it to count patterns. Verify line numbers exactly.');
+  lines.push('3. Follow imports within the chain only when relevant to the gate question (one level deep max).');
   lines.push('4. Stop after 5 files exhausted, or when you have a verified root cause.');
-  lines.push(
-    '5. Drop findings that fail mechanical verification (file missing, pattern not present, etc.).'
-  );
-  lines.push(
-    '6. **Zero-finding case:** if you read the named file(s) and find no mechanism that matches the gate question, abstain (Outcome B). Do NOT invent a rec to fill the slot.'
-  );
-  lines.push(
-    '7. **Evidence-contradicts-source case:** if the deep-dive shows a real signal (e.g. high p95) but the source looks fine (no awaits, no heavy imports, small render), the bottleneck is upstream (DB, external API, or in code not shown). Abstain with reason "evidence and source diverge."'
-  );
+  lines.push('5. Drop findings that fail mechanical verification (file missing, pattern not present, etc.).');
+  lines.push('6. **Zero-finding case:** if you read the named file(s) and find no mechanism that matches the gate question, abstain (Outcome B). Do NOT invent a rec to fill the slot.');
+  lines.push('7. **Evidence-contradicts-source case:** if the deep-dive shows a real signal (e.g. high p95) but the source looks fine (no awaits, no heavy imports, small render), the bottleneck is upstream (DB, external API, or in code not shown). Abstain with reason "evidence and source diverge."');
   lines.push('');
 
   lines.push('## Pre-emit self-check');
   lines.push('');
   lines.push('Before emitting a recommendation (Outcome A), verify ALL of:');
-  lines.push(
-    '- Every file in `affectedFiles` appears in "Files you may read" as a repo-relative path. If a line shows `(scan path: ...)`, do not use the scan path in JSON.'
-  );
-  lines.push(
-    '- `why` quotes at least one specific `file:line` AND at least one deep-dive datum (e.g. `ttfb.p95=576ms`).'
-  );
+  lines.push('- Every file in `affectedFiles` appears in "Files you may read" as a repo-relative path. If a line shows `(scan path: ...)`, do not use the scan path in JSON.');
+  lines.push('- `why` quotes at least one specific `file:line` AND at least one deep-dive datum (e.g. `ttfb.p95=576ms`).');
   lines.push('- Every citation appears in the library above. No invented URLs.');
   lines.push('- `currentBehavior` snippet appears in the actual file (not a paraphrase).');
   lines.push('- No `$N` dollar literals in any customer-facing field.');
@@ -702,24 +579,12 @@ export function buildBrief({
   lines.push('');
   lines.push('Ordered by priority — top is most important.');
   lines.push('');
-  lines.push(
-    '1. **`why` must cite a specific `file:line` AND a specific deep-dive datum.** Both. Not one or the other. This is THE quality gate — recs without both will be dropped by the verifier.'
-  );
-  lines.push(
-    `2. **No invented citations.** Only URLs and refs from the library above. The \`unknown-citation\` sanitizer strips anything else.`
-  );
-  lines.push(
-    `3. **No version-mismatched features.** This project is \`${framework}@${version}\` — do not recommend APIs unavailable in that version. The version-aware library above is your filter.`
-  );
-  lines.push(
-    `4. **No \`$N\` dollar literals** in customer-facing fields. Use magnitude phrases ("hundreds of dollars per month at current traffic"). The \`$-strip\` sanitizer strips them, but emitting them is wasted output.`
-  );
-  lines.push(
-    "5. **Stay within scope.** Do not investigate other routes or fleet-wide patterns; that is the orchestrator's job. If this candidate doesn't yield a finding, abstain (Outcome B above)."
-  );
-  lines.push(
-    '6. **Vercel voice.** Sharp teammate, clear, competent, no fluff. Lead with observed metrics and the user action. Avoid marketing language (`leverage`, `streamline`, `powerful`), filler adverbs (`just`, `simply`, `actually`), hedged starts (`Consider`, `You may want to`), rhetorical reframes, and arrows in prose. Do not expose internal terms like `sub-agent`, `abstention`, `passRate`, or `quality score`. Product names: `Observability Plus`, `Vercel Functions`, `fluid compute` mid-sentence, `BotID`, `AI Gateway`, `AI SDK`, `Edge Config`, `Routing Middleware`, `Web Analytics`. Explain `function invocations` and `95th percentile`; do not use `inv` or `p95` in customer output. See `references/voice.md`.'
-  );
+  lines.push('1. **`why` must cite a specific `file:line` AND a specific deep-dive datum.** Both. Not one or the other. This is THE quality gate — recs without both will be dropped by the verifier.');
+  lines.push(`2. **No invented citations.** Only URLs and refs from the library above. The \`unknown-citation\` sanitizer strips anything else.`);
+  lines.push(`3. **No version-mismatched features.** This project is \`${framework}@${version}\` — do not recommend APIs unavailable in that version. The version-aware library above is your filter.`);
+  lines.push(`4. **No \`$N\` dollar literals** in customer-facing fields. Use magnitude phrases ("hundreds of dollars per month at current traffic"). The \`$-strip\` sanitizer strips them, but emitting them is wasted output.`);
+  lines.push('5. **Stay within scope.** Do not investigate other routes or fleet-wide patterns; that is the orchestrator\'s job. If this candidate doesn\'t yield a finding, abstain (Outcome B above).');
+  lines.push('6. **Vercel voice.** Sharp teammate, clear, competent, no fluff. Lead with observed metrics and the user action. Avoid marketing language (`leverage`, `streamline`, `powerful`), filler adverbs (`just`, `simply`, `actually`), hedged starts (`Consider`, `You may want to`), rhetorical reframes, and arrows in prose. Do not expose internal terms like `sub-agent`, `abstention`, `passRate`, or `quality score`. Product names: `Observability Plus`, `Vercel Functions`, `fluid compute` mid-sentence, `BotID`, `AI Gateway`, `AI SDK`, `Edge Config`, `Routing Middleware`, `Web Analytics`. Explain `function invocations` and `95th percentile`; do not use `inv` or `p95` in customer output. See `references/voice.md`.');
   lines.push('');
 
   return lines.join('\n');
@@ -735,17 +600,11 @@ function cachePolicyGuidance(kind, stack = {}) {
   ];
   if (framework === 'next') {
     if (cacheComponents) {
-      hints.push(
-        'Next.js with Cache Components: for reusable data inside the render path, prefer `use cache` / `use cache: remote` plus `cacheLife()` and `cacheTag()` when invalidation evidence exists.'
-      );
+      hints.push('Next.js with Cache Components: for reusable data inside the render path, prefer `use cache` / `use cache: remote` plus `cacheLife()` and `cacheTag()` when invalidation evidence exists.');
     } else {
-      hints.push(
-        'Next.js data fetch path: use `fetch(..., { next: { revalidate: seconds } })` or route-level `revalidate` only when it matches the project version and route semantics. Before recommending route-level `export const revalidate`, inspect the page/layout route chain for `cookies()`, `headers()`, `draftMode()`, `connection()`, and auth helpers; if any parent layout is request-time dynamic, require `next build` or manifest proof that the route is still ISR/static, otherwise abstain.'
-      );
+      hints.push('Next.js data fetch path: use `fetch(..., { next: { revalidate: seconds } })` or route-level `revalidate` only when it matches the project version and route semantics. Before recommending route-level `export const revalidate`, inspect the page/layout route chain for `cookies()`, `headers()`, `draftMode()`, `connection()`, and auth helpers; if any parent layout is request-time dynamic, require `next build` or manifest proof that the route is still ISR/static, otherwise abstain.');
     }
   }
-  hints.push(
-    'Reusable server data where whole-response CDN caching is unsafe: recommend Runtime Cache only when the same result is reused across requests and the freshness/invalidation story is explicit.'
-  );
+  hints.push('Reusable server data where whole-response CDN caching is unsafe: recommend Runtime Cache only when the same result is reused across requests and the freshness/invalidation story is explicit.');
   return hints;
 }
