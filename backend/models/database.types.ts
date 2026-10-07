@@ -380,6 +380,80 @@ export type Database = {
         };
         Relationships: [];
       };
+      download_job_events: {
+        Row: {
+          created_at: string;
+          id: number;
+          job_id: string;
+          status: string;
+        };
+        Insert: {
+          created_at?: string;
+          id?: number;
+          job_id: string;
+          status: string;
+        };
+        Update: {
+          created_at?: string;
+          id?: number;
+          job_id?: string;
+          status?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'download_job_events_job_id_fkey';
+            columns: ['job_id'];
+            isOneToOne: false;
+            referencedRelation: 'download_jobs';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      download_jobs: {
+        Row: {
+          created_at: string;
+          error: string | null;
+          file_expires_at: string | null;
+          file_filename: string | null;
+          file_size_bytes: number | null;
+          file_url: string | null;
+          format: string;
+          id: string;
+          platform: string | null;
+          source_url: string;
+          status: string;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          error?: string | null;
+          file_expires_at?: string | null;
+          file_filename?: string | null;
+          file_size_bytes?: number | null;
+          file_url?: string | null;
+          format: string;
+          id?: string;
+          platform?: string | null;
+          source_url: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          error?: string | null;
+          file_expires_at?: string | null;
+          file_filename?: string | null;
+          file_size_bytes?: number | null;
+          file_url?: string | null;
+          format?: string;
+          id?: string;
+          platform?: string | null;
+          source_url?: string;
+          status?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       expense_splits: {
         Row: {
           amount: number;

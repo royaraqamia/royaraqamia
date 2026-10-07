@@ -1,0 +1,5 @@
+Media Downloader sample (tracer asset).
+
+This file stands in for a real downloaded video while #150 exercises the
+download path with a stub Media Provider. The Cobalt-backed provider (#151)
+returns its own signed media URL and this asset is no longer used.
