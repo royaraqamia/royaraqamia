@@ -1,87 +1,89 @@
-import { Mic } from 'lucide-react';
+import { ArrowLeft, CalendarDays, User, Wallet } from 'lucide-react';
 import { Button } from './primitives/button';
 import { ScrollAnimation } from './ScrollAnimations';
 import { SectionTitle, SectionTitleHighlight } from './shared/section-title';
 import { CONSULTATION_START_PRICE_USD } from '@/shared/contracts/consultation';
+
+const SESSION_SPECS = [
+  { icon: User, label: 'النِّمط', value: 'جلسة فرديَّة خاصَّة' },
+  { icon: CalendarDays, label: 'العدد', value: 'جلسة واحدة أو باقة جلسات' },
+] as const;
 
 export function ConsultationCards() {
   return (
     <section
       id="consultation"
       dir="rtl"
-      className="relative overflow-hidden py-20 sm:py-28 md:py-36 bg-slate-950 text-slate-100 selection:bg-purple-500/45 selection:text-purple-200"
-      aria-label="الاستشارة التقنية الشاملة"
+      className="relative overflow-hidden bg-slate-950 py-20 text-slate-100 selection:bg-purple-500/45 selection:text-purple-200 sm:py-28 md:py-36"
+      aria-label="الاستشارات التقنيَّة"
     >
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        {/* Header Section */}
-        <ScrollAnimation animation="slide-down" duration={0.7}>
-          <div className="text-center mb-8 sm:mb-10 lg:mb-12">
-            {/* Main H2 Title */}
+      {/* Ambient frame + dot grid, matching the Services section vocabulary */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-purple-500/40 to-transparent" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_right,#1f29371a_1px,transparent_1px),linear-gradient(to_bottom,#1f29371a_1px,transparent_1px)] bg-size-[3.5rem_3.5rem] mask-[radial-gradient(ellipse_60%_50%_at_50%_30%,#000_70%,transparent_100%)]" />
+      <div className="pointer-events-none absolute -top-24 right-1/4 h-72 w-72 rounded-full bg-purple-600/10 blur-3xl" />
+
+      <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <ScrollAnimation animation="slide-up" duration={0.7}>
+          {/* Header */}
+          <div className="mx-auto mb-8 max-w-2xl text-center sm:mb-10">
             <SectionTitle tone="inverse">
               <SectionTitleHighlight>الاستشارات</SectionTitleHighlight>
             </SectionTitle>
           </div>
-        </ScrollAnimation>
 
-        {/* Main Consultation Card */}
-        <ScrollAnimation animation="slide-up" duration={0.8} delay={0.2}>
-          <div className="relative">
-            {/* Glassmorphic Container Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-linear-to-b from-purple-950/40 via-slate-950/80 to-slate-950/95 border border-purple-500/30 transition-[border-color] duration-500 hover:border-purple-400/50">
-              {/* Vibrant Accent Top Strip */}
-              <div className="h-1 w-full bg-linear-to-r from-transparent via-purple-500 to-transparent opacity-80" />
+          {/* Session details */}
+          <div className="mx-auto max-w-2xl">
+            <div className="relative overflow-hidden rounded-3xl border border-purple-500/30 bg-linear-to-b from-purple-950/50 via-slate-950/80 to-slate-950/95 p-6 sm:p-7">
+              <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-transparent via-purple-500 to-transparent opacity-80" />
+              <p className="text-sm leading-relaxed text-slate-300">
+                سؤال مُحدَّد في المواقع والتَّطبيقات، أو باقة جلسات على مدى فترة — تُقدَّم أونلاين
+                عبر جلسة صوتيَّة مباشرة.
+              </p>
 
-              {/* Internal Card Canvas */}
-              <div className="p-6 sm:p-8 md:p-10 lg:p-12">
-                {/* Header Row: Interactive Pill Badge + Starting Price */}
-                <div className="mt-2 mb-8 pb-8 border-b border-purple-500/15 flex flex-wrap items-center justify-between gap-3">
-                  {/* Microphone Feature Badge */}
-                  <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-full bg-purple-500/25 border border-purple-400/30 shadow-inner shadow-purple-500/10">
-                    <Mic className="w-4 h-4 text-purple-300 shrink-0" />
-                    <span className="text-xs sm:text-sm text-purple-200 font-bold tracking-wide">
-                      مكالمة صوتيَّة
+              <dl className="mt-5 space-y-4">
+                {SESSION_SPECS.map((spec) => (
+                  <div key={spec.label} className="flex items-start gap-3">
+                    <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-purple-400/25 bg-purple-500/15 text-purple-200">
+                      <spec.icon className="h-4 w-4" />
                     </span>
+                    <div>
+                      <dt className="text-xs font-medium text-purple-200/70">{spec.label}</dt>
+                      <dd className="text-sm font-bold text-white">{spec.value}</dd>
+                    </div>
                   </div>
+                ))}
 
-                  {/* Starting Price Badge */}
-                  <div className="inline-flex items-baseline gap-2 rounded-full border border-purple-400/30 bg-purple-500/15 px-4 py-2">
-                    <span className="text-xs sm:text-sm text-purple-200/80 font-medium">
-                      تبدأ من
-                    </span>
-                    <span
-                      dir="ltr"
-                      className="text-xl sm:text-2xl font-black tracking-tight bg-linear-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-transparent"
-                    >
-                      {`$${CONSULTATION_START_PRICE_USD}`}
-                    </span>
+                <div className="flex items-start gap-3 border-t border-purple-500/15 pt-4">
+                  <span className="mt-0.5 inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-purple-400/25 bg-purple-500/15 text-purple-200">
+                    <Wallet className="h-4 w-4" />
+                  </span>
+                  <div>
+                    <dt className="text-xs font-medium text-purple-200/70">تبدأ من</dt>
+                    <dd className="flex items-baseline gap-2">
+                      <span
+                        dir="ltr"
+                        className="bg-linear-to-r from-purple-200 via-white to-purple-300 bg-clip-text text-2xl font-black tracking-tight text-transparent"
+                      >
+                        {`$${CONSULTATION_START_PRICE_USD}`}
+                      </span>
+                      <span className="text-xs text-slate-400">حسب الباقة</span>
+                    </dd>
                   </div>
                 </div>
+              </dl>
 
-                {/* Title and Description Content */}
-                <div className="mb-8 space-y-3">
-                  <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight">
-                    توجيه تقني متكامل
-                  </h3>
-                  <p className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl font-normal">
-                    إن كانت لديك استشارة مُحدَّدَة في مجال المواقع والتَّطبيقات، أو رغبتَ في باقة من
-                    الجلسات الاستشاريَّة على مدى فترة من الزَّمن لتقييم مشروعك أو تطويره أو متابعة
-                    رحلة تعلُّمك، فنحنُ نُقدِّم لك هذه الخدمة بما منَّ الله به علينا من عِلمٍ وخبرة.
-                    وتُقدَّم الاستشارة Online عبر جلسة صوتيَّة مباشرة.
-                  </p>
-                </div>
-
-                {/* Action CTA Container */}
-                <div className="space-y-4">
-                  <a
-                    href="/consultation/book"
-                    className="block group/btn rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-                    aria-label="احجز استشارتك الآن"
-                  >
-                    <Button className="w-full h-14 sm:h-16 text-lg sm:text-xl font-bold text-white rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 transition-safe duration-300 ease-out hover:shadow-[0_0_35px_rgba(139,92,246,0.6)] shadow-xl shadow-purple-900/40 cursor-pointer border-0 active:scale-[0.98] flex items-center justify-center gap-3 min-h-11">
-                      <span>احجز استشارتك الآن</span>
-                    </Button>
+              <div className="mt-6 border-t border-purple-500/15 pt-6">
+                <Button
+                  asChild
+                  variant="hero"
+                  size="lg"
+                  className="group/btn w-full gap-3 text-lg sm:text-xl"
+                >
+                  <a href="/consultation/book" aria-label="احجز استشارتك الآن">
+                    <span>احجز استشارتك الآن</span>
+                    <ArrowLeft className="size-5 transition-transform duration-300 group-hover/btn:-translate-x-1" />
                   </a>
-                </div>
+                </Button>
               </div>
             </div>
           </div>
