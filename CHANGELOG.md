@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.55.1] - 2026-10-07
+
+### Changed
+- include deploy-to-vercel archive
+- sync agent skills and update lockfile
+- ignore vendored agent skills in prettier and lint-staged
+- document non-blocking dev server lifecycle
+- color services menu icons with primary
+- drop icon backgrounds and match menu icon size
+- use official brand-colored social icons
+- remove Footer from all pages except homepage
+
 ## [1.55.0] - 2026-10-07
 
 ### Changed
