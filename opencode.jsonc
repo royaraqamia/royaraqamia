@@ -1,0 +1,46 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": ["docs/architecture.md", "docs/conventions.md", "docs/security.md"],
+  "formatter": true,
+  "lsp": true,
+  "watcher": {
+    "ignore": [
+      "node_modules/**",
+      ".next/**",
+      "dist/**",
+      "coverage/**",
+      "playwright-report/**",
+      ".vercel/**",
+    ],
+  },
+  "compaction": {
+    "auto": true,
+    "prune": true,
+  },
+  "tool_output": {
+    "max_lines": 400,
+    "max_bytes": 20000,
+  },
+  "permission": {
+    "bash": {
+      "*": "allow",
+      "git push*": "ask",
+      "npm publish*": "ask",
+      "git reset --hard*": "deny",
+      "rm -rf *": "deny",
+    },
+  },
+  "agent": {
+    "review": {
+      "description": "Read-only reviewer for diffs, branch changes, and PRs. Cannot edit or write files.",
+      "mode": "subagent",
+      "tools": {
+        "edit": false,
+        "write": false,
+      },
+      "permission": {
+        "bash": "ask",
+      },
+    },
+  },
+}
