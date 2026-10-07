@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.56.0] - 2026-10-07
+
+### Changed
+- mirror remote migration versions (#151)
+- rebuild the section as a session details card
+- gradient the feature text with each card's theme
+- match row icons to the user dropdown
+- bolden CTA labels and match button widths
+- replace 'استشارة' with 'أسئلة' in booking summary
+
+### Added
+- tolerate a slow provider acknowledgement (#151)
+- dispatch to the provider and complete via signed callback (#151)
+- sweep stale and old jobs, expire signed links (#155)
+- gate the tool with Turnstile, limits and SSRF guards (#153)
+- add the Media Downloader tool and async job pipeline (#150)
+
 ## [1.55.1] - 2026-10-07
 
 ### Changed
