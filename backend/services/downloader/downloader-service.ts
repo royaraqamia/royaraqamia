@@ -1,10 +1,11 @@
 import {
   MAX_DOWNLOAD_DURATION_SECONDS,
+  TERMINAL_DOWNLOAD_STATUSES,
   maxDownloadBytes,
+  type DownloadCallback,
   type DownloadJob,
   type DownloadRequest,
 } from '@/shared/contracts/downloader';
-import type { ConcurrencyGate } from '@/backend/clients/concurrency-gate';
 import type { DownloadJobRepository } from '@/backend/repositories/downloader/download-job-repository';
 import {
   MediaProviderError,
@@ -12,6 +13,9 @@ import {
 } from '@/backend/services/downloader/media-provider';
 
 const BUSY_MESSAGE = 'الخدمة مزدحمة حاليًّا. حاول مجددًا بعد قليل.';
+const DURATION_MESSAGE = 'مدة الوسائط تتجاوز الحدّ المسموح (15 دقيقة).';
+const SIZE_MESSAGE = 'حجم الملف يتجاوز الحدّ المسموح.';
+const GENERIC_FAILURE = 'تعذّر تنزيل الوسائط من هذا الرابط.';
 
 export class DownloadJobNotFoundError extends Error {
   constructor() {
@@ -20,35 +24,29 @@ export class DownloadJobNotFoundError extends Error {
   }
 }
 
-/** A Download that the provider did deliver, but past a cap we enforce ourselves. */
-class DownloadLimitError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DownloadLimitError';
-  }
-}
-
 export interface DownloaderServiceDeps {
   now?: () => Date;
-  /** Global cap on simultaneous provider jobs; omitted means unbounded. */
-  capacity?: ConcurrencyGate;
+  /** Global cap on jobs running at the provider at once; omitted means unbounded. */
+  capacityLimit?: number;
+  /** The signed callback route the Media Provider reports to. */
+  callbackUrl?: string;
 }
 
 /**
- * Runs one Download through its short life. `create` accepts the request and
- * returns a `queued` job; `process` is scheduled after the response and moves it
- * through `running` to `ready` (or `failed`), recording each transition through
- * the repository. Until the Cobalt provider calls back (#151), `process` is the
- * thing that advances a job.
+ * Owns one Download Job's short life. `create` accepts the request as `queued`;
+ * `dispatch` hands it to the Media Provider (marking it `running`); the provider
+ * finishes off the request path and POSTs back, which `recordResult` turns into
+ * the terminal `ready` or `failed`. Until Cobalt is live (#151) the stub provider
+ * drives that callback itself, so the out-of-band path is the only path.
  *
- * The duration and size caps are enforced here as well as being handed to the
- * provider, so a provider that ignores them still cannot deliver past the limit.
- * A slot from the capacity gate wraps the provider call, bounding how many
- * Downloads run at once across the whole site.
+ * The duration and size caps are re-checked here when the result arrives, so a
+ * provider that ignores the limits it was handed still cannot record a file past
+ * them. The concurrency cap counts jobs already in flight at the provider.
  */
 export class DownloaderService {
   private readonly now: () => Date;
-  private readonly capacity: ConcurrencyGate | undefined;
+  private readonly capacityLimit: number | undefined;
+  private readonly callbackUrl: string;
 
   constructor(
     private readonly repository: DownloadJobRepository,
@@ -56,52 +54,63 @@ export class DownloaderService {
     deps: DownloaderServiceDeps = {}
   ) {
     this.now = deps.now ?? (() => new Date());
-    this.capacity = deps.capacity;
+    this.capacityLimit = deps.capacityLimit;
+    this.callbackUrl = deps.callbackUrl ?? '';
   }
 
   async create(request: DownloadRequest): Promise<DownloadJob> {
     return this.repository.create({ url: request.url, format: request.format });
   }
 
-  async process(id: string, request: DownloadRequest): Promise<void> {
-    const release = this.capacity ? await this.capacity.acquire() : null;
-    if (this.capacity && !release) {
+  async dispatch(id: string, request: DownloadRequest): Promise<void> {
+    if (
+      this.capacityLimit !== undefined &&
+      (await this.repository.countActive()) >= this.capacityLimit
+    ) {
       await this.repository.updateStatus(id, { status: 'failed', error: BUSY_MESSAGE });
       return;
     }
 
-    try {
-      await this.repository.updateStatus(id, { status: 'running' });
+    await this.repository.updateStatus(id, { status: 'running' });
 
-      const maxSizeBytes = maxDownloadBytes(request.format);
-      const result = await this.provider.fetch({
+    try {
+      await this.provider.dispatch({
+        jobId: id,
         url: request.url,
         format: request.format,
+        callbackUrl: this.callbackUrl,
         maxDurationSeconds: MAX_DOWNLOAD_DURATION_SECONDS,
-        maxSizeBytes,
-      });
-
-      if (result.durationSeconds > MAX_DOWNLOAD_DURATION_SECONDS) {
-        throw new DownloadLimitError('مدة الوسائط تتجاوز الحدّ المسموح (15 دقيقة).');
-      }
-      if (result.file.sizeBytes > maxSizeBytes) {
-        throw new DownloadLimitError('حجم الملف يتجاوز الحدّ المسموح.');
-      }
-
-      await this.repository.updateStatus(id, {
-        status: 'ready',
-        platform: result.platform,
-        file: result.file,
+        maxSizeBytes: maxDownloadBytes(request.format),
       });
     } catch (error) {
-      const reason =
-        error instanceof DownloadLimitError || error instanceof MediaProviderError
-          ? error.message
-          : 'تعذّر تنزيل الوسائط من هذا الرابط.';
+      const reason = error instanceof MediaProviderError ? error.message : GENERIC_FAILURE;
       await this.repository.updateStatus(id, { status: 'failed', error: reason });
-    } finally {
-      if (release) await release();
     }
+  }
+
+  async recordResult(callback: DownloadCallback): Promise<void> {
+    const job = await this.repository.findById(callback.jobId);
+    if (!job || TERMINAL_DOWNLOAD_STATUSES.includes(job.status)) return;
+
+    if (callback.status === 'failed') {
+      await this.repository.updateStatus(job.id, { status: 'failed', error: callback.error });
+      return;
+    }
+
+    if (callback.durationSeconds > MAX_DOWNLOAD_DURATION_SECONDS) {
+      await this.repository.updateStatus(job.id, { status: 'failed', error: DURATION_MESSAGE });
+      return;
+    }
+    if (callback.file.sizeBytes > maxDownloadBytes(job.format)) {
+      await this.repository.updateStatus(job.id, { status: 'failed', error: SIZE_MESSAGE });
+      return;
+    }
+
+    await this.repository.updateStatus(job.id, {
+      status: 'ready',
+      platform: callback.platform ?? null,
+      file: callback.file,
+    });
   }
 
   async get(id: string): Promise<DownloadJob> {

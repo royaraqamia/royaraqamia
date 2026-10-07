@@ -1,7 +1,7 @@
 import { getAdminSupabase } from '@/backend/config/supabase';
 import { createTurnstileVerifier } from '@/backend/config/turnstile';
 import { env } from '@/backend/config/env';
-import { createConcurrencyGate, type ConcurrencyGate } from '@/backend/clients/concurrency-gate';
+import { CobaltMediaProvider } from '@/backend/clients/cobalt-media-provider';
 import {
   SupabaseDownloadJobRepository,
   type DownloadJobRepository,
@@ -10,9 +10,8 @@ import type { MediaProvider } from '@/backend/services/downloader/media-provider
 import { StubMediaProvider } from '@/backend/services/downloader/stub-media-provider';
 import { DownloaderService } from '@/backend/services/downloader/downloader-service';
 
-/** Simultaneous provider jobs allowed across the whole site; the TTL reclaims a crashed seat. */
+/** Jobs the provider may work on at once; the stale sweep reclaims a lost callback (#155). */
 const DOWNLOADER_MAX_CONCURRENT_JOBS = 20;
-const DOWNLOADER_JOB_TTL_SECONDS = 15 * 60;
 
 /**
  * Media Downloader composition root. `download_jobs` grants nothing to anon or
@@ -22,23 +21,30 @@ export function createDownloadJobRepository(): DownloadJobRepository {
   return new SupabaseDownloadJobRepository(getAdminSupabase());
 }
 
-export function createMediaProvider(): MediaProvider {
-  // TODO(#151): swap for the Cobalt-backed provider behind the same port.
-  return new StubMediaProvider();
+export function downloaderCallbackUrl(): string {
+  return `${env.siteUrl.replace(/\/$/, '')}/api/downloader/callback`;
 }
 
-export function createDownloadCapacity(): ConcurrencyGate {
-  return createConcurrencyGate({
-    redisUrl: env.upstashRedisUrl,
-    redisToken: env.upstashRedisToken,
-    limit: DOWNLOADER_MAX_CONCURRENT_JOBS,
-    ttlSeconds: DOWNLOADER_JOB_TTL_SECONDS,
+/**
+ * The real Cobalt host once `DOWNLOADER_PROVIDER_URL` is configured (ADR-0017);
+ * until then the stub stands in, reporting back through the same signed callback
+ * route so the out-of-band path is exercised end to end.
+ */
+export function createMediaProvider(): MediaProvider {
+  const url = env.downloaderProviderUrl;
+  if (url) {
+    return new CobaltMediaProvider({ url, token: env.downloaderProviderToken });
+  }
+  return new StubMediaProvider({
+    callbackUrl: downloaderCallbackUrl(),
+    callbackSecret: env.downloaderCallbackSecret,
   });
 }
 
 export function createDownloaderService(): DownloaderService {
   return new DownloaderService(createDownloadJobRepository(), createMediaProvider(), {
-    capacity: createDownloadCapacity(),
+    capacityLimit: DOWNLOADER_MAX_CONCURRENT_JOBS,
+    callbackUrl: downloaderCallbackUrl(),
   });
 }
 

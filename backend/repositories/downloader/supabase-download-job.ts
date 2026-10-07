@@ -57,6 +57,16 @@ export class SupabaseDownloadJobRepository implements DownloadJobRepository {
     return data ? toDownloadJob(data) : null;
   }
 
+  async countActive(): Promise<number> {
+    const { count, error } = await this.supabase
+      .from('download_jobs')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'running');
+
+    if (error) throw error;
+    return count ?? 0;
+  }
+
   async updateStatus(id: string, patch: DownloadJobUpdate): Promise<DownloadJob> {
     const clearFile = patch.file === null;
     const { data, error } = await this.supabase

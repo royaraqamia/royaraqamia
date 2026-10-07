@@ -31,4 +31,6 @@ export interface DownloadJobRepository {
   create(input: CreateDownloadJobCommand): Promise<DownloadJob>;
   findById(id: string): Promise<DownloadJob | null>;
   updateStatus(id: string, patch: DownloadJobUpdate): Promise<DownloadJob>;
+  /** Jobs the Media Provider is working on right now; drives the concurrency cap. */
+  countActive(): Promise<number>;
 }

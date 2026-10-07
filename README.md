@@ -268,6 +268,10 @@ Copy `example.env` to `.env.local` and set each value. All values below are **pl
 
 | `CRON_SECRET` | **Secret.** Bearer token Vercel Cron sends to `/api/rates/refresh` | `change-me` (random 32 bytes) | for the rates cron |
 
+| `DOWNLOADER_PROVIDER_URL` | Job endpoint of the self-hosted Cobalt Media Provider host (empty = built-in stub) | `https://downloader.example.com/job` | Media Downloader only |
+| `DOWNLOADER_PROVIDER_TOKEN` | **Secret.** Bearer token the app sends to the provider host | `change-me` | Media Downloader only |
+| `DOWNLOADER_CALLBACK_SECRET` | **Secret.** Shared secret the provider sends to `/api/downloader/callback` | `change-me` (random 32 bytes) | Media Downloader only |
+
 > **Web Push (VAPID):** OS-level push notifications (browser subscription → server dispatch via `web-push`) activate once the five keys above are set. Generate a key pair with `node scripts/generate-vapid.mjs`; put the public key in `NEXT_PUBLIC_VAPID_PUBLIC_KEY` and keep `VAPID_PRIVATE_KEY` + `PUSH_WEBHOOK_TOKEN` server-only. `PUSH_ENDPOINT_ALLOWLIST` defaults to the known push-service hosts and is fail-closed. Without these keys the push pipeline is a graceful no-op — in-app notifications keep working.
 
 > **Naming convention:** `NEXT_PUBLIC_*` variables are inlined into the client bundle and are therefore **not** secrets. Everything else must only be read server-side. The Supabase **service-role key** bypasses RLS — never expose it to the browser.

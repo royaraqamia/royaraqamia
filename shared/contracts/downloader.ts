@@ -125,6 +125,36 @@ export type CreateDownloadJobInput = z.infer<typeof CreateDownloadJobSchema>;
 /** The part of a create request the download pipeline itself needs. */
 export type DownloadRequest = Pick<CreateDownloadJobInput, 'url' | 'format'>;
 
+const DownloadCallbackFileSchema = z.object({
+  url: z.string().url(),
+  filename: z.string().trim().min(1).max(255),
+  sizeBytes: z.number().int().nonnegative(),
+  expiresAt: z.string().min(1),
+});
+
+/**
+ * What a Media Provider posts to the internal callback route once a Download
+ * finishes. `ready` carries the signed, expiring link; `failed` carries a reason
+ * the visitor can read. The route authenticates the caller by shared secret;
+ * this schema only guards the payload's shape.
+ */
+export const DownloadCallbackSchema = z.discriminatedUnion('status', [
+  z.object({
+    jobId: z.string().uuid(),
+    status: z.literal('ready'),
+    platform: z.string().trim().min(1).max(255).nullish(),
+    durationSeconds: z.number().nonnegative(),
+    file: DownloadCallbackFileSchema,
+  }),
+  z.object({
+    jobId: z.string().uuid(),
+    status: z.literal('failed'),
+    error: z.string().trim().min(1).max(1000),
+  }),
+]);
+
+export type DownloadCallback = z.infer<typeof DownloadCallbackSchema>;
+
 // ------------------------------------------------------------
 // Entities
 // ------------------------------------------------------------

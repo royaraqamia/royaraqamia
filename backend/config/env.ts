@@ -95,6 +95,15 @@ export const env = {
   get cronSecret(): string | undefined {
     return read('CRON_SECRET');
   },
+  get downloaderProviderUrl(): string | undefined {
+    return read('DOWNLOADER_PROVIDER_URL');
+  },
+  get downloaderProviderToken(): string | undefined {
+    return read('DOWNLOADER_PROVIDER_TOKEN');
+  },
+  get downloaderCallbackSecret(): string | undefined {
+    return read('DOWNLOADER_CALLBACK_SECRET');
+  },
   get pushEndpointAllowlist(): string[] {
     const raw = read('PUSH_ENDPOINT_ALLOWLIST')?.trim();
     return (raw && raw.length > 0 ? raw : DEFAULT_PUSH_ENDPOINT_ALLOWLIST)
