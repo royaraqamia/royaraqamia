@@ -29,7 +29,7 @@ export function BookingSummary({ packages }: BookingSummaryProps) {
         className="mt-2 text-sm text-muted-foreground leading-relaxed"
         buttonClassName="text-purple-600 hover:text-purple-500 dark:text-purple-400 dark:hover:text-purple-300"
       >
-        إن كانت لديك استشارة مُحدَّدَة في مجال المواقع والتَّطبيقات، أو رغبتَ في باقة من الجلسات
+        إن كانت لديك أسئلة مُحدَّدَة في مجال المواقع والتَّطبيقات، أو رغبتَ في باقة من الجلسات
         الاستشاريَّة على مدى فترة من الزَّمن لتقييم مشروعك أو تطويره أو متابعة رحلة تعلُّمك، فنحنُ
         نُقدِّم لك هذه الخدمة بما منَّ الله به علينا من عِلمٍ وخبرة. وتُقدَّم الاستشارة Online عبر
         جلسة صوتيَّة مباشرة.
