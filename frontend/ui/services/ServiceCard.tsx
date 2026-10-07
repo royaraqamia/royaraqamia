@@ -82,7 +82,9 @@ export function ServiceCard({ service }: { service: Service }) {
                 key={idx}
                 className="flex items-center justify-center group/item p-1.5 -mx-1.5 rounded-full hover:bg-white/3 transition-colors duration-200"
               >
-                <span className="text-xs sm:text-sm md:text-base text-neutral-300 font-medium leading-relaxed text-center group-hover/item:text-white transition-colors duration-200">
+                <span
+                  className={`bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent text-xs sm:text-sm md:text-base font-medium leading-relaxed text-center transition-[filter] duration-200 group-hover/item:brightness-125`}
+                >
                   {feature}
                 </span>
               </li>
