@@ -30,9 +30,7 @@ export function ServicesMenuItems({ subItems, onSelect, handleHashClick }: Servi
               }`}
             >
               <span className="flex min-w-0 items-center gap-2.5">
-                {sub.icon && (
-                  <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/item:text-violet-400" />
-                )}
+                {sub.icon && <sub.icon className="w-4 h-4 shrink-0 text-primary" />}
                 <span className="truncate">{sub.label}</span>
               </span>
             </div>
@@ -52,9 +50,7 @@ export function ServicesMenuItems({ subItems, onSelect, handleHashClick }: Servi
               }}
             >
               <span className="flex min-w-0 items-center gap-2.5">
-                {sub.icon && (
-                  <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/item:text-violet-400" />
-                )}
+                {sub.icon && <sub.icon className="w-4 h-4 shrink-0 text-primary" />}
                 <span className="truncate">{sub.label}</span>
               </span>
               <span className="text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
@@ -79,9 +75,7 @@ export function ServicesMenuItems({ subItems, onSelect, handleHashClick }: Servi
             role="menuitem"
           >
             <span className="flex min-w-0 items-center gap-2.5">
-              {sub.icon && (
-                <sub.icon className="w-4 h-4 shrink-0 text-neutral-400 transition-colors group-hover/item:text-violet-400" />
-              )}
+              {sub.icon && <sub.icon className="w-4 h-4 shrink-0 text-primary" />}
               <span className="truncate">{sub.label}</span>
             </span>
             <span className="text-violet-500 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover/item:opacity-100 group-hover/item:translate-x-0 group-focus-visible/item:opacity-100 group-focus-visible/item:translate-x-0">
