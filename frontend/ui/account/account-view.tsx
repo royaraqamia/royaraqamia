@@ -23,9 +23,6 @@ function AccountSkeleton() {
 const rowClasses =
   'group flex w-full items-center justify-between gap-3 px-4 py-4 text-start text-sm sm:text-base font-bold text-foreground rounded-2xl border border-border/50 bg-card/60 hover:bg-primary/10 hover:text-primary hover:border-primary/30 active:scale-[0.99] transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30';
 
-const rowIconClasses =
-  'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary transition-transform group-hover:scale-105';
-
 export function AccountView() {
   const { user, isLoading, isAdmin, profileName, profileAvatarUrl, signOut } = useSession();
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -83,10 +80,8 @@ export function AccountView() {
       {/* Account actions */}
       <nav aria-label="إجراءات الحساب" className="flex flex-col gap-2.5">
         <Link href="/account/submissions" className={rowClasses}>
-          <span className="flex items-center gap-3">
-            <span className={rowIconClasses}>
-              <ClipboardList size={18} />
-            </span>
+          <span className="flex items-center gap-2.5">
+            <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
             <span>طلباتي</span>
           </span>
           <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
@@ -96,10 +91,8 @@ export function AccountView() {
 
         {isAdmin && (
           <Link href="/admin" className={rowClasses}>
-            <span className="flex items-center gap-3">
-              <span className={rowIconClasses}>
-                <ShieldCheck size={18} />
-              </span>
+            <span className="flex items-center gap-2.5">
+              <ShieldCheck className="w-4 h-4 shrink-0 text-primary" />
               <span>الإدارة</span>
             </span>
             <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
@@ -116,10 +109,8 @@ export function AccountView() {
             'text-destructive/90 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30'
           )}
         >
-          <span className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive transition-transform group-hover:scale-105">
-              <LogOut size={18} />
-            </span>
+          <span className="flex items-center gap-2.5">
+            <LogOut className="w-4 h-4 shrink-0 text-destructive" />
             <span>تسجيل الخروج</span>
           </span>
         </button>
