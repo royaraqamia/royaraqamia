@@ -158,7 +158,6 @@ export function Navbar() {
           >
             <DesktopNav
               navLinks={navLinks}
-              isScrolled={isScrolled}
               isLinkActive={isLinkActive}
               isSubItemActive={isSubItemActive}
               handleHashClick={handleHashClick}

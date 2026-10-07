@@ -20,7 +20,6 @@ const UserDropdown = dynamic(() => import('../shared/user-dropdown').then((m) =>
 
 interface DesktopNavProps {
   navLinks: NavLink[];
-  isScrolled: boolean;
   isLinkActive: (href: string) => boolean;
   isSubItemActive: (subItems?: NavLink[]) => boolean;
   handleHashClick: (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => void;
@@ -30,7 +29,6 @@ interface DesktopNavProps {
 
 export function DesktopNav({
   navLinks,
-  isScrolled,
   isLinkActive,
   isSubItemActive,
   handleHashClick,
@@ -62,19 +60,10 @@ export function DesktopNav({
               width={48}
               height={48}
               priority
-              className={`rounded-full transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105 ${
-                isScrolled ? 'h-8 w-8 lg:h-9 lg:w-9' : 'h-10 w-10 lg:h-11 lg:w-11'
-              }`}
-              style={{
-                transform: isScrolled ? 'scale(0.95)' : 'scale(1)',
-              }}
+              className="h-8 w-8 rounded-full transition-safe duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-105"
             />
           </div>
-          <span
-            className={`logo-text hidden lg:inline-block font-bold font-heading tracking-tight text-white transition-safe duration-300 group-hover:text-violet-400 ${
-              isScrolled ? 'text-lg lg:text-xl' : 'text-xl lg:text-2xl'
-            }`}
-          >
+          <span className="logo-text hidden lg:inline-block text-xl font-bold font-heading tracking-tight text-white transition-safe duration-300 group-hover:text-violet-400">
             رؤيَة رقَميَّة
           </span>
         </Link>
