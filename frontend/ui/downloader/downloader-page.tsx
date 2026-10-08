@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
-import { Download } from 'lucide-react';
 import {
   DOWNLOAD_FORMATS,
   DOWNLOAD_FORMAT_LABELS,
@@ -138,13 +137,10 @@ export function DownloaderPage() {
                 <p className="text-sm text-destructive">{job.error}</p>
               )}
 
-              {job.status === 'ready' && job.file && (
-                <Button asChild variant="default">
-                  <a href={job.file.url} download={job.file.filename}>
-                    <Download aria-hidden="true" />
-                    حفظ الملف
-                  </a>
-                </Button>
+              {job.status === 'ready' && (
+                <p className="text-sm text-muted-foreground">
+                  اكتمل التنزيل وبدأ حفظ الملف تلقائيًّا في جهازك.
+                </p>
               )}
             </div>
           )}
