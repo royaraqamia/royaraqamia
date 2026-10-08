@@ -119,6 +119,18 @@ describe('DownloadCallbackSchema', () => {
     expect(result.success).toBe(true);
   });
 
+  it('accepts and keeps an optional machine-readable failure code', () => {
+    const result = DownloadCallbackSchema.safeParse({
+      jobId,
+      status: 'failed',
+      code: 'blocked',
+      error: 'الموقع يحجب خادم التنزيل مؤقتًا؛ حاول مجددًا بعد قليل.',
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data).toMatchObject({ code: 'blocked' });
+  });
+
   it('rejects a ready result with no file', () => {
     const result = DownloadCallbackSchema.safeParse({ jobId, status: 'ready', durationSeconds: 1 });
 

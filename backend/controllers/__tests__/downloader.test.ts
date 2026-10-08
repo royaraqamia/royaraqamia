@@ -6,8 +6,12 @@ const mockRecordResult = vi.fn();
 const mockVerifyTurnstile = vi.fn();
 const mockCheckRateLimitApi = vi.fn();
 const mockRunAfter = vi.fn();
+const mockCaptureMessage = vi.fn();
 
-vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
+vi.mock('@sentry/nextjs', () => ({
+  captureException: vi.fn(),
+  captureMessage: (...args: unknown[]) => mockCaptureMessage(...args),
+}));
 vi.mock('@/backend/config/after', () => ({
   runAfter: (fn: () => unknown) => mockRunAfter(fn),
 }));
@@ -149,5 +153,27 @@ describe('downloader controller recordDownloadCallback', () => {
 
     expect(result).toMatchObject({ status: 200 });
     expect(mockRecordResult).toHaveBeenCalledWith(failure);
+  });
+
+  it('reports a classified provider failure to Sentry', async () => {
+    const failure = {
+      jobId: JOB_ID,
+      status: 'failed',
+      code: 'blocked',
+      error: 'الموقع يحجب خادم التنزيل مؤقتًا.',
+    };
+
+    await recordDownloadCallback(failure, secretHeaders);
+
+    expect(mockCaptureMessage).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ tags: { 'downloader.failure_code': 'blocked' } })
+    );
+  });
+
+  it('does not report a ready result to Sentry', async () => {
+    await recordDownloadCallback(READY_CALLBACK, secretHeaders);
+
+    expect(mockCaptureMessage).not.toHaveBeenCalled();
   });
 });

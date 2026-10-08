@@ -72,11 +72,22 @@ Content-Type: application/json
 }
 ```
 
-`failed` — a reason the visitor can read:
+`failed` — a reason the visitor can read, plus an optional machine-readable `code`
+(`duration`, `size`, `unsupported`, `blocked`, `unavailable`, `timeout`, `generic`):
 
 ```json
-{ "jobId": "b3c1…-uuid", "status": "failed", "error": "هذا الرابط خاص أو محميّ." }
+{
+  "jobId": "b3c1…-uuid",
+  "status": "failed",
+  "code": "blocked",
+  "error": "هذا الرابط خاص أو محميّ."
+}
 ```
+
+`code` is for observability: the app tags the failure in Sentry with it, so a
+platform that starts refusing the host (bot check, rate limit, IP block) shows up
+as `blocked` instead of blending into `generic`. The host logs the raw extractor
+output alongside it. Omitting `code` is valid — the app treats it as unclassified.
 
 The app replies `200 {"success":true}` and moves the job to `ready` or `failed`.
 The route rejects a missing or wrong secret with `401` and never trusts a public

@@ -106,6 +106,21 @@ export async function recordDownloadCallback(body: unknown, headers: Headers): P
     return jsonResult(400, { success: false, error: 'بيانات غير صحيحة' });
   }
 
+  // Surface the provider's classified reason so a platform that starts failing
+  // (e.g. YouTube blocking the host's egress) is visible in Sentry, not just as
+  // a generic visitor-facing message.
+  if (parsed.data.status === 'failed') {
+    Sentry.captureMessage('Media Downloader: provider reported a failed download', {
+      level: 'warning',
+      tags: { 'downloader.failure_code': parsed.data.code ?? 'unclassified' },
+      extra: {
+        jobId: parsed.data.jobId,
+        code: parsed.data.code ?? null,
+        error: parsed.data.error,
+      },
+    });
+  }
+
   try {
     await createDownloaderService().recordResult(parsed.data);
     return jsonResult(200, { success: true });

@@ -180,6 +180,12 @@ export const DownloadCallbackSchema = z.discriminatedUnion('status', [
   z.object({
     jobId: z.string().uuid(),
     status: z.literal('failed'),
+    /**
+     * Optional machine-readable reason the provider classified (e.g. `blocked`,
+     * `unavailable`, `duration`, `unsupported`). `error` stays the visitor copy;
+     * this is for observability, and older providers that omit it are still valid.
+     */
+    code: z.string().trim().max(50).optional(),
     error: z.string().trim().min(1).max(1000),
   }),
 ]);
