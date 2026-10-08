@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.57.0] - 2026-10-08
+
+### Added
+- add Platform allowlist and per-Platform circuit breaker (#152)
+
 ## [1.56.0] - 2026-10-07
 
 ### Changed
