@@ -30,12 +30,6 @@ import { useDownloadJob } from '@/frontend/state/downloader/use-download-job';
 
 const REQUIRES_TURNSTILE = TURNSTILE_SITE_KEY.length > 0;
 
-const ACCEPTABLE_USE_POINTS = [
-  'روابط عامة فقط — لا محتوى محميًّا بـ DRM أو مدفوعًا أو خاصًّا.',
-  'أنت مسؤول عن امتلاك حقّ تنزيل هذا المحتوى.',
-  'تنزيل واحد لكل طلب، بحدّ أقصى 15 دقيقة وحجم محدود.',
-];
-
 export function DownloaderPage() {
   const [url, setUrl] = useState('');
   const [format, setFormat] = useState<DownloadFormat>('video-720p');
@@ -157,30 +151,6 @@ export function DownloaderPage() {
           )}
         </CardContent>
       </Card>
-
-      <section
-        aria-labelledby="downloader-aup"
-        className="rounded-xl border border-border/60 bg-card/60 p-5"
-      >
-        <h2 id="downloader-aup" className="mb-2 text-sm font-bold text-foreground">
-          الاستخدام المقبول
-        </h2>
-        <ul className="list-disc space-y-1 ps-5 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-          {ACCEPTABLE_USE_POINTS.map((point) => (
-            <li key={point}>{point}</li>
-          ))}
-        </ul>
-        <p className="mt-3 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-          لطلبات إزالة المحتوى، يُرجَى التّواصل عبر{' '}
-          <a
-            href="mailto:contact@royaraqamia.com"
-            className="font-medium text-primary underline-offset-4 hover:underline"
-          >
-            contact@royaraqamia.com
-          </a>
-          .
-        </p>
-      </section>
     </main>
   );
 }
