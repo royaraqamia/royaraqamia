@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createMcpOAuthProvider, McpOAuthError } from '@/backend/services/mcp/oauth-provider';
 import { basicAuthCredentials, noStore } from '@/backend/services/mcp/oauth-http';
+import { checkRateLimitApi } from '@/backend/middleware/http';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { getClientIp } from '@/backend/transport/http';
+import { mcpTokenRateLimitPolicy } from '@/backend/config/rate-limiter';
 
 export const runtime = 'nodejs';
 
@@ -12,6 +16,12 @@ export const runtime = 'nodejs';
  * header), client_secret_post (body), or none (public client with PKCE).
  */
 export async function POST(req: NextRequest) {
+  const rateLimited = await checkRateLimitApi({
+    ...mcpTokenRateLimitPolicy(getClientIp(req)),
+    failClosed: true,
+  });
+  if (rateLimited) return toNextResponse(rateLimited);
+
   const form = await req.formData();
   const grantType = (form.get('grant_type') as string) ?? '';
   const bodyClientId = (form.get('client_id') as string) ?? '';

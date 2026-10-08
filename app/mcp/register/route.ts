@@ -1,8 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createMcpOAuthProvider, McpOAuthError } from '@/backend/services/mcp/oauth-provider';
+import {
+  createMcpOAuthProvider,
+  McpOAuthError,
+  isValidMcpRedirectUri,
+} from '@/backend/services/mcp/oauth-provider';
 import { generateOpaqueToken } from '@/backend/repositories/mcp/mcp-token-crypto';
 import { parseScopes } from '@/backend/services/mcp/scope';
 import { noStore } from '@/backend/services/mcp/oauth-http';
+import { checkRateLimitApi } from '@/backend/middleware/http';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { getClientIp } from '@/backend/transport/http';
+import { mcpRegisterRateLimitPolicy } from '@/backend/config/rate-limiter';
 
 export const runtime = 'nodejs';
 
@@ -15,6 +23,12 @@ export const runtime = 'nodejs';
  * automatically before the first authorization request.
  */
 export async function POST(req: NextRequest) {
+  const rateLimited = await checkRateLimitApi({
+    ...mcpRegisterRateLimitPolicy(getClientIp(req)),
+    failClosed: true,
+  });
+  if (rateLimited) return toNextResponse(rateLimited);
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -35,6 +49,19 @@ export async function POST(req: NextRequest) {
       {
         error: 'invalid_redirect_uri',
         error_description: 'redirect_uris must be a non-empty array of URLs',
+      },
+      { status: 400, headers: noStore() }
+    );
+  }
+
+  // ADR 0022: https only, with a local-development exception. Non-web schemes
+  // (native app redirect hops, javascript:, etc.) are rejected outright.
+  if (!redirectUris.every((u) => isValidMcpRedirectUri(u as string))) {
+    return NextResponse.json(
+      {
+        error: 'invalid_redirect_uri',
+        error_description:
+          'redirect_uris must use https (or http://localhost / 127.0.0.1 / [::1] for local development)',
       },
       { status: 400, headers: noStore() }
     );

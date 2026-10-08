@@ -2,6 +2,10 @@ import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/
 import type { NextRequest } from 'next/server';
 import { createMcpServer } from '@/backend/services/mcp/tools/registry';
 import { authenticateMcpRequest } from '@/backend/middleware/mcp-auth';
+import { checkRateLimitApi } from '@/backend/middleware/http';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { getClientIp } from '@/backend/transport/http';
+import { mcpDataPlaneRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { corsHeaders, optionsResponse } from '@/backend/services/mcp/oauth-http';
 
 export const runtime = 'nodejs';
@@ -18,11 +22,18 @@ export const maxDuration = 60;
  * Each request creates a fresh McpServer + transport bound to the caller's
  * resolved context, so no session state is kept between calls. The OAuth
  * access token travels in the `Authorization: Bearer` header and is resolved
- * to identity/scopes by the auth middleware; anonymous callers get an
- * anonymous context and may only reach scope-free/public tools.
+ * to identity/scopes by the auth middleware. Callers without a token get an
+ * anonymous context limited to the public tool surface (ADR 0021); anything
+ * personal-data-shaped already answered 401 with an OAuth challenge there.
  */
 
 async function handleRequest(request: NextRequest): Promise<Response> {
+  const rateLimited = await checkRateLimitApi({
+    ...mcpDataPlaneRateLimitPolicy(getClientIp(request)),
+    failClosed: true,
+  });
+  if (rateLimited) return toNextResponse(rateLimited);
+
   const auth = await authenticateMcpRequest(request);
   if (auth instanceof Response) return auth;
 

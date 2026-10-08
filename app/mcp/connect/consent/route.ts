@@ -3,7 +3,10 @@ import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
 import { encryptSecret } from '@/backend/repositories/mcp/mcp-token-crypto';
-import { isSameOrigin } from '@/backend/transport/http';
+import { isSameOrigin, getClientIp } from '@/backend/transport/http';
+import { checkRateLimitApi } from '@/backend/middleware/http';
+import { toNextResponse } from '@/backend/transport/http-result';
+import { mcpConsentRateLimitPolicy } from '@/backend/config/rate-limiter';
 import { parseScopes, effectiveScopes } from '@/backend/services/mcp/scope';
 import { oauthErrorRedirect, noStore } from '@/backend/services/mcp/oauth-http';
 
@@ -17,6 +20,12 @@ export const runtime = 'nodejs';
  * and issues an authorization code (redirecting to the client's redirect_uri).
  */
 export async function POST(req: NextRequest) {
+  const rateLimited = await checkRateLimitApi({
+    ...mcpConsentRateLimitPolicy(getClientIp(req)),
+    failClosed: true,
+  });
+  if (rateLimited) return toNextResponse(rateLimited);
+
   // CSRF guard: only accept provably same-origin consent submissions. A
   // cross-site form can otherwise auto-submit `action=approve` with the
   // victim's session cookies and steal an authorization code (and the
