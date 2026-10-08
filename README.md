@@ -378,7 +378,7 @@ Vercel's Git integration auto-deploys the `[skip ci]` release commit (GitHub Act
 ### Where the version is shown
 
 - `GET /api/version` returns `version` (the unchanged deployment fingerprint), plus `releaseVersion`, `commit`, `ref`, `env`, and `releasedAt`.
-- `frontend/ui/UpdatePopup.tsx` shows the release number when an update is detected: «تحديث متاح — النسخة الجديدة 1.4.1».
+- `frontend/ui/VersionChecker.tsx` runs update detection (`useAppVersion`) without any UI prompt.
 - Sentry releases are tagged with `releaseVersion` (server, edge, and client).
 
 ### Commands
