@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.61.0] - 2026-10-08
+
+### Changed
+- research note on media downloader provider options
+- dual-mode, open-registration, and refresh-token-bridge ADRs + glossary and key runbook
+
+### Added
+- public connection guide at /mcp/guide with nav, account links, and robots allow
+- wire fail-closed rate limits into /mcp, /register, /token, and consent
+- per-IP rate-limit policies and https-only redirect-URI gate
+- dual-mode auth — anonymous callers reach the public tool surface
+
+### Fixed
+- retry transient provider dispatch
+
 ## [1.60.0] - 2026-10-08
 
 ### Added
