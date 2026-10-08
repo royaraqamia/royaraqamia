@@ -6,33 +6,6 @@ import { useUI } from '../state/UIContext';
 import { WHATSAPP_PHONE, WHATSAPP_MESSAGE } from '@/frontend/shared/constants';
 
 // Routes where a floating support button would cover working UI
-const HIDDEN_ROUTE_EXACTS = [
-  '/community',
-  '/rates',
-  '/privacy',
-  '/terms',
-  '/security',
-  '/downloader',
-];
-const HIDDEN_ROUTE_PREFIXES = [
-  '/habitflow/app',
-  '/spendtrack/app',
-  '/spendtrack/categories',
-  '/blogpress/app',
-  '/blogpress/editor',
-  '/linksnap/app',
-  '/admin',
-  '/account',
-  '/verify',
-  '/consultation/book',
-  '/training/apply',
-  '/request-project',
-  '/hire',
-  '/auth',
-  // Community post pages (the listing page is matched exactly above)
-  '/community/',
-];
-
 interface WhatsAppFloatProps {
   phone?: string;
   message?: string;
@@ -46,13 +19,8 @@ export function WhatsAppFloat({
   const pathname = usePathname();
   const [isVisible, setIsVisible] = useState(false);
 
-  // Determine if the button should be hidden due to UI overlays or because
-  // the current page is a route where it would cover working UI
-  const onHiddenRoute =
-    !!pathname &&
-    (HIDDEN_ROUTE_EXACTS.includes(pathname) ||
-      HIDDEN_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix)));
-  const shouldHide = isReviewSheetOpen || onHiddenRoute;
+  // Homepage-only: hidden everywhere else so it never covers working UI
+  const shouldHide = isReviewSheetOpen || pathname !== '/';
 
   useEffect(() => {
     const timer = setTimeout(() => setIsVisible(true), 1000);

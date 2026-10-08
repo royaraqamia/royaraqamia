@@ -24,7 +24,7 @@ describe('WhatsAppFloat', () => {
     vi.useRealTimers();
   });
 
-  it('renders the WhatsApp link after delay', () => {
+  it('renders the WhatsApp link on homepage after delay', () => {
     renderWithProviders(<WhatsAppFloat />);
     act(() => {
       vi.advanceTimersByTime(1000);
@@ -35,25 +35,11 @@ describe('WhatsAppFloat', () => {
     expect(link).toHaveAttribute('rel', 'noopener noreferrer');
   });
 
-  it('hides on product workspace routes', () => {
-    mockUsePathname.mockReturnValue('/habitflow/app');
-    renderWithProviders(<WhatsAppFloat />);
-    act(() => {
-      vi.advanceTimersByTime(1000);
-    });
-    expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
-  });
-
-  it.each(['/verify', '/verify/CERT-123', '/consultation/book'])('hides on %s', (pathname) => {
-    mockUsePathname.mockReturnValue(pathname);
-    renderWithProviders(<WhatsAppFloat />);
-    act(() => {
-      vi.advanceTimersByTime(1000);
-    });
-    expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
-  });
-
   it.each([
+    '/habitflow/app',
+    '/verify',
+    '/verify/CERT-123',
+    '/consultation/book',
     '/training/apply',
     '/request-project',
     '/hire',
@@ -63,6 +49,23 @@ describe('WhatsAppFloat', () => {
     '/auth/update-password',
     '/auth/verify-otp',
     '/auth/error',
+    '/community',
+    '/community/my-post',
+    '/account/submissions',
+    '/rates',
+    '/privacy',
+    '/terms',
+    '/security',
+    '/downloader',
+    '/blogpress',
+    '/blogpress/app',
+    '/spendtrack',
+    '/habitflow',
+    '/linksnap',
+    '/linksnap/unlock/CODE',
+    '/offline',
+    '/app-info',
+    '/mcp/connect',
   ])('hides on %s', (pathname) => {
     mockUsePathname.mockReturnValue(pathname);
     renderWithProviders(<WhatsAppFloat />);
@@ -70,32 +73,5 @@ describe('WhatsAppFloat', () => {
       vi.advanceTimersByTime(1000);
     });
     expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
-  });
-
-  it.each(['/community', '/community/my-post'])('hides on community page %s', (pathname) => {
-    mockUsePathname.mockReturnValue(pathname);
-    renderWithProviders(<WhatsAppFloat />);
-    act(() => {
-      vi.advanceTimersByTime(1000);
-    });
-    expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
-  });
-
-  it('hides on the account submissions page', () => {
-    mockUsePathname.mockReturnValue('/account/submissions');
-    renderWithProviders(<WhatsAppFloat />);
-    act(() => {
-      vi.advanceTimersByTime(1000);
-    });
-    expect(screen.queryByLabelText('تواصل معنا عبر واتساب')).not.toBeInTheDocument();
-  });
-
-  it('stays visible on blogpress landing page', () => {
-    mockUsePathname.mockReturnValue('/blogpress');
-    renderWithProviders(<WhatsAppFloat />);
-    act(() => {
-      vi.advanceTimersByTime(1000);
-    });
-    expect(screen.getByLabelText('تواصل معنا عبر واتساب')).toBeInTheDocument();
   });
 });
