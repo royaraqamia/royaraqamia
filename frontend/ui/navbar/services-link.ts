@@ -26,7 +26,7 @@ export const SERVICES_LINK: NavLink = {
     },
     {
       href: '/mcp/guide',
-      label: 'دليل ربط MCP',
+      label: 'ربط الـ MCP',
       isRoute: true,
       icon: Plug,
     },

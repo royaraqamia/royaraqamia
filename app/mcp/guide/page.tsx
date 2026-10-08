@@ -7,19 +7,19 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 const SERVER_URL = `${env.baseUrl.replace(/\/+$/, '')}/mcp`;
 
 export const metadata: Metadata = {
-  title: 'دليل ربط MCP',
+  title: 'ربط الـ MCP',
   description:
     'اربط وكلاء البرمجة — Claude Code وOpenCode وCodex ونظائرها — بأدوات رؤيَة رقَميَّة عبر بروتوكول سياق النماذج (MCP).',
   alternates: { canonical: '/mcp/guide' },
   openGraph: {
-    title: 'دليل ربط MCP',
+    title: 'ربط الـ MCP',
     description:
       'اربط وكلاء البرمجة بأدوات رؤيَة رقَميَّة عبر بروتوكول سياق النماذج (MCP) بخطوة واحدة.',
     url: '/mcp/guide',
     siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
     type: 'website',
-    images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'دليل ربط MCP' }],
+    images: [{ url: '/OG Image.webp', width: 1200, height: 630, alt: 'ربط الـ MCP' }],
   },
   twitter: { card: 'summary_large_image' },
 };
@@ -74,16 +74,11 @@ export default function McpGuidePage() {
       <Navbar />
       <main id="main-content" className="flex-1 pt-24 pb-16 md:pt-32 md:pb-24" dir="rtl">
         <div className="cv-auto mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <header className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
-            <SectionTitle as="h1">
-              دليل ربط <SectionTitleHighlight>MCP</SectionTitleHighlight>
+          <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
+            <SectionTitle>
+              ربط الـ <SectionTitleHighlight>MCP</SectionTitleHighlight>
             </SectionTitle>
-            <p className="mt-4 max-w-2xl text-sm sm:text-base leading-relaxed text-muted-foreground">
-              بروتوكول سياق النماذج (MCP) يتيح لوكيل البرمجة — Claude Code وOpenCode وCodex ونظائرها
-              — استخدام أدوات رؤيَة رقَميَّة مباشرة من داخل الجلسة: التحقق من الشهادات، إدارة
-              منشورات المجتمع، اختصار الروابط، تتبّع المصاريف والعادات، وغيرها.
-            </p>
-          </header>
+          </div>
 
           <div className="space-y-4 sm:space-y-5">
             <StepCard step={1} title="عنوان الخادم">

@@ -92,7 +92,7 @@ export function AccountView() {
         <Link href="/mcp/guide" className={rowClasses}>
           <span className="flex items-center gap-2.5">
             <Plug className="w-4 h-4 shrink-0 text-primary" />
-            <span>دليل ربط MCP</span>
+            <span>ربط الـ MCP</span>
           </span>
           <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
             ←
