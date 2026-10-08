@@ -6,6 +6,7 @@ import {
   type DownloadJob,
   type DownloadRequest,
   type DownloadSettings,
+  type ProbeResult,
 } from '@/shared/contracts/downloader';
 import type { DownloadJobRepository } from '@/backend/repositories/downloader/download-job-repository';
 import type { DownloadPlatformRepository } from '@/backend/repositories/downloader/download-platform-repository';
@@ -13,6 +14,7 @@ import type { DownloadBlocklistRepository } from '@/backend/repositories/downloa
 import type { DownloadSettingsRepository } from '@/backend/repositories/downloader/download-settings-repository';
 import {
   MediaProviderError,
+  PROBE_FAILURE_MESSAGES,
   type MediaProvider,
 } from '@/backend/services/downloader/media-provider';
 import { isUrlBlocked } from '@/backend/services/downloader/blocklist';
@@ -124,6 +126,38 @@ export class DownloaderService {
     await this.assertNotBlocked(request.url);
     await this.assertPlatformAvailable(request.url);
     return this.repository.create({ url: request.url, format: request.format });
+  }
+
+  /**
+   * Inspect a link before any download: a blocklisted link or an unavailable
+   * Platform is reported the same way `create` refuses it, then the provider is
+   * asked what formats are on offer. Every refusal is a shaped result rather
+   * than a throw, so the UI can always render a reason. A provider/transport
+   * failure is `unknown` — the link is not blamed for the host being down.
+   */
+  async inspect(url: string): Promise<ProbeResult> {
+    const platform = platformForUrl(url);
+    try {
+      await this.assertNotBlocked(url);
+      await this.assertPlatformAvailable(url);
+    } catch (error) {
+      if (error instanceof BlockedLinkError) {
+        return { status: 'unsupported', message: BLOCKED_LINK_MESSAGE };
+      }
+      if (error instanceof PlatformUnavailableError) {
+        return error.reason === 'breaker'
+          ? { status: 'blocked', message: PLATFORM_BREAKER_MESSAGE }
+          : { status: 'unsupported', message: PLATFORM_DISABLED_MESSAGE };
+      }
+      throw error;
+    }
+
+    try {
+      const result = await this.provider.inspect({ url });
+      return result.status === 'ok' ? { ...result, platformName: platform?.name ?? null } : result;
+    } catch {
+      return { status: 'unknown', message: PROBE_FAILURE_MESSAGES.unknown };
+    }
   }
 
   async dispatch(id: string, request: DownloadRequest): Promise<void> {

@@ -6,6 +6,7 @@ import {
   isPublicHttpUrl,
   MAX_DOWNLOAD_AUDIO_BYTES,
   MAX_DOWNLOAD_DURATION_SECONDS,
+  MAX_DOWNLOAD_IMAGE_BYTES,
   MAX_DOWNLOAD_VIDEO_BYTES,
   maxDownloadBytes,
 } from '../downloader';
@@ -47,8 +48,19 @@ describe('CreateDownloadJobSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('exposes audio and the three video tiers as the only formats', () => {
-    expect(DOWNLOAD_FORMATS).toEqual(['audio', 'video-360p', 'video-720p', 'video-1080p']);
+  it('exposes the video, audio and image formats', () => {
+    expect(DOWNLOAD_FORMATS).toEqual([
+      'audio',
+      'audio-mp3',
+      'video-360p',
+      'video-480p',
+      'video-720p',
+      'video-1080p',
+      'image-original',
+      'image-jpg',
+      'image-png',
+      'image-webp',
+    ]);
   });
 });
 
@@ -82,9 +94,11 @@ describe('isPublicHttpUrl (SSRF guard)', () => {
 });
 
 describe('download caps', () => {
-  it('caps audio and video at different sizes', () => {
+  it('caps audio, video and image at different sizes', () => {
     expect(maxDownloadBytes('audio')).toBe(MAX_DOWNLOAD_AUDIO_BYTES);
+    expect(maxDownloadBytes('audio-mp3')).toBe(MAX_DOWNLOAD_AUDIO_BYTES);
     expect(maxDownloadBytes('video-1080p')).toBe(MAX_DOWNLOAD_VIDEO_BYTES);
+    expect(maxDownloadBytes('image-png')).toBe(MAX_DOWNLOAD_IMAGE_BYTES);
     expect(MAX_DOWNLOAD_DURATION_SECONDS).toBe(15 * 60);
   });
 });

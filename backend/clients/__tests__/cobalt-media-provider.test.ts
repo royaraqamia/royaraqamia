@@ -135,3 +135,86 @@ describe('CobaltMediaProvider.dispatch', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });
+
+describe('CobaltMediaProvider.inspect', () => {
+  function jsonResponse(body: unknown, status = 200): Response {
+    return new Response(JSON.stringify(body), {
+      status,
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+
+  it('probes the derived /probe endpoint and shapes a successful result', async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    fetchImpl.mockResolvedValue(
+      jsonResponse({
+        status: 'ok',
+        platform: 'soundcloud.com',
+        title: 'A track',
+        durationSeconds: 12,
+        thumbnailUrl: 'https://img.example/a.jpg',
+        mediaType: 'audio',
+        formats: [
+          { format: 'audio', filesizeBytes: 5_000_000 },
+          { format: 'not-a-format', filesizeBytes: 1 },
+          { format: 'video-720p', filesizeBytes: 'nope' },
+        ],
+      })
+    );
+    const provider = new CobaltMediaProvider({
+      url: 'https://host.example/dispatch',
+      token: 't',
+      fetchImpl,
+    });
+
+    const result = await provider.inspect({ url: 'https://soundcloud.com/x/y' });
+
+    expect(fetchImpl.mock.calls[0]![0]).toBe('https://host.example/probe');
+    expect(result).toEqual({
+      status: 'ok',
+      platform: 'soundcloud.com',
+      platformName: null,
+      mediaType: 'audio',
+      title: 'A track',
+      durationSeconds: 12,
+      thumbnailUrl: 'https://img.example/a.jpg',
+      formats: [{ format: 'audio', filesizeBytes: 5_000_000 }],
+    });
+  });
+
+  it('maps a shaped failure status to its visitor message', async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    fetchImpl.mockResolvedValue(jsonResponse({ status: 'blocked' }));
+    const provider = new CobaltMediaProvider({
+      url: 'https://host.example/dispatch',
+      fetchImpl,
+    });
+
+    const result = await provider.inspect({ url: 'https://youtube.com/watch?v=x' });
+
+    expect(result.status).toBe('blocked');
+    expect(result).toHaveProperty('message');
+  });
+
+  it('throws a MediaProviderError when the host is unreachable or errors', async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    fetchImpl.mockResolvedValue(new Response(null, { status: 503 }));
+    const provider = new CobaltMediaProvider({
+      url: 'https://host.example/dispatch',
+      fetchImpl,
+    });
+
+    await expect(provider.inspect({ url: 'https://x.example/a' })).rejects.toBeInstanceOf(
+      MediaProviderError
+    );
+  });
+
+  it('treats an unexpected media type as unknown', async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    fetchImpl.mockResolvedValue(jsonResponse({ status: 'ok', mediaType: 'hologram', formats: [] }));
+    const provider = new CobaltMediaProvider({ url: 'https://host.example/dispatch', fetchImpl });
+
+    const result = await provider.inspect({ url: 'https://x.example/a' });
+    expect(result.status).toBe('unknown');
+  });
+});

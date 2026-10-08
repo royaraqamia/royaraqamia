@@ -4,18 +4,24 @@ import { z } from 'zod';
 import {
   CreateDownloadJobSchema,
   DownloadCallbackSchema,
+  InspectDownloadLinkSchema,
   type DownloadRequest,
+  type ProbeResult,
 } from '@/shared/contracts/downloader';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { zodFieldErrors } from '@/backend/shared/zod-field-errors';
 import { runAfter } from '@/backend/config/after';
-import { downloaderRateLimitPolicy } from '@/backend/config/rate-limiter';
+import {
+  downloaderInspectRateLimitPolicy,
+  downloaderRateLimitPolicy,
+} from '@/backend/config/rate-limiter';
 import { env } from '@/backend/config/env';
 import {
   createDownloaderService,
   createDownloaderTurnstileVerifier,
 } from '@/backend/config/downloader';
+import { PROBE_FAILURE_MESSAGES } from '@/backend/services/downloader/media-provider';
 import {
   BlockedLinkError,
   BLOCKED_LINK_MESSAGE,
@@ -82,6 +88,38 @@ export async function createDownloadJob(body: unknown, ip: string): Promise<Http
     Sentry.captureException(error);
     return jsonResult(500, { success: false, error: 'تعذّر بدء التنزيل.' });
   }
+}
+
+/**
+ * The inspect path: same public link, no Turnstile (the visitor is still typing,
+ * and a challenge belongs on the committing action), but rate-limited so the
+ * probe cannot be used to hammer the host. Always answers 200 with a `ProbeResult`
+ * — a "blocked" or "unsupported" link is information, not an error.
+ */
+export async function inspectDownloadLink(body: unknown, ip: string): Promise<HttpResult> {
+  const parsed = InspectDownloadLinkSchema.safeParse(body);
+  if (!parsed.success) {
+    return jsonResult(400, {
+      success: false,
+      error: 'تحقق من الرابط.',
+      fieldErrors: zodFieldErrors(parsed.error),
+    });
+  }
+
+  const rateLimited = await checkRateLimitApi({
+    ...downloaderInspectRateLimitPolicy(ip),
+    failClosed: false,
+  });
+  if (rateLimited) return rateLimited;
+
+  let result: ProbeResult;
+  try {
+    result = await createDownloaderService().inspect(parsed.data.url);
+  } catch (error) {
+    Sentry.captureException(error);
+    result = { status: 'unknown', message: PROBE_FAILURE_MESSAGES.unknown };
+  }
+  return jsonResult(200, { success: true, result });
 }
 
 /**

@@ -8,6 +8,7 @@ import {
   type DownloadJob,
   type DownloadSettings,
   type DownloadStatus,
+  type ProbeResult,
 } from '@/shared/contracts/downloader';
 import type {
   CreateDownloadJobCommand,
@@ -29,6 +30,7 @@ import type { DownloadSettingsRepository } from '@/backend/repositories/download
 import {
   MediaProviderError,
   type MediaDispatchInput,
+  type MediaInspectInput,
   type MediaProvider,
 } from '@/backend/services/downloader/media-provider';
 import {
@@ -105,12 +107,29 @@ class InMemoryDownloadJobRepository implements DownloadJobRepository {
 
 class FakeProvider implements MediaProvider {
   readonly calls: MediaDispatchInput[] = [];
+  readonly inspectCalls: string[] = [];
+  inspectResult: ProbeResult = {
+    status: 'ok',
+    platform: 'example.com',
+    platformName: null,
+    mediaType: 'video',
+    title: null,
+    durationSeconds: 0,
+    thumbnailUrl: null,
+    formats: [],
+  };
 
   constructor(private readonly outcome: Error | null = null) {}
 
   async dispatch(input: MediaDispatchInput): Promise<void> {
     this.calls.push(input);
     if (this.outcome) throw this.outcome;
+  }
+
+  async inspect(input: MediaInspectInput): Promise<ProbeResult> {
+    this.inspectCalls.push(input.url);
+    if (this.outcome) throw this.outcome;
+    return this.inspectResult;
   }
 }
 
@@ -205,6 +224,38 @@ describe('DownloaderService.create', () => {
     expect(job.file).toBeNull();
     expect(provider.calls).toHaveLength(0);
     expect(repository.events.map((event) => event.status)).toEqual(['queued']);
+  });
+});
+
+describe('DownloaderService.inspect', () => {
+  it('returns the provider result and fills the platform name from the catalog', async () => {
+    const provider = new FakeProvider();
+    provider.inspectResult = {
+      status: 'ok',
+      platform: 'youtube.com',
+      platformName: null,
+      mediaType: 'video',
+      title: 't',
+      durationSeconds: 1,
+      thumbnailUrl: null,
+      formats: [{ format: 'video-720p', filesizeBytes: 100 }],
+    };
+    const { service } = makeService({}, provider);
+
+    const result = await service.inspect('https://youtube.com/watch?v=abc');
+
+    expect(provider.inspectCalls).toEqual(['https://youtube.com/watch?v=abc']);
+    expect(result).toMatchObject({ status: 'ok', platformName: 'YouTube' });
+  });
+
+  it('reports a provider/transport failure as unknown rather than blaming the link', async () => {
+    const provider = new FakeProvider(new MediaProviderError('host down'));
+    const { service } = makeService({}, provider);
+
+    const result = await service.inspect(INPUT.url);
+
+    expect(result.status).toBe('unknown');
+    expect(result).toHaveProperty('message');
   });
 });
 

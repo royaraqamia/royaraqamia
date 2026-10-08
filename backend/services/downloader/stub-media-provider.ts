@@ -1,7 +1,8 @@
-import { isHttpUrl } from '@/shared/contracts/downloader';
+import { isHttpUrl, type ProbeResult } from '@/shared/contracts/downloader';
 import {
   MediaProviderError,
   type MediaDispatchInput,
+  type MediaInspectInput,
   type MediaProvider,
 } from '@/backend/services/downloader/media-provider';
 
@@ -67,5 +68,29 @@ export class StubMediaProvider implements MediaProvider {
     } catch {
       throw new MediaProviderError('تعذّر إكمال التنزيل.');
     }
+  }
+
+  /**
+   * A canned probe so the inspect path is exercised locally without the host.
+   * Reports a video with the two formats the stub can plausibly produce.
+   */
+  async inspect({ url }: MediaInspectInput): Promise<ProbeResult> {
+    if (!isHttpUrl(url)) {
+      throw new MediaProviderError('هذا الرابط غير مدعوم.');
+    }
+    const hostname = new URL(url).hostname.replace(/^www\./, '');
+    return {
+      status: 'ok',
+      platform: hostname,
+      platformName: null,
+      mediaType: 'video',
+      title: `royaraqamia-${hostname.replace(/[^a-z0-9]+/gi, '-')}`,
+      durationSeconds: 0,
+      thumbnailUrl: null,
+      formats: [
+        { format: 'video-720p', filesizeBytes: null },
+        { format: 'audio', filesizeBytes: null },
+      ],
+    };
   }
 }

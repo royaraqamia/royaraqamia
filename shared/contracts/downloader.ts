@@ -8,14 +8,31 @@ import { z } from 'zod';
  * A Download's format is one flat enum, so an invalid audio/quality
  * combination is unrepresentable rather than rejected at runtime.
  */
-export const DOWNLOAD_FORMATS = ['audio', 'video-360p', 'video-720p', 'video-1080p'] as const;
+export const DOWNLOAD_FORMATS = [
+  'audio',
+  'audio-mp3',
+  'video-360p',
+  'video-480p',
+  'video-720p',
+  'video-1080p',
+  'image-original',
+  'image-jpg',
+  'image-png',
+  'image-webp',
+] as const;
 export type DownloadFormat = (typeof DOWNLOAD_FORMATS)[number];
 
 export const DOWNLOAD_FORMAT_LABELS: Record<DownloadFormat, string> = {
   audio: 'صوت فقط (m4a)',
+  'audio-mp3': 'صوت فقط (mp3)',
   'video-360p': 'فيديو 360p',
+  'video-480p': 'فيديو 480p',
   'video-720p': 'فيديو 720p',
   'video-1080p': 'فيديو 1080p',
+  'image-original': 'صورة (الصيغة الأصلية)',
+  'image-jpg': 'صورة (jpg)',
+  'image-png': 'صورة (png)',
+  'image-webp': 'صورة (webp)',
 };
 
 /**
@@ -36,6 +53,56 @@ export const DOWNLOAD_STATUS_LABELS: Record<DownloadStatus, string> = {
 /** Statuses after which no further transition happens. */
 export const TERMINAL_DOWNLOAD_STATUSES: readonly DownloadStatus[] = ['ready', 'failed', 'expired'];
 
+// ------------------------------------------------------------
+// Link inspection (pre-download probe)
+// ------------------------------------------------------------
+
+/** The broad kind of media a link resolves to; drives which formats are offered. */
+export const MEDIA_KINDS = ['video', 'audio', 'image'] as const;
+export type MediaKind = (typeof MEDIA_KINDS)[number];
+
+export const MEDIA_KIND_LABELS: Record<MediaKind, string> = {
+  video: 'فيديو',
+  audio: 'صوت',
+  image: 'صورة',
+};
+
+/** A format the provider would let the visitor pick, with an estimated size. */
+export interface ProbeFormat {
+  format: DownloadFormat;
+  /** Best-effort size in bytes; `null` when the provider cannot estimate it. */
+  filesizeBytes: number | null;
+}
+
+/**
+ * The successful outcome of inspecting a link before any download: what it is,
+ * what we can produce from it, and roughly how big each option is. Produced by
+ * the Media Provider's `inspect` and cached, so the format field can adapt to
+ * the link without spending a full download.
+ */
+export interface ProbeSuccess {
+  status: 'ok';
+  platform: string | null;
+  platformName: string | null;
+  mediaType: MediaKind;
+  title: string | null;
+  durationSeconds: number | null;
+  thumbnailUrl: string | null;
+  formats: ProbeFormat[];
+}
+
+/** Why a link cannot be offered formats right now (the same vocabulary as download failures). */
+export const PROBE_FAILURE_STATUSES = ['blocked', 'unavailable', 'unsupported', 'unknown'] as const;
+export type ProbeFailureStatus = (typeof PROBE_FAILURE_STATUSES)[number];
+
+export interface ProbeFailure {
+  status: ProbeFailureStatus;
+  message: string;
+}
+
+/** Everything an inspect call can say: either formats, or a reason there are none. */
+export type ProbeResult = ProbeSuccess | ProbeFailure;
+
 export const MAX_SOURCE_URL_LENGTH = 2048;
 
 /**
@@ -45,6 +112,8 @@ export const MAX_SOURCE_URL_LENGTH = 2048;
 export const MAX_DOWNLOAD_DURATION_SECONDS = 15 * 60;
 export const MAX_DOWNLOAD_AUDIO_BYTES = 50 * 1024 * 1024;
 export const MAX_DOWNLOAD_VIDEO_BYTES = 200 * 1024 * 1024;
+/** Images are small; a fixed cap keeps them out of the Admin-tunable settings. */
+export const MAX_DOWNLOAD_IMAGE_BYTES = 25 * 1024 * 1024;
 
 /**
  * How long the Media Provider's signed file link stays valid. The provider sets
@@ -82,7 +151,17 @@ export function maxDownloadBytes(
   format: DownloadFormat,
   caps: DownloadCaps = DEFAULT_DOWNLOAD_SETTINGS
 ): number {
-  return format === 'audio' ? caps.maxAudioBytes : caps.maxVideoBytes;
+  const kind = mediaKindOfFormat(format);
+  if (kind === 'audio') return caps.maxAudioBytes;
+  if (kind === 'image') return MAX_DOWNLOAD_IMAGE_BYTES;
+  return caps.maxVideoBytes;
+}
+
+/** The media kind a format belongs to; the prefix is the single source of truth. */
+export function mediaKindOfFormat(format: DownloadFormat): MediaKind {
+  if (format.startsWith('image')) return 'image';
+  if (format.startsWith('audio')) return 'audio';
+  return 'video';
 }
 
 /** The one definition of "a link a Download may target"; shared by the schema and the provider. */
@@ -139,19 +218,30 @@ export function isPublicHttpUrl(value: string): boolean {
 
 export const DownloadFormatSchema = z.enum(DOWNLOAD_FORMATS);
 
+/**
+ * The one definition of the "public media link" field, shared by the create and
+ * inspect paths so both refuse the same inputs with the same copy.
+ */
+const SourceUrlSchema = z
+  .string()
+  .trim()
+  .min(1, 'أدخل رابط الوسائط.')
+  .max(MAX_SOURCE_URL_LENGTH, 'الرابط طويل جدًّا.')
+  .refine(isPublicHttpUrl, 'الرابط غير مدعوم؛ يجب أن يكون رابطًا عامًّا يبدأ بـ http أو https.');
+
 export const CreateDownloadJobSchema = z.object({
-  url: z
-    .string()
-    .trim()
-    .min(1, 'أدخل رابط الوسائط.')
-    .max(MAX_SOURCE_URL_LENGTH, 'الرابط طويل جدًّا.')
-    .refine(isPublicHttpUrl, 'الرابط غير مدعوم؛ يجب أن يكون رابطًا عامًّا يبدأ بـ http أو https.'),
+  url: SourceUrlSchema,
   format: DownloadFormatSchema,
   /** Cloudflare Turnstile token; required when the server has a secret configured. */
   turnstileToken: z.string().trim().max(4096).optional(),
 });
 
 export type CreateDownloadJobInput = z.infer<typeof CreateDownloadJobSchema>;
+
+/** The inspect path validates the same public link and nothing else. */
+export const InspectDownloadLinkSchema = z.object({ url: SourceUrlSchema });
+
+export type InspectDownloadLinkInput = z.infer<typeof InspectDownloadLinkSchema>;
 
 /** The part of a create request the download pipeline itself needs. */
 export type DownloadRequest = Pick<CreateDownloadJobInput, 'url' | 'format'>;

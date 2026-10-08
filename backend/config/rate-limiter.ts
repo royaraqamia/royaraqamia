@@ -94,6 +94,16 @@ export function downloaderRateLimitPolicy(ip: string): RateLimitPolicy {
   };
 }
 
+/** Looser than the download path: an inspect runs on every debounced keystroke. */
+export function downloaderInspectRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `downloader-inspect:${ip}`,
+    limit: 30,
+    windowMs: DOWNLOAD_WINDOW_MS,
+    message: 'تم تجاوز حدّ الطلب: فحص الروابط محدود بـ 30 طلبًا كل 10 دقائق.',
+  };
+}
+
 export function adminEmailBroadcastRateLimitPolicy(adminEmail: string): RateLimitPolicy {
   return {
     key: `admin-email-broadcast:${adminEmail}`,
