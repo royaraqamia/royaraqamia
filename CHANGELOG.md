@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.63.0] - 2026-10-08
+
+### Added
+- add a save fallback link for mobile browsers
+
 ## [1.62.1] - 2026-10-08
 
 ### Changed
