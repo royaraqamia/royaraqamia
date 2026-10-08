@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 
 import { env } from '@/backend/config/env';
 import { Navbar } from '@/frontend/ui/Navbar';
+import { CodeSnippet } from '@/frontend/ui/mcp/code-snippet';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 const SERVER_URL = `${env.baseUrl.replace(/\/+$/, '')}/mcp`;
@@ -23,21 +24,6 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image' },
 };
-
-function Snippet({ children, label }: { children: string; label?: string }) {
-  return (
-    <div className="mt-4">
-      {label && <p className="mb-1.5 text-xs font-bold text-muted-foreground">{label}</p>}
-      <pre
-        dir="ltr"
-        lang="en"
-        className="overflow-x-auto rounded-xl border border-border/70 bg-zinc-950 p-4 text-left text-sm leading-relaxed text-zinc-100 font-mono dark:border-border/40"
-      >
-        <code>{children.trim()}</code>
-      </pre>
-    </div>
-  );
-}
 
 function StepCard({
   step,
@@ -86,12 +72,15 @@ export default function McpGuidePage() {
                 جميع وكلاء البرمجة تحتاج إلى عنوان URL واحد. أضِفه إلى العميل مرة واحدة، وسيهتم
                 العميل بكل الباقي — بما فيه فتح المتصفح لتسجيل الدخول أول مرة.
               </p>
-              <Snippet label="عنوان الخادم">{SERVER_URL}</Snippet>
+              <CodeSnippet code={SERVER_URL} label="عنوان الخادم" copyLabel="نسخ عنوان الخادم" />
             </StepCard>
 
             <StepCard step={2} title="Claude Code">
               <p>من داخل طرفية Claude Code شغّل أمر الربط التالي:</p>
-              <Snippet>{`claude mcp add --transport http royaraqamia ${SERVER_URL}`}</Snippet>
+              <CodeSnippet
+                code={`claude mcp add --transport http royaraqamia ${SERVER_URL}`}
+                copyLabel="نسخ أمر Claude Code"
+              />
             </StepCard>
 
             <StepCard step={3} title="OpenCode">
@@ -99,7 +88,9 @@ export default function McpGuidePage() {
                 أضِف الخادم إلى ملف <code className="font-mono">opencode.json</code> في مجلد المشروع
                 (أو الإعدادات العامة):
               </p>
-              <Snippet>{`
+              <CodeSnippet
+                copyLabel="نسخ تكوين OpenCode"
+                code={`
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
@@ -110,20 +101,28 @@ export default function McpGuidePage() {
     }
   }
 }
-`}</Snippet>
+`}
+              />
             </StepCard>
 
             <StepCard step={4} title="Codex">
               <p>من طرفية Codex شغّل أمر الربط التالي:</p>
-              <Snippet>{`codex mcp add royaraqamia --url ${SERVER_URL}`}</Snippet>
+              <CodeSnippet
+                code={`codex mcp add royaraqamia --url ${SERVER_URL}`}
+                copyLabel="نسخ أمر Codex"
+              />
               <p>
                 أو أضِف الخادم يدويًا إلى ملف{' '}
                 <code className="font-mono">~/.codex/config.toml</code>:
               </p>
-              <Snippet label="التَّكوين النَّاتِج">{`
+              <CodeSnippet
+                label="التَّكوين النَّاتِج"
+                copyLabel="نسخ تكوين Codex"
+                code={`
 [mcp_servers.royaraqamia]
 url = "${SERVER_URL}"
-`}</Snippet>
+`}
+              />
             </StepCard>
 
             <StepCard step={5} title="أي عميل آخر">
