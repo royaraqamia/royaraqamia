@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.62.1] - 2026-10-08
+
+### Changed
+- assert auto-save instead of the removed save link
+- remove the after-connection section from the guide
+
 ## [1.62.0] - 2026-10-08
 
 ### Changed
