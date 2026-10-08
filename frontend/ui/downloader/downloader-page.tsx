@@ -137,10 +137,20 @@ export function DownloaderPage() {
                 <p className="text-sm text-destructive">{job.error}</p>
               )}
 
-              {job.status === 'ready' && (
-                <p className="text-sm text-muted-foreground">
-                  اكتمل التنزيل وبدأ حفظ الملف تلقائيًّا في جهازك.
-                </p>
+              {job.status === 'ready' && job.file && (
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-sm text-muted-foreground">
+                    اكتمل التنزيل وبدأ حفظ الملف تلقائيًّا في جهازك.
+                  </p>
+                  {/* Recovery path: some mobile browsers ignore a programmatic save. */}
+                  <a
+                    href={job.file.url}
+                    download={job.file.filename}
+                    className="text-sm font-bold text-primary hover:underline underline-offset-4"
+                  >
+                    لم يبدأ التنزيل؟ اضغط للحفظ
+                  </a>
+                </div>
               )}
             </div>
           )}
