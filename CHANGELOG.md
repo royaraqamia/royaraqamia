@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.59.0] - 2026-10-08
+
+### Changed
+- verify-style title and hero CTA, drop subtitle
+- remove acceptable use section
+- drop update popup, keep version detection
+
+### Added
+- mount navbar chrome and add site nav entry
+
+### Fixed
+- show WhatsAppFloat on homepage only
+- keep refresh grant working after access rows are swept
+
 ## [1.58.0] - 2026-10-08
 
 ### Changed
