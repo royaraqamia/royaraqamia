@@ -102,3 +102,39 @@ export function adminEmailBroadcastRateLimitPolicy(adminEmail: string): RateLimi
     message: 'تم تجاوز حد الإرسال: يُسمح بإرسال البريد الجماعي 5 مرات في الساعة.',
   };
 }
+
+export function mcpDataPlaneRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `mcp-data:${ip}`,
+    limit: 100,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: استدعاءات MCP محدودة بـ 100 طلب في الدقيقة لكل عنوان IP.',
+  };
+}
+
+export function mcpRegisterRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `mcp-register:${ip}`,
+    limit: 10,
+    windowMs: 10 * 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: تسجيل عملاء MCP محدود بـ 10 طلبات كل 10 دقائق.',
+  };
+}
+
+export function mcpTokenRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `mcp-token:${ip}`,
+    limit: 30,
+    windowMs: 10 * 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: تبادل رموز MCP محدود بـ 30 طلبًا كل 10 دقائق.',
+  };
+}
+
+export function mcpConsentRateLimitPolicy(ip: string): RateLimitPolicy {
+  return {
+    key: `mcp-consent:${ip}`,
+    limit: 20,
+    windowMs: 10 * 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: الموافقة على ربط MCP محدودة بـ 20 طلبًا كل 10 دقائق.',
+  };
+}

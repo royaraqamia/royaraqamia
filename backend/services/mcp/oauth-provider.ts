@@ -72,6 +72,28 @@ export interface VerifiedAccessToken {
   expiresAt: Date;
 }
 
+/**
+ * Redirect-URI scheme policy for registered MCP clients (ADR 0022): https
+ * only, except http loopback hosts for local development. Native-app and
+ * other non-web schemes are rejected at registration so the authorize step
+ * never has to re-litigate them.
+ */
+export function isValidMcpRedirectUri(uri: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(uri);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol === 'https:') return true;
+  if (parsed.protocol === 'http:') {
+    // URL.hostname keeps IPv6 brackets ("[::1]"), strip them for the comparison.
+    const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
+    return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+  }
+  return false;
+}
+
 export interface McpOAuthProvider {
   /** Load a registered OAuth client by its public client_id. */
   getClient(clientId: string): Promise<McpOAuthClientRecord | null>;
