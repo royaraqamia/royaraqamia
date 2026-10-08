@@ -231,6 +231,23 @@ describe('createMcpOAuthProvider', () => {
       expect(response.refresh_token).toBe('opaque-token');
     });
 
+    it('rotates even when the paired access row was swept (expired)', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+      mockRepo.getAccessTokenByRefreshHash.mockResolvedValue(null);
+
+      const response = await provider.refreshAccessToken({
+        refreshToken: 'refresh-1',
+        client: mockClient,
+      });
+
+      expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-1');
+      expect(mockRepo.revokeToken).not.toHaveBeenCalledWith('tok-access');
+      expect(response.refresh_token).toBe('opaque-token');
+      expect(mockRepo.createToken).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionEnc: mockTokenRecord.session_enc })
+      );
+    });
+
     it('rejects a revoked refresh token', async () => {
       mockRepo.getTokenByHash.mockResolvedValue({
         ...mockTokenRecord,

@@ -238,24 +238,23 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
         throw new McpOAuthError(400, 'invalid_grant', 'Refresh token was issued to another client');
       }
 
+      // The refresh row carries everything needed to reissue (user, scope,
+      // encrypted session), so a valid refresh token must never depend on the
+      // paired access row still existing: the daily sweep deletes access rows
+      // once they expire (1h TTL) while refresh tokens stay valid for 30 days.
+      // Prefer the access row's `session_enc` when it is still present because
+      // the data plane persists the rotated Supabase refresh token there.
       const accessRow = await repo.getAccessTokenByRefreshHash(refreshHash);
-      if (!accessRow) {
-        throw new McpOAuthError(
-          400,
-          'invalid_grant',
-          'Refresh token is not paired with an access token'
-        );
-      }
 
       // Rotation: revoke the old pair, then issue a brand-new pair.
       await repo.revokeToken(refreshRow.id);
-      await repo.revokeToken(accessRow.id);
+      if (accessRow) await repo.revokeToken(accessRow.id);
 
       return issueTokenPair(repo, {
         client: input.client,
-        userId: accessRow.user_id,
-        scopes: accessRow.scope as McpScope[],
-        sessionEnc: accessRow.session_enc,
+        userId: refreshRow.user_id,
+        scopes: refreshRow.scope as McpScope[],
+        sessionEnc: accessRow?.session_enc ?? refreshRow.session_enc,
       });
     },
 
