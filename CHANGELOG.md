@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.60.0] - 2026-10-08
+
+### Added
+- surface provider failure code
+
 ## [1.59.0] - 2026-10-08
 
 ### Changed
