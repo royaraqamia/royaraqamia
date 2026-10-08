@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.62.0] - 2026-10-08
+
+### Changed
+- drop the account link and make MCP the last services menu item
+- match guide title to the verify page, drop subtitle, rename to ربط الـ MCP
+
+### Added
+- auto-save the file instead of a second button
+
 ## [1.61.0] - 2026-10-08
 
 ### Changed
