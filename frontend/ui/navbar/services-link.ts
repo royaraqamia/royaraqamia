@@ -24,17 +24,17 @@ export const SERVICES_LINK: NavLink = {
       isRoute: true,
       icon: CalendarClock,
     },
-    {
-      href: '/mcp/guide',
-      label: 'ربط الـ MCP',
-      isRoute: true,
-      icon: Plug,
-    },
     ...APP_PRODUCTS.filter((p) => !p.hidden).map((p) => ({
       href: p.landingPath,
       label: p.label,
       isRoute: true,
       icon: p.icon,
     })),
+    {
+      href: '/mcp/guide',
+      label: 'ربط الـ MCP',
+      isRoute: true,
+      icon: Plug,
+    },
   ],
 };
