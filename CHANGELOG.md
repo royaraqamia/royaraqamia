@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.64.0] - 2026-10-08
+
+### Changed
+- inspect-before-download and media-kind formats
+- pin LF line endings with .gitattributes to match Prettier
+
+### Added
+- inspect links and adapt formats (video/audio/image)
+- copy control for guide snippets with inline confirm state
+
 ## [1.63.0] - 2026-10-08
 
 ### Added
