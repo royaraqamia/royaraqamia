@@ -2,6 +2,7 @@ import {
   CalendarCheck,
   CheckSquare,
   Coins,
+  Download,
   GraduationCap,
   Link2,
   NotebookPen,
@@ -19,6 +20,7 @@ export type AppProduct =
   | 'verify'
   | 'consultation'
   | 'training'
+  | 'downloader'
   | 'community';
 
 export interface AppProductDef {
@@ -58,6 +60,13 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/rates',
     landingPath: '/rates',
     icon: Coins,
+  },
+  {
+    id: 'downloader',
+    label: 'مُنزِّل الوسائط',
+    appPath: '/downloader',
+    landingPath: '/downloader',
+    icon: Download,
   },
   {
     id: 'linksnap',

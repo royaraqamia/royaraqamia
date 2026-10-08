@@ -6,7 +6,14 @@ import { useUI } from '../state/UIContext';
 import { WHATSAPP_PHONE, WHATSAPP_MESSAGE } from '@/frontend/shared/constants';
 
 // Routes where a floating support button would cover working UI
-const HIDDEN_ROUTE_EXACTS = ['/community', '/rates', '/privacy', '/terms', '/security'];
+const HIDDEN_ROUTE_EXACTS = [
+  '/community',
+  '/rates',
+  '/privacy',
+  '/terms',
+  '/security',
+  '/downloader',
+];
 const HIDDEN_ROUTE_PREFIXES = [
   '/habitflow/app',
   '/spendtrack/app',
