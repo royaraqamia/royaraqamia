@@ -55,44 +55,83 @@ describe('CobaltMediaProvider.dispatch', () => {
     );
   });
 
-  it('maps a rejected link (4xx) to an unsupported error', async () => {
+  it('maps a rejected link (4xx) to an unsupported error without retrying', async () => {
     const fetchImpl = vi.fn<typeof fetch>();
     fetchImpl.mockResolvedValue(new Response(null, { status: 422 }));
-    const provider = new CobaltMediaProvider({ url: 'https://host.example/job', fetchImpl });
-
-    await expect(provider.dispatch(INPUT)).rejects.toBeInstanceOf(MediaProviderError);
-    await expect(provider.dispatch(INPUT)).rejects.toThrow('غير مدعوم');
-  });
-
-  it('maps a provider fault (5xx) to an unavailable error', async () => {
-    const fetchImpl = vi.fn<typeof fetch>();
-    fetchImpl.mockResolvedValue(new Response(null, { status: 503 }));
-    const provider = new CobaltMediaProvider({ url: 'https://host.example/job', fetchImpl });
-
-    await expect(provider.dispatch(INPUT)).rejects.toThrow('غير متاحة');
-  });
-
-  it('maps an unreachable host to an unavailable error', async () => {
-    const fetchImpl = vi.fn<typeof fetch>();
-    fetchImpl.mockRejectedValue(new Error('ECONNREFUSED'));
-    const provider = new CobaltMediaProvider({ url: 'https://host.example/job', fetchImpl });
-
-    await expect(provider.dispatch(INPUT)).rejects.toBeInstanceOf(MediaProviderError);
-  });
-
-  it('reports unavailable when the host does not acknowledge in time', async () => {
-    const fetchImpl = vi.fn<typeof fetch>().mockImplementation(
-      (_input, init) =>
-        new Promise<Response>((_resolve, reject) => {
-          init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
-        })
-    );
     const provider = new CobaltMediaProvider({
       url: 'https://host.example/job',
-      timeoutMs: 5,
+      backoffMs: 1,
       fetchImpl,
     });
 
+    await expect(provider.dispatch(INPUT)).rejects.toThrow('غير مدعوم');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('retries a transient fault (5xx) then succeeds', async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    fetchImpl
+      .mockResolvedValueOnce(new Response(null, { status: 503 }))
+      .mockResolvedValueOnce(new Response(null, { status: 202 }));
+    const provider = new CobaltMediaProvider({
+      url: 'https://host.example/job',
+      backoffMs: 1,
+      fetchImpl,
+    });
+
+    await provider.dispatch(INPUT);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after the configured attempts and reports unavailable', async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    fetchImpl.mockResolvedValue(new Response(null, { status: 503 }));
+    const provider = new CobaltMediaProvider({
+      url: 'https://host.example/job',
+      attempts: 2,
+      backoffMs: 1,
+      fetchImpl,
+    });
+
+    await expect(provider.dispatch(INPUT)).rejects.toBeInstanceOf(MediaProviderError);
     await expect(provider.dispatch(INPUT)).rejects.toThrow('غير متاحة');
+    expect(fetchImpl).toHaveBeenCalledTimes(4);
+  });
+
+  it('maps an unreachable host to an unavailable error after retrying', async () => {
+    const fetchImpl = vi.fn<typeof fetch>();
+    fetchImpl.mockRejectedValue(new Error('ECONNREFUSED'));
+    const provider = new CobaltMediaProvider({
+      url: 'https://host.example/job',
+      attempts: 2,
+      backoffMs: 1,
+      fetchImpl,
+    });
+
+    await expect(provider.dispatch(INPUT)).rejects.toBeInstanceOf(MediaProviderError);
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('retries when the host does not acknowledge in time, then succeeds', async () => {
+    const fetchImpl = vi
+      .fn<typeof fetch>()
+      .mockImplementationOnce(
+        (_input, init) =>
+          new Promise<Response>((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () => reject(new Error('aborted')));
+          })
+      )
+      .mockResolvedValueOnce(new Response(null, { status: 202 }));
+    const provider = new CobaltMediaProvider({
+      url: 'https://host.example/job',
+      timeoutMs: 5,
+      backoffMs: 1,
+      fetchImpl,
+    });
+
+    await provider.dispatch(INPUT);
+
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });
