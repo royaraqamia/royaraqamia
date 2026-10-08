@@ -145,6 +145,11 @@ An external site whose hosted media a Download can target. Each Platform can be 
 disabled independently of the others.
 _Avoid_: Source, host, site, service, provider
 
+**Circuit breaker**:
+Per-Platform safety that opens when a Platform's extractor keeps failing, refusing new
+Downloads for that Platform until a cooldown passes.
+_Avoid_: Rate limiter, throttle, backoff
+
 **Media Provider**:
 The external backend that turns a media link into a downloadable file. The site does not
 extract or convert media itself.

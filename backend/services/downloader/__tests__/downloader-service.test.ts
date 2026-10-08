@@ -11,6 +11,11 @@ import type {
   DownloadJobRepository,
   DownloadJobUpdate,
 } from '@/backend/repositories/downloader/download-job-repository';
+import type {
+  DownloadPlatformPatch,
+  DownloadPlatformRepository,
+  DownloadPlatformState,
+} from '@/backend/repositories/downloader/download-platform-repository';
 import {
   MediaProviderError,
   type MediaDispatchInput,
@@ -19,6 +24,8 @@ import {
 import {
   DownloaderService,
   DownloadJobNotFoundError,
+  PlatformUnavailableError,
+  type BreakerTrip,
   type DownloaderServiceDeps,
 } from '@/backend/services/downloader/downloader-service';
 
@@ -80,6 +87,25 @@ class FakeProvider implements MediaProvider {
   async dispatch(input: MediaDispatchInput): Promise<void> {
     this.calls.push(input);
     if (this.outcome) throw this.outcome;
+  }
+}
+
+class InMemoryDownloadPlatformRepository implements DownloadPlatformRepository {
+  readonly states = new Map<string, DownloadPlatformState>();
+
+  async get(platform: string): Promise<DownloadPlatformState | null> {
+    return this.states.get(platform) ?? null;
+  }
+
+  async save(platform: string, patch: DownloadPlatformPatch): Promise<void> {
+    const previous = this.states.get(platform) ?? {
+      platform,
+      enabled: null,
+      consecutiveFailures: 0,
+      openUntil: null,
+      lastFailureAt: null,
+    };
+    this.states.set(platform, { ...previous, ...patch, platform });
   }
 }
 
@@ -293,5 +319,112 @@ describe('DownloaderService.get', () => {
     expect(job.status).toBe('expired');
     expect(job.file).toBeNull();
     expect(repository.events.map((event) => event.status)).toContain('expired');
+  });
+});
+
+const YOUTUBE_URL = 'https://www.youtube.com/watch?v=abc123';
+const YOUTUBE_INPUT = { url: YOUTUBE_URL, format: 'audio' } as const;
+
+describe('DownloaderService platform allowlist', () => {
+  it('refuses a Platform the allowlist disables', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    await platforms.save('youtube', { enabled: false });
+    const { service } = makeService({ platforms });
+
+    await expect(service.create(YOUTUBE_INPUT)).rejects.toBeInstanceOf(PlatformUnavailableError);
+  });
+
+  it('refuses a Platform whose circuit breaker is open', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    await platforms.save('youtube', { openUntil: '2031-01-01T00:00:00.000Z' });
+    const { service } = makeService({
+      platforms,
+      now: () => new Date('2030-01-01T00:00:00.000Z'),
+    });
+
+    await expect(service.create(YOUTUBE_INPUT)).rejects.toMatchObject({ reason: 'breaker' });
+  });
+
+  it('accepts a Platform once its breaker has closed', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    await platforms.save('youtube', { openUntil: '2029-01-01T00:00:00.000Z' });
+    const { service } = makeService({
+      platforms,
+      now: () => new Date('2030-01-01T00:00:00.000Z'),
+    });
+
+    await expect(service.create(YOUTUBE_INPUT)).resolves.toMatchObject({ status: 'queued' });
+  });
+
+  it('attempts an unknown host best-effort and records no state for it', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    const { service } = makeService({ platforms });
+
+    await expect(service.create(INPUT)).resolves.toMatchObject({ status: 'queued' });
+    expect(platforms.states.size).toBe(0);
+  });
+});
+
+describe('DownloaderService platform circuit breaker', () => {
+  const policy = { failureThreshold: 3, cooldownMs: 60_000 };
+
+  async function failOnce(service: DownloaderService) {
+    const created = await service.create(YOUTUBE_INPUT);
+    await service.dispatch(created.id, YOUTUBE_INPUT);
+    await service.recordResult({ jobId: created.id, status: 'failed', error: 'تعذّر التنزيل.' });
+  }
+
+  it('counts consecutive failures without opening below the threshold', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    const trips: BreakerTrip[] = [];
+    const { service } = makeService({
+      platforms,
+      breaker: policy,
+      onBreakerTrip: (trip) => trips.push(trip),
+    });
+
+    await failOnce(service);
+
+    expect(platforms.states.get('youtube')?.consecutiveFailures).toBe(1);
+    expect(platforms.states.get('youtube')?.openUntil).toBeNull();
+    expect(trips).toHaveLength(0);
+  });
+
+  it('opens the breaker at the threshold, resets the counter and reports the trip', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    const trips: BreakerTrip[] = [];
+    const { service } = makeService({
+      platforms,
+      breaker: policy,
+      onBreakerTrip: (trip) => trips.push(trip),
+    });
+
+    await failOnce(service);
+    await failOnce(service);
+    await failOnce(service);
+
+    const state = platforms.states.get('youtube');
+    expect(state?.consecutiveFailures).toBe(0);
+    expect(state?.openUntil).not.toBeNull();
+    expect(trips).toHaveLength(1);
+    expect(trips[0]).toMatchObject({ platform: 'youtube', failures: 3 });
+  });
+
+  it('resets the counter and closes the breaker when a job succeeds', async () => {
+    const platforms = new InMemoryDownloadPlatformRepository();
+    const { service } = makeService({ platforms, breaker: policy });
+    await platforms.save('youtube', {
+      consecutiveFailures: 2,
+      openUntil: '2020-01-01T00:00:00.000Z',
+    });
+
+    const created = await service.create(YOUTUBE_INPUT);
+    await service.dispatch(created.id, YOUTUBE_INPUT);
+    await service.recordResult(readyCallback(created.id));
+
+    expect(platforms.states.get('youtube')).toMatchObject({
+      consecutiveFailures: 0,
+      openUntil: null,
+    });
   });
 });

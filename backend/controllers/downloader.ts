@@ -16,7 +16,12 @@ import {
   createDownloaderService,
   createDownloaderTurnstileVerifier,
 } from '@/backend/config/downloader';
-import { DownloadJobNotFoundError } from '@/backend/services/downloader/downloader-service';
+import {
+  DownloadJobNotFoundError,
+  PlatformUnavailableError,
+  PLATFORM_BREAKER_MESSAGE,
+  PLATFORM_DISABLED_MESSAGE,
+} from '@/backend/services/downloader/downloader-service';
 
 const DownloadJobIdSchema = z.string().uuid();
 
@@ -64,6 +69,11 @@ export async function createDownloadJob(body: unknown, ip: string): Promise<Http
 
     return jsonResult(202, { success: true, job });
   } catch (error) {
+    if (error instanceof PlatformUnavailableError) {
+      const message =
+        error.reason === 'breaker' ? PLATFORM_BREAKER_MESSAGE : PLATFORM_DISABLED_MESSAGE;
+      return jsonResult(403, { success: false, error: message });
+    }
     Sentry.captureException(error);
     return jsonResult(500, { success: false, error: 'تعذّر بدء التنزيل.' });
   }

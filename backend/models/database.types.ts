@@ -454,6 +454,33 @@ export type Database = {
         };
         Relationships: [];
       };
+      downloader_platforms: {
+        Row: {
+          consecutive_failures: number;
+          enabled: boolean | null;
+          last_failure_at: string | null;
+          open_until: string | null;
+          platform: string;
+          updated_at: string;
+        };
+        Insert: {
+          consecutive_failures?: number;
+          enabled?: boolean | null;
+          last_failure_at?: string | null;
+          open_until?: string | null;
+          platform: string;
+          updated_at?: string;
+        };
+        Update: {
+          consecutive_failures?: number;
+          enabled?: boolean | null;
+          last_failure_at?: string | null;
+          open_until?: string | null;
+          platform?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       expense_splits: {
         Row: {
           amount: number;
