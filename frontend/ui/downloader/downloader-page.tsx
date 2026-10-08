@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/frontend/ui/primitives/select';
 import { Turnstile } from '@/frontend/ui/shared/turnstile';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { useDownloadJob } from '@/frontend/state/downloader/use-download-job';
 
 const REQUIRES_TURNSTILE = TURNSTILE_SITE_KEY.length > 0;
@@ -49,13 +50,10 @@ export function DownloaderPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-16">
-      <header className="flex flex-col gap-2 text-center">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
-          مُنزِّل الوسائط
-        </h1>
-        <p className="text-sm text-muted-foreground sm:text-base">
-          حمّل الصوت أو الفيديو من رابط على منصّات التواصل الاجتماعي.
-        </p>
+      <header className="flex flex-col items-center text-center">
+        <SectionTitle as="h1">
+          مُنزِّل <SectionTitleHighlight>الوسائط</SectionTitleHighlight>
+        </SectionTitle>
       </header>
 
       <Card>
@@ -107,6 +105,7 @@ export function DownloaderPage() {
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 type="submit"
+                variant="hero"
                 isLoading={loading}
                 disabled={url.trim().length === 0 || blockedByTurnstile}
               >
