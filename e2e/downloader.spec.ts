@@ -24,11 +24,14 @@ test('a public link becomes a downloadable file through the signed callback', as
   await page.goto('/downloader');
 
   await page.getByLabel('الرابط').fill('https://example.com/watch?v=1');
-  await page.getByRole('button', { name: 'ابدأ التنزيل' }).click();
 
+  // The save starts automatically once the job is ready, so arm the listener
+  // before the status flips — there is no separate "save" button to click.
+  const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
+
+  await page.getByRole('button', { name: 'ابدأ التنزيل' }).click();
   await expect(page.getByText('الحالة: جاهز للتنزيل')).toBeVisible({ timeout: 30_000 });
 
-  const save = page.getByRole('link', { name: 'حفظ الملف' });
-  await expect(save).toBeVisible();
-  await expect(save).toHaveAttribute('download', /royaraqamia-/);
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/royaraqamia-/);
 });
