@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, ClipboardList, ShieldCheck, LogOut } from 'lucide-react';
+import { User, ClipboardList, ShieldCheck, LogOut, Plug } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
@@ -83,6 +83,16 @@ export function AccountView() {
           <span className="flex items-center gap-2.5">
             <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
             <span>طلباتي</span>
+          </span>
+          <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
+            ←
+          </span>
+        </Link>
+
+        <Link href="/mcp/guide" className={rowClasses}>
+          <span className="flex items-center gap-2.5">
+            <Plug className="w-4 h-4 shrink-0 text-primary" />
+            <span>دليل ربط MCP</span>
           </span>
           <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
             ←

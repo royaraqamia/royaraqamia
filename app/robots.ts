@@ -26,7 +26,7 @@ export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: '*',
-      allow: '/',
+      allow: ['/', '/mcp/guide'],
       disallow: DISALLOWED_PATHS,
     },
     sitemap: `${baseUrl}/sitemap.xml`,

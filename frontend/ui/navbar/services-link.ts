@@ -1,4 +1,4 @@
-import { CalendarClock, Package, Rocket } from 'lucide-react';
+import { CalendarClock, Package, Plug, Rocket } from 'lucide-react';
 
 import { APP_PRODUCTS } from '../app-shell/constants';
 import type { NavLink } from './NavDropdown';
@@ -23,6 +23,12 @@ export const SERVICES_LINK: NavLink = {
       label: 'طلب التَّعاقُد الشَّهري',
       isRoute: true,
       icon: CalendarClock,
+    },
+    {
+      href: '/mcp/guide',
+      label: 'دليل ربط MCP',
+      isRoute: true,
+      icon: Plug,
     },
     ...APP_PRODUCTS.filter((p) => !p.hidden).map((p) => ({
       href: p.landingPath,
