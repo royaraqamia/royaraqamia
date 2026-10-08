@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.58.0] - 2026-10-08
+
+### Changed
+- trim opencode project config
+- update supabase CLI to 2.120.0
+
+### Added
+- add admin console for jobs, blocklist, platforms and limits (#154)
+
 ## [1.57.0] - 2026-10-08
 
 ### Added
