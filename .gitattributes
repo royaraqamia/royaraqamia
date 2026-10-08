@@ -1,0 +1,4 @@
+# Normalize all text files to LF in the repository and in the working tree.
+# Prettier is configured with `endOfLine: lf`, so without this Windows'
+# `core.autocrlf=true` makes LF-formatted files show as perpetually modified.
+* text=auto eol=lf
