@@ -37,6 +37,17 @@ function makeRequest(authorization: string | null, url = 'https://royaraqamia.co
   return new Request(url, { method: 'POST', headers });
 }
 
+function makeJsonRequest(body: unknown, authorization: string | null = null): Request {
+  const headers = new Headers();
+  if (authorization) headers.set('authorization', authorization);
+  headers.set('content-type', 'application/json');
+  return new Request('https://royaraqamia.com/mcp', {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  });
+}
+
 describe('authenticateMcpRequest', () => {
   beforeEach(() => vi.clearAllMocks());
   afterEach(() => vi.restoreAllMocks());
@@ -87,6 +98,74 @@ describe('authenticateMcpRequest', () => {
     expect(response.status).toBe(401);
     expect(response.headers.get('WWW-Authenticate')).toContain('resource_metadata=');
     expect(response.headers.get('WWW-Authenticate')).toContain('scope=');
+  });
+});
+
+describe('anonymous dual-mode surface (ADR 0021)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('lets a tokenless caller list tools', async () => {
+    mockResolve.mockResolvedValue(anonymousCtx);
+
+    const result = await authenticateMcpRequest(
+      makeJsonRequest({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) as never
+    );
+
+    if (result instanceof Response) throw new Error('expected anonymous access');
+    expect(result.authInfo.token).toBe('');
+    expect(result.authInfo.scopes).toEqual([]);
+    expect(result.authInfo.extra?.userId).toBeNull();
+  });
+
+  it('lets a tokenless caller invoke a public tool', async () => {
+    mockResolve.mockResolvedValue(anonymousCtx);
+
+    const result = await authenticateMcpRequest(
+      makeJsonRequest({
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/call',
+        params: { name: 'royaraqamia_server_info', arguments: {} },
+      }) as never
+    );
+
+    expect(result).not.toBeInstanceOf(Response);
+  });
+
+  it('challenges a tokenless caller invoking a personal-data tool', async () => {
+    mockResolve.mockResolvedValue(anonymousCtx);
+
+    const result = await authenticateMcpRequest(
+      makeJsonRequest({
+        jsonrpc: '2.0',
+        id: 3,
+        method: 'tools/call',
+        params: { name: 'royaraqamia_spendtrack_create_expense', arguments: {} },
+      }) as never
+    );
+
+    expect(result).toBeInstanceOf(Response);
+    expect((result as Response).status).toBe(401);
+    expect((result as Response).headers.get('WWW-Authenticate')).toContain('resource_metadata=');
+  });
+
+  it('rejects a batch containing any protected call', async () => {
+    mockResolve.mockResolvedValue(anonymousCtx);
+
+    const result = await authenticateMcpRequest(
+      makeJsonRequest([
+        { jsonrpc: '2.0', id: 1, method: 'tools/list' },
+        {
+          jsonrpc: '2.0',
+          id: 2,
+          method: 'tools/call',
+          params: { name: 'royaraqamia_linksnap_create_link', arguments: {} },
+        },
+      ]) as never
+    );
+
+    expect(result).toBeInstanceOf(Response);
+    expect((result as Response).status).toBe(401);
   });
 });
 
