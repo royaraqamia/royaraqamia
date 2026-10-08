@@ -63,6 +63,7 @@ export class CobaltMediaProvider implements MediaProvider {
           callbackUrl: input.callbackUrl,
           maxDurationSeconds: input.maxDurationSeconds,
           maxSizeBytes: input.maxSizeBytes,
+          linkTtlSeconds: input.linkTtlSeconds,
         }),
         signal: controller.signal,
       });

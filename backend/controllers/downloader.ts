@@ -17,6 +17,8 @@ import {
   createDownloaderTurnstileVerifier,
 } from '@/backend/config/downloader';
 import {
+  BlockedLinkError,
+  BLOCKED_LINK_MESSAGE,
   DownloadJobNotFoundError,
   PlatformUnavailableError,
   PLATFORM_BREAKER_MESSAGE,
@@ -69,6 +71,9 @@ export async function createDownloadJob(body: unknown, ip: string): Promise<Http
 
     return jsonResult(202, { success: true, job });
   } catch (error) {
+    if (error instanceof BlockedLinkError) {
+      return jsonResult(403, { success: false, error: BLOCKED_LINK_MESSAGE });
+    }
     if (error instanceof PlatformUnavailableError) {
       const message =
         error.reason === 'breaker' ? PLATFORM_BREAKER_MESSAGE : PLATFORM_DISABLED_MESSAGE;

@@ -1,13 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+  DEFAULT_DOWNLOAD_SETTINGS,
   MAX_DOWNLOAD_DURATION_SECONDS,
   MAX_DOWNLOAD_VIDEO_BYTES,
+  type DownloadBlocklistEntry,
   type DownloadCallback,
   type DownloadJob,
+  type DownloadSettings,
   type DownloadStatus,
 } from '@/shared/contracts/downloader';
 import type {
   CreateDownloadJobCommand,
+  DownloadJobListQuery,
+  DownloadJobListResult,
   DownloadJobRepository,
   DownloadJobUpdate,
 } from '@/backend/repositories/downloader/download-job-repository';
@@ -16,12 +21,18 @@ import type {
   DownloadPlatformRepository,
   DownloadPlatformState,
 } from '@/backend/repositories/downloader/download-platform-repository';
+import type {
+  AddDownloadBlockCommand,
+  DownloadBlocklistRepository,
+} from '@/backend/repositories/downloader/download-blocklist-repository';
+import type { DownloadSettingsRepository } from '@/backend/repositories/downloader/download-settings-repository';
 import {
   MediaProviderError,
   type MediaDispatchInput,
   type MediaProvider,
 } from '@/backend/services/downloader/media-provider';
 import {
+  BlockedLinkError,
   DownloaderService,
   DownloadJobNotFoundError,
   PlatformUnavailableError,
@@ -59,6 +70,19 @@ class InMemoryDownloadJobRepository implements DownloadJobRepository {
 
   async countActive(): Promise<number> {
     return [...this.jobs.values()].filter((job) => job.status === 'running').length;
+  }
+
+  async list(query: DownloadJobListQuery): Promise<DownloadJobListResult> {
+    const filtered = [...this.jobs.values()].filter((job) => {
+      if (query.status && job.status !== query.status) return false;
+      if (query.search && !job.sourceUrl.includes(query.search)) return false;
+      return true;
+    });
+    const start = (query.page - 1) * query.pageSize;
+    return {
+      jobs: filtered.slice(start, start + query.pageSize),
+      total: filtered.length,
+    };
   }
 
   async updateStatus(id: string, patch: DownloadJobUpdate): Promise<DownloadJob> {
@@ -106,6 +130,43 @@ class InMemoryDownloadPlatformRepository implements DownloadPlatformRepository {
       lastFailureAt: null,
     };
     this.states.set(platform, { ...previous, ...patch, platform });
+  }
+}
+
+class InMemoryDownloadBlocklistRepository implements DownloadBlocklistRepository {
+  readonly entries: DownloadBlocklistEntry[] = [];
+
+  async list(): Promise<DownloadBlocklistEntry[]> {
+    return [...this.entries];
+  }
+
+  async add(input: AddDownloadBlockCommand): Promise<DownloadBlocklistEntry> {
+    const entry: DownloadBlocklistEntry = {
+      id: `block-${this.entries.length + 1}`,
+      kind: input.kind,
+      value: input.value,
+      createdAt: new Date().toISOString(),
+      createdBy: input.createdBy,
+    };
+    this.entries.push(entry);
+    return entry;
+  }
+
+  async remove(id: string): Promise<void> {
+    const index = this.entries.findIndex((entry) => entry.id === id);
+    if (index >= 0) this.entries.splice(index, 1);
+  }
+}
+
+class InMemoryDownloadSettingsRepository implements DownloadSettingsRepository {
+  constructor(private current: DownloadSettings | null = null) {}
+
+  async get(): Promise<DownloadSettings | null> {
+    return this.current;
+  }
+
+  async save(settings: DownloadSettings): Promise<void> {
+    this.current = settings;
   }
 }
 
@@ -194,7 +255,11 @@ describe('DownloaderService.dispatch', () => {
   });
 
   it('refuses a new job with a busy reason once the concurrency cap is reached', async () => {
-    const { service, provider } = makeService({ capacityLimit: 1 });
+    const settings = new InMemoryDownloadSettingsRepository({
+      ...DEFAULT_DOWNLOAD_SETTINGS,
+      maxConcurrentJobs: 1,
+    });
+    const { service, provider } = makeService({ settings });
     const first = await service.create(INPUT);
     await service.dispatch(first.id, INPUT);
 
@@ -426,5 +491,61 @@ describe('DownloaderService platform circuit breaker', () => {
       consecutiveFailures: 0,
       openUntil: null,
     });
+  });
+});
+
+describe('DownloaderService blocklist', () => {
+  it('refuses a blocked link before creating a job', async () => {
+    const blocklist = new InMemoryDownloadBlocklistRepository();
+    await blocklist.add({ kind: 'domain', value: 'example.com', createdBy: null });
+    const { repository, service } = makeService({ blocklist });
+
+    await expect(service.create(INPUT)).rejects.toBeInstanceOf(BlockedLinkError);
+    expect(repository.jobs.size).toBe(0);
+  });
+
+  it('accepts a link when the blocklist is empty', async () => {
+    const blocklist = new InMemoryDownloadBlocklistRepository();
+    const { service } = makeService({ blocklist });
+
+    await expect(service.create(INPUT)).resolves.toMatchObject({ status: 'queued' });
+  });
+});
+
+describe('DownloaderService tunable settings', () => {
+  it('hands the provider the live caps and link TTL', async () => {
+    const settings = new InMemoryDownloadSettingsRepository({
+      maxDurationSeconds: 60,
+      maxAudioBytes: 1024,
+      maxVideoBytes: 2048,
+      maxConcurrentJobs: 20,
+      linkTtlSeconds: 45,
+    });
+    const { service, provider } = makeService({ settings });
+    const created = await service.create(INPUT);
+
+    await service.dispatch(created.id, INPUT);
+
+    expect(provider.calls[0]).toMatchObject({
+      maxDurationSeconds: 60,
+      maxSizeBytes: 2048,
+      linkTtlSeconds: 45,
+    });
+  });
+
+  it('rejects a result past the tuned duration cap', async () => {
+    const settings = new InMemoryDownloadSettingsRepository({
+      ...DEFAULT_DOWNLOAD_SETTINGS,
+      maxDurationSeconds: 60,
+    });
+    const { service } = makeService({ settings });
+    const created = await service.create(INPUT);
+    await service.dispatch(created.id, INPUT);
+
+    await service.recordResult({ ...readyCallback(created.id), durationSeconds: 61 });
+
+    const job = await service.get(created.id);
+    expect(job.status).toBe('failed');
+    expect(job.error).toContain('1 دقيقة');
   });
 });

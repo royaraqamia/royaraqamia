@@ -3,6 +3,8 @@ import type { Database } from '@/backend/models/database.types';
 import type { DownloadFormat, DownloadJob, DownloadStatus } from '@/shared/contracts/downloader';
 import type {
   CreateDownloadJobCommand,
+  DownloadJobListQuery,
+  DownloadJobListResult,
   DownloadJobRepository,
   DownloadJobUpdate,
 } from '@/backend/repositories/downloader/download-job-repository';
@@ -65,6 +67,22 @@ export class SupabaseDownloadJobRepository implements DownloadJobRepository {
 
     if (error) throw error;
     return count ?? 0;
+  }
+
+  async list(query: DownloadJobListQuery): Promise<DownloadJobListResult> {
+    const from = (query.page - 1) * query.pageSize;
+    let builder = this.supabase
+      .from('download_jobs')
+      .select('*', { count: 'exact' })
+      .order('created_at', { ascending: false })
+      .range(from, from + query.pageSize - 1);
+
+    if (query.status) builder = builder.eq('status', query.status);
+    if (query.search) builder = builder.ilike('source_url', `%${query.search}%`);
+
+    const { data, error, count } = await builder;
+    if (error) throw error;
+    return { jobs: (data ?? []).map(toDownloadJob), total: count ?? 0 };
   }
 
   async updateStatus(id: string, patch: DownloadJobUpdate): Promise<DownloadJob> {

@@ -4,10 +4,14 @@ import { createTurnstileVerifier } from '@/backend/config/turnstile';
 import { env } from '@/backend/config/env';
 import { CobaltMediaProvider } from '@/backend/clients/cobalt-media-provider';
 import {
+  SupabaseDownloadBlocklistRepository,
   SupabaseDownloadJobRepository,
   SupabaseDownloadPlatformRepository,
+  SupabaseDownloadSettingsRepository,
+  type DownloadBlocklistRepository,
   type DownloadJobRepository,
   type DownloadPlatformRepository,
+  type DownloadSettingsRepository,
 } from '@/backend/repositories/downloader';
 import type { MediaProvider } from '@/backend/services/downloader/media-provider';
 import { StubMediaProvider } from '@/backend/services/downloader/stub-media-provider';
@@ -15,9 +19,7 @@ import {
   DownloaderService,
   type PlatformBreakerPolicy,
 } from '@/backend/services/downloader/downloader-service';
-
-/** Jobs the provider may work on at once; the stale sweep reclaims a lost callback (#155). */
-const DOWNLOADER_MAX_CONCURRENT_JOBS = 20;
+import { DownloaderAdminService } from '@/backend/services/downloader/downloader-admin-service';
 
 /** Consecutive provider failures before a Platform's breaker opens, and its cooldown. */
 const DOWNLOADER_PLATFORM_FAILURE_THRESHOLD = 5;
@@ -29,7 +31,8 @@ const platformBreakerPolicy: PlatformBreakerPolicy = {
 };
 
 /**
- * Media Downloader composition root. `download_jobs` grants nothing to anon or
+ * Media Downloader composition root. `download_jobs`, `downloader_platforms`,
+ * `downloader_blocklist` and `downloader_settings` grant nothing to anon or
  * authenticated, so every path runs on the service role.
  */
 export function createDownloadJobRepository(): DownloadJobRepository {
@@ -39,6 +42,16 @@ export function createDownloadJobRepository(): DownloadJobRepository {
 /** Per-Platform allowlist overrides and breaker state (ADR-0020). */
 export function createDownloadPlatformRepository(): DownloadPlatformRepository {
   return new SupabaseDownloadPlatformRepository(getAdminSupabase());
+}
+
+/** The Admin's domain/URL blocklist. */
+export function createDownloadBlocklistRepository(): DownloadBlocklistRepository {
+  return new SupabaseDownloadBlocklistRepository(getAdminSupabase());
+}
+
+/** The Admin-tunable caps, read on every dispatch and result. */
+export function createDownloadSettingsRepository(): DownloadSettingsRepository {
+  return new SupabaseDownloadSettingsRepository(getAdminSupabase());
 }
 
 export function downloaderCallbackUrl(): string {
@@ -63,10 +76,11 @@ export function createMediaProvider(): MediaProvider {
 
 export function createDownloaderService(): DownloaderService {
   return new DownloaderService(createDownloadJobRepository(), createMediaProvider(), {
-    capacityLimit: DOWNLOADER_MAX_CONCURRENT_JOBS,
     callbackUrl: downloaderCallbackUrl(),
     platforms: createDownloadPlatformRepository(),
     breaker: platformBreakerPolicy,
+    settings: createDownloadSettingsRepository(),
+    blocklist: createDownloadBlocklistRepository(),
     onBreakerTrip: (trip) => {
       Sentry.captureMessage(`Media Downloader: ${trip.platform} circuit breaker opened`, {
         level: 'warning',
@@ -78,6 +92,16 @@ export function createDownloaderService(): DownloaderService {
       });
     },
   });
+}
+
+/** The Admin Console's read/write view over the same repositories the service enforces. */
+export function createDownloaderAdminService(): DownloaderAdminService {
+  return new DownloaderAdminService(
+    createDownloadJobRepository(),
+    createDownloadBlocklistRepository(),
+    createDownloadPlatformRepository(),
+    createDownloadSettingsRepository()
+  );
 }
 
 /** Fail-closed on the anonymous create path once `TURNSTILE_SECRET_KEY` is set (ADR-0019). */

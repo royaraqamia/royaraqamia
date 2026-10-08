@@ -10,6 +10,19 @@ export interface CreateDownloadJobCommand {
   format: DownloadFormat;
 }
 
+/** The bounded, Admin-supplied window over the Download Jobs, newest first. */
+export interface DownloadJobListQuery {
+  page: number;
+  pageSize: number;
+  status?: DownloadStatus;
+  search?: string;
+}
+
+export interface DownloadJobListResult {
+  jobs: DownloadJob[];
+  total: number;
+}
+
 /**
  * The mutable half of a Download Job; every call also records an event.
  * `file: null` clears a stored link (the `expired` transition), while leaving it
@@ -33,4 +46,6 @@ export interface DownloadJobRepository {
   updateStatus(id: string, patch: DownloadJobUpdate): Promise<DownloadJob>;
   /** Jobs the Media Provider is working on right now; drives the concurrency cap. */
   countActive(): Promise<number>;
+  /** A page of jobs for the Admin list, with the total matching the same filters. */
+  list(query: DownloadJobListQuery): Promise<DownloadJobListResult>;
 }

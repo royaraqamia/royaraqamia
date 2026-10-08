@@ -1,26 +1,35 @@
 import {
-  MAX_DOWNLOAD_DURATION_SECONDS,
+  DEFAULT_DOWNLOAD_SETTINGS,
   TERMINAL_DOWNLOAD_STATUSES,
   maxDownloadBytes,
   type DownloadCallback,
   type DownloadJob,
   type DownloadRequest,
+  type DownloadSettings,
 } from '@/shared/contracts/downloader';
 import type { DownloadJobRepository } from '@/backend/repositories/downloader/download-job-repository';
 import type { DownloadPlatformRepository } from '@/backend/repositories/downloader/download-platform-repository';
+import type { DownloadBlocklistRepository } from '@/backend/repositories/downloader/download-blocklist-repository';
+import type { DownloadSettingsRepository } from '@/backend/repositories/downloader/download-settings-repository';
 import {
   MediaProviderError,
   type MediaProvider,
 } from '@/backend/services/downloader/media-provider';
+import { isUrlBlocked } from '@/backend/services/downloader/blocklist';
 import { platformForUrl } from '@/backend/services/downloader/platform-catalog';
 
 const BUSY_MESSAGE = 'الخدمة مزدحمة حاليًّا. حاول مجددًا بعد قليل.';
-const DURATION_MESSAGE = 'مدة الوسائط تتجاوز الحدّ المسموح (15 دقيقة).';
 const SIZE_MESSAGE = 'حجم الملف يتجاوز الحدّ المسموح.';
 const GENERIC_FAILURE = 'تعذّر تنزيل الوسائط من هذا الرابط.';
 
+export const BLOCKED_LINK_MESSAGE = 'هذا الرابط محظور.';
 export const PLATFORM_DISABLED_MESSAGE = 'هذا الموقع غير مدعوم حاليًّا.';
 export const PLATFORM_BREAKER_MESSAGE = 'هذا الموقع غير متاح مؤقتًا. حاول مجددًا بعد قليل.';
+
+function durationMessage(maxDurationSeconds: number): string {
+  const minutes = Math.max(1, Math.round(maxDurationSeconds / 60));
+  return `مدة الوسائط تتجاوز الحدّ المسموح (${minutes} دقيقة).`;
+}
 
 export class DownloadJobNotFoundError extends Error {
   constructor() {
@@ -34,6 +43,14 @@ export class PlatformUnavailableError extends Error {
   constructor(readonly reason: 'disabled' | 'breaker') {
     super(reason === 'disabled' ? 'Platform disabled.' : 'Platform circuit breaker open.');
     this.name = 'PlatformUnavailableError';
+  }
+}
+
+/** A source link the Admin blocklist refuses. */
+export class BlockedLinkError extends Error {
+  constructor() {
+    super('Source link is blocked.');
+    this.name = 'BlockedLinkError';
   }
 }
 
@@ -51,8 +68,6 @@ export interface BreakerTrip {
 
 export interface DownloaderServiceDeps {
   now?: () => Date;
-  /** Global cap on jobs running at the provider at once; omitted means unbounded. */
-  capacityLimit?: number;
   /** The signed callback route the Media Provider reports to. */
   callbackUrl?: string;
   /** Per-Platform allowlist overrides and breaker state; omitted means catalogue defaults only. */
@@ -61,6 +76,10 @@ export interface DownloaderServiceDeps {
   breaker?: PlatformBreakerPolicy;
   /** Called when a Platform's breaker opens, so the edge can report it (Sentry). */
   onBreakerTrip?: (trip: BreakerTrip) => void;
+  /** Live caps an Admin can tune; omitted means `DEFAULT_DOWNLOAD_SETTINGS`. */
+  settings?: DownloadSettingsRepository;
+  /** Admin blocklist; omitted means no link is refused. */
+  blocklist?: DownloadBlocklistRepository;
 }
 
 /**
@@ -71,18 +90,21 @@ export interface DownloaderServiceDeps {
  *
  * The duration and size caps are re-checked here when the result arrives, so a
  * provider that ignores the limits it was handed still cannot record a file past
- * them. The concurrency cap counts jobs already in flight at the provider. A
- * known Platform is refused at `create` when the allowlist disables it or its
- * circuit breaker is open, and provider failures are counted per Platform so a
- * repeatedly failing extractor opens that breaker (ADR-0020).
+ * them. Every limit is read from the tunable settings row, so an Admin change
+ * takes effect without a deploy. The concurrency cap counts jobs already in
+ * flight at the provider. A known Platform is refused at `create` when the
+ * allowlist disables it or its circuit breaker is open, a blocked link is refused
+ * before any work, and provider failures are counted per Platform so a repeatedly
+ * failing extractor opens that breaker (ADR-0020).
  */
 export class DownloaderService {
   private readonly now: () => Date;
-  private readonly capacityLimit: number | undefined;
   private readonly callbackUrl: string;
   private readonly platforms: DownloadPlatformRepository | undefined;
   private readonly breaker: PlatformBreakerPolicy | undefined;
   private readonly onBreakerTrip: ((trip: BreakerTrip) => void) | undefined;
+  private readonly settings: DownloadSettingsRepository | undefined;
+  private readonly blocklist: DownloadBlocklistRepository | undefined;
 
   constructor(
     private readonly repository: DownloadJobRepository,
@@ -90,23 +112,23 @@ export class DownloaderService {
     deps: DownloaderServiceDeps = {}
   ) {
     this.now = deps.now ?? (() => new Date());
-    this.capacityLimit = deps.capacityLimit;
     this.callbackUrl = deps.callbackUrl ?? '';
     this.platforms = deps.platforms;
     this.breaker = deps.breaker;
     this.onBreakerTrip = deps.onBreakerTrip;
+    this.settings = deps.settings;
+    this.blocklist = deps.blocklist;
   }
 
   async create(request: DownloadRequest): Promise<DownloadJob> {
+    await this.assertNotBlocked(request.url);
     await this.assertPlatformAvailable(request.url);
     return this.repository.create({ url: request.url, format: request.format });
   }
 
   async dispatch(id: string, request: DownloadRequest): Promise<void> {
-    if (
-      this.capacityLimit !== undefined &&
-      (await this.repository.countActive()) >= this.capacityLimit
-    ) {
+    const settings = await this.effectiveSettings();
+    if ((await this.repository.countActive()) >= settings.maxConcurrentJobs) {
       await this.repository.updateStatus(id, { status: 'failed', error: BUSY_MESSAGE });
       return;
     }
@@ -119,8 +141,9 @@ export class DownloaderService {
         url: request.url,
         format: request.format,
         callbackUrl: this.callbackUrl,
-        maxDurationSeconds: MAX_DOWNLOAD_DURATION_SECONDS,
-        maxSizeBytes: maxDownloadBytes(request.format),
+        maxDurationSeconds: settings.maxDurationSeconds,
+        maxSizeBytes: maxDownloadBytes(request.format, settings),
+        linkTtlSeconds: settings.linkTtlSeconds,
       });
     } catch (error) {
       const reason = error instanceof MediaProviderError ? error.message : GENERIC_FAILURE;
@@ -138,11 +161,15 @@ export class DownloaderService {
       return;
     }
 
-    if (callback.durationSeconds > MAX_DOWNLOAD_DURATION_SECONDS) {
-      await this.repository.updateStatus(job.id, { status: 'failed', error: DURATION_MESSAGE });
+    const settings = await this.effectiveSettings();
+    if (callback.durationSeconds > settings.maxDurationSeconds) {
+      await this.repository.updateStatus(job.id, {
+        status: 'failed',
+        error: durationMessage(settings.maxDurationSeconds),
+      });
       return;
     }
-    if (callback.file.sizeBytes > maxDownloadBytes(job.format)) {
+    if (callback.file.sizeBytes > maxDownloadBytes(job.format, settings)) {
       await this.repository.updateStatus(job.id, { status: 'failed', error: SIZE_MESSAGE });
       return;
     }
@@ -153,6 +180,19 @@ export class DownloaderService {
       file: callback.file,
     });
     await this.recordPlatformSuccess(job.sourceUrl);
+  }
+
+  /** The live caps, falling back to the defaults when no row or repo is wired. */
+  private async effectiveSettings(): Promise<DownloadSettings> {
+    if (!this.settings) return DEFAULT_DOWNLOAD_SETTINGS;
+    return (await this.settings.get()) ?? DEFAULT_DOWNLOAD_SETTINGS;
+  }
+
+  /** Refuse a link the Admin blocklist bans before any provider work. */
+  private async assertNotBlocked(url: string): Promise<void> {
+    if (!this.blocklist) return;
+    const entries = await this.blocklist.list();
+    if (isUrlBlocked(url, entries)) throw new BlockedLinkError();
   }
 
   /**

@@ -1,4 +1,4 @@
-import { DOWNLOAD_LINK_TTL_SECONDS, isHttpUrl } from '@/shared/contracts/downloader';
+import { isHttpUrl } from '@/shared/contracts/downloader';
 import {
   MediaProviderError,
   type MediaDispatchInput,
@@ -34,15 +34,13 @@ export class StubMediaProvider implements MediaProvider {
     this.fetch = deps.fetchImpl ?? fetch;
   }
 
-  async dispatch({ jobId, url }: MediaDispatchInput): Promise<void> {
+  async dispatch({ jobId, url, linkTtlSeconds }: MediaDispatchInput): Promise<void> {
     if (!isHttpUrl(url)) {
       throw new MediaProviderError('هذا الرابط غير مدعوم.');
     }
 
     const hostname = new URL(url).hostname.replace(/^www\./, '');
-    const expiresAt = new Date(
-      this.now().getTime() + DOWNLOAD_LINK_TTL_SECONDS * 1000
-    ).toISOString();
+    const expiresAt = new Date(this.now().getTime() + linkTtlSeconds * 1000).toISOString();
 
     const body = {
       jobId,

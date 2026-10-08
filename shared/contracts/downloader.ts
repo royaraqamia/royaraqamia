@@ -38,14 +38,13 @@ export const TERMINAL_DOWNLOAD_STATUSES: readonly DownloadStatus[] = ['ready', '
 
 export const MAX_SOURCE_URL_LENGTH = 2048;
 
-/** Hard caps enforced server-side; the visitor sees them from the copy on the tool page. */
+/**
+ * The default caps, enforced server-side; an Admin can tune the live values at
+ * runtime (ADR-0020), and the visitor sees them from the copy on the tool page.
+ */
 export const MAX_DOWNLOAD_DURATION_SECONDS = 15 * 60;
 export const MAX_DOWNLOAD_AUDIO_BYTES = 50 * 1024 * 1024;
 export const MAX_DOWNLOAD_VIDEO_BYTES = 200 * 1024 * 1024;
-
-export function maxDownloadBytes(format: DownloadFormat): number {
-  return format === 'audio' ? MAX_DOWNLOAD_AUDIO_BYTES : MAX_DOWNLOAD_VIDEO_BYTES;
-}
 
 /**
  * How long the Media Provider's signed file link stays valid. The provider sets
@@ -53,6 +52,38 @@ export function maxDownloadBytes(format: DownloadFormat): number {
  * `expired` once that moment passes — the link is never handed out again.
  */
 export const DOWNLOAD_LINK_TTL_SECONDS = 5 * 60;
+
+/** The size caps that depend on the requested format. */
+export interface DownloadCaps {
+  maxDurationSeconds: number;
+  maxAudioBytes: number;
+  maxVideoBytes: number;
+}
+
+/**
+ * The full set of limits an Admin can tune without a deploy. The row lives in
+ * `downloader_settings`; `DEFAULT_DOWNLOAD_SETTINGS` is what the app falls back
+ * to when the row is absent.
+ */
+export interface DownloadSettings extends DownloadCaps {
+  maxConcurrentJobs: number;
+  linkTtlSeconds: number;
+}
+
+export const DEFAULT_DOWNLOAD_SETTINGS: DownloadSettings = {
+  maxDurationSeconds: MAX_DOWNLOAD_DURATION_SECONDS,
+  maxAudioBytes: MAX_DOWNLOAD_AUDIO_BYTES,
+  maxVideoBytes: MAX_DOWNLOAD_VIDEO_BYTES,
+  maxConcurrentJobs: 20,
+  linkTtlSeconds: DOWNLOAD_LINK_TTL_SECONDS,
+};
+
+export function maxDownloadBytes(
+  format: DownloadFormat,
+  caps: DownloadCaps = DEFAULT_DOWNLOAD_SETTINGS
+): number {
+  return format === 'audio' ? caps.maxAudioBytes : caps.maxVideoBytes;
+}
 
 /** The one definition of "a link a Download may target"; shared by the schema and the provider. */
 export function isHttpUrl(value: string): boolean {
@@ -183,3 +214,122 @@ export interface DownloadJob {
   createdAt: string;
   updatedAt: string;
 }
+
+// ------------------------------------------------------------
+// Admin Console (ADR-0020)
+// ------------------------------------------------------------
+
+/**
+ * A blocklist entry either bans a whole host and its subdomains (`domain`) or one
+ * exact link (`url`). Blocked links are refused on the create path.
+ */
+export const DOWNLOAD_BLOCK_KINDS = ['domain', 'url'] as const;
+export type DownloadBlockKind = (typeof DOWNLOAD_BLOCK_KINDS)[number];
+
+export const DOWNLOAD_BLOCK_KIND_LABELS: Record<DownloadBlockKind, string> = {
+  domain: 'نطاق',
+  url: 'رابط',
+};
+
+export interface DownloadBlocklistEntry {
+  id: string;
+  kind: DownloadBlockKind;
+  value: string;
+  createdAt: string;
+  createdBy: string | null;
+}
+
+/**
+ * One Platform as the Admin Console sees it: the catalogue's identity merged with
+ * the runtime override, breaker state and whether the breaker is open right now.
+ */
+export interface DownloadPlatformView {
+  id: string;
+  name: string;
+  domains: string[];
+  enabled: boolean;
+  enabledByDefault: boolean;
+  consecutiveFailures: number;
+  openUntil: string | null;
+  breakerOpen: boolean;
+}
+
+/** A page of Download Jobs for the Admin list, newest first. */
+export interface DownloadJobPage {
+  jobs: DownloadJob[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+const HOSTNAME_RE = /^(?=.{1,253}$)([a-z0-9](?:-?[a-z0-9])*\.)+[a-z]{2,}$/i;
+
+export const AddDownloadBlockSchema = z.discriminatedUnion('kind', [
+  z.object({
+    kind: z.literal('domain'),
+    value: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .min(1, 'أدخل نطاقًا.')
+      .max(253)
+      .regex(HOSTNAME_RE, 'أدخل اسم نطاق صحيحًا.'),
+  }),
+  z.object({
+    kind: z.literal('url'),
+    value: z
+      .string()
+      .trim()
+      .min(1, 'أدخل رابطًا.')
+      .max(MAX_SOURCE_URL_LENGTH)
+      .refine(isHttpUrl, 'أدخل رابطًا صحيحًا يبدأ بـ http أو https.'),
+  }),
+]);
+
+export type AddDownloadBlockInput = z.infer<typeof AddDownloadBlockSchema>;
+
+export const SetDownloadPlatformEnabledSchema = z.object({
+  enabled: z.boolean(),
+});
+
+export type SetDownloadPlatformEnabledInput = z.infer<typeof SetDownloadPlatformEnabledSchema>;
+
+const MB = 1024 * 1024;
+
+/**
+ * A partial update of the tunable limits; at least one field must be present.
+ * Bounds keep an Admin from setting a nonsensical (or unbounded) value.
+ */
+export const UpdateDownloadSettingsSchema = z
+  .object({
+    maxDurationSeconds: z
+      .number()
+      .int()
+      .min(30)
+      .max(24 * 60 * 60)
+      .optional(),
+    maxAudioBytes: z
+      .number()
+      .int()
+      .min(MB)
+      .max(2 * 1024 * MB)
+      .optional(),
+    maxVideoBytes: z
+      .number()
+      .int()
+      .min(MB)
+      .max(5 * 1024 * MB)
+      .optional(),
+    maxConcurrentJobs: z.number().int().min(1).max(200).optional(),
+    linkTtlSeconds: z
+      .number()
+      .int()
+      .min(30)
+      .max(60 * 60)
+      .optional(),
+  })
+  .refine((value) => Object.values(value).some((field) => field !== undefined), {
+    message: 'لا توجد قيم للتحديث.',
+  });
+
+export type UpdateDownloadSettingsInput = z.infer<typeof UpdateDownloadSettingsSchema>;

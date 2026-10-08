@@ -150,6 +150,16 @@ Per-Platform safety that opens when a Platform's extractor keeps failing, refusi
 Downloads for that Platform until a cooldown passes.
 _Avoid_: Rate limiter, throttle, backoff
 
+**Blocklist**:
+The domains and exact links an Admin has refused; a Download targeting one is rejected
+before any provider work.
+_Avoid_: Ban list, denylist, blacklist
+
+**Download Limits**:
+The tunable caps — max duration, audio/video size, concurrent jobs and signed-link
+lifetime — an Admin can change without a deploy.
+_Avoid_: Quotas, thresholds, config
+
 **Media Provider**:
 The external backend that turns a media link into a downloadable file. The site does not
 extract or convert media itself.

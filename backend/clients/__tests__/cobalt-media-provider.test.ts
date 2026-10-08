@@ -12,6 +12,7 @@ const INPUT: MediaDispatchInput = {
   callbackUrl: 'https://royaraqamia.com/api/downloader/callback',
   maxDurationSeconds: 900,
   maxSizeBytes: 200 * 1024 * 1024,
+  linkTtlSeconds: 300,
 };
 
 describe('CobaltMediaProvider.dispatch', () => {
@@ -38,6 +39,7 @@ describe('CobaltMediaProvider.dispatch', () => {
       callbackUrl: INPUT.callbackUrl,
       maxDurationSeconds: INPUT.maxDurationSeconds,
       maxSizeBytes: INPUT.maxSizeBytes,
+      linkTtlSeconds: INPUT.linkTtlSeconds,
     });
   });
 

@@ -454,6 +454,30 @@ export type Database = {
         };
         Relationships: [];
       };
+      downloader_blocklist: {
+        Row: {
+          created_at: string;
+          created_by: string | null;
+          id: string;
+          kind: string;
+          value: string;
+        };
+        Insert: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind: string;
+          value: string;
+        };
+        Update: {
+          created_at?: string;
+          created_by?: string | null;
+          id?: string;
+          kind?: string;
+          value?: string;
+        };
+        Relationships: [];
+      };
       downloader_platforms: {
         Row: {
           consecutive_failures: number;
@@ -477,6 +501,36 @@ export type Database = {
           last_failure_at?: string | null;
           open_until?: string | null;
           platform?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      downloader_settings: {
+        Row: {
+          id: boolean;
+          link_ttl_seconds: number;
+          max_audio_bytes: number;
+          max_concurrent_jobs: number;
+          max_duration_seconds: number;
+          max_video_bytes: number;
+          updated_at: string;
+        };
+        Insert: {
+          id?: boolean;
+          link_ttl_seconds?: number;
+          max_audio_bytes?: number;
+          max_concurrent_jobs?: number;
+          max_duration_seconds?: number;
+          max_video_bytes?: number;
+          updated_at?: string;
+        };
+        Update: {
+          id?: boolean;
+          link_ttl_seconds?: number;
+          max_audio_bytes?: number;
+          max_concurrent_jobs?: number;
+          max_duration_seconds?: number;
+          max_video_bytes?: number;
           updated_at?: string;
         };
         Relationships: [];

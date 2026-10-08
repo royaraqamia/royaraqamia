@@ -27,7 +27,8 @@ Content-Type: application/json
   "format": "audio | video-360p | video-720p | video-1080p",
   "callbackUrl": "https://royaraqamia.com/api/downloader/callback",
   "maxDurationSeconds": 900,
-  "maxSizeBytes": 209715200
+  "maxSizeBytes": 209715200,
+  "linkTtlSeconds": 300
 }
 ```
 
@@ -41,7 +42,9 @@ all, makes the app record the job as `failed` with "خدمة التنزيل غي
 A `4xx` means the link cannot be handled (surfaced to the visitor as a `failed` job
 with "هذا الرابط غير مدعوم."); any other failure or a timeout surfaces as
 "خدمة التنزيل غير متاحة الآن.". The host must honour `maxDurationSeconds` and
-`maxSizeBytes`; the app re-checks both when the callback arrives.
+`maxSizeBytes`; the app re-checks both when the callback arrives. `linkTtlSeconds`
+is optional: when present the host must set the signed file link's lifetime from
+it (falling back to its own default when absent).
 
 ## 2. Host → app: report the result
 

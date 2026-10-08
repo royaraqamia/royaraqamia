@@ -10,6 +10,8 @@ export interface MediaDispatchInput {
   /** Caps the provider must honour, mirrored from the server-side limits. */
   maxDurationSeconds: number;
   maxSizeBytes: number;
+  /** How long the provider's signed file link should stay valid. */
+  linkTtlSeconds: number;
 }
 
 /**
