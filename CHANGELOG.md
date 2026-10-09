@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.65.0] - 2026-10-09
+
+### Changed
+- add autonomous issue planner and implementer workflows
+- add diacritics to الرَّابط and الصِّيغة across the app
+- remove card header from media link form
+- align title and CTA with shared site styles
+
+### Added
+- render dropdowns as bottom sheets below lg
+
+### Fixed
+- left-align the submit action
+
 ## [1.64.0] - 2026-10-08
 
 ### Changed
