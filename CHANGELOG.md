@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.69.0] - 2026-10-09
+
+### Changed
+- center the public profile card on all breakpoints
+- drop the members icon chip and hide the mobile rail scrollbar
+
+### Added
+- remove the member count badge
+- open the account page from the user dropdown card
+
+### Fixed
+- show the full member roster and the real total
+
 ## [1.68.0] - 2026-10-09
 
 ### Added
