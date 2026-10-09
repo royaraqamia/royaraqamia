@@ -130,8 +130,13 @@ export const UserDropdown = memo(function UserDropdown() {
             >
               {user ? (
                 <div className="space-y-1">
-                  {/* Profile Card Header */}
-                  <div className="px-3 py-2.5 rounded-xl bg-muted/40 border border-border/40 flex items-center gap-3">
+                  {/* Profile Card Header — links through to the account page */}
+                  <Link
+                    href="/account"
+                    onClick={() => setIsOpen(false)}
+                    role="menuitem"
+                    className="group/profile flex items-center gap-3 rounded-xl border border-border/40 bg-muted/40 px-3 py-2.5 transition-safe duration-150 ease-out hover:border-primary/40 hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                  >
                     <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-xs">
                       {userName ? userName.charAt(0).toUpperCase() : <User size={16} />}
                       {showAvatar && (
@@ -156,7 +161,7 @@ export const UserDropdown = memo(function UserDropdown() {
                         {userEmail || 'حساب نشط'}
                       </p>
                     </div>
-                  </div>
+                  </Link>
 
                   <div className="divide-y divide-border/40">
                     {/* My Submissions — the account-based edit path */}
