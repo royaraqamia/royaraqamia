@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.68.0] - 2026-10-09
+
+### Added
+- transliterate Arabic names into latin usernames
+- add member directory, public profiles, and people search
+
 ## [1.67.1] - 2026-10-09
 
 ### Changed
