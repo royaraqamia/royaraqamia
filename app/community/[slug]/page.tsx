@@ -254,7 +254,8 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                       #{tag.name}
                     </span>
                   ))}
-                  <div className="ms-auto">
+                  <div className="ms-auto flex items-center gap-2">
+                    <SocialShare url={postUrl} title={excerpt} />
                     <PostOwnerActions post={p} />
                   </div>
                 </div>
@@ -304,17 +305,6 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
               </aside>
             )}
           </div>
-
-          {/* Footer Content & Actions */}
-          <footer
-            style={{ backgroundColor: 'transparent' }}
-            className="mt-16 sm:mt-20 space-y-12 sm:space-y-16"
-            role="contentinfo"
-          >
-            <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4 pt-8 border-t border-border/50">
-              <SocialShare url={postUrl} title={excerpt} />
-            </div>
-          </footer>
         </article>
       </div>
     </>
