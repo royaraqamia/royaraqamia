@@ -21,3 +21,15 @@ _Avoid_: mixed tool, smart tool
 **Consent**:
 A signed-in browser user's approval of an MCP client's requested scopes, captured on the connect page.
 _Avoid_: acceptance, permission prompt
+
+### Automation
+
+**Issue Planner**:
+The scheduled system that reads the repository and files high-confidence findings as
+`ready-for-agent` issues in the tracker.
+_Avoid_: triager, backlog bot, maintenance agent
+
+**Issue Implementer**:
+The scheduled system that takes one `ready-for-agent` issue and publishes a pull request that
+closes it.
+_Avoid_: coder bot, autofix, repair agent
