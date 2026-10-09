@@ -24,6 +24,10 @@ Flow: `controller → service → repository/client`
 
 Supabase `.from()` / external calls stay in `backend/repositories` / `backend/clients` (behind interfaces) and `frontend/transport` — never in UI components.
 
+## Edge middleware — `proxy.ts`, not `middleware.ts`
+
+Next.js 16 renamed the edge middleware file `middleware.ts` → `proxy.ts` (the exported function is `proxy`). **This repo has no `middleware.ts`** — the edge entry point is `proxy.ts` at the repo root. It calls `updateSession` (`backend/middleware/session.ts`) to refresh the Supabase session, then stamps the geo-derived country cookie. `config.matcher` excludes static assets.
+
 ## Feature folders
 
 Product code follows this structure:
