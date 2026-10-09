@@ -1357,6 +1357,34 @@
   touch-action: none;
 }
 
+/* Global custom scrollbar — replaces the OS/browser default on every scroll
+   container (page, code blocks, dropdowns, panels). `.scrollbar-hide`,
+   `.horizontal-scroll`, and `.dialog-scrollbar` keep their class-based
+   overrides thanks to higher specificity. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #7766ee rgba(255, 255, 255, 0.05);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7766ee 0%, #5b4db8 100%);
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #8b5cf6 0%, #7766ee 100%);
+}
+
 /* Custom Scrollbar Styling */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
