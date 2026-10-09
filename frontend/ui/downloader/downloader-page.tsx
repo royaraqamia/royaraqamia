@@ -12,13 +12,7 @@ import { TURNSTILE_SITE_KEY } from '@/frontend/shared/constants';
 import { formatBytes } from '@/frontend/shared/format-bytes';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/frontend/ui/primitives/card';
+import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import {
   Select,
   SelectContent,
@@ -84,10 +78,6 @@ export function DownloaderPage() {
       </header>
 
       <Card>
-        <CardHeader>
-          <CardTitle>رابط الوسائط</CardTitle>
-          <CardDescription>ألصق رابطًا عامًّا، اختر الصيغة، ثم ابدأ التنزيل.</CardDescription>
-        </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-1.5">
