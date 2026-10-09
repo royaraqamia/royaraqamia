@@ -59,7 +59,7 @@ export default function McpGuidePage() {
     <div className="relative min-h-dvh bg-background text-foreground flex flex-col font-sans selection:bg-primary/20 selection:text-primary antialiased">
       <Navbar />
       <main id="main-content" className="flex-1 pt-24 pb-16 md:pt-32 md:pb-24" dir="rtl">
-        <div className="cv-auto mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+        <div className="cv-auto mx-auto max-w-3xl px-4">
           <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
             <SectionTitle>
               ربط الـ <SectionTitleHighlight>MCP</SectionTitleHighlight>

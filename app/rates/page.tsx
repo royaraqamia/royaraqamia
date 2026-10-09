@@ -72,7 +72,7 @@ export default async function RatesPage() {
       <Navbar />
 
       <main id="main-content" dir="rtl" className="flex-1 pt-24 pb-16 md:pt-32 md:pb-24">
-        <div className="cv-auto mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="cv-auto mx-auto max-w-3xl px-4">
           <header className="mb-10 text-center">
             <SectionTitle as="h1">
               أسعار <SectionTitleHighlight>الصَّرف</SectionTitleHighlight>

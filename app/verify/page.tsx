@@ -57,7 +57,7 @@ export default function VerifyPage() {
 
   return (
     <div className="relative overflow-hidden bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary">
-      <div className="relative z-10 mx-auto max-w-4xl px-4 pt-4 pb-10 sm:px-6 lg:px-8 sm:pb-12">
+      <div className="relative z-10 mx-auto max-w-3xl px-4 pt-4 pb-10 sm:pb-12">
         <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
           <SectionTitle>
             التَّحقُّق من <SectionTitleHighlight>الشَّهادة</SectionTitleHighlight>

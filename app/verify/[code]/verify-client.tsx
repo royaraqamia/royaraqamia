@@ -64,9 +64,9 @@ function NotFoundState({ code }: { code: string }) {
   return (
     <div
       dir="rtl"
-      className="relative w-full overflow-x-hidden bg-background text-foreground flex items-center justify-center py-12 md:py-20 px-4 sm:px-6 lg:px-8 selection:bg-red-500/20 selection:text-red-500"
+      className="relative w-full overflow-x-hidden bg-background text-foreground flex items-center justify-center py-12 md:py-20 px-4 selection:bg-red-500/20 selection:text-red-500"
     >
-      <div className="relative z-10 w-full max-w-2xl mx-auto">
+      <div className="relative z-10 w-full max-w-3xl mx-auto">
         <m.div
           variants={staggerVariants}
           initial={reduce ? false : 'hidden'}
@@ -249,7 +249,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
   return (
     <div
       dir="rtl"
-      className="relative w-full overflow-x-hidden bg-background text-foreground py-10 md:py-20 px-4 sm:px-6 lg:px-8 selection:bg-primary/20 selection:text-primary"
+      className="relative w-full overflow-x-hidden bg-background text-foreground py-10 md:py-20 px-4 selection:bg-primary/20 selection:text-primary"
     >
       <style>{`
         @media print {
@@ -269,7 +269,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
         }
       `}</style>
 
-      <div className="relative z-10 w-full max-w-4xl mx-auto">
+      <div className="relative z-10 w-full max-w-3xl mx-auto">
         <m.div variants={staggerVariants} initial={reduce ? false : 'hidden'} animate="visible">
           {/* Header Section */}
           <div className="mb-10 text-center flex flex-col items-center">
