@@ -31,6 +31,8 @@ export interface PublicUser {
   name: string | null;
   avatar_url: string | null;
   bio: string | null;
+  /** Mirrors auth `email_confirmed_at`; only verified members are listed. */
+  verified: boolean;
 }
 
 /**

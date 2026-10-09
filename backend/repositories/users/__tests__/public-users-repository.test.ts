@@ -38,17 +38,19 @@ const member: PublicUser = {
   name: 'أحمد',
   avatar_url: null,
   bio: null,
+  verified: true,
 };
 
 describe('createPublicUsersRepository', () => {
   it('lists the newest members with the public projection', async () => {
-    const { supabase } = createClient({ list: [member] });
+    const { supabase, eqFilters } = createClient({ list: [member] });
     const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
 
     const result = await repo.list(8);
 
     expect(result).toEqual([member]);
     expect(supabase.from).toHaveBeenCalledWith('users');
+    expect(eqFilters).toContainEqual(['verified', true]);
   });
 
   it('returns the exact roster total, independent of the page size', async () => {
@@ -61,12 +63,13 @@ describe('createPublicUsersRepository', () => {
   });
 
   it('sanitizes the search term before it reaches the or() filter', async () => {
-    const { supabase, orFilters } = createClient({ list: [member] });
+    const { supabase, orFilters, eqFilters } = createClient({ list: [member] });
     const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
 
     await repo.search('ahmad,admin(test)', 5);
 
     expect(orFilters).toContain('name.ilike.%ahmad admin test%,username.ilike.%ahmad admin test%');
+    expect(eqFilters).toContainEqual(['verified', true]);
   });
 
   it('returns nothing for a term made only of delimiters', async () => {

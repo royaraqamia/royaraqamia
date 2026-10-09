@@ -3,7 +3,7 @@ import type { Database } from '@/backend/models/database.types';
 import type { PublicUser } from '@/shared/contracts/users';
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 
-const PUBLIC_USER_COLUMNS = 'id, username, name, avatar_url, bio';
+const PUBLIC_USER_COLUMNS = 'id, username, name, avatar_url, bio, verified';
 
 /**
  * Read access to the public member directory.
@@ -11,13 +11,16 @@ const PUBLIC_USER_COLUMNS = 'id, username, name, avatar_url, bio';
  * `public.users` is not readable by the anon client the feed runs on (RLS scopes
  * it to the owning session), so callers wire this to the service role and the
  * projection above keeps email, `is_admin` and every other private column out of
- * the returned shape.
+ * the returned shape. Directory reads are scoped to verified members so
+ * unconfirmed signups never surface; `getByUsername` stays unfiltered because it
+ * also backs the handle-uniqueness check.
  */
 export interface PublicUsersRepository {
-  /** Newest members first — the community page's "who's here" list. */
+  /** Newest verified members first — the community page's "who's here" list. */
   list(limit: number): Promise<PublicUser[]>;
   /** Total members, for the roster badge. Independent of how many are shown. */
   count(): Promise<number>;
+  /** Verified members matching the term. */
   search(query: string, limit: number): Promise<PublicUser[]>;
   getByUsername(username: string): Promise<PublicUser | null>;
   getById(id: string): Promise<PublicUser | null>;
@@ -31,6 +34,7 @@ export function createPublicUsersRepository(
       const { data, error } = await supabase
         .from('users')
         .select(PUBLIC_USER_COLUMNS)
+        .eq('verified', true)
         .order('created_at', { ascending: false })
         .limit(limit);
 
@@ -55,6 +59,7 @@ export function createPublicUsersRepository(
         .from('users')
         .select(PUBLIC_USER_COLUMNS)
         .or(`name.ilike.%${term}%,username.ilike.%${term}%`)
+        .eq('verified', true)
         .order('name', { ascending: true, nullsFirst: false })
         .limit(limit);
 

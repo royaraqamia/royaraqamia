@@ -15,7 +15,9 @@ vi.mock('@/frontend/ui/shared/member-avatar', () => ({
 }));
 
 const results: CommunitySearchResult = {
-  people: [{ id: 'u-1', username: 'ahmad', name: 'أحمد', avatar_url: null, bio: null }],
+  people: [
+    { id: 'u-1', username: 'ahmad', name: 'أحمد', avatar_url: null, bio: null, verified: true },
+  ],
   posts: [
     {
       id: 'p-1',

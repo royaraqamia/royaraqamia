@@ -1484,6 +1484,7 @@ export type Database = {
           is_admin: boolean;
           name: string | null;
           username: string;
+          verified: boolean;
         };
         Insert: {
           avatar_url?: string | null;
@@ -1494,6 +1495,7 @@ export type Database = {
           is_admin?: boolean;
           name?: string | null;
           username?: string;
+          verified?: boolean;
         };
         Update: {
           avatar_url?: string | null;
@@ -1504,6 +1506,7 @@ export type Database = {
           is_admin?: boolean;
           name?: string | null;
           username?: string;
+          verified?: boolean;
         };
         Relationships: [];
       };

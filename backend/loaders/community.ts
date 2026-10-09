@@ -134,7 +134,7 @@ export interface CommunityMemberPage {
 export const loadCommunityMember = unstable_cache(
   async (username: string): Promise<CommunityMemberPage | null> => {
     const member = await createPublicUsersRepositoryServer().getByUsername(username);
-    if (!member) return null;
+    if (!member || !member.verified) return null;
 
     const feed = await pub().getPublishedFeed(
       null,
