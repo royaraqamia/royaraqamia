@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, ClipboardList, ShieldCheck, LogOut } from 'lucide-react';
+import { User, ClipboardList, ShieldCheck, LogOut, MessageCircle } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
+import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 function AccountSkeleton() {
@@ -100,6 +101,16 @@ export function AccountView() {
             </span>
           </Link>
         )}
+
+        <a href={getWhatsAppUrl()} target="_blank" rel="noopener noreferrer" className={rowClasses}>
+          <span className="flex items-center gap-2.5">
+            <MessageCircle className="w-4 h-4 shrink-0 text-primary" />
+            <span>تواصل معنا</span>
+          </span>
+          <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
+            ←
+          </span>
+        </a>
 
         <button
           type="button"

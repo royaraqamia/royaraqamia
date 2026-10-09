@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
  *
  * Each float is a `next/dynamic` chunk with `ssr: false`, and the whole group
  * only mounts after the first pass of React's commit phase (`setTimeout 0`).
- * Nothing visible is delayed and there is zero layout shift: all three
+ * Nothing visible is delayed and there is zero layout shift: both
  * components render `null` until user scroll / a 1s timer / a detected
  * update anyway.
  * NOTE (measured, Next 16 / Turbopack): the merged dynamic chunk (which also
@@ -16,11 +16,6 @@ import { useEffect, useState } from 'react';
  * non-blocking <script async> in prerendered HTML; execution stays deferred.
  */
 const GoUpButton = dynamic(() => import('./GoUpButton').then((m) => m.GoUpButton), {
-  ssr: false,
-  loading: () => null,
-});
-
-const WhatsAppFloat = dynamic(() => import('./WhatsAppFloat').then((m) => m.WhatsAppFloat), {
   ssr: false,
   loading: () => null,
 });
@@ -44,7 +39,6 @@ export function FloatingActions() {
     <>
       <VersionChecker />
       <GoUpButton />
-      <WhatsAppFloat />
     </>
   );
 }

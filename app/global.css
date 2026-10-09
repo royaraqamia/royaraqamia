@@ -1177,68 +1177,6 @@
   color: hsl(var(--destructive));
 }
 
-/* WhatsApp Floating Button - Optimized */
-.whatsapp-float-btn {
-  position: fixed;
-  left: 20px;
-  bottom: 20px;
-  width: 64px;
-  height: 64px;
-  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4);
-  color: #ffffff;
-  z-index: 9999;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0;
-  transform: scale(0.8) translateY(20px);
-  pointer-events: none;
-}
-
-.whatsapp-float-btn.visible {
-  opacity: 1;
-  transform: scale(1) translateY(0);
-  pointer-events: auto;
-}
-
-.whatsapp-float-btn:hover {
-  transform: scale(1.1) translateY(-4px);
-  box-shadow: 0 8px 30px rgba(37, 211, 102, 0.5);
-}
-
-.whatsapp-float-btn:active {
-  transform: scale(0.95);
-}
-
-@media (max-width: 768px) {
-  .whatsapp-float-btn {
-    width: 56px;
-    height: 56px;
-    left: 16px;
-    bottom: 16px;
-  }
-
-  .whatsapp-float-btn svg {
-    width: 24px;
-    height: 24px;
-  }
-}
-
-.whatsapp-float-btn:focus-visible {
-  outline: 3px solid #8b5cf6;
-  outline-offset: 4px;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .whatsapp-float-btn {
-    animation: none !important;
-    transition: opacity 0.2s ease;
-  }
-}
-
 /* Go Up Button - Optimized for Performance & Accessibility */
 .go-up-btn {
   position: fixed;
@@ -1484,7 +1422,6 @@
   }
 
   /* Lift the floating utilities above the tab bar. */
-  .whatsapp-float-btn,
   .go-up-btn,
   .compose-fab-btn {
     bottom: calc(3.5rem + env(safe-area-inset-bottom) + 0.75rem);
@@ -1670,8 +1607,7 @@
   .card-hover:hover,
   .btn-hover-lift:hover,
   .hover-lift:hover,
-  .whatsapp-float,
-  .whatsapp-float-btn {
+  .whatsapp-float {
     transform: none !important;
   }
 }

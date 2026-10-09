@@ -6,8 +6,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/frontend/shared/cn';
-import { User, UserRound, LogOut, Download, ShieldCheck, ClipboardList } from 'lucide-react';
+import {
+  User,
+  UserRound,
+  LogOut,
+  Download,
+  ShieldCheck,
+  ClipboardList,
+  MessageCircle,
+} from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
+import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { ResponsiveSheetScrim } from '@/frontend/ui/primitives/responsive-sheet';
 import { usePWAContext } from '../PWAProvider';
 import { ConfirmDialog } from './confirm-dialog';
@@ -177,6 +186,21 @@ export const UserDropdown = memo(function UserDropdown() {
                         </div>
                       </Link>
                     )}
+
+                    {/* Contact Us — opens WhatsApp, same behaviour as the old float */}
+                    <a
+                      href={getWhatsAppUrl()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={() => setIsOpen(false)}
+                      className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      role="menuitem"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <MessageCircle className="w-4 h-4 shrink-0 text-primary" />
+                        <span>تواصل معنا</span>
+                      </div>
+                    </a>
 
                     {/* Sign Out Item */}
                     <button
