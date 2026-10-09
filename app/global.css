@@ -1491,6 +1491,30 @@
   }
 }
 
+/* ========================================
+   RESPONSIVE DROPDOWNS → BOTTOM SHEETS (< lg)
+   Radix floats popover/menu/select panels by writing inline styles on its own
+   `[data-radix-popper-content-wrapper]` node, which components cannot reach.
+   Below `lg` we reparent that wrapper to the viewport bottom whenever it holds a
+   panel that opted in via `data-responsive-sheet` (see
+   `frontend/ui/primitives/responsive-sheet.tsx`). Overrides must be
+   `!important` to beat Radix's inline placement.
+   ======================================== */
+@media (max-width: 1023px) {
+  [data-radix-popper-content-wrapper]:has(> [data-responsive-sheet]) {
+    position: fixed !important;
+    inset: auto 0 0 0 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    margin: 0 !important;
+    transform: none !important;
+    z-index: 11000 !important;
+  }
+}
+
 /* Form Validation Styles */
 .input-error {
   @apply border-destructive focus:ring-destructive/50;

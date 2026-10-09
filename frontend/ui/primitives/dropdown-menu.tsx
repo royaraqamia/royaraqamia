@@ -5,6 +5,11 @@ import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
 import { CheckIcon, ChevronRightIcon, CircleIcon } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import {
+  RESPONSIVE_SHEET_PROPS,
+  RESPONSIVE_SHEET_CONTENT_CLASSES,
+  ResponsiveSheetScrim,
+} from '@/frontend/ui/primitives/responsive-sheet';
 
 function DropdownMenu({ ...props }: React.ComponentProps<typeof DropdownMenuPrimitive.Root>) {
   return <DropdownMenuPrimitive.Root data-slot="dropdown-menu" {...props} />;
@@ -29,19 +34,25 @@ function DropdownMenuContent({
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
   return (
     <DropdownMenuPrimitive.Portal>
-      <DropdownMenuPrimitive.Content
-        data-slot="dropdown-menu-content"
-        sideOffset={sideOffset}
-        className={cn(
-          'bg-popover text-popover-foreground',
-          'border border-border/60 shadow-2xl shadow-black/40 ring-1 ring-white/10',
-          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
-          'z-11000 max-h-(--radix-dropdown-menu-content-available-height) min-w-48 max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-2xl p-1.5',
-          'contain-layout contain-style',
-          className
-        )}
-        {...props}
-      />
+      <div className="contents">
+        <ResponsiveSheetScrim />
+        <DropdownMenuPrimitive.Content
+          data-slot="dropdown-menu-content"
+          {...RESPONSIVE_SHEET_PROPS}
+          sideOffset={sideOffset}
+          className={cn(
+            'bg-popover text-popover-foreground',
+            'border border-border/60 shadow-2xl shadow-black/40 ring-1 ring-white/10',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
+            'z-11000 max-h-(--radix-dropdown-menu-content-available-height) min-w-48 max-w-[calc(100vw-2rem)] origin-(--radix-dropdown-menu-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-2xl p-1.5',
+            'contain-layout contain-style',
+            RESPONSIVE_SHEET_CONTENT_CLASSES,
+            'max-lg:min-w-0 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+            className
+          )}
+          {...props}
+        />
+      </div>
     </DropdownMenuPrimitive.Portal>
   );
 }
@@ -66,6 +77,7 @@ function DropdownMenuItem({
       data-variant={variant}
       className={cn(
         'group relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg px-2.5 py-2 text-xs md:text-sm font-medium outline-none transition-[background-color,color,transform] duration-150 ease-out',
+        'max-lg:py-3 max-lg:text-sm',
         'focus:bg-accent focus:text-accent-foreground active:scale-[0.98]',
         'data-disabled:pointer-events-none data-disabled:opacity-40',
         'data-[inset=true]:ps-8',
@@ -89,6 +101,7 @@ function DropdownMenuCheckboxItem({
       data-slot="dropdown-menu-checkbox-item"
       className={cn(
         'group relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg py-2 pe-2.5 ps-8 text-xs md:text-sm font-medium outline-none transition-[background-color,color,transform] duration-150 ease-out',
+        'max-lg:py-3 max-lg:text-sm',
         'focus:bg-accent focus:text-accent-foreground active:scale-[0.98]',
         'data-disabled:pointer-events-none data-disabled:opacity-40',
         '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4',
@@ -123,6 +136,7 @@ function DropdownMenuRadioItem({
       data-slot="dropdown-menu-radio-item"
       className={cn(
         'group relative flex cursor-pointer select-none items-center gap-2.5 rounded-lg py-2 pe-2.5 ps-8 text-xs md:text-sm font-medium outline-none transition-[background-color,color,transform] duration-150 ease-out',
+        'max-lg:py-3 max-lg:text-sm',
         'focus:bg-accent focus:text-accent-foreground active:scale-[0.98]',
         'data-disabled:pointer-events-none data-disabled:opacity-40',
         '[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*="size-"])]:size-4',

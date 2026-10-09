@@ -22,6 +22,7 @@ import { useNotifications } from '@/frontend/state/NotificationContext';
 import { useSession } from '@/frontend/state/session-provider';
 import { cn } from '@/frontend/shared/cn';
 import { ScrollArea } from '@/frontend/ui/primitives/scroll-area';
+import { ResponsiveSheetScrim } from '@/frontend/ui/primitives/responsive-sheet';
 import { usePortalPopover } from './use-portal-popover';
 import { PushNotificationToggle } from './push-notification-toggle';
 
@@ -127,179 +128,183 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
 
       {isOpen &&
         createPortal(
-          <div
-            ref={panelRef}
-            data-glass-panel
-            style={style}
-            className={cn(
-              'z-50 overflow-hidden will-change-[transform,opacity] contain-layout contain-style',
-              'bg-popover/90 border border-border/80 shadow-2xl rounded-2xl',
-              'animate-in fade-in-0 zoom-in-95 duration-200 ease-out'
-            )}
-            onKeyDown={handleKeyDown}
-            role="menu"
-            aria-label="قائمة الإشعارات"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3.5 border-b border-border/60">
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-sm tracking-tight text-foreground">الإشعارات</h3>
+          <>
+            <ResponsiveSheetScrim />
+            <div
+              ref={panelRef}
+              data-glass-panel
+              style={style}
+              className={cn(
+                'z-50 overflow-hidden will-change-[transform,opacity] contain-layout contain-style',
+                'bg-popover/90 border border-border/80 shadow-2xl rounded-2xl',
+                'animate-in fade-in-0 zoom-in-95 duration-200 ease-out',
+                'max-lg:z-[11000] max-lg:max-h-[85dvh] max-lg:rounded-b-none max-lg:rounded-t-3xl max-lg:border-x-0 max-lg:border-b-0 max-lg:slide-in-from-bottom-4'
+              )}
+              onKeyDown={handleKeyDown}
+              role="menu"
+              aria-label="قائمة الإشعارات"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 py-3.5 border-b border-border/60">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-sm tracking-tight text-foreground">الإشعارات</h3>
+                  {unreadCount > 0 && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary">
+                      {unreadCount} جديد
+                    </span>
+                  )}
+                </div>
                 {unreadCount > 0 && (
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-primary/10 text-primary">
-                    {unreadCount} جديد
-                  </span>
+                  <button
+                    onClick={() => markAllAsRead()}
+                    className="text-xs font-medium text-primary hover:text-primary/80 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-safe duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
+                  >
+                    <Check size={14} className="shrink-0" />
+                    <span>تحديد الكل كمقروء</span>
+                  </button>
                 )}
               </div>
-              {unreadCount > 0 && (
-                <button
-                  onClick={() => markAllAsRead()}
-                  className="text-xs font-medium text-primary hover:text-primary/80 hover:bg-primary/10 px-2.5 py-1 rounded-lg transition-safe duration-150 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95"
-                >
-                  <Check size={14} className="shrink-0" />
-                  <span>تحديد الكل كمقروء</span>
-                </button>
-              )}
-            </div>
 
-            {/* List Content */}
-            {/* The scroll constraint must live on Radix's viewport (not just
+              {/* List Content */}
+              {/* The scroll constraint must live on Radix's viewport (not just
                 the overflow-hidden root) or tall lists get clipped instead of
                 scrolled. */}
-            <ScrollArea className="max-h-95 min-h-40 *:data-[slot=scroll-area-viewport]:max-h-95">
-              {!user ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <div className="p-3.5 rounded-full bg-muted/60 text-muted-foreground/80 mb-3 border border-border/40 shadow-inner">
-                    <Bell size={24} />
-                  </div>
-                  <p className="text-sm font-bold text-foreground">
-                    سجِّل الدُّخول لمتابعة إشعاراتك
-                  </p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
-                    تابع التَّنبيهات الخاصَّة بحسابك بعد تسجيل الدُّخول
-                  </p>
-                  <Link
-                    href={loginHref}
-                    onClick={() => setIsOpen(false)}
-                    className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-xs transition-safe duration-150 ease-out hover:bg-primary/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                  >
-                    تسجيل الدُّخول
-                  </Link>
-                </div>
-              ) : isLoading ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
-                </div>
-              ) : notifications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                  <div className="p-3.5 rounded-full bg-muted/60 text-muted-foreground/80 mb-3 border border-border/40 shadow-inner">
-                    <Bell size={24} />
-                  </div>
-                  <p className="text-sm font-bold text-foreground">لا توجد إشعارات</p>
-                  <p className="text-xs text-muted-foreground/70 mt-1">
-                    ستظهر هنا الإشعارات والتَّنبيهات الجديدة
-                  </p>
-                </div>
-              ) : (
-                <ul ref={listRef} className="divide-y divide-border/40" role="listbox">
-                  {notifications.map((notification) => (
-                    <li
-                      key={notification.id}
-                      className={cn(
-                        'px-4 py-3.5 transition-safe duration-200 ease-out relative group cursor-pointer select-none',
-                        'focus-visible:bg-accent/80 focus-visible:outline-none',
-                        !notification.is_read
-                          ? 'bg-primary/4 dark:bg-primary/8 hover:bg-primary/8 dark:hover:bg-primary/[0.14]'
-                          : 'hover:bg-muted/50'
-                      )}
-                      onClick={() => {
-                        if (!notification.is_read) markAsRead(notification.id);
-                      }}
-                      role="menuitem"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          if (!notification.is_read) markAsRead(notification.id);
-                        }
-                      }}
+              <ScrollArea className="max-h-95 min-h-40 *:data-[slot=scroll-area-viewport]:max-h-95">
+                {!user ? (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <div className="p-3.5 rounded-full bg-muted/60 text-muted-foreground/80 mb-3 border border-border/40 shadow-inner">
+                      <Bell size={24} />
+                    </div>
+                    <p className="text-sm font-bold text-foreground">
+                      سجِّل الدُّخول لمتابعة إشعاراتك
+                    </p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      تابع التَّنبيهات الخاصَّة بحسابك بعد تسجيل الدُّخول
+                    </p>
+                    <Link
+                      href={loginHref}
+                      onClick={() => setIsOpen(false)}
+                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-xs transition-safe duration-150 ease-out hover:bg-primary/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                     >
-                      {/* Delete Action Button */}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteNotification(notification.id);
-                        }}
+                      تسجيل الدُّخول
+                    </Link>
+                  </div>
+                ) : isLoading ? (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <div className="w-6 h-6 border-2 border-primary/30 border-t-primary rounded-full animate-spin mb-3" />
+                    <p className="text-sm font-medium text-muted-foreground">جاري التَّحميل...</p>
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                    <div className="p-3.5 rounded-full bg-muted/60 text-muted-foreground/80 mb-3 border border-border/40 shadow-inner">
+                      <Bell size={24} />
+                    </div>
+                    <p className="text-sm font-bold text-foreground">لا توجد إشعارات</p>
+                    <p className="text-xs text-muted-foreground/70 mt-1">
+                      ستظهر هنا الإشعارات والتَّنبيهات الجديدة
+                    </p>
+                  </div>
+                ) : (
+                  <ul ref={listRef} className="divide-y divide-border/40" role="listbox">
+                    {notifications.map((notification) => (
+                      <li
+                        key={notification.id}
                         className={cn(
-                          'absolute top-3 inset-inline-end-3 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
-                          'p-1.5 rounded-lg text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10',
-                          'transition-safe duration-150 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive'
+                          'px-4 py-3.5 transition-safe duration-200 ease-out relative group cursor-pointer select-none',
+                          'focus-visible:bg-accent/80 focus-visible:outline-none',
+                          !notification.is_read
+                            ? 'bg-primary/4 dark:bg-primary/8 hover:bg-primary/8 dark:hover:bg-primary/[0.14]'
+                            : 'hover:bg-muted/50'
                         )}
-                        aria-label="حذف الإشعار"
+                        onClick={() => {
+                          if (!notification.is_read) markAsRead(notification.id);
+                        }}
+                        role="menuitem"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            if (!notification.is_read) markAsRead(notification.id);
+                          }
+                        }}
                       >
-                        <X size={14} />
-                      </button>
-
-                      <div className="flex items-start gap-3.5 pe-6">
-                        {/* Icon Avatar */}
-                        <div
+                        {/* Delete Action Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteNotification(notification.id);
+                          }}
                           className={cn(
-                            'p-2.5 rounded-xl text-foreground shrink-0 transition-colors duration-200 flex items-center justify-center',
-                            !notification.is_read
-                              ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
-                              : 'bg-muted/80 text-muted-foreground group-hover:bg-muted group-hover:text-foreground'
+                            'absolute top-3 inset-inline-end-3 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100',
+                            'p-1.5 rounded-lg text-muted-foreground/70 hover:text-destructive hover:bg-destructive/10',
+                            'transition-safe duration-150 focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-destructive'
                           )}
+                          aria-label="حذف الإشعار"
                         >
-                          {typeIcons[notification.type] ?? <Bell size={18} />}
-                        </div>
+                          <X size={14} />
+                        </button>
 
-                        {/* Item Text Content */}
-                        <div className="flex-1 min-w-0 pt-0.5">
-                          <div className="flex items-center justify-between gap-2">
-                            <p
-                              className={cn(
-                                'text-sm leading-snug tracking-tight',
-                                !notification.is_read
-                                  ? 'font-bold text-foreground'
-                                  : 'font-medium text-foreground/80'
-                              )}
-                            >
-                              {notification.title}
-                            </p>
-                            {!notification.is_read && (
-                              <span
-                                className="w-2 h-2 rounded-full bg-primary shrink-0 ring-4 ring-primary/20"
-                                role="status"
-                              >
-                                <span className="sr-only">غير مقروء</span>
-                              </span>
+                        <div className="flex items-start gap-3.5 pe-6">
+                          {/* Icon Avatar */}
+                          <div
+                            className={cn(
+                              'p-2.5 rounded-xl text-foreground shrink-0 transition-colors duration-200 flex items-center justify-center',
+                              !notification.is_read
+                                ? 'bg-primary/10 text-primary ring-1 ring-primary/20'
+                                : 'bg-muted/80 text-muted-foreground group-hover:bg-muted group-hover:text-foreground'
                             )}
+                          >
+                            {typeIcons[notification.type] ?? <Bell size={18} />}
                           </div>
 
-                          {notification.body && (
-                            <p className="text-xs text-muted-foreground/80 mt-1 leading-relaxed line-clamp-2 font-normal">
-                              {notification.body}
+                          {/* Item Text Content */}
+                          <div className="flex-1 min-w-0 pt-0.5">
+                            <div className="flex items-center justify-between gap-2">
+                              <p
+                                className={cn(
+                                  'text-sm leading-snug tracking-tight',
+                                  !notification.is_read
+                                    ? 'font-bold text-foreground'
+                                    : 'font-medium text-foreground/80'
+                                )}
+                              >
+                                {notification.title}
+                              </p>
+                              {!notification.is_read && (
+                                <span
+                                  className="w-2 h-2 rounded-full bg-primary shrink-0 ring-4 ring-primary/20"
+                                  role="status"
+                                >
+                                  <span className="sr-only">غير مقروء</span>
+                                </span>
+                              )}
+                            </div>
+
+                            {notification.body && (
+                              <p className="text-xs text-muted-foreground/80 mt-1 leading-relaxed line-clamp-2 font-normal">
+                                {notification.body}
+                              </p>
+                            )}
+
+                            <p className="text-[11px] font-medium text-muted-foreground/60 mt-1.5 flex items-center gap-1">
+                              {notification.timeAgo}
                             </p>
-                          )}
-
-                          <p className="text-[11px] font-medium text-muted-foreground/60 mt-1.5 flex items-center gap-1">
-                            {notification.timeAgo}
-                          </p>
+                          </div>
                         </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </ScrollArea>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </ScrollArea>
 
-            {/* Footer: OS-level push toggle (signed-in users only) */}
-            {user && (
-              <div className="border-t border-border/60">
-                <PushNotificationToggle />
-              </div>
-            )}
-          </div>,
+              {/* Footer: OS-level push toggle (signed-in users only) */}
+              {user && (
+                <div className="border-t border-border/60">
+                  <PushNotificationToggle />
+                </div>
+              )}
+            </div>
+          </>,
           document.body
         )}
     </div>

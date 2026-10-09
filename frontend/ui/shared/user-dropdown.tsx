@@ -8,6 +8,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/frontend/shared/cn';
 import { User, UserRound, LogOut, Download, ShieldCheck, ClipboardList } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
+import { ResponsiveSheetScrim } from '@/frontend/ui/primitives/responsive-sheet';
 import { usePWAContext } from '../PWAProvider';
 import { ConfirmDialog } from './confirm-dialog';
 import { usePortalPopover } from './use-portal-popover';
@@ -103,137 +104,140 @@ export const UserDropdown = memo(function UserDropdown() {
       {/* Popover Dropdown */}
       {isOpen &&
         createPortal(
-          <div
-            ref={panelRef}
-            data-glass-panel
-            style={style}
-            className="z-50 rounded-2xl bg-popover/90 border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto will-change-[transform,opacity] contain-layout contain-style"
-            role="menu"
-            aria-label="قائمة المستخدِم"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                setIsOpen(false);
-              }
-            }}
-          >
-            {user ? (
-              <div className="space-y-1">
-                {/* Profile Card Header */}
-                <div className="px-3 py-2.5 rounded-xl bg-muted/40 border border-border/40 flex items-center gap-3">
-                  <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-xs">
-                    {userName ? userName.charAt(0).toUpperCase() : <User size={16} />}
-                    {showAvatar && (
-                      <Image
-                        src={avatarUrl!}
-                        alt=""
-                        width={32}
-                        height={32}
-                        unoptimized
-                        onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                        }}
-                        className="absolute inset-0 h-full w-full object-cover"
-                      />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1 text-right">
-                    <p className="text-xs font-bold text-foreground truncate">
-                      {userName || userEmail || 'المستخدِم'}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {userEmail || 'حساب نشط'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="divide-y divide-border/40">
-                  {/* My Submissions — the account-based edit path */}
-                  <Link
-                    href="/account/submissions"
-                    onClick={() => setIsOpen(false)}
-                    className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                    role="menuitem"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
-                      <span>طلباتي</span>
+          <>
+            <ResponsiveSheetScrim />
+            <div
+              ref={panelRef}
+              data-glass-panel
+              style={style}
+              className="z-50 rounded-2xl bg-popover/90 border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto will-change-[transform,opacity] contain-layout contain-style max-lg:z-[11000] max-lg:max-h-[85dvh] max-lg:rounded-b-none max-lg:rounded-t-3xl max-lg:border-x-0 max-lg:border-b-0 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-lg:origin-bottom max-lg:slide-in-from-bottom-4"
+              role="menu"
+              aria-label="قائمة المستخدِم"
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  setIsOpen(false);
+                }
+              }}
+            >
+              {user ? (
+                <div className="space-y-1">
+                  {/* Profile Card Header */}
+                  <div className="px-3 py-2.5 rounded-xl bg-muted/40 border border-border/40 flex items-center gap-3">
+                    <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-xs">
+                      {userName ? userName.charAt(0).toUpperCase() : <User size={16} />}
+                      {showAvatar && (
+                        <Image
+                          src={avatarUrl!}
+                          alt=""
+                          width={32}
+                          height={32}
+                          unoptimized
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none';
+                          }}
+                          className="absolute inset-0 h-full w-full object-cover"
+                        />
+                      )}
                     </div>
-                  </Link>
+                    <div className="min-w-0 flex-1 text-right">
+                      <p className="text-xs font-bold text-foreground truncate">
+                        {userName || userEmail || 'المستخدِم'}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground truncate">
+                        {userEmail || 'حساب نشط'}
+                      </p>
+                    </div>
+                  </div>
 
-                  {/* Admin Console (Admins only — the flag defaults to false) */}
-                  {isAdmin && (
+                  <div className="divide-y divide-border/40">
+                    {/* My Submissions — the account-based edit path */}
                     <Link
-                      href="/admin"
+                      href="/account/submissions"
                       onClick={() => setIsOpen(false)}
                       className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                       role="menuitem"
                     >
                       <div className="flex items-center gap-2.5">
-                        <ShieldCheck className="w-4 h-4 shrink-0 text-primary" />
-                        <span>الإدارة</span>
+                        <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
+                        <span>طلباتي</span>
                       </div>
                     </Link>
-                  )}
 
-                  {/* Sign Out Item */}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsOpen(false);
-                      setIsLogoutDialogOpen(true);
-                    }}
-                    className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-destructive/90 hover:text-destructive hover:bg-destructive/10 active:bg-destructive/15 rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
-                    role="menuitem"
-                  >
-                    <div className="flex items-center gap-2.5">
-                      <LogOut className="w-4 h-4 shrink-0 text-destructive" />
-                      <span>تسجيل الخروج</span>
-                    </div>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              /* Login Link */
-              <a
-                href={
-                  pathname && !AUTH_PATHS.some((p) => pathname.startsWith(p)) && pathname !== '/'
-                    ? `/auth/login?redirect=${encodeURIComponent(pathname)}`
-                    : '/auth/login'
-                }
-                onClick={() => setIsOpen(false)}
-                className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-                role="menuitem"
-              >
-                <div className="flex items-center gap-2.5">
-                  <User className="w-4 h-4 shrink-0 text-primary" />
-                  <span>تسجيل الدُّخول</span>
-                </div>
-              </a>
-            )}
+                    {/* Admin Console (Admins only — the flag defaults to false) */}
+                    {isAdmin && (
+                      <Link
+                        href="/admin"
+                        onClick={() => setIsOpen(false)}
+                        className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                        role="menuitem"
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <ShieldCheck className="w-4 h-4 shrink-0 text-primary" />
+                          <span>الإدارة</span>
+                        </div>
+                      </Link>
+                    )}
 
-            {/* PWA Install Button */}
-            {canInstall && !isInstalled && (
-              <div className="pt-1 mt-1 border-t border-border/50">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setIsOpen(false);
-                    await promptInstall();
-                  }}
-                  className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                    {/* Sign Out Item */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsOpen(false);
+                        setIsLogoutDialogOpen(true);
+                      }}
+                      className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-destructive/90 hover:text-destructive hover:bg-destructive/10 active:bg-destructive/15 rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30"
+                      role="menuitem"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <LogOut className="w-4 h-4 shrink-0 text-destructive" />
+                        <span>تسجيل الخروج</span>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Login Link */
+                <a
+                  href={
+                    pathname && !AUTH_PATHS.some((p) => pathname.startsWith(p)) && pathname !== '/'
+                      ? `/auth/login?redirect=${encodeURIComponent(pathname)}`
+                      : '/auth/login'
+                  }
+                  onClick={() => setIsOpen(false)}
+                  className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
                   role="menuitem"
                 >
                   <div className="flex items-center gap-2.5">
-                    <Download className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                    <span>تثبيت التَّطبيق</span>
+                    <User className="w-4 h-4 shrink-0 text-primary" />
+                    <span>تسجيل الدُّخول</span>
                   </div>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    يُنصَح بتثبيته
-                  </span>
-                </button>
-              </div>
-            )}
-          </div>,
+                </a>
+              )}
+
+              {/* PWA Install Button */}
+              {canInstall && !isInstalled && (
+                <div className="pt-1 mt-1 border-t border-border/50">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setIsOpen(false);
+                      await promptInstall();
+                    }}
+                    className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-emerald-500/10 hover:text-emerald-600 dark:hover:text-emerald-400 rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30"
+                    role="menuitem"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Download className="w-4 h-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <span>تثبيت التَّطبيق</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      يُنصَح بتثبيته
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </>,
           document.body
         )}
 

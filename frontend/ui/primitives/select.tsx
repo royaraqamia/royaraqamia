@@ -5,9 +5,44 @@ import * as SelectPrimitive from '@radix-ui/react-select';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
+import {
+  RESPONSIVE_SHEET_PROPS,
+  RESPONSIVE_SHEET_CONTENT_CLASSES,
+  ResponsiveSheetScrim,
+} from '@/frontend/ui/primitives/responsive-sheet';
 
-function Select(props: React.ComponentProps<typeof SelectPrimitive.Root>) {
-  return <SelectPrimitive.Root data-slot="select" {...props} />;
+/** Tracks the select's open state so the scrim only mounts while it is open —
+ *  Radix's `Select.Portal` renders its children even when closed. */
+const SelectOpenContext = React.createContext(false);
+
+function Select({
+  open,
+  defaultOpen,
+  onOpenChange,
+  ...props
+}: React.ComponentProps<typeof SelectPrimitive.Root>) {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(defaultOpen ?? false);
+  const isControlled = open !== undefined;
+  const resolvedOpen = isControlled ? open : uncontrolledOpen;
+  const handleOpenChange = React.useCallback(
+    (next: boolean) => {
+      if (!isControlled) setUncontrolledOpen(next);
+      onOpenChange?.(next);
+    },
+    [isControlled, onOpenChange]
+  );
+
+  return (
+    <SelectOpenContext.Provider value={resolvedOpen}>
+      <SelectPrimitive.Root
+        data-slot="select"
+        open={open}
+        defaultOpen={defaultOpen}
+        onOpenChange={handleOpenChange}
+        {...props}
+      />
+    </SelectOpenContext.Provider>
+  );
 }
 
 function SelectGroup(props: React.ComponentProps<typeof SelectPrimitive.Group>) {
@@ -61,38 +96,46 @@ function SelectContent({
 }: React.ComponentProps<typeof SelectPrimitive.Content> & {
   position?: 'popper' | 'item-aligned';
 }) {
+  const open = React.useContext(SelectOpenContext);
+
   return (
     <SelectPrimitive.Portal>
-      <SelectPrimitive.Content
-        data-slot="select-content"
-        className={cn(
-          'relative z-11000 min-w-32 max-h-(--radix-select-content-available-height) origin-(--radix-select-content-transform-origin) overflow-hidden rounded-2xl border border-border/60 bg-popover p-1 text-popover-foreground shadow-2xl transition-[opacity,transform]',
-          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 duration-200 ease-out',
-          'contain-layout contain-style',
-          position === 'popper' &&
-            'data-[side=bottom]:translate-y-1.5 data-[side=left]:-translate-x-1.5 data-[side=right]:translate-x-1.5 data-[side=top]:-translate-y-1.5',
-          className
-        )}
-        position={position}
-        {...props}
-      >
-        <SelectScrollUpButton />
-        <SelectPrimitive.Viewport
+      <div className="contents">
+        {open ? <ResponsiveSheetScrim /> : null}
+        <SelectPrimitive.Content
+          data-slot="select-content"
+          {...RESPONSIVE_SHEET_PROPS}
           className={cn(
-            'p-1',
-            position === 'popper' && 'w-full min-w-(--radix-select-trigger-width) scroll-my-1'
+            'relative z-11000 min-w-32 max-h-(--radix-select-content-available-height) origin-(--radix-select-content-transform-origin) overflow-hidden rounded-2xl border border-border/60 bg-popover p-1 text-popover-foreground shadow-2xl transition-[opacity,transform]',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 duration-200 ease-out',
+            'contain-layout contain-style',
+            RESPONSIVE_SHEET_CONTENT_CLASSES,
+            'max-lg:min-w-0 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+            position === 'popper' &&
+              'data-[side=bottom]:translate-y-1.5 data-[side=left]:-translate-x-1.5 data-[side=right]:translate-x-1.5 data-[side=top]:-translate-y-1.5',
+            className
           )}
+          position={position}
+          {...props}
         >
-          {React.Children.count(children) > 0 ? (
-            children
-          ) : (
-            <div className="px-4 py-3 text-center text-xs font-medium text-muted-foreground/80">
-              لا توجد خيارات متاحة
-            </div>
-          )}
-        </SelectPrimitive.Viewport>
-        <SelectScrollDownButton />
-      </SelectPrimitive.Content>
+          <SelectScrollUpButton />
+          <SelectPrimitive.Viewport
+            className={cn(
+              'p-1',
+              position === 'popper' && 'w-full min-w-(--radix-select-trigger-width) scroll-my-1'
+            )}
+          >
+            {React.Children.count(children) > 0 ? (
+              children
+            ) : (
+              <div className="px-4 py-3 text-center text-xs font-medium text-muted-foreground/80">
+                لا توجد خيارات متاحة
+              </div>
+            )}
+          </SelectPrimitive.Viewport>
+          <SelectScrollDownButton />
+        </SelectPrimitive.Content>
+      </div>
     </SelectPrimitive.Portal>
   );
 }

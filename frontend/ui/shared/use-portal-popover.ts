@@ -10,8 +10,6 @@ import {
 } from 'react';
 
 const MOBILE_BREAKPOINT = 640;
-const MOBILE_TOP = 64;
-const MOBILE_SIDE = 16;
 const EDGE_PADDING = 8;
 const VERTICAL_OFFSET = 10;
 
@@ -48,13 +46,15 @@ export function usePortalPopover(
 
     let next: CSSProperties;
     if (isMobile) {
+      // Pinned to the viewport bottom as a sheet; the panel supplies its own
+      // rounded-top / safe-area chrome via `max-lg:` classes.
       next = {
         position: 'fixed',
-        top: MOBILE_TOP,
-        left: MOBILE_SIDE,
-        right: MOBILE_SIDE,
+        left: 0,
+        right: 0,
+        bottom: 0,
         width: 'auto',
-        maxHeight: maxHeight ? `calc(100vh - ${MOBILE_TOP}px - ${MOBILE_SIDE * 2}px)` : undefined,
+        maxHeight: '85dvh',
       };
     } else {
       const top = Math.min(rect.bottom + VERTICAL_OFFSET, viewportHeight - EDGE_PADDING);

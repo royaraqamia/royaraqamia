@@ -4,6 +4,11 @@ import * as React from 'react';
 import * as PopoverPrimitive from '@radix-ui/react-popover';
 
 import { cn } from '@/frontend/shared/cn';
+import {
+  RESPONSIVE_SHEET_PROPS,
+  RESPONSIVE_SHEET_CONTENT_CLASSES,
+  ResponsiveSheetScrim,
+} from '@/frontend/ui/primitives/responsive-sheet';
 
 function Popover({ ...props }: React.ComponentProps<typeof PopoverPrimitive.Root>) {
   return <PopoverPrimitive.Root data-slot="popover" {...props} />;
@@ -33,20 +38,26 @@ function PopoverContent({
 }: React.ComponentProps<typeof PopoverPrimitive.Content>) {
   return (
     <PopoverPrimitive.Portal>
-      <PopoverPrimitive.Content
-        data-slot="popover-content"
-        align={align}
-        sideOffset={sideOffset}
-        className={cn(
-          'bg-popover text-popover-foreground z-11000 w-72 max-w-[calc(100vw-2rem)] origin-(--radix-popover-content-transform-origin) rounded-2xl border border-border/80 p-4 text-sm tracking-tight shadow-2xl shadow-black/10 outline-none duration-200 ease-out sm:w-80 sm:p-5',
-          'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
-          'data-[side=bottom]:slide-in-from-top-2.5 data-[side=left]:slide-in-from-right-2.5 data-[side=right]:slide-in-from-left-2.5 data-[side=top]:slide-in-from-bottom-2.5',
-          'focus-visible:outline-none',
-          'contain-layout contain-style',
-          className
-        )}
-        {...props}
-      />
+      <div className="contents">
+        <ResponsiveSheetScrim />
+        <PopoverPrimitive.Content
+          data-slot="popover-content"
+          {...RESPONSIVE_SHEET_PROPS}
+          align={align}
+          sideOffset={sideOffset}
+          className={cn(
+            'bg-popover text-popover-foreground z-11000 w-72 max-w-[calc(100vw-2rem)] origin-(--radix-popover-content-transform-origin) rounded-2xl border border-border/80 p-4 text-sm tracking-tight shadow-2xl shadow-black/10 outline-none duration-200 ease-out sm:w-80 sm:p-5',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
+            'data-[side=bottom]:slide-in-from-top-2.5 data-[side=left]:slide-in-from-right-2.5 data-[side=right]:slide-in-from-left-2.5 data-[side=top]:slide-in-from-bottom-2.5',
+            'focus-visible:outline-none',
+            'contain-layout contain-style',
+            RESPONSIVE_SHEET_CONTENT_CLASSES,
+            'max-lg:pb-[max(1rem,env(safe-area-inset-bottom))]',
+            className
+          )}
+          {...props}
+        />
+      </div>
     </PopoverPrimitive.Portal>
   );
 }
