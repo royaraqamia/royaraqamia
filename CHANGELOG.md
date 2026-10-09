@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.67.0] - 2026-10-09
+
+### Changed
+- note that proxy.ts replaces middleware.ts
+- align verify, rates, downloader, and MCP guide widths with form pages
+
+### Added
+- show sign-in prompt to guests instead of redirecting
+- prompt guests to sign in from the compose FAB
+
+### Fixed
+- hide carousel scrollbars after global scrollbar change
+
 ## [1.66.0] - 2026-10-09
 
 ### Changed
