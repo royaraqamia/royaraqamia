@@ -117,7 +117,7 @@ export function DownloaderJobsView() {
         <EmptyState
           icon={Download}
           title="لا توجد طلبات"
-          description="ستظهر هنا طلبات التنزيل الواردة من صفحة مُنزِّل الوسائط."
+          description="ستظهر هنا طلبات التَّنزيل الواردة من صفحة مُنزِّل الوسائط."
         />
       )}
 

@@ -29,7 +29,7 @@ test('a public link becomes a downloadable file through the signed callback', as
   // before the status flips — there is no separate "save" button to click.
   const downloadPromise = page.waitForEvent('download', { timeout: 30_000 });
 
-  await page.getByRole('button', { name: 'ابدأ التنزيل' }).click();
+  await page.getByRole('button', { name: 'ابدأ التَّنزيل' }).click();
   await expect(page.getByText('الحالة: جاهز للتنزيل')).toBeVisible({ timeout: 30_000 });
 
   const download = await downloadPromise;

@@ -35,7 +35,7 @@ describe('DownloaderPage', () => {
   it('offers a recovery link for a ready file and no separate save button', () => {
     render(<DownloaderPage />);
 
-    const recovery = screen.getByRole('link', { name: 'لم يبدأ التنزيل؟ اضغط للحفظ' });
+    const recovery = screen.getByRole('link', { name: 'لم يبدأ التَّنزيل؟ اضغط للحفظ' });
     expect(recovery).toHaveAttribute('download', READY_JOB.file!.filename);
     expect(screen.queryByText('حفظ الملف')).not.toBeInTheDocument();
   });

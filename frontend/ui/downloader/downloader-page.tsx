@@ -150,7 +150,7 @@ export function DownloaderPage() {
                 isLoading={loading}
                 disabled={url.trim().length === 0 || blockedByTurnstile || probeRefusal !== null}
               >
-                ابدأ التنزيل
+                ابدأ التَّنزيل
               </Button>
               {submitted && (
                 <Button type="button" variant="ghost" onClick={reset} disabled={loading}>
@@ -182,7 +182,7 @@ export function DownloaderPage() {
               {job.status === 'ready' && job.file && (
                 <div className="flex flex-col gap-1.5">
                   <p className="text-sm text-muted-foreground">
-                    اكتمل التنزيل وبدأ حفظ الملف تلقائيًّا في جهازك.
+                    اكتمل التَّنزيل وبدأ حفظ الملف تلقائيًّا في جهازك.
                   </p>
                   {/* Recovery path: some mobile browsers ignore a programmatic save. */}
                   <a
@@ -190,7 +190,7 @@ export function DownloaderPage() {
                     download={job.file.filename}
                     className="text-sm font-bold text-primary hover:underline underline-offset-4"
                   >
-                    لم يبدأ التنزيل؟ اضغط للحفظ
+                    لم يبدأ التَّنزيل؟ اضغط للحفظ
                   </a>
                 </div>
               )}

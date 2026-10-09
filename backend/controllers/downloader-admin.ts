@@ -44,7 +44,7 @@ export async function listDownloadJobs(query: {
       const page = await createDownloaderAdminService().listJobs(parsed);
       return jsonResult(200, { success: true, ...page });
     },
-    { whenFailed: { success: false, error: 'تعذّر تحميل طلبات التنزيل.' } }
+    { whenFailed: { success: false, error: 'تعذّر تحميل طلبات التَّنزيل.' } }
   );
 }
 

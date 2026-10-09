@@ -487,7 +487,7 @@ describe('DownloaderService platform circuit breaker', () => {
   async function failOnce(service: DownloaderService) {
     const created = await service.create(YOUTUBE_INPUT);
     await service.dispatch(created.id, YOUTUBE_INPUT);
-    await service.recordResult({ jobId: created.id, status: 'failed', error: 'تعذّر التنزيل.' });
+    await service.recordResult({ jobId: created.id, status: 'failed', error: 'تعذّر التَّنزيل.' });
   }
 
   it('counts consecutive failures without opening below the threshold', async () => {

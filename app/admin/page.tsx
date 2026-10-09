@@ -52,7 +52,7 @@ const SECTIONS = [
   {
     href: '/admin/downloader',
     label: 'مُنزِّل الوسائط',
-    description: 'طلبات التنزيل، قائمة الحظر، المنصّات، والحدود',
+    description: 'طلبات التَّنزيل، قائمة الحظر، المنصّات، والحدود',
     icon: Download,
   },
   {

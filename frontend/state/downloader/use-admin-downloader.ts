@@ -39,7 +39,7 @@ export function useAdminDownloadJobs(filters: DownloadJobFilters = {}) {
       setResult(await fetchDownloadJobs({ page: pageNumber, status, search }));
     } catch (err) {
       logger.error('Failed to load download jobs', { error: String(err) });
-      setError(messageOf(err, 'تعذّر تحميل طلبات التنزيل.'));
+      setError(messageOf(err, 'تعذّر تحميل طلبات التَّنزيل.'));
     } finally {
       setLoading(false);
     }

@@ -138,7 +138,7 @@ describe('DownloadCallbackSchema', () => {
       jobId,
       status: 'failed',
       code: 'blocked',
-      error: 'الموقع يحجب خادم التنزيل مؤقتًا؛ حاول مجددًا بعد قليل.',
+      error: 'الموقع يحجب خادم التَّنزيل مؤقتًا؛ حاول مجددًا بعد قليل.',
     });
 
     expect(result.success).toBe(true);

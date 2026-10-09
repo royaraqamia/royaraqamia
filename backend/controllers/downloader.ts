@@ -86,7 +86,7 @@ export async function createDownloadJob(body: unknown, ip: string): Promise<Http
       return jsonResult(403, { success: false, error: message });
     }
     Sentry.captureException(error);
-    return jsonResult(500, { success: false, error: 'تعذّر بدء التنزيل.' });
+    return jsonResult(500, { success: false, error: 'تعذّر بدء التَّنزيل.' });
   }
 }
 
@@ -164,14 +164,14 @@ export async function recordDownloadCallback(body: unknown, headers: Headers): P
     return jsonResult(200, { success: true });
   } catch (error) {
     Sentry.captureException(error);
-    return jsonResult(500, { success: false, error: 'تعذّر تحديث حالة التنزيل.' });
+    return jsonResult(500, { success: false, error: 'تعذّر تحديث حالة التَّنزيل.' });
   }
 }
 
 export async function getDownloadJob(id: string): Promise<HttpResult> {
   const parsedId = DownloadJobIdSchema.safeParse(id);
   if (!parsedId.success) {
-    return jsonResult(400, { success: false, error: 'معرّف التنزيل غير صحيح.' });
+    return jsonResult(400, { success: false, error: 'معرّف التَّنزيل غير صحيح.' });
   }
 
   try {
@@ -179,9 +179,9 @@ export async function getDownloadJob(id: string): Promise<HttpResult> {
     return jsonResult(200, { success: true, job });
   } catch (error) {
     if (error instanceof DownloadJobNotFoundError) {
-      return jsonResult(404, { success: false, error: 'طلب التنزيل غير موجود.' });
+      return jsonResult(404, { success: false, error: 'طلب التَّنزيل غير موجود.' });
     }
     Sentry.captureException(error);
-    return jsonResult(500, { success: false, error: 'تعذّر تحميل حالة التنزيل.' });
+    return jsonResult(500, { success: false, error: 'تعذّر تحميل حالة التَّنزيل.' });
   }
 }

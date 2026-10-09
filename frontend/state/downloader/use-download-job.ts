@@ -59,7 +59,7 @@ export function useDownloadJob() {
         }
         timer.current = setTimeout(() => void poll(id), POLL_INTERVAL_MS);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'تعذّر متابعة حالة التنزيل.');
+        setError(err instanceof Error ? err.message : 'تعذّر متابعة حالة التَّنزيل.');
         setLoading(false);
         stopPolling();
       }
@@ -82,7 +82,7 @@ export function useDownloadJob() {
         }
         timer.current = setTimeout(() => void poll(created.id), POLL_INTERVAL_MS);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'تعذّر بدء التنزيل.');
+        setError(err instanceof Error ? err.message : 'تعذّر بدء التَّنزيل.');
         setLoading(false);
       }
     },

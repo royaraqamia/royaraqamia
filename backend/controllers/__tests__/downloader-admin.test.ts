@@ -140,7 +140,7 @@ describe('listDownloadJobs', () => {
 
     expect(result).toMatchObject({
       status: 500,
-      body: { success: false, error: 'تعذّر تحميل طلبات التنزيل.' },
+      body: { success: false, error: 'تعذّر تحميل طلبات التَّنزيل.' },
     });
   });
 });

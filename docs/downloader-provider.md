@@ -37,11 +37,11 @@ job. It must then do the work **off the request path** and report back via the
 callback — the app does not wait for the file. Reply `202` immediately, before
 doing the work: the app waits up to 55s for this acknowledgement (so a cold or
 sleeping host is tolerated), but a host that answers later than that, or not at
-all, makes the app record the job as `failed` with "خدمة التنزيل غير متاحة الآن.".
+all, makes the app record the job as `failed` with "خدمة التَّنزيل غير متاحة الآن.".
 
 A `4xx` means the link cannot be handled (surfaced to the visitor as a `failed` job
 with "هذا الرَّابط غير مدعوم."); any other failure or a timeout surfaces as
-"خدمة التنزيل غير متاحة الآن.". The host must honour `maxDurationSeconds` and
+"خدمة التَّنزيل غير متاحة الآن.". The host must honour `maxDurationSeconds` and
 `maxSizeBytes`; the app re-checks both when the callback arrives. `linkTtlSeconds`
 is optional: when present the host must set the signed file link's lifetime from
 it (falling back to its own default when absent).

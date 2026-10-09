@@ -66,7 +66,7 @@ export class StubMediaProvider implements MediaProvider {
         body: JSON.stringify(body),
       });
     } catch {
-      throw new MediaProviderError('تعذّر إكمال التنزيل.');
+      throw new MediaProviderError('تعذّر إكمال التَّنزيل.');
     }
   }
 

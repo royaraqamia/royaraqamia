@@ -160,7 +160,7 @@ describe('downloader controller recordDownloadCallback', () => {
       jobId: JOB_ID,
       status: 'failed',
       code: 'blocked',
-      error: 'الموقع يحجب خادم التنزيل مؤقتًا.',
+      error: 'الموقع يحجب خادم التَّنزيل مؤقتًا.',
     };
 
     await recordDownloadCallback(failure, secretHeaders);

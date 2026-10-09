@@ -28,7 +28,7 @@ export interface MediaInspectInput {
  * next to the port so every provider reports the same words for the same reason.
  */
 export const PROBE_FAILURE_MESSAGES: Record<ProbeFailureStatus, string> = {
-  blocked: 'المحتوى محجوب عن خادم التنزيل حاليًّا. جرّب رابطًا آخر أو أعد المحاولة لاحقًا.',
+  blocked: 'المحتوى محجوب عن خادم التَّنزيل حاليًّا. جرّب رابطًا آخر أو أعد المحاولة لاحقًا.',
   unavailable: 'هذا المحتوى غير متاح.',
   unsupported: 'هذا الرَّابط غير مدعوم.',
   unknown: 'تعذّر فحص الرَّابط. تأكّد من صحّته وحاول مجددًا.',

@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/frontend/shared/cn';
 
 const SECTIONS = [
-  { href: '/admin/downloader', label: 'طلبات التنزيل', exact: true },
+  { href: '/admin/downloader', label: 'طلبات التَّنزيل', exact: true },
   { href: '/admin/downloader/blocklist', label: 'قائمة الحظر' },
   { href: '/admin/downloader/platforms', label: 'المنصّات' },
   { href: '/admin/downloader/settings', label: 'الحدود' },
