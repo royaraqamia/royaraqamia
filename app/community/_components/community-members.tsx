@@ -5,8 +5,6 @@ import type { PublicUser } from '@/shared/contracts/users';
 
 interface CommunityMembersProps {
   members: PublicUser[];
-  /** Roster size, which may exceed the rows shown. */
-  total: number;
 }
 
 function displayName(member: PublicUser): string {
@@ -17,19 +15,14 @@ function displayName(member: PublicUser): string {
  * Desktop rail of members. Reads as part of the feed's right column —
  * deliberately quiet chrome so the gradient avatars carry the identity.
  */
-export function CommunityMembersPanel({ members, total }: CommunityMembersProps) {
+export function CommunityMembersPanel({ members }: CommunityMembersProps) {
   if (members.length === 0) return null;
 
   return (
     <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/40 shadow-sm">
-      <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
-        <div className="flex items-center gap-2">
-          <Users className="size-4 text-primary" aria-hidden="true" />
-          <h2 className="text-sm font-bold text-foreground">أعضاء المجتمع</h2>
-        </div>
-        <span className="rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
-          {total}
-        </span>
+      <header className="flex items-center gap-2 px-5 pt-5 pb-3">
+        <Users className="size-4 text-primary" aria-hidden="true" />
+        <h2 className="text-sm font-bold text-foreground">أعضاء المجتمع</h2>
       </header>
 
       <ul className="flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto px-2 pb-3">
@@ -66,7 +59,7 @@ export function CommunityMembersPanel({ members, total }: CommunityMembersProps)
 }
 
 /** Mobile counterpart: a snap-scrolling row of member chips above the feed. */
-export function CommunityMembersStrip({ members, total }: CommunityMembersProps) {
+export function CommunityMembersStrip({ members }: CommunityMembersProps) {
   if (members.length === 0) return null;
 
   return (
@@ -74,9 +67,6 @@ export function CommunityMembersStrip({ members, total }: CommunityMembersProps)
       <div className="mb-3 flex items-center gap-2 px-1">
         <Users className="size-4 text-primary" aria-hidden="true" />
         <h2 className="text-sm font-bold text-foreground">أعضاء المجتمع</h2>
-        <span className="rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
-          {total}
-        </span>
       </div>
       <ul className="scrollbar-none flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2">
         {members.map((member) => (

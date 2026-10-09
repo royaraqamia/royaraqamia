@@ -97,22 +97,13 @@ export const loadCommunityPost = unstable_cache(
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.post] }
 );
 
-export interface CommunityMembers {
-  members: PublicUser[];
-  /** Total member count — the badge is the roster size, not the shown rows. */
-  total: number;
-}
-
 /**
  * The "who's here" roster shown on `/community`. Shared by every visitor, so
  * it is cached under its own tag — publishing a post must not evict it.
  */
 export const loadCommunityMembers = unstable_cache(
-  async (limit: number = COMMUNITY_MEMBERS_LIMIT): Promise<CommunityMembers> => {
-    const repository = createPublicUsersRepositoryServer();
-    const [members, total] = await Promise.all([repository.list(limit), repository.count()]);
-    return { members, total };
-  },
+  async (limit: number = COMMUNITY_MEMBERS_LIMIT): Promise<PublicUser[]> =>
+    createPublicUsersRepositoryServer().list(limit),
   ['community-members'],
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.members] }
 );

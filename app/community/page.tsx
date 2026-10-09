@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CommunityPage() {
-  const [{ posts, nextCursor }, { members, total }] = await Promise.all([
+  const [{ posts, nextCursor }, members] = await Promise.all([
     loadCommunityIndex(null, '', COMMUNITY_PAGE_SIZE),
     loadCommunityMembers(),
   ]);
@@ -47,7 +47,7 @@ export default async function CommunityPage() {
               </div>
             </Suspense>
 
-            <CommunityMembersStrip members={members} total={total} />
+            <CommunityMembersStrip members={members} />
 
             <Suspense
               fallback={
@@ -74,7 +74,7 @@ export default async function CommunityPage() {
 
           {/* Members rail (desktop) */}
           <aside className="sticky top-24 hidden self-start lg:block" aria-label="أعضاء المجتمع">
-            <CommunityMembersPanel members={members} total={total} />
+            <CommunityMembersPanel members={members} />
           </aside>
         </div>
       </div>
