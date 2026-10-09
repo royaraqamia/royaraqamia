@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.70.0] - 2026-10-09
+
+### Changed
+- normalize Arabic diacritics in copy
+- match the username save button to the hero CTA and refine Arabic copy
+
+### Added
+- check username availability live while typing
+- list verified members only
+
 ## [1.69.0] - 2026-10-09
 
 ### Changed
