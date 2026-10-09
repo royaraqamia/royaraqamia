@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
   title: 'غير متَّصل',
@@ -48,14 +49,9 @@ export default function OfflinePage() {
 
           {/* Primary Typography & Status Header */}
           <div className="text-center">
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-amber-500/20 bg-amber-500/10 px-3 py-1 text-xs font-medium text-amber-700 dark:text-amber-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
-              <span>انقطع الاتِّصال بالشَّبكة</span>
-            </div>
-
-            <h1 className="font-arabic text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
-              غير متَّصل
-            </h1>
+            <SectionTitle as="h1">
+              غير <SectionTitleHighlight>متَّصل</SectionTitleHighlight>
+            </SectionTitle>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 sm:text-base dark:text-slate-400">
               يبدو أنَّك غير متَّصل بالإنترنت. حاول مرَّة أخرى عندما تتوفَّر لديك شبكة.
             </p>
@@ -65,48 +61,13 @@ export default function OfflinePage() {
           <div className="mt-8 flex flex-col gap-3">
             <a
               href="."
-              className="group relative flex w-full items-center justify-center gap-2.5 overflow-hidden rounded-xl bg-slate-900 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-slate-900/10 transition-safe duration-200 ease-out hover:bg-slate-800 hover:shadow-xl hover:scale-[1.01] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 dark:bg-slate-100 dark:text-slate-900 dark:shadow-slate-100/5 dark:hover:bg-white dark:focus-visible:ring-offset-slate-900"
+              className="group relative flex h-13 w-full items-center justify-center gap-2.5 overflow-hidden rounded-full border border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 px-6 text-base font-bold! text-white shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)] transition-transform duration-300 hover:scale-[1.02] hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 hover:shadow-[0_15px_35px_-5px_rgba(147,51,234,0.7)] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:h-14 sm:px-8 sm:text-lg"
             >
-              <svg
-                className="h-4 w-4 transition-transform duration-500 group-hover:rotate-180"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-              <span>إعادة المحاولة</span>
+              <div className="absolute inset-0 bg-linear-to-r from-transparent via-white/25 to-transparent -translate-x-full transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
+              <span className="relative z-10">إعادة المحاولة</span>
             </a>
           </div>
-
-          {/* Troubleshooting Checklist */}
-          <div className="mt-6 rounded-2xl border border-slate-200/60 bg-slate-50/50 p-4 text-right dark:border-slate-800/60 dark:bg-slate-950/50">
-            <span className="mb-2 block text-xs font-bold text-slate-500 dark:text-slate-400">
-              خطوات سريعة للتَّحقُّق:
-            </span>
-            <ul className="space-y-1.5 text-xs text-slate-600 dark:text-slate-400">
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500/70 shrink-0"></span>
-                <span>تأكَّد من تفعيل اتِّصال Wi-Fi أو بيانات الهاتف</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-amber-500/70 shrink-0"></span>
-                <span>أعِد تشغيل جهاز الـ Router إن أمكن</span>
-              </li>
-            </ul>
-          </div>
         </article>
-
-        {/* Footer status text */}
-        <footer className="mt-6 text-center text-xs text-slate-400 dark:text-slate-600">
-          سيتمُّ استئناف الاتِّصال تلقائيًّا فور توفُّر الشَّبكة
-        </footer>
       </main>
     </div>
   );
