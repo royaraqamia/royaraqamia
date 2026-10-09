@@ -1,18 +1,16 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LogIn, PenLine } from 'lucide-react';
+import { PenLine } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
 import { useUI } from '@/frontend/state/UIContext';
-import { Button } from '@/frontend/ui/primitives/button';
+import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
 import { PostComposerDialog } from './post-composer-dialog';
@@ -65,23 +63,22 @@ export function ComposeFab() {
 
       <Dialog open={authPromptOpen} onOpenChange={setAuthPromptOpen}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader className="items-center text-center">
-            <div className="mx-auto mb-1 flex size-14 items-center justify-center rounded-full bg-muted/60 text-muted-foreground/80 border border-border/40 shadow-inner">
+          <div className="flex flex-col items-center gap-3 text-center">
+            <div className="flex size-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
               <PenLine size={24} />
             </div>
-            <DialogTitle>سجِّل الدُّخول للنَّشر في المُجتمع</DialogTitle>
-            <DialogDescription>
-              لنشر منشور في المُجتمع، يلزمك تسجيل الدُّخول إلى حسابك أوَّلًا.
-            </DialogDescription>
-          </DialogHeader>
+            <div className="space-y-1.5">
+              <DialogTitle className="leading-snug!">
+                سجِّل الدُّخول للنَّشر في المُجتمع
+              </DialogTitle>
+              <DialogDescription className="text-pretty">
+                لنشر منشور في المُجتمع، يلزمك تسجيل الدُّخول إلى حسابك أوَّلًا.
+              </DialogDescription>
+            </div>
+          </div>
 
           <DialogFooter className="sm:justify-center">
-            <Button asChild className="w-full sm:w-auto">
-              <Link href={loginHref} onClick={() => setAuthPromptOpen(false)}>
-                <LogIn className="size-4" />
-                تسجيل الدُّخول
-              </Link>
-            </Button>
+            <SignInCta href={loginHref} onClick={() => setAuthPromptOpen(false)} />
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, memo } from 'react';
 import { createPortal } from 'react-dom';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   X,
@@ -24,6 +23,7 @@ import { cn } from '@/frontend/shared/cn';
 import { ScrollArea } from '@/frontend/ui/primitives/scroll-area';
 import { ResponsiveSheetScrim } from '@/frontend/ui/primitives/responsive-sheet';
 import { usePortalPopover } from './use-portal-popover';
+import { SignInCta } from './sign-in-cta';
 import { PushNotificationToggle } from './push-notification-toggle';
 
 const typeIcons: Record<string, React.ReactNode> = {
@@ -181,13 +181,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
                     <p className="text-xs text-muted-foreground/70 mt-1">
                       تابع التَّنبيهات الخاصَّة بحسابك بعد تسجيل الدُّخول
                     </p>
-                    <Link
-                      href={loginHref}
-                      onClick={() => setIsOpen(false)}
-                      className="mt-4 inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground shadow-xs transition-safe duration-150 ease-out hover:bg-primary/90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                    >
-                      تسجيل الدُّخول
-                    </Link>
+                    <SignInCta href={loginHref} onClick={() => setIsOpen(false)} className="mt-4" />
                   </div>
                 ) : isLoading ? (
                   <div className="flex flex-col items-center justify-center py-12 px-4 text-center">

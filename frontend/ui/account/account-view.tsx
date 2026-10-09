@@ -3,13 +3,13 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, ClipboardList, ShieldCheck, LogOut, LogIn, MessageCircle } from 'lucide-react';
+import { User, ClipboardList, ShieldCheck, LogOut, MessageCircle } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
-import { Button } from '@/frontend/ui/primitives/button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 
 function AccountSkeleton() {
   return (
@@ -65,12 +65,7 @@ export function AccountView() {
               تابع طلباتك وبياناتك الشَّخصيَّة بعد تسجيل الدُّخول
             </p>
           </div>
-          <Button asChild className="mt-1 w-full sm:w-auto">
-            <Link href="/auth/login?redirect=/account">
-              <LogIn className="size-4" />
-              تسجيل الدُّخول
-            </Link>
-          </Button>
+          <SignInCta href="/auth/login?redirect=/account" className="mt-1 w-full sm:w-auto" />
         </section>
       ) : (
         <section className="flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5">
