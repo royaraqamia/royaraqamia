@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { AtSign, Check, Loader2 } from 'lucide-react';
+import { AtSign, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/frontend/ui/primitives/button';
@@ -49,14 +49,14 @@ export function UsernameEditor() {
     try {
       const result = await updateUsername(parsed.data);
       if (!result.success || !result.username) {
-        setError(result.error ?? 'تعذَّر تحديث المعرّف');
+        setError(result.error ?? 'تعذَّر تحديث المعرِّف');
         return;
       }
       setSaved(result.username);
       setValue(result.username);
-      toast.success('تمَّ تحديث المعرّف العام');
+      toast.success('تمَّ تحديث المعرِّف العام');
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : 'تعذَّر تحديث المعرّف');
+      setError(caught instanceof Error ? caught.message : 'تعذَّر تحديث المعرِّف');
     } finally {
       setSaving(false);
     }
@@ -66,10 +66,10 @@ export function UsernameEditor() {
     <section className="rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5">
       <div className="flex items-center gap-2">
         <AtSign className="size-4 shrink-0 text-primary" aria-hidden="true" />
-        <h2 className="text-sm font-bold text-foreground sm:text-base">المعرّف العام</h2>
+        <h2 className="text-sm font-bold text-foreground sm:text-base">المعرِّف العام</h2>
       </div>
       <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
-        رابط ملفك الشَّخصي الذي يراه الجميع على المجتمع. يظهر في قائمة الأعضاء ونتائج البحث.
+        رابط ملفَّك الشَّخصي الذي يراه الجميع على المجتمع. يظهر في قائمة الأعضاء ونتائج البحث.
       </p>
 
       <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
@@ -92,22 +92,25 @@ export function UsernameEditor() {
             spellCheck={false}
             maxLength={30}
             error={Boolean(error)}
-            aria-label="المعرّف العام"
+            aria-label="المعرِّف العام"
             aria-describedby={error ? 'username-error' : undefined}
             className="ps-8 font-medium"
           />
         </div>
-        <Button onClick={handleSave} disabled={!dirty || saving} className="shrink-0">
+        <Button
+          onClick={handleSave}
+          disabled={!dirty || saving}
+          variant="hero"
+          className="group relative h-13 w-auto min-w-44 shrink-0 gap-2.5 overflow-hidden px-6 text-base font-bold! transition-transform duration-300 hover:translate-y-0 hover:scale-[1.02] focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:h-14 sm:min-w-50 sm:px-8 sm:text-lg"
+        >
+          <div className="pointer-events-none absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/25 to-transparent transition-transform duration-1000 ease-in-out group-hover:translate-x-full" />
           {saving ? (
             <>
-              <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-              جاري الحفظ
+              <Loader2 className="relative z-10 size-4 animate-spin" aria-hidden="true" />
+              <span className="relative z-10">جاري الحفظ</span>
             </>
           ) : (
-            <>
-              <Check className="size-4" aria-hidden="true" />
-              حفظ
-            </>
+            <span className="relative z-10">حفظ</span>
           )}
         </Button>
       </div>
@@ -120,7 +123,7 @@ export function UsernameEditor() {
 
       {!error && saved && (
         <p className="mt-2 text-xs text-muted-foreground">
-          ملفك الشخصي:{' '}
+          ملفَّك الشَّخصي:{' '}
           <Link
             href={`/u/${encodeURIComponent(saved)}`}
             className="font-bold text-primary hover:underline"
