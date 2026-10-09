@@ -15,7 +15,7 @@ describe('UserIdsSchema', () => {
   it('rejects a non-uuid entry', () => {
     const result = UserIdsSchema.safeParse(['not-a-uuid']);
     expect(result.success).toBe(false);
-    expect(result.error?.issues[0]?.message).toBe('معرّف مستخدم غير صالح');
+    expect(result.error?.issues[0]?.message).toBe('معرِّف مستخدم غير صالح');
   });
 
   it('rejects more than 50 ids', () => {

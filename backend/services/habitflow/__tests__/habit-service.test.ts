@@ -233,11 +233,11 @@ describe('HabitService', () => {
     it('requires an id', async () => {
       const { repository, service } = makeRepo();
       await expect(service.updateHabit('', { name: 'قراءة' })).rejects.toThrow(
-        'معرّف العادة مطلوب'
+        'معرِّف العادة مطلوب'
       );
       await expect(
         service.updateHabit(null as unknown as string, { name: 'قراءة' })
-      ).rejects.toThrow('معرّف العادة مطلوب');
+      ).rejects.toThrow('معرِّف العادة مطلوب');
       expect(repository.updateHabit).not.toHaveBeenCalled();
     });
 
@@ -294,7 +294,7 @@ describe('HabitService', () => {
   describe('deleteHabit', () => {
     it('requires an id', async () => {
       const { repository, service } = makeRepo();
-      await expect(service.deleteHabit('')).rejects.toThrow('معرّف العادة مطلوب');
+      await expect(service.deleteHabit('')).rejects.toThrow('معرِّف العادة مطلوب');
       expect(repository.deleteHabit).not.toHaveBeenCalled();
     });
 

@@ -42,7 +42,7 @@ export class BlogpressPostsService {
     authorEmail = ''
   ): Promise<{ id: string }> {
     if (!snapshot.slug || !snapshot.slug.trim()) {
-      throw new Error('المعرّف (slug) مطلوب');
+      throw new Error('المعرِّف (slug) مطلوب');
     }
 
     const communityVisible = isAdmin(authorEmail, this.adminEmails) && snapshot.community_visible;

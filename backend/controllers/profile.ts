@@ -19,7 +19,7 @@ export async function checkUsernameAvailability(username: string | null): Promis
       if (rateLimitResult) return rateLimitResult;
 
       if (typeof username !== 'string') {
-        return jsonResult(200, { success: true, available: false, error: 'معرّف غير صالح' });
+        return jsonResult(200, { success: true, available: false, error: 'معرِّف غير صالح' });
       }
 
       const parsed = UsernameSchema.safeParse(username);
@@ -27,7 +27,7 @@ export async function checkUsernameAvailability(username: string | null): Promis
         return jsonResult(200, {
           success: true,
           available: false,
-          error: parsed.error.issues[0]?.message ?? 'معرّف غير صالح',
+          error: parsed.error.issues[0]?.message ?? 'معرِّف غير صالح',
         });
       }
 
@@ -35,11 +35,11 @@ export async function checkUsernameAvailability(username: string | null): Promis
       return jsonResult(200, {
         success: true,
         available,
-        error: available ? undefined : 'المعرّف مستخدم بالفعل',
+        error: available ? undefined : 'المعرِّف مستخدم بالفعل',
       });
     },
     {
-      mapError: () => jsonResult(500, { success: false, error: 'تعذَّر التحقق من المعرّف' }),
+      mapError: () => jsonResult(500, { success: false, error: 'تعذَّر التحقق من المعرِّف' }),
     }
   );
 }
@@ -53,7 +53,7 @@ export async function updateUsername(body: Record<string, unknown>): Promise<Htt
         const { fieldErrors, formErrors } = parsed.error.flatten();
         return jsonResult(400, {
           success: false,
-          error: formErrors[0] ?? 'معرّف غير صالح',
+          error: formErrors[0] ?? 'معرِّف غير صالح',
           errors: fieldErrors,
         });
       }
@@ -80,7 +80,7 @@ export async function updateUsername(body: Record<string, unknown>): Promise<Htt
       }
     },
     {
-      mapError: () => jsonResult(500, { success: false, error: 'تعذَّر تحديث المعرّف' }),
+      mapError: () => jsonResult(500, { success: false, error: 'تعذَّر تحديث المعرِّف' }),
     }
   );
 }

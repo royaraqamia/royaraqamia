@@ -179,7 +179,7 @@ export function Turnstile({ onToken, theme = 'auto' }: TurnstileProps) {
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-primary" />
             </span>
             <span className="text-[11px] font-medium tracking-wide text-neutral-500 dark:text-neutral-400">
-              {isLoading ? 'جارِ التحميل...' : 'مُشفَّر'}
+              {isLoading ? 'جاري التحميل...' : 'مُشفَّر'}
             </span>
           </div>
         </div>

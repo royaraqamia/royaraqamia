@@ -52,7 +52,7 @@ export async function createDownloadJob(body: unknown, ip: string): Promise<Http
 
   const verifyTurnstile = createDownloaderTurnstileVerifier();
   if (!(await verifyTurnstile(parsed.data.turnstileToken ?? ''))) {
-    return jsonResult(403, { success: false, error: 'فشل التحقّق الأمني. أعد المحاولة.' });
+    return jsonResult(403, { success: false, error: 'فشل التَّحقُّق الأمني. أعد المحاولة.' });
   }
 
   const rateLimited = await checkRateLimitApi({
@@ -171,7 +171,7 @@ export async function recordDownloadCallback(body: unknown, headers: Headers): P
 export async function getDownloadJob(id: string): Promise<HttpResult> {
   const parsedId = DownloadJobIdSchema.safeParse(id);
   if (!parsedId.success) {
-    return jsonResult(400, { success: false, error: 'معرّف التَّنزيل غير صحيح.' });
+    return jsonResult(400, { success: false, error: 'معرِّف التَّنزيل غير صحيح.' });
   }
 
   try {

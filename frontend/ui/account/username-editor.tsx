@@ -43,9 +43,9 @@ export function UsernameEditor() {
   const feedback = shownError
     ? { tone: 'error' as const, text: shownError }
     : status === 'checking' && dirty
-      ? { tone: 'muted' as const, text: 'جارٍ التحقّق من التوفّر…' }
+      ? { tone: 'muted' as const, text: 'جاري التَّحقُّق من التَّوفُّر…' }
       : status === 'available' && dirty
-        ? { tone: 'success' as const, text: 'المعرّف متاح' }
+        ? { tone: 'success' as const, text: 'المعرِّف متاح' }
         : null;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -56,7 +56,7 @@ export function UsernameEditor() {
   const handleSave = async () => {
     const parsed = UsernameSchema.safeParse(value);
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? 'معرّف غير صالح');
+      setError(parsed.error.issues[0]?.message ?? 'معرِّف غير صالح');
       return;
     }
 

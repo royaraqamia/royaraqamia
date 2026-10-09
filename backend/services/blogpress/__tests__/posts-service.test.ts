@@ -205,7 +205,7 @@ describe('BlogpressPostsService.restorePost', () => {
     const { repository, service } = makeRepo();
 
     await expect(service.restorePost('u-1', { ...snapshotBase, slug: ' ' })).rejects.toThrow(
-      'المعرّف (slug) مطلوب'
+      'المعرِّف (slug) مطلوب'
     );
     expect(repository.restorePost).not.toHaveBeenCalled();
   });

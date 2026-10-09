@@ -68,11 +68,9 @@ export function ComposeFab() {
               <PenLine size={24} />
             </div>
             <div className="space-y-1.5">
-              <DialogTitle className="leading-snug!">
-                سجِّل الدُّخول للنَّشر في المُجتمع
-              </DialogTitle>
+              <DialogTitle className="leading-snug!">سجِّل الدُّخول للنَّشر في المجتمع</DialogTitle>
               <DialogDescription className="text-pretty">
-                لنشر منشور في المُجتمع، يلزمك تسجيل الدُّخول إلى حسابك أوَّلًا.
+                لنشر منشور في المجتمع، يلزمك تسجيل الدُّخول إلى حسابك أوَّلًا.
               </DialogDescription>
             </div>
           </div>

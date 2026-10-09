@@ -8,7 +8,7 @@ export interface AdminUser {
 }
 
 export const UserIdsSchema = z
-  .array(z.string().uuid('معرّف مستخدم غير صالح'))
+  .array(z.string().uuid('معرِّف مستخدم غير صالح'))
   .max(50, 'الحد الأقصى 50 مستخدم');
 
 export type UserIdsInput = z.infer<typeof UserIdsSchema>;
@@ -47,11 +47,11 @@ export const UsernameSchema = z
   .pipe(
     z
       .string()
-      .min(3, 'المعرّف قصير جدًا')
-      .max(30, 'المعرّف طويل جدًا')
+      .min(3, 'المعرِّف قصير جدًا')
+      .max(30, 'المعرِّف طويل جدًا')
       .regex(
         /^[a-z0-9\u0621-\u064A][a-z0-9\u0621-\u064A-]*[a-z0-9\u0621-\u064A]$/,
-        'المعرّف يقبل الحروف والأرقام والشرطة فقط'
+        'المعرِّف يقبل الحروف والأرقام والشرطة فقط'
       )
   );
 

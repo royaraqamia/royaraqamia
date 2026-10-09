@@ -92,7 +92,7 @@ export async function removeDownloadBlock(id: string): Promise<HttpResult> {
   return withAdminUser(
     async () => {
       if (!UuidSchema.safeParse(id).success) {
-        return jsonResult(400, { success: false, error: 'معرّف غير صحيح.' });
+        return jsonResult(400, { success: false, error: 'معرِّف غير صحيح.' });
       }
       await createDownloaderAdminService().removeBlock(id);
       return jsonResult(200, { success: true });

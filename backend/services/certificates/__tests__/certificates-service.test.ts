@@ -316,7 +316,7 @@ describe('CertificatesService', () => {
       await expect(
         service.create({ ...validInput, recipient_user_ids: ['not-a-uuid'] })
       ).rejects.toMatchObject({
-        fieldErrors: { recipient_user_ids: 'معرّف مستخدم غير صالح' },
+        fieldErrors: { recipient_user_ids: 'معرِّف مستخدم غير صالح' },
       });
     });
   });

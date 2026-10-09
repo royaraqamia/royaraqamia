@@ -64,7 +64,7 @@ export const RestorePostSnapshotSchema = z.object({
   featured: z.boolean(),
   community_visible: z.boolean(),
   reading_time_minutes: z.number().int().min(0),
-  tagIds: z.array(z.string().uuid('معرّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم').optional(),
+  tagIds: z.array(z.string().uuid('معرِّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم').optional(),
 });
 
 export type RestorePostSnapshot = z.infer<typeof RestorePostSnapshotSchema>;

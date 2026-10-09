@@ -79,7 +79,7 @@ export function usernameAvailabilityRateLimitPolicy(userId: string): RateLimitPo
     key: `username-availability:${userId}`,
     limit: 30,
     windowMs: 60 * 1000,
-    message: 'تم تجاوز حدّ الطلب: التحقق من توفّر المعرّف محدود بـ 30 استعلامًا في الدقيقة.',
+    message: 'تم تجاوز حدّ الطلب: التحقق من توفّر المعرِّف محدود بـ 30 استعلامًا في الدقيقة.',
   };
 }
 

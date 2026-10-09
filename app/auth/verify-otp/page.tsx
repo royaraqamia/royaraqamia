@@ -156,7 +156,7 @@ function VerifyOtpForm() {
               </h3>
               <p className="text-xs text-muted-foreground flex items-center justify-center gap-1.5">
                 <span className="inline-block size-1.5 rounded-full bg-emerald-500" />
-                جارِ تحويلك تلقائيًّا...
+                جاري تحويلك تلقائيًّا...
               </p>
             </div>
           </div>

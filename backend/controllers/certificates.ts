@@ -112,7 +112,7 @@ export async function verifyCertificate(code: string, ip: string): Promise<HttpR
     if (isRepositoryError(error)) {
       return jsonResult(500, {
         success: false,
-        error: 'تعذّر التحقّق من الشهادة حاليًّا. الرجاء المحاولة بعد قليل.',
+        error: 'تعذّر التَّحقُّق من الشهادة حاليًّا. الرجاء المحاولة بعد قليل.',
       });
     }
     return jsonResult(200, {

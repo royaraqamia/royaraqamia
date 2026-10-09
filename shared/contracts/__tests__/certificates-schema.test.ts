@@ -95,7 +95,7 @@ describe('CertificateIntakeSchema', () => {
 
   it('rejects an invalid recipient user id', () => {
     expect(errorFor({ recipient_user_ids: ['not-a-uuid'] })).toMatchObject({
-      message: 'معرّف مستخدم غير صالح',
+      message: 'معرِّف مستخدم غير صالح',
     });
   });
 

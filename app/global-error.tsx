@@ -69,7 +69,7 @@ export default function GlobalError({
             {/* Dynamic Error Digest Metadata Pill */}
             {error.digest && (
               <div className="mb-6 inline-flex max-w-full items-center gap-2 rounded-xl border border-zinc-800 bg-zinc-950/80 px-3.5 py-2 text-xs font-mono text-zinc-400 shadow-inner">
-                <span className="shrink-0 select-none text-zinc-500">رمز المعرّف:</span>
+                <span className="shrink-0 select-none text-zinc-500">رمز المعرِّف:</span>
                 <code className="truncate font-mono text-purple-300 select-all">
                   {error.digest}
                 </code>

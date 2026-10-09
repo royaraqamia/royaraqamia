@@ -4,7 +4,7 @@ import type { PublicUsersRepository } from '@/backend/repositories/users/public-
 /** The requested handle is already claimed by another member. */
 export class UsernameTakenError extends Error {
   constructor() {
-    super('المعرّف مستخدم بالفعل');
+    super('المعرِّف مستخدم بالفعل');
     this.name = 'UsernameTakenError';
   }
 }

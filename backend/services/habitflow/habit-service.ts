@@ -28,7 +28,7 @@ export class HabitService {
   }
 
   async updateHabit(id: string, data: Partial<Habit>): Promise<Habit> {
-    if (!id) throw new AppError('معرّف العادة مطلوب', 400);
+    if (!id) throw new AppError('معرِّف العادة مطلوب', 400);
     return this.repository.updateHabit(id, {
       ...(data.name !== undefined && { name: data.name.trim() }),
       ...(data.frequency !== undefined && { frequency: data.frequency }),
@@ -84,7 +84,7 @@ export class HabitService {
   }
 
   async deleteHabit(id: string): Promise<boolean> {
-    if (!id) throw new AppError('معرّف العادة مطلوب', 400);
+    if (!id) throw new AppError('معرِّف العادة مطلوب', 400);
     const deleted = await this.repository.deleteHabit(id);
     if (!deleted) throw new AppError('العادة غير موجودة أو تعذّر أرشفتها', 404);
     return deleted;

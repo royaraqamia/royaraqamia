@@ -30,7 +30,7 @@ export function useUsernameAvailability(value: string, currentUsername: string |
     const parsed = UsernameSchema.safeParse(value);
     if (!parsed.success) {
       setStatus('invalid');
-      setError(parsed.error.issues[0]?.message ?? 'معرّف غير صالح');
+      setError(parsed.error.issues[0]?.message ?? 'معرِّف غير صالح');
       return;
     }
 
@@ -49,7 +49,7 @@ export function useUsernameAvailability(value: string, currentUsername: string |
         const result = await checkUsernameAvailability(parsed.data);
         if (requestIdRef.current !== id) return;
         setStatus(result.available ? 'available' : 'taken');
-        setError(result.available ? undefined : (result.error ?? 'المعرّف مستخدم بالفعل'));
+        setError(result.available ? undefined : (result.error ?? 'المعرِّف مستخدم بالفعل'));
       } catch {
         if (requestIdRef.current !== id) return;
         setStatus('idle');

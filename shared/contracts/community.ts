@@ -40,15 +40,17 @@ export const TagInputSchema = z.object({
 export type TagInput = z.infer<typeof TagInputSchema>;
 
 export const PostTagIdsSchema = z.object({
-  tagIds: z.array(z.string().uuid('معرّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم'),
+  tagIds: z.array(z.string().uuid('معرِّف وسم غير صالح')).max(10, 'الحد الأقصى 10 وسوم'),
 });
 
 export type PostTagIdsInput = z.infer<typeof PostTagIdsSchema>;
 
 export const BulkPostsActionSchema = z.object({
   action: z.enum(['publish', 'unpublish', 'delete', 'setCategory']),
-  postIds: z.array(z.string().uuid('معرّف منشور غير صالح')).min(1, 'اختر منشوراً واحداً على الأقل'),
-  categoryId: z.string().uuid('معرّف تصنيف غير صالح').nullable().optional(),
+  postIds: z
+    .array(z.string().uuid('معرِّف منشور غير صالح'))
+    .min(1, 'اختر منشوراً واحداً على الأقل'),
+  categoryId: z.string().uuid('معرِّف تصنيف غير صالح').nullable().optional(),
 });
 
 export type BulkPostsActionInput = z.infer<typeof BulkPostsActionSchema>;
