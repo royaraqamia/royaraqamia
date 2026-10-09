@@ -15,7 +15,9 @@ export function stripMarkdown(text: string): string {
       .replace(/^\d+\.\s+/gm, ' ')
       .replace(/^[-*_]{3,}\s*$/gm, ' ')
       .replace(/[|]/g, ' ')
-      .replace(/\s{2,}/g, ' ')
+      .replace(/[^\S\n]+/g, ' ')
+      .replace(/ *\n */g, '\n')
+      .replace(/\n{3,}/g, '\n\n')
       .trim();
 
   let previous: string;
@@ -35,7 +37,7 @@ export function stripMarkdown(text: string): string {
  */
 export function postExcerpt(content: string | null, fallback = '', max = 160): string {
   const text = content ? stripMarkdown(content) : '';
-  const source = (text || fallback).trim();
+  const source = (text || fallback).replace(/\s+/g, ' ').trim();
   if (source.length <= max) return source;
   return `${source.slice(0, max - 1).trimEnd()}…`;
 }
