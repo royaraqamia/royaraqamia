@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.66.0] - 2026-10-09
+
+### Changed
+- write جاري instead of جارٍ
+- add shadda to التَّنزيل across the app
+- apply custom scrollbar globally
+
+### Added
+- add WhatsApp link to user menu and account page
+
+### Fixed
+- keep copy button legible when snippet scrolls
+
 ## [1.65.1] - 2026-10-09
 
 ### Changed
