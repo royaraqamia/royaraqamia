@@ -74,6 +74,15 @@ export function slugAvailabilityRateLimitPolicy(ip: string): RateLimitPolicy {
   };
 }
 
+export function usernameAvailabilityRateLimitPolicy(userId: string): RateLimitPolicy {
+  return {
+    key: `username-availability:${userId}`,
+    limit: 30,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: التحقق من توفّر المعرّف محدود بـ 30 استعلامًا في الدقيقة.',
+  };
+}
+
 export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `link-unlock:${ip}`,

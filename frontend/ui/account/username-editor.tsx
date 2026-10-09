@@ -7,7 +7,9 @@ import { toast } from 'sonner';
 
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
+import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
+import { useUsernameAvailability } from '@/frontend/state/account/use-username-availability';
 import { updateUsername } from '@/frontend/api/me';
 import { UsernameSchema } from '@/shared/contracts/users';
 
@@ -23,6 +25,8 @@ export function UsernameEditor() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
+  const { status, error: availabilityError } = useUsernameAvailability(value, saved);
+
   useEffect(() => {
     setValue(profileUsername ?? '');
     setSaved(profileUsername ?? null);
@@ -31,6 +35,18 @@ export function UsernameEditor() {
 
   const normalized = value.trim().toLowerCase();
   const dirty = normalized !== (saved ?? '');
+
+  const liveError = status === 'invalid' || status === 'taken' ? (availabilityError ?? null) : null;
+  const shownError = error ?? liveError;
+  const blocked = status === 'checking' || status === 'taken' || status === 'invalid';
+
+  const feedback = shownError
+    ? { tone: 'error' as const, text: shownError }
+    : status === 'checking' && dirty
+      ? { tone: 'muted' as const, text: 'جارٍ التحقّق من التوفّر…' }
+      : status === 'available' && dirty
+        ? { tone: 'success' as const, text: 'المعرّف متاح' }
+        : null;
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setValue(event.target.value);
@@ -91,15 +107,15 @@ export function UsernameEditor() {
             autoComplete="off"
             spellCheck={false}
             maxLength={30}
-            error={Boolean(error)}
+            error={Boolean(shownError)}
             aria-label="المعرِّف العام"
-            aria-describedby={error ? 'username-error' : undefined}
+            aria-describedby={feedback ? 'username-feedback' : undefined}
             className="ps-8 font-medium"
           />
         </div>
         <Button
           onClick={handleSave}
-          disabled={!dirty || saving}
+          disabled={!dirty || saving || blocked}
           variant="hero"
           className="group relative h-13 w-auto min-w-44 shrink-0 gap-2.5 overflow-hidden px-6 text-base font-bold! transition-transform duration-300 hover:translate-y-0 hover:scale-[1.02] focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:h-14 sm:min-w-50 sm:px-8 sm:text-lg"
         >
@@ -115,13 +131,21 @@ export function UsernameEditor() {
         </Button>
       </div>
 
-      {error && (
-        <p id="username-error" className="mt-2 text-xs font-medium text-destructive">
-          {error}
+      {feedback && (
+        <p
+          id="username-feedback"
+          className={cn(
+            'mt-2 text-xs font-medium',
+            feedback.tone === 'error' && 'text-destructive',
+            feedback.tone === 'success' && 'text-emerald-500',
+            feedback.tone === 'muted' && 'text-muted-foreground'
+          )}
+        >
+          {feedback.text}
         </p>
       )}
 
-      {!error && saved && (
+      {!shownError && saved && (
         <p className="mt-2 text-xs text-muted-foreground">
           ملفَّك الشَّخصي:{' '}
           <Link

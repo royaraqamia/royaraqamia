@@ -21,3 +21,13 @@ export async function updateUsername(
     body: JSON.stringify({ username }),
   });
 }
+
+/** Live availability probe; `available: false` carries the reason as `error`. */
+export async function checkUsernameAvailability(
+  username: string
+): Promise<{ success: boolean; available: boolean; error?: string }> {
+  return request<{ success: boolean; available: boolean; error?: string }>(
+    `/api/me/username?username=${encodeURIComponent(username)}`,
+    { cache: 'no-store' }
+  );
+}

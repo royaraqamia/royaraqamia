@@ -22,6 +22,16 @@ export interface ProfileServiceDeps {
 export class ProfileService {
   constructor(private readonly deps: ProfileServiceDeps) {}
 
+  /**
+   * Non-throwing counterpart of `updateUsername`'s pre-check, used by the live
+   * availability endpoint. A member always "owns" their current handle, so it
+   * reads as available rather than taken against themselves.
+   */
+  async checkUsername(userId: string, username: string): Promise<{ available: boolean }> {
+    const existing = await this.deps.publicUsers.getByUsername(username);
+    return { available: !existing || existing.id === userId };
+  }
+
   async updateUsername(userId: string, username: string): Promise<{ username: string }> {
     const existing = await this.deps.publicUsers.getByUsername(username);
     if (existing && existing.id !== userId) throw new UsernameTakenError();

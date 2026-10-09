@@ -15,6 +15,26 @@ function createService(overrides?: { existing?: { id: string } | null; updateErr
   return { service: new ProfileService({ profiles, publicUsers }), updateProfile, publicUsers };
 }
 
+describe('ProfileService.checkUsername', () => {
+  it('reports a handle no one owns as available', async () => {
+    const { service } = createService({ existing: null });
+
+    await expect(service.checkUsername('u-1', 'ahmad')).resolves.toEqual({ available: true });
+  });
+
+  it("reports the caller's own handle as available", async () => {
+    const { service } = createService({ existing: { id: 'u-1' } });
+
+    await expect(service.checkUsername('u-1', 'ahmad')).resolves.toEqual({ available: true });
+  });
+
+  it("reports another member's handle as taken", async () => {
+    const { service } = createService({ existing: { id: 'u-2' } });
+
+    await expect(service.checkUsername('u-1', 'ahmad')).resolves.toEqual({ available: false });
+  });
+});
+
 describe('ProfileService.updateUsername', () => {
   it('persists a handle no one else owns', async () => {
     const { service, updateProfile } = createService({ existing: null });
