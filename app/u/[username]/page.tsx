@@ -69,7 +69,7 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
           className="glow-orb pointer-events-none absolute -top-16 inset-e-[-10%] h-48 w-48 text-violet-500/20"
           aria-hidden="true"
         />
-        <div className="relative flex flex-col items-center gap-5 text-center sm:flex-row sm:text-start">
+        <div className="relative flex flex-col items-center gap-5 text-center">
           <MemberAvatar
             name={member.name}
             avatarUrl={member.avatar_url}
@@ -77,15 +77,15 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
             sizes="80px"
             className="group"
           />
-          <div className="min-w-0 flex-1">
-            <h1 className="font-aref-ruqaa text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
               {name}
             </h1>
             <p className="mt-1 text-sm text-muted-foreground" dir="ltr">
               @{member.username}
             </p>
             {member.bio?.trim() && (
-              <p className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground sm:mx-0">
+              <p className="mx-auto mt-4 max-w-prose text-sm leading-relaxed text-muted-foreground">
                 {member.bio}
               </p>
             )}
