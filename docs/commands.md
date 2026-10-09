@@ -39,6 +39,18 @@ npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --
 
 - `npm run load-test -- --url <endpoint> --concurrency 100 --total 200` — concurrency smoke test for `POST /api/training/applications`. Writes real rows and triggers notifications, so target a preview deployment backed by a throwaway database; production is refused unless `--allow-prod` is passed.
 
+## Agent workflows
+
+Three `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
+
+| Workflow                | Trigger                                                    | What it does                                                                                                                                                                             |
+| ----------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `issue-planner.yml`     | daily 03:00 UTC + dispatch                                 | Scans the codebase, de-dupes against all open issues/PRs, files up to 5 fully-specified issues labelled `ready-for-agent` + `opencode:planned`                                           |
+| `issue-implementer.yml` | daily 06:00 UTC + dispatch                                 | Claims the oldest `ready-for-agent` issue that is unassigned and not in an open PR, implements it, opens a PR with `Closes #<n>`; on failure swaps `ready-for-agent` → `ready-for-human` |
+| `opencode.yml`          | `/oc <task>` or `/opencode <task>` comment on any issue/PR | Interactive: plans then implements the requested task and opens a PR (write access only)                                                                                                 |
+
+`ready-for-agent` is the trust boundary — only maintainers and the planner apply it. The workflows create the `opencode:planned`, `opencode:in-progress` and `opencode` labels themselves; agent PRs are tagged `opencode` and their titles normalized to Conventional Commits. Rationale: [ADR 0026](adr/0026-autonomous-issue-planner-and-implementer.md).
+
 ## Deployment
 
 **Primary path:** Push to `main` → CI runs code-quality checks → `.github/workflows/release.yml` (gated: push on `main`) → bump/tag/`chore(release)` commit `[skip ci]` → Vercel auto-deploys.

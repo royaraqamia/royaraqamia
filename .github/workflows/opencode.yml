@@ -7,6 +7,9 @@
 #   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
 #   SUPABASE_ACCESS_TOKEN - https://supabase.com/dashboard/account/tokens
 #   SUPABASE_PROJECT_REF  - target Supabase project reference
+#   VERCEL_TOKEN          - https://vercel.com/account/tokens
+#   VERCEL_ORG_ID         - Vercel team/org id, so the CLI never needs `vercel link`
+#   VERCEL_PROJECT_ID     - Vercel project id
 #
 # Uses the OpenCode GitHub App (id-token exchange): commits and pull requests
 # are authored by the app identity and DO re-trigger code-quality workflows.
@@ -61,6 +64,13 @@ jobs:
           node-version: '22'
           cache-next: 'false'
 
+      - name: Install Vercel CLI
+        # Pinned, global so the agent can call it directly. Kept out of the shared
+        # setup-environment action so other CI jobs do not pay for it.
+        run: |
+          npm install --global vercel@63.1.0
+          vercel --version
+
       - name: Configure Supabase MCP (runner-only)
         env:
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -95,6 +105,9 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           OPENCODE_EXPERIMENTAL_OUTPUT_TOKEN_MAX: 250000
         with:
           model: opencode-go/deepseek-v4.1-flash
@@ -111,6 +124,10 @@ jobs:
             - `vercel-react-best-practices` — React/Next.js performance optimization patterns
             - `codebase-design` — shared vocabulary for identifying deepening opportunities in architecture
             Load `diagnosing-bugs` if the task involves debugging or fixing a reported issue.
+
+            Connected tooling (installed for this run, authenticated by environment):
+            - The Vercel CLI is installed and reads VERCEL_TOKEN from the environment itself — never pass it as a `--token` flag. VERCEL_ORG_ID and VERCEL_PROJECT_ID are set, so never run `vercel link`. Use it read-only (`vercel ls --format json`, `vercel inspect <url> --logs`, `vercel env ls`); do not deploy.
+            - The Supabase MCP server is the only database surface; read with `list_tables`, `list_migrations` and `get_advisors`.
 
             Steps:
             1. Understand the user's request. If it is ambiguous or unsafe, write "DECISION: CANNOT (reason)" to /tmp/plan.md and stop.
@@ -129,6 +146,9 @@ jobs:
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
           NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
           NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
           NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
@@ -147,6 +167,10 @@ jobs:
             - `supabase-postgres-best-practices` — Postgres rules for writing correct migrations, indexes, and RLS policies
             - `vercel-react-best-practices` — React/Next.js performance patterns for implementing fixes correctly
             - `tdd` — for writing tests during implementation
+
+            Connected tooling (installed for this run, authenticated by environment):
+            - The Vercel CLI is installed and reads VERCEL_TOKEN from the environment itself — never pass it as a `--token` flag. VERCEL_ORG_ID and VERCEL_PROJECT_ID are set, so never run `vercel link`. Use it read-only (`vercel ls --format json`, `vercel inspect <url> --logs`, `vercel logs <url>`, `vercel env ls`); do not deploy — Vercel builds a preview for the pull request — and never deploy to production.
+            - The Supabase MCP server is the only database surface; apply schema changes only through `apply_migration` as described below.
 
             First, read the plan from /tmp/plan.md (use the Read tool). If it says "DECISION: CANNOT", respond with the reason and stop.
 
