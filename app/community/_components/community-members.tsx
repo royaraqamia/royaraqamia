@@ -24,9 +24,7 @@ export function CommunityMembersPanel({ members, total }: CommunityMembersProps)
     <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/40 shadow-sm">
       <header className="flex items-center justify-between gap-3 px-5 pt-5 pb-3">
         <div className="flex items-center gap-2">
-          <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Users className="size-4" aria-hidden="true" />
-          </span>
+          <Users className="size-4 text-primary" aria-hidden="true" />
           <h2 className="text-sm font-bold text-foreground">أعضاء المجتمع</h2>
         </div>
         <span className="rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
@@ -80,7 +78,7 @@ export function CommunityMembersStrip({ members, total }: CommunityMembersProps)
           {total}
         </span>
       </div>
-      <ul className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <ul className="scrollbar-none flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2">
         {members.map((member) => (
           <li key={member.id} className="snap-start">
             <Link
