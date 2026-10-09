@@ -1,16 +1,26 @@
 'use client';
 
 import { useCallback, useState } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { PenLine } from 'lucide-react';
+import { LogIn, PenLine } from 'lucide-react';
 import { useSession } from '@/frontend/state/session-provider';
 import { useUI } from '@/frontend/state/UIContext';
+import { Button } from '@/frontend/ui/primitives/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/frontend/ui/primitives/dialog';
 import { PostComposerDialog } from './post-composer-dialog';
 
 /**
  * Facebook/X-style composer for the public community. Signed-in users can publish a
- * post without ever leaving `/community`; anonymous visitors are sent to login with
- * a redirect back.
+ * post without ever leaving `/community`; anonymous visitors get the same nudge the
+ * notification bell gives them — a prompt to sign in — instead of a hard redirect.
  */
 export function ComposeFab() {
   const { user, isLoading } = useSession();
@@ -18,15 +28,17 @@ export function ComposeFab() {
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [authPromptOpen, setAuthPromptOpen] = useState(false);
+
+  const loginHref = `/auth/login?redirect=${encodeURIComponent(pathname || '/community')}`;
 
   const handleFabClick = useCallback(() => {
     if (!user) {
-      const redirect = encodeURIComponent(pathname || '/community');
-      router.push(`/auth/login?redirect=${redirect}`);
+      setAuthPromptOpen(true);
       return;
     }
     setOpen(true);
-  }, [user, router, pathname]);
+  }, [user]);
 
   const handleSaved = useCallback(
     (slug: string) => {
@@ -50,6 +62,29 @@ export function ComposeFab() {
       </button>
 
       <PostComposerDialog open={open} onOpenChange={setOpen} onSaved={handleSaved} />
+
+      <Dialog open={authPromptOpen} onOpenChange={setAuthPromptOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="items-center text-center">
+            <div className="mx-auto mb-1 flex size-14 items-center justify-center rounded-full bg-muted/60 text-muted-foreground/80 border border-border/40 shadow-inner">
+              <PenLine size={24} />
+            </div>
+            <DialogTitle>سجِّل الدُّخول للنَّشر في المُجتمع</DialogTitle>
+            <DialogDescription>
+              لنشر منشور في المُجتمع، يلزمك تسجيل الدُّخول إلى حسابك أوَّلًا.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="sm:justify-center">
+            <Button asChild className="w-full sm:w-auto">
+              <Link href={loginHref} onClick={() => setAuthPromptOpen(false)}>
+                <LogIn className="size-4" />
+                تسجيل الدُّخول
+              </Link>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
