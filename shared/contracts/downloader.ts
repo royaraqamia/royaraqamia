@@ -44,7 +44,7 @@ export type DownloadStatus = (typeof DOWNLOAD_STATUSES)[number];
 
 export const DOWNLOAD_STATUS_LABELS: Record<DownloadStatus, string> = {
   queued: 'في الانتظار',
-  running: 'جارٍ المعالجة',
+  running: 'جاري المعالجة',
   ready: 'جاهز للتنزيل',
   failed: 'فشل',
   expired: 'انتهت صلاحية الرَّابط',

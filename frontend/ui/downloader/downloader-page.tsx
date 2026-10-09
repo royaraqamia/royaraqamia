@@ -101,7 +101,7 @@ export function DownloaderPage() {
 
             {probing && (
               <p className="text-xs text-muted-foreground" aria-live="polite">
-                جارٍ فحص الرَّابط…
+                جاري فحص الرَّابط…
               </p>
             )}
 
