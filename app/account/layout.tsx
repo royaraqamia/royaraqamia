@@ -1,15 +1,17 @@
 import type { Metadata } from 'next';
 import { Navbar } from '@/frontend/ui/Navbar';
-import { requireAuth } from '@/backend/middleware/auth-guard';
 
 export const metadata: Metadata = {
   title: 'حسابي',
   description: 'إدارة حسابك في رؤيَة رَقَميَّة: ملفَّك الشَّخصيّ وطلباتك وإعدادات الدُّخول.',
 };
 
-export default async function AccountLayout({ children }: { children: React.ReactNode }) {
-  await requireAuth('/auth/login?redirect=/account');
-
+/**
+ * Left open to guests on purpose: `/account` renders a sign-in prompt in place
+ * of the profile card so the mobile tab lands somewhere useful. Auth-only
+ * children (e.g. `/account/submissions`) guard themselves.
+ */
+export default function AccountLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh bg-background text-foreground flex flex-col pt-16 lg:pt-20">
       <Navbar />

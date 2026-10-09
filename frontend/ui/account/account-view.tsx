@@ -3,11 +3,12 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, ClipboardList, ShieldCheck, LogOut, MessageCircle } from 'lucide-react';
+import { User, ClipboardList, ShieldCheck, LogOut, LogIn, MessageCircle } from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
+import { Button } from '@/frontend/ui/primitives/button';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
 function AccountSkeleton() {
@@ -50,45 +51,69 @@ export function AccountView() {
 
   return (
     <div className="space-y-6">
-      {/* Profile card */}
-      <section className="flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5">
-        <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-lg">
-          {userName ? userName.charAt(0).toUpperCase() : <User size={24} />}
-          {showAvatar && (
-            <Image
-              src={avatarUrl!}
-              alt=""
-              width={56}
-              height={56}
-              unoptimized
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-              className="absolute inset-0 h-full w-full object-cover"
-            />
-          )}
-        </div>
-        <div className="min-w-0 flex-1 text-start">
-          <p className="truncate text-base sm:text-lg font-bold text-foreground">
-            {userName || userEmail || 'المستخدِم'}
-          </p>
-          <p className="truncate text-xs sm:text-sm text-muted-foreground">
-            {userEmail || 'حساب نشط'}
-          </p>
-        </div>
-      </section>
+      {/* Profile card — or the sign-in prompt that stands in for it for guests */}
+      {!user ? (
+        <section className="flex flex-col items-center gap-3 rounded-2xl border border-border/50 bg-card/60 p-6 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full border border-border/40 bg-muted/60 text-muted-foreground/80 shadow-inner">
+            <User size={24} />
+          </div>
+          <div className="space-y-1">
+            <p className="text-base font-bold text-foreground sm:text-lg">
+              سجِّل الدُّخول إلى حسابك
+            </p>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              تابع طلباتك وبياناتك الشَّخصيَّة بعد تسجيل الدُّخول
+            </p>
+          </div>
+          <Button asChild className="mt-1 w-full sm:w-auto">
+            <Link href="/auth/login?redirect=/account">
+              <LogIn className="size-4" />
+              تسجيل الدُّخول
+            </Link>
+          </Button>
+        </section>
+      ) : (
+        <section className="flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5">
+          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-lg">
+            {userName ? userName.charAt(0).toUpperCase() : <User size={24} />}
+            {showAvatar && (
+              <Image
+                src={avatarUrl!}
+                alt=""
+                width={56}
+                height={56}
+                unoptimized
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
+          </div>
+          <div className="min-w-0 flex-1 text-start">
+            <p className="truncate text-base sm:text-lg font-bold text-foreground">
+              {userName || userEmail || 'المستخدِم'}
+            </p>
+            <p className="truncate text-xs sm:text-sm text-muted-foreground">
+              {userEmail || 'حساب نشط'}
+            </p>
+          </div>
+        </section>
+      )}
 
       {/* Account actions */}
       <nav aria-label="إجراءات الحساب" className="flex flex-col gap-2.5">
-        <Link href="/account/submissions" className={rowClasses}>
-          <span className="flex items-center gap-2.5">
-            <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
-            <span>طلباتي</span>
-          </span>
-          <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
-            ←
-          </span>
-        </Link>
+        {user && (
+          <Link href="/account/submissions" className={rowClasses}>
+            <span className="flex items-center gap-2.5">
+              <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
+              <span>طلباتي</span>
+            </span>
+            <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
+              ←
+            </span>
+          </Link>
+        )}
 
         {isAdmin && (
           <Link href="/admin" className={rowClasses}>
@@ -112,19 +137,21 @@ export function AccountView() {
           </span>
         </a>
 
-        <button
-          type="button"
-          onClick={() => setIsLogoutDialogOpen(true)}
-          className={cn(
-            rowClasses,
-            'text-destructive/90 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30'
-          )}
-        >
-          <span className="flex items-center gap-2.5">
-            <LogOut className="w-4 h-4 shrink-0 text-destructive" />
-            <span>تسجيل الخروج</span>
-          </span>
-        </button>
+        {user && (
+          <button
+            type="button"
+            onClick={() => setIsLogoutDialogOpen(true)}
+            className={cn(
+              rowClasses,
+              'text-destructive/90 hover:text-destructive hover:bg-destructive/10 hover:border-destructive/30'
+            )}
+          >
+            <span className="flex items-center gap-2.5">
+              <LogOut className="w-4 h-4 shrink-0 text-destructive" />
+              <span>تسجيل الخروج</span>
+            </span>
+          </button>
+        )}
       </nav>
 
       <ConfirmDialog
