@@ -65,7 +65,7 @@ export function CodeSnippet({ code, label, copyLabel = 'نسخ' }: CodeSnippetPr
           onClick={handleCopy}
           title={status}
           aria-label={status}
-          className="focus-ring touch-target-sm absolute end-2 top-2 flex items-center justify-center rounded-lg text-zinc-400 transition-colors duration-150 ease-out hover:bg-white/10 hover:text-zinc-100 active:scale-95"
+          className="focus-ring touch-target-sm absolute end-2 top-2 z-10 flex items-center justify-center rounded-lg bg-zinc-950 text-zinc-400 transition-colors duration-150 ease-out hover:bg-zinc-800 hover:text-zinc-100 active:scale-95"
         >
           {state === 'copied' ? (
             <Check aria-hidden="true" className="size-4 text-emerald-400" />
