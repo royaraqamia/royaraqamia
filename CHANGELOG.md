@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.67.1] - 2026-10-09
+
+### Changed
+- move post share button beside the actions menu
+- match sign-in prompts to the Hero CTA
+
+### Fixed
+- preserve paragraph breaks in post card excerpt
+
 ## [1.67.0] - 2026-10-09
 
 ### Changed
