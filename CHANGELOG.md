@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.65.1] - 2026-10-09
+
+### Changed
+- retire weekly agent, wire Vercel into interactive agent, document workflows
+
 ## [1.65.0] - 2026-10-09
 
 ### Changed
