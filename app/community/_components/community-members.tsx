@@ -5,6 +5,8 @@ import type { PublicUser } from '@/shared/contracts/users';
 
 interface CommunityMembersProps {
   members: PublicUser[];
+  /** Roster size, which may exceed the rows shown. */
+  total: number;
 }
 
 function displayName(member: PublicUser): string {
@@ -12,10 +14,10 @@ function displayName(member: PublicUser): string {
 }
 
 /**
- * Desktop rail of recent members. Reads as part of the feed's right column —
+ * Desktop rail of members. Reads as part of the feed's right column —
  * deliberately quiet chrome so the gradient avatars carry the identity.
  */
-export function CommunityMembersPanel({ members }: CommunityMembersProps) {
+export function CommunityMembersPanel({ members, total }: CommunityMembersProps) {
   if (members.length === 0) return null;
 
   return (
@@ -28,11 +30,11 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
           <h2 className="text-sm font-bold text-foreground">أعضاء المجتمع</h2>
         </div>
         <span className="rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
-          {members.length}
+          {total}
         </span>
       </header>
 
-      <ul className="flex flex-col gap-0.5 px-2 pb-3">
+      <ul className="flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto px-2 pb-3">
         {members.map((member) => (
           <li key={member.id}>
             <Link
@@ -66,7 +68,7 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
 }
 
 /** Mobile counterpart: a snap-scrolling row of member chips above the feed. */
-export function CommunityMembersStrip({ members }: CommunityMembersProps) {
+export function CommunityMembersStrip({ members, total }: CommunityMembersProps) {
   if (members.length === 0) return null;
 
   return (
@@ -74,6 +76,9 @@ export function CommunityMembersStrip({ members }: CommunityMembersProps) {
       <div className="mb-3 flex items-center gap-2 px-1">
         <Users className="size-4 text-primary" aria-hidden="true" />
         <h2 className="text-sm font-bold text-foreground">أعضاء المجتمع</h2>
+        <span className="rounded-full bg-muted/50 px-2 py-0.5 text-[11px] font-bold tabular-nums text-muted-foreground">
+          {total}
+        </span>
       </div>
       <ul className="flex snap-x snap-mandatory gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         {members.map((member) => (

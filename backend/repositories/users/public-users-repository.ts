@@ -16,6 +16,8 @@ const PUBLIC_USER_COLUMNS = 'id, username, name, avatar_url, bio';
 export interface PublicUsersRepository {
   /** Newest members first — the community page's "who's here" list. */
   list(limit: number): Promise<PublicUser[]>;
+  /** Total members, for the roster badge. Independent of how many are shown. */
+  count(): Promise<number>;
   search(query: string, limit: number): Promise<PublicUser[]>;
   getByUsername(username: string): Promise<PublicUser | null>;
   getById(id: string): Promise<PublicUser | null>;
@@ -29,12 +31,20 @@ export function createPublicUsersRepository(
       const { data, error } = await supabase
         .from('users')
         .select(PUBLIC_USER_COLUMNS)
-        .not('username', 'is', null)
         .order('created_at', { ascending: false })
         .limit(limit);
 
       if (error) return [];
       return (data ?? []) as PublicUser[];
+    },
+
+    async count(): Promise<number> {
+      const { count, error } = await supabase
+        .from('users')
+        .select('id', { count: 'exact', head: true });
+
+      if (error) return 0;
+      return count ?? 0;
     },
 
     async search(query, limit): Promise<PublicUser[]> {
@@ -44,7 +54,6 @@ export function createPublicUsersRepository(
       const { data, error } = await supabase
         .from('users')
         .select(PUBLIC_USER_COLUMNS)
-        .not('username', 'is', null)
         .or(`name.ilike.%${term}%,username.ilike.%${term}%`)
         .order('name', { ascending: true, nullsFirst: false })
         .limit(limit);

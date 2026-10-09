@@ -4,12 +4,15 @@ import type { Database } from '@/backend/models/database.types';
 import { createPublicUsersRepository } from '@/backend/repositories/users/public-users-repository';
 import type { PublicUser } from '@/shared/contracts/users';
 
-function createClient(options: { list?: PublicUser[]; single?: PublicUser | null }) {
+function createClient(options: {
+  list?: PublicUser[];
+  single?: PublicUser | null;
+  count?: number;
+}) {
   const orFilters: string[] = [];
   const eqFilters: Array<[string, unknown]> = [];
   const builder = {
     select: vi.fn(() => builder),
-    not: vi.fn(() => builder),
     or: vi.fn((filter: string) => {
       orFilters.push(filter);
       return builder;
@@ -21,6 +24,9 @@ function createClient(options: { list?: PublicUser[]; single?: PublicUser | null
     order: vi.fn(() => builder),
     limit: vi.fn(async () => ({ data: options.list ?? [], error: null })),
     maybeSingle: vi.fn(async () => ({ data: options.single ?? null, error: null })),
+    // `count()` awaits the builder directly (head: true, no terminal call).
+    then: (resolve: (value: unknown) => unknown) =>
+      resolve({ data: options.list ?? [], error: null, count: options.count ?? 0 }),
   };
   const supabase = { from: vi.fn(() => builder) };
   return { supabase, orFilters, eqFilters };
@@ -43,6 +49,15 @@ describe('createPublicUsersRepository', () => {
 
     expect(result).toEqual([member]);
     expect(supabase.from).toHaveBeenCalledWith('users');
+  });
+
+  it('returns the exact roster total, independent of the page size', async () => {
+    const { supabase } = createClient({ list: [member], count: 11 });
+    const repo = createPublicUsersRepository(supabase as unknown as SupabaseClient<Database>);
+
+    const total = await repo.count();
+
+    expect(total).toBe(11);
   });
 
   it('sanitizes the search term before it reaches the or() filter', async () => {

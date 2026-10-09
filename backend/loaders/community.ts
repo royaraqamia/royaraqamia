@@ -16,7 +16,7 @@ const COMMUNITY_CACHE_SECONDS = 60;
 
 const pub = () => createBlogpressPostsModule(getPublicSupabase()).repository;
 
-const COMMUNITY_MEMBERS_LIMIT = 8;
+const COMMUNITY_MEMBERS_LIMIT = 50;
 const COMMUNITY_SEARCH_PEOPLE_LIMIT = 5;
 const COMMUNITY_SEARCH_POSTS_LIMIT = 6;
 const COMMUNITY_MEMBER_POSTS_PAGE_SIZE = 9;
@@ -97,13 +97,22 @@ export const loadCommunityPost = unstable_cache(
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.post] }
 );
 
+export interface CommunityMembers {
+  members: PublicUser[];
+  /** Total member count — the badge is the roster size, not the shown rows. */
+  total: number;
+}
+
 /**
- * The "who's here" directory shown on `/community`. Shared by every visitor, so
+ * The "who's here" roster shown on `/community`. Shared by every visitor, so
  * it is cached under its own tag — publishing a post must not evict it.
  */
 export const loadCommunityMembers = unstable_cache(
-  (limit: number = COMMUNITY_MEMBERS_LIMIT): Promise<PublicUser[]> =>
-    createPublicUsersRepositoryServer().list(limit),
+  async (limit: number = COMMUNITY_MEMBERS_LIMIT): Promise<CommunityMembers> => {
+    const repository = createPublicUsersRepositoryServer();
+    const [members, total] = await Promise.all([repository.list(limit), repository.count()]);
+    return { members, total };
+  },
   ['community-members'],
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.members] }
 );
