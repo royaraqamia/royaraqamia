@@ -6,12 +6,20 @@ import {
   createBlogpressAdminPostsModule,
   createBlogpressPostsModule,
 } from '@/backend/config/blogpress';
-import type { Post, PostAuthor, PostTag } from '@/shared/contracts/blogpress';
+import { createPublicUsersRepositoryServer } from '@/backend/config/users';
+import type { Post, PostAuthor, PostTag, PostSummary } from '@/shared/contracts/blogpress';
+import type { PublicUser } from '@/shared/contracts/users';
+import type { CommunitySearchResult } from '@/shared/contracts/community';
 import { COMMUNITY_TAGS } from '@/backend/shared/community-cache-tags';
 
 const COMMUNITY_CACHE_SECONDS = 60;
 
 const pub = () => createBlogpressPostsModule(getPublicSupabase()).repository;
+
+const COMMUNITY_MEMBERS_LIMIT = 8;
+const COMMUNITY_SEARCH_PEOPLE_LIMIT = 5;
+const COMMUNITY_SEARCH_POSTS_LIMIT = 6;
+const COMMUNITY_MEMBER_POSTS_PAGE_SIZE = 9;
 
 export const loadCommunityIndex = unstable_cache(
   async (cursor: string | null, query: string, pageSize: number, categorySlug?: string) => {
@@ -87,4 +95,62 @@ export const loadCommunityPost = unstable_cache(
   },
   ['community-post'],
   { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.post] }
+);
+
+/**
+ * The "who's here" directory shown on `/community`. Shared by every visitor, so
+ * it is cached under its own tag — publishing a post must not evict it.
+ */
+export const loadCommunityMembers = unstable_cache(
+  (limit: number = COMMUNITY_MEMBERS_LIMIT): Promise<PublicUser[]> =>
+    createPublicUsersRepositoryServer().list(limit),
+  ['community-members'],
+  { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.members] }
+);
+
+/**
+ * Combined people + post suggestions for the search combobox. Not cached: it is
+ * keyed on the visitor's keystrokes and served on the request path.
+ */
+export async function loadCommunitySearch(query: string): Promise<CommunitySearchResult> {
+  const trimmed = query.trim();
+  if (!trimmed) return { people: [], posts: [] };
+
+  const [people, feed] = await Promise.all([
+    createPublicUsersRepositoryServer().search(trimmed, COMMUNITY_SEARCH_PEOPLE_LIMIT),
+    pub().getPublishedFeed(null, trimmed, COMMUNITY_SEARCH_POSTS_LIMIT),
+  ]);
+
+  return { people, posts: feed.posts };
+}
+
+export interface CommunityMemberPage {
+  member: PublicUser;
+  posts: PostSummary[];
+  nextCursor: string | null;
+}
+
+/** A public member profile plus the first page of their published posts. */
+export const loadCommunityMember = unstable_cache(
+  async (username: string): Promise<CommunityMemberPage | null> => {
+    const member = await createPublicUsersRepositoryServer().getByUsername(username);
+    if (!member) return null;
+
+    const feed = await pub().getPublishedFeed(
+      null,
+      '',
+      COMMUNITY_MEMBER_POSTS_PAGE_SIZE,
+      undefined,
+      member.id
+    );
+    const author = { name: member.name, avatar_url: member.avatar_url };
+
+    return {
+      member,
+      posts: feed.posts.map((post) => ({ ...post, author })),
+      nextCursor: feed.nextCursor,
+    };
+  },
+  ['community-member'],
+  { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.memberByUsername] }
 );

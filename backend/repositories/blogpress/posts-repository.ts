@@ -22,7 +22,8 @@ export interface PostsRepository {
     cursor: string | null,
     query: string,
     pageSize: number,
-    categorySlug?: string
+    categorySlug?: string,
+    authorId?: string
   ): Promise<PublishedFeedResult>;
   getPublishedPostSlugs(): Promise<string[]>;
   getPublishedPostSitemapEntries(): Promise<PostSitemapEntry[]>;

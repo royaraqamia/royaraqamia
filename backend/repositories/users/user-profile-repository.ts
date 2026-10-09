@@ -12,6 +12,7 @@ export interface UserProfile {
   id: string;
   email: string;
   name: string | null;
+  username: string;
   avatar_url: string | null;
   bio: string | null;
   is_admin: boolean;
@@ -22,7 +23,12 @@ export interface UserProfileRepository {
   getById(id: string): Promise<UserProfile | null>;
   updateProfile(
     id: string,
-    input: { name?: string | null; avatar_url?: string | null; bio?: string | null }
+    input: {
+      name?: string | null;
+      username?: string;
+      avatar_url?: string | null;
+      bio?: string | null;
+    }
   ): Promise<void>;
 }
 
@@ -46,15 +52,21 @@ export function createUserProfileRepository(
     async getById(id) {
       const { data } = await supabase
         .from('users')
-        .select('id, email, name, avatar_url, bio, is_admin')
+        .select('id, email, name, username, avatar_url, bio, is_admin')
         .eq('id', id)
         .maybeSingle();
       return data ?? null;
     },
 
     async updateProfile(id, input) {
-      const updates: { name?: string | null; avatar_url?: string | null; bio?: string | null } = {};
+      const updates: {
+        name?: string | null;
+        username?: string;
+        avatar_url?: string | null;
+        bio?: string | null;
+      } = {};
       if (input.name !== undefined) updates.name = input.name;
+      if (input.username !== undefined) updates.username = input.username;
       if (input.avatar_url !== undefined) updates.avatar_url = input.avatar_url;
       if (input.bio !== undefined) updates.bio = input.bio;
 

@@ -18,20 +18,23 @@ export async function getMe(): Promise<HttpResult> {
 
   let name: string | null = null;
   let avatarUrl: string | null = null;
+  let username: string | null = null;
   if (user) {
     try {
       const profile = await createServerUserProfileRepository().getById(user.id);
       name = profile?.name?.trim() ? profile.name : null;
       avatarUrl = profile?.avatar_url?.trim() ? profile.avatar_url : null;
+      username = profile?.username?.trim() ? profile.username : null;
     } catch {
       name = null;
       avatarUrl = null;
+      username = null;
     }
   }
 
   return jsonResult(
     200,
-    { isAdmin: isAdmin(user?.email ?? '', env.adminEmails), name, avatarUrl },
+    { isAdmin: isAdmin(user?.email ?? '', env.adminEmails), name, avatarUrl, username },
     { headers: { 'Cache-Control': 'no-store' } }
   );
 }

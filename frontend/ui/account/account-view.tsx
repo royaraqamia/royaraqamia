@@ -10,6 +10,7 @@ import { useSession } from '@/frontend/state/session-provider';
 import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
+import { UsernameEditor } from '@/frontend/ui/account/username-editor';
 
 function AccountSkeleton() {
   return (
@@ -95,6 +96,9 @@ export function AccountView() {
           </div>
         </section>
       )}
+
+      {/* Public handle editor — signed-in members only */}
+      {user && <UsernameEditor />}
 
       {/* Account actions */}
       <nav aria-label="إجراءات الحساب" className="flex flex-col gap-2.5">

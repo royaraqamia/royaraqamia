@@ -145,7 +145,8 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       cursor: string | null,
       query: string,
       pageSize: number,
-      categorySlug?: string
+      categorySlug?: string,
+      authorId?: string
     ): Promise<PublishedFeedResult> {
       const decoded = cursor ? decodeFeedCursor(cursor) : null;
 
@@ -163,6 +164,10 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .select(POST_SUMMARY_COLUMNS)
         .or(PUBLISHED_POSTS_FILTER)
         .eq('community_visible', true);
+
+      if (authorId) {
+        queryBuilder = queryBuilder.eq('author_id', authorId);
+      }
 
       if (postIds) {
         queryBuilder = queryBuilder.in('id', postIds);

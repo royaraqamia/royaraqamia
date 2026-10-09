@@ -4,10 +4,20 @@ export interface Me {
   isAdmin: boolean;
   name: string | null;
   avatarUrl: string | null;
+  username: string | null;
 }
 
 export async function getMe(): Promise<Me> {
   return request<Me>('/api/me', {
     cache: 'no-store',
+  });
+}
+
+export async function updateUsername(
+  username: string
+): Promise<{ success: boolean; username?: string; error?: string }> {
+  return request<{ success: boolean; username?: string; error?: string }>('/api/me/username', {
+    method: 'PATCH',
+    body: JSON.stringify({ username }),
   });
 }

@@ -1,4 +1,6 @@
 import { z } from 'zod';
+import type { PostSummary } from '@/shared/contracts/blogpress';
+import type { PublicUser } from '@/shared/contracts/users';
 
 export const PostSchema = z.object({
   slug: z
@@ -52,7 +54,13 @@ export const BulkPostsActionSchema = z.object({
 export type BulkPostsActionInput = z.infer<typeof BulkPostsActionSchema>;
 
 export const SchedulePostSchema = z.object({
-  publish_at: z.string().min(1, 'تاريخ الجدولة مطلوب'),
+  publish_at: z.string().min(1, 'تاريخ النشر مطلوب'),
 });
 
 export type SchedulePostInput = z.infer<typeof SchedulePostSchema>;
+
+/** Combined people + posts result for the community search combobox. */
+export interface CommunitySearchResult {
+  people: PublicUser[];
+  posts: PostSummary[];
+}

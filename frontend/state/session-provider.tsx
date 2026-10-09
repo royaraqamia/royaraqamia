@@ -27,6 +27,8 @@ interface SessionContextType {
   profileName: string | null;
   /** Avatar URL from the user's profile row, or null when unavailable. */
   profileAvatarUrl: string | null;
+  /** Public handle from the user's profile row, or null when unavailable. */
+  profileUsername: string | null;
   signOut: () => Promise<void>;
 }
 
@@ -37,6 +39,7 @@ const SessionContext = createContext<SessionContextType>({
   isAdmin: false,
   profileName: null,
   profileAvatarUrl: null,
+  profileUsername: null,
   signOut: async () => {},
 });
 
@@ -59,6 +62,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [profileName, setProfileName] = useState<string | null>(null);
   const [profileAvatarUrl, setProfileAvatarUrl] = useState<string | null>(null);
+  const [profileUsername, setProfileUsername] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
   const prevSessionRef = useRef<Session | null>(null);
@@ -127,6 +131,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setIsAdmin(false);
       setProfileName(null);
       setProfileAvatarUrl(null);
+      setProfileUsername(null);
       return;
     }
 
@@ -139,12 +144,14 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           setIsAdmin(me.isAdmin);
           setProfileName(me.name ?? null);
           setProfileAvatarUrl(me.avatarUrl ?? null);
+          setProfileUsername(me.username ?? null);
         })
         .catch(() => {
           if (active) {
             setIsAdmin(false);
             setProfileName(null);
             setProfileAvatarUrl(null);
+            setProfileUsername(null);
           }
         })
     );
@@ -155,8 +162,17 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [userId]);
 
   const value = useMemo(
-    () => ({ user, session, isLoading, isAdmin, profileName, profileAvatarUrl, signOut }),
-    [user, session, isLoading, isAdmin, profileName, profileAvatarUrl, signOut]
+    () => ({
+      user,
+      session,
+      isLoading,
+      isAdmin,
+      profileName,
+      profileAvatarUrl,
+      profileUsername,
+      signOut,
+    }),
+    [user, session, isLoading, isAdmin, profileName, profileAvatarUrl, profileUsername, signOut]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
