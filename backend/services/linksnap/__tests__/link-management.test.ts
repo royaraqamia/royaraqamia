@@ -71,7 +71,7 @@ describe('UpdateLinkService', () => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
     await expect(service.execute('', 'u-1', { originalUrl: 'https://new.com' })).rejects.toThrow(
-      'رمز الرابط والمستخدم مطلوبان.'
+      'رمز الرَّابط والمستخدم مطلوبان.'
     );
   });
 
@@ -79,7 +79,7 @@ describe('UpdateLinkService', () => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
     await expect(service.execute('abc123', 'u-1', {})).rejects.toThrow(
-      'لا توجد تغييرات لتطبيقها على الرابط.'
+      'لا توجد تغييرات لتطبيقها على الرَّابط.'
     );
     expect(repository.findByCode).not.toHaveBeenCalled();
   });
@@ -88,7 +88,7 @@ describe('UpdateLinkService', () => {
     const { repository } = makeRepo();
     const service = new UpdateLinkService(repository);
     await expect(service.execute('abc123', '', { originalUrl: 'https://new.com' })).rejects.toThrow(
-      'رمز الرابط والمستخدم مطلوبان.'
+      'رمز الرَّابط والمستخدم مطلوبان.'
     );
   });
 
@@ -252,7 +252,7 @@ describe('DeleteLinkService', () => {
   it('throws when the code is missing', async () => {
     const { repository } = makeRepo();
     const service = new DeleteLinkService(repository);
-    await expect(service.execute('', 'u-1')).rejects.toThrow('رمز الرابط مطلوب.');
+    await expect(service.execute('', 'u-1')).rejects.toThrow('رمز الرَّابط مطلوب.');
   });
 
   it('throws when the user id is missing', async () => {

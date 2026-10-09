@@ -6,7 +6,7 @@ import { inspectDownloadLink } from '@/frontend/api/downloader';
 
 const DEBOUNCE_MS = 600;
 
-const UNKNOWN_MESSAGE = 'تعذّر فحص الرابط. تأكّد من صحّته وحاول مجددًا.';
+const UNKNOWN_MESSAGE = 'تعذّر فحص الرَّابط. تأكّد من صحّته وحاول مجددًا.';
 
 /**
  * Inspects a link after the visitor stops typing, so the format field can adapt

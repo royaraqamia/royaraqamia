@@ -60,7 +60,7 @@ export function useUpdateLink(token: string) {
       try {
         return await updateLink(code, token, changes);
       } catch (err: unknown) {
-        setUpdateError(err instanceof Error ? err.message : 'خطأ في تحديث الرابط.');
+        setUpdateError(err instanceof Error ? err.message : 'خطأ في تحديث الرَّابط.');
         throw err;
       } finally {
         setUpdateLoading(false);
@@ -81,7 +81,7 @@ export function useDeleteLink(token: string) {
       try {
         await deleteLink(code, token);
       } catch (err: unknown) {
-        setDeleteError(err instanceof Error ? err.message : 'خطأ في حذف الرابط.');
+        setDeleteError(err instanceof Error ? err.message : 'خطأ في حذف الرَّابط.');
         throw err;
       }
     },

@@ -56,12 +56,12 @@ function LinkRowActions({
       ) : link.isBlocked ? (
         <>
           <Unlock className="w-3 h-3" />
-          <span>إلغاء حظر الرابط</span>
+          <span>إلغاء حظر الرَّابط</span>
         </>
       ) : (
         <>
           <Lock className="w-3 h-3" />
-          <span>حظر الرابط</span>
+          <span>حظر الرَّابط</span>
         </>
       )}
     </button>
@@ -180,8 +180,8 @@ export function AdminLinksDirectory({
             type="search"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder="بحث بالرمز أو الرابط..."
-            aria-label="بحث بالرمز أو الرابط"
+            placeholder="بحث بالرمز أو الرَّابط..."
+            aria-label="بحث بالرمز أو الرَّابط"
             className="h-10 ps-9 text-xs"
           />
         </div>

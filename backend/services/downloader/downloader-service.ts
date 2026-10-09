@@ -22,9 +22,9 @@ import { platformForUrl } from '@/backend/services/downloader/platform-catalog';
 
 const BUSY_MESSAGE = 'الخدمة مزدحمة حاليًّا. حاول مجددًا بعد قليل.';
 const SIZE_MESSAGE = 'حجم الملف يتجاوز الحدّ المسموح.';
-const GENERIC_FAILURE = 'تعذّر تنزيل الوسائط من هذا الرابط.';
+const GENERIC_FAILURE = 'تعذّر تنزيل الوسائط من هذا الرَّابط.';
 
-export const BLOCKED_LINK_MESSAGE = 'هذا الرابط محظور.';
+export const BLOCKED_LINK_MESSAGE = 'هذا الرَّابط محظور.';
 export const PLATFORM_DISABLED_MESSAGE = 'هذا الموقع غير مدعوم حاليًّا.';
 export const PLATFORM_BREAKER_MESSAGE = 'هذا الموقع غير متاح مؤقتًا. حاول مجددًا بعد قليل.';
 

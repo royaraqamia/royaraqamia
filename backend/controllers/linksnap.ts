@@ -135,7 +135,7 @@ export async function deleteLink(
 ): Promise<HttpResult> {
   return requireBearer(authorization, 'Error in delete link API route:', async ({ userId }) => {
     await createDeleteLinkService().execute(code ?? '', userId);
-    return jsonResult(200, { success: true, message: 'تم حذف الرابط بنجاح.' });
+    return jsonResult(200, { success: true, message: 'تم حذف الرَّابط بنجاح.' });
   });
 }
 
@@ -215,7 +215,7 @@ export async function moderateLink(
 
       return jsonResult(200, {
         success: true,
-        message: `تم ${body.isBlocked ? 'حظر' : 'إلغاء حظر'} الرابط بنجاح.`,
+        message: `تم ${body.isBlocked ? 'حظر' : 'إلغاء حظر'} الرَّابط بنجاح.`,
         link: {
           code: updatedLink.code,
           originalUrl: updatedLink.originalUrl,
@@ -345,7 +345,7 @@ export async function unlockLinkPassword(
     if (rateLimitResult) return rateLimitResult;
 
     if (typeof body.code !== 'string' || typeof body.password !== 'string') {
-      throw new AppError('رمز الرابط وكلمة المرور مطلوبان.', 400);
+      throw new AppError('رمز الرَّابط وكلمة المرور مطلوبان.', 400);
     }
 
     const originalUrl = await createUnlockLinkService().execute(body.code, body.password, {

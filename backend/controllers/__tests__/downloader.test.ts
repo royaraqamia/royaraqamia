@@ -147,7 +147,7 @@ describe('downloader controller recordDownloadCallback', () => {
   });
 
   it('records a failed result for an authenticated provider', async () => {
-    const failure = { jobId: JOB_ID, status: 'failed', error: 'هذا الرابط غير مدعوم.' };
+    const failure = { jobId: JOB_ID, status: 'failed', error: 'هذا الرَّابط غير مدعوم.' };
 
     const result = await recordDownloadCallback(failure, secretHeaders);
 

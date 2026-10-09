@@ -30,7 +30,7 @@ export class UnlockLinkService {
       throw new ShortLinkRedirectError('Short link not found.', 'not-found');
     }
     if (!link.passwordHash) {
-      throw new AppError('هذا الرابط ليس محمياً بكلمة مرور.', 400);
+      throw new AppError('هذا الرَّابط ليس محمياً بكلمة مرور.', 400);
     }
     if (!verifyPassword(password, link.passwordHash)) {
       throw new AppError('كلمة المرور غير صحيحة.', 401);

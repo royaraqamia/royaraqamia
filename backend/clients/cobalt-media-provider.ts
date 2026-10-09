@@ -63,7 +63,7 @@ const DEFAULT_BACKOFF_MS = 750;
 const DEFAULT_INSPECT_TIMEOUT_MS = 30000;
 
 const UNAVAILABLE_MESSAGE = 'الخدمة غير متاحة مؤقتًا. حاول مجددًا بعد لحظات.';
-const UNSUPPORTED_MESSAGE = 'هذا الرابط غير مدعوم.';
+const UNSUPPORTED_MESSAGE = 'هذا الرَّابط غير مدعوم.';
 
 /** A failure worth retrying (host still cold, transient 5xx) vs. a decision. */
 class TransientDispatchError extends MediaProviderError {

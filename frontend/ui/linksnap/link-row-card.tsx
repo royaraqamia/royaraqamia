@@ -110,11 +110,11 @@ export const LinkRowCard = memo(function LinkRowCard({
     try {
       await navigator.clipboard.writeText(fullShortUrl);
       setCopiedCode(code);
-      toast.success('تم نسخ الرابط!');
+      toast.success('تم نسخ الرَّابط!');
       setTimeout(() => setCopiedCode(null), 2000);
     } catch (err) {
       logger.error('Copy failed', { error: String(err) });
-      toast.error('فشل نسخ الرابط');
+      toast.error('فشل نسخ الرَّابط');
     }
   };
 
@@ -139,16 +139,16 @@ export const LinkRowCard = memo(function LinkRowCard({
     try {
       await deleteLink(code);
       onDeleted(code);
-      toast('تم حذف الرابط', {
+      toast('تم حذف الرَّابط', {
         action: {
           label: 'تراجع',
           onClick: async () => {
             try {
               await shorten(originalUrl, code, token);
               onRestored?.();
-              toast.success('تم استرجاع الرابط');
+              toast.success('تم استرجاع الرَّابط');
             } catch {
-              toast.error('فشل استرجاع الرابط');
+              toast.error('فشل استرجاع الرَّابط');
             }
           },
         },
@@ -186,7 +186,7 @@ export const LinkRowCard = memo(function LinkRowCard({
               type="button"
               onClick={() => onToggleSelect(code)}
               aria-pressed={isSelected}
-              aria-label={isSelected ? 'إلغاء تحديد الرابط' : 'تحديد الرابط'}
+              aria-label={isSelected ? 'إلغاء تحديد الرَّابط' : 'تحديد الرَّابط'}
               className={cn(
                 'mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-safe duration-200 ease-out',
                 'active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:focus-visible:ring-neutral-100 dark:focus-visible:ring-offset-neutral-950',
@@ -243,7 +243,7 @@ export const LinkRowCard = memo(function LinkRowCard({
               {passwordProtected && (
                 <span
                   className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-amber-200/70 bg-amber-50/80 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-800/50 dark:bg-amber-950/40 dark:text-amber-400"
-                  title="هذا الرابط محمي بكلمة مرور"
+                  title="هذا الرَّابط محمي بكلمة مرور"
                 >
                   <Lock aria-hidden="true" className="h-3 w-3" />
                   محمي
@@ -281,8 +281,8 @@ export const LinkRowCard = memo(function LinkRowCard({
           <button
             onClick={handleCopy}
             type="button"
-            aria-label="نسخ الرابط"
-            title="نسخ الرابط"
+            aria-label="نسخ الرَّابط"
+            title="نسخ الرَّابط"
             className={cn(
               'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-safe duration-200 ease-out',
               'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
@@ -305,8 +305,8 @@ export const LinkRowCard = memo(function LinkRowCard({
           <button
             onClick={handleShare}
             type="button"
-            aria-label="مشاركة الرابط"
-            title="مشاركة الرابط"
+            aria-label="مشاركة الرَّابط"
+            title="مشاركة الرَّابط"
             className={cn(
               'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-safe duration-200 ease-out',
               'hover:scale-[1.03] hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900 active:scale-95',
@@ -349,7 +349,7 @@ export const LinkRowCard = memo(function LinkRowCard({
             <DropdownMenuTrigger asChild>
               <button
                 type="button"
-                aria-label={`إجراءات الرابط /${code}`}
+                aria-label={`إجراءات الرَّابط /${code}`}
                 title="مزيد من الإجراءات"
                 className={cn(
                   'inline-flex h-9 w-9 items-center justify-center rounded-xl border border-neutral-200/80 bg-white text-neutral-600 transition-safe duration-200 ease-out',
@@ -417,9 +417,9 @@ export const LinkRowCard = memo(function LinkRowCard({
 
       <ConfirmDialog
         open={showDeleteConfirm}
-        title="حذف الرابط"
+        title="حذف الرَّابط"
         message="هل أنت متأكد من حذف هذا الرَّابط المُختصَر؟ هذا الإجراء دائم."
-        confirmLabel="حذف الرابط"
+        confirmLabel="حذف الرَّابط"
         cancelLabel="إلغاء"
         icon={Trash2}
         variant="danger"

@@ -23,7 +23,7 @@ export class UpdateLinkService {
    */
   async execute(code: string, userId: string, input: UpdateLinkInput): Promise<ShortLink> {
     if (!code || !userId) {
-      throw new AppError('رمز الرابط والمستخدم مطلوبان.', 400);
+      throw new AppError('رمز الرَّابط والمستخدم مطلوبان.', 400);
     }
     if (
       input.code === undefined &&
@@ -31,7 +31,7 @@ export class UpdateLinkService {
       input.expiresAt === undefined &&
       input.password === undefined
     ) {
-      throw new AppError('لا توجد تغييرات لتطبيقها على الرابط.', 400);
+      throw new AppError('لا توجد تغييرات لتطبيقها على الرَّابط.', 400);
     }
 
     // Verify ownership

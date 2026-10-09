@@ -282,7 +282,7 @@ describe('DownloaderService.dispatch', () => {
   it('records a provider-declared failure as a failed job rather than throwing', async () => {
     const { repository, service } = makeService(
       {},
-      new FakeProvider(new MediaProviderError('هذا الرابط غير مدعوم.'))
+      new FakeProvider(new MediaProviderError('هذا الرَّابط غير مدعوم.'))
     );
     const created = await service.create(INPUT);
 
@@ -290,7 +290,7 @@ describe('DownloaderService.dispatch', () => {
 
     const job = await service.get(created.id);
     expect(job.status).toBe('failed');
-    expect(job.error).toBe('هذا الرابط غير مدعوم.');
+    expect(job.error).toBe('هذا الرَّابط غير مدعوم.');
     expect(repository.events.map((event) => event.status)).toEqual(['queued', 'running', 'failed']);
   });
 
@@ -347,12 +347,12 @@ describe('DownloaderService.recordResult', () => {
     await service.recordResult({
       jobId: created.id,
       status: 'failed',
-      error: 'هذا الرابط خاص أو محميّ.',
+      error: 'هذا الرَّابط خاص أو محميّ.',
     });
 
     const job = await service.get(created.id);
     expect(job.status).toBe('failed');
-    expect(job.error).toBe('هذا الرابط خاص أو محميّ.');
+    expect(job.error).toBe('هذا الرَّابط خاص أو محميّ.');
   });
 
   it('rejects a result past the duration cap even if the provider ignores it', async () => {

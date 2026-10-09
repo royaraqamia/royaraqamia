@@ -51,7 +51,7 @@ export function useAdminLinks(token: string) {
             links: updatedLinks,
           };
         });
-        toast.success(targetState ? 'تم حظر الرابط بنجاح' : 'تم إلغاء حظر الرابط بنجاح');
+        toast.success(targetState ? 'تم حظر الرَّابط بنجاح' : 'تم إلغاء حظر الرَّابط بنجاح');
       } catch (err: unknown) {
         setModerateError(err instanceof Error ? err.message : 'حدث خطأ أثناء إجراء المراقبة.');
       } finally {

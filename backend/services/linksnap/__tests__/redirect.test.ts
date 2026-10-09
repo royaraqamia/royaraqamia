@@ -290,7 +290,7 @@ describe('GetUrlAnalyticsService.execute', () => {
   it('throws when the code is missing', async () => {
     const { analyticsRepository } = makeDeps();
     const service = new GetUrlAnalyticsService(analyticsRepository);
-    await expect(service.execute('', 'u-1')).rejects.toThrow('رمز الرابط مطلوب.');
+    await expect(service.execute('', 'u-1')).rejects.toThrow('رمز الرَّابط مطلوب.');
   });
 
   it('throws when the user id is missing', async () => {

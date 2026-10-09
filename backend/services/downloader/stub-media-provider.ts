@@ -37,7 +37,7 @@ export class StubMediaProvider implements MediaProvider {
 
   async dispatch({ jobId, url, linkTtlSeconds }: MediaDispatchInput): Promise<void> {
     if (!isHttpUrl(url)) {
-      throw new MediaProviderError('هذا الرابط غير مدعوم.');
+      throw new MediaProviderError('هذا الرَّابط غير مدعوم.');
     }
 
     const hostname = new URL(url).hostname.replace(/^www\./, '');
@@ -76,7 +76,7 @@ export class StubMediaProvider implements MediaProvider {
    */
   async inspect({ url }: MediaInspectInput): Promise<ProbeResult> {
     if (!isHttpUrl(url)) {
-      throw new MediaProviderError('هذا الرابط غير مدعوم.');
+      throw new MediaProviderError('هذا الرَّابط غير مدعوم.');
     }
     const hostname = new URL(url).hostname.replace(/^www\./, '');
     return {

@@ -45,7 +45,7 @@ export async function createDownloadJob(body: unknown, ip: string): Promise<Http
   if (!parsed.success) {
     return jsonResult(400, {
       success: false,
-      error: 'تحقق من الرابط والصيغة.',
+      error: 'تحقق من الرَّابط والصِّيغة.',
       fieldErrors: zodFieldErrors(parsed.error),
     });
   }
@@ -101,7 +101,7 @@ export async function inspectDownloadLink(body: unknown, ip: string): Promise<Ht
   if (!parsed.success) {
     return jsonResult(400, {
       success: false,
-      error: 'تحقق من الرابط.',
+      error: 'تحقق من الرَّابط.',
       fieldErrors: zodFieldErrors(parsed.error),
     });
   }

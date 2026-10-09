@@ -114,7 +114,7 @@ function CertificateListItem({
               variant="ghost"
               size="icon-sm"
               onClick={() => onCopy(cert.certificate_code, cert.id)}
-              aria-label="نسخ الرابط"
+              aria-label="نسخ الرَّابط"
               className="hover:text-primary size-11 sm:size-10"
             >
               {copied ? <Check className="size-4 text-green-500" /> : <Copy className="size-4" />}

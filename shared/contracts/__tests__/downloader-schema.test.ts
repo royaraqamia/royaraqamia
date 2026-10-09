@@ -127,7 +127,7 @@ describe('DownloadCallbackSchema', () => {
     const result = DownloadCallbackSchema.safeParse({
       jobId,
       status: 'failed',
-      error: 'هذا الرابط غير مدعوم.',
+      error: 'هذا الرَّابط غير مدعوم.',
     });
 
     expect(result.success).toBe(true);

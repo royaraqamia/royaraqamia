@@ -23,7 +23,7 @@ test.skip(!ENABLED, 'requires DOWNLOADER_E2E=1 (Supabase + stub-provider env)');
 test('a public link becomes a downloadable file through the signed callback', async ({ page }) => {
   await page.goto('/downloader');
 
-  await page.getByLabel('الرابط').fill('https://example.com/watch?v=1');
+  await page.getByLabel('الرَّابط').fill('https://example.com/watch?v=1');
 
   // The save starts automatically once the job is ready, so arm the listener
   // before the status flips — there is no separate "save" button to click.

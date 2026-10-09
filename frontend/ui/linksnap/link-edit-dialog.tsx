@@ -225,10 +225,10 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
     try {
       await navigator.clipboard.writeText(fullShortUrl);
       setCopiedLink(true);
-      toast.success('تم نسخ الرابط المُختصر إلى الحافظة');
+      toast.success('تم نسخ الرَّابط المُختصر إلى الحافظة');
       setTimeout(() => setCopiedLink(false), 2000);
     } catch {
-      toast.error('تعذر نسخ الرابط');
+      toast.error('تعذر نسخ الرَّابط');
     }
   };
 
@@ -271,7 +271,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
       onSaved(updated);
       onClose();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء تحديث الرابط.';
+      const msg = err instanceof Error ? err.message : 'حدث خطأ أثناء تحديث الرَّابط.';
       toast.error(msg);
     }
   };
@@ -328,7 +328,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                 </div>
                 <div>
                   <DialogTitle className="text-base sm:text-lg font-bold tracking-tight text-foreground flex items-center gap-2">
-                    <span>تعديل الرابط المُختصر</span>
+                    <span>تعديل الرَّابط المُختصر</span>
                     {hasChanges && (
                       <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                         تعديلات معلقة
@@ -336,7 +336,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     )}
                   </DialogTitle>
                   <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                    قم بتعديل الوجهة، الرمز المخصص، الحماية أو صلاحية الرابط.
+                    قم بتعديل الوجهة، الرمز المخصص، الحماية أو صلاحية الرَّابط.
                   </DialogDescription>
                 </div>
               </div>
@@ -365,7 +365,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span className="flex items-center gap-1.5 font-medium">
                   <Sparkles className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                  <span>معاينة الرابط المباشر</span>
+                  <span>معاينة الرَّابط المباشر</span>
                 </span>
                 <div className="flex items-center gap-1.5">
                   {passwordEnabled && (
@@ -396,8 +396,8 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     type="button"
                     onClick={handleCopyLink}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-neutral-800 transition-colors cursor-pointer"
-                    title="نسخ الرابط المختصر"
-                    aria-label="نسخ الرابط المختصر"
+                    title="نسخ الرَّابط المختصر"
+                    aria-label="نسخ الرَّابط المختصر"
                   >
                     {copiedLink ? (
                       <CheckCheck className="w-4 h-4 text-emerald-500" />
@@ -417,7 +417,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   className="text-xs font-bold text-foreground/90 flex items-center gap-1.5"
                 >
                   <Globe className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
-                  <span>الرابط الوجهة المستهدف (Destination URL)</span>
+                  <span>الرَّابط الوجهة المستهدف (Destination URL)</span>
                   <span className="text-destructive font-bold" aria-hidden="true">
                     *
                   </span>
@@ -429,7 +429,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-[11px] font-medium text-primary hover:underline"
                   >
-                    <span>اختبار الرابط</span>
+                    <span>اختبار الرَّابط</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
@@ -559,7 +559,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                         تاريخ ووقت انتهاء الصلاحية
                       </h4>
                       <p className="text-[11px] text-muted-foreground">
-                        تعطيل الرابط تلقائياً بعد حلول هذا الموعد
+                        تعطيل الرَّابط تلقائياً بعد حلول هذا الموعد
                       </p>
                     </div>
                   </div>
@@ -568,7 +568,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     type="button"
                     role="switch"
                     aria-checked={enableExpiry}
-                    aria-label="تفعيل أو تعطيل انتهاء صلاحية الرابط"
+                    aria-label="تفعيل أو تعطيل انتهاء صلاحية الرَّابط"
                     onClick={() => {
                       const nextState = !enableExpiry;
                       setEnableExpiry(nextState);
@@ -684,7 +684,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     <div>
                       <h4 className="text-xs font-bold text-foreground">الحماية بكلمة مرور</h4>
                       <p className="text-[11px] text-muted-foreground">
-                        طلب رمز أمان سري قبل التوجيه إلى الرابط الأصلي
+                        طلب رمز أمان سري قبل التوجيه إلى الرَّابط الأصلي
                       </p>
                     </div>
                   </div>
@@ -723,7 +723,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       <div className="flex items-center gap-2 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-400 text-xs font-medium">
                         <ShieldCheck className="w-4 h-4 shrink-0" />
                         <span>
-                          الرابط محمي حالياً بكلمة مرور. اتركه فارغاً للإبقاء عليها، أو اكتب كلمة
+                          الرَّابط محمي حالياً بكلمة مرور. اتركه فارغاً للإبقاء عليها، أو اكتب كلمة
                           مرور جديدة لتغييرها.
                         </span>
                       </div>

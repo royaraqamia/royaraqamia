@@ -22,7 +22,7 @@ export class CertificateValidationError extends Error {
 
 export class CertificateCodeFormatError extends Error {
   constructor() {
-    super('صيغة الرمز غير صالحة. الصيغة: COMP-YYYY-XXXXXXXX');
+    super('صيغة الرمز غير صالحة. الصِّيغة: COMP-YYYY-XXXXXXXX');
     this.name = 'CertificateCodeFormatError';
   }
 }

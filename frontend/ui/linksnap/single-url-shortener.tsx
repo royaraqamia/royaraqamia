@@ -83,11 +83,11 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
     try {
       await navigator.clipboard.writeText(shortenedUrl);
       setCopied(true);
-      toast.success('تم نسخ الرابط!');
+      toast.success('تم نسخ الرَّابط!');
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       logger.error('Failed to copy text', { error: String(err) });
-      toast.error('فشل نسخ الرابط');
+      toast.error('فشل نسخ الرَّابط');
     }
   };
 
@@ -262,7 +262,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    placeholder="يُطلب من الزائر قبل فتح الرابط"
+                    placeholder="يُطلب من الزائر قبل فتح الرَّابط"
                     autoComplete="new-password"
                     className="w-full pr-11 pl-4 py-3 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
                   />

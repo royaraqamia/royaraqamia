@@ -21,7 +21,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
       const { originalUrl } = await unlockLink(code, password);
       window.location.href = originalUrl;
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'تعذر فتح الرابط. حاول مجدداً.');
+      setError(err instanceof Error ? err.message : 'تعذر فتح الرَّابط. حاول مجدداً.');
     } finally {
       setLoading(false);
     }
@@ -49,10 +49,10 @@ export function UnlockLinkForm({ code }: { code: string }) {
             </div>
 
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl dark:text-white">
-              فتح الرابط
+              فتح الرَّابط
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-              هذا الرابط محمي بكلمة مرور. أدخلها للمتابعة إلى الوجهة.
+              هذا الرَّابط محمي بكلمة مرور. أدخلها للمتابعة إلى الوجهة.
             </p>
             <p className="mt-2 text-xs font-mono font-bold text-muted-foreground" dir="ltr">
               /{code}
@@ -102,7 +102,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
                   <span>جاري الفتح...</span>
                 </>
               ) : (
-                <span>فتح الرابط</span>
+                <span>فتح الرَّابط</span>
               )}
             </button>
           </form>

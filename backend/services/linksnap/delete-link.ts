@@ -6,7 +6,7 @@ export class DeleteLinkService {
 
   async execute(code: string, userId: string): Promise<boolean> {
     if (!code) {
-      throw new AppError('رمز الرابط مطلوب.', 400);
+      throw new AppError('رمز الرَّابط مطلوب.', 400);
     }
     if (!userId) {
       throw new Error('User authorization is required to delete a link.');

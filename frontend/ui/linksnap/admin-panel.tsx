@@ -93,13 +93,13 @@ export function AdminPanel({ token }: AdminPanelProps) {
 
       <ConfirmDialog
         open={!!blockConfirm}
-        title={blockConfirm?.isBlocked ? 'إلغاء حظر الرابط' : 'حظر الرابط'}
+        title={blockConfirm?.isBlocked ? 'إلغاء حظر الرَّابط' : 'حظر الرَّابط'}
         message={
           blockConfirm?.isBlocked
-            ? 'هل أنت متأكد من إلغاء حظر هذا الرابط؟ سيصبح متاحًا للمستخدمين مرة أخرى.'
-            : 'هل أنت متأكد من حظر هذا الرابط؟ لن يتمكن المستخدمون من الوصول إليه بعد الآن.'
+            ? 'هل أنت متأكد من إلغاء حظر هذا الرَّابط؟ سيصبح متاحًا للمستخدمين مرة أخرى.'
+            : 'هل أنت متأكد من حظر هذا الرَّابط؟ لن يتمكن المستخدمون من الوصول إليه بعد الآن.'
         }
-        confirmLabel={blockConfirm?.isBlocked ? 'إلغاء الحظر' : 'حظر الرابط'}
+        confirmLabel={blockConfirm?.isBlocked ? 'إلغاء الحظر' : 'حظر الرَّابط'}
         cancelLabel="إلغاء"
         variant={blockConfirm?.isBlocked ? 'default' : 'danger'}
         onConfirm={() => {

@@ -52,7 +52,7 @@ export interface PostAuthor {
 
 /** Full snapshot of a deleted post, re-sent by the client to undo a delete. */
 export const RestorePostSnapshotSchema = z.object({
-  slug: z.string().min(1, 'الرابط مطلوب'),
+  slug: z.string().min(1, 'الرَّابط مطلوب'),
   content: z.string().nullable(),
   status: z.enum(['draft', 'published', 'scheduled']),
   cover_image: z.string().nullable(),

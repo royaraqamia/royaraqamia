@@ -82,7 +82,7 @@ export function DownloaderPage() {
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             <div className="flex flex-col gap-1.5">
               <label htmlFor="downloader-url" className="text-sm font-medium text-foreground">
-                الرابط
+                الرَّابط
               </label>
               <Input
                 id="downloader-url"
@@ -101,7 +101,7 @@ export function DownloaderPage() {
 
             {probing && (
               <p className="text-xs text-muted-foreground" aria-live="polite">
-                جارٍ فحص الرابط…
+                جارٍ فحص الرَّابط…
               </p>
             )}
 
@@ -121,7 +121,7 @@ export function DownloaderPage() {
 
             <div className="flex flex-col gap-1.5">
               <label htmlFor="downloader-format" className="text-sm font-medium text-foreground">
-                الصيغة
+                الصِّيغة
               </label>
               <Select value={format} onValueChange={(value) => setFormat(value as DownloadFormat)}>
                 <SelectTrigger id="downloader-format">

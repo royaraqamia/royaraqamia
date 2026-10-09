@@ -258,13 +258,13 @@ describe('PATCH /linksnap/api/links', () => {
 describe('DELETE /linksnap/api/links', () => {
   it('returns 400 when the code query param is missing', async () => {
     mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
-    mockDeleteLink.execute.mockRejectedValue(new AppError('رمز الرابط مطلوب.', 400));
+    mockDeleteLink.execute.mockRejectedValue(new AppError('رمز الرَّابط مطلوب.', 400));
     const res = await linksDELETE({
       url: 'http://localhost/linksnap/api/links',
       headers: new Headers(),
     } as unknown as NextRequest);
     expect(res.status).toBe(400);
-    expect(readBody<{ error: string }>(res).error).toBe('رمز الرابط مطلوب.');
+    expect(readBody<{ error: string }>(res).error).toBe('رمز الرَّابط مطلوب.');
   });
 
   it('returns 401 without authentication', async () => {
@@ -282,7 +282,7 @@ describe('DELETE /linksnap/api/links', () => {
     const res = await linksDELETE(req as unknown as NextRequest);
 
     expect(res.status).toBe(200);
-    expect(readBody(res)).toEqual({ success: true, message: 'تم حذف الرابط بنجاح.' });
+    expect(readBody(res)).toEqual({ success: true, message: 'تم حذف الرَّابط بنجاح.' });
     expect(mockDeleteLink.execute).toHaveBeenCalledWith('abc123', 'u-1');
   });
 });
@@ -290,7 +290,7 @@ describe('DELETE /linksnap/api/links', () => {
 describe('GET /linksnap/api/analytics/[code]', () => {
   it('returns 400 when the code is missing', async () => {
     mockGetAuthenticatedUser.mockResolvedValue({ id: 'u-1', email: 'a@b.com' });
-    mockAnalytics.execute.mockRejectedValue(new AppError('رمز الرابط مطلوب.', 400));
+    mockAnalytics.execute.mockRejectedValue(new AppError('رمز الرَّابط مطلوب.', 400));
     const res = await analyticsGET(makeReq(), { params: Promise.resolve({ code: '' }) });
     expect(res.status).toBe(400);
   });
@@ -371,7 +371,7 @@ describe('POST /linksnap/api/admin/moderate', () => {
     const res = await moderatePOST(makeReq({ code: 'abc123', isBlocked: true }));
 
     expect(res.status).toBe(200);
-    expect(readBody<{ message: string }>(res).message).toBe('تم حظر الرابط بنجاح.');
+    expect(readBody<{ message: string }>(res).message).toBe('تم حظر الرَّابط بنجاح.');
     expect(readBody<{ link: { isBlocked: boolean } }>(res).link.isBlocked).toBe(true);
     expect(mockModerate.execute).toHaveBeenCalledWith('admin@example.com', 'abc123', true);
   });
@@ -383,7 +383,7 @@ describe('POST /linksnap/api/admin/moderate', () => {
     const res = await moderatePOST(makeReq({ code: 'abc123', isBlocked: false }));
 
     expect(res.status).toBe(200);
-    expect(readBody<{ message: string }>(res).message).toBe('تم إلغاء حظر الرابط بنجاح.');
+    expect(readBody<{ message: string }>(res).message).toBe('تم إلغاء حظر الرَّابط بنجاح.');
   });
 });
 

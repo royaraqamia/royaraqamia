@@ -40,7 +40,7 @@ sleeping host is tolerated), but a host that answers later than that, or not at
 all, makes the app record the job as `failed` with "خدمة التنزيل غير متاحة الآن.".
 
 A `4xx` means the link cannot be handled (surfaced to the visitor as a `failed` job
-with "هذا الرابط غير مدعوم."); any other failure or a timeout surfaces as
+with "هذا الرَّابط غير مدعوم."); any other failure or a timeout surfaces as
 "خدمة التنزيل غير متاحة الآن.". The host must honour `maxDurationSeconds` and
 `maxSizeBytes`; the app re-checks both when the callback arrives. `linkTtlSeconds`
 is optional: when present the host must set the signed file link's lifetime from
@@ -80,7 +80,7 @@ Content-Type: application/json
   "jobId": "b3c1…-uuid",
   "status": "failed",
   "code": "blocked",
-  "error": "هذا الرابط خاص أو محميّ."
+  "error": "هذا الرَّابط خاص أو محميّ."
 }
 ```
 

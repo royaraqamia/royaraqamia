@@ -3,8 +3,8 @@ import { z } from 'zod';
 export const PostSchema = z.object({
   slug: z
     .string()
-    .min(1, 'الرابط مطلوب')
-    .regex(/^[\w\u0600-\u06FF-]+$/, 'الرابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط'),
+    .min(1, 'الرَّابط مطلوب')
+    .regex(/^[\w\u0600-\u06FF-]+$/, 'الرَّابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط'),
   content: z.string().optional(),
   cover_image: z.string().optional(),
   meta_title: z.string().max(70).optional(),
@@ -19,9 +19,9 @@ export type PostInput = z.infer<typeof PostSchema>;
 export const PostSlugSchema = z
   .string()
   .trim()
-  .min(1, 'الرابط مطلوب')
-  .max(200, 'الرابط طويل جداً')
-  .regex(/^[\w\u0600-\u06FF-]+$/, 'الرابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط');
+  .min(1, 'الرَّابط مطلوب')
+  .max(200, 'الرَّابط طويل جداً')
+  .regex(/^[\w\u0600-\u06FF-]+$/, 'الرَّابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط');
 
 export type PostSlug = z.infer<typeof PostSlugSchema>;
 
@@ -31,8 +31,8 @@ export const TagInputSchema = z.object({
     .string()
     .trim()
     .min(1, 'رابط الوسم مطلوب')
-    .max(60, 'الرابط طويل جداً')
-    .regex(/^[\w\u0600-\u06FF-]+$/, 'الرابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط'),
+    .max(60, 'الرَّابط طويل جداً')
+    .regex(/^[\w\u0600-\u06FF-]+$/, 'الرَّابط يجب أن يحتوي على أحرف وأرقام وشرطات فقط'),
 });
 
 export type TagInput = z.infer<typeof TagInputSchema>;

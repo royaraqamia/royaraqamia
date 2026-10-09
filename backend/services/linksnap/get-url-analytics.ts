@@ -11,7 +11,7 @@ export class GetUrlAnalyticsService {
 
   private async assertOwner(code: string, userId: string): Promise<void> {
     if (!code) {
-      throw new AppError('رمز الرابط مطلوب.', 400);
+      throw new AppError('رمز الرَّابط مطلوب.', 400);
     }
     if (!userId) {
       throw new Error('User authorization is required to view link analytics.');

@@ -57,7 +57,7 @@ export class CertificateVerifier {
         });
         return {
           success: false,
-          error: 'صيغة الرمز غير صالحة. الصيغة الصحيحة: COMP-YYYY-XXXXXXXX',
+          error: 'صيغة الرمز غير صالحة. الصِّيغة الصحيحة: COMP-YYYY-XXXXXXXX',
         };
       }
 

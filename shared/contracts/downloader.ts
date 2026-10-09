@@ -29,7 +29,7 @@ export const DOWNLOAD_FORMAT_LABELS: Record<DownloadFormat, string> = {
   'video-480p': 'فيديو 480p',
   'video-720p': 'فيديو 720p',
   'video-1080p': 'فيديو 1080p',
-  'image-original': 'صورة (الصيغة الأصلية)',
+  'image-original': 'صورة (الصِّيغة الأصلية)',
   'image-jpg': 'صورة (jpg)',
   'image-png': 'صورة (png)',
   'image-webp': 'صورة (webp)',
@@ -47,7 +47,7 @@ export const DOWNLOAD_STATUS_LABELS: Record<DownloadStatus, string> = {
   running: 'جارٍ المعالجة',
   ready: 'جاهز للتنزيل',
   failed: 'فشل',
-  expired: 'انتهت صلاحية الرابط',
+  expired: 'انتهت صلاحية الرَّابط',
 };
 
 /** Statuses after which no further transition happens. */
@@ -226,8 +226,8 @@ const SourceUrlSchema = z
   .string()
   .trim()
   .min(1, 'أدخل رابط الوسائط.')
-  .max(MAX_SOURCE_URL_LENGTH, 'الرابط طويل جدًّا.')
-  .refine(isPublicHttpUrl, 'الرابط غير مدعوم؛ يجب أن يكون رابطًا عامًّا يبدأ بـ http أو https.');
+  .max(MAX_SOURCE_URL_LENGTH, 'الرَّابط طويل جدًّا.')
+  .refine(isPublicHttpUrl, 'الرَّابط غير مدعوم؛ يجب أن يكون رابطًا عامًّا يبدأ بـ http أو https.');
 
 export const CreateDownloadJobSchema = z.object({
   url: SourceUrlSchema,

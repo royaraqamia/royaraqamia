@@ -11,7 +11,7 @@ export default function NotFound() {
         <div className="space-y-2">
           <h1 className="text-4xl font-display font-black text-foreground">الصفحة غير موجودة</h1>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            عذراً، لم نتمكن من العثور على الصفحة التي تبحث عنها. قد يكون الرابط غير صحيح أو تمت
+            عذراً، لم نتمكن من العثور على الصفحة التي تبحث عنها. قد يكون الرَّابط غير صحيح أو تمت
             إزالة الصفحة.
           </p>
         </div>

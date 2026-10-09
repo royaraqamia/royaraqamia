@@ -207,7 +207,7 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
                   </div>
                   <div className="bg-card p-4 rounded-xl border border-border shadow-sm flex flex-col justify-between col-span-2 md:col-span-1 card-lift">
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                      حالة الرابط
+                      حالة الرَّابط
                     </span>
                     <span
                       className={`text-xs font-bold border px-2 py-0.5 rounded-full w-max mt-2 flex items-center gap-1 ${
