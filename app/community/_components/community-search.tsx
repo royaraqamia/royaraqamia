@@ -244,7 +244,10 @@ export function CommunitySearch() {
                       <span className="block truncate text-sm font-bold text-foreground">
                         {person.name?.trim() || `@${person.username}`}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground" dir="ltr">
+                      <span
+                        className="block truncate text-end text-xs text-muted-foreground"
+                        dir="ltr"
+                      >
                         @{person.username}
                       </span>
                     </span>

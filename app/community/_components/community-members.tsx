@@ -42,7 +42,7 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
                 <span className="block truncate text-sm font-bold text-foreground">
                   {displayName(member)}
                 </span>
-                <span className="block truncate text-xs text-muted-foreground" dir="ltr">
+                <span className="block truncate text-end text-xs text-muted-foreground" dir="ltr">
                   @{member.username}
                 </span>
               </span>
