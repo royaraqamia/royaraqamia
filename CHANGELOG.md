@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.73.0] - 2026-10-10
+
+### Added
+- expose LinkSnap, HabitFlow and SpendTrack in services menu
+- surface sync status and outbox diagnostics (#165)
+- sync local writes through an outbox with guest claim (#164)
+
 ## [1.72.0] - 2026-10-10
 
 ### Changed
