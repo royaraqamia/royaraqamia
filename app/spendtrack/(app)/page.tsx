@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
 import { DollarSign, PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
@@ -13,11 +12,12 @@ import { ChartsSkeleton } from '@/frontend/ui/spendtrack/charts-skeleton';
 import { InsightsStrip } from '@/frontend/ui/spendtrack/insights-strip';
 import { CsvActions } from '@/frontend/ui/spendtrack/csv-actions';
 import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
-import { getAuthUser } from '@/backend/middleware/auth-guard';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import {
   loadCategoryBreakdown,
   loadCategoryBudgets,
   loadDailyTotals,
+  loadDefaultCategories,
   loadInsights,
   loadRecurringExpenses,
   loadTotalExpenses,
@@ -25,11 +25,12 @@ import {
   loadUserCategories,
   loadUserCurrency,
 } from '@/backend/loaders/spendtrack';
-import { formatMoney } from '@/shared/currency';
+import { DEFAULT_CURRENCY, formatMoney } from '@/shared/currency';
 import { CurrencySelector } from '@/frontend/ui/spendtrack/currency-selector';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SpendtrackProvider } from '@/frontend/state/spendtrack/spendtrack-context';
 import { SpendtrackSyncStatus } from '@/frontend/ui/spendtrack/spendtrack-sync-status';
+import { SpendtrackDashboard } from '@/frontend/ui/spendtrack/spendtrack-dashboard';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
@@ -302,6 +303,151 @@ async function TransactionsSection({
   );
 }
 
+async function SignedInDashboard({
+  userId,
+  currency,
+  start,
+  end,
+  filterCategories,
+  sort,
+  search,
+  catFilter,
+  autoOpen,
+}: {
+  userId: string;
+  currency: string;
+  start: string;
+  end: string;
+  filterCategories: string[];
+  sort: string;
+  search?: string;
+  catFilter: string[] | null;
+  autoOpen?: boolean;
+}) {
+  return (
+    <>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <CsvActions start={start} end={end} categories={filterCategories} />
+          <CurrencySelector currency={currency} />
+          <Suspense fallback={<ButtonSkeleton />}>
+            <CreateExpenseButton userId={userId} currency={currency} autoOpen={autoOpen} />
+          </Suspense>
+        </div>
+        <SpendtrackSyncStatus />
+      </div>
+
+      <div className=" stagger-2">
+        <div className="grid gap-4 md:grid-cols-2">
+          <Suspense fallback={<StatCardSkeleton />}>
+            <TotalCard
+              userId={userId}
+              start={start}
+              end={end}
+              catFilter={catFilter}
+              currency={currency}
+            />
+          </Suspense>
+          <Suspense fallback={<StatCardSkeleton />}>
+            <BudgetSection userId={userId} currency={currency} />
+          </Suspense>
+        </div>
+      </div>
+
+      <Suspense fallback={<SectionSkeleton className="h-40" />}>
+        <CategoryBudgetsSection userId={userId} />
+      </Suspense>
+
+      <div className=" stagger-3">
+        <Suspense fallback={<SectionSkeleton className="h-28" />}>
+          <InsightsSection
+            userId={userId}
+            start={start}
+            end={end}
+            catFilter={catFilter}
+            currency={currency}
+          />
+        </Suspense>
+      </div>
+
+      <Suspense fallback={<SectionSkeleton className="h-40" />}>
+        <RecurringExpensesSection userId={userId} currency={currency} />
+      </Suspense>
+
+      <div className="grid gap-4 lg:grid-cols-2 stagger-3">
+        <Card
+          className="group/card card-lift"
+          aria-label="رسم بياني يوضح توزيع الإنفاق حسب التصنيف"
+        >
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">حسب التصنيف</CardTitle>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 transition-colors duration-300 group-hover/card:bg-primary/15">
+              <PieChartIcon className="size-3.5 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Suspense fallback={<ChartsSkeleton />}>
+              <CategoryPieSection
+                userId={userId}
+                start={start}
+                end={end}
+                catFilter={catFilter}
+                currency={currency}
+              />
+            </Suspense>
+          </CardContent>
+        </Card>
+        <Card
+          className="group/card card-lift"
+          aria-label="رسم بياني يوضح الاتجاهات اليومية للإنفاق"
+        >
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">الاتجاهات اليومية</CardTitle>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 transition-colors duration-300 group-hover/card:bg-primary/15">
+              <TrendingUp className="size-3.5 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Suspense fallback={<ChartsSkeleton />}>
+              <DailyBarSection
+                userId={userId}
+                start={start}
+                end={end}
+                catFilter={catFilter}
+                currency={currency}
+              />
+            </Suspense>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className=" stagger-4">
+        <Card className="group/card card-lift">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">المعاملات</CardTitle>
+            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
+              <Receipt className="size-3.5 text-primary" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Suspense fallback={<SectionSkeleton className="h-72" />}>
+              <TransactionsSection
+                userId={userId}
+                start={start}
+                end={end}
+                filterCategories={filterCategories}
+                sort={sort}
+                search={search}
+                currency={currency}
+              />
+            </Suspense>
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  );
+}
+
 export default async function DashboardPage(props: {
   searchParams: Promise<{
     range?: string;
@@ -314,10 +460,7 @@ export default async function DashboardPage(props: {
   }>;
 }) {
   const searchParams = await props.searchParams;
-  const { user } = await getAuthUser();
-  if (!user) redirect('/auth/login?redirect=/spendtrack');
-
-  const currency = await loadUserCurrency(user.id);
+  const { user } = await getOptionalUser();
 
   const range = searchParams.range || 'this_month';
   const filterCategories = searchParams.categories
@@ -328,31 +471,40 @@ export default async function DashboardPage(props: {
   const { start, end } = getDateRange(range, searchParams.from, searchParams.to);
   const catFilter: string[] | null = filterCategories.length > 0 ? filterCategories : null;
 
-  // The Local Store's seed: the same loaders the sections use (React-cached per
-  // request) plus a wide expense window, so offline renders the user's history.
-  const [seedCategories, seedRecurring, seedTransactions] = await Promise.all([
-    loadUserCategories(user.id),
-    loadRecurringExpenses(user.id),
-    loadTransactions({
-      userId: user.id,
-      start: '1900-01-01',
-      end: '2099-12-31',
-      filterCategories: [],
-      sort: 'date_desc',
-      pageSize: 100,
-    }),
-  ]);
+  const currency = user ? await loadUserCurrency(user.id) : DEFAULT_CURRENCY;
+
+  const seed = user
+    ? await (async () => {
+        const [seedCategories, seedRecurring, seedTransactions] = await Promise.all([
+          loadUserCategories(user.id),
+          loadRecurringExpenses(user.id),
+          loadTransactions({
+            userId: user.id,
+            start: '1900-01-01',
+            end: '2099-12-31',
+            filterCategories: [],
+            sort: 'date_desc',
+            pageSize: 100,
+          }),
+        ]);
+        return {
+          categories: seedCategories,
+          expenses: seedTransactions.expenses,
+          budgets: [],
+          recurring: seedRecurring,
+          user: { id: user.id },
+        };
+      })()
+    : {
+        categories: await loadDefaultCategories(),
+        expenses: [],
+        budgets: [],
+        recurring: [],
+        user: null,
+      };
 
   return (
-    <SpendtrackProvider
-      seed={{
-        categories: seedCategories,
-        expenses: seedTransactions.expenses,
-        budgets: [],
-        recurring: seedRecurring,
-        user: { id: user.id },
-      }}
-    >
+    <SpendtrackProvider seed={seed}>
       <div className="space-y-6 pb-8">
         <header className="mb-10 text-center">
           <SectionTitle as="h1">
@@ -360,128 +512,28 @@ export default async function DashboardPage(props: {
           </SectionTitle>
         </header>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-            <CsvActions start={start} end={end} categories={filterCategories} />
-            <CurrencySelector currency={currency} />
-            <Suspense fallback={<ButtonSkeleton />}>
-              <CreateExpenseButton
-                userId={user.id}
-                currency={currency}
-                autoOpen={searchParams.create === '1'}
-              />
-            </Suspense>
-          </div>
-          <SpendtrackSyncStatus />
-        </div>
-
-        <div className=" stagger-2">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Suspense fallback={<StatCardSkeleton />}>
-              <TotalCard
-                userId={user.id}
-                start={start}
-                end={end}
-                catFilter={catFilter}
-                currency={currency}
-              />
-            </Suspense>
-            <Suspense fallback={<StatCardSkeleton />}>
-              <BudgetSection userId={user.id} currency={currency} />
-            </Suspense>
-          </div>
-        </div>
-
-        <Suspense fallback={<SectionSkeleton className="h-40" />}>
-          <CategoryBudgetsSection userId={user.id} />
-        </Suspense>
-
-        <div className=" stagger-3">
-          <Suspense fallback={<SectionSkeleton className="h-28" />}>
-            <InsightsSection
-              userId={user.id}
-              start={start}
-              end={end}
-              catFilter={catFilter}
-              currency={currency}
-            />
-          </Suspense>
-        </div>
-
-        <Suspense fallback={<SectionSkeleton className="h-40" />}>
-          <RecurringExpensesSection userId={user.id} currency={currency} />
-        </Suspense>
-
-        <div className="grid gap-4 lg:grid-cols-2 stagger-3">
-          <Card
-            className="group/card card-lift"
-            aria-label="رسم بياني يوضح توزيع الإنفاق حسب التصنيف"
-          >
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">حسب التصنيف</CardTitle>
-              <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 transition-colors duration-300 group-hover/card:bg-primary/15">
-                <PieChartIcon className="size-3.5 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Suspense fallback={<ChartsSkeleton />}>
-                <CategoryPieSection
-                  userId={user.id}
-                  start={start}
-                  end={end}
-                  catFilter={catFilter}
-                  currency={currency}
-                />
-              </Suspense>
-            </CardContent>
-          </Card>
-          <Card
-            className="group/card card-lift"
-            aria-label="رسم بياني يوضح الاتجاهات اليومية للإنفاق"
-          >
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">الاتجاهات اليومية</CardTitle>
-              <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 transition-colors duration-300 group-hover/card:bg-primary/15">
-                <TrendingUp className="size-3.5 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Suspense fallback={<ChartsSkeleton />}>
-                <DailyBarSection
-                  userId={user.id}
-                  start={start}
-                  end={end}
-                  catFilter={catFilter}
-                  currency={currency}
-                />
-              </Suspense>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className=" stagger-4">
-          <Card className="group/card card-lift">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">المعاملات</CardTitle>
-              <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10">
-                <Receipt className="size-3.5 text-primary" />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Suspense fallback={<SectionSkeleton className="h-72" />}>
-                <TransactionsSection
-                  userId={user.id}
-                  start={start}
-                  end={end}
-                  filterCategories={filterCategories}
-                  sort={sort}
-                  search={search}
-                  currency={currency}
-                />
-              </Suspense>
-            </CardContent>
-          </Card>
-        </div>
+        {user ? (
+          <SignedInDashboard
+            userId={user.id}
+            currency={currency}
+            start={start}
+            end={end}
+            filterCategories={filterCategories}
+            sort={sort}
+            search={search}
+            catFilter={catFilter}
+            autoOpen={searchParams.create === '1'}
+          />
+        ) : (
+          <SpendtrackDashboard
+            currency={currency}
+            start={start}
+            end={end}
+            filterCategories={filterCategories}
+            sort={sort}
+            search={search}
+          />
+        )}
       </div>
     </SpendtrackProvider>
   );

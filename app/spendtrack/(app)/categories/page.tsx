@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
-import { redirect } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
-import { getAuthUser } from '@/backend/middleware/auth-guard';
-import { loadUserCategories } from '@/backend/loaders/spendtrack';
+import { getOptionalUser } from '@/backend/middleware/auth-guard';
+import { loadDefaultCategories, loadUserCategories } from '@/backend/loaders/spendtrack';
 import { SpendtrackProvider } from '@/frontend/state/spendtrack/spendtrack-context';
 import { CategoryList } from './category-list';
 import { CreateCategoryDialog } from './create-category-dialog';
@@ -13,27 +12,33 @@ export const metadata: Metadata = {
 };
 
 export default async function CategoriesPage() {
-  const { user } = await getAuthUser();
-  if (!user) redirect('/auth/login?redirect=/spendtrack/categories');
+  const { user } = await getOptionalUser();
 
-  const categories = await loadUserCategories(user.id);
+  const categories = user ? await loadUserCategories(user.id) : await loadDefaultCategories();
+  const userId = user?.id ?? '';
 
   return (
     <SpendtrackProvider
-      seed={{ categories, expenses: [], budgets: [], recurring: [], user: { id: user.id } }}
+      seed={{
+        categories,
+        expenses: [],
+        budgets: [],
+        recurring: [],
+        user: user ? { id: user.id } : null,
+      }}
     >
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <h1 className="text-3xl font-display font-bold tracking-tight">التَّصنيفات</h1>
+          <h1 className="text-3xl font-display font-bold tracking-tight">التَّصنيفات</h1>
           <CreateCategoryDialog />
         </div>
 
         <Card className=" stagger-2 card-lift">
           <CardHeader>
-            <CardTitle>جميع التَّصنيفات</CardTitle>
+            <CardTitle>جميع التَّصنيفات</CardTitle>
           </CardHeader>
           <CardContent>
-            <CategoryList categories={categories} userId={user.id} />
+            <CategoryList categories={categories} userId={userId} allowEditAll={!user} />
           </CardContent>
         </Card>
       </div>

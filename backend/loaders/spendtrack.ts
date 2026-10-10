@@ -2,7 +2,7 @@ import 'server-only';
 
 import { cache } from 'react';
 import { cookies } from 'next/headers';
-import { createServerSupabaseClient } from '@/backend/config/supabase';
+import { createServerSupabaseClient, getAdminSupabase } from '@/backend/config/supabase';
 import { createSpendtrackService } from '@/backend/config/spendtrack';
 import type {
   Category,
@@ -33,6 +33,19 @@ const createService = cache(async () => {
 export const loadUserCategories = cache(async (userId: string): Promise<Category[]> => {
   const service = await createService();
   return service.getUserCategories(userId);
+});
+
+export const loadDefaultCategories = cache(async (): Promise<Category[]> => {
+  const { data } = await getAdminSupabase()
+    .from('categories')
+    .select('*')
+    .eq('is_default', true)
+    .is('deleted_at', null)
+    .order('name');
+  return (data ?? []).map((row) => {
+    const { color_hex, ...rest } = row as { color_hex: string; [key: string]: unknown };
+    return { ...rest, colorHex: color_hex } as Category;
+  });
 });
 
 export const loadTotalExpenses = cache(

@@ -29,9 +29,11 @@ type CategoryFormValues = z.input<typeof categorySchema>;
 export const CategoryList = memo(function CategoryList({
   categories,
   userId,
+  allowEditAll = false,
 }: {
   categories: Category[];
   userId: string;
+  allowEditAll?: boolean;
 }) {
   const context = useSpendtrackContext();
   const store = context?.store ?? null;
@@ -78,7 +80,7 @@ export const CategoryList = memo(function CategoryList({
               </span>
             )}
           </div>
-          {category.user_id === userId && (
+          {(allowEditAll || category.user_id === userId) && (
             <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover/row:sm:opacity-100 transition-opacity duration-200">
               <EditCategoryDialog category={category} />
               <DeleteCategoryButton categoryId={category.id} />
