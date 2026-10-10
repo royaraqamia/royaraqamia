@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import NextLink from 'next/link';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   Link,
@@ -176,6 +177,18 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
               />
             </div>
           </div>
+
+          {!token && (
+            <p className="text-xs text-muted-foreground font-medium">
+              سجِّل الدُّخول لاستخدام رمزٍ مخصَّص وكلمة مرور وتتبُّع النَّقرات.{' '}
+              <NextLink
+                href="/auth/login?redirect=%2Flinksnap"
+                className="font-bold text-primary hover:underline"
+              >
+                تسجيل الدُّخول
+              </NextLink>
+            </p>
+          )}
 
           {token && (
             <m.div
