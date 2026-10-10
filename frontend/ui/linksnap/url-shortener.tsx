@@ -4,7 +4,7 @@ import { SingleUrlShortener } from './single-url-shortener';
 
 interface UrlShortenerProps {
   token: string | null;
-  onLinkCreated: () => void;
+  onLinkCreated?: () => void;
 }
 
 export function UrlShortener({ token, onLinkCreated }: UrlShortenerProps) {

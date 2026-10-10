@@ -23,7 +23,7 @@ import { useSlugAvailability } from '@/frontend/state/linksnap/use-slug-availabi
 
 interface SingleUrlShortenerProps {
   token: string | null;
-  onLinkCreated: () => void;
+  onLinkCreated?: () => void;
 }
 
 function isValidUrl(url: string): boolean {
@@ -63,7 +63,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
 
     const generatedCode = link.code;
     setShortenedUrl(`${getBaseUrl()}/${generatedCode}`);
-    onLinkCreated();
+    onLinkCreated?.();
     const style = getComputedStyle(document.documentElement);
     const primary = style.getPropertyValue('--primary').trim();
     const accent = style.getPropertyValue('--accent').trim();
