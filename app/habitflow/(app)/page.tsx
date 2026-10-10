@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { DashboardShell } from '@/frontend/ui/habitflow/components/dashboard-shell';
 import { loadHabitflowDashboard } from '@/backend/loaders/habitflow';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,12 +37,19 @@ export default async function HomePage({
   const { create } = await searchParams;
 
   return (
-    <DashboardShell
-      initialHabits={habits}
-      initialLogs={logs}
-      initialMode={mode}
-      initialUser={user}
-      autoOpenCreate={create === '1'}
-    />
+    <>
+      <header className="mb-10 text-center">
+        <SectionTitle as="h1">
+          تتبُّع <SectionTitleHighlight>العادات</SectionTitleHighlight>
+        </SectionTitle>
+      </header>
+      <DashboardShell
+        initialHabits={habits}
+        initialLogs={logs}
+        initialMode={mode}
+        initialUser={user}
+        autoOpenCreate={create === '1'}
+      />
+    </>
   );
 }

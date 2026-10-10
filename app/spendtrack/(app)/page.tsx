@@ -27,6 +27,7 @@ import {
 } from '@/backend/loaders/spendtrack';
 import { formatMoney } from '@/shared/currency';
 import { CurrencySelector } from '@/frontend/ui/spendtrack/currency-selector';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
@@ -327,6 +328,12 @@ export default async function DashboardPage(props: {
 
   return (
     <div className="space-y-6 pb-8">
+      <header className="mb-10 text-center">
+        <SectionTitle as="h1">
+          تتبُّع <SectionTitleHighlight>المصاريف</SectionTitleHighlight>
+        </SectionTitle>
+      </header>
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <CsvActions start={start} end={end} categories={filterCategories} />
