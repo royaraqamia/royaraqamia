@@ -1,4 +1,4 @@
-﻿export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
   // Allows to automatically instantiate createClient with right options
@@ -79,6 +79,128 @@ export type Database = {
         };
         Relationships: [];
       };
+      budgets: {
+        Row: {
+          amount: number;
+          category_id: string | null;
+          client_id: string | null;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          month: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          amount: number;
+          category_id?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          month: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          amount?: number;
+          category_id?: string | null;
+          client_id?: string | null;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          month?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'budgets_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      categories: {
+        Row: {
+          client_id: string | null;
+          color_hex: string;
+          created_at: string;
+          deleted_at: string | null;
+          id: string;
+          is_default: boolean;
+          name: string;
+          updated_at: string;
+          user_id: string | null;
+        };
+        Insert: {
+          client_id?: string | null;
+          color_hex: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          is_default?: boolean;
+          name: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Update: {
+          client_id?: string | null;
+          color_hex?: string;
+          created_at?: string;
+          deleted_at?: string | null;
+          id?: string;
+          is_default?: boolean;
+          name?: string;
+          updated_at?: string;
+          user_id?: string | null;
+        };
+        Relationships: [];
+      };
+      certificates: {
+        Row: {
+          certificate_code: string;
+          course_name: string;
+          created_at: string;
+          created_by: string | null;
+          expiration_date: string | null;
+          grade_or_status: string | null;
+          id: string;
+          issue_date: string;
+          recipient_email: string | null;
+          recipient_user_ids: string[];
+          student_name: string;
+        };
+        Insert: {
+          certificate_code: string;
+          course_name: string;
+          created_at?: string;
+          created_by?: string | null;
+          expiration_date?: string | null;
+          grade_or_status?: string | null;
+          id?: string;
+          issue_date: string;
+          recipient_email?: string | null;
+          recipient_user_ids?: string[];
+          student_name: string;
+        };
+        Update: {
+          certificate_code?: string;
+          course_name?: string;
+          created_at?: string;
+          created_by?: string | null;
+          expiration_date?: string | null;
+          grade_or_status?: string | null;
+          id?: string;
+          issue_date?: string;
+          recipient_email?: string | null;
+          recipient_user_ids?: string[];
+          student_name?: string;
+        };
+        Relationships: [];
+      };
       community_categories: {
         Row: {
           created_at: string;
@@ -124,113 +246,6 @@ export type Database = {
           name?: string;
           slug?: string;
           user_id?: string;
-        };
-        Relationships: [];
-      };
-      budgets: {
-        Row: {
-          amount: number;
-          category_id: string | null;
-          created_at: string;
-          id: string;
-          month: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          amount: number;
-          category_id?: string | null;
-          created_at?: string;
-          id?: string;
-          month: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          amount?: number;
-          category_id?: string | null;
-          created_at?: string;
-          id?: string;
-          month?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'budgets_category_id_fkey';
-            columns: ['category_id'];
-            isOneToOne: false;
-            referencedRelation: 'categories';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      categories: {
-        Row: {
-          color_hex: string;
-          created_at: string;
-          id: string;
-          is_default: boolean;
-          name: string;
-          user_id: string | null;
-        };
-        Insert: {
-          color_hex: string;
-          created_at?: string;
-          id?: string;
-          is_default?: boolean;
-          name: string;
-          user_id?: string | null;
-        };
-        Update: {
-          color_hex?: string;
-          created_at?: string;
-          id?: string;
-          is_default?: boolean;
-          name?: string;
-          user_id?: string | null;
-        };
-        Relationships: [];
-      };
-      certificates: {
-        Row: {
-          certificate_code: string;
-          course_name: string;
-          created_at: string;
-          created_by: string | null;
-          expiration_date: string | null;
-          grade_or_status: string | null;
-          id: string;
-          issue_date: string;
-          recipient_email: string | null;
-          recipient_user_ids: string[];
-          student_name: string;
-        };
-        Insert: {
-          certificate_code: string;
-          course_name: string;
-          created_at?: string;
-          created_by?: string | null;
-          expiration_date?: string | null;
-          grade_or_status?: string | null;
-          id?: string;
-          issue_date: string;
-          recipient_email?: string | null;
-          recipient_user_ids?: string[];
-          student_name: string;
-        };
-        Update: {
-          certificate_code?: string;
-          course_name?: string;
-          created_at?: string;
-          created_by?: string | null;
-          expiration_date?: string | null;
-          grade_or_status?: string | null;
-          id?: string;
-          issue_date?: string;
-          recipient_email?: string | null;
-          recipient_user_ids?: string[];
-          student_name?: string;
         };
         Relationships: [];
       };
@@ -389,13 +404,13 @@ export type Database = {
         };
         Insert: {
           created_at?: string;
-          id?: number;
+          id?: never;
           job_id: string;
           status: string;
         };
         Update: {
           created_at?: string;
-          id?: number;
+          id?: never;
           job_id?: string;
           status?: string;
         };
@@ -539,23 +554,32 @@ export type Database = {
         Row: {
           amount: number;
           category_id: string;
+          client_id: string | null;
           created_at: string;
+          deleted_at: string | null;
           expense_id: string;
           id: string;
+          updated_at: string;
         };
         Insert: {
           amount: number;
           category_id: string;
+          client_id?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           expense_id: string;
           id?: string;
+          updated_at?: string;
         };
         Update: {
           amount?: number;
           category_id?: string;
+          client_id?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           expense_id?: string;
           id?: string;
+          updated_at?: string;
         };
         Relationships: [
           {
@@ -578,9 +602,11 @@ export type Database = {
         Row: {
           amount: number;
           category_id: string;
+          client_id: string | null;
           created_at: string;
           currency: string | null;
           date: string;
+          deleted_at: string | null;
           description: string | null;
           id: string;
           updated_at: string;
@@ -589,9 +615,11 @@ export type Database = {
         Insert: {
           amount: number;
           category_id: string;
+          client_id?: string | null;
           created_at?: string;
           currency?: string | null;
           date: string;
+          deleted_at?: string | null;
           description?: string | null;
           id?: string;
           updated_at?: string;
@@ -600,9 +628,11 @@ export type Database = {
         Update: {
           amount?: number;
           category_id?: string;
+          client_id?: string | null;
           created_at?: string;
           currency?: string | null;
           date?: string;
+          deleted_at?: string | null;
           description?: string | null;
           id?: string;
           updated_at?: string;
@@ -620,33 +650,42 @@ export type Database = {
       };
       habit_logs: {
         Row: {
+          client_id: string | null;
           completed: boolean;
           completed_at: string | null;
           date: string;
+          deleted_at: string | null;
           habit_id: string;
           id: string;
           log_kind: string;
           note: string | null;
+          updated_at: string;
           user_id: string;
         };
         Insert: {
+          client_id?: string | null;
           completed?: boolean;
           completed_at?: string | null;
           date: string;
+          deleted_at?: string | null;
           habit_id: string;
           id?: string;
           log_kind?: string;
           note?: string | null;
+          updated_at?: string;
           user_id: string;
         };
         Update: {
+          client_id?: string | null;
           completed?: boolean;
           completed_at?: string | null;
           date?: string;
+          deleted_at?: string | null;
           habit_id?: string;
           id?: string;
           log_kind?: string;
           note?: string | null;
+          updated_at?: string;
           user_id?: string;
         };
         Relationships: [
@@ -662,35 +701,44 @@ export type Database = {
       habits: {
         Row: {
           archived: boolean;
+          client_id: string | null;
           created_at: string;
+          deleted_at: string | null;
           frequency: string;
           id: string;
           name: string;
           reminder_time: string | null;
           target: number | null;
           target_period: string | null;
+          updated_at: string;
           user_id: string;
         };
         Insert: {
           archived?: boolean;
+          client_id?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           frequency?: string;
           id?: string;
           name: string;
           reminder_time?: string | null;
           target?: number | null;
           target_period?: string | null;
+          updated_at?: string;
           user_id: string;
         };
         Update: {
           archived?: boolean;
+          client_id?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           frequency?: string;
           id?: string;
           name?: string;
           reminder_time?: string | null;
           target?: number | null;
           target_period?: string | null;
+          updated_at?: string;
           user_id?: string;
         };
         Relationships: [];
@@ -1141,53 +1189,6 @@ export type Database = {
         };
         Relationships: [];
       };
-      recurring_expenses: {
-        Row: {
-          active: boolean;
-          amount: number;
-          category_id: string;
-          created_at: string;
-          day_of_month: number;
-          description: string | null;
-          id: string;
-          start_month: string;
-          updated_at: string;
-          user_id: string;
-        };
-        Insert: {
-          active?: boolean;
-          amount: number;
-          category_id: string;
-          created_at?: string;
-          day_of_month: number;
-          description?: string | null;
-          id?: string;
-          start_month: string;
-          updated_at?: string;
-          user_id: string;
-        };
-        Update: {
-          active?: boolean;
-          amount?: number;
-          category_id?: string;
-          created_at?: string;
-          day_of_month?: number;
-          description?: string | null;
-          id?: string;
-          start_month?: string;
-          updated_at?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'recurring_expenses_category_id_fkey';
-            columns: ['category_id'];
-            isOneToOne: false;
-            referencedRelation: 'categories';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
       rate_snapshots: {
         Row: {
           base_currency: string;
@@ -1271,6 +1272,59 @@ export type Database = {
           },
         ];
       };
+      recurring_expenses: {
+        Row: {
+          active: boolean;
+          amount: number;
+          category_id: string;
+          client_id: string | null;
+          created_at: string;
+          day_of_month: number;
+          deleted_at: string | null;
+          description: string | null;
+          id: string;
+          start_month: string;
+          updated_at: string;
+          user_id: string;
+        };
+        Insert: {
+          active?: boolean;
+          amount: number;
+          category_id: string;
+          client_id?: string | null;
+          created_at?: string;
+          day_of_month: number;
+          deleted_at?: string | null;
+          description?: string | null;
+          id?: string;
+          start_month: string;
+          updated_at?: string;
+          user_id: string;
+        };
+        Update: {
+          active?: boolean;
+          amount?: number;
+          category_id?: string;
+          client_id?: string | null;
+          created_at?: string;
+          day_of_month?: number;
+          deleted_at?: string | null;
+          description?: string | null;
+          id?: string;
+          start_month?: string;
+          updated_at?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'recurring_expenses_category_id_fkey';
+            columns: ['category_id'];
+            isOneToOne: false;
+            referencedRelation: 'categories';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
       retainers: {
         Row: {
           company: string | null;
@@ -1333,8 +1387,10 @@ export type Database = {
       };
       short_links: {
         Row: {
+          client_id: string | null;
           code: string;
           created_at: string;
+          deleted_at: string | null;
           expires_at: string | null;
           is_blocked: boolean;
           original_url: string;
@@ -1343,8 +1399,10 @@ export type Database = {
           user_id: string | null;
         };
         Insert: {
+          client_id?: string | null;
           code: string;
           created_at?: string;
+          deleted_at?: string | null;
           expires_at?: string | null;
           is_blocked?: boolean;
           original_url: string;
@@ -1353,8 +1411,10 @@ export type Database = {
           user_id?: string | null;
         };
         Update: {
+          client_id?: string | null;
           code?: string;
           created_at?: string;
+          deleted_at?: string | null;
           expires_at?: string | null;
           is_blocked?: boolean;
           original_url?: string;
@@ -1494,7 +1554,7 @@ export type Database = {
           id: string;
           is_admin?: boolean;
           name?: string | null;
-          username?: string;
+          username: string;
           verified?: boolean;
         };
         Update: {
@@ -1537,7 +1597,7 @@ export type Database = {
         Args: { p_email: string };
         Returns: {
           email: string;
-          email_confirmed_at: string | null;
+          email_confirmed_at: string;
           id: string;
         }[];
       };
@@ -1602,9 +1662,9 @@ export type Database = {
       reschedule_consultation_booking: {
         Args: {
           p_booking_id: string;
-          p_user_id: string;
           p_package_id: string;
           p_slot_ids: string[];
+          p_user_id: string;
         };
         Returns: undefined;
       };
@@ -1612,8 +1672,11 @@ export type Database = {
       send_recovery_nudges: { Args: never; Returns: undefined };
       show_limit: { Args: never; Returns: number };
       show_trgm: { Args: { '': string }; Returns: string[] };
+      slugify_username: { Args: { raw: string }; Returns: string };
+      sweep_download_jobs: { Args: never; Returns: undefined };
       sweep_expired_mcp_oauth_tokens: { Args: never; Returns: undefined };
       sweep_stale_push_subscriptions: { Args: never; Returns: undefined };
+      transliterate_arabic: { Args: { raw: string }; Returns: string };
     };
     Enums: {
       post_status: 'draft' | 'published' | 'scheduled';

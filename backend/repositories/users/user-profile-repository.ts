@@ -37,15 +37,23 @@ export function createUserProfileRepository(
 ): UserProfileRepository {
   return {
     async upsert(input) {
+      // `username` is deliberately omitted: the assign_username trigger fills it
+      // (and resolves collisions) on insert — see migration 20261009120000. The
+      // generated Insert type requires it because the column is NOT NULL with no
+      // default, which cannot express a trigger-filled column, so we narrow the
+      // payload to everything but username.
+      type UsersInsert = Database['public']['Tables']['users']['Insert'];
+      const payload = {
+        id: input.id,
+        email: input.email,
+        name: input.name,
+        avatar_url: input.avatar_url ?? null,
+        created_at: new Date().toISOString(),
+      } satisfies Omit<UsersInsert, 'username'>;
+
       await supabase
         .from('users')
-        .upsert({
-          id: input.id,
-          email: input.email,
-          name: input.name,
-          avatar_url: input.avatar_url ?? null,
-          created_at: new Date().toISOString(),
-        })
+        .upsert(payload as UsersInsert)
         .maybeSingle();
     },
 
