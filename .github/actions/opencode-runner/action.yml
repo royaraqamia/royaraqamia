@@ -1,0 +1,54 @@
+name: 'OpenCode Runner Setup'
+description: >-
+  Prepares a runner for an OpenCode agent job: installs the pinned Vercel CLI and
+  writes the runner-only OpenCode config (Supabase MCP server + headless permission
+  block). Shared by the autonomous agent workflows so the setup cannot drift between
+  them.
+
+inputs:
+  supabase-project-ref:
+    description: 'Supabase project reference, baked into the MCP server URL'
+    required: true
+  vercel-version:
+    description: 'Pinned Vercel CLI version'
+    required: false
+    default: '63.1.0'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Install Vercel CLI
+      # Pinned, global so the agent can call it directly.
+      shell: bash
+      run: |
+        npm install --global vercel@${{ inputs.vercel-version }}
+        vercel --version
+
+    - name: Configure Supabase MCP (runner-only)
+      shell: bash
+      env:
+        SUPABASE_PROJECT_REF: ${{ inputs.supabase-project-ref }}
+      run: |
+        mkdir -p "$HOME/.config/opencode"
+        cat > "$HOME/.config/opencode/opencode.json" <<EOF
+        {
+          "\$schema": "https://opencode.ai/config.json",
+          "mcp": {
+            "supabase": {
+              "type": "remote",
+              "url": "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}&features=database,debugging,docs",
+              "enabled": true,
+              "oauth": false,
+              "headers": {
+                "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
+              }
+            }
+          },
+          "permission": {
+            "external_directory": {
+              "/tmp/*": "allow"
+            },
+            "doom_loop": "deny"
+          }
+        }
+        EOF

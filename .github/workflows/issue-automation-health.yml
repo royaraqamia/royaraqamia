@@ -1,0 +1,159 @@
+# Heartbeat and catch-up for the autonomous issue automation.
+#
+# GitHub's `schedule` trigger is best-effort: it lands hours late and is sometimes
+# dropped for a whole day, which is exactly the failure the planner/implementer
+# pipeline cannot detect on its own (a run that never starts cannot report that it
+# never started). This workflow is the dead-man's switch: once a day it checks the
+# age of the last successful run of each agent workflow, re-dispatches any that
+# lapsed, and opens (or closes) a single tracking issue so a human notices a
+# recurring outage.
+#
+# Re-dispatching works with the default GITHUB_TOKEN: `workflow_dispatch` is exempt
+# from the "token-triggered events do not start workflows" rule the planner and
+# implementer rely on, so no extra PAT is needed here. See ADR 0032.
+
+name: 'Issue Automation Health'
+
+on:
+  schedule:
+    # 12:00 UTC = 15:00 Damascus — six hours after the implementer backstop, so a
+    # missed day is unambiguous.
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+  issues: write
+
+concurrency:
+  group: issue-automation-health
+  cancel-in-progress: false
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check heartbeats and recover
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const ALERT_LABEL = 'opencode:alert';
+            const ALERT_TITLE = 'Issue automation heartbeat missed';
+            const STALE_MS = 26 * 60 * 60 * 1000;
+            const targets = [
+              { name: 'Issue Planner', file: 'issue-planner.yml' },
+              { name: 'Issue Implementer', file: 'issue-implementer.yml' },
+            ];
+
+            const lastSuccess = async (file) => {
+              const runs = await github.paginate(github.rest.actions.listWorkflowRuns, {
+                owner,
+                repo,
+                workflow_id: file,
+                per_page: 30,
+              });
+              return runs.find((r) => r.conclusion === 'success') || null;
+            };
+
+            const stale = [];
+            const lines = [];
+            for (const target of targets) {
+              const run = await lastSuccess(target.file);
+              const ageMs = run ? Date.now() - Date.parse(run.created_at) : Number.POSITIVE_INFINITY;
+              const ageHours = run ? (ageMs / 3600000).toFixed(1) : 'never';
+              lines.push(
+                '- ' + target.name + ': ' +
+                  (run
+                    ? 'last success `' + run.created_at + '` (' + ageHours + 'h ago, run ' + run.id + ')'
+                    : 'no successful run on record')
+              );
+              if (!run || ageMs > STALE_MS) stale.push(target);
+            }
+
+            for (const target of stale) {
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner,
+                  repo,
+                  workflow_id: target.file,
+                  ref: 'main',
+                });
+                core.warning('Re-dispatched ' + target.name + ' (' + target.file + ').');
+              } catch (err) {
+                core.error('Could not re-dispatch ' + target.name + ': ' + err.message);
+              }
+            }
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner,
+              repo,
+              state: 'open',
+              labels: ALERT_LABEL,
+              per_page: 100,
+            });
+            const existing = open.find((i) => !i.pull_request && i.title === ALERT_TITLE);
+
+            if (stale.length === 0) {
+              if (existing) {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  body: 'Heartbeat recovered:\n\n' + lines.join('\n'),
+                });
+                await github.rest.issues.update({
+                  owner,
+                  repo,
+                  issue_number: existing.number,
+                  state: 'closed',
+                });
+                core.info('Closed heartbeat alert #' + existing.number + '.');
+              } else {
+                core.info('All heartbeats healthy; no alert to raise.');
+              }
+              return;
+            }
+
+            const body = [
+              'The daily heartbeat for the autonomous issue automation is late.',
+              '',
+              'Last successful runs:',
+              ...lines,
+              '',
+              'Re-dispatched: ' + stale.map((t) => t.name).join(', ') + '.',
+              '',
+              "If this recurs, check the pg_cron dispatcher (`dispatch_github_workflow`) and GitHub's schedule delivery.",
+              '',
+              '_Maintained by `.github/workflows/issue-automation-health.yml` (ADR 0032)._',
+            ].join('\n');
+
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+              core.info('Updated heartbeat alert #' + existing.number + '.');
+              return;
+            }
+
+            try {
+              await github.rest.issues.createLabel({
+                owner,
+                repo,
+                name: ALERT_LABEL,
+                color: 'b60205',
+                description: 'Issue automation heartbeat is degraded',
+              });
+            } catch (err) {
+              if (err.status !== 422) throw err;
+            }
+            const created = await github.rest.issues.create({
+              owner,
+              repo,
+              title: ALERT_TITLE,
+              body,
+              labels: [ALERT_LABEL],
+            });
+            core.info('Opened heartbeat alert #' + created.data.number + '.');

@@ -64,40 +64,10 @@ jobs:
           node-version: '22'
           cache-next: 'false'
 
-      - name: Install Vercel CLI
-        # Pinned, global so the agent can call it directly. Kept out of the shared
-        # setup-environment action so other CI jobs do not pay for it.
-        run: |
-          npm install --global vercel@63.1.0
-          vercel --version
-
-      - name: Configure Supabase MCP (runner-only)
-        env:
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
-        run: |
-          mkdir -p "$HOME/.config/opencode"
-          cat > "$HOME/.config/opencode/opencode.json" <<EOF
-          {
-            "\$schema": "https://opencode.ai/config.json",
-            "mcp": {
-              "supabase": {
-                "type": "remote",
-                "url": "https://mcp.supabase.com/mcp?project_ref=${SUPABASE_PROJECT_REF}&features=database,debugging,docs",
-                "enabled": true,
-                "oauth": false,
-                "headers": {
-                  "Authorization": "Bearer {env:SUPABASE_ACCESS_TOKEN}"
-                }
-              }
-            },
-            "permission": {
-              "external_directory": {
-                "/tmp/*": "allow"
-              },
-              "doom_loop": "deny"
-            }
-          }
-          EOF
+      - name: OpenCode Runner Setup
+        uses: ./.github/actions/opencode-runner
+        with:
+          supabase-project-ref: ${{ secrets.SUPABASE_PROJECT_REF }}
 
       - name: Plan — DeepSeek 4.1 Flash (Analyze)
         id: plan
