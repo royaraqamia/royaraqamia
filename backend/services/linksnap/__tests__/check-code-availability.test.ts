@@ -5,6 +5,7 @@ import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-
 function makeRepo(overrides: Partial<ShortLinkRepository> = {}) {
   const repository: ShortLinkRepository = {
     findByCode: vi.fn(),
+    findByClientId: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),
     update: vi.fn(),

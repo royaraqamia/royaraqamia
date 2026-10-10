@@ -8,13 +8,24 @@ import {
   type LinkUpdateBody,
   type ShortenedLink,
 } from '@/frontend/api/linksnap';
+import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
 
+/**
+ * The link list. Inside a `LinksnapProvider` the list renders from the Local
+ * Store (offline-first, ADR-0028); outside one it falls back to the network so
+ * the admin console and any legacy caller keep working unchanged.
+ */
 export function useLinks(token: string, refreshTrigger: number) {
+  const context = useLinksnapContext();
   const [links, setLinks] = useState<ShortenedLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLinks = useCallback(async () => {
+    if (context) {
+      await context.refresh();
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -24,41 +35,54 @@ export function useLinks(token: string, refreshTrigger: number) {
     } finally {
       setLoading(false);
     }
-  }, [token]);
+  }, [context, token]);
 
   useEffect(() => {
+    if (context) return undefined;
     if (token) {
       const timer = setTimeout(() => fetchLinks(), 0);
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [token, refreshTrigger, fetchLinks]);
+  }, [token, refreshTrigger, fetchLinks, context]);
 
-  const handleDelete = useCallback((code: string) => {
-    setLinks((prev) => prev.filter((l) => l.code !== code));
+  const handleDelete = useCallback((key: string) => {
+    setLinks((prev) => prev.filter((l) => (l.clientId ?? l.code) !== key && l.code !== key));
   }, []);
 
-  const handleUpdate = useCallback((code: string, newUrl: string) => {
-    setLinks((prev) => prev.map((l) => (l.code === code ? { ...l, originalUrl: newUrl } : l)));
+  const applyLinkUpdate = useCallback((key: string, link: ShortenedLink) => {
+    setLinks((prev) => prev.map((l) => ((l.clientId ?? l.code) === key ? { ...l, ...link } : l)));
   }, []);
 
-  const applyLinkUpdate = useCallback((prevCode: string, link: ShortenedLink) => {
-    setLinks((prev) => prev.map((l) => (l.code === prevCode ? { ...l, ...link } : l)));
-  }, []);
-
-  return { links, loading, error, fetchLinks, handleDelete, handleUpdate, applyLinkUpdate };
+  return {
+    links: context ? context.links : links,
+    loading: context ? context.loading : loading,
+    error: context ? null : error,
+    fetchLinks,
+    handleDelete,
+    applyLinkUpdate,
+  };
 }
 
 export function useUpdateLink(token: string) {
+  const context = useLinksnapContext();
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
 
   const updateLinkAction = useCallback(
-    async (code: string, changes: LinkUpdateBody) => {
+    async (clientId: string, changes: LinkUpdateBody) => {
       setUpdateLoading(true);
       setUpdateError(null);
       try {
-        return await updateLink(code, token, changes);
+        if (context) {
+          return await context.updateLink(clientId, {
+            newCode: changes.newCode,
+            originalUrl: changes.originalUrl,
+            expiresAt: changes.expiresAt,
+            password: changes.password,
+          });
+        }
+        return await updateLink(clientId, token, changes);
       } catch (err: unknown) {
         setUpdateError(err instanceof Error ? err.message : 'خطأ في تحديث الرَّابط.');
         throw err;
@@ -66,26 +90,31 @@ export function useUpdateLink(token: string) {
         setUpdateLoading(false);
       }
     },
-    [token]
+    [context, token]
   );
 
   return { updateLink: updateLinkAction, updateLoading, updateError };
 }
 
 export function useDeleteLink(token: string) {
+  const context = useLinksnapContext();
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const deleteLinkAction = useCallback(
-    async (code: string) => {
+    async (clientId: string) => {
       setDeleteError(null);
       try {
-        await deleteLink(code, token);
+        if (context) {
+          await context.deleteLink(clientId);
+          return;
+        }
+        await deleteLink(clientId, token);
       } catch (err: unknown) {
         setDeleteError(err instanceof Error ? err.message : 'خطأ في حذف الرَّابط.');
         throw err;
       }
     },
-    [token]
+    [context, token]
   );
 
   return { deleteLink: deleteLinkAction, deleteError };

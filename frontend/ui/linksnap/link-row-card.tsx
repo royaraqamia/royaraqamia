@@ -34,6 +34,7 @@ import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { shorten, type ShortenedLink } from '@/frontend/api/linksnap';
 import { toast } from 'sonner';
 import { useDeleteLink } from '@/frontend/state/linksnap/use-links';
+import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
 import { useLinkAnalytics } from '@/frontend/state/linksnap/use-analytics';
 import type { LinkStatus } from '@/shared/contracts/linksnap';
 
@@ -59,6 +60,7 @@ const STATUS_META: Record<LinkStatus, { label: string; className: string; dotCla
 };
 
 interface LinkRowCardProps {
+  clientId: string;
   code: string;
   originalUrl: string;
   createdAt: string;
@@ -66,14 +68,15 @@ interface LinkRowCardProps {
   status: LinkStatus;
   passwordProtected?: boolean;
   token: string;
-  onDeleted: (code: string) => void;
-  onUpdated: (prevCode: string, link: ShortenedLink) => void;
+  onDeleted: (clientId: string) => void;
+  onUpdated: (clientId: string, link: ShortenedLink) => void;
   onRestored?: () => void;
   isSelected?: boolean;
   onToggleSelect?: (code: string) => void;
 }
 
 export const LinkRowCard = memo(function LinkRowCard({
+  clientId,
   code,
   originalUrl,
   createdAt,
@@ -88,10 +91,11 @@ export const LinkRowCard = memo(function LinkRowCard({
   onToggleSelect,
 }: LinkRowCardProps) {
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
-  const [editingCode, setEditingCode] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showQr, setShowQr] = useState(false);
+  const linksnap = useLinksnapContext();
   const { deleteLink, deleteError } = useDeleteLink(token);
   const {
     analytics,
@@ -137,14 +141,18 @@ export const LinkRowCard = memo(function LinkRowCard({
     setShowDeleteConfirm(false);
 
     try {
-      await deleteLink(code);
-      onDeleted(code);
+      await deleteLink(clientId);
+      onDeleted(clientId);
       toast('تم حذف الرَّابط', {
         action: {
           label: 'تراجع',
           onClick: async () => {
             try {
-              await shorten(originalUrl, code, token);
+              if (linksnap) {
+                await linksnap.restoreLink(clientId);
+              } else {
+                await shorten(originalUrl, code, token);
+              }
               onRestored?.();
               toast.success('تم استرجاع الرَّابط');
             } catch {
@@ -362,7 +370,7 @@ export const LinkRowCard = memo(function LinkRowCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 font-medium">
-              <DropdownMenuItem onClick={() => setEditingCode(code)} className="cursor-pointer">
+              <DropdownMenuItem onClick={() => setEditing(true)} className="cursor-pointer">
                 <Pencil className="me-2 h-4 w-4" />
                 <span>تعديل الرَّابط</span>
               </DropdownMenuItem>
@@ -430,17 +438,18 @@ export const LinkRowCard = memo(function LinkRowCard({
       <LinkQrModal code={code} baseUrl={getBaseUrl()} open={showQr} onOpenChange={setShowQr} />
 
       <LinkEditDialog
-        open={editingCode === code}
+        open={editing}
+        clientId={clientId}
         code={code}
         currentUrl={originalUrl}
         currentExpiresAt={expiresAt}
         currentPasswordProtected={passwordProtected}
         token={token}
         onSaved={(link) => {
-          onUpdated(code, link);
-          setEditingCode(null);
+          onUpdated(clientId, link);
+          setEditing(false);
         }}
-        onClose={() => setEditingCode(null)}
+        onClose={() => setEditing(false)}
       />
     </article>
   );

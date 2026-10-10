@@ -14,6 +14,13 @@ interface UpdateLinkInput {
   password?: string | null;
 }
 
+/** Offline write metadata carried by an Outbox replay (ADR-0029, ticket #167). */
+interface UpdateLinkMeta {
+  updatedAt?: string;
+  /** `null` resurrects a tombstoned link (an undo). */
+  deletedAt?: string | null;
+}
+
 export class UpdateLinkService {
   constructor(private shortLinkRepository: ShortLinkRepository) {}
 
@@ -21,7 +28,12 @@ export class UpdateLinkService {
    * Validates and updates the destination URL, slug and/or expiry of an
    * existing short link.
    */
-  async execute(code: string, userId: string, input: UpdateLinkInput): Promise<ShortLink> {
+  async execute(
+    code: string,
+    userId: string,
+    input: UpdateLinkInput,
+    meta?: UpdateLinkMeta
+  ): Promise<ShortLink> {
     if (!code || !userId) {
       throw new AppError('رمز الرَّابط والمستخدم مطلوبان.', 400);
     }
@@ -29,7 +41,8 @@ export class UpdateLinkService {
       input.code === undefined &&
       input.originalUrl === undefined &&
       input.expiresAt === undefined &&
-      input.password === undefined
+      input.password === undefined &&
+      meta?.deletedAt === undefined
     ) {
       throw new AppError('لا توجد تغييرات لتطبيقها على الرَّابط.', 400);
     }
@@ -58,7 +71,9 @@ export class UpdateLinkService {
       updates.code = await this.validateNewCode(input.code);
     }
 
-    return await this.shortLinkRepository.update(code, updates);
+    return meta
+      ? await this.shortLinkRepository.update(code, updates, meta)
+      : await this.shortLinkRepository.update(code, updates);
   }
 
   private async validateNewCode(code: string): Promise<string> {

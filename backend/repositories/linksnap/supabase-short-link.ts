@@ -1,4 +1,7 @@
-import { ShortLinkRepository } from '@/backend/repositories/linksnap/short-link-repository';
+import {
+  ShortLinkRepository,
+  type ShortLinkWriteMeta,
+} from '@/backend/repositories/linksnap/short-link-repository';
 import { ShortLink } from '@/shared/contracts/linksnap';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
@@ -13,6 +16,8 @@ interface ShortLinkDbRow {
   is_blocked: boolean;
   expires_at: string | null;
   password_hash: string | null;
+  client_id: string | null;
+  deleted_at: string | null;
 }
 
 export class SupabaseShortLinkRepository implements ShortLinkRepository {
@@ -31,6 +36,8 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       isBlocked: row.is_blocked,
       expiresAt: row.expires_at ? new Date(row.expires_at) : null,
       passwordHash: row.password_hash,
+      clientId: row.client_id,
+      deletedAt: row.deleted_at ? new Date(row.deleted_at) : null,
     };
   }
 
@@ -44,6 +51,8 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       is_blocked: domain.isBlocked,
       expires_at: domain.expiresAt ? domain.expiresAt.toISOString() : null,
       password_hash: domain.passwordHash,
+      client_id: domain.clientId ?? null,
+      deleted_at: domain.deletedAt ? domain.deletedAt.toISOString() : null,
     };
   }
 
@@ -65,13 +74,44 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     return this.toDomain(data as ShortLinkDbRow);
   }
 
-  async create(link: ShortLink): Promise<ShortLink> {
+  async findByClientId(userId: string, clientId: string): Promise<ShortLink | null> {
     const supabase = this.adminClient;
     const { data, error } = await supabase
       .from('short_links')
-      .insert(this.toDb(link))
-      .select()
-      .single();
+      .select('*')
+      .eq('user_id', userId)
+      .eq('client_id', clientId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Failed to find short link by client id: ${error.message}`);
+    }
+
+    return data ? this.toDomain(data as ShortLinkDbRow) : null;
+  }
+
+  async create(link: ShortLink): Promise<ShortLink> {
+    const supabase = this.adminClient;
+    const row = this.toDb(link);
+
+    // A client-minted id makes a replayed write an idempotent upsert keyed on
+    // (user_id, client_id) (ADR-0029, ticket #167). A legacy/online create with
+    // no client id falls back to a plain insert.
+    if (link.clientId && link.userId) {
+      const { data, error } = await supabase
+        .from('short_links')
+        .upsert(row, { onConflict: 'user_id,client_id' })
+        .select()
+        .single();
+
+      if (error) {
+        throw new Error(`Failed to create short link: ${error.message}`);
+      }
+
+      return this.toDomain(data as ShortLinkDbRow);
+    }
+
+    const { data, error } = await supabase.from('short_links').insert(row).select().single();
 
     if (error) {
       throw new Error(`Failed to create short link: ${error.message}`);
@@ -86,6 +126,7 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       .from('short_links')
       .select('*')
       .eq('user_id', userId)
+      .is('deleted_at', null)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -99,7 +140,8 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     code: string,
     updates: Partial<
       Pick<ShortLink, 'code' | 'originalUrl' | 'isBlocked' | 'expiresAt' | 'passwordHash'>
-    >
+    >,
+    meta?: ShortLinkWriteMeta
   ): Promise<ShortLink> {
     const dbUpdates: Partial<ShortLinkDbRow> = {};
     if (updates.code !== undefined) {
@@ -117,15 +159,17 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     if (updates.passwordHash !== undefined) {
       dbUpdates.password_hash = updates.passwordHash;
     }
-    dbUpdates.updated_at = new Date().toISOString();
+    dbUpdates.updated_at = meta?.updatedAt ?? new Date().toISOString();
+    // `deletedAt: null` from an outbox replay is a resurrect (undo of a delete).
+    const resurrect = meta?.deletedAt === null;
+    if (meta?.deletedAt !== undefined) {
+      dbUpdates.deleted_at = meta.deletedAt;
+    }
 
     const supabase = this.adminClient;
-    const { data, error } = await supabase
-      .from('short_links')
-      .update(dbUpdates)
-      .eq('code', code)
-      .select()
-      .single();
+    let query = supabase.from('short_links').update(dbUpdates).eq('code', code);
+    if (!resurrect) query = query.is('deleted_at', null);
+    const { data, error } = await query.select().single();
 
     if (error) {
       throw new Error(`Failed to update short link: ${error.message}`);
@@ -138,13 +182,17 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     return this.toDomain(data as ShortLinkDbRow);
   }
 
-  async delete(code: string, userId: string): Promise<boolean> {
-    const supabase = this.adminClient; // Admin client verifies ownership/allows direct deletion safely
+  async delete(code: string, userId: string, meta?: ShortLinkWriteMeta): Promise<boolean> {
+    // Tombstone, not a hard delete: a replayed delete is idempotent, and reads
+    // exclude the row via `deleted_at is null` (ADR-0029, ticket #167).
+    const stamp = meta?.updatedAt ?? new Date().toISOString();
+    const supabase = this.adminClient;
     const { error } = await supabase
       .from('short_links')
-      .delete()
+      .update({ deleted_at: stamp, updated_at: stamp })
       .eq('code', code)
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .is('deleted_at', null);
 
     if (error) {
       throw new Error(`Failed to delete short link: ${error.message}`);
@@ -174,7 +222,8 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       .from('short_links')
       .update({ expires_at: expiresAt ? expiresAt.toISOString() : null })
       .in('code', codes)
-      .eq('user_id', userId);
+      .eq('user_id', userId)
+      .is('deleted_at', null);
 
     if (error) {
       throw new Error(`Failed to update short links expiry: ${error.message}`);

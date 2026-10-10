@@ -21,6 +21,7 @@ const linkFixture: ShortLink = {
 function makeRepo(overrides: Partial<ShortLinkRepository> = {}) {
   const repository: ShortLinkRepository = {
     findByCode: vi.fn(),
+    findByClientId: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),
     update: vi.fn(),
@@ -236,6 +237,22 @@ describe('UpdateLinkService', () => {
     ];
     expect(Object.prototype.hasOwnProperty.call(updateCall[1], 'passwordHash')).toBe(false);
   });
+
+  it('passes offline tombstone metadata through on an update replay', async () => {
+    const { repository } = makeRepo();
+    const service = new UpdateLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (repository.update as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+
+    const meta = { updatedAt: '2026-08-01T00:00:00.000Z', deletedAt: null };
+    await service.execute('abc123', 'u-1', { originalUrl: 'https://new.com' }, meta);
+
+    expect(repository.update).toHaveBeenCalledWith(
+      'abc123',
+      { originalUrl: 'https://new.com' },
+      meta
+    );
+  });
 });
 
 describe('DeleteLinkService', () => {
@@ -280,5 +297,17 @@ describe('DeleteLinkService', () => {
       'Unauthorized: You do not own this short link.'
     );
     expect(repository.delete).not.toHaveBeenCalled();
+  });
+
+  it('passes the offline updatedAt through on a delete replay', async () => {
+    const { repository } = makeRepo();
+    const service = new DeleteLinkService(repository);
+    (repository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    (repository.delete as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+
+    const meta = { updatedAt: '2026-08-01T00:00:00.000Z' };
+    await service.execute('abc123', 'u-1', meta);
+
+    expect(repository.delete).toHaveBeenCalledWith('abc123', 'u-1', meta);
   });
 });

@@ -14,6 +14,10 @@ export interface ShortenedLink {
   expiresAt: string | null;
   status: LinkStatus;
   passwordProtected?: boolean;
+  /** Outbox/LWW fields (ADR-0029, ticket #167). */
+  clientId?: string | null;
+  updatedAt?: string;
+  deletedAt?: string | null;
 }
 
 export interface LinkUpdateBody {
@@ -22,6 +26,10 @@ export interface LinkUpdateBody {
   expiresAt?: string | null;
   /** String sets a new password, null clears it, undefined leaves it unchanged. */
   password?: string | null;
+  /** Client-minted write timestamp; the server uses it for last-write-wins. */
+  updatedAt?: string;
+  /** `null` resurrects a tombstoned link (an undo). */
+  deletedAt?: string | null;
 }
 
 export interface CodeAvailability {
@@ -78,7 +86,8 @@ export async function shorten(
   originalUrl: string,
   customCode: string | undefined,
   token: string | null,
-  password?: string
+  password?: string,
+  meta?: { clientId?: string; updatedAt?: string }
 ): Promise<ShortenedLink> {
   const data = await request<{ link: ShortenedLink }>('/linksnap/api/shorten', {
     method: 'POST',
@@ -87,6 +96,8 @@ export async function shorten(
       originalUrl,
       customCode: customCode || undefined,
       password: password || undefined,
+      clientId: meta?.clientId,
+      updatedAt: meta?.updatedAt,
     }),
   });
   return data.link;

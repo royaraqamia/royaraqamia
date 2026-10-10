@@ -13,7 +13,15 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
+  let body: { updatedAt?: unknown } = {};
+  if (typeof req.json === 'function') {
+    body = await req.json().catch(() => ({}));
+  }
   return toNextResponse(
-    await deleteLink(req.headers.get('Authorization'), searchParams.get('code'))
+    await deleteLink(
+      req.headers.get('Authorization'),
+      searchParams.get('code'),
+      typeof body.updatedAt === 'string' ? body.updatedAt : undefined
+    )
   );
 }

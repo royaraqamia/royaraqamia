@@ -4,7 +4,7 @@ import { AppError } from '@/backend/shared/errors';
 export class DeleteLinkService {
   constructor(private shortLinkRepository: ShortLinkRepository) {}
 
-  async execute(code: string, userId: string): Promise<boolean> {
+  async execute(code: string, userId: string, meta?: { updatedAt?: string }): Promise<boolean> {
     if (!code) {
       throw new AppError('رمز الرَّابط مطلوب.', 400);
     }
@@ -21,6 +21,8 @@ export class DeleteLinkService {
       throw new Error('Unauthorized: You do not own this short link.');
     }
 
-    return await this.shortLinkRepository.delete(code, userId);
+    return meta
+      ? await this.shortLinkRepository.delete(code, userId, meta)
+      : await this.shortLinkRepository.delete(code, userId);
   }
 }

@@ -5,6 +5,7 @@ import type { ShortLinkRepository } from '@/backend/repositories/linksnap/short-
 function makeRepo(overrides: Partial<ShortLinkRepository> = {}) {
   const repository: ShortLinkRepository = {
     findByCode: vi.fn(),
+    findByClientId: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),
     update: vi.fn(),
@@ -156,5 +157,37 @@ describe('ShortenUrlService.execute', () => {
     const result = await service.execute('https://example.com', null);
 
     expect(result.passwordHash).toBeNull();
+  });
+
+  it('replays an offline create idempotently without re-checking its own code', async () => {
+    const { repository, service } = makeRepo();
+    (repository.findByClientId as ReturnType<typeof vi.fn>).mockResolvedValue({
+      code: 'promo',
+      userId: 'u-1',
+    });
+    (repository.create as ReturnType<typeof vi.fn>).mockImplementation(async (link) => link);
+
+    const result = await service.execute('https://example.com', 'u-1', 'promo', null, undefined, {
+      clientId: 'c-1',
+      updatedAt: '2026-08-01T00:00:00.000Z',
+    });
+
+    expect(result.code).toBe('promo');
+    expect(result.clientId).toBe('c-1');
+    expect(repository.exists).not.toHaveBeenCalled();
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ clientId: 'c-1', code: 'promo' })
+    );
+  });
+
+  it('rejects a custom code taken by another link on first sync', async () => {
+    const { repository, service } = makeRepo();
+    (repository.findByClientId as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+    (repository.exists as ReturnType<typeof vi.fn>).mockResolvedValue(true);
+
+    await expect(
+      service.execute('https://example.com', 'u-1', 'promo', null, undefined, { clientId: 'c-1' })
+    ).rejects.toThrow('This custom short code is already taken. Please try another one.');
+    expect(repository.create).not.toHaveBeenCalled();
   });
 });

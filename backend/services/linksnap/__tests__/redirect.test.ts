@@ -33,6 +33,7 @@ const summaryFixture: LinkAnalyticsSummary = {
 function makeDeps() {
   const shortLinkRepository: ShortLinkRepository = {
     findByCode: vi.fn(),
+    findByClientId: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),
     update: vi.fn(),

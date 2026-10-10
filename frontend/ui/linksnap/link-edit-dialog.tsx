@@ -21,6 +21,7 @@ import {
   Calendar,
   KeyRound,
   CheckCheck,
+  CloudOff,
 } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
 import { useUpdateLink } from '@/frontend/state/linksnap/use-links';
@@ -40,6 +41,7 @@ import type { ShortenedLink } from '@/frontend/api/linksnap';
 
 interface LinkEditDialogProps {
   open: boolean;
+  clientId: string;
   code: string;
   currentUrl: string;
   currentExpiresAt: string | null;
@@ -98,6 +100,7 @@ function formatRemainingTime(dateStr: string, timeStr: string): string | null {
 
 export const LinkEditDialog = React.memo(function LinkEditDialog({
   open,
+  clientId,
   code,
   currentUrl,
   currentExpiresAt,
@@ -261,7 +264,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
     }
 
     try {
-      const updated = await updateLink(code, {
+      const updated = await updateLink(clientId, {
         newCode: editingCodeValue !== code ? editingCodeValue : undefined,
         originalUrl: editingUrlValue.trim(),
         expiresAt,
@@ -522,6 +525,11 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   <span className="text-destructive flex items-center gap-1.5">
                     <AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     {slugError || 'هذا الرمز مأخوذ من قبل رابط آخر.'}
+                  </span>
+                ) : slugStatus === 'offline' ? (
+                  <span className="text-muted-foreground flex items-center gap-1.5">
+                    <CloudOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    يتطلَّب الاتصال لفحص توفُّر الرمز؛ سيُحفظ وسيُتحقَّق عند المزامنة.
                   </span>
                 ) : (
                   <span className="text-muted-foreground/70">

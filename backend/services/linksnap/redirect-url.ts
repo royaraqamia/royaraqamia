@@ -52,6 +52,11 @@ export class RedirectUrlService {
       throw new ShortLinkRedirectError('Short link not found.', 'not-found');
     }
 
+    // A tombstoned link is deleted; its code must stop resolving (ADR-0029).
+    if (link.deletedAt) {
+      throw new ShortLinkRedirectError('Short link not found.', 'not-found');
+    }
+
     if (link.isBlocked) {
       throw new ShortLinkRedirectError(
         'This link has been deactivated due to terms of service violations.',

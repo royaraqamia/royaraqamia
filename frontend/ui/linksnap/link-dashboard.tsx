@@ -20,6 +20,7 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { DatePicker } from '@/frontend/ui/primitives/date-picker';
 import { useLinks } from '@/frontend/state/linksnap/use-links';
 import { useBulkLinks } from '@/frontend/state/linksnap/use-bulk-links';
+import { LinksnapSyncStatus } from '@/frontend/ui/linksnap/linksnap-sync-status';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { toast } from 'sonner';
 
@@ -100,18 +101,21 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
           <Link2 aria-hidden="true" className="w-5 h-5 text-primary" />
           <span>روابطك المختصَرة</span>
         </h2>
-        <button
-          onClick={fetchLinks}
-          disabled={loading}
-          aria-label="تحديث القائمة"
-          className="p-2 text-muted-foreground hover:text-primary rounded-full hover:bg-muted transition-colors cursor-pointer press-scale focus-ring touch-target btn-press"
-          title="تحديث القائمة"
-        >
-          <RefreshCw
-            className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-            role={loading ? 'status' : undefined}
-          />
-        </button>
+        <div className="flex items-center gap-2">
+          <LinksnapSyncStatus />
+          <button
+            onClick={fetchLinks}
+            disabled={loading}
+            aria-label="تحديث القائمة"
+            className="p-2 text-muted-foreground hover:text-primary rounded-full hover:bg-muted transition-colors cursor-pointer press-scale focus-ring touch-target btn-press"
+            title="تحديث القائمة"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
+              role={loading ? 'status' : undefined}
+            />
+          </button>
+        </div>
       </div>
 
       {showBar ? (
@@ -172,13 +176,14 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
         >
           {links.map((link) => (
             <m.div
-              key={link.code}
+              key={link.clientId ?? link.code}
               variants={{
                 hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 },
                 visible: { opacity: 1, y: 0 },
               }}
             >
               <LinkRowCard
+                clientId={link.clientId ?? link.code}
                 code={link.code}
                 originalUrl={link.originalUrl}
                 createdAt={link.createdAt}
@@ -187,7 +192,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
                 passwordProtected={link.passwordProtected}
                 token={token}
                 onDeleted={handleDelete}
-                onUpdated={(prevCode, link) => applyLinkUpdate(prevCode, link)}
+                onUpdated={(key, updated) => applyLinkUpdate(key, updated)}
                 onRestored={fetchLinks}
                 isSelected={bulk.selected.has(link.code)}
                 onToggleSelect={bulk.toggle}

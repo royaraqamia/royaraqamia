@@ -4,7 +4,9 @@ import { useState, useEffect, useRef } from 'react';
 import { m } from 'motion/react';
 import { UrlShortener } from '@/frontend/ui/linksnap/url-shortener';
 import { RedirectErrorBanner } from '@/frontend/ui/linksnap/redirect-error-banner';
+import { LinksnapSyncStatus } from '@/frontend/ui/linksnap/linksnap-sync-status';
 import { useSession } from '@/frontend/state/session-provider';
+import { LinksnapProvider } from '@/frontend/state/linksnap/linksnap-context';
 
 interface RedirectError {
   type: string;
@@ -14,6 +16,7 @@ interface RedirectError {
 export function LinkSnapAppView() {
   const { session } = useSession();
   const [redirectError, setRedirectError] = useState<RedirectError | null>(null);
+  const token = session?.access_token ?? null;
 
   const parsedParams = useRef(false);
   useEffect(() => {
@@ -46,14 +49,19 @@ export function LinkSnapAppView() {
   }, []);
 
   return (
-    <div className="relative flex flex-col min-h-full overflow-hidden">
-      <div className="flex-1 flex flex-col justify-center max-w-xl w-full mx-auto space-y-8">
-        <RedirectErrorBanner error={redirectError} onDismiss={() => setRedirectError(null)} />
+    <LinksnapProvider token={token} user={session?.user ?? null}>
+      <div className="relative flex flex-col min-h-full overflow-hidden">
+        <div className="flex justify-end mb-2">
+          <LinksnapSyncStatus />
+        </div>
+        <div className="flex-1 flex flex-col justify-center max-w-xl w-full mx-auto space-y-8">
+          <RedirectErrorBanner error={redirectError} onDismiss={() => setRedirectError(null)} />
 
-        <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-          <UrlShortener token={session?.access_token ?? null} />
-        </m.div>
+          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+            <UrlShortener token={token} />
+          </m.div>
+        </div>
       </div>
-    </div>
+    </LinksnapProvider>
   );
 }

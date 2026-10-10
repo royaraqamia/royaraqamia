@@ -14,6 +14,7 @@ import {
   RotateCcw,
   Lock,
   LockOpen,
+  CloudOff,
 } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
@@ -229,7 +230,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                   role="status"
                   aria-live="polite"
                   className={`flex items-center gap-1.5 text-xs font-bold ${
-                    slugStatus === 'checking'
+                    slugStatus === 'checking' || slugStatus === 'offline'
                       ? 'text-muted-foreground'
                       : slugStatus === 'available'
                         ? 'text-success'
@@ -248,6 +249,11 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                     <>
                       <Check className="h-3.5 w-3.5" aria-hidden="true" />
                       <span>هذا الرمز متاح!</span>
+                    </>
+                  ) : slugStatus === 'offline' ? (
+                    <>
+                      <CloudOff className="h-3.5 w-3.5" aria-hidden="true" />
+                      <span>يتطلَّب الاتصال للتحقق من التوفُّر؛ سيُتحقَّق عند المزامنة.</span>
                     </>
                   ) : (
                     <>

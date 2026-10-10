@@ -26,7 +26,7 @@ export class UnlockLinkService {
     metadata: { referrer: string | null; userAgent: string | null; ipCountry: string | null }
   ): Promise<string> {
     const link = await this.shortLinkRepository.findByCode(code);
-    if (!link) {
+    if (!link || link.deletedAt) {
       throw new ShortLinkRedirectError('Short link not found.', 'not-found');
     }
     if (!link.passwordHash) {

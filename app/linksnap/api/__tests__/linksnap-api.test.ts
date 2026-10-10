@@ -134,9 +134,11 @@ describe('POST /linksnap/api/shorten', () => {
       code: 'abc123',
       originalUrl: 'https://example.com',
       createdAt: now.toISOString(),
+      updatedAt: now.toISOString(),
       userId: 'u-1',
       expiresAt: null,
       status: 'active',
+      clientId: null,
     });
     expect(mockCheckRateLimitApi).toHaveBeenCalledWith(
       expect.objectContaining({ key: 'shorten:u-1', limit: 50, windowMs: 600_000 })
@@ -200,10 +202,13 @@ describe('GET /linksnap/api/links', () => {
           code: 'abc123',
           originalUrl: 'https://example.com',
           createdAt: now.toISOString(),
+          updatedAt: now.toISOString(),
           isBlocked: false,
           expiresAt: null,
           passwordProtected: false,
           status: 'active',
+          clientId: null,
+          deletedAt: null,
         },
       ],
     });

@@ -7,6 +7,12 @@ import { hashPassword } from '@/backend/shared/password-hash';
 
 const MAX_CODE_ATTEMPTS = 5;
 
+/** Offline write metadata carried by an Outbox replay (ADR-0029, ticket #167). */
+interface ShortenMeta {
+  clientId?: string;
+  updatedAt?: string;
+}
+
 export class ShortenUrlService {
   constructor(private shortLinkRepository: ShortLinkRepository) {}
 
@@ -15,9 +21,12 @@ export class ShortenUrlService {
     userId: string | null,
     customCode?: string,
     expiresAt?: Date | null,
-    password?: string
+    password?: string,
+    meta?: ShortenMeta
   ): Promise<ShortLink> {
     const sanitizedUrl = SecurityValidator.validateUrl(originalUrl);
+    const clientId = meta?.clientId ?? null;
+    const now = meta?.updatedAt ? new Date(meta.updatedAt) : new Date();
 
     let code = '';
 
@@ -28,11 +37,6 @@ export class ShortenUrlService {
       }
       if (sanitizedCode.length > 16) {
         throw new AppError('Custom short code must be under 16 characters.', 400);
-      }
-
-      const isTaken = await this.shortLinkRepository.exists(sanitizedCode);
-      if (isTaken) {
-        throw new AppError('This custom short code is already taken. Please try another one.', 400);
       }
       code = sanitizedCode;
     } else {
@@ -51,7 +55,19 @@ export class ShortenUrlService {
       }
     }
 
-    const now = new Date();
+    // An offline create always carries a client id and (usually) its own code.
+    // If the client-minted row already exists, this is an idempotent replay, so
+    // its code must not be re-validated as "taken" (it is taken by itself).
+    const replayed =
+      clientId && userId ? await this.shortLinkRepository.findByClientId(userId, clientId) : null;
+
+    if (customCode && !replayed) {
+      const isTaken = await this.shortLinkRepository.exists(code);
+      if (isTaken) {
+        throw new AppError('This custom short code is already taken. Please try another one.', 400);
+      }
+    }
+
     const shortLink: ShortLink = {
       code,
       originalUrl: sanitizedUrl,
@@ -61,6 +77,8 @@ export class ShortenUrlService {
       isBlocked: false,
       expiresAt: expiresAt ?? null,
       passwordHash: password ? hashPassword(password) : null,
+      clientId,
+      deletedAt: null,
     };
 
     return await this.shortLinkRepository.create(shortLink);

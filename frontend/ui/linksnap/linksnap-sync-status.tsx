@@ -1,0 +1,19 @@
+'use client';
+
+import { SyncStatusPill } from '@/frontend/ui/shared/sync-status-pill';
+import { useLinksnapContext } from '@/frontend/state/linksnap/linksnap-context';
+
+/**
+ * LinkSnap's header sync state; renders nothing outside the provider. The
+ * `data-linksnap-ready` marker lets the offline E2E wait until the Local Store
+ * is open before it drives a write.
+ */
+export function LinksnapSyncStatus() {
+  const context = useLinksnapContext();
+  if (!context) return null;
+  return (
+    <div data-linksnap-ready={context.ready ? 'true' : 'false'}>
+      <SyncStatusPill status={context} />
+    </div>
+  );
+}

@@ -23,6 +23,7 @@ const linkFixture: ShortLink = {
 function makeLinkRepo(overrides: Partial<ShortLinkRepository> = {}) {
   const repository: ShortLinkRepository = {
     findByCode: vi.fn(),
+    findByClientId: vi.fn(),
     create: vi.fn(),
     listByUserId: vi.fn(),
     update: vi.fn(),

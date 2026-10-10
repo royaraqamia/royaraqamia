@@ -60,18 +60,50 @@ function linkView(l: {
   code: string;
   originalUrl: string;
   createdAt: Date;
+  updatedAt?: Date;
   isBlocked: boolean;
   expiresAt: Date | null;
   passwordHash?: string | null;
+  clientId?: string | null;
+  deletedAt?: Date | null;
 }) {
+  const updatedAt = l.updatedAt ?? l.createdAt;
   return {
     code: l.code,
     originalUrl: l.originalUrl,
     createdAt: l.createdAt.toISOString(),
+    updatedAt: updatedAt.toISOString(),
     isBlocked: l.isBlocked,
     expiresAt: l.expiresAt ? l.expiresAt.toISOString() : null,
     passwordProtected: Boolean(l.passwordHash),
     status: getLinkStatus(l.isBlocked, l.expiresAt),
+    clientId: l.clientId ?? null,
+    deletedAt: l.deletedAt ? l.deletedAt.toISOString() : null,
+  };
+}
+
+/** Offline create metadata for an Outbox replay (ADR-0029, ticket #167). */
+function offlineCreateMeta(body: { clientId?: unknown; updatedAt?: unknown }): {
+  clientId?: string;
+  updatedAt?: string;
+} {
+  return {
+    clientId: typeof body.clientId === 'string' ? body.clientId : undefined,
+    updatedAt: typeof body.updatedAt === 'string' ? body.updatedAt : undefined,
+  };
+}
+
+/** `deletedAt` present means the write carries a tombstone decision (null = resurrect). */
+function offlineUpdateMeta(body: {
+  updatedAt?: unknown;
+  deletedAt?: unknown;
+}): { updatedAt?: string; deletedAt?: string | null } | undefined {
+  const hasUpdatedAt = typeof body.updatedAt === 'string';
+  const hasDeletedAt = 'deletedAt' in body;
+  if (!hasUpdatedAt && !hasDeletedAt) return undefined;
+  return {
+    updatedAt: hasUpdatedAt ? (body.updatedAt as string) : undefined,
+    ...(hasDeletedAt ? { deletedAt: body.deletedAt === null ? null : String(body.deletedAt) } : {}),
   };
 }
 
@@ -110,10 +142,12 @@ export async function updateLink(
     originalUrl?: unknown;
     expiresAt?: unknown;
     password?: unknown;
+    updatedAt?: unknown;
+    deletedAt?: unknown;
   }
 ): Promise<HttpResult> {
   return requireBearer(authorization, 'Error in update link API route:', async ({ userId }) => {
-    const updatedLink = await createUpdateLinkService().execute(body.code as string, userId, {
+    const changes = {
       code: body.newCode as string | undefined,
       originalUrl: body.originalUrl as string | undefined,
       expiresAt: parseExpiresAt(body.expiresAt),
@@ -123,7 +157,14 @@ export async function updateLink(
           : body.password === null
             ? null
             : undefined,
-    });
+    };
+    // Only pass offline metadata when the replay actually carries it, so the
+    // online path keeps its two-argument service call shape.
+    const meta = offlineUpdateMeta(body);
+    const service = createUpdateLinkService();
+    const updatedLink = meta
+      ? await service.execute(body.code as string, userId, changes, meta)
+      : await service.execute(body.code as string, userId, changes);
 
     return jsonResult(200, { success: true, link: linkView(updatedLink) });
   });
@@ -131,10 +172,16 @@ export async function updateLink(
 
 export async function deleteLink(
   authorization: string | null,
-  code: string | null
+  code: string | null,
+  updatedAt?: string | null
 ): Promise<HttpResult> {
   return requireBearer(authorization, 'Error in delete link API route:', async ({ userId }) => {
-    await createDeleteLinkService().execute(code ?? '', userId);
+    const service = createDeleteLinkService();
+    if (typeof updatedAt === 'string') {
+      await service.execute(code ?? '', userId, { updatedAt });
+    } else {
+      await service.execute(code ?? '', userId);
+    }
     return jsonResult(200, { success: true, message: 'تم حذف الرَّابط بنجاح.' });
   });
 }
@@ -161,7 +208,14 @@ export async function checkCodeAvailability(
 export async function shortenUrl(
   authorization: string | null,
   ip: string,
-  body: { originalUrl?: unknown; customCode?: unknown; expiresAt?: unknown; password?: unknown }
+  body: {
+    originalUrl?: unknown;
+    customCode?: unknown;
+    expiresAt?: unknown;
+    password?: unknown;
+    clientId?: unknown;
+    updatedAt?: unknown;
+  }
 ): Promise<HttpResult> {
   try {
     const { originalUrl, customCode } = body;
@@ -180,7 +234,8 @@ export async function shortenUrl(
       userId,
       customCode as string | undefined,
       parseExpiresAt(body.expiresAt),
-      typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined
+      typeof body.password === 'string' && body.password.length > 0 ? body.password : undefined,
+      offlineCreateMeta(body)
     );
 
     return jsonResult(200, {
@@ -189,9 +244,11 @@ export async function shortenUrl(
         code: newLink.code,
         originalUrl: newLink.originalUrl,
         createdAt: newLink.createdAt.toISOString(),
+        updatedAt: newLink.updatedAt.toISOString(),
         userId: newLink.userId,
         expiresAt: newLink.expiresAt ? newLink.expiresAt.toISOString() : null,
         status: getLinkStatus(newLink.isBlocked, newLink.expiresAt),
+        clientId: newLink.clientId ?? null,
       },
     });
   } catch (err: unknown) {

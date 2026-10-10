@@ -4,11 +4,12 @@ import { useSession } from '@/frontend/state/session-provider';
 import { LinkDashboard } from '@/frontend/ui/linksnap/link-dashboard';
 import { DashboardSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
+import { LinksnapProvider } from '@/frontend/state/linksnap/linksnap-context';
 
 /**
  * The signed-in visitor's own LinkSnap shortcuts and their per-link analytics.
- * The dashboard talks to the LinkSnap API with the session token, so ownership
- * is enforced server-side; guests only ever see the sign-in prompt.
+ * The list renders from the identity-scoped Local Store (offline-first); the
+ * per-link analytics stay server-only and require a connection.
  */
 export function MyLinksView() {
   const { session, isLoading } = useSession();
@@ -22,5 +23,9 @@ export function MyLinksView() {
     return <SignInCta href="/auth/login?redirect=/account/links" />;
   }
 
-  return <LinkDashboard token={token} refreshTrigger={0} />;
+  return (
+    <LinksnapProvider token={token} user={session?.user ?? null}>
+      <LinkDashboard token={token} refreshTrigger={0} />
+    </LinksnapProvider>
+  );
 }
