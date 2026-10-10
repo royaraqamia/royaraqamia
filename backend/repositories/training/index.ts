@@ -144,10 +144,14 @@ export function createTrainingApplicationsRepository(
       status: TrainingApplication['status'],
       notes: string | null
     ): Promise<TrainingApplication> {
+      // Defence in depth: leaving `enrolled` must go through `release`, which
+      // returns the seat (ADR-0008). The service refuses this first; the filter
+      // makes the write itself a no-op if that guard is ever bypassed.
       const { data, error } = await supabase
         .from('training_applications')
         .update({ status, notes, updated_at: new Date().toISOString() })
         .eq('id', id)
+        .neq('status', 'enrolled')
         .select()
         .single();
 

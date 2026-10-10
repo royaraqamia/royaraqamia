@@ -213,9 +213,17 @@ export class TrainingApplicationService {
     return this.deps.repository.list(query);
   }
 
+  /**
+   * Applies an operator's manual status/notes change. The one status it refuses
+   * to leave via a plain write is `enrolled`: the application holds a scarce
+   * seat, so leaving it is `release`, which gives the seat back atomically
+   * (ADR-0008). A stale admin list re-saving the row's own `enrolled` status
+   * would otherwise leak the seat permanently.
+   */
   async update(id: string, input: TrainingApplicationUpdateInput): Promise<TrainingApplication> {
     const existing = await this.deps.repository.getById(id);
     if (!existing) throw new TrainingApplicationNotFoundError();
+    if (existing.status === 'enrolled') throw new TrainingApplicationEnrolledError();
 
     return this.deps.repository.updateStatus(id, input.status, toNullableText(input.notes));
   }

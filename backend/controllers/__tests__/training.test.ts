@@ -256,6 +256,14 @@ describe('training controller: updateTrainingApplication', () => {
     expect(result).toMatchObject({ status: 404, body: { success: false } });
   });
 
+  it('maps an enrolled application to the typed 409 conflict', async () => {
+    mockUpdate.mockRejectedValue(new TrainingApplicationEnrolledError());
+
+    const result = await updateTrainingApplication('app-1', { status: 'contacted' });
+
+    expect(result).toMatchObject({ status: 409, body: { success: false } });
+  });
+
   it('answers a readable 500 on a genuine failure', async () => {
     mockUpdate.mockRejectedValue(new Error('db down'));
 

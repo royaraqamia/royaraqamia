@@ -391,6 +391,21 @@ describe('TrainingApplicationService.update', () => {
 
     await expect(service.update('missing', { status: 'contacted' })).rejects.toThrow('غير موجود');
   });
+
+  it('refuses to move an enrolled application off enrolled without releasing the seat', async () => {
+    const { service, repository } = makeService({
+      repository: makeRepository({
+        getById: vi
+          .fn()
+          .mockResolvedValue(makeApplication({ status: 'enrolled', cohort_id: 'cohort-seat' })),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    await expect(service.update('app-1', { status: 'contacted' })).rejects.toBeInstanceOf(
+      TrainingApplicationEnrolledError
+    );
+    expect(repository.updateStatus).not.toHaveBeenCalled();
+  });
 });
 
 describe('TrainingApplicationService.enroll', () => {
