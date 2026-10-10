@@ -73,7 +73,7 @@ export function ServicesMenu({ trigger, align = 'start' }: ServicesMenuProps) {
         side="bottom"
         sideOffset={8}
         collisionPadding={8}
-        className="w-[min(18rem,calc(100vw-2rem))] p-1.5 sm:w-72 sm:p-1.5"
+        className="w-[min(18rem,calc(100vw-2rem))] max-h-[min(70vh,32rem)] overflow-y-auto overscroll-contain scrollbar-on-hover p-1.5 sm:w-72 sm:p-1.5"
       >
         <ServicesMenuItems
           subItems={link.subItems}
