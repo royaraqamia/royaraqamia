@@ -31,7 +31,7 @@ export function GuestModeBanner() {
     try {
       window.localStorage.setItem(DISMISS_KEY, '1');
     } catch {
-      /* storage unavailable — keep it hidden for this session */
+      // ignore
     }
   }
 
