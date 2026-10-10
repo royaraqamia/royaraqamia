@@ -23,6 +23,8 @@ export class HabitService {
     return this.repository.createHabit({
       name: data.name.trim(),
       frequency: data.frequency || 'daily',
+      clientId: data.clientId ?? null,
+      updatedAt: data.updatedAt,
       ...this.normalizeGoalFields(data),
     });
   }
@@ -99,17 +101,19 @@ export class HabitService {
     habitId: string;
     date: string;
     completed: boolean;
+    clientId?: string;
   }): Promise<HabitLog> {
     if (!data.habitId || !data.date || data.completed === undefined) {
       throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
     }
-    return this.repository.toggleLog(data.habitId, data.date, data.completed);
+    return this.repository.toggleLog(data.habitId, data.date, data.completed, data.clientId);
   }
 
   async setHabitLogKind(data: {
     habitId: string;
     date: string;
     kind: HabitLogKind | 'none';
+    clientId?: string;
   }): Promise<HabitLog> {
     if (!data.habitId || !data.date) {
       throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
@@ -118,13 +122,14 @@ export class HabitService {
     if (kind !== 'complete' && kind !== 'skip' && kind !== 'miss' && kind !== 'none') {
       throw new AppError('نوع تسجيل غير صالح', 400);
     }
-    return this.repository.setLogKind(data.habitId, data.date, kind);
+    return this.repository.setLogKind(data.habitId, data.date, kind, data.clientId);
   }
 
   async setHabitLogNote(data: {
     habitId: string;
     date: string;
     note: string | null;
+    clientId?: string;
   }): Promise<HabitLog> {
     if (!data.habitId || !data.date) {
       throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
@@ -135,7 +140,7 @@ export class HabitService {
           ? null
           : data.note.trim().slice(0, 500)
         : null;
-    return this.repository.setLogNote(data.habitId, data.date, note);
+    return this.repository.setLogNote(data.habitId, data.date, note, data.clientId);
   }
 
   async getLogs(startDate: string, endDate: string): Promise<HabitLog[]> {

@@ -1,4 +1,11 @@
-export type Category = {
+/** Outbox/LWW fields shared by offline-owned rows (ADR-0029, ticket #162). */
+type OfflineFields = {
+  clientId?: string | null;
+  updatedAt?: string;
+  deletedAt?: string | null;
+};
+
+export type Category = OfflineFields & {
   id: string;
   user_id: string | null;
   name: string;
@@ -6,7 +13,7 @@ export type Category = {
   created_at: string;
 };
 
-export type ExpenseSplit = {
+export type ExpenseSplit = OfflineFields & {
   id: string;
   expense_id: string;
   category_id: string;
@@ -18,7 +25,7 @@ export type ExpenseSplitInput = {
   amount: number;
 };
 
-export type Expense = {
+export type Expense = OfflineFields & {
   id: string;
   user_id: string;
   category_id: string;
@@ -53,7 +60,7 @@ export interface SpendtrackTransactionsResult {
   totalCount: number;
 }
 
-export type Budget = {
+export type Budget = OfflineFields & {
   id: string;
   month: string;
   amount: number;
@@ -67,7 +74,7 @@ export type CategoryBudget = {
   budget: number | null;
 };
 
-export type RecurringExpense = {
+export type RecurringExpense = OfflineFields & {
   id: string;
   amount: number;
   category_id: string;

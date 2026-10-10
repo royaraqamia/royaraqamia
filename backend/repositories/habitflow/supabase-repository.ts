@@ -20,6 +20,9 @@ interface HabitRow {
   target?: number | null;
   target_period?: string | null;
   reminder_time?: string | null;
+  client_id?: string | null;
+  updated_at?: string;
+  deleted_at?: string | null;
 }
 
 interface LogRow {
@@ -31,7 +34,12 @@ interface LogRow {
   log_kind?: string | null;
   note?: string | null;
   user_id?: string;
+  client_id?: string | null;
+  updated_at?: string;
+  deleted_at?: string | null;
 }
+
+const nowIso = () => new Date().toISOString();
 
 function toHabit(row: HabitRow): Habit {
   return {
@@ -44,6 +52,9 @@ function toHabit(row: HabitRow): Habit {
     target: row.target ?? null,
     targetPeriod: isTargetPeriod(row.target_period) ? row.target_period : null,
     reminderTime: row.reminder_time ?? null,
+    clientId: row.client_id ?? null,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at ?? null,
   };
 }
 
@@ -68,6 +79,9 @@ function toLog(row: LogRow): HabitLog {
     kind: toLogKind(row.log_kind),
     note: row.note ?? null,
     user_id: row.user_id,
+    clientId: row.client_id ?? null,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at ?? null,
   };
 }
 
@@ -85,6 +99,7 @@ export class SupabaseHabitRepository implements HabitRepository {
       .from('habits')
       .select('*')
       .eq('archived', false)
+      .is('deleted_at', null)
       .order('created_at', { ascending: true });
 
     if (this.userId) {
@@ -101,19 +116,35 @@ export class SupabaseHabitRepository implements HabitRepository {
   }
 
   async createHabit(habit: Omit<Habit, 'id' | 'createdAt' | 'archived'>): Promise<Habit> {
-    const { data, error } = await this.client
-      .from('habits')
-      .insert({
-        name: habit.name,
-        frequency: habit.frequency,
-        archived: false,
-        user_id: this.userId,
-        target: habit.target ?? null,
-        target_period: habit.targetPeriod ?? null,
-        reminder_time: habit.reminderTime ?? null,
-      })
-      .select()
-      .single();
+    const row = {
+      name: habit.name,
+      frequency: habit.frequency,
+      archived: false,
+      user_id: this.userId,
+      target: habit.target ?? null,
+      target_period: habit.targetPeriod ?? null,
+      reminder_time: habit.reminderTime ?? null,
+      client_id: habit.clientId ?? null,
+      updated_at: habit.updatedAt ?? nowIso(),
+    };
+
+    // A client-minted id makes a replayed write an idempotent upsert: the same
+    // client_id yields exactly one row (ADR-0029, ticket #162).
+    if (habit.clientId && this.userId) {
+      const { data, error } = await this.client
+        .from('habits')
+        .upsert(row, { onConflict: 'user_id,client_id' })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      return toHabit(data);
+    }
+
+    const { data, error } = await this.client.from('habits').insert(row).select().single();
 
     if (error) {
       throw error;
@@ -123,7 +154,7 @@ export class SupabaseHabitRepository implements HabitRepository {
   }
 
   async updateHabit(id: string, updates: Partial<Habit>): Promise<Habit> {
-    const dbUpdates: Record<string, unknown> = {};
+    const dbUpdates: Record<string, unknown> = { updated_at: updates.updatedAt ?? nowIso() };
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
     if (updates.archived !== undefined) dbUpdates.archived = updates.archived;
@@ -131,7 +162,7 @@ export class SupabaseHabitRepository implements HabitRepository {
     if (updates.targetPeriod !== undefined) dbUpdates.target_period = updates.targetPeriod;
     if (updates.reminderTime !== undefined) dbUpdates.reminder_time = updates.reminderTime;
 
-    let query = this.client.from('habits').update(dbUpdates).eq('id', id);
+    let query = this.client.from('habits').update(dbUpdates).eq('id', id).is('deleted_at', null);
 
     if (this.userId) {
       query = query.eq('user_id', this.userId);
@@ -147,7 +178,13 @@ export class SupabaseHabitRepository implements HabitRepository {
   }
 
   async deleteHabit(id: string): Promise<boolean> {
-    let query = this.client.from('habits').update({ archived: true }).eq('id', id);
+    // Tombstone, not a hard delete: a replayed delete is therefore idempotent,
+    // and reads exclude the row via `deleted_at is null`.
+    let query = this.client
+      .from('habits')
+      .update({ deleted_at: nowIso(), updated_at: nowIso() })
+      .eq('id', id)
+      .is('deleted_at', null);
 
     if (this.userId) {
       query = query.eq('user_id', this.userId);
@@ -195,7 +232,7 @@ export class SupabaseHabitRepository implements HabitRepository {
       name: h.name,
       frequency: h.frequency,
       archived: h.archived || false,
-      created_at: h.createdAt || new Date().toISOString(),
+      created_at: h.createdAt || nowIso(),
       user_id: userId,
       target: h.target ?? null,
       target_period: isTargetPeriod(h.targetPeriod) ? h.targetPeriod : null,
@@ -212,7 +249,7 @@ export class SupabaseHabitRepository implements HabitRepository {
       habit_id: l.habitId,
       date: l.date,
       completed: l.completed,
-      completed_at: l.completedAt || new Date().toISOString(),
+      completed_at: l.completedAt || nowIso(),
       log_kind: l.kind || (l.completed ? 'complete' : 'none'),
       user_id: userId,
     }));
@@ -225,8 +262,8 @@ export class SupabaseHabitRepository implements HabitRepository {
   }
 
   async getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }> {
-    let habitsQuery = this.client.from('habits').select('*');
-    let logsQuery = this.client.from('habit_logs').select('*');
+    let habitsQuery = this.client.from('habits').select('*').is('deleted_at', null);
+    let logsQuery = this.client.from('habit_logs').select('*').is('deleted_at', null);
 
     if (this.userId) {
       habitsQuery = habitsQuery.eq('user_id', this.userId);
@@ -254,7 +291,8 @@ export class SupabaseHabitRepository implements HabitRepository {
       .from('habit_logs')
       .select('*')
       .gte('date', startDate)
-      .lte('date', endDate);
+      .lte('date', endDate)
+      .is('deleted_at', null);
 
     if (this.userId) {
       query = query.eq('user_id', this.userId);
@@ -269,12 +307,18 @@ export class SupabaseHabitRepository implements HabitRepository {
     return (data || []).map(toLog);
   }
 
-  async toggleLog(habitId: string, date: string, completed: boolean): Promise<HabitLog> {
+  async toggleLog(
+    habitId: string,
+    date: string,
+    completed: boolean,
+    clientId?: string
+  ): Promise<HabitLog> {
     let fetchQuery = this.client
       .from('habit_logs')
       .select('*')
       .eq('habit_id', habitId)
-      .eq('date', date);
+      .eq('date', date)
+      .is('deleted_at', null);
 
     if (this.userId) {
       fetchQuery = fetchQuery.eq('user_id', this.userId);
@@ -293,8 +337,10 @@ export class SupabaseHabitRepository implements HabitRepository {
         .from('habit_logs')
         .update({
           completed,
-          completed_at: completed ? new Date().toISOString() : null,
+          completed_at: completed ? nowIso() : null,
           log_kind: completed ? 'complete' : 'none',
+          updated_at: nowIso(),
+          ...(clientId && !existing.client_id ? { client_id: clientId } : {}),
         })
         .eq('id', existing.id);
 
@@ -315,9 +361,11 @@ export class SupabaseHabitRepository implements HabitRepository {
           habit_id: habitId,
           date,
           completed,
-          completed_at: completed ? new Date().toISOString() : null,
+          completed_at: completed ? nowIso() : null,
           log_kind: completed ? 'complete' : 'none',
           user_id: this.userId,
+          client_id: clientId ?? null,
+          updated_at: nowIso(),
         })
         .select()
         .single();
@@ -331,15 +379,21 @@ export class SupabaseHabitRepository implements HabitRepository {
     return toLog(result);
   }
 
-  async setLogKind(habitId: string, date: string, kind: HabitLogKind | 'none'): Promise<HabitLog> {
+  async setLogKind(
+    habitId: string,
+    date: string,
+    kind: HabitLogKind | 'none',
+    clientId?: string
+  ): Promise<HabitLog> {
     const completed = kind === 'complete';
-    const completedAt = completed ? new Date().toISOString() : null;
+    const completedAt = completed ? nowIso() : null;
 
     let fetchQuery = this.client
       .from('habit_logs')
       .select('*')
       .eq('habit_id', habitId)
-      .eq('date', date);
+      .eq('date', date)
+      .is('deleted_at', null);
 
     if (this.userId) {
       fetchQuery = fetchQuery.eq('user_id', this.userId);
@@ -358,6 +412,8 @@ export class SupabaseHabitRepository implements HabitRepository {
           completed,
           completed_at: completedAt,
           log_kind: kind,
+          updated_at: nowIso(),
+          ...(clientId && !existing.client_id ? { client_id: clientId } : {}),
         })
         .eq('id', existing.id);
 
@@ -382,6 +438,8 @@ export class SupabaseHabitRepository implements HabitRepository {
         completed_at: completedAt,
         log_kind: kind,
         user_id: this.userId,
+        client_id: clientId ?? null,
+        updated_at: nowIso(),
       })
       .select()
       .single();
@@ -392,12 +450,18 @@ export class SupabaseHabitRepository implements HabitRepository {
     return toLog(data);
   }
 
-  async setLogNote(habitId: string, date: string, note: string | null): Promise<HabitLog> {
+  async setLogNote(
+    habitId: string,
+    date: string,
+    note: string | null,
+    clientId?: string
+  ): Promise<HabitLog> {
     let fetchQuery = this.client
       .from('habit_logs')
       .select('*')
       .eq('habit_id', habitId)
-      .eq('date', date);
+      .eq('date', date)
+      .is('deleted_at', null);
 
     if (this.userId) {
       fetchQuery = fetchQuery.eq('user_id', this.userId);
@@ -410,7 +474,14 @@ export class SupabaseHabitRepository implements HabitRepository {
     }
 
     if (existing) {
-      let updateQuery = this.client.from('habit_logs').update({ note }).eq('id', existing.id);
+      let updateQuery = this.client
+        .from('habit_logs')
+        .update({
+          note,
+          updated_at: nowIso(),
+          ...(clientId && !existing.client_id ? { client_id: clientId } : {}),
+        })
+        .eq('id', existing.id);
 
       if (this.userId) {
         updateQuery = updateQuery.eq('user_id', this.userId);
@@ -434,6 +505,8 @@ export class SupabaseHabitRepository implements HabitRepository {
         log_kind: 'none',
         note,
         user_id: this.userId,
+        client_id: clientId ?? null,
+        updated_at: nowIso(),
       })
       .select()
       .single();

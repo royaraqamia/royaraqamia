@@ -9,6 +9,9 @@ export interface ShortLink {
   isBlocked: boolean;
   expiresAt: Date | null;
   passwordHash: string | null;
+  /** Outbox/LWW fields (ADR-0029, ticket #162). */
+  clientId?: string | null;
+  deletedAt?: Date | null;
 }
 
 export interface AnalyticsEvent {

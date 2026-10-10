@@ -67,12 +67,13 @@ export async function getLogs(
 export async function toggleLog(body: Record<string, unknown>): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { habitId, date, completed } = body;
+      const { habitId, date, completed, clientId } = body;
       const { service, mode } = createHabitService(userId, supabase);
       const log = await service.toggleHabitLog({
         habitId: habitId as string,
         date: date as string,
         completed: completed as boolean,
+        clientId: typeof clientId === 'string' ? clientId : undefined,
       });
 
       return jsonResult(200, { log, mode });
@@ -84,12 +85,13 @@ export async function toggleLog(body: Record<string, unknown>): Promise<HttpResu
 export async function setHabitLogNote(body: Record<string, unknown>): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { habitId, date, note } = body;
+      const { habitId, date, note, clientId } = body;
       const { service, mode } = createHabitService(userId, supabase);
       const log = await service.setHabitLogNote({
         habitId: habitId as string,
         date: date as string,
         note: (note as string | null | undefined) ?? null,
+        clientId: typeof clientId === 'string' ? clientId : undefined,
       });
 
       return jsonResult(200, { log, mode });
@@ -101,12 +103,13 @@ export async function setHabitLogNote(body: Record<string, unknown>): Promise<Ht
 export async function setHabitLogKind(body: Record<string, unknown>): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      const { habitId, date, kind } = body;
+      const { habitId, date, kind, clientId } = body;
       const { service, mode } = createHabitService(userId, supabase);
       const log = await service.setHabitLogKind({
         habitId: habitId as string,
         date: date as string,
         kind: kind as 'complete' | 'skip' | 'miss' | 'none',
+        clientId: typeof clientId === 'string' ? clientId : undefined,
       });
 
       return jsonResult(200, { log, mode });

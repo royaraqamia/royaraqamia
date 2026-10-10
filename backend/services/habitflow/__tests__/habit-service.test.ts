@@ -87,6 +87,7 @@ describe('HabitService', () => {
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'قراءة',
         frequency: 'daily',
+        clientId: null,
       });
     });
 
@@ -99,6 +100,7 @@ describe('HabitService', () => {
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'رياضة',
         frequency: 'weekly',
+        clientId: null,
       });
     });
 
@@ -116,6 +118,7 @@ describe('HabitService', () => {
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'قراءة',
         frequency: 'daily',
+        clientId: null,
         target: 5,
         targetPeriod: 'week',
         reminderTime: '21:30',
@@ -136,6 +139,7 @@ describe('HabitService', () => {
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'قراءة',
         frequency: 'daily',
+        clientId: null,
         target: 7,
         targetPeriod: 'week',
         reminderTime: null,
@@ -151,6 +155,7 @@ describe('HabitService', () => {
       expect(repository.createHabit).toHaveBeenCalledWith({
         name: 'قراءة',
         frequency: 'daily',
+        clientId: null,
         target: null,
         targetPeriod: null,
       });
@@ -341,7 +346,7 @@ describe('HabitService', () => {
       await expect(
         service.toggleHabitLog({ habitId: 'h-1', date: '2026-08-02', completed: true })
       ).resolves.toEqual(logFixture);
-      expect(repository.toggleLog).toHaveBeenCalledWith('h-1', '2026-08-02', true);
+      expect(repository.toggleLog).toHaveBeenCalledWith('h-1', '2026-08-02', true, undefined);
     });
   });
 
@@ -384,7 +389,7 @@ describe('HabitService', () => {
       await expect(
         service.setHabitLogKind({ habitId: 'h-1', date: '2026-08-02', kind: 'skip' })
       ).resolves.toEqual(skipLog);
-      expect(repository.setLogKind).toHaveBeenCalledWith('h-1', '2026-08-02', 'skip');
+      expect(repository.setLogKind).toHaveBeenCalledWith('h-1', '2026-08-02', 'skip', undefined);
     });
   });
 
@@ -406,7 +411,12 @@ describe('HabitService', () => {
 
       await service.setHabitLogNote({ habitId: 'h-1', date: '2026-08-02', note: '  يوم رائع  ' });
 
-      expect(repository.setLogNote).toHaveBeenCalledWith('h-1', '2026-08-02', 'يوم رائع');
+      expect(repository.setLogNote).toHaveBeenCalledWith(
+        'h-1',
+        '2026-08-02',
+        'يوم رائع',
+        undefined
+      );
     });
 
     it('normalises an empty/whitespace note to null', async () => {
@@ -416,8 +426,20 @@ describe('HabitService', () => {
       await service.setHabitLogNote({ habitId: 'h-1', date: '2026-08-02', note: '   ' });
       await service.setHabitLogNote({ habitId: 'h-1', date: '2026-08-02', note: '' });
 
-      expect(repository.setLogNote).toHaveBeenNthCalledWith(1, 'h-1', '2026-08-02', null);
-      expect(repository.setLogNote).toHaveBeenNthCalledWith(2, 'h-1', '2026-08-02', null);
+      expect(repository.setLogNote).toHaveBeenNthCalledWith(
+        1,
+        'h-1',
+        '2026-08-02',
+        null,
+        undefined
+      );
+      expect(repository.setLogNote).toHaveBeenNthCalledWith(
+        2,
+        'h-1',
+        '2026-08-02',
+        null,
+        undefined
+      );
     });
   });
 
