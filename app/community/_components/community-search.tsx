@@ -161,7 +161,7 @@ export function CommunitySearch() {
   return (
     <div ref={wrapperRef} className="relative">
       <Search
-        className="pointer-events-none absolute inset-e-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40"
+        className="pointer-events-none absolute inset-s-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground/40"
         aria-hidden="true"
       />
       <input
@@ -185,7 +185,7 @@ export function CommunitySearch() {
 
       {loading ? (
         <Loader2
-          className="absolute inset-s-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-primary/70"
+          className="absolute inset-e-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-primary/70"
           aria-hidden="true"
         />
       ) : (
@@ -193,7 +193,7 @@ export function CommunitySearch() {
           <button
             type="button"
             onClick={handleClear}
-            className="absolute inset-s-3 top-1/2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground transition-colors hover:bg-muted-foreground/30"
+            className="absolute inset-e-3 top-1/2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full bg-muted-foreground/20 text-muted-foreground transition-colors hover:bg-muted-foreground/30"
             aria-label="إلغاء البحث"
           >
             <X className="size-3" />
