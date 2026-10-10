@@ -1,5 +1,6 @@
 try { importScripts('/sw-version.js'); } catch { self.CACHE_VERSION = 'royaraqamia-dev'; }
 try { importScripts('/sw-push-config.js'); } catch { self.PUSH_CONFIG = null; }
+try { importScripts('/sw-routing.js'); } catch { self.SWRouting = self.SWRouting || null; }
 const CACHE = self.CACHE_VERSION;
 const STATIC_CACHE = 'royaraqamia-static-' + (self.CACHE_VERSION ? self.CACHE_VERSION.split('-').pop() : 'v1');
 const FALLBACK_URL = '/offline';
@@ -48,48 +49,20 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-function isNavigationRequest(request) {
-  return (
-    request.mode === 'navigate' ||
-    (request.method === 'GET' && request.headers.get('accept')?.includes('text/html'))
-  );
-}
-
-function isNextStaticAsset(url) {
-  return url.pathname.startsWith('/_next/static/');
-}
-
-function isRSCPayload(url) {
-  return url.pathname.startsWith('/_next/data/') || url.searchParams.has('__rsc');
-}
-
-function isFont(url) {
-  return url.pathname.startsWith('/fonts/') || url.pathname.endsWith('.woff2') || url.pathname.endsWith('.woff') || url.pathname.endsWith('.ttf');
-}
-
-function isIcon(url) {
-  return url.pathname.startsWith('/icons/');
-}
-
-function isImage(url) {
-  return /\.(png|webp|jpg|jpeg|gif|svg|ico)$/i.test(url.pathname);
-}
-
-function isNextImage(url) {
-  return url.pathname.startsWith('/_next/image');
-}
-
-function isApiCall(url) {
-  return url.pathname.startsWith('/api/');
-}
-
-// Server explicitly opted out of storage (e.g. /api/version is no-store).
-// Serving such a response from cache after a network timeout would silently
-// show stale data, so API responses honoring these directives are never put.
-function isCacheable(response) {
-  const cacheControl = response.headers.get('cache-control') || '';
-  return !/no-store|no-cache|private/i.test(cacheControl);
-}
+// Routing rules live in `sw-routing.js` (loaded above) so they can be unit
+// tested outside the worker realm.
+const {
+  isNavigationRequest,
+  isNextStaticAsset,
+  isRSCPayload,
+  isFont,
+  isIcon,
+  isImage,
+  isNextImage,
+  isApiCall,
+  isCacheable,
+  isNeverCache,
+} = self.SWRouting;
 
 async function cacheFirst(request) {
   const cached = await caches.match(request);
@@ -130,13 +103,37 @@ async function networkFirst(request, timeoutMs = 3000, options = {}) {
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(CACHE);
   const cached = await cache.match(request);
-  const fetchPromise = fetch(request).then((response) => {
-    if (response.ok) {
-      cache.put(request, response.clone());
-    }
-    return response;
-  }).catch(() => cached);
+  const fetchPromise = fetch(request)
+    .then((response) => {
+      if (response.ok && isCacheable(response)) {
+        cache.put(request, response.clone());
+      }
+      return response;
+    })
+    .catch(async () => {
+      if (cached) return cached;
+      if (isNavigationRequest(request)) {
+        const fallback = await caches.match(FALLBACK_URL);
+        if (fallback) return fallback;
+      }
+      return new Response('Offline', { status: 503 });
+    });
   return cached || fetchPromise;
+}
+
+// Online-only surfaces (ADR-0031): go straight to the network, never to Cache
+// Storage. A navigation that cannot reach the network falls back to the offline
+// page so the user lands somewhere legible rather than on a browser error.
+async function networkOnly(request) {
+  try {
+    return await fetch(request);
+  } catch {
+    if (isNavigationRequest(request)) {
+      const fallback = await caches.match(FALLBACK_URL);
+      if (fallback) return fallback;
+    }
+    return new Response('Offline', { status: 503 });
+  }
 }
 
 self.addEventListener('fetch', (event) => {
@@ -147,27 +144,18 @@ self.addEventListener('fetch', (event) => {
 
   if (request.method !== 'GET') return;
 
-  if (isNextStaticAsset(url)) {
+  // Online-only surfaces bypass the cache entirely (ADR-0031).
+  if (isNeverCache(url)) {
+    event.respondWith(networkOnly(request));
+    return;
+  }
+
+  if (isNextStaticAsset(url) || isFont(url)) {
     event.respondWith(cacheFirst(request));
     return;
   }
 
-  if (isFont(url)) {
-    event.respondWith(cacheFirst(request));
-    return;
-  }
-
-  if (isIcon(url)) {
-    event.respondWith(staleWhileRevalidate(request));
-    return;
-  }
-
-  if (isImage(url)) {
-    event.respondWith(staleWhileRevalidate(request));
-    return;
-  }
-
-  if (isNextImage(url)) {
+  if (isIcon(url) || isImage(url) || isNextImage(url)) {
     event.respondWith(staleWhileRevalidate(request));
     return;
   }
@@ -177,12 +165,14 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Public navigations and RSC payloads paint from cache instantly, then
+  // refresh in the background (stale-while-revalidate). Offline-first reads.
   if (isNavigationRequest(request) || isRSCPayload(url)) {
-    event.respondWith(networkFirst(request));
+    event.respondWith(staleWhileRevalidate(request));
     return;
   }
 
-  event.respondWith(networkFirst(request));
+  event.respondWith(staleWhileRevalidate(request));
 });
 
 self.addEventListener('message', (event) => {

@@ -14,6 +14,7 @@ import vm from 'node:vm';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const SW_SOURCE = readFileSync(resolve(ROOT, 'public', 'sw.js'), 'utf8');
+const ROUTING_SOURCE = readFileSync(resolve(ROOT, 'public', 'sw-routing.js'), 'utf8');
 
 const TEST_KEY_B64 = Buffer.from(new Uint8Array(65).fill(7)).toString('base64url');
 const PUSH_CONFIG_SCRIPT = `self.PUSH_CONFIG = { publicKey: '${TEST_KEY_B64}' };\n`;
@@ -108,6 +109,9 @@ function createSandbox({ withPushConfig = true } = {}) {
       }
       if (name === 'sw-version.js') {
         return Function('self', VERSION_SCRIPT)(sandbox);
+      }
+      if (name === 'sw-routing.js') {
+        return Function('self', 'URL', ROUTING_SOURCE)(sandbox, URL);
       }
       throw new Error(`not found: ${name}`);
     },
@@ -275,5 +279,15 @@ describe('service worker pushsubscriptionchange handling', () => {
     expect(state.showNotificationCalls[0].title).toBe('مرحبا');
     expect(state.showNotificationCalls[0].options.data.url).toBe('/linksnap');
     expect(state.showNotificationCalls[0].options.tag).toBe('n-1');
+  });
+});
+
+describe('service worker routing wiring', () => {
+  it('exposes the extracted routing module to the worker realm', async () => {
+    const { sandbox } = await boot();
+
+    expect(typeof sandbox.SWRouting.isNeverCache).toBe('function');
+    expect(sandbox.SWRouting.isNeverCache(new URL('https://site.example/admin'))).toBe(true);
+    expect(sandbox.SWRouting.isNeverCache(new URL('https://site.example/community/x'))).toBe(false);
   });
 });

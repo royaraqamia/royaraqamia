@@ -13,6 +13,7 @@ import { DirectionProvider } from '@radix-ui/react-direction';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import { PWAProvider } from '../frontend/ui/PWAProvider';
+import { ConnectivityIndicator } from '@/frontend/ui/shared/connectivity-indicator';
 import { FloatingActions } from '../frontend/ui/FloatingActions';
 import { BottomTabBar } from '../frontend/ui/navbar/BottomTabBar';
 import { SITE_NAME } from '@/frontend/shared/metadata';
@@ -164,6 +165,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                       {children}
                       <FloatingActions />
                       <BottomTabBar />
+                      <ConnectivityIndicator />
                     </PWAProvider>
                     <RoyaToaster />
                   </NotificationProvider>

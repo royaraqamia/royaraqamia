@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { requestPersistentStorage } from './persistent-storage';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -45,6 +46,9 @@ export function usePWA(onUpdateAvailable?: PWAUpdateCallback) {
     const handleAppInstalled = () => {
       setInstallPrompt(null);
       setState((prev) => ({ ...prev, canInstall: false, isInstalled: true }));
+      // An install gesture is one of the signals browsers weigh when deciding
+      // whether to grant durable storage (so the Local Store survives eviction).
+      void requestPersistentStorage();
     };
 
     window.addEventListener('online', handleOnline);
