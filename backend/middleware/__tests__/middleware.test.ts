@@ -178,8 +178,8 @@ describe('proxy', () => {
   it('redirects unauthenticated users from protected routes to login', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    mockNextUrl.pathname = '/linksnap';
-    mockRequest.url = 'https://royaraqamia.com/linksnap';
+    mockNextUrl.pathname = '/blogpress';
+    mockRequest.url = 'https://royaraqamia.com/blogpress';
 
     const { proxy } = await import('@/proxy');
     const result = await proxy(mockRequest as never);
@@ -191,7 +191,7 @@ describe('proxy', () => {
     mockSessionCookie();
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
-    mockNextUrl.pathname = '/habitflow';
+    mockNextUrl.pathname = '/blogpress';
 
     const { proxy } = await import('@/proxy');
     const result = await proxy(mockRequest as never);
