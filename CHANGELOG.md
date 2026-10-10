@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.75.0] - 2026-10-10
+
+### Changed
+- drop the outbox sync panel and its dead hook
+- cover the guest dashboard aggregates
+- cover protected routes after opening guest products
+
+### Added
+- link الرَّوابط المختصَرة from the user dropdown
+- open the shortener to visitors, gate codes and analytics
+- open SpendTrack to visitors with a device-local dashboard
+- add guest mode and open HabitFlow to visitors
+
+### Fixed
+- reveal the popper scrollbar on hover, not focus
+- point empty-state CTA to the shortener page
+
 ## [1.74.0] - 2026-10-10
 
 ### Changed
