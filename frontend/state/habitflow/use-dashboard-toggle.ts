@@ -1,10 +1,6 @@
 import { useState, type Dispatch, type SetStateAction } from 'react';
 import { toast } from 'sonner';
-import { HabitLog } from '@/shared/contracts/habitflow';
-import { ApiClient } from '@/frontend/api/habitflow/habit-api';
-import { LocalStorageHabitRepository } from '@/frontend/api/habitflow/local-storage-repository';
-
-const localRepo = new LocalStorageHabitRepository();
+import { HabitLog, HabitRepository } from '@/shared/contracts/habitflow';
 
 export interface DashboardToggle {
   togglingHabitId: string | null;
@@ -15,7 +11,7 @@ export interface DashboardToggle {
 }
 
 export function useDashboardToggle(
-  user: unknown,
+  store: HabitRepository | null,
   logs: HabitLog[],
   setLogs: Dispatch<SetStateAction<HabitLog[]>>,
   activeDate: string
@@ -43,6 +39,10 @@ export function useDashboardToggle(
 
   const handleToggleLog = async (habitId: string) => {
     if (togglingHabitId === habitId) return;
+    if (!store) {
+      toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      return;
+    }
     setTogglingHabitId(habitId);
     const previousLogs = logs;
     try {
@@ -60,19 +60,11 @@ export function useDashboardToggle(
       setLogs(updatedLogs);
 
       try {
-        if (user) {
-          const result = await ApiClient.toggleLog(habitId, activeDate, nextCompleted);
-          setLogs((prev) =>
-            prev.map((l) => (l.habitId === habitId && l.date === activeDate ? result.log : l))
-          );
-          if (nextCompleted) toast.success('تم تسجيل العادة');
-        } else {
-          const log = await localRepo.toggleLog(habitId, activeDate, nextCompleted);
-          setLogs((prev) =>
-            prev.map((l) => (l.habitId === habitId && l.date === activeDate ? log : l))
-          );
-          if (nextCompleted) toast.success('تم تسجيل العادة');
-        }
+        const log = await store.toggleLog(habitId, activeDate, nextCompleted);
+        setLogs((prev) =>
+          prev.map((l) => (l.habitId === habitId && l.date === activeDate ? log : l))
+        );
+        if (nextCompleted) toast.success('تم تسجيل العادة');
       } catch {
         setLogs(previousLogs);
         toast.error('حدث خطأ أثناء تسجيل العادة. يرجى المحاولة مرة أخرى.');
@@ -84,6 +76,10 @@ export function useDashboardToggle(
 
   const handleSkipHabit = async (habitId: string) => {
     if (skippingHabitId === habitId) return;
+    if (!store) {
+      toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      return;
+    }
     setSkippingHabitId(habitId);
     const previousLogs = logs;
     try {
@@ -100,23 +96,11 @@ export function useDashboardToggle(
       setLogs(updatedLogs);
 
       try {
-        if (user) {
-          const result = await ApiClient.setLogKind(
-            habitId,
-            activeDate,
-            nextKind as 'skip' | 'none'
-          );
-          setLogs((prev) =>
-            prev.map((l) => (l.habitId === habitId && l.date === activeDate ? result.log : l))
-          );
-          if (nextKind === 'skip') toast.success('تم تخطي اليوم — سلسلتك محفوظة');
-        } else {
-          const log = await localRepo.setLogKind(habitId, activeDate, nextKind as 'skip' | 'none');
-          setLogs((prev) =>
-            prev.map((l) => (l.habitId === habitId && l.date === activeDate ? log : l))
-          );
-          if (nextKind === 'skip') toast.success('تم تخطي اليوم — سلسلتك محفوظة');
-        }
+        const log = await store.setLogKind(habitId, activeDate, nextKind);
+        setLogs((prev) =>
+          prev.map((l) => (l.habitId === habitId && l.date === activeDate ? log : l))
+        );
+        if (nextKind === 'skip') toast.success('تم تخطي اليوم — سلسلتك محفوظة');
       } catch {
         setLogs(previousLogs);
         toast.error('حدث خطأ أثناء تخطي اليوم. يرجى المحاولة مرة أخرى.');
@@ -127,6 +111,10 @@ export function useDashboardToggle(
   };
 
   const handleSaveNote = async (habitId: string, note: string) => {
+    if (!store) {
+      toast.error('جارٍ تجهيز التخزين المحلِّي. يرجى المحاولة بعد لحظة.');
+      return;
+    }
     try {
       const trimmed = note.trim();
       const nextNote = trimmed === '' ? null : trimmed;
@@ -137,11 +125,7 @@ export function useDashboardToggle(
         )
       );
 
-      if (user) {
-        await ApiClient.setLogNote(habitId, activeDate, nextNote);
-      } else {
-        await localRepo.setLogNote(habitId, activeDate, nextNote);
-      }
+      await store.setLogNote(habitId, activeDate, nextNote);
       toast.success(nextNote ? 'تم حفظ الملاحظة' : 'تم مسح الملاحظة');
     } catch {
       toast.error('حدث خطأ أثناء حفظ الملاحظة. يرجى المحاولة مرة أخرى.');

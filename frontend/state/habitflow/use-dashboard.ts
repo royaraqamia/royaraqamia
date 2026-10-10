@@ -5,7 +5,7 @@ import { useDashboardToggle } from './use-dashboard-toggle';
 import { useDashboardBackup } from './use-dashboard-backup';
 
 export function useDashboard(seed: DashboardSeed) {
-  const { habits, logs, mode, user, setHabits, setLogs, refreshData, syncUser } =
+  const { habits, logs, mode, user, store, setHabits, setLogs, refreshData, syncUser } =
     useDashboardData(seed);
 
   const {
@@ -44,10 +44,10 @@ export function useDashboard(seed: DashboardSeed) {
     cancelArchive,
     openEditModal,
     closeEditModal,
-  } = useDashboardForm(user, setHabits, habits);
+  } = useDashboardForm(store, setHabits, habits);
 
   const { togglingHabitId, skippingHabitId, handleToggleLog, handleSkipHabit, handleSaveNote } =
-    useDashboardToggle(user, logs, setLogs, activeDate);
+    useDashboardToggle(store, logs, setLogs, activeDate);
 
   const {
     fileInputRef,
@@ -57,7 +57,7 @@ export function useDashboard(seed: DashboardSeed) {
     handleImportBackupFile,
     confirmImport,
     cancelImport,
-  } = useDashboardBackup(refreshData);
+  } = useDashboardBackup(store, refreshData);
 
   return {
     habits,

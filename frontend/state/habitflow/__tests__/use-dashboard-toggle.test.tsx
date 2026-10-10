@@ -2,20 +2,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useState } from 'react';
 import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
 import { useDashboardToggle } from '@/frontend/state/habitflow/use-dashboard-toggle';
-import type { HabitLog } from '@/shared/contracts/habitflow';
+import type { HabitLog, HabitRepository } from '@/shared/contracts/habitflow';
 
 const mocks = vi.hoisted(() => ({
   toggleLog: vi.fn(),
   setLogKind: vi.fn(),
+  setLogNote: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
-}));
-
-vi.mock('@/frontend/api/habitflow/habit-api', () => ({
-  ApiClient: {
-    toggleLog: mocks.toggleLog,
-    setLogKind: mocks.setLogKind,
-  },
 }));
 
 vi.mock('sonner', () => ({
@@ -27,9 +21,17 @@ vi.mock('sonner', () => ({
 
 const ACTIVE_DATE = '2026-08-18';
 
-function Harness({ user, initialLogs }: { user: unknown; initialLogs: HabitLog[] }) {
+function makeStore(): HabitRepository {
+  return {
+    toggleLog: mocks.toggleLog,
+    setLogKind: mocks.setLogKind,
+    setLogNote: mocks.setLogNote,
+  } as unknown as HabitRepository;
+}
+
+function Harness({ initialLogs }: { initialLogs: HabitLog[] }) {
   const [logs, setLogs] = useState(initialLogs);
-  const toggle = useDashboardToggle(user, logs, setLogs, ACTIVE_DATE);
+  const toggle = useDashboardToggle(makeStore(), logs, setLogs, ACTIVE_DATE);
   return (
     <div>
       <span data-testid="logs">{JSON.stringify(logs)}</span>
@@ -43,8 +45,8 @@ function readLogs(): HabitLog[] {
   return JSON.parse(screen.getByTestId('logs').textContent ?? '[]') as HabitLog[];
 }
 
-const serverLog: HabitLog = {
-  id: 'log-server',
+const storeLog: HabitLog = {
+  id: 'log-store',
   habitId: 'h-1',
   date: ACTIVE_DATE,
   completed: true,
@@ -57,16 +59,16 @@ describe('useDashboardToggle (optimistic toggle + rollback)', () => {
     vi.clearAllMocks();
   });
 
-  it('applies the toggle optimistically before the API resolves, then swaps in the server log', async () => {
-    let resolveToggle: ((value: { log: HabitLog }) => void) | undefined;
+  it('applies the toggle optimistically before the store resolves, then swaps in the stored log', async () => {
+    let resolveToggle: ((value: HabitLog) => void) | undefined;
     mocks.toggleLog.mockImplementation(
       () =>
-        new Promise<{ log: HabitLog }>((resolve) => {
+        new Promise<HabitLog>((resolve) => {
           resolveToggle = resolve;
         })
     );
 
-    render(<Harness user={{ id: 'u-1' }} initialLogs={[]} />);
+    render(<Harness initialLogs={[]} />);
 
     fireEvent.click(screen.getByText('toggle'));
 
@@ -77,15 +79,14 @@ describe('useDashboardToggle (optimistic toggle + rollback)', () => {
     expect(mocks.toggleLog).toHaveBeenCalledWith('h-1', ACTIVE_DATE, true);
 
     await act(async () => {
-      resolveToggle?.({ log: serverLog });
+      resolveToggle?.(storeLog);
     });
 
     await waitFor(() => expect(readLogs()).toHaveLength(1));
-    const settled = readLogs();
-    expect(settled[0]!.id).toBe('log-server');
+    expect(readLogs()[0]!.id).toBe('log-store');
   });
 
-  it('rolls back to the exact previous logs when the API fails (no ghost temp entry)', async () => {
+  it('rolls back to the exact previous logs when the store fails (no ghost temp entry)', async () => {
     mocks.toggleLog.mockRejectedValue(new Error('boom'));
 
     const initial: HabitLog[] = [
@@ -97,7 +98,7 @@ describe('useDashboardToggle (optimistic toggle + rollback)', () => {
         completedAt: null,
       },
     ];
-    render(<Harness user={{ id: 'u-1' }} initialLogs={initial} />);
+    render(<Harness initialLogs={initial} />);
 
     fireEvent.click(screen.getByText('toggle'));
 
@@ -121,7 +122,7 @@ describe('useDashboardToggle (optimistic toggle + rollback)', () => {
         kind: 'complete',
       },
     ];
-    render(<Harness user={{ id: 'u-1' }} initialLogs={initial} />);
+    render(<Harness initialLogs={initial} />);
 
     fireEvent.click(screen.getByText('skip'));
 
@@ -132,16 +133,16 @@ describe('useDashboardToggle (optimistic toggle + rollback)', () => {
     expect(mocks.toastError).toHaveBeenCalledWith(expect.stringContaining('حدث خطأ'));
   });
 
-  it('applies a skip optimistically then settles with the server log', async () => {
-    let resolveKind: ((value: { log: HabitLog }) => void) | undefined;
+  it('applies a skip optimistically then settles with the stored log', async () => {
+    let resolveKind: ((value: HabitLog) => void) | undefined;
     mocks.setLogKind.mockImplementation(
       () =>
-        new Promise<{ log: HabitLog }>((resolve) => {
+        new Promise<HabitLog>((resolve) => {
           resolveKind = resolve;
         })
     );
 
-    render(<Harness user={{ id: 'u-1' }} initialLogs={[]} />);
+    render(<Harness initialLogs={[]} />);
 
     fireEvent.click(screen.getByText('skip'));
 
@@ -157,7 +158,7 @@ describe('useDashboardToggle (optimistic toggle + rollback)', () => {
       kind: 'skip',
     };
     await act(async () => {
-      resolveKind?.({ log: skipLog });
+      resolveKind?.(skipLog);
     });
 
     await waitFor(() => expect(readLogs()[0]!.id).toBe('log-skip'));

@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
-import { LocalStorageHabitRepository } from '@/frontend/api/habitflow/local-storage-repository';
+import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
+import { identityFromUser } from '@/frontend/shared/local-store/identity';
+import { logger } from '@/frontend/shared/logger';
 
 export function getTodayString(): string {
   const tzOffset = new Date().getTimezoneOffset() * 60000;
@@ -19,6 +21,8 @@ export interface DashboardData {
   logs: HabitLog[];
   mode: 'supabase' | 'local';
   user: unknown;
+  /** The identity-scoped Local Store once it is open; the source of truth for rendering. */
+  store: HabitLocalStore | null;
   setHabits: Dispatch<SetStateAction<Habit[]>>;
   setLogs: Dispatch<SetStateAction<HabitLog[]>>;
   setMode: Dispatch<SetStateAction<'supabase' | 'local'>>;
@@ -27,48 +31,66 @@ export interface DashboardData {
   syncUser: (sessionUser: unknown) => Promise<void>;
 }
 
+function visibleHabits(habits: Habit[]): Habit[] {
+  return habits.filter((habit) => !habit.archived && !habit.deletedAt);
+}
+
+function visibleLogs(logs: HabitLog[]): HabitLog[] {
+  return logs.filter((log) => !log.deletedAt);
+}
+
 export function useDashboardData(seed: DashboardSeed): DashboardData {
   const [habits, setHabits] = useState<Habit[]>(seed.habits);
   const [logs, setLogs] = useState<HabitLog[]>(seed.logs);
   const [mode, setMode] = useState<'supabase' | 'local'>(seed.mode);
   const [user, setUser] = useState(seed.user);
+  const [store, setStore] = useState<HabitLocalStore | null>(null);
+
+  const identity = identityFromUser(user);
 
   useEffect(() => {
-    if (seed.user) return;
-    LocalStorageHabitRepository.seedFromSSR(seed.habits, seed.logs);
-    const habitsRaw = localStorage.getItem('habitflow_habits');
-    if (habitsRaw) {
-      try {
-        const parsed: Habit[] = JSON.parse(habitsRaw);
-        const filtered = parsed.filter((h) => !h.archived);
-        if (filtered.length > 0) {
-          setHabits(filtered);
+    if (typeof window === 'undefined') return;
+
+    let cancelled = false;
+    let opened: HabitLocalStore | null = null;
+
+    HabitLocalStore.open(identity)
+      .then(async (localStore) => {
+        opened = localStore;
+        if (cancelled) {
+          localStore.close();
+          return;
         }
-      } catch {
-        /* ignore parse error */
-      }
-    }
-    const logsRaw = localStorage.getItem('habitflow_logs');
-    if (logsRaw) {
-      try {
-        setLogs(JSON.parse(logsRaw));
-      } catch {
-        /* ignore parse error */
-      }
-    }
+        // The server loader is only a seed: it fills an empty store and never
+        // overwrites local writes. After that the store is authoritative.
+        await localStore.seedIfEmpty(seed.habits, seed.logs);
+        const data = await localStore.getLocalData();
+        if (cancelled) {
+          localStore.close();
+          return;
+        }
+        setStore(localStore);
+        setHabits(visibleHabits(data.habits));
+        setLogs(visibleLogs(data.logs));
+      })
+      .catch((error) => {
+        logger.error('Failed to open HabitFlow Local Store', { error: String(error) });
+      });
+
+    return () => {
+      cancelled = true;
+      opened?.close();
+    };
+    // The SSR seed fills an empty store on open; reopening on every seed change
+    // would clobber local writes, so identity change is the only trigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [identity]);
 
   async function refreshData() {
-    const { ApiClient } = await import('@/frontend/api/habitflow/habit-api');
-    const [data, freshUser] = await Promise.all([
-      ApiClient.fetchInitialData(),
-      ApiClient.fetchUser(),
-    ]);
-    setHabits(data.habits);
-    setLogs(data.logs);
-    setMode(data.mode);
-    setUser(freshUser);
+    if (!store) return;
+    const data = await store.getLocalData();
+    setHabits(visibleHabits(data.habits));
+    setLogs(visibleLogs(data.logs));
   }
 
   const syncUser = useCallback(
@@ -90,6 +112,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
     logs,
     mode,
     user,
+    store,
     setHabits,
     setLogs,
     setMode,

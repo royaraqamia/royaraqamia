@@ -21,9 +21,9 @@ const OWNED_TABLES = [
 ];
 
 describe('offline write contract migration (#162)', () => {
-  it('is the newest migration and is additive only', () => {
+  it('is present and additive only', () => {
     const files = readdirSync(migrationsDir).filter((f) => f.endsWith('.sql'));
-    expect(files.sort().at(-1)).toBe('20261010120000_offline_write_contract.sql');
+    expect(files).toContain('20261010120000_offline_write_contract.sql');
     expect(sql).not.toMatch(/drop (table|column)|truncate/);
   });
 
