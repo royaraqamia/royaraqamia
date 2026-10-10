@@ -27,7 +27,9 @@ function toPayload(input: ExpenseInput): ExpensePayload {
     category_id: input.category_id,
     date: input.date,
     description: input.description?.trim()?.slice(0, 200) || null,
-    currency: input.currency ?? null,
+    // An empty string means "inherit the account currency"; the server rejects
+    // any non-null value that is not a known code, so normalise it to null.
+    currency: input.currency?.trim() ? input.currency : null,
     splits: input.splits && input.splits.length > 0 ? input.splits : undefined,
   };
 }

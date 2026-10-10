@@ -10,6 +10,18 @@ import type {
 } from '@/shared/contracts/spendtrack';
 import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
 
+const nowIso = () => new Date().toISOString();
+
+/** Surfaces the camelCase offline fields the contract (and Local Store) expect. */
+function withOfflineFields<T extends Record<string, unknown>>(row: T): T {
+  return {
+    ...row,
+    clientId: (row.client_id as string | null | undefined) ?? null,
+    updatedAt: row.updated_at as string | undefined,
+    deletedAt: (row.deleted_at as string | null | undefined) ?? null,
+  };
+}
+
 export function createSpendtrackRepository(
   supabase: SupabaseClient<Database>
 ): SpendtrackRepository {
@@ -19,13 +31,14 @@ export function createSpendtrackRepository(
 
     const { data: splits } = await supabase
       .from('expense_splits')
-      .select('id, expense_id, category_id, amount')
-      .in('expense_id', ids);
+      .select('id, expense_id, category_id, amount, client_id, updated_at, deleted_at')
+      .in('expense_id', ids)
+      .is('deleted_at', null);
 
     const byExpense = new Map<string, Record<string, unknown>[]>();
     for (const s of splits ?? []) {
       const arr = byExpense.get(s.expense_id) ?? [];
-      arr.push(s);
+      arr.push(withOfflineFields(s as Record<string, unknown>));
       byExpense.set(s.expense_id, arr);
     }
 
@@ -40,11 +53,11 @@ export function createSpendtrackRepository(
         .from('categories')
         .select('*')
         .or(`user_id.eq.${userId},is_default.eq.true`)
+        .is('deleted_at', null)
         .order('name')) as { data: Array<{ color_hex: string; [key: string]: unknown }> | null };
-      return (data ?? []).map(({ color_hex, ...row }) => ({
-        ...row,
-        colorHex: color_hex,
-      })) as Category[];
+      return (data ?? []).map(({ color_hex, ...row }) =>
+        withOfflineFields({ ...row, colorHex: color_hex })
+      ) as Category[];
     },
 
     async getTotalExpenses(
@@ -219,18 +232,56 @@ export function createSpendtrackRepository(
       date: string;
       description: string | null;
       currency?: string | null;
-      splits?: { category_id: string; amount: number }[];
+      splits?: { category_id: string; amount: number; clientId?: string | null }[];
+      clientId?: string | null;
+      updatedAt?: string;
     }): Promise<string> {
-      const { splits, ...expense } = input;
-      const { data, error } = await supabase.from('expenses').insert(expense).select('id').single();
-      if (error) throw new Error(error.message);
-      const expenseId = data?.id;
-      if (splits && splits.length > 0 && expenseId) {
-        const { error: splitError } = await supabase
-          .from('expense_splits')
-          .insert(splits.map((s) => ({ expense_id: expenseId, ...s })));
-        if (splitError) throw new Error(splitError.message);
+      const { splits, clientId, updatedAt, ...expense } = input;
+      const row = {
+        ...expense,
+        client_id: clientId ?? null,
+        updated_at: updatedAt ?? nowIso(),
+      };
+
+      // A client-minted id makes a replayed write an idempotent upsert, and
+      // adopting it as the primary key lets offline splits/updates reference a
+      // row the server has never seen (ADR-0029, ticket #162/#166).
+      let expenseId: string;
+      if (clientId && input.user_id) {
+        const { data, error } = await supabase
+          .from('expenses')
+          .upsert({ ...row, id: clientId }, { onConflict: 'user_id,client_id' })
+          .select('id')
+          .single();
+        if (error) throw new Error(error.message);
+        expenseId = data.id;
+      } else {
+        const { data, error } = await supabase.from('expenses').insert(row).select('id').single();
+        if (error) throw new Error(error.message);
+        expenseId = data.id;
       }
+
+      if (splits !== undefined) {
+        // Replace-all so a replay converges on the same split set.
+        const { error: delError } = await supabase
+          .from('expense_splits')
+          .delete()
+          .eq('expense_id', expenseId);
+        if (delError) throw new Error(delError.message);
+
+        if (splits.length > 0) {
+          const { error: splitError } = await supabase.from('expense_splits').insert(
+            splits.map((s) => ({
+              expense_id: expenseId,
+              category_id: s.category_id,
+              amount: s.amount,
+              client_id: s.clientId ?? null,
+            }))
+          );
+          if (splitError) throw new Error(splitError.message);
+        }
+      }
+
       return expenseId;
     },
 
@@ -257,16 +308,24 @@ export function createSpendtrackRepository(
         date: string;
         description: string | null;
         currency?: string | null;
-        splits?: { category_id: string; amount: number }[] | null;
+        splits?: { category_id: string; amount: number; clientId?: string | null }[] | null;
+        updatedAt?: string;
+        deletedAt?: string | null;
       }
     ): Promise<void> {
-      const { splits, ...expense } = input;
-      const { error } = await supabase
-        .from('expenses')
-        .update({ ...expense, updated_at: new Date().toISOString() })
-        .eq('id', expenseId)
-        .eq('user_id', userId);
+      const { splits, updatedAt, deletedAt, ...expense } = input;
+      const resurrect = deletedAt === null;
 
+      const row: Database['public']['Tables']['expenses']['Update'] = {
+        ...expense,
+        updated_at: updatedAt ?? nowIso(),
+      };
+      if (deletedAt !== undefined) row.deleted_at = deletedAt;
+
+      let query = supabase.from('expenses').update(row).eq('id', expenseId).eq('user_id', userId);
+      if (!resurrect) query = query.is('deleted_at', null);
+
+      const { error } = await query;
       if (error) throw new Error(error.message);
 
       if (splits !== undefined) {
@@ -277,20 +336,33 @@ export function createSpendtrackRepository(
         if (delError) throw new Error(delError.message);
 
         if (splits && splits.length > 0) {
-          const { error: insError } = await supabase
-            .from('expense_splits')
-            .insert(splits.map((s) => ({ expense_id: expenseId, ...s })));
+          const { error: insError } = await supabase.from('expense_splits').insert(
+            splits.map((s) => ({
+              expense_id: expenseId,
+              category_id: s.category_id,
+              amount: s.amount,
+              client_id: s.clientId ?? null,
+            }))
+          );
           if (insError) throw new Error(insError.message);
         }
       }
     },
 
-    async deleteExpense(expenseId: string, userId: string): Promise<void> {
+    async deleteExpense(
+      expenseId: string,
+      userId: string,
+      meta?: { updatedAt?: string }
+    ): Promise<void> {
+      // Tombstone, not a hard delete: a replayed delete is idempotent, and reads
+      // exclude the row via `deleted_at is null` (ADR-0029, ticket #166).
+      const stamp = meta?.updatedAt ?? nowIso();
       const { error } = await supabase
         .from('expenses')
-        .delete()
+        .update({ deleted_at: stamp, updated_at: stamp })
         .eq('id', expenseId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .is('deleted_at', null);
 
       if (error) throw new Error(error.message);
     },
@@ -304,7 +376,8 @@ export function createSpendtrackRepository(
         .from('budgets')
         .select('amount')
         .eq('user_id', userId)
-        .eq('month', month);
+        .eq('month', month)
+        .is('deleted_at', null);
 
       if (categoryId) {
         query = query.eq('category_id', categoryId);
@@ -320,52 +393,53 @@ export function createSpendtrackRepository(
       userId: string,
       month: string,
       amount: number,
-      categoryId?: string | null
+      categoryId?: string | null,
+      meta?: { clientId?: string | null; updatedAt?: string }
     ): Promise<void> {
-      const rowUpdate = { amount, updated_at: new Date().toISOString() };
+      const stamp = meta?.updatedAt ?? nowIso();
+      const clientId = meta?.clientId ?? null;
 
-      if (categoryId) {
-        const { data: existing } = await supabase
-          .from('budgets')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('month', month)
-          .eq('category_id', categoryId)
-          .maybeSingle();
-        if (existing) {
-          const { error } = await supabase
-            .from('budgets')
-            .update(rowUpdate)
-            .eq('user_id', userId)
-            .eq('month', month)
-            .eq('category_id', categoryId);
-          if (error) throw new Error(error.message);
+      // Budgets dedupe on (user_id, month, category_id) via a partial unique
+      // index, so the replay target is that tuple — not a client id. The read
+      // deliberately includes tombstones: a re-created budget must resurrect the
+      // row that still occupies the unique key rather than insert a duplicate.
+      let readQuery = supabase
+        .from('budgets')
+        .select('id, updated_at, client_id')
+        .eq('user_id', userId)
+        .eq('month', month);
+      readQuery = categoryId
+        ? readQuery.eq('category_id', categoryId)
+        : readQuery.is('category_id', null);
+
+      const { data: existing } = await readQuery.maybeSingle();
+
+      if (existing) {
+        // Last-write-wins: never let an older queued write clobber a newer one.
+        if (
+          existing.updated_at &&
+          meta?.updatedAt &&
+          new Date(existing.updated_at).getTime() > new Date(meta.updatedAt).getTime()
+        ) {
           return;
         }
-        const { error } = await supabase.from('budgets').insert({
-          user_id: userId,
-          month,
+        const update: Database['public']['Tables']['budgets']['Update'] = {
           amount,
-          category_id: categoryId,
-        });
-        if (error) throw new Error(error.message);
-        return;
-      }
+          updated_at: stamp,
+          deleted_at: null,
+        };
+        if (clientId && !existing.client_id) update.client_id = clientId;
 
-      const { data: existing } = await supabase
-        .from('budgets')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('month', month)
-        .is('category_id', null)
-        .maybeSingle();
-      if (existing) {
-        const { error } = await supabase
+        let updateQuery = supabase
           .from('budgets')
-          .update(rowUpdate)
+          .update(update)
           .eq('user_id', userId)
-          .eq('month', month)
-          .is('category_id', null);
+          .eq('month', month);
+        updateQuery = categoryId
+          ? updateQuery.eq('category_id', categoryId)
+          : updateQuery.is('category_id', null);
+
+        const { error } = await updateQuery;
         if (error) throw new Error(error.message);
         return;
       }
@@ -374,70 +448,114 @@ export function createSpendtrackRepository(
         user_id: userId,
         month,
         amount,
-        category_id: null,
+        category_id: categoryId ?? null,
+        client_id: clientId,
+        updated_at: stamp,
       });
       if (error) throw new Error(error.message);
     },
 
-    async deleteBudget(userId: string, month: string, categoryId?: string | null): Promise<void> {
-      const { error } = categoryId
-        ? await supabase
-            .from('budgets')
-            .delete()
-            .eq('user_id', userId)
-            .eq('month', month)
-            .eq('category_id', categoryId)
-        : await supabase
-            .from('budgets')
-            .delete()
-            .eq('user_id', userId)
-            .eq('month', month)
-            .is('category_id', null);
+    async deleteBudget(
+      userId: string,
+      month: string,
+      categoryId?: string | null,
+      meta?: { updatedAt?: string }
+    ): Promise<void> {
+      const stamp = meta?.updatedAt ?? nowIso();
+      let query = supabase
+        .from('budgets')
+        .update({ deleted_at: stamp, updated_at: stamp })
+        .eq('user_id', userId)
+        .eq('month', month)
+        .is('deleted_at', null);
+      query = categoryId ? query.eq('category_id', categoryId) : query.is('category_id', null);
+      const { error } = await query;
       if (error) throw new Error(error.message);
     },
 
     async getRecurringExpenses(userId: string): Promise<RecurringExpense[]> {
       const { data, error } = await supabase
         .from('recurring_expenses')
-        .select('id, amount, category_id, description, day_of_month, start_month, active')
+        .select(
+          'id, amount, category_id, description, day_of_month, start_month, active, client_id, updated_at, deleted_at'
+        )
         .eq('user_id', userId)
+        .is('deleted_at', null)
         .order('day_of_month');
       if (error) throw new Error(error.message);
-      return (data ?? []) as RecurringExpense[];
+      return (data ?? []).map((row) =>
+        withOfflineFields(row as Record<string, unknown>)
+      ) as RecurringExpense[];
     },
 
     async createRecurringExpense(
       userId: string,
-      input: RecurringExpenseInput
+      input: RecurringExpenseInput & { clientId?: string | null; updatedAt?: string }
     ): Promise<RecurringExpense> {
+      const { clientId, updatedAt, ...fields } = input;
+      const row = {
+        user_id: userId,
+        ...fields,
+        client_id: clientId ?? null,
+        updated_at: updatedAt ?? nowIso(),
+      };
+      const columns =
+        'id, amount, category_id, description, day_of_month, start_month, active, client_id, updated_at, deleted_at';
+
+      if (clientId) {
+        const { data, error } = await supabase
+          .from('recurring_expenses')
+          .upsert({ ...row, id: clientId }, { onConflict: 'user_id,client_id' })
+          .select(columns)
+          .single();
+        if (error) throw new Error(error.message);
+        return withOfflineFields(data as Record<string, unknown>) as RecurringExpense;
+      }
+
       const { data, error } = await supabase
         .from('recurring_expenses')
-        .insert({ user_id: userId, ...input })
-        .select('id, amount, category_id, description, day_of_month, start_month, active')
+        .insert(row)
+        .select(columns)
         .single();
       if (error) throw new Error(error.message);
-      return data as RecurringExpense;
+      return withOfflineFields(data as Record<string, unknown>) as RecurringExpense;
     },
 
     async updateRecurringExpense(
       expenseId: string,
       userId: string,
-      input: RecurringExpenseInput
+      input: RecurringExpenseInput & { updatedAt?: string; deletedAt?: string | null }
     ): Promise<void> {
-      const { error } = await supabase
+      const { updatedAt, deletedAt, ...fields } = input;
+      const resurrect = deletedAt === null;
+      const row: Database['public']['Tables']['recurring_expenses']['Update'] = {
+        ...fields,
+        updated_at: updatedAt ?? nowIso(),
+      };
+      if (deletedAt !== undefined) row.deleted_at = deletedAt;
+
+      let query = supabase
         .from('recurring_expenses')
-        .update({ ...input, updated_at: new Date().toISOString() })
+        .update(row)
         .eq('id', expenseId)
         .eq('user_id', userId);
+      if (!resurrect) query = query.is('deleted_at', null);
+      const { error } = await query;
       if (error) throw new Error(error.message);
     },
 
-    async deleteRecurringExpense(expenseId: string, userId: string): Promise<void> {
+    async deleteRecurringExpense(
+      expenseId: string,
+      userId: string,
+      meta?: { updatedAt?: string }
+    ): Promise<void> {
+      const stamp = meta?.updatedAt ?? nowIso();
       const { error } = await supabase
         .from('recurring_expenses')
-        .delete()
+        .update({ deleted_at: stamp, updated_at: stamp })
         .eq('id', expenseId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .is('deleted_at', null);
       if (error) throw new Error(error.message);
     },
 
@@ -449,7 +567,8 @@ export function createSpendtrackRepository(
         .from('budgets')
         .select('category_id, amount')
         .eq('user_id', userId)
-        .eq('month', month);
+        .eq('month', month)
+        .is('deleted_at', null);
       return (data ?? []) as { category_id: string | null; amount: number }[];
     },
 
@@ -457,33 +576,66 @@ export function createSpendtrackRepository(
       user_id: string;
       name: string;
       colorHex: string;
+      clientId?: string | null;
+      updatedAt?: string;
     }): Promise<void> {
-      const { colorHex, ...rest } = input;
-      const { error } = await supabase.from('categories').insert({ ...rest, color_hex: colorHex });
+      const { colorHex, clientId, updatedAt, ...rest } = input;
+      const row = {
+        ...rest,
+        color_hex: colorHex,
+        client_id: clientId ?? null,
+        updated_at: updatedAt ?? nowIso(),
+      };
+
+      if (clientId && input.user_id) {
+        const { error } = await supabase
+          .from('categories')
+          .upsert({ ...row, id: clientId }, { onConflict: 'user_id,client_id' });
+        if (error) throw new Error(error.message);
+        return;
+      }
+
+      const { error } = await supabase.from('categories').insert(row);
       if (error) throw new Error(error.message);
     },
 
     async updateCategory(
       categoryId: string,
       userId: string,
-      input: { name: string; colorHex: string }
+      input: { name: string; colorHex: string; updatedAt?: string; deletedAt?: string | null }
     ): Promise<void> {
-      const { colorHex, ...rest } = input;
-      const { error } = await supabase
+      const { colorHex, updatedAt, deletedAt, ...rest } = input;
+      const resurrect = deletedAt === null;
+      const row: Database['public']['Tables']['categories']['Update'] = {
+        ...rest,
+        color_hex: colorHex,
+        updated_at: updatedAt ?? nowIso(),
+      };
+      if (deletedAt !== undefined) row.deleted_at = deletedAt;
+
+      let query = supabase
         .from('categories')
-        .update({ ...rest, color_hex: colorHex })
+        .update(row)
         .eq('id', categoryId)
         .eq('user_id', userId);
+      if (!resurrect) query = query.is('deleted_at', null);
 
+      const { error } = await query;
       if (error) throw new Error(error.message);
     },
 
-    async deleteCategory(categoryId: string, userId: string): Promise<void> {
+    async deleteCategory(
+      categoryId: string,
+      userId: string,
+      meta?: { updatedAt?: string }
+    ): Promise<void> {
+      const stamp = meta?.updatedAt ?? nowIso();
       const { error } = await supabase
         .from('categories')
-        .delete()
+        .update({ deleted_at: stamp, updated_at: stamp })
         .eq('id', categoryId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .is('deleted_at', null);
 
       if (error) throw new Error(error.message);
     },

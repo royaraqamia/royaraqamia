@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { updateCategory, deleteCategory } from '@/frontend/api/spendtrack';
+import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Pencil, Trash2, Tags } from 'lucide-react';
@@ -32,7 +33,11 @@ export const CategoryList = memo(function CategoryList({
   categories: Category[];
   userId: string;
 }) {
-  if (categories.length === 0) {
+  const context = useSpendtrackContext();
+  const store = context?.store ?? null;
+  const list = store ? context!.categories : categories;
+
+  if (list.length === 0) {
     return (
       <div
         className="flex flex-col items-center gap-4 py-12 text-center"
@@ -54,7 +59,7 @@ export const CategoryList = memo(function CategoryList({
 
   return (
     <div className="space-y-2" role="list" aria-label="قائمة التصنيفات">
-      {categories.map((category) => (
+      {list.map((category) => (
         <div
           key={category.id}
           role="listitem"
@@ -86,6 +91,8 @@ export const CategoryList = memo(function CategoryList({
 });
 
 const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { category: Category }) {
+  const context = useSpendtrackContext();
+  const store = context?.store ?? null;
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
 
@@ -108,6 +115,16 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
   function onSubmit(data: CategoryFormValues) {
     setPending(true);
     setState(undefined);
+    if (store) {
+      store
+        .updateCategory(category.id, { name: data.name, colorHex: data.colorHex })
+        .then(() => context?.refresh?.())
+        .catch((error) =>
+          setState({ error: error instanceof Error ? error.message : 'فشل التحديث' })
+        )
+        .finally(() => setPending(false));
+      return;
+    }
     updateCategory(category.id, { name: data.name, colorHex: data.colorHex })
       .then((result) => {
         setState(result);
@@ -205,6 +222,8 @@ const DeleteCategoryButton = memo(function DeleteCategoryButton({
 }: {
   categoryId: string;
 }) {
+  const context = useSpendtrackContext();
+  const store = context?.store ?? null;
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -213,6 +232,17 @@ const DeleteCategoryButton = memo(function DeleteCategoryButton({
     e.preventDefault();
     setPending(true);
     setState(undefined);
+    if (store) {
+      store
+        .deleteCategory(categoryId)
+        .then(() => {
+          setConfirmOpen(false);
+          return context?.refresh?.();
+        })
+        .catch((error) => setState({ error: error instanceof Error ? error.message : 'فشل الحذف' }))
+        .finally(() => setPending(false));
+      return;
+    }
     deleteCategory(categoryId)
       .then((result) => {
         setState(result);

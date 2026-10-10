@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getBudget, setBudgetForMonth } from '@/frontend/api/spendtrack';
+import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
@@ -18,6 +19,8 @@ export function BudgetCard({
   total: number;
   currency?: string;
 }) {
+  const context = useSpendtrackContext();
+  const store = context?.store ?? null;
   const [budget, setBudget] = useState<number | null>(null);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
@@ -26,22 +29,26 @@ export function BudgetCard({
 
   useEffect(() => {
     let active = true;
-    getBudget(month)
-      .then((value) => {
+    async function load() {
+      try {
+        const value = store
+          ? ((await store.getBudgets(month)).find((row) => row.category_id === null)?.amount ??
+            null)
+          : await getBudget(month);
         if (!active) return;
         setBudget(value);
         setInput(value != null ? value.toString() : '');
-      })
-      .catch(() => {
-        if (active) setError('تعذَّر تحميل الميزانيَّة');
-      })
-      .finally(() => {
+      } catch {
+        if (active) setError('تعذَّر تحميل الميزانيَّة');
+      } finally {
         if (active) setLoading(false);
-      });
+      }
+    }
+    void load();
     return () => {
       active = false;
     };
-  }, [month]);
+  }, [month, store]);
 
   const exceeded = budget != null && total > budget;
   const percentUsed = budget && budget > 0 ? Math.min(Math.round((total / budget) * 100), 100) : 0;
@@ -56,12 +63,26 @@ export function BudgetCard({
     }
     setSaving(true);
     setError(null);
+
+    if (store) {
+      try {
+        await store.setBudget(month, amount, null);
+        setBudget(amount);
+        await context?.refresh?.();
+      } catch {
+        setError('فشل حفظ الميزانيَّة');
+      } finally {
+        setSaving(false);
+      }
+      return;
+    }
+
     const result = await setBudgetForMonth(month, amount);
     setSaving(false);
     if (result?.success) {
       setBudget(amount);
     } else {
-      setError(result?.error ?? 'فشل حفظ الميزانيَّة');
+      setError(result?.error ?? 'فشل حفظ الميزانيَّة');
     }
   }
 

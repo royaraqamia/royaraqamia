@@ -25,6 +25,12 @@ import {
 export interface SpendtrackCategoryInput {
   name: string;
   colorHex: string;
+  clientId?: string | null;
+  updatedAt?: string;
+}
+
+export interface SpendtrackCategoryUpdateInput extends SpendtrackCategoryInput {
+  deletedAt?: string | null;
 }
 
 export interface SpendtrackExpenseInput {
@@ -33,7 +39,22 @@ export interface SpendtrackExpenseInput {
   date: string;
   description: string | null;
   currency?: string | null;
-  splits?: { category_id: string; amount: number }[];
+  splits?: { category_id: string; amount: number; clientId?: string | null }[];
+  clientId?: string | null;
+  updatedAt?: string;
+}
+
+export interface SpendtrackExpenseUpdateInput extends SpendtrackExpenseInput {
+  deletedAt?: string | null;
+}
+
+export interface SpendtrackOfflineMeta {
+  updatedAt?: string;
+}
+
+export interface SpendtrackBudgetMeta {
+  clientId?: string | null;
+  updatedAt?: string;
 }
 
 export interface ExpenseAlertInfo {
@@ -258,7 +279,8 @@ export class SpendtrackService {
     userId: string,
     month: string,
     amount: number,
-    categoryId?: string | null
+    categoryId?: string | null,
+    meta?: SpendtrackBudgetMeta
   ): Promise<void> {
     if (!/^\d{4}-\d{2}$/.test(month)) {
       throw new Error('شهر غير صالح');
@@ -266,14 +288,19 @@ export class SpendtrackService {
     if (isNaN(amount) || amount <= 0) {
       throw new Error('مبلغ غير صالح');
     }
-    await this.repository.setBudget(userId, month, amount, categoryId);
+    await this.repository.setBudget(userId, month, amount, categoryId, meta);
   }
 
-  async deleteBudget(userId: string, month: string, categoryId?: string | null): Promise<void> {
+  async deleteBudget(
+    userId: string,
+    month: string,
+    categoryId?: string | null,
+    meta?: SpendtrackOfflineMeta
+  ): Promise<void> {
     if (!/^\d{4}-\d{2}$/.test(month)) {
       throw new Error('شهر غير صالح');
     }
-    await this.repository.deleteBudget(userId, month, categoryId);
+    await this.repository.deleteBudget(userId, month, categoryId, meta);
   }
 
   async getCategoryBudgets(
@@ -304,26 +331,34 @@ export class SpendtrackService {
   async updateExpense(
     expenseId: string,
     userId: string,
-    input: SpendtrackExpenseInput
+    input: SpendtrackExpenseUpdateInput
   ): Promise<void> {
     await this.validateExpenseInput(input, userId);
 
     await this.repository.updateExpense(expenseId, userId, input);
   }
 
-  async deleteExpense(expenseId: string, userId: string): Promise<void> {
-    await this.repository.deleteExpense(expenseId, userId);
+  async deleteExpense(
+    expenseId: string,
+    userId: string,
+    meta?: SpendtrackOfflineMeta
+  ): Promise<void> {
+    await this.repository.deleteExpense(expenseId, userId, meta);
   }
 
   async createCategory(userId: string, input: SpendtrackCategoryInput): Promise<void> {
     this.validateCategoryInput(input);
-    await this.repository.createCategory({ user_id: userId, ...input, name: input.name.trim() });
+    await this.repository.createCategory({
+      user_id: userId,
+      ...input,
+      name: input.name.trim(),
+    });
   }
 
   async updateCategory(
     categoryId: string,
     userId: string,
-    input: SpendtrackCategoryInput
+    input: SpendtrackCategoryUpdateInput
   ): Promise<void> {
     this.validateCategoryInput(input);
     await this.repository.updateCategory(categoryId, userId, {
@@ -332,8 +367,12 @@ export class SpendtrackService {
     });
   }
 
-  async deleteCategory(categoryId: string, userId: string): Promise<void> {
-    await this.repository.deleteCategory(categoryId, userId);
+  async deleteCategory(
+    categoryId: string,
+    userId: string,
+    meta?: SpendtrackOfflineMeta
+  ): Promise<void> {
+    await this.repository.deleteCategory(categoryId, userId, meta);
   }
 
   async getRecurringExpenses(userId: string): Promise<RecurringExpense[]> {
@@ -342,7 +381,7 @@ export class SpendtrackService {
 
   async createRecurringExpense(
     userId: string,
-    input: RecurringExpenseInput
+    input: RecurringExpenseInput & { clientId?: string | null; updatedAt?: string }
   ): Promise<RecurringExpense> {
     this.validateRecurringInput(input);
     return this.repository.createRecurringExpense(userId, input);
@@ -351,14 +390,18 @@ export class SpendtrackService {
   async updateRecurringExpense(
     expenseId: string,
     userId: string,
-    input: RecurringExpenseInput
+    input: RecurringExpenseInput & { updatedAt?: string; deletedAt?: string | null }
   ): Promise<void> {
     this.validateRecurringInput(input);
     await this.repository.updateRecurringExpense(expenseId, userId, input);
   }
 
-  async deleteRecurringExpense(expenseId: string, userId: string): Promise<void> {
-    await this.repository.deleteRecurringExpense(expenseId, userId);
+  async deleteRecurringExpense(
+    expenseId: string,
+    userId: string,
+    meta?: SpendtrackOfflineMeta
+  ): Promise<void> {
+    await this.repository.deleteRecurringExpense(expenseId, userId, meta);
   }
 
   async getCurrency(userId: string): Promise<CurrencyCode> {

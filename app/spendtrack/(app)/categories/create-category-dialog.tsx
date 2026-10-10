@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createCategory } from '@/frontend/api/spendtrack';
+import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
@@ -26,6 +27,8 @@ const categorySchema = z.object({
 type CategoryFormValues = z.input<typeof categorySchema>;
 
 export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
+  const context = useSpendtrackContext();
+  const store = context?.store ?? null;
   const [pending, setPending] = useState(false);
   const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
   const [showToast, setShowToast] = useState(false);
@@ -60,6 +63,21 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
   function onSubmit(data: CategoryFormValues) {
     setPending(true);
     setState(undefined);
+    if (store) {
+      store
+        .createCategory({ name: data.name, colorHex: data.colorHex })
+        .then(() => {
+          setState({ success: true });
+          setShowToast(true);
+          return context?.refresh?.();
+        })
+        .catch((error) => {
+          setState({ error: error instanceof Error ? error.message : 'فشل الإنشاء' });
+          setShowToast(true);
+        })
+        .finally(() => setPending(false));
+      return;
+    }
     createCategory({ name: data.name, colorHex: data.colorHex })
       .then((result) => {
         setState(result);

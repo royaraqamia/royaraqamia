@@ -17,6 +17,7 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const categoryId = searchParams.get('categoryId') ?? undefined;
-  const result = await deleteBudget(searchParams.get('month') ?? '', categoryId);
+  const body = await req.json().catch(() => ({}));
+  const result = await deleteBudget(searchParams.get('month') ?? '', categoryId, body);
   return toNextResponse(result);
 }

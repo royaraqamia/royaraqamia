@@ -8,6 +8,7 @@ import { messageError } from '@/backend/transport/authenticated-handler';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import type {
   SpendtrackCategoryInput,
+  SpendtrackCategoryUpdateInput,
   SpendtrackExpenseInput,
 } from '@/backend/services/spendtrack/spendtrack-service';
 import type { RecurringExpenseInput } from '@/shared/contracts/spendtrack';
@@ -15,6 +16,28 @@ import type { RecurringExpenseInput } from '@/shared/contracts/spendtrack';
 const SPENDTRACK_LAYOUT_REVALIDATION: RevalidationHint[] = [
   { path: '/spendtrack', type: 'layout' },
 ];
+
+/** Offline write metadata an Outbox replay carries (ADR-0029, ticket #162). */
+function offlineWriteFields(body: Record<string, unknown>): {
+  clientId?: string;
+  updatedAt?: string;
+} {
+  const clientId =
+    body.clientId === undefined || body.clientId === null ? undefined : String(body.clientId);
+  const updatedAt = typeof body.updatedAt === 'string' ? body.updatedAt : undefined;
+  return { clientId, updatedAt };
+}
+
+/** `deletedAt` present means the write carries a tombstone decision (null = resurrect). */
+function offlineDeleteField(body: Record<string, unknown>): { deletedAt?: string | null } {
+  if (!('deletedAt' in body)) return {};
+  return { deletedAt: body.deletedAt === null ? null : String(body.deletedAt) };
+}
+
+/** The `updatedAt` a delete replay carries so the tombstone keeps write order. */
+function offlineDeleteMeta(body: Record<string, unknown>): { updatedAt?: string } {
+  return typeof body.updatedAt === 'string' ? { updatedAt: body.updatedAt } : {};
+}
 
 export async function getExpenses(query: URLSearchParams): Promise<HttpResult> {
   return withAuthenticatedUser(
@@ -92,6 +115,7 @@ export async function createExpense(body: Record<string, unknown>): Promise<Http
         description: (description ?? null) as SpendtrackExpenseInput['description'],
         currency: (currency ?? null) as SpendtrackExpenseInput['currency'],
         splits: splits as SpendtrackExpenseInput['splits'],
+        ...offlineWriteFields(body),
       });
 
       return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
@@ -115,6 +139,8 @@ export async function updateExpense(
         description: (description ?? null) as SpendtrackExpenseInput['description'],
         currency: (currency ?? null) as SpendtrackExpenseInput['currency'],
         splits: (splits ?? null) as SpendtrackExpenseInput['splits'],
+        ...offlineWriteFields(body),
+        ...offlineDeleteField(body),
       });
 
       return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
@@ -123,10 +149,13 @@ export async function updateExpense(
   );
 }
 
-export async function deleteExpense(id: string): Promise<HttpResult> {
+export async function deleteExpense(
+  id: string,
+  body: Record<string, unknown> = {}
+): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      await createSpendtrackService(supabase).deleteExpense(id, userId);
+      await createSpendtrackService(supabase).deleteExpense(id, userId, offlineDeleteMeta(body));
       return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
     },
     { mapError: messageError(400, 'فشل حذف المصروف') }
@@ -153,17 +182,32 @@ export async function setBudget(body: Record<string, unknown>): Promise<HttpResu
           ? undefined
           : String(body.categoryId);
 
-      await createSpendtrackService(supabase).setBudget(userId, month, amount, categoryId);
+      await createSpendtrackService(supabase).setBudget(
+        userId,
+        month,
+        amount,
+        categoryId,
+        offlineWriteFields(body)
+      );
       return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
     },
     { mapError: messageError(400, 'فشل حفظ الميزانية') }
   );
 }
 
-export async function deleteBudget(month: string, categoryId?: string): Promise<HttpResult> {
+export async function deleteBudget(
+  month: string,
+  categoryId?: string,
+  body: Record<string, unknown> = {}
+): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      await createSpendtrackService(supabase).deleteBudget(userId, month, categoryId);
+      await createSpendtrackService(supabase).deleteBudget(
+        userId,
+        month,
+        categoryId,
+        offlineDeleteMeta(body)
+      );
       return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
     },
     { mapError: messageError(400, 'فشل حذف الميزانية') }
@@ -177,7 +221,13 @@ function parseRecurringInput(body: Record<string, unknown>) {
     description: (body.description ?? null) as string | null,
     day_of_month: Number(body.day_of_month),
     start_month: String(body.start_month ?? ''),
-  } satisfies RecurringExpenseInput;
+    ...offlineWriteFields(body),
+    ...offlineDeleteField(body),
+  } satisfies RecurringExpenseInput & {
+    clientId?: string;
+    updatedAt?: string;
+    deletedAt?: string | null;
+  };
 }
 
 export async function getRecurringExpenses(): Promise<HttpResult> {
@@ -224,10 +274,17 @@ export async function updateRecurringExpense(
   );
 }
 
-export async function deleteRecurringExpense(id: string): Promise<HttpResult> {
+export async function deleteRecurringExpense(
+  id: string,
+  body: Record<string, unknown> = {}
+): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      await createSpendtrackService(supabase).deleteRecurringExpense(id, userId);
+      await createSpendtrackService(supabase).deleteRecurringExpense(
+        id,
+        userId,
+        offlineDeleteMeta(body)
+      );
       return jsonResult(200, { success: true }, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
     },
     { mapError: messageError(400, 'فشل حذف المصروف المتكرر') }
@@ -243,6 +300,7 @@ export async function createCategory(body: Record<string, unknown>): Promise<Htt
       await createSpendtrackService(supabase).createCategory(userId, {
         name,
         colorHex,
+        ...offlineWriteFields(body),
       } satisfies SpendtrackCategoryInput);
 
       return jsonResult(
@@ -272,7 +330,9 @@ export async function updateCategory(
       await createSpendtrackService(supabase).updateCategory(id, userId, {
         name,
         colorHex,
-      } satisfies SpendtrackCategoryInput);
+        ...offlineWriteFields(body),
+        ...offlineDeleteField(body),
+      } satisfies SpendtrackCategoryUpdateInput);
 
       return jsonResult(
         200,
@@ -289,10 +349,13 @@ export async function updateCategory(
   );
 }
 
-export async function deleteCategory(id: string): Promise<HttpResult> {
+export async function deleteCategory(
+  id: string,
+  body: Record<string, unknown> = {}
+): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
-      await createSpendtrackService(supabase).deleteCategory(id, userId);
+      await createSpendtrackService(supabase).deleteCategory(id, userId, offlineDeleteMeta(body));
 
       return jsonResult(
         200,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
@@ -8,6 +8,7 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Loader2, Wallet, Trash2, Check } from 'lucide-react';
 import { setBudgetForMonth, deleteBudgetForMonth } from '@/frontend/api/spendtrack';
+import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import type { CategoryBudget } from '@/shared/contracts/spendtrack';
 
 export function CategoryBudgets({
@@ -18,6 +19,8 @@ export function CategoryBudgets({
   initialBudgets: CategoryBudget[];
 }) {
   const router = useRouter();
+  const context = useSpendtrackContext();
+  const store = context?.store ?? null;
   const [drafts, setDrafts] = useState<Record<string, string>>(
     Object.fromEntries(
       initialBudgets.filter((b) => b.budget !== null).map((b) => [b.categoryId, String(b.budget)])
@@ -25,7 +28,30 @@ export function CategoryBudgets({
   );
   const [pending, setPending] = useState<string | null>(null);
 
-  if (initialBudgets.length === 0) return null;
+  // Offline the rows come from the Local Store; online they are the loader's.
+  const rows = useMemo<CategoryBudget[]>(() => {
+    if (!store) return initialBudgets;
+    const budgetByCategory = new Map(
+      context!.budgets
+        .filter((row) => row.month === month)
+        .map((row) => [row.category_id, row.amount])
+    );
+    return context!.categories
+      .map((category) => ({
+        categoryId: category.id,
+        name: category.name,
+        colorHex: category.colorHex,
+        budget: budgetByCategory.get(category.id) ?? null,
+      }))
+      .sort((a, b) => {
+        if (a.budget === null && b.budget === null) return a.name.localeCompare(b.name);
+        if (a.budget === null) return 1;
+        if (b.budget === null) return -1;
+        return b.budget - a.budget;
+      });
+  }, [store, context, month, initialBudgets]);
+
+  if (rows.length === 0) return null;
 
   async function save(categoryId: string, amount: string) {
     const value = parseFloat(amount);
@@ -34,6 +60,18 @@ export function CategoryBudgets({
       return;
     }
     setPending(categoryId);
+    if (store) {
+      try {
+        await store.setBudget(month, value, categoryId);
+        toast.success('تمَّ حفظ ميزانيَّة التَّصنيف');
+        await context?.refresh?.();
+      } catch {
+        toast.error('فشل حفظ الميزانيَّة');
+      } finally {
+        setPending(null);
+      }
+      return;
+    }
     const result = await setBudgetForMonth(month, value, categoryId);
     setPending(null);
     if (result?.success) {
@@ -46,6 +84,18 @@ export function CategoryBudgets({
 
   async function remove(categoryId: string) {
     setPending(categoryId);
+    if (store) {
+      try {
+        await store.deleteBudget(month, categoryId);
+        toast.success('تمَّت إزالة ميزانيَّة التَّصنيف');
+        await context?.refresh?.();
+      } catch {
+        toast.error('فشل إزالة الميزانيَّة');
+      } finally {
+        setPending(null);
+      }
+      return;
+    }
     const result = await deleteBudgetForMonth(month, categoryId);
     setPending(null);
     if (result?.success) {
@@ -67,7 +117,7 @@ export function CategoryBudgets({
             ميزانيَّات التَّصنيفات
           </CardTitle>
           <span className="inline-flex items-center rounded-full border border-border/40 bg-muted/80 px-2 py-0.5 font-mono text-xs font-medium text-muted-foreground">
-            {initialBudgets.length}
+            {rows.length}
           </span>
         </div>
         <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/20 transition-safe duration-300 group-hover/card:scale-105 group-hover/card:bg-primary/15 group-hover/card:ring-primary/30 sm:size-9">
@@ -76,8 +126,8 @@ export function CategoryBudgets({
       </CardHeader>
 
       <CardContent className="space-y-2.5 p-3 sm:p-5">
-        {initialBudgets.map((cat) => {
-          const current = drafts[cat.categoryId] ?? '';
+        {rows.map((cat) => {
+          const current = drafts[cat.categoryId] ?? (cat.budget !== null ? String(cat.budget) : '');
           return (
             <div
               key={cat.categoryId}

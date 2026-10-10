@@ -73,7 +73,7 @@ describe('SpendtrackService budget', () => {
     const service = makeService(repository);
 
     await service.setBudget('u-1', '2026-08', 1500);
-    expect(repository.setBudget).toHaveBeenCalledWith('u-1', '2026-08', 1500, undefined);
+    expect(repository.setBudget).toHaveBeenCalledWith('u-1', '2026-08', 1500, undefined, undefined);
 
     await expect(service.setBudget('u-1', '2026-08', -5)).rejects.toThrow('مبلغ غير صالح');
     await expect(service.setBudget('u-1', 'bad-month', 10)).rejects.toThrow('شهر غير صالح');
@@ -85,7 +85,7 @@ describe('SpendtrackService budget', () => {
     const service = makeService(repository);
 
     await service.setBudget('u-1', '2026-08', 500, 'cat-9');
-    expect(repository.setBudget).toHaveBeenCalledWith('u-1', '2026-08', 500, 'cat-9');
+    expect(repository.setBudget).toHaveBeenCalledWith('u-1', '2026-08', 500, 'cat-9', undefined);
 
     (repository.getBudget as ReturnType<typeof vi.fn>).mockResolvedValue(500);
     await expect(service.getBudget('u-1', '2026-08', 'cat-9')).resolves.toBe(500);
@@ -173,7 +173,7 @@ describe('SpendtrackService recurring expenses', () => {
     await service.deleteRecurringExpense('r-1', 'u-1');
 
     expect(repository.getRecurringExpenses).toHaveBeenCalledWith('u-1');
-    expect(repository.deleteRecurringExpense).toHaveBeenCalledWith('r-1', 'u-1');
+    expect(repository.deleteRecurringExpense).toHaveBeenCalledWith('r-1', 'u-1', undefined);
   });
 });
 

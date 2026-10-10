@@ -28,11 +28,12 @@ import {
   updateRecurringExpense,
   deleteRecurringExpense,
 } from '@/frontend/api/spendtrack';
+import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import type { Category, RecurringExpense } from '@/shared/contracts/spendtrack';
 import { formatMoney, getCurrencySymbol } from '@/shared/currency';
 
 export function RecurringExpenses({
-  categories,
+  categories: serverCategories,
   initialRecurring,
   currency,
 }: {
@@ -41,15 +42,29 @@ export function RecurringExpenses({
   currency?: string;
 }) {
   const router = useRouter();
+  const context = useSpendtrackContext();
+  const store = context?.store ?? null;
+  const categories = store ? context!.categories : serverCategories;
+  const rows = store ? context!.recurring : initialRecurring;
   const currentMonth = new Date().toISOString().slice(0, 7);
 
   async function handleDelete(item: RecurringExpense) {
+    if (store) {
+      try {
+        await store.deleteRecurring(item.id);
+        toast.success('تمَّ حذف المصروف المُتكرِّر');
+        await context?.refresh?.();
+      } catch {
+        toast.error('فشل حذف المصروف المُتكرِّر');
+      }
+      return;
+    }
     const result = await deleteRecurringExpense(item.id);
     if (result?.success) {
-      toast.success('تمَّ حذف المصروف المُتكرِّر');
+      toast.success('تمَّ حذف المصروف المُتكرِّر');
       router.refresh();
     } else {
-      toast.error(result?.error ?? 'فشل حذف المصروف المُتكرِّر');
+      toast.error(result?.error ?? 'فشل حذف المصروف المُتكرِّر');
     }
   }
 
@@ -89,7 +104,7 @@ export function RecurringExpenses({
         />
       </CardHeader>
       <CardContent className="p-5 sm:p-6 space-y-3">
-        {initialRecurring.length === 0 ? (
+        {rows.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border/70 bg-muted/20 px-6 py-10 text-center transition-safe">
             <div className="flex size-12 items-center justify-center rounded-2xl bg-background border border-border/50 text-muted-foreground/80 shadow-2xs mb-3">
               <Repeat className="size-6" />
@@ -100,7 +115,7 @@ export function RecurringExpenses({
             </p>
           </div>
         ) : (
-          initialRecurring.map((item) => {
+          rows.map((item) => {
             const cat = categories.find((c) => c.id === item.category_id);
             return (
               <div
@@ -182,6 +197,8 @@ function RecurringDialog({
   currency?: string;
 }) {
   const router = useRouter();
+  const context = useSpendtrackContext();
+  const store = context?.store ?? null;
   const [isOpen, setIsOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [amount, setAmount] = useState(item ? String(item.amount) : '');
@@ -217,12 +234,26 @@ function RecurringDialog({
     };
 
     setPending(true);
+    if (store) {
+      try {
+        if (item) await store.updateRecurring(item.id, input);
+        else await store.createRecurring(input);
+        toast.success(item ? 'تمَّ تحديث المصروف المُتكرِّر' : 'تمَّت إضافة المصروف المُتكرّر');
+        setIsOpen(false);
+        await context?.refresh?.();
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'حدث خطأ أثناء الحفظ');
+      } finally {
+        setPending(false);
+      }
+      return;
+    }
     const result = item
       ? await updateRecurringExpense(item.id, input)
       : await createRecurringExpense(input);
     setPending(false);
     if (result?.success) {
-      toast.success(item ? 'تمَّ تحديث المصروف المُتكرِّر' : 'تمَّت إضافة المصروف المُتكرّر');
+      toast.success(item ? 'تمَّ تحديث المصروف المُتكرِّر' : 'تمَّت إضافة المصروف المُتكرّر');
       setIsOpen(false);
       router.refresh();
     } else {
