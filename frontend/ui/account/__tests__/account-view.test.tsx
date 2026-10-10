@@ -20,21 +20,6 @@ vi.mock('@/frontend/shared/constants', () => ({
   getWhatsAppUrl: () => 'https://wa.me/963968478904',
 }));
 
-// The Outbox panel owns its own IndexedDB store; keep it inert here so this
-// suite tests AccountView's own structure.
-vi.mock('@/frontend/state/habitflow/use-outbox-diagnostics', () => ({
-  useOutboxDiagnostics: () => ({
-    ready: false,
-    online: true,
-    entries: [],
-    pending: 0,
-    failed: 0,
-    retrying: false,
-    retry: vi.fn(),
-    removeLocalCopy: vi.fn(),
-  }),
-}));
-
 import { AccountView } from '../account-view';
 
 /* Radix dialog measures with ResizeObserver; jsdom does not ship it. */

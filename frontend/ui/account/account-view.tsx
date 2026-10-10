@@ -11,7 +11,6 @@ import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
-import { OutboxPanel } from '@/frontend/ui/account/outbox-panel';
 
 function AccountSkeleton() {
   return (
@@ -100,9 +99,6 @@ export function AccountView() {
 
       {/* Public handle editor — signed-in members only */}
       {user && <UsernameEditor />}
-
-      {/* Offline outbox diagnostics for the device's HabitFlow copy */}
-      <OutboxPanel />
 
       {/* Account actions */}
       <nav aria-label="إجراءات الحساب" className="flex flex-col gap-2.5">
