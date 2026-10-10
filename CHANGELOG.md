@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.71.0] - 2026-10-10
+
+### Changed
+- regenerate database types after offline write contract
+- hide members-list scrollbar until hover
+- add offline-first glossary, ADRs 0027-0031, and spec
+
+### Added
+- full-screen composer on mobile, taller dialog on desktop
+- replay-safe write contract for owned records (#162)
+- stale-while-revalidate shell caching and never-cache bypass (#161)
+
+### Fixed
+- place search icon at start and clear at end in RTL search
+- align member username under name in RTL lists
+
 ## [1.70.1] - 2026-10-10
 
 ### Changed
