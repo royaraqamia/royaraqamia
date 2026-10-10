@@ -1,5 +1,14 @@
 import { m, useReducedMotion } from 'motion/react';
-import { Check, Flame, Edit3, Snowflake, NotebookPen, Target, MoreHorizontal } from 'lucide-react';
+import {
+  Check,
+  Flame,
+  Edit3,
+  Snowflake,
+  NotebookPen,
+  Target,
+  MoreHorizontal,
+  CloudOff,
+} from 'lucide-react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import {
   calculateHabitStats,
@@ -23,6 +32,8 @@ interface HabitCardProps {
   onNote: (habitId: string) => void;
   onEdit: (habit: Habit) => void;
   togglingHabitId?: string | null;
+  /** True while a change to this habit (or today's log) waits to reach the server. */
+  pending?: boolean;
 }
 
 export function HabitCard({
@@ -34,6 +45,7 @@ export function HabitCard({
   onNote,
   onEdit,
   togglingHabitId,
+  pending = false,
 }: HabitCardProps) {
   const reduce = useReducedMotion();
   const isCompleted = logs.some(
@@ -103,6 +115,15 @@ export function HabitCard({
 
           {/* Dynamic Wrapping Tags */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap min-w-0">
+            {pending && (
+              <span
+                className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 whitespace-nowrap shrink-0"
+                title="لم يُزامَن مع الخادم بعد"
+              >
+                <CloudOff className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span>غير مُزامَن</span>
+              </span>
+            )}
             {isSkipped ? (
               <span className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold bg-sky-500/10 text-sky-700 dark:text-sky-400 border border-sky-500/20 whitespace-nowrap shrink-0 transition-colors">
                 <Snowflake className="w-3 h-3 sm:w-3.5 sm:h-3.5" />

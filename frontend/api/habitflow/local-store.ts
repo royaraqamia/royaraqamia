@@ -75,12 +75,29 @@ function logKind(value: string | null | undefined): HabitLogKind | undefined {
  */
 export class HabitLocalStore implements HabitRepository {
   private readonly db: IDBDatabase;
+  private readonly writeListeners = new Set<() => void>();
 
   private constructor(
     db: IDBDatabase,
     readonly identity: LocalIdentity
   ) {
     this.db = db;
+  }
+
+  /**
+   * Notifies on every committed write so views (sync badges, the Outbox panel)
+   * re-derive from the store without polling. `commit` is the single choke point
+   * for mutations, so one subscription observes them all.
+   */
+  subscribeWrites(listener: () => void): () => void {
+    this.writeListeners.add(listener);
+    return () => {
+      this.writeListeners.delete(listener);
+    };
+  }
+
+  private notifyWrites(): void {
+    for (const listener of this.writeListeners) listener();
   }
 
   static async open(
@@ -134,6 +151,7 @@ export class HabitLocalStore implements HabitRepository {
       transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
     }
     await transactionDone(transaction);
+    this.notifyWrites();
   }
 
   private entry(intent: OutboxIntent): NewOutboxEntry {
@@ -427,6 +445,7 @@ export class HabitLocalStore implements HabitRepository {
       .objectStore(OUTBOX_STORE)
       .put(this.entry({ entity: 'backup', type: 'backup.restore', payload: input }));
     await transactionDone(transaction);
+    this.notifyWrites();
   }
 
   /** Seeds the server loader's data once, then the store is authoritative. */
@@ -473,6 +492,7 @@ export class HabitLocalStore implements HabitRepository {
     const transaction = this.db.transaction(OUTBOX_STORE, 'readwrite');
     transaction.objectStore(OUTBOX_STORE).delete(seq);
     await transactionDone(transaction);
+    this.notifyWrites();
   }
 
   async patchOutbox(seq: number, patch: Partial<OutboxEntry>): Promise<void> {
@@ -597,6 +617,7 @@ export class HabitLocalStore implements HabitRepository {
     transaction.objectStore(LOGS_STORE).clear();
     transaction.objectStore(OUTBOX_STORE).clear();
     await transactionDone(transaction);
+    this.notifyWrites();
   }
 
   /** True when the store has received no writes yet (safe to seed). */

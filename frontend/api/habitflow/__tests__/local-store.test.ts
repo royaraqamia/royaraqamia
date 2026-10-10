@@ -274,4 +274,23 @@ describe('HabitLocalStore', () => {
     expect(data.logs[0]?.id).toBe('restored-log');
     repo.close();
   });
+
+  it('notifies write subscribers on commit and clear, and stops after unsubscribe', async () => {
+    const repo = await openGuest();
+    let calls = 0;
+    const unsubscribe = repo.subscribeWrites(() => {
+      calls += 1;
+    });
+
+    await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
+    expect(calls).toBe(1);
+
+    await repo.clear();
+    expect(calls).toBe(2);
+
+    unsubscribe();
+    await repo.createHabit({ name: 'صلاة', frequency: 'daily' });
+    expect(calls).toBe(2);
+    repo.close();
+  });
 });

@@ -1,15 +1,16 @@
 'use client';
 
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, CloudOff, RefreshCw } from 'lucide-react';
 import type { HabitSyncState } from '@/frontend/state/habitflow/use-habit-sync';
 
 /**
- * The always-visible sync state (ADR-0027). Permanent failures are surfaced
- * with a retry, never swallowed; pending work shows while it waits for a
- * connection. A fully-synced habit flow renders nothing at all.
+ * The always-visible sync state (ADR-0027). Connectivity persists whether or
+ * not anything is queued, permanent failures are surfaced with a retry, and
+ * never swallowed; pending work shows while it waits for a connection. A
+ * fully-synced, connected flow renders nothing at all.
  */
 export function SyncStatusPill({ status }: { status: HabitSyncState }) {
-  const { syncing, pending, failed, retry } = status;
+  const { syncing, pending, failed, online, retry } = status;
 
   if (failed > 0) {
     return (
@@ -25,9 +26,26 @@ export function SyncStatusPill({ status }: { status: HabitSyncState }) {
     );
   }
 
+  if (!online) {
+    return (
+      <span
+        role="status"
+        aria-live="polite"
+        className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-zinc-300/80 dark:border-zinc-700/80 bg-zinc-100/80 dark:bg-zinc-900/70 text-zinc-600 dark:text-zinc-300 text-xs sm:text-sm font-bold shadow-sm"
+      >
+        <CloudOff className="w-4 h-4" />
+        <span>
+          غير متَّصل
+          {pending > 0 && ` — ${pending} بانتظار المزامنة`}
+        </span>
+      </span>
+    );
+  }
+
   if (syncing) {
     return (
       <span
+        role="status"
         aria-live="polite"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-zinc-200/80 dark:border-zinc-800/80 bg-white/60 dark:bg-zinc-900/60 text-zinc-600 dark:text-zinc-300 text-xs sm:text-sm font-bold shadow-sm"
       >
@@ -40,6 +58,7 @@ export function SyncStatusPill({ status }: { status: HabitSyncState }) {
   if (pending > 0) {
     return (
       <span
+        role="status"
         aria-live="polite"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-amber-300/70 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 text-xs sm:text-sm font-bold shadow-sm"
       >

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { m, useReducedMotion } from 'motion/react';
 import {
   Plus,
@@ -118,6 +118,16 @@ export function DashboardShell({
   const [noteHabitId, setNoteHabitId] = useState<string | null>(null);
   const [isSavingNote, setIsSavingNote] = useState(false);
   const { signOut, isLoggingOut } = useLogout();
+
+  // A habit counts as pending if the habit itself or any of its logs is queued.
+  const pendingHabitIds = useMemo(() => {
+    const ids = new Set(syncStatus.pendingHabitIds);
+    for (const key of syncStatus.pendingLogKeys) {
+      const separator = key.indexOf('#');
+      if (separator > 0) ids.add(key.slice(0, separator));
+    }
+    return ids;
+  }, [syncStatus.pendingHabitIds, syncStatus.pendingLogKeys]);
 
   useEffect(() => {
     if (sessionUser) {
@@ -322,6 +332,7 @@ export function DashboardShell({
                       onNote={setNoteHabitId}
                       onEdit={openEditModal}
                       togglingHabitId={togglingHabitId}
+                      pending={pendingHabitIds.has(habit.id)}
                     />
                   ))}
                 </div>
