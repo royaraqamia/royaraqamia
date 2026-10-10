@@ -6,13 +6,13 @@ import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/sectio
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'HabitFlow',
+  title: 'تتبُّع العادات',
   description:
     'تتبَّع عاداتك اليوميَّة والأسبوعيَّة، راقب تقدُّمك، وحافظ على استمراريَّتك مع HabitFlow.',
   openGraph: {
-    title: 'HabitFlow | رؤيَة رقَميَّة',
+    title: 'تتبُّع العادات | رؤيَة رقَميَّة',
     description:
-      'تتبَّع عاداتك اليوميَّة والأسبوعيَّة، راقب تقدُّمك، وحافظ على استمراريَّتك مع HabitFlow.',
+      'تتبَّع عاداتك اليوميَّة والأسبوعيَّة، راقب تقدُّمك، وحافظ على استمراريَّتك مع تتبُّع العادات.',
     url: '/habitflow',
     siteName: 'رؤيَة رقَميَّة',
     locale: 'ar_SY',
@@ -21,9 +21,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'HabitFlow | رؤيَة رقَميَّة',
+    title: 'تتبُّع العادات | رؤيَة رقَميَّة',
     description:
-      'تتبَّع عاداتك اليوميَّة والأسبوعيَّة، راقب تقدُّمك، وحافظ على استمراريَّتك مع HabitFlow.',
+      'تتبَّع عاداتك اليوميَّة والأسبوعيَّة، راقب تقدُّمك، وحافظ على استمراريَّتك مع تتبُّع العادات.',
     images: ['/OG Image.webp'],
   },
 };

@@ -4,8 +4,9 @@ import { AppShell } from '@/frontend/ui/app-shell/app-shell';
 import { ProgressBar } from '@/frontend/ui/linksnap/progress-bar';
 
 export const metadata: Metadata = {
-  title: 'LinkSnap',
-  description: 'اختصر روابطك الطَّويلة وتتبَّع أداءها بسهولة مع LinkSnap من رؤيَة رقَميَّة.',
+  title: 'اختصار الرَّوابط',
+  description:
+    'اختصر روابطك الطَّويلة وتتبَّع أداءها بسهولة مع اختصار الرَّوابط من رؤيَة رقَميَّة.',
 };
 
 export default async function LinkSnapAppLayout({ children }: { children: React.ReactNode }) {

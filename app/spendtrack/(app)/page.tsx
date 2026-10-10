@@ -35,9 +35,9 @@ import { startOfMonth, endOfMonth, subDays, format } from 'date-fns';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'SpendTrack',
+  title: 'تتبُّع المصاريف',
   description:
-    'تتبَّع مصروفاتك اليوميَّة، حلِّل أنماط إنفاقك، وتحكَّم في ميزانيَّتك مع SpendTrack.',
+    'تتبَّع مصروفاتك اليوميَّة، حلِّل أنماط إنفاقك، وتحكَّم في ميزانيَّتك مع تتبُّع المصاريف.',
 };
 
 const PAGE_SIZE = 20;
