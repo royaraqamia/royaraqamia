@@ -70,11 +70,10 @@ export const APP_PRODUCTS: AppProductDef[] = [
   },
   {
     id: 'linksnap',
-    label: 'إدارة الرَّوابط',
+    label: 'اختصار الرَّوابط',
     appPath: '/linksnap',
     landingPath: '/linksnap',
     icon: Link2,
-    hidden: true,
   },
   {
     id: 'blogpress',
@@ -86,18 +85,16 @@ export const APP_PRODUCTS: AppProductDef[] = [
   },
   {
     id: 'habitflow',
-    label: 'إدارة العادات',
+    label: 'تتبُّع العادات',
     appPath: '/habitflow',
     landingPath: '/habitflow',
     icon: CheckSquare,
-    hidden: true,
   },
   {
     id: 'spendtrack',
-    label: 'إدارة المصاريف',
+    label: 'تتبُّع المصاريف',
     appPath: '/spendtrack',
     landingPath: '/spendtrack',
     icon: Wallet,
-    hidden: true,
   },
 ];

@@ -45,7 +45,7 @@ const SECTIONS = [
   },
   {
     href: '/admin/linksnap',
-    label: 'إدارة الرَّوابط',
+    label: 'اختصار الرَّوابط',
     description: 'إحصاءات المنصَّة ودليل الرَّوابط وحظر الرَّوابط',
     icon: Link2,
   },
