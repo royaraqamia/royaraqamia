@@ -1412,8 +1412,11 @@
   scrollbar-color: #7766ee rgba(255, 255, 255, 0.05);
 }
 
-/* Scrollbar that stays invisible until the container is hovered or focused
-   (keyboard/touch), then matches the `.custom-scrollbar` styling. */
+/* Scrollbar that stays invisible until the container is hovered, then matches
+   the `.custom-scrollbar` styling. Keyboard access is preserved with
+   `:has(:focus-visible)` — not `:focus-within` — because Radix popper panels
+   programmatically focus their first item on open, which would otherwise
+   reveal the bar for pointer users too. */
 .scrollbar-on-hover {
   scrollbar-width: thin;
   scrollbar-color: transparent transparent;
@@ -1428,22 +1431,22 @@
 }
 
 .scrollbar-on-hover:hover,
-.scrollbar-on-hover:focus-within {
+.scrollbar-on-hover:has(:focus-visible) {
   scrollbar-color: #7766ee rgba(255, 255, 255, 0.05);
 }
 
 .scrollbar-on-hover:hover::-webkit-scrollbar-track,
-.scrollbar-on-hover:focus-within::-webkit-scrollbar-track {
+.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.05);
 }
 
 .scrollbar-on-hover:hover::-webkit-scrollbar-thumb,
-.scrollbar-on-hover:focus-within::-webkit-scrollbar-thumb {
+.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #7766ee 0%, #5b4db8 100%);
 }
 
 .scrollbar-on-hover:hover::-webkit-scrollbar-thumb:hover,
-.scrollbar-on-hover:focus-within::-webkit-scrollbar-thumb:hover {
+.scrollbar-on-hover:has(:focus-visible)::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #8b5cf6 0%, #7766ee 100%);
 }
 
