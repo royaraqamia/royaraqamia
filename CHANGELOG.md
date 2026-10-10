@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.74.0] - 2026-10-10
+
+### Changed
+- cap the services popover height and make it scroll
+- drop the header bar from services, country and currency menus
+- remove the onboarding template picker
+- write المختصَرة with the fatha in link copy
+- reveal services dropdown scrollbar only on hover
+
+### Added
+- use Arabic titles for LinkSnap, SpendTrack and HabitFlow
+- offline-first expenses, budgets, categories and recurring (#166)
+- add روابطي المختصَرة and move the LinkSnap dashboard there
+- add page titles to LinkSnap, SpendTrack and HabitFlow
+
 ## [1.73.0] - 2026-10-10
 
 ### Added
