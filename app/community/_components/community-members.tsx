@@ -25,7 +25,7 @@ export function CommunityMembersPanel({ members }: CommunityMembersProps) {
         <h2 className="text-sm font-bold text-foreground">أعضاء المجتمع</h2>
       </header>
 
-      <ul className="flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto px-2 pb-3">
+      <ul className="dialog-scrollbar flex max-h-[60vh] flex-col gap-0.5 overflow-y-auto px-2 pb-3">
         {members.map((member) => (
           <li key={member.id}>
             <Link
