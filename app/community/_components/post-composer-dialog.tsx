@@ -106,15 +106,15 @@ export function PostComposerDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => (pending ? undefined : onOpenChange(next))}>
-      <DialogContent className="sm:max-w-xl">
+      <DialogContent className="max-sm:inset-0 max-sm:left-0 max-sm:top-0 max-sm:flex max-sm:h-dvh max-sm:w-full max-sm:max-w-none max-sm:max-h-none max-sm:translate-x-0 max-sm:translate-y-0 max-sm:flex-col max-sm:rounded-none sm:max-w-xl sm:max-h-[calc(100dvh_-_2rem)]">
         <DialogHeader>
           <DialogTitle className="text-center">
             {isEdit ? 'تعديل المنشور' : 'منشور جديد'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="space-y-1.5">
+        <div className="space-y-4 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col">
+          <div className="space-y-1.5 max-sm:flex max-sm:min-h-0 max-sm:flex-1 max-sm:flex-col max-sm:[&>div]:flex-1 max-sm:[&>div>textarea]:h-full">
             <Label htmlFor="composer-body" required>
               النَّص
             </Label>
