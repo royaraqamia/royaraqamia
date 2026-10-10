@@ -227,7 +227,7 @@ export function NavDropdown({
           id={dropdownId}
           className={`absolute ${
             align === 'start' ? 'inset-s-0 origin-top-left' : 'inset-e-0 origin-top-right'
-          } top-full mt-2.5 max-h-[min(70vh,32rem)] w-60 overflow-y-auto overscroll-contain custom-scrollbar p-1.5 bg-neutral-900/95 rounded-2xl border border-neutral-800/80 shadow-2xl shadow-neutral-950/50 z-50 transition-transform duration-200 ease-out animate-in fade-in-0 zoom-in-95 will-change-[transform,opacity] contain-layout contain-style`}
+          } top-full mt-2.5 max-h-[min(70vh,32rem)] w-60 overflow-y-auto overscroll-contain scrollbar-on-hover p-1.5 bg-neutral-900/95 rounded-2xl border border-neutral-800/80 shadow-2xl shadow-neutral-950/50 z-50 transition-transform duration-200 ease-out animate-in fade-in-0 zoom-in-95 will-change-[transform,opacity] contain-layout contain-style`}
           role="menu"
           aria-orientation="vertical"
           onMouseEnter={handleMouseEnter}
