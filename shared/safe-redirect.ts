@@ -15,7 +15,7 @@ export function safeRedirect(to: string | null | undefined, fallback: string = '
     } while (decoded !== prev);
 
     if (!decoded.startsWith('/')) return fallback;
-    if (decoded.startsWith('//') || decoded.startsWith('\\\\')) return fallback;
+    if (/^\/[/\\]/.test(decoded)) return fallback;
     if (/^(javascript|data|vbscript):/i.test(decoded)) return fallback;
     return decoded;
   } catch {

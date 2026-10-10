@@ -19,6 +19,7 @@ describe('safeRedirect', () => {
       '/auth/login?redirect=/spendtrack'
     );
     expect(safeRedirect('/community/some-post')).toBe('/community/some-post');
+    expect(safeRedirect('/account?tab=1')).toBe('/account?tab=1');
   });
 
   it('returns the decoded path for percent-encoded internal paths', () => {
@@ -29,11 +30,23 @@ describe('safeRedirect', () => {
     expect(safeRedirect('//evil.com')).toBe('/');
     expect(safeRedirect('%2F%2Fevil.com')).toBe('/');
     expect(safeRedirect('\\\\evil.com')).toBe('/');
-    expect(safeRedirect('/%5C%5Cevil.com')).toBe('/\\\\evil.com');
+    expect(safeRedirect('/%5C%5Cevil.com')).toBe('/');
   });
 
   it('rejects a leading backslash prefix', () => {
     expect(safeRedirect('\\evil.com')).toBe('/');
+  });
+
+  it('rejects a slash-backslash prefix (WHATWG treats \\ as /)', () => {
+    expect(safeRedirect('/\\evil.com')).toBe('/');
+    expect(safeRedirect('/%5Cevil.com')).toBe('/');
+    expect(safeRedirect('//\\evil.com')).toBe('/');
+    expect(safeRedirect('/%2F%5Cevil.com')).toBe('/');
+  });
+
+  it('rejects doubled-encoded slash-backslash prefixes', () => {
+    expect(safeRedirect('/%255Cevil.com')).toBe('/');
+    expect(safeRedirect('/%252F%255Cevil.com')).toBe('/');
   });
 
   it('rejects external URLs', () => {
@@ -86,6 +99,9 @@ describe('isSafeRedirect', () => {
       '%252F%252Fevil.com',
       '\\\\evil.com',
       '\\evil.com',
+      '/\\evil.com',
+      '/%5Cevil.com',
+      '/%255Cevil.com',
       'https://evil.com',
       'javascript:alert(1)',
       'java%0ascript:alert(1)',
