@@ -53,6 +53,7 @@ function makeRepository(overrides: Partial<TrainingApplicationsRepository> = {})
   return {
     getById: vi.fn().mockResolvedValue(makeApplication()),
     getByReferenceCode: vi.fn().mockResolvedValue(null),
+    getByClientId: vi.fn().mockResolvedValue(null),
     list: vi.fn().mockResolvedValue({ data: [], total: 0 }),
     create: vi.fn().mockImplementation((input: TrainingApplicationCreateInput) =>
       Promise.resolve(
@@ -154,6 +155,38 @@ describe('TrainingApplicationService.submit', () => {
     await service.submit(VALID_INPUT, { ip: '1.1.1.1', userId: 'user-9' });
 
     expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ user_id: 'user-9' }));
+  });
+
+  it('returns the row an Outbox replay already created without re-notifying', async () => {
+    const existing = makeApplication();
+    const { service, repository, notifyAdmins } = makeService({
+      repository: makeRepository({
+        getByClientId: vi.fn().mockResolvedValue(existing),
+      } as Partial<TrainingApplicationsRepository>),
+    });
+
+    const application = await service.submit(
+      { ...VALID_INPUT, client_id: '11111111-1111-7111-8111-111111111111' },
+      { ip: '1.1.1.1' }
+    );
+
+    expect(application).toBe(existing);
+    expect(repository.getByClientId).toHaveBeenCalledWith('11111111-1111-7111-8111-111111111111');
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(notifyAdmins).not.toHaveBeenCalled();
+  });
+
+  it('carries the client_id through on a fresh submit', async () => {
+    const { service, repository } = makeService();
+
+    await service.submit(
+      { ...VALID_INPUT, client_id: '22222222-2222-7222-8222-222222222222' },
+      { ip: '1.1.1.1' }
+    );
+
+    expect(repository.create).toHaveBeenCalledWith(
+      expect.objectContaining({ client_id: '22222222-2222-7222-8222-222222222222' })
+    );
   });
 
   it('rejects the submission when the course is closed', async () => {

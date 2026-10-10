@@ -7,8 +7,9 @@ import type { z } from 'zod';
 
 import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizard';
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
-import { submitProjectRequest } from '@/frontend/api/project-requests';
+import { LeadQueuedPanel } from '@/frontend/ui/shared/lead-queued-panel';
 import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
+import { useLeadSubmission } from '@/frontend/state/leads/use-lead-submission';
 import { ProjectRequestSchema } from '@/shared/contracts/project-requests';
 import { ProjectTypeStep } from './steps/project-type-step';
 import { ProjectDetailsStep } from './steps/project-details-step';
@@ -63,6 +64,9 @@ export function ProjectRequestWizard({
   // instead of a blank form.
   const receipt = useSubmissionReceipt('projectRequest');
   const referenceCode = receipt.referenceCode;
+  // Offline-first: a submission made with the network off is queued and replayed.
+  const lead = useLeadSubmission();
+  const [queued, setQueued] = useState(false);
 
   const {
     control,
@@ -103,24 +107,31 @@ export function ProjectRequestWizard({
   const onSubmit = handleSubmit(async (formValues) => {
     setSubmitError(null);
 
-    const response = await submitProjectRequest({
-      full_name: formValues.full_name,
-      phone_whatsapp: formValues.phone_whatsapp,
-      email: formValues.email,
-      project_type: formValues.project_type,
-      description: formValues.description,
-      budget_range: formValues.budget_range,
-      timeline: formValues.timeline,
-      existing_url: formValues.existing_url,
+    const outcome = await lead.submit({
+      kind: 'projectRequest',
+      value: {
+        full_name: formValues.full_name,
+        phone_whatsapp: formValues.phone_whatsapp,
+        email: formValues.email,
+        project_type: formValues.project_type,
+        description: formValues.description,
+        budget_range: formValues.budget_range,
+        timeline: formValues.timeline,
+        existing_url: formValues.existing_url,
+      },
     });
 
-    if (response.success && response.referenceCode) {
-      receipt.remember(response.referenceCode);
+    if (outcome.status === 'sent') {
+      receipt.remember(outcome.referenceCode);
       onSubmitted?.();
       return;
     }
-
-    setSubmitError(response.error ?? 'حدث خطأ غير متوقَّع. الرَّجاء المحاولة مرَّة أخرى.');
+    if (outcome.status === 'queued') {
+      setQueued(true);
+      onSubmitted?.();
+      return;
+    }
+    setSubmitError(outcome.error);
   });
 
   if (referenceCode) {
@@ -128,8 +139,26 @@ export function ProjectRequestWizard({
       <LeadSuccessPanel
         referenceCode={referenceCode}
         isAuthenticated={isAuthenticated}
-        onStartOver={receipt.dismiss}
+        onStartOver={() => {
+          receipt.dismiss();
+          setQueued(false);
+        }}
         message="احتفظ برقم الطَّلب أدناه — سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة."
+      />
+    );
+  }
+
+  if (queued || lead.pendingKinds.has('projectRequest')) {
+    return (
+      <LeadQueuedPanel
+        message="أنت غير متَّصل بالإنترنت حاليًّا. سنُرسِل طلبك تلقائيًّا عند عودة الاتصال، وسيظهر رقم الطَّلب هنا فور وصوله."
+        status={{
+          syncing: lead.syncing,
+          pending: lead.pending,
+          failed: lead.failed,
+          online: lead.online,
+          retry: lead.retry,
+        }}
       />
     );
   }

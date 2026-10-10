@@ -83,6 +83,18 @@ export function createTrainingApplicationsRepository(
       return data ? (data as TrainingApplication) : null;
     },
 
+    async getByClientId(clientId: string): Promise<TrainingApplication | null> {
+      const { data, error } = await supabase
+        .from('training_applications')
+        .select('*')
+        .eq('client_id', clientId)
+        .maybeSingle();
+
+      if (error) throw repositoryFailure('training.getByClientId', error);
+
+      return data ? (data as TrainingApplication) : null;
+    },
+
     async list(query: TrainingApplicationListQuery): Promise<Paginated<TrainingApplication>> {
       let request = supabase
         .from('training_applications')
@@ -130,6 +142,7 @@ export function createTrainingApplicationsRepository(
           cohort_id: input.cohort_id,
           reference_code: input.reference_code,
           user_id: input.user_id,
+          client_id: input.client_id ?? null,
         })
         .select()
         .single();

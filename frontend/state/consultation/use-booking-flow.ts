@@ -61,6 +61,8 @@ export interface UseBookingFlowResult {
   requiredSessions: number;
   canProceed: boolean;
   submitting: boolean;
+  /** Whether the device currently has a connection. Booking is online-only. */
+  online: boolean;
   error: string | null;
   fieldErrors: Record<string, string>;
   /** The reference code of the booking just made, restored across a refresh. */
@@ -91,6 +93,10 @@ export function useBookingFlow(
   const [slotsLoading, setSlotsLoading] = useState(false);
   const [selectedSlotIds, setSelectedSlotIds] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  // Booking reserves an Availability Slot against a live conflict check, so it
+  // is online-only and never queues (ADR-0031). Start "online" so the server and
+  // first client render agree, then read the real value in an effect.
+  const [online, setOnline] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   // The receipt survives a refresh; only the reference code is remembered, so
@@ -99,6 +105,17 @@ export function useBookingFlow(
   const createdBooking: CreatedBooking | null = receipt.referenceCode
     ? { id: '', referenceCode: receipt.referenceCode }
     : null;
+
+  useEffect(() => {
+    const sync = () => setOnline(typeof navigator === 'undefined' || navigator.onLine !== false);
+    sync();
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    return () => {
+      window.removeEventListener('online', sync);
+      window.removeEventListener('offline', sync);
+    };
+  }, []);
 
   useEffect(() => {
     // Packages are server-rendered into the page; only fetch when absent.
@@ -225,6 +242,12 @@ export function useBookingFlow(
 
   const confirmBooking = useCallback(async () => {
     if (!selectedPackage || submitting) return;
+    // Online-only: a booking must not queue, because it reserves a scarce slot
+    // that could collide with another device's booking by the time it replays.
+    if (!online) {
+      setError('يلزم الاتصال بالإنترنت لإتمام الحجز. تحقَّق من اتِّصالك ثم أعِد المحاولة.');
+      return;
+    }
     setSubmitting(true);
     setError(null);
     setFieldErrors({});
@@ -247,7 +270,7 @@ export function useBookingFlow(
     } finally {
       setSubmitting(false);
     }
-  }, [selectedPackage, submitting, selectedSlotIds, contact, receipt]);
+  }, [selectedPackage, submitting, selectedSlotIds, contact, receipt, online]);
 
   return {
     stepIndex,
@@ -270,6 +293,7 @@ export function useBookingFlow(
     requiredSessions,
     canProceed,
     submitting,
+    online,
     error,
     fieldErrors,
     createdBooking,

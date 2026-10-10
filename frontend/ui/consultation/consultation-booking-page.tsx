@@ -1,6 +1,6 @@
 'use client';
 
-import { LogIn } from 'lucide-react';
+import { CloudOff, LogIn } from 'lucide-react';
 import { type ConsultationPackage } from '@/shared/contracts/consultation';
 import { useBookingFlow } from '@/frontend/state/consultation/use-booking-flow';
 import { BookingSummary } from '@/frontend/ui/consultation/booking-summary';
@@ -38,6 +38,23 @@ export function ConsultationBookingPage({
               >
                 تسجيل الدُّخول
               </a>
+            </p>
+          </div>
+        )}
+
+        {/* Consultation Booking reserves a scarce Availability Slot against a
+            live conflict check, so it stays online-only and never queues
+            (ADR-0031). Offline, it says so plainly rather than failing. */}
+        {!flow.online && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-start gap-3 rounded-2xl border border-amber-500/40 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-950 dark:text-amber-200"
+          >
+            <CloudOff className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <p>
+              الحجز يحتاج اتصالًا بالإنترنت لتأكيد الموعد المتاح. يمكنك الاطِّلاع على الباقات
+              والمواعيد، ثم إتمام الحجز عند عودة الاتصال.
             </p>
           </div>
         )}

@@ -20,6 +20,17 @@ export function createRetainersRepository(supabase: SupabaseClient<Database>): R
       return data as Retainer;
     },
 
+    async getByClientId(clientId: string): Promise<Retainer | null> {
+      const { data, error } = await supabase
+        .from('retainers')
+        .select('*')
+        .eq('client_id', clientId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data as Retainer | null) ?? null;
+    },
+
     async list(query: RetainerListQuery): Promise<Paginated<Retainer>> {
       let request = supabase
         .from('retainers')
@@ -67,6 +78,7 @@ export function createRetainersRepository(supabase: SupabaseClient<Database>): R
           preferred_start: input.preferred_start,
           reference_code: input.reference_code,
           user_id: input.user_id,
+          client_id: input.client_id ?? null,
         })
         .select()
         .single();

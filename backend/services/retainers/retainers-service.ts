@@ -91,6 +91,14 @@ export class RetainerService {
   constructor(private readonly deps: RetainerServiceDeps) {}
 
   async submit(input: RetainerInput, context: SubmitRetainerContext): Promise<Retainer> {
+    // An Outbox replay carries a client-minted `client_id`; returning the row it
+    // already created keeps the replay idempotent (ADR-0029, ticket #169).
+    const clientId = input.client_id ?? null;
+    if (clientId) {
+      const existing = await this.deps.repository.getByClientId(clientId);
+      if (existing) return existing;
+    }
+
     const allowed = await this.deps.checkRateLimit(`retainer:${context.ip}`, IP_LIMIT, WINDOW_MS);
     if (!allowed) throw new RetainerRateLimitError();
 
@@ -182,6 +190,7 @@ export class RetainerService {
       needs: input.needs,
       preferred_start: toNullableText(input.preferred_start),
       user_id: userId,
+      client_id: input.client_id ?? null,
     };
 
     const { result } = await mintWithUniqueCode({

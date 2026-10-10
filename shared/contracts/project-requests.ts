@@ -171,9 +171,15 @@ export const ProjectRequestSchema = z.object({
   existing_url: z
     .string()
     .trim()
-    .max(500, 'الرَّابط طويل جدًّا')
+    .max(500, 'الرَّابط طويل جدًّا')
     .optional()
     .refine((value) => !value || z.url().safeParse(value).success, 'رابط غير صحيح'),
+  /**
+   * Client-minted idempotency key for an Outbox replay (ADR-0029, ticket #169).
+   * Absent on the plain online path; present when the form queued the submit
+   * offline, so a replayed POST returns the row it already created.
+   */
+  client_id: z.string().uuid('مُعرَّف الطَّلب غير صحيح').optional(),
 });
 
 export type ProjectRequestInput = z.infer<typeof ProjectRequestSchema>;

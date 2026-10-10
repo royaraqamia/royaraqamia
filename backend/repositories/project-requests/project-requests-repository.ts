@@ -16,6 +16,8 @@ export interface ProjectRequestCreateInput {
   existing_url: string | null;
   reference_code: string;
   user_id: string | null;
+  /** Client-minted idempotency key for an Outbox replay (ADR-0029, ticket #169). */
+  client_id?: string | null;
 }
 
 export interface ProjectRequestListQuery {
@@ -44,6 +46,8 @@ export interface ProjectRequestEditFields {
 
 export interface ProjectRequestsReader {
   getById(id: string): Promise<ProjectRequest | null>;
+  /** The row a replayed Outbox submit already created, keyed on `client_id`. */
+  getByClientId(clientId: string): Promise<ProjectRequest | null>;
   list(query: ProjectRequestListQuery): Promise<Paginated<ProjectRequest>>;
   /** The requests attributed to one signed-in visitor, newest first. */
   listByUser(userId: string): Promise<ProjectRequest[]>;

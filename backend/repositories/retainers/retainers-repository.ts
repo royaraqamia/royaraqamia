@@ -11,6 +11,8 @@ export interface RetainerCreateInput {
   preferred_start: string | null;
   reference_code: string;
   user_id: string | null;
+  /** Client-minted idempotency key for an Outbox replay (ADR-0029, ticket #169). */
+  client_id?: string | null;
 }
 
 export interface RetainerListQuery {
@@ -49,6 +51,8 @@ export interface RetainerEditFields {
 
 export interface RetainersReader {
   getById(id: string): Promise<Retainer | null>;
+  /** The row a replayed Outbox submit already created, keyed on `client_id`. */
+  getByClientId(clientId: string): Promise<Retainer | null>;
   list(query: RetainerListQuery): Promise<Paginated<Retainer>>;
   /** The retainers attributed to one signed-in visitor, newest first. */
   listByUser(userId: string): Promise<Retainer[]>;

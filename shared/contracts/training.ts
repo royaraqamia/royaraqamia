@@ -182,6 +182,12 @@ export const TrainingApplicationSchema = z.object({
     .string('الرَّجاء اختيار الدُّفعة')
     .min(1, 'الرَّجاء اختيار الدُّفعة')
     .uuid('الدُّفعة المختارة غير صحيحة'),
+  /**
+   * Client-minted idempotency key for an Outbox replay (ADR-0029, ticket #169).
+   * Absent on the plain online path; present when the form queued the submit
+   * offline, so a replayed POST returns the row it already created.
+   */
+  client_id: z.string().uuid('مُعرَّف الطَّلب غير صحيح').optional(),
 });
 
 export type TrainingApplicationInput = z.infer<typeof TrainingApplicationSchema>;

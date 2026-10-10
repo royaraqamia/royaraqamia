@@ -25,6 +25,17 @@ export function createProjectRequestsRepository(
       return data as ProjectRequest;
     },
 
+    async getByClientId(clientId: string): Promise<ProjectRequest | null> {
+      const { data, error } = await supabase
+        .from('project_requests')
+        .select('*')
+        .eq('client_id', clientId)
+        .maybeSingle();
+
+      if (error) throw error;
+      return (data as ProjectRequest | null) ?? null;
+    },
+
     async list(query: ProjectRequestListQuery): Promise<Paginated<ProjectRequest>> {
       let request = supabase
         .from('project_requests')
@@ -73,6 +84,7 @@ export function createProjectRequestsRepository(
           existing_url: input.existing_url,
           reference_code: input.reference_code,
           user_id: input.user_id,
+          client_id: input.client_id ?? null,
         })
         .select()
         .single();

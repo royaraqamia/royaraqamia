@@ -31,6 +31,27 @@ export type SubmissionKind = keyof typeof SUBMISSION_RECEIPT_KEYS;
  */
 export const RECEIPT_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
+/**
+ * Fired on `window` whenever a receipt is written, so a form that queued a
+ * submission offline can flip to its confirmation the instant the Outbox replay
+ * lands the Reference Code (ticket #169), without polling or reloading.
+ */
+export const SUBMISSION_RECEIPT_EVENT = 'rr:submission-receipt';
+
+interface SubmissionReceiptEventDetail {
+  kind: SubmissionKind;
+  code: string;
+}
+
+function emitSubmissionReceipt(kind: SubmissionKind, code: string): void {
+  if (typeof window === 'undefined') return;
+  window.dispatchEvent(
+    new CustomEvent<SubmissionReceiptEventDetail>(SUBMISSION_RECEIPT_EVENT, {
+      detail: { kind, code },
+    })
+  );
+}
+
 interface StoredReceipt {
   code: string;
   at: number;
@@ -83,6 +104,7 @@ export function writeSubmissionReceipt(kind: SubmissionKind, referenceCode: stri
   } catch {
     // A full or unavailable store only costs the persistence fallback, never the submit.
   }
+  emitSubmissionReceipt(kind, referenceCode);
 }
 
 export function clearSubmissionReceipt(kind: SubmissionKind): void {
@@ -111,6 +133,15 @@ export function useSubmissionReceipt(kind: SubmissionKind): {
 
   useEffect(() => {
     setReferenceCode(readSubmissionReceipt(kind));
+
+    // A queued submission is delivered by the Outbox Sync Engine after this hook
+    // mounted; the transport writes the receipt and announces it here.
+    const onReceipt = (event: Event) => {
+      const detail = (event as CustomEvent<SubmissionReceiptEventDetail>).detail;
+      if (detail?.kind === kind) setReferenceCode(detail.code);
+    };
+    window.addEventListener(SUBMISSION_RECEIPT_EVENT, onReceipt);
+    return () => window.removeEventListener(SUBMISSION_RECEIPT_EVENT, onReceipt);
   }, [kind]);
 
   return {

@@ -70,6 +70,7 @@ function makeService(overrides: Partial<ProjectRequestServiceDeps> = {}) {
   const repository = {
     create: vi.fn(async (input: ProjectRequestCreateInput) => toRow(input)),
     getById: vi.fn(async (): Promise<ProjectRequest | null> => makeRow()),
+    getByClientId: vi.fn(async (): Promise<ProjectRequest | null> => null),
     list: vi.fn(async () => ({ data: [makeRow()], total: 1 })),
     listByUser: vi.fn(async (): Promise<ProjectRequest[]> => [makeRow({ user_id: 'user-9' })]),
     updateStatus: vi.fn(async (id: string, status: ProjectRequestStatus, notes: string | null) =>
@@ -126,6 +127,23 @@ describe('ProjectRequestService.submit', () => {
     await service.submit(VALID_INPUT, { ip: '1.1.1.1' });
 
     expect(repository.create).toHaveBeenCalledWith(expect.objectContaining({ user_id: null }));
+  });
+
+  it('returns the row an Outbox replay already created without re-notifying', async () => {
+    const existing = makeRow();
+    const { service, repository, notifyAdmins, checkRateLimit } = makeService();
+    repository.getByClientId.mockResolvedValue(existing);
+
+    const created = await service.submit(
+      { ...VALID_INPUT, client_id: '11111111-1111-7111-8111-111111111111' },
+      { ip: '1.1.1.1' }
+    );
+
+    expect(created).toBe(existing);
+    expect(repository.getByClientId).toHaveBeenCalledWith('11111111-1111-7111-8111-111111111111');
+    expect(repository.create).not.toHaveBeenCalled();
+    expect(checkRateLimit).not.toHaveBeenCalled();
+    expect(notifyAdmins).not.toHaveBeenCalled();
   });
 
   it('stores blank optional fields as NULL rather than empty strings', async () => {

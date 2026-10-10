@@ -5,12 +5,14 @@ import type {
   RetainerStatus,
 } from '@/shared/contracts/retainers';
 import type { Paginated } from '@/shared/pagination';
-import { request } from '@/frontend/transport/http';
+import { ApiError, request } from '@/frontend/transport/http';
 
 export interface SubmitRetainerResult {
   success: boolean;
   referenceCode?: string;
   error?: string;
+  /** HTTP status when the server answered; absent on a network failure. */
+  status?: number;
 }
 
 /**
@@ -25,7 +27,13 @@ export async function submitRetainer(input: RetainerInput): Promise<SubmitRetain
       body: JSON.stringify(input),
     });
   } catch (error) {
-    return error instanceof Error ? { success: false, error: error.message } : { success: false };
+    return error instanceof Error
+      ? {
+          success: false,
+          error: error.message,
+          status: error instanceof ApiError ? error.status : undefined,
+        }
+      : { success: false };
   }
 }
 

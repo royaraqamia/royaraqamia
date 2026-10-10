@@ -7,8 +7,10 @@ import type { z } from 'zod';
 
 import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizard';
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
-import { getOpenTrainingCohorts, submitTrainingApplication } from '@/frontend/api/training';
+import { LeadQueuedPanel } from '@/frontend/ui/shared/lead-queued-panel';
+import { getOpenTrainingCohorts } from '@/frontend/api/training';
 import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
+import { useLeadSubmission } from '@/frontend/state/leads/use-lead-submission';
 import {
   TRAINING_COURSE,
   TrainingApplicationSchema,
@@ -58,6 +60,9 @@ export function TrainingApplicationWizard({
   // Remembered across a refresh, so a reload still shows the reference code.
   const receipt = useSubmissionReceipt('training');
   const referenceCode = receipt.referenceCode;
+  // Offline-first: a submission made with the network off is queued and replayed.
+  const lead = useLeadSubmission();
+  const [queued, setQueued] = useState(false);
   const [cohorts, setCohorts] = useState<TrainingCohort[]>([]);
 
   const {
@@ -111,21 +116,28 @@ export function TrainingApplicationWizard({
   const onSubmit = handleSubmit(async (formValues) => {
     setSubmitError(null);
 
-    const response = await submitTrainingApplication({
-      course_slug: formValues.course_slug,
-      full_name: formValues.full_name,
-      phone_whatsapp: formValues.phone_whatsapp,
-      goal: formValues.goal,
-      cohort_id: formValues.cohort_id,
+    const outcome = await lead.submit({
+      kind: 'training',
+      value: {
+        course_slug: formValues.course_slug,
+        full_name: formValues.full_name,
+        phone_whatsapp: formValues.phone_whatsapp,
+        goal: formValues.goal,
+        cohort_id: formValues.cohort_id,
+      },
     });
 
-    if (response.success && response.referenceCode) {
-      receipt.remember(response.referenceCode);
+    if (outcome.status === 'sent') {
+      receipt.remember(outcome.referenceCode);
       onSubmitted?.();
       return;
     }
-
-    setSubmitError(response.error ?? 'حدث خطأ غير متوقَّع. الرَّجاء المحاولة مرَّة أخرى.');
+    if (outcome.status === 'queued') {
+      setQueued(true);
+      onSubmitted?.();
+      return;
+    }
+    setSubmitError(outcome.error);
   });
 
   if (referenceCode) {
@@ -133,8 +145,26 @@ export function TrainingApplicationWizard({
       <LeadSuccessPanel
         referenceCode={referenceCode}
         isAuthenticated={isAuthenticated}
-        onStartOver={receipt.dismiss}
+        onStartOver={() => {
+          receipt.dismiss();
+          setQueued(false);
+        }}
         message="احتفظ برقم الطَّلب أدناه — سنُراجع طلبك ونتواصل معك خلال 48 ساعة عبر واتساب لتأكيد التحاقك بالدَّورة."
+      />
+    );
+  }
+
+  if (queued || lead.pendingKinds.has('training')) {
+    return (
+      <LeadQueuedPanel
+        message="أنت غير متَّصل بالإنترنت حاليًّا. سنُرسِل طلبك تلقائيًّا عند عودة الاتصال، وسيظهر رقم الطَّلب هنا فور وصوله."
+        status={{
+          syncing: lead.syncing,
+          pending: lead.pending,
+          failed: lead.failed,
+          online: lead.online,
+          retry: lead.retry,
+        }}
       />
     );
   }

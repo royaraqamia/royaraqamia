@@ -24,7 +24,7 @@ export function BookingWizard({ flow }: BookingWizardProps) {
       ariaLabel="خطوات الحجز"
       error={flow.error}
       submitting={flow.submitting}
-      canProceed={flow.canProceed}
+      canProceed={flow.canProceed && flow.online}
       confirmLabel="تأكيد طلب الحجز"
       submittingLabel="جاري إرسال الطَّلب..."
       onBack={flow.back}

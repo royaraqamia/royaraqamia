@@ -8,12 +8,14 @@ import type {
   TrainingReleaseTargetStatus,
 } from '@/shared/contracts/training';
 import type { Paginated } from '@/shared/pagination';
-import { request } from '@/frontend/transport/http';
+import { ApiError, request } from '@/frontend/transport/http';
 
 export interface SubmitTrainingApplicationResult {
   success: boolean;
   referenceCode?: string;
   error?: string;
+  /** HTTP status when the server answered; absent on a network failure. */
+  status?: number;
 }
 
 export interface TrainingApplicationActionResult {
@@ -39,6 +41,8 @@ export async function submitTrainingApplication(input: {
   phone_whatsapp: string;
   goal?: string;
   cohort_id: string;
+  /** Client-minted idempotency key for an Outbox replay (ticket #169). */
+  client_id?: string;
 }): Promise<SubmitTrainingApplicationResult> {
   try {
     return await request<SubmitTrainingApplicationResult>('/api/training/applications', {
@@ -46,7 +50,13 @@ export async function submitTrainingApplication(input: {
       body: JSON.stringify(input),
     });
   } catch (error) {
-    return error instanceof Error ? { success: false, error: error.message } : { success: false };
+    return error instanceof Error
+      ? {
+          success: false,
+          error: error.message,
+          status: error instanceof ApiError ? error.status : undefined,
+        }
+      : { success: false };
   }
 }
 

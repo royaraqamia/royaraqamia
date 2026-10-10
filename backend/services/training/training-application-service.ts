@@ -180,6 +180,15 @@ export class TrainingApplicationService {
   ): Promise<TrainingApplication> {
     if (!this.deps.isApplicationOpen()) throw new TrainingApplicationClosedError();
 
+    // An Outbox replay carries a client-minted `client_id`. Returning the row it
+    // already created makes the replay idempotent and hands back the same
+    // Reference Code without re-notifying admins or spending rate-limit budget.
+    const clientId = input.client_id ?? null;
+    if (clientId) {
+      const existing = await this.deps.repository.getByClientId(clientId);
+      if (existing) return existing;
+    }
+
     const ipAllowed = await this.deps.checkRateLimit(
       `training-apply:${context.ip}`,
       IP_LIMIT,
@@ -321,6 +330,7 @@ export class TrainingApplicationService {
       goal: toNullableText(input.goal),
       cohort_id: input.cohort_id ?? null,
       user_id: userId,
+      client_id: input.client_id ?? null,
     };
 
     const { result } = await mintWithUniqueCode({

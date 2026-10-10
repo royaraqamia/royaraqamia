@@ -1102,6 +1102,7 @@ export type Database = {
       project_requests: {
         Row: {
           budget_range: string | null;
+          client_id: string | null;
           created_at: string;
           description: string;
           edited_at: string | null;
@@ -1120,6 +1121,7 @@ export type Database = {
         };
         Insert: {
           budget_range?: string | null;
+          client_id?: string | null;
           created_at?: string;
           description: string;
           edited_at?: string | null;
@@ -1138,6 +1140,7 @@ export type Database = {
         };
         Update: {
           budget_range?: string | null;
+          client_id?: string | null;
           created_at?: string;
           description?: string;
           edited_at?: string | null;
@@ -1327,6 +1330,7 @@ export type Database = {
       };
       retainers: {
         Row: {
+          client_id: string | null;
           company: string | null;
           created_at: string;
           current_projects: string;
@@ -1346,6 +1350,7 @@ export type Database = {
           user_id: string | null;
         };
         Insert: {
+          client_id?: string | null;
           company?: string | null;
           created_at?: string;
           current_projects: string;
@@ -1365,6 +1370,7 @@ export type Database = {
           user_id?: string | null;
         };
         Update: {
+          client_id?: string | null;
           company?: string | null;
           created_at?: string;
           current_projects?: string;
@@ -1426,6 +1432,7 @@ export type Database = {
       };
       training_applications: {
         Row: {
+          client_id: string | null;
           cohort_id: string | null;
           course_slug: string;
           created_at: string;
@@ -1441,6 +1448,7 @@ export type Database = {
           user_id: string | null;
         };
         Insert: {
+          client_id?: string | null;
           cohort_id?: string | null;
           course_slug: string;
           created_at?: string;
@@ -1456,6 +1464,7 @@ export type Database = {
           user_id?: string | null;
         };
         Update: {
+          client_id?: string | null;
           cohort_id?: string | null;
           course_slug?: string;
           created_at?: string;

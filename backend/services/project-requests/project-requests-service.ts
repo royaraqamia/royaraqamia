@@ -96,6 +96,14 @@ export class ProjectRequestService {
     input: ProjectRequestInput,
     context: SubmitProjectRequestContext
   ): Promise<ProjectRequest> {
+    // An Outbox replay carries a client-minted `client_id`; returning the row it
+    // already created keeps the replay idempotent (ADR-0029, ticket #169).
+    const clientId = input.client_id ?? null;
+    if (clientId) {
+      const existing = await this.deps.repository.getByClientId(clientId);
+      if (existing) return existing;
+    }
+
     const allowed = await this.deps.checkRateLimit(
       `project-request:${context.ip}`,
       IP_LIMIT,
@@ -180,6 +188,7 @@ export class ProjectRequestService {
       timeline: toNullableText(input.timeline),
       existing_url: toNullableText(input.existing_url),
       user_id: userId,
+      client_id: input.client_id ?? null,
     };
 
     const { result } = await mintWithUniqueCode({

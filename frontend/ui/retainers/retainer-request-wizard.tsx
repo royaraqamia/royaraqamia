@@ -7,8 +7,9 @@ import type { z } from 'zod';
 
 import { FormWizard, type WizardStepMeta } from '@/frontend/ui/shared/form-wizard';
 import { LeadSuccessPanel } from '@/frontend/ui/shared/lead-success-panel';
-import { submitRetainer } from '@/frontend/api/retainers';
+import { LeadQueuedPanel } from '@/frontend/ui/shared/lead-queued-panel';
 import { useSubmissionReceipt } from '@/frontend/shared/submission-receipt';
+import { useLeadSubmission } from '@/frontend/state/leads/use-lead-submission';
 import { RetainerSchema } from '@/shared/contracts/retainers';
 import { RetainerProjectsStep } from './steps/retainer-projects-step';
 import { RetainerNeedsStep } from './steps/retainer-needs-step';
@@ -62,6 +63,9 @@ export function RetainerRequestWizard({
   // Remembered across a refresh, so a reload still shows the reference code.
   const receipt = useSubmissionReceipt('retainer');
   const referenceCode = receipt.referenceCode;
+  // Offline-first: a submission made with the network off is queued and replayed.
+  const lead = useLeadSubmission();
+  const [queued, setQueued] = useState(false);
 
   const {
     control,
@@ -104,23 +108,30 @@ export function RetainerRequestWizard({
   const onSubmit = handleSubmit(async (formValues) => {
     setSubmitError(null);
 
-    const response = await submitRetainer({
-      full_name: formValues.full_name,
-      phone_whatsapp: formValues.phone_whatsapp,
-      email: formValues.email,
-      company: formValues.company,
-      current_projects: formValues.current_projects,
-      needs: formValues.needs,
-      preferred_start: formValues.preferred_start,
+    const outcome = await lead.submit({
+      kind: 'retainer',
+      value: {
+        full_name: formValues.full_name,
+        phone_whatsapp: formValues.phone_whatsapp,
+        email: formValues.email,
+        company: formValues.company,
+        current_projects: formValues.current_projects,
+        needs: formValues.needs,
+        preferred_start: formValues.preferred_start,
+      },
     });
 
-    if (response.success && response.referenceCode) {
-      receipt.remember(response.referenceCode);
+    if (outcome.status === 'sent') {
+      receipt.remember(outcome.referenceCode);
       onSubmitted?.();
       return;
     }
-
-    setSubmitError(response.error ?? 'حدث خطأ غير متوقَّع. الرَّجاء المحاولة مرَّة أخرى.');
+    if (outcome.status === 'queued') {
+      setQueued(true);
+      onSubmitted?.();
+      return;
+    }
+    setSubmitError(outcome.error);
   });
 
   if (referenceCode) {
@@ -128,8 +139,26 @@ export function RetainerRequestWizard({
       <LeadSuccessPanel
         referenceCode={referenceCode}
         isAuthenticated={isAuthenticated}
-        onStartOver={receipt.dismiss}
+        onStartOver={() => {
+          receipt.dismiss();
+          setQueued(false);
+        }}
         message="احتفظ برقم الطَّلب أدناه — سنُراجع طلبك ونتواصل معك عبر واتساب خلال 48 ساعة إن شاء الله."
+      />
+    );
+  }
+
+  if (queued || lead.pendingKinds.has('retainer')) {
+    return (
+      <LeadQueuedPanel
+        message="أنت غير متَّصل بالإنترنت حاليًّا. سنُرسِل طلبك تلقائيًّا عند عودة الاتصال، وسيظهر رقم الطَّلب هنا فور وصوله."
+        status={{
+          syncing: lead.syncing,
+          pending: lead.pending,
+          failed: lead.failed,
+          online: lead.online,
+          retry: lead.retry,
+        }}
       />
     );
   }

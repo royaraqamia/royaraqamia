@@ -171,6 +171,12 @@ export const RetainerSchema = z.object({
     .optional()
     .refine((value) => !value || isIsoDate(value), 'تاريخ غير صحيح')
     .refine((value) => !value || isTodayOrLater(value), 'تاريخ البدء يجب أن يكون اليوم أو بعده'),
+  /**
+   * Client-minted idempotency key for an Outbox replay (ADR-0029, ticket #169).
+   * Absent on the plain online path; present when the form queued the submit
+   * offline, so a replayed POST returns the row it already created.
+   */
+  client_id: z.string().uuid('مُعرَّف الطَّلب غير صحيح').optional(),
 });
 
 export type RetainerInput = z.infer<typeof RetainerSchema>;

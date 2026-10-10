@@ -17,6 +17,8 @@ export interface TrainingApplicationCreateInput {
   cohort_id: string | null;
   reference_code: string;
   user_id: string | null;
+  /** Client-minted idempotency key for an Outbox replay (ADR-0029, ticket #169). */
+  client_id?: string | null;
 }
 
 export interface TrainingApplicationListQuery {
@@ -40,6 +42,8 @@ export interface TrainingApplicationEditFields {
 export interface TrainingApplicationsReader {
   getById(id: string): Promise<TrainingApplication | null>;
   getByReferenceCode(referenceCode: string): Promise<TrainingApplication | null>;
+  /** The row a replayed Outbox submit already created, keyed on `client_id`. */
+  getByClientId(clientId: string): Promise<TrainingApplication | null>;
   list(query: TrainingApplicationListQuery): Promise<Paginated<TrainingApplication>>;
   /** The applications attributed to one signed-in visitor, newest first. */
   listByUser(userId: string): Promise<TrainingApplication[]>;
