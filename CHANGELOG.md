@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.75.1] - 2026-10-10
+
+### Fixed
+- reject slash-backslash prefixes in safeRedirect
+- allow every DOWNLOAD_FORMAT in download_jobs check
+
 ## [1.75.0] - 2026-10-10
 
 ### Changed
