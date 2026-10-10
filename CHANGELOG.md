@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.72.0] - 2026-10-10
+
+### Changed
+- document the issue automation triggers
+- schedule the issue planner dispatch from pg_cron
+- trigger the issue agent punctually and once a day
+
+### Added
+- render and write from a durable local store (#163)
+
 ## [1.71.0] - 2026-10-10
 
 ### Changed
