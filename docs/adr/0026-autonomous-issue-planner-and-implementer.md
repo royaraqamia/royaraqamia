@@ -39,3 +39,11 @@ idempotently by the workflows. Because the default `GITHUB_TOKEN` cannot trigger
 the daily schedule is load-bearing, not a convenience. The implementer treats issue text as its spec, so the
 `ready-for-agent` label is the trust boundary: only the planner and maintainers apply it, and a
 stranger cannot hand the implementer instructions by opening an issue.
+
+## Revision
+
+ADR 0032 replaces the fixed three-hour offset and the "load-bearing schedule" assumption: the
+planner is now triggered punctually by a pg_cron dispatch, the implementer is chained by
+`workflow_run`, both `schedule` triggers are backstops, a health workflow re-dispatches a missed
+day, and an 18-hour day-guard keeps the redundant triggers idempotent. The reasoning above about
+`GITHUB_TOKEN`-caused events no longer applies to the implementer's trigger.

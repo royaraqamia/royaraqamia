@@ -41,15 +41,16 @@ npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --
 
 ## Agent workflows
 
-Three `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
+Four `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
 
-| Workflow                | Trigger                                                    | What it does                                                                                                                                                                             |
-| ----------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `issue-planner.yml`     | daily 03:00 UTC + dispatch                                 | Scans the codebase, de-dupes against all open issues/PRs, files up to 5 fully-specified issues labelled `ready-for-agent` + `opencode:planned`                                           |
-| `issue-implementer.yml` | daily 06:00 UTC + dispatch                                 | Claims the oldest `ready-for-agent` issue that is unassigned and not in an open PR, implements it, opens a PR with `Closes #<n>`; on failure swaps `ready-for-agent` → `ready-for-human` |
-| `opencode.yml`          | `/oc <task>` or `/opencode <task>` comment on any issue/PR | Interactive: plans then implements the requested task and opens a PR (write access only)                                                                                                 |
+| Workflow                      | Trigger                                                       | What it does                                                                                                                                                                             |
+| ----------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `issue-planner.yml`           | pg_cron 03:00 UTC (primary), daily 03:00 UTC + dispatch       | Scans the codebase, de-dupes against all open issues/PRs, files up to 5 fully-specified issues labelled `ready-for-agent` + `opencode:planned`                                           |
+| `issue-implementer.yml`       | `workflow_run` on planner success, daily 06:00 UTC + dispatch | Claims the oldest `ready-for-agent` issue that is unassigned and not in an open PR, implements it, opens a PR with `Closes #<n>`; on failure swaps `ready-for-agent` → `ready-for-human` |
+| `issue-automation-health.yml` | daily 12:00 UTC + dispatch                                    | Dead-man's switch: re-dispatches a workflow whose heartbeat lapsed and opens/closes an `opencode:alert` issue                                                                            |
+| `opencode.yml`                | `/oc <task>` or `/opencode <task>` comment on any issue/PR    | Interactive: plans then implements the requested task and opens a PR (write access only)                                                                                                 |
 
-`ready-for-agent` is the trust boundary — only maintainers and the planner apply it. The workflows create the `opencode:planned`, `opencode:in-progress` and `opencode` labels themselves; agent PRs are tagged `opencode` and their titles normalized to Conventional Commits. Rationale: [ADR 0026](adr/0026-autonomous-issue-planner-and-implementer.md).
+`ready-for-agent` is the trust boundary — only maintainers and the planner apply it. The workflows create the `opencode:planned`, `opencode:in-progress`, `opencode` and `opencode:alert` labels themselves; agent PRs are tagged `opencode` and their titles normalized to Conventional Commits. Because GitHub's `schedule` is best-effort, the pipeline is driven by a punctual pg_cron dispatch (`dispatch_github_workflow`), chained through `workflow_run`, caught up by the health workflow, and guarded to one run a day. Rationale: [ADR 0026](adr/0026-autonomous-issue-planner-and-implementer.md) and [ADR 0032](adr/0032-scheduled-agent-automation-is-externally-triggered.md).
 
 ## Deployment
 

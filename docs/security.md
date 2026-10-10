@@ -16,6 +16,7 @@
 - `CRON_SECRET`
 - `E2E_TEST_PASSWORD`
 - `MCP_TOKEN_ENCRYPTION_KEY`
+- `github_dispatch_token` (Supabase Vault, not env — see runbook below)
 
 ## Security baseline
 
@@ -51,3 +52,30 @@ All MCP routes (`/mcp`, `/register`, `/token`, `/connect/consent`) are Upstash-l
 4. Suspected key compromise: perform steps 1–2 AND delete every row in `mcp_oauth_tokens`/
    `mcp_oauth_auth_codes`, then treat the incident as a user-session compromise: rotate
    Supabase secrets, audit admin actions, notify ADMIN_EMAILS users.
+
+## GitHub dispatch token (issue automation)
+
+The pg_cron dispatcher (`public.dispatch_github_workflow`, migration
+`20261010131500_dispatch_github_workflows.sql`, ADR 0032) wakes the agent workflows by
+calling the GitHub Actions dispatch API. It authenticates with a fine-grained PAT stored in
+the Supabase Vault as `github_dispatch_token` (repo slug in `github_dispatch_repo`), never in
+an env var or the repository. If the secret is absent the function no-ops safely and the
+pipeline falls back to GitHub's own schedule plus the health monitor.
+
+Blast radius is bounded to **starting** workflows on this one repository: a workflow a dispatch
+starts still acts under its own scoped `GITHUB_TOKEN`, and the per-workflow day-guard and
+concurrency groups bound how much a single dispatch can do. The dispatcher holds no repository
+contents power of its own. The credential is ideally a **dedicated** fine-grained PAT scoped to
+this repository with only `Actions: write`; if the stored PAT is instead the repo automation
+token, a Vault compromise equals that broader token's scope — rotate to a dedicated token, and
+treat any `github_dispatch_token` leak as a leak of whatever PAT is stored.
+
+### Runbook: rotating `github_dispatch_token`
+
+1. Create a new fine-grained PAT scoped to `royaraqamia/royaraqamia` with only `Actions: write`.
+2. Update the Vault secret:
+   `select vault.update_secret((select id from vault.secrets where name = 'github_dispatch_token'), '<new-pat>');`
+   (use `vault.create_secret` if it was never provisioned).
+3. The next pg_cron run picks it up; nothing to redeploy.
+4. Suspected compromise: rotate as above, then review the repository's Actions run log for
+   unexpected `workflow_dispatch` runs and treat it as a trigger-abuse incident.
