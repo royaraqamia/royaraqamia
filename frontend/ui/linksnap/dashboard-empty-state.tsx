@@ -7,7 +7,7 @@ export function DashboardEmptyState() {
     <EmptyState
       icon={Link2}
       variant="card"
-      title="لم تقم بإنشاء أي روابط مختصرة بعد."
+      title="لم تقم بإنشاء أي روابط مختصَرة بعد."
       description="قم باختصار رابط أعلاه لبدء تتبع النقرات!"
       action={
         <Link

@@ -98,7 +98,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
           <Link2 aria-hidden="true" className="w-5 h-5 text-primary" />
-          <span>روابطك المختصرة</span>
+          <span>روابطك المختصَرة</span>
         </h2>
         <button
           onClick={fetchLinks}

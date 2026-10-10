@@ -167,7 +167,7 @@ export function AdminLinksDirectory({
 
       <div className="border-border/50 flex flex-col justify-between gap-3 border-b p-4 sm:flex-row sm:items-center sm:p-6">
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-          <h3 className="text-foreground text-sm font-bold">دليل الروابط المختصرة الكامل</h3>
+          <h3 className="text-foreground text-sm font-bold">دليل الروابط المختصَرة الكامل</h3>
           <Badge variant="outline">مزامنة قاعدة البيانات المباشرة</Badge>
         </div>
         <div className="relative w-full sm:w-64">
@@ -189,7 +189,7 @@ export function AdminLinksDirectory({
 
       {links.length === 0 ? (
         <div className="py-12 sm:py-16 text-center text-muted-foreground text-xs font-bold">
-          {searchQuery ? 'لا توجد نتائج تطابق بحثك.' : 'لا توجد روابط مختصرة متاحة في الدليل.'}
+          {searchQuery ? 'لا توجد نتائج تطابق بحثك.' : 'لا توجد روابط مختصَرة متاحة في الدليل.'}
         </div>
       ) : (
         <>

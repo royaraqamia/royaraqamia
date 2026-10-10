@@ -20,7 +20,7 @@ export function useLinks(token: string, refreshTrigger: number) {
     try {
       setLinks(await listLinks(token));
     } catch (err: unknown) {
-      setError((err instanceof Error && err.message) || 'فشل في تحميل روابطك المختصرة.');
+      setError((err instanceof Error && err.message) || 'فشل في تحميل روابطك المختصَرة.');
     } finally {
       setLoading(false);
     }
