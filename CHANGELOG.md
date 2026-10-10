@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.75.2] - 2026-10-10
+
+### Fixed
+- keep the first variant source's value in the composite provider
+
 ## [1.75.1] - 2026-10-10
 
 ### Fixed
