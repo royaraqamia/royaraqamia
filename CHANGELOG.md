@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.76.0] - 2026-10-10
+
+### Added
+- queue lead form submissions offline through the Outbox (#169)
+- offline-first links through the Local Store and Outbox (#167)
+
+### Fixed
+- refuse leaving enrolled through the manual status update path
+
 ## [1.75.2] - 2026-10-10
 
 ### Fixed
