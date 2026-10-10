@@ -28,9 +28,7 @@ import { CalendarGrid } from '@/frontend/ui/habitflow/components/calendar-grid';
 import { AddHabitModal } from '@/frontend/ui/habitflow/components/add-habit-modal';
 import { EditHabitModal } from '@/frontend/ui/habitflow/components/edit-habit-modal';
 import { NotesDialog } from '@/frontend/ui/habitflow/components/notes-dialog';
-import { HabitOnboarding } from '@/frontend/ui/habitflow/components/habit-onboarding';
 import { SyncStatusPill } from '@/frontend/ui/habitflow/components/sync-status-pill';
-import type { HabitTemplate } from '@/frontend/shared/habitflow/habit-templates';
 import { pluralize, type PluralForms } from '@/frontend/shared/habitflow/calendar-format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
@@ -298,45 +296,22 @@ export function DashboardShell({
                 </Button>
               </div>
 
-              {habits.length === 0 ? (
-                <m.div
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  <HabitOnboarding
-                    onTemplateSelect={(template: HabitTemplate) => {
-                      setHabitName(template.name);
-                      setHabitFrequency(template.frequency);
-                      setFormError('');
-                      setIsAddModalOpen(true);
-                    }}
-                    onCreateBlank={() => {
-                      setHabitName('');
-                      setHabitFrequency('daily');
-                      setFormError('');
-                      setIsAddModalOpen(true);
-                    }}
+              <div className="flex flex-col gap-4">
+                {habits.map((habit) => (
+                  <HabitCard
+                    key={habit.id}
+                    habit={habit}
+                    logs={logs}
+                    activeDate={activeDate}
+                    onToggle={handleToggleLog}
+                    onSkip={handleSkipHabit}
+                    onNote={setNoteHabitId}
+                    onEdit={openEditModal}
+                    togglingHabitId={togglingHabitId}
+                    pending={pendingHabitIds.has(habit.id)}
                   />
-                </m.div>
-              ) : (
-                <div className="flex flex-col gap-4">
-                  {habits.map((habit) => (
-                    <HabitCard
-                      key={habit.id}
-                      habit={habit}
-                      logs={logs}
-                      activeDate={activeDate}
-                      onToggle={handleToggleLog}
-                      onSkip={handleSkipHabit}
-                      onNote={setNoteHabitId}
-                      onEdit={openEditModal}
-                      togglingHabitId={togglingHabitId}
-                      pending={pendingHabitIds.has(habit.id)}
-                    />
-                  ))}
-                </div>
-              )}
+                ))}
+              </div>
             </section>
 
             {/* Calendar Grid Column */}
