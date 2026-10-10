@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { Navbar } from '@/frontend/ui/Navbar';
+import { GuestModeBanner } from '@/frontend/ui/app-shell/guest-mode-banner';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -23,6 +24,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         tabIndex={-1}
         className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 lg:py-10 focus:outline-none"
       >
+        <GuestModeBanner />
         <div className="w-full h-full transition-safe duration-300">{children}</div>
       </main>
     </div>
