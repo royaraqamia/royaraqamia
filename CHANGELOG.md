@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.70.1] - 2026-10-10
+
+### Changed
+- serve apps at /<product> and drop landing pages
+
 ## [1.70.0] - 2026-10-09
 
 ### Changed
