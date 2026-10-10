@@ -63,10 +63,10 @@ export function createCompositeVariantProvider(
         const existing = byCode.get(quote.code);
         byCode.set(quote.code, {
           code: quote.code,
-          official: quote.official ?? existing?.official,
-          parallel: quote.parallel ?? existing?.parallel,
-          markets: quote.markets ? { ...existing?.markets, ...quote.markets } : existing?.markets,
-          date: quote.date || existing?.date || '',
+          official: existing?.official ?? quote.official,
+          parallel: existing?.parallel ?? quote.parallel,
+          markets: quote.markets ? { ...quote.markets, ...existing?.markets } : existing?.markets,
+          date: existing?.date || quote.date || '',
         });
       }
       return [...byCode.values()];

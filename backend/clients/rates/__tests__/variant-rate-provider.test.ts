@@ -43,6 +43,59 @@ describe('createCompositeVariantProvider', () => {
     expect(result[0]?.markets).toEqual({ sanaa: 531, aden: 1563 });
   });
 
+  it('keeps the first source value when a later source also returns one', async () => {
+    const composite = createCompositeVariantProvider([
+      provider('primary', async () => [
+        { code: 'SYP', official: 122, parallel: 138, date: '2026-10-05' },
+      ]),
+      provider('secondary', async () => [
+        { code: 'SYP', official: 999, parallel: 1000, date: '2026-10-06' },
+      ]),
+    ]);
+
+    const result = await composite.fetchVariants();
+
+    expect(result[0]).toMatchObject({
+      code: 'SYP',
+      official: 122,
+      parallel: 138,
+      date: '2026-10-05',
+    });
+  });
+
+  it('uses a later source value only when the first source omitted that field', async () => {
+    const composite = createCompositeVariantProvider([
+      provider('primary', async () => [{ code: 'IQD', official: 1310, date: '' }]),
+      provider('secondary', async () => [
+        { code: 'IQD', official: 999, parallel: 1596, date: '2026-10-06' },
+      ]),
+    ]);
+
+    const result = await composite.fetchVariants();
+
+    expect(result[0]).toMatchObject({
+      code: 'IQD',
+      official: 1310,
+      parallel: 1596,
+      date: '2026-10-06',
+    });
+  });
+
+  it('keeps the first source value for a shared market and fills secondary-only markets', async () => {
+    const composite = createCompositeVariantProvider([
+      provider('primary', async () => [
+        { code: 'YER', parallel: 531, markets: { sanaa: 531, aden: 1563 }, date: '' },
+      ]),
+      provider('secondary', async () => [
+        { code: 'YER', parallel: 600, markets: { sanaa: 999, taiz: 700 }, date: '' },
+      ]),
+    ]);
+
+    const result = await composite.fetchVariants();
+
+    expect(result[0]?.markets).toEqual({ sanaa: 531, aden: 1563, taiz: 700 });
+  });
+
   it('drops a failing source and reports it without losing the others', async () => {
     const onFallback = vi.fn();
     const composite = createCompositeVariantProvider(
