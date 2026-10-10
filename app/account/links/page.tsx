@@ -5,7 +5,7 @@ import { MyLinksView } from '@/frontend/ui/account/my-links-view';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
-  title: 'روابطي المختصَرة',
+  title: 'الرَّوابط المختصَرة',
   description: 'روابطك المختصَرة في LinkSnap مع تحليلات الزِّيارات لكلِّ رابط.',
 };
 
@@ -16,7 +16,7 @@ export default async function AccountLinksPage() {
     <div className="space-y-6">
       <div className="text-center flex flex-col items-center">
         <SectionTitle as="h1">
-          <SectionTitleHighlight>روابطي المختصَرة</SectionTitleHighlight>
+          <SectionTitleHighlight>الرَّوابط المختصَرة</SectionTitleHighlight>
         </SectionTitle>
       </div>
 
