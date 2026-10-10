@@ -224,6 +224,63 @@ of whether the feed is healthy, and the page falls back to the last good Snapsho
 fails.
 _Avoid_: Sync log, job run
 
+### Offline
+
+**Offline-first**:
+An application property: every feature that logically can work without a network does, and the
+network is treated as an optional, asynchronous dependency rather than a precondition.
+_Avoid_: offline support, offline mode, PWA
+
+**Local-first**:
+The stronger property that a user's own records live in the Local Store and that store is the
+source of truth, with the server acting as a sync and backup peer.
+_Avoid_: client-first, device-first, sync-first
+
+**Owned data**:
+Records a single user authors and controls — habits, expenses, links, drafts — for which the
+device is authoritative. Distinct from Shared data.
+_Avoid_: user data, private data, local data
+
+**Shared data**:
+Read-oriented records the server owns and many users see — the Community feed, Exchange Rates,
+Certificates, Availability Slots. Cached for offline reading, but never written from the device.
+_Avoid_: public data, global data, remote data
+
+**Local Store**:
+The durable, per-identity IndexedDB database on a device that holds a user's Owned data and the
+Outbox. It survives service-worker updates and sign-out.
+_Avoid_: cache, local cache, offline DB
+
+**Outbox**:
+The ordered queue of a user's not-yet-synced writes, held inside the Local Store, replayed to the
+server until each is acknowledged.
+_Avoid_: write queue, sync queue, pending writes
+
+**Claim**:
+The act of attaching a guest's Local Store records to an account on first sign-in, so work done
+before signing in is not lost.
+_Avoid_: migration, merge, import
+
+**Connectivity state**:
+Whether the app is currently online, offline, or mid-sync, surfaced to the user rather than
+inferred from a failed request.
+_Avoid_: network status, online flag, connection
+
+**Pending change**:
+A write that is durable locally but not yet acknowledged by the server. Its count is shown to the
+user.
+_Avoid_: unsynced, dirty, queued change
+
+**Never-cache list**:
+The set of responses the service worker must never store — auth, mutations, admin, push and
+anything marked `no-store`/`private`.
+_Avoid_: blacklist, do-not-cache, exclusions
+
+**Tombstone**:
+A soft delete (`deleted_at`) that records a removal so it can sync to other devices without losing
+the row's identity.
+_Avoid_: soft delete, deleted flag, marker
+
 ### Shared
 
 **Admin**:
