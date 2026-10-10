@@ -1,9 +1,8 @@
 export const PROTECTED_ROUTES: Record<string, string> = {
-  '/linksnap/app': '/auth/login',
-  '/blogpress/app': '/auth/login',
-  '/blogpress/editor': '/auth/login',
-  '/habitflow/app': '/auth/login',
-  '/spendtrack/app': '/auth/login',
+  '/linksnap': '/auth/login',
+  '/blogpress': '/auth/login',
+  '/habitflow': '/auth/login',
+  '/spendtrack': '/auth/login',
   '/admin': '/auth/login',
 };
 

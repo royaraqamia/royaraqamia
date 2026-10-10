@@ -25,26 +25,6 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.9,
   },
   {
-    path: '/linksnap',
-    changeFrequency: 'monthly',
-    priority: 0.8,
-  },
-  {
-    path: '/blogpress',
-    changeFrequency: 'monthly',
-    priority: 0.8,
-  },
-  {
-    path: '/habitflow',
-    changeFrequency: 'monthly',
-    priority: 0.8,
-  },
-  {
-    path: '/spendtrack',
-    changeFrequency: 'monthly',
-    priority: 0.8,
-  },
-  {
     path: '/training/apply',
     changeFrequency: 'weekly',
     priority: 0.8,

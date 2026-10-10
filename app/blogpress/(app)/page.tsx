@@ -70,7 +70,7 @@ export default async function DashboardPage({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-8">
         <div className="flex items-center gap-2">
           <Link
-            href="/blogpress/app/calendar"
+            href="/blogpress/calendar"
             className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
           >
             <CalendarRange className="size-4" />

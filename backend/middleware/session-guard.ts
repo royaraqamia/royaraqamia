@@ -12,7 +12,7 @@ export const verifySession = cache(async () => {
   const { user } = await identity.resolveSession();
 
   if (!user) {
-    redirect('/auth/login?redirect=/blogpress/app');
+    redirect('/auth/login?redirect=/blogpress');
   }
 
   return { isAuth: true, userId: user.id, user };

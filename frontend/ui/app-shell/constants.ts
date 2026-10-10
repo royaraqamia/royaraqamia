@@ -71,7 +71,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
   {
     id: 'linksnap',
     label: 'إدارة الرَّوابط',
-    appPath: '/linksnap/app',
+    appPath: '/linksnap',
     landingPath: '/linksnap',
     icon: Link2,
     hidden: true,
@@ -79,7 +79,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
   {
     id: 'blogpress',
     label: 'إدارة المنشورات',
-    appPath: '/blogpress/app',
+    appPath: '/blogpress',
     landingPath: '/blogpress',
     icon: NotebookPen,
     hidden: true,
@@ -87,7 +87,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
   {
     id: 'habitflow',
     label: 'إدارة العادات',
-    appPath: '/habitflow/app',
+    appPath: '/habitflow',
     landingPath: '/habitflow',
     icon: CheckSquare,
     hidden: true,
@@ -95,7 +95,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
   {
     id: 'spendtrack',
     label: 'إدارة المصاريف',
-    appPath: '/spendtrack/app',
+    appPath: '/spendtrack',
     landingPath: '/spendtrack',
     icon: Wallet,
     hidden: true,

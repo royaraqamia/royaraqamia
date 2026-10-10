@@ -12,9 +12,7 @@ describe('authLink', () => {
   });
 
   it('appends a single redirect param', () => {
-    expect(authLink('/auth/signup', '/blogpress/app')).toBe(
-      '/auth/signup?redirect=%2Fblogpress%2Fapp'
-    );
+    expect(authLink('/auth/signup', '/blogpress')).toBe('/auth/signup?redirect=%2Fblogpress');
   });
 
   it('preserves extra params alongside redirect', () => {
@@ -38,7 +36,7 @@ describe('authLink', () => {
   it('rejects the same crafted redirects as the shared safe-redirect helper', async () => {
     const { isSafeRedirect } = await import('@/shared/safe-redirect');
     const crafted = [
-      '/spendtrack/app',
+      '/spendtrack',
       '//evil.com',
       '%2F%2Fevil.com',
       '%252F%252Fevil.com',

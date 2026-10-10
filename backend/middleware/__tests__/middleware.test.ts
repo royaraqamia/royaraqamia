@@ -178,8 +178,8 @@ describe('proxy', () => {
   it('redirects unauthenticated users from protected routes to login', async () => {
     mockGetSession.mockResolvedValue({ data: { session: null } });
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    mockNextUrl.pathname = '/linksnap/app';
-    mockRequest.url = 'https://royaraqamia.com/linksnap/app';
+    mockNextUrl.pathname = '/linksnap';
+    mockRequest.url = 'https://royaraqamia.com/linksnap';
 
     const { proxy } = await import('@/proxy');
     const result = await proxy(mockRequest as never);
@@ -299,13 +299,13 @@ describe('proxy', () => {
     mockGetSession.mockResolvedValue({ data: { session: { user: { id: 'u1' } } } });
     mockGetUser.mockResolvedValue({ data: { user: { id: 'u1' } } });
     mockNextUrl.pathname = '/auth/login';
-    mockNextUrl.searchParams = new URLSearchParams('redirect=/spendtrack/app');
-    mockRequest.url = 'https://royaraqamia.com/auth/login?redirect=%2Fspendtrack%2Fapp';
+    mockNextUrl.searchParams = new URLSearchParams('redirect=/spendtrack');
+    mockRequest.url = 'https://royaraqamia.com/auth/login?redirect=%2Fspendtrack';
 
     const { proxy } = await import('@/proxy');
     const result = await proxy(mockRequest as never);
     expect(result.status).toBe(307);
-    expect(result.url).toBe('https://royaraqamia.com/spendtrack/app');
+    expect(result.url).toBe('https://royaraqamia.com/spendtrack');
   });
 
   it('ignores an unsafe redirect param when bouncing logged-in users off auth pages', async () => {
@@ -325,7 +325,7 @@ describe('proxy', () => {
   it('rejects the same crafted redirects as the shared safe-redirect helper', async () => {
     const { isSafeRedirect } = await import('@/shared/safe-redirect');
     const crafted = [
-      '/spendtrack/app',
+      '/spendtrack',
       '//evil.com',
       '%2F%2Fevil.com',
       '%252F%252Fevil.com',

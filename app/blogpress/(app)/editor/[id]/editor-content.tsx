@@ -281,7 +281,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
             size="icon-sm"
             onClick={async () => {
               await saveAllFields();
-              router.push('/blogpress/app');
+              router.push('/blogpress');
             }}
             className="shrink-0 transition-smooth"
             aria-label="العودة إلى لوحة التحكم"

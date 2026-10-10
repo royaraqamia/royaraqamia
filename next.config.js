@@ -60,6 +60,25 @@ const nextConfig = {
   async redirects() {
     // The public blog was renamed to Community. Preserve inbound links and
     // SEO equity with a permanent redirect from the old paths.
+    //
+    // The product dashboards moved from `/<product>/app` to `/<product>` when
+    // their marketing landing pages were removed. Keep old bookmarks and
+    // indexed URLs working with a permanent redirect.
+    const productAppRedirects = ['linksnap', 'habitflow', 'blogpress', 'spendtrack'].flatMap(
+      (product) => [
+        {
+          source: `/${product}/app`,
+          destination: `/${product}`,
+          permanent: true,
+        },
+        {
+          source: `/${product}/app/:path*`,
+          destination: `/${product}/:path*`,
+          permanent: true,
+        },
+      ]
+    );
+
     return [
       {
         source: '/blog',
@@ -71,6 +90,7 @@ const nextConfig = {
         destination: '/community/:path*',
         permanent: true,
       },
+      ...productAppRedirects,
     ];
   },
   async rewrites() {

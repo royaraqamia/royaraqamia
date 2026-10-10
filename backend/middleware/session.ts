@@ -6,7 +6,17 @@ import { PROTECTED_ROUTES, AUTH_ROUTES } from '@/backend/config/routes';
 import { env } from '@/backend/config/env';
 import { isSafeRedirect } from '@/shared/safe-redirect';
 
+/**
+ * Public routes that live under a protected product prefix and must stay
+ * reachable without a session (e.g. the password-protected share unlock form
+ * at `/linksnap/unlock/:code`, reached via the `/unlock/:code` rewrite).
+ */
+const PUBLIC_ROUTE_PREFIXES = ['/linksnap/unlock'];
+
 function isProtectedRoute(pathname: string): boolean {
+  if (PUBLIC_ROUTE_PREFIXES.some((path) => pathname.startsWith(path))) {
+    return false;
+  }
   return Object.keys(PROTECTED_ROUTES).some((path) => pathname.startsWith(path));
 }
 

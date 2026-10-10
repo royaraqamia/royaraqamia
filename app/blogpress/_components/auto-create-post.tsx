@@ -11,7 +11,7 @@ export function AutoCreatePost() {
         const { id } = await createPost();
         if (!cancelled) window.location.assign(`/blogpress/editor/${id}`);
       } catch {
-        if (!cancelled) window.location.assign('/blogpress/app');
+        if (!cancelled) window.location.assign('/blogpress');
       }
     })();
     return () => {

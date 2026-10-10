@@ -13,11 +13,10 @@ const DISALLOWED_PATHS = [
   '/auth/',
   '/mcp',
   '/offline',
-  '/linksnap/app',
-  '/habitflow/app',
-  '/spendtrack/app',
-  '/blogpress/app',
-  '/blogpress/editor',
+  '/linksnap',
+  '/habitflow',
+  '/spendtrack',
+  '/blogpress',
 ];
 
 export default function robots(): MetadataRoute.Robots {
