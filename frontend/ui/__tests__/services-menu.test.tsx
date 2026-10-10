@@ -43,8 +43,8 @@ describe('ServicesMenu (hero CTA)', () => {
 
     expect(await screen.findByRole('dialog')).toBeInTheDocument();
     expect(screen.getByText('طلب بناء مشروع')).toBeInTheDocument();
-    // The bottom sheet renders its own close control; the popover does not.
-    expect(screen.getByText('إغلاق')).toBeInTheDocument();
+    // The bottom sheet no longer renders a header or its own close control.
+    expect(screen.queryByText('إغلاق')).not.toBeInTheDocument();
   });
 
   it('opens a popover at `lg` and up', async () => {

@@ -220,12 +220,13 @@ export function CountryPhoneInput({
           <SheetTrigger asChild>{trigger}</SheetTrigger>
           <SheetContent
             side="bottom"
+            hideClose
             className="gap-0 max-h-[85dvh] rounded-t-2xl p-0 sm:rounded-t-3xl"
           >
-            <SheetHeader className="border-b border-border/40 px-5 pe-14 pb-3 pt-5 text-start">
-              <SheetTitle className="text-base">اختر رمز الدَّولة</SheetTitle>
-              <SheetDescription className="sr-only">
-                ابحث عن الدَّولة بالاسم أو رمز الاتِّصال ثمَّ اخترها لإتمام رقمك.
+            <SheetHeader className="sr-only">
+              <SheetTitle>اختر رمز الدَّولة</SheetTitle>
+              <SheetDescription>
+                ابحث عن الدَّولة بالاسم أو رمز الاتِّصال ثمَّ اخترها لإتمام رقمك.
               </SheetDescription>
             </SheetHeader>
             <CountryPicker selectedIso={country.iso} onSelect={handleSelect} />

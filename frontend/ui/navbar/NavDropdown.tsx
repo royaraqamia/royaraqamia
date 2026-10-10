@@ -149,13 +149,12 @@ export function NavDropdown({
           <SheetTrigger asChild>{overlayTrigger}</SheetTrigger>
           <SheetContent
             side="bottom"
+            hideClose
             className="gap-0 max-h-[85dvh] rounded-t-2xl p-0 sm:rounded-t-3xl"
           >
-            <SheetHeader className="border-b border-border/40 px-5 pe-14 pb-3 pt-5 text-start">
-              <SheetTitle className="text-base">{link.label}</SheetTitle>
-              <SheetDescription className="sr-only">
-                اختر خدمة من القائمة ثمَّ تابع.
-              </SheetDescription>
+            <SheetHeader className="sr-only">
+              <SheetTitle>{link.label}</SheetTitle>
+              <SheetDescription>اختر خدمة من القائمة ثمَّ تابع.</SheetDescription>
             </SheetHeader>
             <div className="p-1.5">{subItemsList}</div>
           </SheetContent>
