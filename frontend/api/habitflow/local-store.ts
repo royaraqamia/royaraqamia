@@ -14,17 +14,29 @@ import {
   type LocalStoreMigration,
 } from '@/frontend/shared/local-store/idb';
 import { uuidv7 } from '@/frontend/shared/local-store/uuid';
+import {
+  OUTBOX_STORE,
+  type NewOutboxEntry,
+  type OutboxEntry,
+} from '@/frontend/shared/local-store/outbox';
 
 const PRODUCT = 'habitflow';
 const HABITS_STORE = 'habits';
 const LOGS_STORE = 'logs';
 
+/** A durable write-intent paired with the mutation that produced it. */
+interface OutboxIntent {
+  entity: string;
+  type: string;
+  payload: unknown;
+}
+
 /**
- * Forward-only schema. v1 is the whole Local Store: `habits` keyed by `id`,
- * `logs` keyed by `id` with a unique `(habitId, date)` index so a habit can
- * only hold one log per day. New versions are appended, never edited.
+ * Forward-only schema. v1 is the rendered data (`habits`, `logs`); v2 adds the
+ * Outbox alongside it, so a write and its replay-intent commit atomically in
+ * the same IndexedDB transaction. New versions are appended, never edited.
  */
-export const HABIT_STORE_VERSION = 1;
+export const HABIT_STORE_VERSION = 2;
 
 export const habitStoreMigrations: readonly LocalStoreMigration[] = [
   {
@@ -36,6 +48,13 @@ export const habitStoreMigrations: readonly LocalStoreMigration[] = [
       const logs = db.createObjectStore(LOGS_STORE, { keyPath: 'id' });
       logs.createIndex('by_habit_date', ['habitId', 'date'], { unique: true });
       logs.createIndex('by_date', 'date');
+    },
+  },
+  {
+    version: 2,
+    migrate: (db) => {
+      // `seq` is auto-increment so replay order is the exact write order.
+      db.createObjectStore(OUTBOX_STORE, { keyPath: 'seq', autoIncrement: true });
     },
   },
 ];
@@ -51,8 +70,8 @@ function logKind(value: string | null | undefined): HabitLogKind | undefined {
 /**
  * The Local Store for HabitFlow: the source of truth the UI renders from, one
  * IndexedDB database per identity (`habitflow__guest`, `habitflow__user:<id>`).
- * Writes land here first and are optimistic; the Outbox (#164) later replays
- * them to the server.
+ * Every mutation lands here and enqueues an Outbox intent in the same
+ * transaction; the Sync Engine (#164) replays those intents to the server.
  */
 export class HabitLocalStore implements HabitRepository {
   private readonly db: IDBDatabase;
@@ -93,19 +112,42 @@ export class HabitLocalStore implements HabitRepository {
     return value ?? null;
   }
 
-  private async put<T>(store: string, value: T): Promise<void> {
-    const transaction = this.db.transaction(store, 'readwrite');
-    transaction.objectStore(store).put(value);
+  /**
+   * Commits one or more record writes and, when present, the matching Outbox
+   * intent in a single transaction. The intent can therefore never diverge from
+   * the local write it describes: either both persist or neither does.
+   */
+  private async commit(
+    writes: ReadonlyArray<[store: string, value: unknown]>,
+    intent?: OutboxIntent
+  ): Promise<void> {
+    if (writes.length === 0 && !intent) return;
+
+    const stores = writes.map(([store]) => store);
+    if (intent) stores.push(OUTBOX_STORE);
+
+    const transaction = this.db.transaction(stores, 'readwrite');
+    for (const [store, value] of writes) {
+      transaction.objectStore(store).put(value);
+    }
+    if (intent) {
+      transaction.objectStore(OUTBOX_STORE).put(this.entry(intent));
+    }
     await transactionDone(transaction);
   }
 
-  private async putMany<T>(store: string, values: readonly T[]): Promise<void> {
-    const transaction = this.db.transaction(store, 'readwrite');
-    const objectStore = transaction.objectStore(store);
-    for (const value of values) {
-      objectStore.put(value);
-    }
-    await transactionDone(transaction);
+  private entry(intent: OutboxIntent): NewOutboxEntry {
+    return {
+      id: uuidv7(),
+      entity: intent.entity,
+      type: intent.type,
+      payload: intent.payload,
+      createdAt: Date.now(),
+      attempts: 0,
+      status: 'pending',
+      lastError: null,
+      nextAttemptAt: 0,
+    };
   }
 
   private async getLog(habitId: string, date: string): Promise<HabitLog | null> {
@@ -140,7 +182,19 @@ export class HabitLocalStore implements HabitRepository {
       reminderTime: habit.reminderTime ?? null,
       deletedAt: null,
     };
-    await this.put(HABITS_STORE, record);
+    await this.commit([[HABITS_STORE, record]], {
+      entity: 'habit',
+      type: 'habit.create',
+      payload: {
+        clientId: record.clientId,
+        name: record.name,
+        frequency: record.frequency,
+        target: record.target ?? null,
+        targetPeriod: record.targetPeriod ?? null,
+        reminderTime: record.reminderTime ?? null,
+        updatedAt: record.updatedAt,
+      },
+    });
     return record;
   }
 
@@ -155,17 +209,24 @@ export class HabitLocalStore implements HabitRepository {
       id: existing.id,
       updatedAt: new Date().toISOString(),
     };
-    await this.put(HABITS_STORE, updated);
+    await this.commit([[HABITS_STORE, updated]], {
+      entity: 'habit',
+      type: 'habit.update',
+      payload: { ...updates, id: existing.id, updatedAt: updated.updatedAt },
+    });
     return updated;
   }
 
   async deleteHabit(id: string): Promise<boolean> {
     const existing = await this.getOne<Habit>(HABITS_STORE, id);
     if (!existing) return false;
-    await this.put(HABITS_STORE, {
-      ...existing,
-      archived: true,
-      updatedAt: new Date().toISOString(),
+    // Tombstone, not a hard delete: a removal syncs without losing row identity
+    // and an undo is simply a newer write that clears it again (ADR-0029).
+    const now = new Date().toISOString();
+    await this.commit([[HABITS_STORE, { ...existing, deletedAt: now, updatedAt: now }]], {
+      entity: 'habit',
+      type: 'habit.delete',
+      payload: { id, updatedAt: now },
     });
     return true;
   }
@@ -197,7 +258,11 @@ export class HabitLocalStore implements HabitRepository {
         updatedAt: now,
         ...(clientId && !existing.clientId ? { clientId } : {}),
       };
-      await this.put(LOGS_STORE, updated);
+      await this.commit([[LOGS_STORE, updated]], {
+        entity: 'habit_log',
+        type: 'log.toggle',
+        payload: { habitId, date, completed, clientId: updated.clientId, updatedAt: now },
+      });
       return updated;
     }
 
@@ -214,7 +279,11 @@ export class HabitLocalStore implements HabitRepository {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.put(LOGS_STORE, record);
+    await this.commit([[LOGS_STORE, record]], {
+      entity: 'habit_log',
+      type: 'log.toggle',
+      payload: { habitId, date, completed, clientId: record.clientId, updatedAt: now },
+    });
     return record;
   }
 
@@ -237,7 +306,11 @@ export class HabitLocalStore implements HabitRepository {
         updatedAt: now,
         ...(clientId && !existing.clientId ? { clientId } : {}),
       };
-      await this.put(LOGS_STORE, updated);
+      await this.commit([[LOGS_STORE, updated]], {
+        entity: 'habit_log',
+        type: 'log.kind',
+        payload: { habitId, date, kind, clientId: updated.clientId, updatedAt: now },
+      });
       return updated;
     }
 
@@ -253,7 +326,11 @@ export class HabitLocalStore implements HabitRepository {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.put(LOGS_STORE, record);
+    await this.commit([[LOGS_STORE, record]], {
+      entity: 'habit_log',
+      type: 'log.kind',
+      payload: { habitId, date, kind, clientId: record.clientId, updatedAt: now },
+    });
     return record;
   }
 
@@ -273,7 +350,11 @@ export class HabitLocalStore implements HabitRepository {
         updatedAt: now,
         ...(clientId && !existing.clientId ? { clientId } : {}),
       };
-      await this.put(LOGS_STORE, updated);
+      await this.commit([[LOGS_STORE, updated]], {
+        entity: 'habit_log',
+        type: 'log.note',
+        payload: { habitId, date, note, clientId: updated.clientId, updatedAt: now },
+      });
       return updated;
     }
 
@@ -289,7 +370,11 @@ export class HabitLocalStore implements HabitRepository {
       updatedAt: now,
       deletedAt: null,
     };
-    await this.put(LOGS_STORE, record);
+    await this.commit([[LOGS_STORE, record]], {
+      entity: 'habit_log',
+      type: 'log.note',
+      payload: { habitId, date, note, clientId: record.clientId, updatedAt: now },
+    });
     return record;
   }
 
@@ -331,13 +416,16 @@ export class HabitLocalStore implements HabitRepository {
       deletedAt: null,
     }));
 
-    const transaction = this.db.transaction([HABITS_STORE, LOGS_STORE], 'readwrite');
+    const transaction = this.db.transaction([HABITS_STORE, LOGS_STORE, OUTBOX_STORE], 'readwrite');
     transaction.objectStore(HABITS_STORE).clear();
     transaction.objectStore(LOGS_STORE).clear();
     const habitStore = transaction.objectStore(HABITS_STORE);
     for (const habit of habits) habitStore.put(habit);
     const logStore = transaction.objectStore(LOGS_STORE);
     for (const log of logs) logStore.put(log);
+    transaction
+      .objectStore(OUTBOX_STORE)
+      .put(this.entry({ entity: 'backup', type: 'backup.restore', payload: input }));
     await transactionDone(transaction);
   }
 
@@ -350,23 +438,179 @@ export class HabitLocalStore implements HabitRepository {
     if (existingHabits.length > 0 || existingLogs.length > 0) return;
 
     const now = new Date().toISOString();
-    await this.putMany(
-      HABITS_STORE,
-      habits.map<Habit>((habit) => ({
-        ...habit,
-        clientId: habit.clientId ?? habit.id,
-        updatedAt: habit.updatedAt ?? now,
-        deletedAt: habit.deletedAt ?? null,
-      }))
+    await this.commit(
+      habits.map<[string, Habit]>((habit) => [
+        HABITS_STORE,
+        {
+          ...habit,
+          clientId: habit.clientId ?? habit.id,
+          updatedAt: habit.updatedAt ?? now,
+          deletedAt: habit.deletedAt ?? null,
+        },
+      ])
     );
-    await this.putMany(
-      LOGS_STORE,
-      logs.map<HabitLog>((log) => ({
-        ...log,
-        clientId: log.clientId ?? log.id,
-        updatedAt: log.updatedAt ?? now,
-        deletedAt: log.deletedAt ?? null,
-      }))
+    await this.commit(
+      logs.map<[string, HabitLog]>((log) => [
+        LOGS_STORE,
+        {
+          ...log,
+          clientId: log.clientId ?? log.id,
+          updatedAt: log.updatedAt ?? now,
+          deletedAt: log.deletedAt ?? null,
+        },
+      ])
     );
   }
+
+  // --- Outbox ---------------------------------------------------------------
+
+  /** All queued intents in strict replay order (`seq` ascending). */
+  async getOutbox(): Promise<OutboxEntry[]> {
+    return this.readAll<OutboxEntry>(OUTBOX_STORE);
+  }
+
+  async removeOutbox(seq: number): Promise<void> {
+    const transaction = this.db.transaction(OUTBOX_STORE, 'readwrite');
+    transaction.objectStore(OUTBOX_STORE).delete(seq);
+    await transactionDone(transaction);
+  }
+
+  async patchOutbox(seq: number, patch: Partial<OutboxEntry>): Promise<void> {
+    const existing = await this.getOne<OutboxEntry>(OUTBOX_STORE, seq);
+    if (!existing) return;
+    await this.commit([[OUTBOX_STORE, { ...existing, ...patch }]]);
+  }
+
+  /** Re-arms every permanently-failed intent for a manual retry. */
+  async retryFailedOutbox(): Promise<void> {
+    const failed = (await this.getOutbox()).filter((entry) => entry.status === 'failed');
+    if (failed.length === 0) return;
+    await this.commit(
+      failed.map<[string, OutboxEntry]>((entry) => [
+        OUTBOX_STORE,
+        { ...entry, status: 'pending', attempts: 0, nextAttemptAt: 0, lastError: null },
+      ])
+    );
+  }
+
+  /**
+   * Merges server rows into the store, last-write-wins on `updated_at` with the
+   * server as the tiebreaker (ADR-0029). Rows with a queued local intent are
+   * left alone: the device's unflushed edit must not be clobbered by an older
+   * server copy.
+   */
+  async mergeServerData(habits: readonly Habit[], logs: readonly HabitLog[]): Promise<void> {
+    const [localHabits, localLogs, outbox] = await Promise.all([
+      this.readAll<Habit>(HABITS_STORE),
+      this.readAll<HabitLog>(LOGS_STORE),
+      this.getOutbox(),
+    ]);
+
+    const pendingHabitIds = new Set(
+      outbox.filter((e) => e.entity === 'habit').map((e) => (e.payload as { id?: string }).id)
+    );
+    const pendingLogKeys = new Set(
+      outbox
+        .filter((e) => e.entity === 'habit_log')
+        .map((e) => {
+          const p = e.payload as { habitId?: string; date?: string };
+          return `${p.habitId}#${p.date}`;
+        })
+    );
+
+    const localHabitById = new Map(localHabits.map((h) => [h.id, h]));
+    const localLogByKey = new Map(localLogs.map((l) => [`${l.habitId}#${l.date}`, l]));
+
+    const writes: Array<[string, unknown]> = [];
+
+    for (const server of habits) {
+      if (pendingHabitIds.has(server.id)) continue;
+      const local = localHabitById.get(server.id);
+      if (!local || isServerNewer(server.updatedAt, local.updatedAt)) {
+        writes.push([HABITS_STORE, { ...local, ...server, deletedAt: server.deletedAt ?? null }]);
+      }
+    }
+
+    for (const server of logs) {
+      const key = `${server.habitId}#${server.date}`;
+      if (pendingLogKeys.has(key)) continue;
+      const local = localLogByKey.get(key);
+      if (!local || isServerNewer(server.updatedAt, local.updatedAt)) {
+        writes.push([LOGS_STORE, { ...local, ...server, deletedAt: server.deletedAt ?? null }]);
+      }
+    }
+
+    if (writes.length > 0) await this.commit(writes);
+  }
+
+  /**
+   * Claims a guest store's rows into this (signed-in) store: dedupe by
+   * `client_id`, LWW on `updated_at`, and re-enqueue the guest intents so the
+   * work the guest did offline is pushed under the account (ADR-0027).
+   */
+  async claimFrom(guest: HabitLocalStore): Promise<void> {
+    const [guestHabits, guestLogs, guestOutbox, localHabits, localLogs] = await Promise.all([
+      guest.readAll<Habit>(HABITS_STORE),
+      guest.readAll<HabitLog>(LOGS_STORE),
+      guest.getOutbox(),
+      this.readAll<Habit>(HABITS_STORE),
+      this.readAll<HabitLog>(LOGS_STORE),
+    ]);
+
+    const localHabitById = new Map(localHabits.map((h) => [h.id, h]));
+    const localLogByKey = new Map(localLogs.map((l) => [`${l.habitId}#${l.date}`, l]));
+
+    const writes: Array<[string, unknown]> = [];
+
+    for (const habit of guestHabits) {
+      const local = localHabitById.get(habit.id);
+      if (!local || isServerNewer(habit.updatedAt, local.updatedAt)) {
+        writes.push([HABITS_STORE, { ...local, ...habit }]);
+      }
+    }
+    for (const log of guestLogs) {
+      const key = `${log.habitId}#${log.date}`;
+      const local = localLogByKey.get(key);
+      if (!local || isServerNewer(log.updatedAt, local.updatedAt)) {
+        writes.push([LOGS_STORE, { ...local, ...log }]);
+      }
+    }
+    // Re-home the guest's pending intents onto the account outbox. Drop `seq`
+    // so the account store assigns fresh, monotonic keys in iteration order —
+    // the guest's relative replay order is preserved without key collisions.
+    for (const entry of guestOutbox) {
+      const intent: NewOutboxEntry = { ...entry };
+      delete (intent as Partial<OutboxEntry>).seq;
+      writes.push([OUTBOX_STORE, intent]);
+    }
+
+    if (writes.length > 0) await this.commit(writes);
+
+    // Clear the guest database that was just absorbed.
+    await guest.clear();
+  }
+
+  /** Empties every owned store (used after a successful claim). */
+  async clear(): Promise<void> {
+    const transaction = this.db.transaction([HABITS_STORE, LOGS_STORE, OUTBOX_STORE], 'readwrite');
+    transaction.objectStore(HABITS_STORE).clear();
+    transaction.objectStore(LOGS_STORE).clear();
+    transaction.objectStore(OUTBOX_STORE).clear();
+    await transactionDone(transaction);
+  }
+
+  /** True when the store has received no writes yet (safe to seed). */
+  async isEmpty(): Promise<boolean> {
+    const [habits, logs] = await Promise.all([
+      this.readAll<Habit>(HABITS_STORE),
+      this.readAll<HabitLog>(LOGS_STORE),
+    ]);
+    return habits.length === 0 && logs.length === 0;
+  }
+}
+
+function isServerNewer(serverUpdatedAt: string | undefined, localUpdatedAt: string | undefined) {
+  if (!localUpdatedAt) return true;
+  if (!serverUpdatedAt) return false;
+  return serverUpdatedAt > localUpdatedAt;
 }

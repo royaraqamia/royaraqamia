@@ -29,6 +29,7 @@ import { AddHabitModal } from '@/frontend/ui/habitflow/components/add-habit-moda
 import { EditHabitModal } from '@/frontend/ui/habitflow/components/edit-habit-modal';
 import { NotesDialog } from '@/frontend/ui/habitflow/components/notes-dialog';
 import { HabitOnboarding } from '@/frontend/ui/habitflow/components/habit-onboarding';
+import { SyncStatusPill } from '@/frontend/ui/habitflow/components/sync-status-pill';
 import type { HabitTemplate } from '@/frontend/shared/habitflow/habit-templates';
 import { pluralize, type PluralForms } from '@/frontend/shared/habitflow/calendar-format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
@@ -55,6 +56,7 @@ export function DashboardShell({
   const {
     habits,
     logs,
+    syncStatus,
     activeDate,
     formError,
     isSubmitting,
@@ -208,6 +210,10 @@ export function DashboardShell({
                   اليوم
                 </Button>
               </m.div>
+            </div>
+
+            <div className="self-start md:self-auto">
+              <SyncStatusPill status={syncStatus} />
             </div>
           </m.header>
 

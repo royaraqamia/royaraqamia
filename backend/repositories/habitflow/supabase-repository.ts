@@ -130,10 +130,15 @@ export class SupabaseHabitRepository implements HabitRepository {
 
     // A client-minted id makes a replayed write an idempotent upsert: the same
     // client_id yields exactly one row (ADR-0029, ticket #162).
+    //
+    // Adopting the client id as the row's primary key (not just a side column)
+    // is what lets the rest of the graph reference a habit the server has never
+    // seen: an offline `habit_logs.habit_id` and every habit update/delete use
+    // the same UUID the device minted, so replay needs no id remapping (#164).
     if (habit.clientId && this.userId) {
       const { data, error } = await this.client
         .from('habits')
-        .upsert(row, { onConflict: 'user_id,client_id' })
+        .upsert({ ...row, id: habit.clientId }, { onConflict: 'user_id,client_id' })
         .select()
         .single();
 
@@ -154,6 +159,11 @@ export class SupabaseHabitRepository implements HabitRepository {
   }
 
   async updateHabit(id: string, updates: Partial<Habit>): Promise<Habit> {
+    // `deletedAt: null` is a resurrect: clear the tombstone and allow the
+    // update to reach a tombstoned row. Last-write-wins on updated_at means the
+    // newer undo wins over the earlier delete (ADR-0029).
+    const resurrect = updates.deletedAt === null;
+
     const dbUpdates: Record<string, unknown> = { updated_at: updates.updatedAt ?? nowIso() };
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
@@ -161,8 +171,10 @@ export class SupabaseHabitRepository implements HabitRepository {
     if (updates.target !== undefined) dbUpdates.target = updates.target;
     if (updates.targetPeriod !== undefined) dbUpdates.target_period = updates.targetPeriod;
     if (updates.reminderTime !== undefined) dbUpdates.reminder_time = updates.reminderTime;
+    if (updates.deletedAt !== undefined) dbUpdates.deleted_at = updates.deletedAt;
 
-    let query = this.client.from('habits').update(dbUpdates).eq('id', id).is('deleted_at', null);
+    let query = this.client.from('habits').update(dbUpdates).eq('id', id);
+    if (!resurrect) query = query.is('deleted_at', null);
 
     if (this.userId) {
       query = query.eq('user_id', this.userId);
@@ -358,6 +370,7 @@ export class SupabaseHabitRepository implements HabitRepository {
       const { data, error } = await this.client
         .from('habit_logs')
         .insert({
+          ...(clientId ? { id: clientId } : {}),
           habit_id: habitId,
           date,
           completed,
@@ -432,6 +445,7 @@ export class SupabaseHabitRepository implements HabitRepository {
     const { data, error } = await this.client
       .from('habit_logs')
       .insert({
+        ...(clientId ? { id: clientId } : {}),
         habit_id: habitId,
         date,
         completed,
@@ -498,6 +512,7 @@ export class SupabaseHabitRepository implements HabitRepository {
     const { data, error } = await this.client
       .from('habit_logs')
       .insert({
+        ...(clientId ? { id: clientId } : {}),
         habit_id: habitId,
         date,
         completed: false,

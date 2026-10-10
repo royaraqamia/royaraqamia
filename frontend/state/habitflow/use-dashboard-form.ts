@@ -134,11 +134,12 @@ export function useDashboardForm(
             const id = confirmArchiveHabitId;
             if (!id || !archivedHabit) return;
             try {
-              await storeRef.updateHabit(id, { archived: false });
+              // A delete is a tombstone; undo is a newer write that clears it.
+              await storeRef.updateHabit(id, { archived: false, deletedAt: null });
               setHabits((prev) =>
                 prev.some((h) => h.id === id)
                   ? prev
-                  : [...prev, { ...archivedHabit, archived: false }]
+                  : [...prev, { ...archivedHabit, archived: false, deletedAt: null }]
               );
             } catch {
               toast.error('فشل استرجاع العادة');

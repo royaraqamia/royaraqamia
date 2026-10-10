@@ -125,6 +125,9 @@ describe('SupabaseHabitRepository — offline write contract', () => {
       expect(upsertCall).toContain('"onConflict":"user_id,client_id"');
       expect(upsertCall).toContain('"client_id":"11111111-1111-7111-8111-111111111111"');
       expect(upsertCall).toContain('"updated_at":"2026-08-01T00:00:00.000Z"');
+      // The client id becomes the row's primary key, so an offline log can
+      // reference this habit by the same UUID the device minted (#164).
+      expect(upsertCall).toContain('"id":"11111111-1111-7111-8111-111111111111"');
     });
 
     it('falls back to a plain insert without a client id', async () => {

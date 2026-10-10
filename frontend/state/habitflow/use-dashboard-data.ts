@@ -1,8 +1,23 @@
 import { useState, useEffect, useCallback, type Dispatch, type SetStateAction } from 'react';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
 import { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
-import { identityFromUser } from '@/frontend/shared/local-store/identity';
+import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
 import { logger } from '@/frontend/shared/logger';
+
+/**
+ * Moves anything a guest wrote before signing in into the account store
+ * (ADR-0027): dedupe by client_id, LWW, and the guest intents are re-homed so
+ * the work syncs under the account. Idempotent — an emptied guest store is a
+ * no-op on the next open.
+ */
+async function claimGuestData(userStore: HabitLocalStore): Promise<void> {
+  const guest = await HabitLocalStore.open(GUEST_IDENTITY);
+  try {
+    await userStore.claimFrom(guest);
+  } finally {
+    guest.close();
+  }
+}
 
 export function getTodayString(): string {
   const tzOffset = new Date().getTimezoneOffset() * 60000;
@@ -21,6 +36,8 @@ export interface DashboardData {
   logs: HabitLog[];
   mode: 'supabase' | 'local';
   user: unknown;
+  /** True once a real session exists; the Outbox only flushes for an account. */
+  isSignedIn: boolean;
   /** The identity-scoped Local Store once it is open; the source of truth for rendering. */
   store: HabitLocalStore | null;
   setHabits: Dispatch<SetStateAction<Habit[]>>;
@@ -47,6 +64,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
   const [store, setStore] = useState<HabitLocalStore | null>(null);
 
   const identity = identityFromUser(user);
+  const isSignedIn = identity !== GUEST_IDENTITY;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -57,6 +75,17 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
     HabitLocalStore.open(identity)
       .then(async (localStore) => {
         opened = localStore;
+        if (cancelled) {
+          localStore.close();
+          return;
+        }
+        // Signing in claims any work done as a guest before the seed runs, so
+        // the claimed rows count as "already there" and are never overwritten.
+        if (identity !== GUEST_IDENTITY) {
+          await claimGuestData(localStore).catch((error) => {
+            logger.error('Failed to claim guest HabitFlow data', { error: String(error) });
+          });
+        }
         if (cancelled) {
           localStore.close();
           return;
@@ -112,6 +141,7 @@ export function useDashboardData(seed: DashboardSeed): DashboardData {
     logs,
     mode,
     user,
+    isSignedIn,
     store,
     setHabits,
     setLogs,

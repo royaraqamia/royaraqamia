@@ -3,10 +3,13 @@ import { useDashboardCalendar } from './use-dashboard-calendar';
 import { useDashboardForm } from './use-dashboard-form';
 import { useDashboardToggle } from './use-dashboard-toggle';
 import { useDashboardBackup } from './use-dashboard-backup';
+import { useHabitSync } from './use-habit-sync';
 
 export function useDashboard(seed: DashboardSeed) {
-  const { habits, logs, mode, user, store, setHabits, setLogs, refreshData, syncUser } =
+  const { habits, logs, mode, user, isSignedIn, store, setHabits, setLogs, refreshData, syncUser } =
     useDashboardData(seed);
+
+  const syncStatus = useHabitSync(store, isSignedIn, refreshData);
 
   const {
     activeDate,
@@ -64,6 +67,7 @@ export function useDashboard(seed: DashboardSeed) {
     logs,
     mode,
     user,
+    syncStatus,
     activeDate,
     formError,
     isSubmitting,

@@ -35,6 +35,8 @@ export class HabitService {
       ...(data.name !== undefined && { name: data.name.trim() }),
       ...(data.frequency !== undefined && { frequency: data.frequency }),
       ...(data.archived !== undefined && { archived: data.archived }),
+      // An Outbox replay of an undo clears the tombstone (deletedAt: null).
+      ...(data.deletedAt !== undefined && { deletedAt: data.deletedAt }),
       ...this.normalizeGoalFields(data),
     });
   }

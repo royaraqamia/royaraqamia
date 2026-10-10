@@ -102,7 +102,7 @@ describe('HabitLocalStore', () => {
     repo.close();
   });
 
-  it('getLocalData returns raw data including archived habits', async () => {
+  it('getLocalData returns raw data including tombstoned habits', async () => {
     const repo = await openGuest();
     const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
     await repo.toggleLog(habit.id, '2026-08-02', true);
@@ -110,9 +110,79 @@ describe('HabitLocalStore', () => {
 
     const data = await repo.getLocalData();
     expect(data.habits).toHaveLength(1);
-    expect(data.habits[0]?.archived).toBe(true);
+    expect(data.habits[0]?.deletedAt).toBeDefined();
     expect(data.logs).toHaveLength(1);
     repo.close();
+  });
+
+  it('enqueues an ordered outbox intent for every owned mutation', async () => {
+    const repo = await openGuest();
+    const habit = await repo.createHabit({ name: 'قراءة', frequency: 'daily' });
+    await repo.toggleLog(habit.id, '2026-08-02', true);
+    await repo.setLogKind(habit.id, '2026-08-03', 'skip');
+    await repo.setLogNote(habit.id, '2026-08-03', 'ملاحظة');
+    await repo.updateHabit(habit.id, { name: 'قراءة يومية' });
+    await repo.deleteHabit(habit.id);
+
+    const outbox = await repo.getOutbox();
+    expect(outbox.map((e) => e.type)).toEqual([
+      'habit.create',
+      'log.toggle',
+      'log.kind',
+      'log.note',
+      'habit.update',
+      'habit.delete',
+    ]);
+    expect(outbox.every((e) => e.status === 'pending')).toBe(true);
+    // `seq` is strictly increasing, so getOutbox is exactly write order.
+    const seqs = outbox.map((e) => e.seq);
+    expect(seqs).toEqual([...seqs].sort((a, b) => a - b));
+    repo.close();
+  });
+
+  it('merges server data by last-write-wins and keeps pending local edits', async () => {
+    const repo = await openGuest();
+    const synced = await repo.createHabit({ name: 'مصطفى', frequency: 'daily' });
+    // Simulate that `synced` already flushed: no intent is left for it.
+    for (const entry of await repo.getOutbox()) await repo.removeOutbox(entry.seq);
+
+    const pending = await repo.createHabit({ name: 'قديم', frequency: 'daily' });
+    await repo.updateHabit(pending.id, { name: 'أحدث محلي' });
+
+    await repo.mergeServerData(
+      [
+        { ...synced, name: 'من الخادم', updatedAt: '9999-01-01T00:00:00.000Z' },
+        { ...pending, name: 'من الخادم' },
+      ],
+      []
+    );
+
+    const habits = new Map((await repo.getLocalData()).habits.map((h) => [h.id, h]));
+    // No pending intent for `synced` → the newer server copy wins.
+    expect(habits.get(synced.id)?.name).toBe('من الخادم');
+    // `pending` has queued intents → the local edit is preserved.
+    expect(habits.get(pending.id)?.name).toBe('أحدث محلي');
+    repo.close();
+  });
+
+  it('claims guest rows into the account store and re-homes its intents', async () => {
+    const factory = new IDBFactory();
+    const guest = await openGuest(factory);
+    const user = await HabitLocalStore.open(userIdentity('u-1'), factory);
+
+    const guestHabit = await guest.createHabit({ name: 'ضيف', frequency: 'daily' });
+    await guest.toggleLog(guestHabit.id, '2026-08-02', true);
+
+    await user.claimFrom(guest);
+
+    expect(await user.getHabits()).toHaveLength(1);
+    expect(await user.getLogs('2026-01-01', '2026-12-31')).toHaveLength(1);
+    expect((await user.getOutbox()).map((e) => e.type)).toEqual(['habit.create', 'log.toggle']);
+    // The guest store is emptied once absorbed.
+    expect(await guest.getOutbox()).toHaveLength(0);
+    expect(await guest.getHabits()).toHaveLength(0);
+    guest.close();
+    user.close();
   });
 
   it('persists across reopen (durable, same identity)', async () => {

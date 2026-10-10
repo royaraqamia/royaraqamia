@@ -73,7 +73,7 @@ describe('useDashboardData (Local Store is the source of truth)', () => {
     await waitFor(() => expect(screen.getByTestId('habits').textContent).toBe('من الخادم'));
   });
 
-  it('reads the namespace that matches the signed-in identity', async () => {
+  it('claims guest rows into the account namespace on sign-in', async () => {
     await seedStore(GUEST_IDENTITY, 'بيانات الضيوف');
     await seedStore(userIdentity('u-1'), 'بيانات المستخدم');
 
@@ -88,6 +88,16 @@ describe('useDashboardData (Local Store is the source of truth)', () => {
       />
     );
 
-    await waitFor(() => expect(screen.getByTestId('habits').textContent).toBe('بيانات المستخدم'));
+    // The account store is the only one read; the guest work is absorbed into
+    // it (ADR-0027) rather than shown as a separate namespace.
+    await waitFor(() => {
+      const text = screen.getByTestId('habits').textContent ?? '';
+      expect(text).toContain('بيانات الضيوف');
+      expect(text).toContain('بيانات المستخدم');
+    });
+
+    const guest = await HabitLocalStore.open(GUEST_IDENTITY);
+    expect(await guest.getHabits()).toHaveLength(0);
+    guest.close();
   });
 });
