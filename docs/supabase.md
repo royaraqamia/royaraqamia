@@ -45,12 +45,18 @@ When the agent has Supabase MCP access:
     functions already live in the non-exposed `net` schema), and moving it would risk the
     habit-reminder and workflow-dispatch webhooks that call `net.http_post`. The exposure is
     closed by revoking `EXECUTE` from `public`/`anon`/`authenticated` (20260917082727).
-  - `authenticated_security_definer_function_executable` for `public.is_admin()`, the SpendTrack
-    aggregates (`get_total_expenses`, `get_daily_totals`, `get_category_breakdown`) and
-    `list_available_consultation_slots`— all intentional.`is_admin()`must be executable by`authenticated`for the certificate RLS policies (20260802120700, 20260917075359) and only
-    ever returns the caller's own flag; the SpendTrack RPCs are client-callable by design and
-    self-guard with `auth.uid() is distinct from p_user_id`; the consultation-slot function is
-    the booking flow's client call and is revoked from `anon`/`public`.
+  - `authenticated_security_definer_function_executable` — resolved where it mattered:
+    - `public.is_admin()` moved to the non-exposed `private` schema (20261011130000), so the
+      `/rpc/is_admin` route is gone; the three certificate policies call `private.is_admin()`.
+    - the SpendTrack aggregates (`get_total_expenses`, `get_daily_totals`,
+      `get_category_breakdown`) switched to `SECURITY INVOKER` (20261011120000) — they are only
+      ever called with the user-scoped session client and their RLS is own-row ("own + defaults"
+      for categories), so the existing `auth.uid()` guard keeps results identical without the
+      definer bypass.
+    - `list_available_consultation_slots` is the one remaining, deliberate finding: it **must**
+      stay `SECURITY DEFINER` because it reads `consultation_booking_slots`, which has RLS
+      enabled with no policies (deny-all), so an `INVOKER` version would treat every slot as
+      free. It is the booking flow's client read and is revoked from `anon`/`public`.
   - `auth_leaked_password_protection` — **cannot be enabled on the current plan.** Supabase's
     HaveIBeenPwned check is Pro-plan-and-up only (the Management API rejects
     `password_hibp_enabled` with "available on Pro Plans and up"). The app enforces the check
