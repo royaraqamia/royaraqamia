@@ -49,12 +49,14 @@ When the agent has Supabase MCP access:
     aggregates (`get_total_expenses`, `get_daily_totals`, `get_category_breakdown`) and
     `list_available_consultation_slots`— all intentional.`is_admin()`must be executable by`authenticated`for the certificate RLS policies (20260802120700, 20260917075359) and only
     ever returns the caller's own flag; the SpendTrack RPCs are client-callable by design and
-    self-guard with`auth.uid() is distinct from p_user_id`; the consultation-slot function is
+    self-guard with `auth.uid() is distinct from p_user_id`; the consultation-slot function is
     the booking flow's client call and is revoked from `anon`/`public`.
-  - `auth_leaked_password_protection` — the app already rejects breached passwords itself
-    (`backend/clients/password-breach.ts`, HIBP k-anonymity, applied at signup and password
-    set, gated by `passwordBreachCheckEnabled`). The Supabase Auth toggle is optional
-    defense-in-depth and a dashboard setting, not a code change.
+  - `auth_leaked_password_protection` — **cannot be enabled on the current plan.** Supabase's
+    HaveIBeenPwned check is Pro-plan-and-up only (the Management API rejects
+    `password_hibp_enabled` with "available on Pro Plans and up"). The app enforces the check
+    itself instead (`backend/clients/password-breach.ts`, HIBP k-anonymity, applied at signup
+    and password set, gated by `passwordBreachCheckEnabled`). Re-evaluate if the project moves
+    to Pro.
 - **RLS testing:** Verify policies with `supabase list_tables verbose=true`
 - **Edge functions:** `supabase functions deploy <name>` (`verify_jwt=true` by default)
 - **Backups/Point-in-time:** Configure in Supabase dashboard (not CLI)
