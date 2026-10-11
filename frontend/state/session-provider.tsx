@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { hasBrowserSessionToken } from '@/frontend/transport/supabase/client';
+import type { Me } from '@/frontend/api/me';
 import type { Session, User } from '@supabase/supabase-js';
 
 // Auth machinery is loaded lazily so the auth wrapper module stays out of the
@@ -30,6 +31,8 @@ interface SessionContextType {
   /** Public handle from the user's profile row, or null when unavailable. */
   profileUsername: string | null;
   signOut: () => Promise<void>;
+  /** Re-read the profile row after an edit so the UI reflects it immediately. */
+  refreshProfile: () => Promise<void>;
 }
 
 const SessionContext = createContext<SessionContextType>({
@@ -41,6 +44,7 @@ const SessionContext = createContext<SessionContextType>({
   profileAvatarUrl: null,
   profileUsername: null,
   signOut: async () => {},
+  refreshProfile: async () => {},
 });
 
 export function useSession() {
@@ -126,12 +130,23 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   // response carries the profile display name, so this costs no extra round-trip.
   const userId = session?.user?.id ?? null;
 
+  const applyMe = useCallback((me: Me) => {
+    setIsAdmin(me.isAdmin);
+    setProfileName(me.name ?? null);
+    setProfileAvatarUrl(me.avatarUrl ?? null);
+    setProfileUsername(me.username ?? null);
+  }, []);
+
+  const clearProfile = useCallback(() => {
+    setIsAdmin(false);
+    setProfileName(null);
+    setProfileAvatarUrl(null);
+    setProfileUsername(null);
+  }, []);
+
   useEffect(() => {
     if (!userId) {
-      setIsAdmin(false);
-      setProfileName(null);
-      setProfileAvatarUrl(null);
-      setProfileUsername(null);
+      clearProfile();
       return;
     }
 
@@ -140,26 +155,27 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     void import('@/frontend/api/me').then(({ getMe }) =>
       getMe()
         .then((me) => {
-          if (!active) return;
-          setIsAdmin(me.isAdmin);
-          setProfileName(me.name ?? null);
-          setProfileAvatarUrl(me.avatarUrl ?? null);
-          setProfileUsername(me.username ?? null);
+          if (active) applyMe(me);
         })
         .catch(() => {
-          if (active) {
-            setIsAdmin(false);
-            setProfileName(null);
-            setProfileAvatarUrl(null);
-            setProfileUsername(null);
-          }
+          if (active) clearProfile();
         })
     );
 
     return () => {
       active = false;
     };
-  }, [userId]);
+  }, [userId, applyMe, clearProfile]);
+
+  const refreshProfile = useCallback(async () => {
+    if (!userId) return;
+    try {
+      const { getMe } = await import('@/frontend/api/me');
+      applyMe(await getMe());
+    } catch {
+      // Keep the last known values when a refresh fails.
+    }
+  }, [userId, applyMe]);
 
   const value = useMemo(
     () => ({
@@ -171,8 +187,19 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       profileAvatarUrl,
       profileUsername,
       signOut,
+      refreshProfile,
     }),
-    [user, session, isLoading, isAdmin, profileName, profileAvatarUrl, profileUsername, signOut]
+    [
+      user,
+      session,
+      isLoading,
+      isAdmin,
+      profileName,
+      profileAvatarUrl,
+      profileUsername,
+      signOut,
+      refreshProfile,
+    ]
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

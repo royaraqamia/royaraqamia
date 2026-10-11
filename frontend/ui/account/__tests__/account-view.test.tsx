@@ -8,7 +8,9 @@ const mocks = vi.hoisted(() => ({
     isAdmin: false,
     profileName: null as string | null,
     profileAvatarUrl: null as string | null,
+    profileUsername: null as string | null,
     signOut: vi.fn(),
+    refreshProfile: vi.fn(),
   },
 }));
 

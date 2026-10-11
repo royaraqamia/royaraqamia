@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import {
   User,
@@ -19,6 +18,7 @@ import { getWhatsAppUrl } from '@/frontend/shared/constants';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { SignInCta } from '@/frontend/ui/shared/sign-in-cta';
 import { UsernameEditor } from '@/frontend/ui/account/username-editor';
+import { ProfileEditor } from '@/frontend/ui/account/profile-editor';
 
 function AccountSkeleton() {
   return (
@@ -49,14 +49,12 @@ export function AccountView() {
       : typeof metadata.full_name === 'string' && metadata.full_name.trim()
         ? metadata.full_name
         : null;
-  const metadataAvatar =
-    typeof metadata.avatar_url === 'string' && metadata.avatar_url.trim()
-      ? metadata.avatar_url
-      : null;
   const userName = profileName?.trim() || metadataName;
   const userEmail = typeof user?.email === 'string' ? user.email : null;
-  const avatarUrl = profileAvatarUrl?.trim() || metadataAvatar;
-  const showAvatar = Boolean(user && avatarUrl);
+  // The profile row is the source of truth: the editor writes it and can clear
+  // it, so we must not fall back to auth metadata or "delete avatar" could not
+  // take effect for OAuth accounts.
+  const avatarUrl = profileAvatarUrl?.trim() || null;
 
   return (
     <div className="space-y-6">
@@ -77,32 +75,7 @@ export function AccountView() {
           <SignInCta href="/auth/login?redirect=/account" className="mt-1 w-full sm:w-auto" />
         </section>
       ) : (
-        <section className="flex items-center gap-4 rounded-2xl border border-border/50 bg-card/60 p-4 sm:p-5">
-          <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-primary border border-primary/20 font-bold text-lg">
-            {userName ? userName.charAt(0).toUpperCase() : <User size={24} />}
-            {showAvatar && (
-              <Image
-                src={avatarUrl!}
-                alt=""
-                width={56}
-                height={56}
-                unoptimized
-                onError={(e) => {
-                  e.currentTarget.style.display = 'none';
-                }}
-                className="absolute inset-0 h-full w-full object-cover"
-              />
-            )}
-          </div>
-          <div className="min-w-0 flex-1 text-start">
-            <p className="truncate text-base sm:text-lg font-bold text-foreground">
-              {userName || userEmail || 'المستخدِم'}
-            </p>
-            <p className="truncate text-xs sm:text-sm text-muted-foreground">
-              {userEmail || 'حساب نشط'}
-            </p>
-          </div>
-        </section>
+        <ProfileEditor userName={userName} userEmail={userEmail} avatarUrl={avatarUrl} />
       )}
 
       {/* Public handle editor — signed-in members only */}

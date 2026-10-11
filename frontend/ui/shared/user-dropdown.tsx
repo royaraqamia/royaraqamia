@@ -72,7 +72,8 @@ export const UserDropdown = memo(function UserDropdown() {
   // Prefer the profile name (authoritative, and editable by the user), then fall
   // back to Supabase `user_metadata` — set at signup and by OAuth providers — so
   // the name renders instantly while `/api/me` is still in flight and for
-  // accounts whose profile row is missing.
+  // accounts whose profile row is missing. The avatar does *not* fall back: the
+  // profile row owns it and clearing it must visibly remove the image.
   const metadata = user?.user_metadata ?? {};
   const metadataName =
     typeof metadata.name === 'string' && metadata.name.trim()
@@ -80,13 +81,9 @@ export const UserDropdown = memo(function UserDropdown() {
       : typeof metadata.full_name === 'string' && metadata.full_name.trim()
         ? metadata.full_name
         : null;
-  const metadataAvatar =
-    typeof metadata.avatar_url === 'string' && metadata.avatar_url.trim()
-      ? metadata.avatar_url
-      : null;
   const userName = profileName?.trim() || metadataName;
   const userEmail = typeof user?.email === 'string' ? user.email : null;
-  const avatarUrl = profileAvatarUrl?.trim() || metadataAvatar;
+  const avatarUrl = profileAvatarUrl?.trim() || null;
   const showAvatar = Boolean(user && avatarUrl);
 
   return (
