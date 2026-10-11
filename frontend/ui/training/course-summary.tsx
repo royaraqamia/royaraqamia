@@ -8,10 +8,10 @@ import { TRAINING_COURSE } from '@/shared/contracts/training';
  */
 const SUMMARY_LINES = [
   ...TRAINING_COURSE.description.split('\n'),
-  `المدرِّب: ${TRAINING_COURSE.trainer}`,
-  `عدد السَّاعات: ${TRAINING_COURSE.duration}`,
-  `عدد الجلسات: ${TRAINING_COURSE.sessions}`,
-];
+  `المدرِّب: ${TRAINING_COURSE.trainer}.`,
+  `عدد السَّاعات: ${TRAINING_COURSE.duration}.`,
+  `عدد الجلسات: ${TRAINING_COURSE.sessions}.`,
+].map((line) => line.normalize('NFC'));
 
 const EMPHASIS_PHRASES = [
   'Online',
@@ -19,7 +19,7 @@ const EMPHASIS_PHRASES = [
   TRAINING_COURSE.duration,
   TRAINING_COURSE.sessions,
   'توفُّر الإنترنت واللابتوب وخلفيَّة تقنيَّة',
-];
+].map((phrase) => phrase.normalize('NFC'));
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
