@@ -10,7 +10,7 @@ import {
   DialogDescription,
 } from '@/frontend/ui/primitives/dialog';
 import { Trash2, Loader2, Receipt, AlertCircle, PieChart } from 'lucide-react';
-import { CreateExpenseDialog, EditExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
+import { EditExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { useDeleteExpense, useExpensePagination } from '@/frontend/state/spendtrack/use-expenses';
 import { parseISO } from 'date-fns';
@@ -57,11 +57,6 @@ export function ExpenseList({
         title={hasFilters ? 'لا توجد نتائج تُطابق الفلترة' : 'لا توجد مصروفات بعد'}
         description={
           hasFilters ? 'حاول تغيير نطاق الفلترة' : 'ابدأ بتتبُّع إنفاقك بإضافة أوَّل مصروف'
-        }
-        action={
-          !hasFilters ? (
-            <CreateExpenseDialog categories={categories} currency={currency} />
-          ) : undefined
         }
       />
     );

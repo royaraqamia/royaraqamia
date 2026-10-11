@@ -1,14 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Download, PieChartIcon, Receipt, TrendingUp } from 'lucide-react';
+import { PieChartIcon, Receipt, TrendingUp } from 'lucide-react';
 import { format, startOfMonth, endOfMonth } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
-import { Button } from '@/frontend/ui/primitives/button';
 import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import { CreateExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
 import { BudgetCard } from '@/frontend/ui/spendtrack/budget-card';
-import { CategoryBudgets } from '@/frontend/ui/spendtrack/category-budgets';
 import { RecurringExpenses } from '@/frontend/ui/spendtrack/recurring-expenses';
 import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
 import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
@@ -16,7 +14,6 @@ import { InsightsStrip } from '@/frontend/ui/spendtrack/insights-strip';
 import { CategoryPieChartLazy, DailyBarChartLazy } from '@/frontend/ui/spendtrack/charts-lazy';
 import { SpendtrackSyncStatus } from '@/frontend/ui/spendtrack/spendtrack-sync-status';
 import { TotalSpendCard } from '@/frontend/ui/spendtrack/total-spend-card';
-import { SignInPrompt } from '@/frontend/ui/shared/sign-in-prompt';
 import {
   categoryBreakdown,
   computeInsights,
@@ -85,23 +82,7 @@ export function SpendtrackDashboard({
   return (
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <CreateExpenseDialog categories={categories} currency={currency} />
-          <SignInPrompt
-            title="تصدير واستيراد CSV"
-            description="حفظ بياناتك في ملف أو استيراد ملفٍّ سابق يحتاج إلى حساب. سجِّل الدُّخول للاستمرار."
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              type="button"
-              className="h-9 px-3 gap-1.5 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
-            >
-              <Download className="size-3.5" />
-              تصدير CSV
-            </Button>
-          </SignInPrompt>
-        </div>
+        <CreateExpenseDialog categories={categories} currency={currency} showFab hideTrigger />
         <SpendtrackSyncStatus />
       </div>
 
@@ -122,8 +103,6 @@ export function SpendtrackDashboard({
             <TotalSpendCard total={total} start={start} end={end} currency={currency} />
             <BudgetCard month={month} total={monthTotal} currency={currency} />
           </div>
-
-          <CategoryBudgets month={month} initialBudgets={[]} />
 
           <InsightsStrip insights={insights} currency={currency} />
 

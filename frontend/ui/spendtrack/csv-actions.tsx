@@ -11,50 +11,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
-import { Download, Loader2, Upload, UploadCloud, FileText } from 'lucide-react';
-import { exportExpensesCsv, importExpensesCsv } from '@/frontend/api/spendtrack';
+import { Loader2, Upload, UploadCloud, FileText } from 'lucide-react';
+import { importExpensesCsv } from '@/frontend/api/spendtrack';
 
-function downloadCsv(filename: string, content: string): void {
-  const blob = new Blob([`\uFEFF${content}`], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  URL.revokeObjectURL(url);
-}
-
-export function CsvActions({
-  start,
-  end,
-  categories,
-}: {
-  start: string;
-  end: string;
-  categories: string[];
-}) {
+export function CsvActions() {
   const router = useRouter();
   const [importOpen, setImportOpen] = useState(false);
-  const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileContent, setFileContent] = useState<string>('');
-
-  function handleExport() {
-    setExporting(true);
-    void exportExpensesCsv({ start, end, categories })
-      .then((content) => {
-        const scope = categories.length > 0 ? 'filtered' : 'all';
-        downloadCsv(`spendtrack-${scope}-${start}-to-${end}.csv`, content);
-        toast.success('تم تصدير المصروفات بنجاح');
-      })
-      .catch(() => {
-        toast.error('فشل تصدير المصروفات');
-      })
-      .finally(() => setExporting(false));
-  }
 
   function handleFileChange(file: File | null) {
     if (!file) {
@@ -101,21 +66,6 @@ export function CsvActions({
       >
         <Upload className="size-3.5" />
         استيراد
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        type="button"
-        onClick={handleExport}
-        disabled={exporting}
-        className="h-9 px-3 gap-1.5 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
-      >
-        {exporting ? (
-          <Loader2 className="size-3.5 animate-spin" />
-        ) : (
-          <Download className="size-3.5" />
-        )}
-        تصدير CSV
       </Button>
 
       <Dialog open={importOpen} onOpenChange={setImportOpen}>

@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitiv
 import { DollarSign, PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
 import { CreateExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
 import { BudgetCard } from '@/frontend/ui/spendtrack/budget-card';
-import { CategoryBudgets } from '@/frontend/ui/spendtrack/category-budgets';
 import { RecurringExpenses } from '@/frontend/ui/spendtrack/recurring-expenses';
 import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
 import { CategoryPieChartLazy, DailyBarChartLazy } from '@/frontend/ui/spendtrack/charts-lazy';
@@ -15,7 +14,6 @@ import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
 import {
   loadCategoryBreakdown,
-  loadCategoryBudgets,
   loadDailyTotals,
   loadDefaultCategories,
   loadInsights,
@@ -72,10 +70,6 @@ function SectionSkeleton({ className }: { className?: string }) {
       className={`w-full animate-pulse rounded-2xl border border-border/60 bg-muted/30 ${className ?? ''}`}
     />
   );
-}
-
-function ButtonSkeleton() {
-  return <div aria-hidden="true" className="h-10 w-32 animate-pulse rounded-xl bg-muted/50" />;
 }
 
 function getDateRange(range: string, from?: string, to?: string) {
@@ -156,7 +150,15 @@ async function CreateExpenseButton({
   autoOpen?: boolean;
 }) {
   const categories = await loadUserCategories(userId);
-  return <CreateExpenseDialog categories={categories} currency={currency} autoOpen={autoOpen} />;
+  return (
+    <CreateExpenseDialog
+      categories={categories}
+      currency={currency}
+      autoOpen={autoOpen}
+      showFab
+      hideTrigger
+    />
+  );
 }
 
 async function BudgetSection({ userId, currency }: { userId: string; currency: string }) {
@@ -170,12 +172,6 @@ async function BudgetSection({ userId, currency }: { userId: string; currency: s
       null
     )) ?? 0;
   return <BudgetCard month={month} total={total} currency={currency} />;
-}
-
-async function CategoryBudgetsSection({ userId }: { userId: string }) {
-  const month = format(new Date(), 'yyyy-MM');
-  const budgets = await loadCategoryBudgets(userId, month);
-  return <CategoryBudgets month={month} initialBudgets={budgets} />;
 }
 
 async function RecurringExpensesSection({
@@ -328,9 +324,9 @@ async function SignedInDashboard({
     <>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
-          <CsvActions start={start} end={end} categories={filterCategories} />
+          <CsvActions />
           <CurrencySelector currency={currency} />
-          <Suspense fallback={<ButtonSkeleton />}>
+          <Suspense fallback={null}>
             <CreateExpenseButton userId={userId} currency={currency} autoOpen={autoOpen} />
           </Suspense>
         </div>
@@ -353,10 +349,6 @@ async function SignedInDashboard({
           </Suspense>
         </div>
       </div>
-
-      <Suspense fallback={<SectionSkeleton className="h-40" />}>
-        <CategoryBudgetsSection userId={userId} />
-      </Suspense>
 
       <div className=" stagger-3">
         <Suspense fallback={<SectionSkeleton className="h-28" />}>

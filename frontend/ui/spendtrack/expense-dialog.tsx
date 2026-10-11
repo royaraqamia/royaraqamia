@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, memo } from 'react';
-import { useForm, useFieldArray, useWatch, Controller } from 'react-hook-form';
+import { useForm, useWatch, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSaveExpense } from '@/frontend/state/spendtrack/use-expenses';
 import { Button } from '@/frontend/ui/primitives/button';
+import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { DatePicker } from '@/frontend/ui/primitives/date-picker';
@@ -33,16 +34,9 @@ import {
   FileText,
   AlertCircle,
   Coins,
-  PieChart,
-  Trash2,
 } from 'lucide-react';
 import type { Category, Expense } from '@/shared/contracts/spendtrack';
-import {
-  getCurrencyName,
-  getCurrencySymbol,
-  formatMoney,
-  EXPENSE_CURRENCIES,
-} from '@/shared/currency';
+import { getCurrencyName, getCurrencySymbol, EXPENSE_CURRENCIES } from '@/shared/currency';
 
 const expenseSchema = z.object({
   amount: z
@@ -72,10 +66,14 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
   categories,
   currency,
   autoOpen = false,
+  showFab = false,
+  hideTrigger = false,
 }: {
   categories: Category[];
   currency?: string;
   autoOpen?: boolean;
+  showFab?: boolean;
+  hideTrigger?: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(autoOpen);
   const { submit, pending, serverError } = useSaveExpense();
@@ -121,12 +119,21 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
         if (!open) reset();
       }}
     >
-      <DialogTrigger asChild>
-        <Button className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-safe duration-200 ease-out hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:focus-visible:ring-neutral-100 cursor-pointer">
-          <Plus className="size-4 transition-transform duration-200 group-hover:rotate-90" />
-          <span>إضافة مصروف</span>
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button className="group relative inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-bold text-white shadow-sm transition-safe duration-200 ease-out hover:bg-neutral-800 hover:shadow-md hover:scale-[1.01] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 dark:focus-visible:ring-neutral-100 cursor-pointer">
+            <Plus className="size-4 transition-transform duration-200 group-hover:rotate-90" />
+            <span>إضافة مصروف</span>
+          </Button>
+        </DialogTrigger>
+      )}
+      {showFab && (
+        <DialogTrigger asChild>
+          <FabButton label="إضافة مصروف جديد">
+            <Plus className="size-6 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-rotate-6" />
+          </FabButton>
+        </DialogTrigger>
+      )}
       {isOpen && (
         <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
           <DialogHeader className="flex flex-row items-center gap-3.5 space-y-0 text-start pb-4 border-b border-neutral-100 dark:border-neutral-800/60">
@@ -281,23 +288,8 @@ function ExpenseForm({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [pending]);
 
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'splits',
-  });
-
   const watchedCurrency = useWatch({ control, name: 'currency' });
-  const watchedAmount = useWatch({ control, name: 'amount' });
-  const watchedSplits = useWatch({ control, name: 'splits' }) ?? [];
   const effectiveCurrency = watchedCurrency || currency;
-
-  const amountValue = parseFloat(watchedAmount) || 0;
-  const splitSum = watchedSplits.reduce((sum, row) => sum + (parseFloat(row.amount) || 0), 0);
-  const splitRemaining = Math.max(0, amountValue - splitSum);
-
-  function handleAppendSplit() {
-    append({ category_id: '', amount: splitRemaining > 0 ? String(splitRemaining) : '' });
-  }
 
   return (
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
@@ -510,105 +502,6 @@ function ExpenseForm({
         />
         <p className="text-[11px] font-normal text-neutral-400 dark:text-neutral-500">
           تُستخدم عملة حسابك الأساسية عند عدم التحديد
-        </p>
-      </div>
-
-      {/* SPLITS FIELD */}
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label
-            htmlFor="splits"
-            className="text-xs font-bold tracking-wide text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5"
-          >
-            <PieChart className="size-3.5 text-neutral-400 dark:text-neutral-500" />
-            <span>تقسيم على التصنيفات</span>
-          </Label>
-          <span className="text-[11px] font-normal text-neutral-400 dark:text-neutral-500">
-            (اختياري)
-          </span>
-        </div>
-
-        {fields.length > 0 && (
-          <div
-            className={`rounded-xl border p-3 space-y-2.5 transition-colors ${
-              splitSum > 0 && Math.abs(splitSum - amountValue) > 0.01
-                ? 'border-amber-300/70 bg-amber-50/60 dark:border-amber-500/40 dark:bg-amber-500/10'
-                : 'border-neutral-200/80 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-950/40'
-            }`}
-          >
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex items-center gap-2">
-                <Controller
-                  name={`splits.${index}.category_id`}
-                  control={control}
-                  render={({ field: splitCatField }) => (
-                    <Select onValueChange={splitCatField.onChange} value={splitCatField.value}>
-                      <SelectTrigger className="flex-1 h-10 px-3 bg-white/80 dark:bg-neutral-900/60 border border-neutral-200/90 dark:border-neutral-800 rounded-lg text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
-                        <SelectValue placeholder="اختر تصنيف" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 shadow-xl p-1 max-h-48">
-                        {categories.map((cat) => (
-                          <SelectItem
-                            key={cat.id}
-                            value={cat.id}
-                            className="rounded-lg py-2 px-3 text-sm font-medium cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:bg-neutral-100 dark:focus:bg-neutral-800"
-                          >
-                            <span className="truncate">{cat.name}</span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                <Input
-                  type="number"
-                  step="0.01"
-                  min="0.01"
-                  inputMode="decimal"
-                  placeholder="0.00"
-                  aria-label={`مبلغ تقسيم ${index + 1}`}
-                  className="w-28 shrink-0 h-10 px-3 bg-white/80 dark:bg-neutral-900/60 border border-neutral-200/90 dark:border-neutral-800 rounded-lg text-sm font-medium text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-neutral-600 transition-safe duration-200 hover:border-neutral-300 dark:hover:border-neutral-700 focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-900 dark:focus:border-neutral-100 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus-visible:outline-none"
-                  {...register(`splits.${index}.amount`)}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  aria-label="حذف التقسيم"
-                  onClick={() => remove(index)}
-                  className="shrink-0 size-9 rounded-lg text-neutral-400 hover:text-rose-500 hover:bg-rose-500/10 transition-safe duration-200 active:scale-95"
-                >
-                  <Trash2 className="size-4" />
-                </Button>
-              </div>
-            ))}
-
-            {amountValue > 0 && (
-              <p className="text-[11px] font-medium text-neutral-500 dark:text-neutral-400 flex items-center gap-1.5">
-                <AlertCircle className="size-3 shrink-0" />
-                {Math.abs(splitSum - amountValue) > 0.01
-                  ? `مجموع التقسيمات ${formatMoney(splitSum, effectiveCurrency)} من أصل ${formatMoney(
-                      amountValue,
-                      effectiveCurrency
-                    )} — المتبقي ${formatMoney(splitRemaining, effectiveCurrency)}`
-                  : `مجموع التقسيمات ${formatMoney(splitSum, effectiveCurrency)} — مكتمل ✓`}
-              </p>
-            )}
-          </div>
-        )}
-
-        <Button
-          type="button"
-          variant="outline"
-          size="sm"
-          onClick={handleAppendSplit}
-          className="inline-flex items-center gap-1.5 h-9 px-3 rounded-lg text-xs font-bold border border-neutral-200 dark:border-neutral-800 text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-safe duration-200 active:scale-95"
-        >
-          <Plus className="size-3.5" />
-          إضافة تقسيم
-        </Button>
-        <p className="text-[11px] font-normal text-neutral-400 dark:text-neutral-500">
-          اقسم مصروفًا واحدًا على عدة تصنيفات بحيث يساوي مجموعها المبلغ الإجمالي
         </p>
       </div>
 
