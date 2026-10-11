@@ -60,6 +60,19 @@ export interface SpendtrackTransactionsResult {
   totalCount: number;
 }
 
+/**
+ * The full owned SpendTrack dataset for reconciliation (ADR-0028): every row
+ * the device may own, **including tombstones** (`deletedAt` set), so a delete
+ * made on another device reaches this one. Deliberately uncapped — the local
+ * store is authoritative, so it must be able to hold the whole set.
+ */
+export interface SpendtrackSyncSnapshot {
+  categories: Category[];
+  expenses: ExpenseWithCategory[];
+  budgets: Budget[];
+  recurring: RecurringExpense[];
+}
+
 export type Budget = OfflineFields & {
   id: string;
   month: string;

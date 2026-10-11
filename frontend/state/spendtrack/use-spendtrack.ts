@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { Budget, Category, Expense, RecurringExpense } from '@/shared/contracts/spendtrack';
 import { SpendtrackLocalStore } from '@/frontend/api/spendtrack/local-store';
+import { getSyncSnapshot } from '@/frontend/api/spendtrack';
 import { createSpendtrackHttpSyncTransport } from '@/frontend/api/spendtrack/sync-transport';
 import { SyncEngine, type SyncStatus } from '@/frontend/shared/local-store/sync-engine';
 import { GUEST_IDENTITY, identityFromUser } from '@/frontend/shared/local-store/identity';
@@ -98,15 +99,19 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         await store.seedIfEmpty(seed);
         if (cancelled) return store.close();
 
-        // Reconcile with the server copy on every open (LWW, pending-aware), so
-        // edits made on another device show up here instead of the store
-        // silently diverging until a reinstall.
-        try {
-          await store.mergeServerData(seed);
-        } catch (error) {
-          logger.error('Failed to reconcile SpendTrack data with the server', {
-            error: String(error),
-          });
+        // Reconcile with the full server snapshot on every open (LWW,
+        // pending-aware), including tombstones, so edits and deletes made on
+        // another device land here instead of the store silently diverging.
+        // Guests own no server rows beyond the seeded defaults.
+        if (isSignedIn) {
+          try {
+            const snapshot = await getSyncSnapshot();
+            if (!cancelled) await store.mergeServerData(snapshot);
+          } catch (error) {
+            logger.error('Failed to reconcile SpendTrack data with the server', {
+              error: String(error),
+            });
+          }
         }
         if (cancelled) return store.close();
 

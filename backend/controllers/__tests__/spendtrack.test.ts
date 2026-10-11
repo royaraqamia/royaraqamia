@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 const mockGetAuthUser = vi.fn();
 const mockService = {
   getTransactions: vi.fn(),
+  getSyncSnapshot: vi.fn(),
   createExpense: vi.fn(),
   createCategory: vi.fn(),
   getBudget: vi.fn(),
@@ -30,6 +31,7 @@ import {
   createExpense,
   getExpenses,
   setBudget,
+  syncSpendtrack,
 } from '@/backend/controllers/spendtrack';
 
 describe('spendtrack controller', () => {
@@ -96,6 +98,30 @@ describe('spendtrack controller', () => {
     const result = await createCategory({ name: 'Food', color_hex: '#aabbcc' });
 
     expect(result).toEqual(expect.objectContaining({ status: 500, body: { error: 'فشل' } }));
+  });
+
+  it('returns the sync snapshot scoped to the session user', async () => {
+    const snapshot = {
+      categories: [],
+      expenses: [{ id: 'e-1', deletedAt: '2026-10-10T00:00:00.000Z' }],
+      budgets: [],
+      recurring: [],
+    };
+    mockService.getSyncSnapshot.mockResolvedValue(snapshot);
+
+    const result = await syncSpendtrack();
+
+    expect(result).toMatchObject({ status: 200, body: snapshot });
+    expect(mockService.getSyncSnapshot).toHaveBeenCalledWith('u-1');
+  });
+
+  it('401s the sync snapshot without a session', async () => {
+    mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
+
+    const result = await syncSpendtrack();
+
+    expect(result).toEqual(expect.objectContaining({ status: 401 }));
+    expect(mockService.getSyncSnapshot).not.toHaveBeenCalled();
   });
 
   it('maps a budget rejection to 400', async () => {

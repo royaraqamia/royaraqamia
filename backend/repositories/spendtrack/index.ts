@@ -1,10 +1,12 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/backend/models/database.types';
 import type {
+  Budget,
   Category,
   ExpenseWithCategory,
   RecurringExpense,
   RecurringExpenseInput,
+  SpendtrackSyncSnapshot,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -58,6 +60,41 @@ export function createSpendtrackRepository(
       return (data ?? []).map(({ color_hex, ...row }) =>
         withOfflineFields({ ...row, colorHex: color_hex })
       ) as Category[];
+    },
+
+    async getSyncSnapshot(userId: string): Promise<SpendtrackSyncSnapshot> {
+      // Deliberately unfiltered by `deleted_at`: tombstones are part of the
+      // snapshot so a delete made on another device can be replayed here.
+      const [cats, rawExpenses, rawBudgets, rawRecurring] = await Promise.all([
+        supabase.from('categories').select('*').or(`user_id.eq.${userId},is_default.eq.true`),
+        supabase.from('expenses').select('*, categories(name, color_hex)').eq('user_id', userId),
+        supabase.from('budgets').select('*').eq('user_id', userId),
+        supabase.from('recurring_expenses').select('*').eq('user_id', userId),
+      ]);
+
+      const categories = (
+        (cats.data ?? []) as Array<{ color_hex: string; [key: string]: unknown }>
+      ).map(({ color_hex, ...row }) =>
+        withOfflineFields({ ...row, colorHex: color_hex })
+      ) as Category[];
+
+      const expenses = ((rawExpenses.data ?? []) as Array<Record<string, unknown>>).map((row) => {
+        const cat = row.categories as { name: string; color_hex: string } | null;
+        return withOfflineFields({
+          ...row,
+          categories: cat ? { name: cat.name, colorHex: cat.color_hex } : undefined,
+        });
+      }) as ExpenseWithCategory[];
+      await attachSplits(expenses as unknown as Array<Record<string, unknown>>);
+
+      const budgets = (rawBudgets.data ?? []).map((row) =>
+        withOfflineFields(row as Record<string, unknown>)
+      ) as Budget[];
+      const recurring = (rawRecurring.data ?? []).map((row) =>
+        withOfflineFields(row as Record<string, unknown>)
+      ) as RecurringExpense[];
+
+      return { categories, expenses, budgets, recurring };
     },
 
     async getTotalExpenses(

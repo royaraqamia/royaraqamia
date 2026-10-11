@@ -7,6 +7,7 @@ import type {
   RecurringExpenseInput,
   SpendImportResult,
   SpendInsights,
+  SpendtrackSyncSnapshot,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -71,6 +72,10 @@ export class SpendtrackService {
 
   async getUserCategories(userId: string): Promise<Category[]> {
     return this.repository.getUserCategories(userId);
+  }
+
+  async getSyncSnapshot(userId: string): Promise<SpendtrackSyncSnapshot> {
+    return this.repository.getSyncSnapshot(userId);
   }
 
   async getTotalExpenses(

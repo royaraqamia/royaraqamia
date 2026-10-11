@@ -67,6 +67,20 @@ export async function getExpenses(query: URLSearchParams): Promise<HttpResult> {
   );
 }
 
+/**
+ * The full owned SpendTrack snapshot for on-open reconciliation (ADR-0028),
+ * including tombstones so another device's deletes land here. Uncapped.
+ */
+export async function syncSpendtrack(): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      const snapshot = await createSpendtrackService(supabase).getSyncSnapshot(userId);
+      return jsonResult(200, snapshot);
+    },
+    { mapError: messageError(500, 'فشل مزامنة بيانات المصاريف') }
+  );
+}
+
 export async function exportExpenses(query: URLSearchParams): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {

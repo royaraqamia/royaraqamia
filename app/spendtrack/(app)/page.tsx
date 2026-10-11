@@ -7,9 +7,12 @@ import { BudgetCardLive } from '@/frontend/ui/spendtrack/budget-card-live';
 import { TotalSpendCardLive } from '@/frontend/ui/spendtrack/total-spend-card-live';
 import { RecurringExpenses } from '@/frontend/ui/spendtrack/recurring-expenses';
 import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
-import { CategoryPieChartLazy, DailyBarChartLazy } from '@/frontend/ui/spendtrack/charts-lazy';
 import { ChartsSkeleton } from '@/frontend/ui/spendtrack/charts-skeleton';
-import { InsightsStrip } from '@/frontend/ui/spendtrack/insights-strip';
+import {
+  CategoryPieChartLive,
+  DailyBarChartLive,
+  InsightsStripLive,
+} from '@/frontend/ui/spendtrack/dashboard-local';
 import { CsvActions } from '@/frontend/ui/spendtrack/csv-actions';
 import { TransactionFilters } from '@/frontend/ui/spendtrack/transaction-filters';
 import { getOptionalUser } from '@/backend/middleware/auth-guard';
@@ -185,7 +188,13 @@ async function CategoryPieSection({
   const data = await loadCategoryBreakdown(userId, start, end, catFilter);
   return (
     <Suspense fallback={<ChartsSkeleton />}>
-      <CategoryPieChartLazy data={data ?? []} currency={currency} />
+      <CategoryPieChartLive
+        initialData={data ?? []}
+        start={start}
+        end={end}
+        filterCategories={catFilter ?? []}
+        currency={currency}
+      />
     </Suspense>
   );
 }
@@ -206,7 +215,13 @@ async function DailyBarSection({
   const data = await loadDailyTotals(userId, start, end, catFilter);
   return (
     <Suspense fallback={<ChartsSkeleton />}>
-      <DailyBarChartLazy data={data ?? []} currency={currency} />
+      <DailyBarChartLive
+        initialData={data ?? []}
+        start={start}
+        end={end}
+        filterCategories={catFilter ?? []}
+        currency={currency}
+      />
     </Suspense>
   );
 }
@@ -225,7 +240,15 @@ async function InsightsSection({
   currency: string;
 }) {
   const insights = await loadInsights(userId, start, end, catFilter);
-  return <InsightsStrip insights={insights} currency={currency} />;
+  return (
+    <InsightsStripLive
+      initialInsights={insights}
+      start={start}
+      end={end}
+      filterCategories={catFilter ?? []}
+      currency={currency}
+    />
+  );
 }
 
 async function TransactionsSection({

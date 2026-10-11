@@ -3,6 +3,7 @@ import type {
   ExpenseWithCategory,
   RecurringExpense,
   RecurringExpenseInput,
+  SpendtrackSyncSnapshot,
   SpendtrackTransactionsQuery,
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
@@ -75,6 +76,7 @@ export interface BudgetWriteMeta {
 
 export interface SpendtrackRepository {
   getUserCategories(userId: string): Promise<Category[]>;
+  getSyncSnapshot(userId: string): Promise<SpendtrackSyncSnapshot>;
   getTotalExpenses(
     userId: string,
     start: string,

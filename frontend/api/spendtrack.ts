@@ -1,4 +1,8 @@
-import type { ExpenseWithCategory, RecurringExpenseInput } from '@/shared/contracts/spendtrack';
+import type {
+  ExpenseWithCategory,
+  RecurringExpenseInput,
+  SpendtrackSyncSnapshot,
+} from '@/shared/contracts/spendtrack';
 import { request } from '@/frontend/transport/http';
 
 type ActionState = { error?: string; success?: boolean } | undefined;
@@ -65,6 +69,11 @@ export async function deleteExpense(expenseId: string): Promise<ActionState> {
   } catch (error) {
     return { error: error instanceof Error ? error.message : 'فشل حذف المصروف' };
   }
+}
+
+/** Full owned snapshot (incl. tombstones) for on-open reconciliation. */
+export async function getSyncSnapshot(): Promise<SpendtrackSyncSnapshot> {
+  return request<SpendtrackSyncSnapshot>('/spendtrack/api/sync');
 }
 
 export async function getBudget(month: string, categoryId?: string): Promise<number | null> {
