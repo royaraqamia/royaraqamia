@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.79.0] - 2026-10-11
+
+### Changed
+- use solid backgrounds for dropdowns, popovers, and dialogs
+
+### Added
+- inline name and avatar editor
+- add display-name and avatar write endpoints
+
+### Fixed
+- don't overwrite profile on OAuth code exchange
+
 ## [1.78.0] - 2026-10-11
 
 ### Changed
