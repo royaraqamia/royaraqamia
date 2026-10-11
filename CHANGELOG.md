@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.82.0] - 2026-10-11
+
+### Changed
+- unify primary CTAs with hero button and highlight titles
+- fix URL/custom-code field alignment and Arabic diacritics
+
+### Added
+- full-snapshot reconcile on open + local-first charts
+- add labels to name and handle dialog inputs
+
+### Fixed
+- restore even spacing between habit modal sections
+- proper LWW on updated_at, local-first totals, reconcile on open
+- last-write-wins on expense update and delete
+
 ## [1.81.0] - 2026-10-11
 
 ### Changed
