@@ -38,7 +38,7 @@ export default async function HomePage({
 
   return (
     <>
-      <header className="mb-10 text-center">
+      <header className="mb-6 text-center sm:mb-10">
         <SectionTitle as="h1">
           تتبُّع <SectionTitleHighlight>العادات</SectionTitleHighlight>
         </SectionTitle>

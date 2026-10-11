@@ -11,7 +11,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  FileSpreadsheet,
   Upload,
   Calendar as CalendarIcon,
   Database,
@@ -31,6 +30,7 @@ import { NotesDialog } from '@/frontend/ui/habitflow/components/notes-dialog';
 import { SyncStatusPill } from '@/frontend/ui/habitflow/components/sync-status-pill';
 import { pluralize, type PluralForms } from '@/frontend/shared/habitflow/calendar-format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { FabButton } from '@/frontend/ui/shared/fab-button';
 
 const DAY_FORMS: PluralForms = { one: 'يوم', two: 'يومين', few: 'أيام', other: 'يوم' };
 
@@ -87,7 +87,6 @@ export function DashboardShell({
     handleSkipHabit,
     handleSaveNote,
     handleDownloadBackup,
-    handleDownloadCsv,
     handleImportBackupFile,
     showImportConfirm,
     confirmImport,
@@ -154,32 +153,32 @@ export function DashboardShell({
         className="min-h-screen text-zinc-900 dark:text-zinc-50 selection:bg-primary/20 selection:text-primary transition-colors duration-500 font-sans"
         dir="rtl"
       >
-        <div className="max-w-350 mx-auto px-4 sm:px-6 md:px-8 py-8 sm:py-12 flex flex-col gap-10 lg:gap-14">
+        <div className="max-w-350 mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-12 flex flex-col gap-8 lg:gap-14">
           {/* Header & Date Navigation Toolbar */}
           <m.header
             initial={shouldReduce ? false : { opacity: 0, y: -15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={shouldReduce ? undefined : { type: 'spring', stiffness: 280, damping: 25 }}
-            className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-zinc-200/60 dark:border-zinc-800/60"
+            className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-zinc-200/60 dark:border-zinc-800/60"
           >
-            <div className="flex items-center gap-4 self-start md:self-auto flex-wrap sm:flex-nowrap">
+            <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto sm:flex-nowrap sm:gap-4">
               {/* Apple-style Segmented Date Control */}
-              <div className="flex items-center bg-white/70 dark:bg-zinc-900/70 border border-zinc-200/80 dark:border-zinc-800/80 rounded-full p-1.5 shadow-sm transition-safe hover:border-zinc-300 dark:hover:border-zinc-700">
+              <div className="flex w-full items-center justify-between bg-white/70 dark:bg-zinc-900/70 border border-zinc-200/80 dark:border-zinc-800/80 rounded-full p-1.5 shadow-sm transition-safe hover:border-zinc-300 dark:hover:border-zinc-700 sm:w-auto sm:justify-start">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => handleDateShift(-1)}
                   aria-label="اليوم السَّابق"
                   id="btn-prev-day"
-                  className="size-11 sm:size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-safe duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="size-10 sm:size-9 shrink-0 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-safe duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <ChevronRight className="w-4 h-4" />
                 </Button>
 
-                <div className="flex items-center gap-2 px-4 py-1">
-                  <CalendarIcon className="w-4 h-4 text-zinc-400 dark:text-zinc-500" />
+                <div className="flex min-w-0 flex-1 items-center justify-center gap-2 px-2 sm:flex-none sm:px-4 sm:py-1">
+                  <CalendarIcon className="w-4 h-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
                   <span
-                    className="text-sm font-bold text-zinc-800 dark:text-zinc-200 whitespace-nowrap min-w-30 text-center select-none"
+                    className="truncate text-sm font-bold text-zinc-800 dark:text-zinc-200 whitespace-nowrap text-center select-none sm:min-w-30"
                     aria-live="polite"
                     aria-atomic="true"
                   >
@@ -193,31 +192,29 @@ export function DashboardShell({
                   onClick={() => handleDateShift(1)}
                   aria-label="اليوم التَّالي"
                   id="btn-next-day"
-                  className="size-11 sm:size-9 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-safe duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                  className="size-10 sm:size-9 shrink-0 rounded-full text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-safe duration-300 ease-out active:scale-90 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
               </div>
 
-              <m.div
-                initial={false}
-                animate={{
-                  opacity: activeDate !== todayDate ? 1 : 0,
-                  scale: activeDate !== todayDate ? 1 : 0.8,
-                }}
-                transition={{ duration: 0.3, ease: 'easeOut' }}
-                className={activeDate !== todayDate ? '' : 'pointer-events-none'}
-                inert={activeDate === todayDate}
-              >
-                <Button
-                  variant="outline"
-                  onClick={() => setActiveDate(todayDate)}
-                  aria-label="العودة إلى اليوم"
-                  className="h-12 rounded-full px-5 border-zinc-200/80 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-bold shadow-sm transition-safe duration-300 active:scale-[0.97] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
+              {activeDate !== todayDate && (
+                <m.div
+                  initial={shouldReduce ? false : { opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  className="shrink-0"
                 >
-                  اليوم
-                </Button>
-              </m.div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveDate(todayDate)}
+                    aria-label="العودة إلى اليوم"
+                    className="h-11 sm:h-12 rounded-full px-5 border-zinc-200/80 dark:border-zinc-800/80 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-bold shadow-sm transition-safe duration-300 active:scale-[0.97] cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
+                  >
+                    اليوم
+                  </Button>
+                </m.div>
+              )}
             </div>
 
             <div className="self-start md:self-auto">
@@ -279,21 +276,6 @@ export function DashboardShell({
                     </span>
                   )}
                 </div>
-
-                <Button
-                  onClick={() => {
-                    setIsAddModalOpen(true);
-                    setFormError('');
-                  }}
-                  id="btn-create-habit"
-                  className="group rounded-full shadow-sm hover:shadow-md hover:shadow-primary/20 transition-safe duration-300 ease-out hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.97] bg-primary text-primary-foreground font-bold h-11 px-5 text-sm flex items-center gap-2 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-950"
-                >
-                  <Plus className="w-4 h-4 transition-transform group-hover:rotate-90 duration-300 ease-out" />
-                  <span>إضافة عادة</span>
-                  <kbd className="hidden sm:inline-flex items-center justify-center min-w-5.5 h-5 px-1 rounded text-[10px] font-mono font-bold bg-white/20 dark:bg-black/20 border border-white/20 dark:border-black/20 shadow-[0_1px_0_rgba(255,255,255,0.2)] dark:shadow-none">
-                    N
-                  </kbd>
-                </Button>
               </div>
 
               <div className="flex flex-col gap-4">
@@ -351,7 +333,7 @@ export function DashboardShell({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3 self-stretch sm:grid-cols-3 sm:self-auto">
+              <div className="grid grid-cols-1 gap-3 self-stretch sm:grid-cols-2 sm:self-auto">
                 <input
                   ref={fileInputRef}
                   id="file-input-ref"
@@ -380,14 +362,6 @@ export function DashboardShell({
                 >
                   <Download className="w-4 h-4" />
                   <span>تصدير</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={handleDownloadCsv}
-                  className="w-full rounded-xl border-zinc-200 dark:border-zinc-800 bg-white/50 dark:bg-zinc-900/50 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 font-bold h-11 px-4 text-xs sm:text-sm flex items-center justify-center gap-2 transition-safe duration-300 active:scale-95 cursor-pointer focus-visible:ring-2 focus-visible:ring-primary/50"
-                >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span>تصدير CSV</span>
                 </Button>
               </div>
             </div>
@@ -487,6 +461,17 @@ export function DashboardShell({
             onConfirm={confirmImport}
             onCancel={cancelImport}
           />
+
+          <FabButton
+            id="btn-create-habit"
+            label="إضافة عادة جديدة"
+            onClick={() => {
+              setIsAddModalOpen(true);
+              setFormError('');
+            }}
+          >
+            <Plus className="size-6 transition-transform duration-200 ease-out group-hover:scale-110 group-hover:-rotate-6" />
+          </FabButton>
         </div>
       </main>
     </ErrorBoundary>
