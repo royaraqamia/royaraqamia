@@ -44,7 +44,7 @@ export function SignInPrompt({
           </DialogDescription>
         </DialogHeader>
         <div className="flex items-center justify-end gap-2.5 pt-2">
-          <Button asChild className="w-full">
+          <Button asChild variant="hero" className="w-full">
             <Link href={loginHref}>تسجيل الدُّخول</Link>
           </Button>
         </div>

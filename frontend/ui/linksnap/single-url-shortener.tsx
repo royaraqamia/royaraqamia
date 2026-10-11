@@ -5,12 +5,10 @@ import NextLink from 'next/link';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   Link,
-  Sparkles,
   Copy,
   Check,
   Share2,
   QrCode,
-  ArrowLeft,
   RotateCcw,
   Lock,
   LockOpen,
@@ -309,7 +307,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
           <button
             type="submit"
             disabled={loading || !originalUrl}
-            className="w-full py-4 px-6 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-sm rounded-full transition-safe shadow-md shadow-primary/20 hover:shadow-primary/30 flex items-center justify-center gap-2 cursor-pointer group btn-lift focus-ring touch-target btn-press"
+            className="group relative w-full py-4 px-6 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white text-base font-bold transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)] hover:shadow-[0_15px_35px_-5px_rgba(147,51,234,0.7)] border border-white/20 overflow-hidden flex items-center justify-center gap-2.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
           >
             {loading ? (
               <>
@@ -320,14 +318,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 <span>جاري الاختصار...</span>
               </>
             ) : (
-              <>
-                <Sparkles
-                  aria-hidden="true"
-                  className="w-4 h-4 text-primary-foreground/60 group-hover:scale-110 transition-transform"
-                />
-                <span>اختصار الرَّابط</span>
-                <ArrowLeft aria-hidden="true" className="w-4 h-4 ms-1" />
-              </>
+              <span>اختصار الرَّابط</span>
             )}
           </button>
         </m.form>

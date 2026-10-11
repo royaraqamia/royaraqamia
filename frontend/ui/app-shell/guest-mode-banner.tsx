@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Sparkles, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { useSession } from '@/frontend/state/session-provider';
 
@@ -41,14 +41,13 @@ export function GuestModeBanner() {
       className="mb-6 flex flex-col gap-3 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
     >
       <p className="flex items-start gap-2 text-foreground sm:items-center">
-        <Sparkles className="mt-0.5 size-4 shrink-0 text-primary sm:mt-0" aria-hidden="true" />
         <span>
           أنت تستعرض <span className="font-bold">وضع الضَّيف</span> — بياناتك محفوظة على هذا الجهاز
           فقط. سجِّل الدُّخول لحفظها ومزامنتها على كلِّ أجهزتك.
         </span>
       </p>
       <div className="flex shrink-0 items-center gap-2 self-end sm:self-auto">
-        <Button asChild size="sm" className="shrink-0">
+        <Button asChild variant="hero" size="sm" className="shrink-0">
           <Link href={loginHref}>تسجيل الدُّخول</Link>
         </Button>
         <Button
