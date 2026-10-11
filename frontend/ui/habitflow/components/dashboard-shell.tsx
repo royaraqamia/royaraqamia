@@ -14,6 +14,7 @@ import {
   Upload,
   Calendar as CalendarIcon,
   Database,
+  ListChecks,
 } from 'lucide-react';
 import { ErrorBoundary } from '@/frontend/ui/shared/error-boundary';
 import { Habit, HabitLog } from '@/shared/contracts/habitflow';
@@ -156,7 +157,7 @@ export function DashboardShell({
         <div className="max-w-350 mx-auto px-4 sm:px-6 md:px-8 py-6 sm:py-12 flex flex-col gap-8 lg:gap-14">
           {/* Header & Date Navigation Toolbar */}
           <m.header
-            initial={shouldReduce ? false : { opacity: 0, y: -15 }}
+            initial={{ opacity: 0, y: -15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={shouldReduce ? undefined : { type: 'spring', stiffness: 280, damping: 25 }}
             className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-zinc-200/60 dark:border-zinc-800/60"
@@ -200,7 +201,7 @@ export function DashboardShell({
 
               {activeDate !== todayDate && (
                 <m.div
-                  initial={shouldReduce ? false : { opacity: 0, scale: 0.8 }}
+                  initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                   className="shrink-0"
@@ -254,7 +255,7 @@ export function DashboardShell({
 
           {/* Main Workspace Layout */}
           <m.div
-            initial={shouldReduce ? false : { opacity: 0, y: 30 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.05 }}
             transition={shouldReduce ? undefined : { duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
@@ -268,7 +269,7 @@ export function DashboardShell({
               <div className="flex items-center justify-between gap-4 pb-2 border-b border-transparent">
                 <div className="flex items-center gap-3">
                   <h2 className="text-2xl sm:text-3xl font-bold text-zinc-900 dark:text-zinc-50">
-                    قائمة عادات اليوم
+                    قائمة العادات
                   </h2>
                   {habits.length > 0 && (
                     <span className="inline-flex items-center justify-center px-3 py-0.5 text-xs font-bold rounded-full bg-zinc-200/50 dark:bg-zinc-800/50 text-zinc-600 dark:text-zinc-300 border border-zinc-300/50 dark:border-zinc-700/50">
@@ -278,22 +279,49 @@ export function DashboardShell({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-4">
-                {habits.map((habit) => (
-                  <HabitCard
-                    key={habit.id}
-                    habit={habit}
-                    logs={logs}
-                    activeDate={activeDate}
-                    onToggle={handleToggleLog}
-                    onSkip={handleSkipHabit}
-                    onNote={setNoteHabitId}
-                    onEdit={openEditModal}
-                    togglingHabitId={togglingHabitId}
-                    pending={pendingHabitIds.has(habit.id)}
-                  />
-                ))}
-              </div>
+              {habits.length === 0 ? (
+                <m.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={
+                    shouldReduce ? undefined : { duration: 0.45, ease: [0.16, 1, 0.3, 1] }
+                  }
+                  className="relative flex flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-zinc-300/70 bg-linear-to-b from-zinc-50/80 to-transparent px-6 py-14 text-center dark:border-zinc-800 dark:from-zinc-900/50"
+                >
+                  <div className="relative mb-5">
+                    <div
+                      className="absolute -inset-3 rounded-full bg-primary/15 blur-2xl"
+                      aria-hidden="true"
+                    />
+                    <div className="relative flex size-16 items-center justify-center rounded-2xl border border-zinc-200/80 bg-white text-primary shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+                      <ListChecks className="size-7" aria-hidden="true" />
+                    </div>
+                  </div>
+                  <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
+                    لا توجد عادات بعد
+                  </h3>
+                  <p className="mt-2 max-w-xs text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                    لم تُسجَّل أي عادة في هذا اليوم بعد. ستظهر عاداتك هنا لتتابع تقدُّمك يوماً بيوم.
+                  </p>
+                </m.div>
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {habits.map((habit) => (
+                    <HabitCard
+                      key={habit.id}
+                      habit={habit}
+                      logs={logs}
+                      activeDate={activeDate}
+                      onToggle={handleToggleLog}
+                      onSkip={handleSkipHabit}
+                      onNote={setNoteHabitId}
+                      onEdit={openEditModal}
+                      togglingHabitId={togglingHabitId}
+                      pending={pendingHabitIds.has(habit.id)}
+                    />
+                  ))}
+                </div>
+              )}
             </section>
 
             {/* Calendar Grid Column */}
@@ -312,7 +340,7 @@ export function DashboardShell({
 
           {/* Backup & Data Management Footer Banner */}
           <m.footer
-            initial={shouldReduce ? false : { opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true, amount: 0.3 }}
             transition={shouldReduce ? undefined : { duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
