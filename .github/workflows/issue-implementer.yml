@@ -11,8 +11,9 @@
 # fixed three-hour clock offset to race against. The 06:00 UTC schedule is a
 # no-config backstop for the case where the planner never completes, and the
 # `issue-automation-health` workflow can re-dispatch directly. The `Daily guard` step
-# makes those redundant triggers idempotent — only the first successful run inside an
-# 18-hour window does any work, preserving the one-issue-a-day contract.
+# makes those redundant triggers idempotent — only the first successful run on a given
+# UTC day does any work, preserving the one-issue-a-day contract and never letting a
+# late backstop suppress the next day's run.
 #
 # It polls (schedule/workflow_run/dispatch) rather than reacting to the
 # `issues: [labeled]` event on purpose: GitHub does not run workflows in response to
@@ -48,7 +49,7 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: 'Run even if a successful implementer run already happened in the last 18h'
+        description: 'Run even if a successful implementer run already happened today (UTC)'
         type: boolean
         default: false
 
@@ -75,7 +76,10 @@ jobs:
       - name: Daily guard
         # Idempotency for the redundant triggers: the `workflow_run` chain, the 06:00
         # schedule and the health-monitor catch-up all point here. Only the first
-        # successful run in an 18-hour window does work; the rest exit immediately.
+        # successful run on a given UTC day does work; the rest exit immediately. The
+        # window is the calendar day, not a rolling one, so a backstop that lands
+        # hours late can never push the next day's punctual run inside the window and
+        # suppress it.
         id: guard
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
@@ -87,10 +91,16 @@ jobs:
               workflow_id: 'issue-implementer.yml',
               per_page: 30,
             });
-            const cutoff = Date.now() - 18 * 60 * 60 * 1000;
-            const recent = runs.find((r) => r.conclusion === 'success' && Date.parse(r.created_at) > cutoff);
+            const startOfDayUtc = new Date();
+            startOfDayUtc.setUTCHours(0, 0, 0, 0);
+            const recent = runs.find(
+              (r) =>
+                r.conclusion === 'success' &&
+                r.id !== context.runId &&
+                Date.parse(r.created_at) >= startOfDayUtc.getTime()
+            );
             if (recent && !force) {
-              core.notice('Issue Implementer already succeeded at ' + recent.created_at + '; skipping this ' + context.eventName + ' trigger. Dispatch with force=true to override.');
+              core.notice('Issue Implementer already succeeded today at ' + recent.created_at + '; skipping this ' + context.eventName + ' trigger. Dispatch with force=true to override.');
               core.setOutput('run', 'false');
             } else {
               core.setOutput('run', 'true');

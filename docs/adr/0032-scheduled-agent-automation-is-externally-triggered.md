@@ -18,9 +18,11 @@ layered triggers plus a day-guard:
 - **Catch-up:** `issue-automation-health.yml` checks the age of each workflow's last success,
   re-dispatches any that lapsed (using the default `GITHUB_TOKEN`), and opens or closes a single
   `opencode:alert` issue.
-- **Idempotency:** an 18-hour `Daily guard` on each workflow means only the first successful run in
-  a window does work, so the redundant triggers never double-file issues or implement a second
-  issue in a day. `workflow_dispatch` accepts `force: true` to override the guard.
+- **Idempotency:** a calendar-day `Daily guard` on each workflow means only the first successful run
+  on a given UTC day does work, so the redundant triggers never double-file issues or implement a
+  second issue in a day. Keying on the calendar day rather than a rolling window is deliberate: a
+  backstop that lands hours late could otherwise push the next day's punctual run inside a shrinking
+  window and silently suppress it. `workflow_dispatch` accepts `force: true` to override the guard.
 
 ## Considered options
 
