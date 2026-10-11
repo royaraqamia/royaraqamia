@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import {
@@ -365,14 +366,16 @@ function RecurringDialog({
               <span>{error}</span>
             </div>
           )}
-          <Button
-            type="submit"
-            className="w-full h-11 rounded-xl font-bold shadow-xs hover:shadow-md active:scale-[0.99] transition-safe duration-200 disabled:opacity-50 cursor-pointer"
-            disabled={pending}
-          >
-            {pending && <Loader2 className="me-2 size-4 animate-spin" />}
-            {pending ? 'جاري الحفظ...' : item ? 'حفظ التَّعديلات' : 'إضافة'}
-          </Button>
+          <HeroCtaButton type="submit" className="w-full" disabled={pending}>
+            {pending ? (
+              <>
+                <Loader2 className="size-4 animate-spin shrink-0" />
+                <span>جاري الحفظ...</span>
+              </>
+            ) : (
+              <span>{item ? 'حفظ التَّعديلات' : 'إضافة'}</span>
+            )}
+          </HeroCtaButton>
         </form>
       </DialogContent>
     </Dialog>

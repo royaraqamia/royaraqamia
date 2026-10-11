@@ -3,8 +3,9 @@
 import React, { memo } from 'react';
 import { Trash2, AlertCircle, Loader2, Bell, Target } from 'lucide-react';
 import { Habit, HabitTargetPeriod } from '@/shared/contracts/habitflow';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { TimePicker } from '@/frontend/ui/primitives/time-picker';
 
@@ -55,13 +56,9 @@ export const EditHabitModal = memo(function EditHabitModal({
       }}
     >
       <DialogContent className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]">
-        <DialogHeader className="sticky top-0 z-10 px-6 sm:px-8 pt-8 pb-4 text-start rounded-t-[28px] bg-background">
-          <DialogTitle className="text-xl sm:text-2xl font-bold text-foreground/90">
-            تعديل خصائص العادة
-          </DialogTitle>
-        </DialogHeader>
+        <DialogTitle className="sr-only">تعديل خصائص العادة</DialogTitle>
 
-        <form onSubmit={onSubmit} className="px-6 sm:px-8 pb-8 space-y-7 text-start" dir="rtl">
+        <form onSubmit={onSubmit} className="px-6 sm:px-8 pt-8 pb-8 space-y-7 text-start" dir="rtl">
           {formError && (
             <div
               id="edit-habit-error"
@@ -251,11 +248,11 @@ export const EditHabitModal = memo(function EditHabitModal({
               >
                 إلغاء
               </Button>
-              <Button
+              <HeroCtaButton
                 type="submit"
                 disabled={isSubmitting}
                 id="btn-submit-edit-habit"
-                className="w-full sm:w-auto rounded-xl px-7 py-5 sm:py-2.5 text-[14px] font-bold bg-primary text-primary-foreground hover:bg-primary/95 shadow-[0_4px_14px_0] shadow-primary/20 dark:shadow-primary/10 transition-safe duration-300 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2.5"
+                className="w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <>
@@ -265,7 +262,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                 ) : (
                   'تطبيق التَّغييرات'
                 )}
-              </Button>
+              </HeroCtaButton>
             </div>
           </div>
         </form>

@@ -6,17 +6,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useSaveExpense } from '@/frontend/state/spendtrack/use-expenses';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { DatePicker } from '@/frontend/ui/primitives/date-picker';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/frontend/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/frontend/ui/primitives/dialog';
 import {
   Select,
   SelectContent,
@@ -136,19 +131,7 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
       )}
       {isOpen && (
         <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
-          <DialogHeader className="flex flex-row items-center gap-3.5 space-y-0 text-start pb-4 border-b border-neutral-100 dark:border-neutral-800/60">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 shadow-inner">
-              <Plus className="size-5" />
-            </div>
-            <div className="space-y-0.5">
-              <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
-                إضافة مصروف
-              </DialogTitle>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                أدخِل تفاصيل المصروف لتسجيله في حسابك
-              </p>
-            </div>
-          </DialogHeader>
+          <DialogTitle className="sr-only">إضافة مصروف</DialogTitle>
           <ExpenseForm
             onSubmit={handleSubmit(onSubmit)}
             register={register}
@@ -227,19 +210,7 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
       </DialogTrigger>
       {isOpen && (
         <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
-          <DialogHeader className="flex flex-row items-center gap-3.5 space-y-0 text-start pb-4 border-b border-neutral-100 dark:border-neutral-800/60">
-            <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-neutral-100 dark:bg-neutral-800/80 text-neutral-900 dark:text-neutral-100 shadow-inner">
-              <Pencil className="size-5" />
-            </div>
-            <div className="space-y-0.5">
-              <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900 dark:text-neutral-50">
-                تعديل المصروف
-              </DialogTitle>
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                تعديل بيانات وتفاصيل المصروف الحالي
-              </p>
-            </div>
-          </DialogHeader>
+          <DialogTitle className="sr-only">تعديل المصروف</DialogTitle>
           <ExpenseForm
             onSubmit={handleSubmit(onSubmit)}
             register={register}
@@ -517,14 +488,16 @@ function ExpenseForm({
       )}
 
       {/* SUBMIT BUTTON */}
-      <Button
-        type="submit"
-        className="w-full h-11 mt-2 inline-flex items-center justify-center gap-2 rounded-xl bg-neutral-900 text-neutral-50 font-bold text-sm shadow-md transition-safe duration-200 ease-out hover:bg-neutral-800 hover:shadow-lg active:scale-[0.98] disabled:opacity-60 disabled:pointer-events-none disabled:transform-none dark:bg-neutral-50 dark:text-neutral-900 dark:hover:bg-neutral-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 dark:focus-visible:ring-neutral-100 focus-visible:ring-offset-2 cursor-pointer"
-        disabled={pending}
-      >
-        {pending ? <Loader2 className="size-4 animate-spin shrink-0" /> : null}
-        <span>{pending ? 'جاري الحفظ...' : submitLabel}</span>
-      </Button>
+      <HeroCtaButton type="submit" className="w-full mt-2" disabled={pending}>
+        {pending ? (
+          <>
+            <Loader2 className="size-4 animate-spin shrink-0" />
+            <span>جاري الحفظ...</span>
+          </>
+        ) : (
+          <span>{submitLabel}</span>
+        )}
+      </HeroCtaButton>
     </form>
   );
 }
