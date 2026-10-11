@@ -15,12 +15,13 @@ import bash from 'highlight.js/lib/languages/bash';
 import sql from 'highlight.js/lib/languages/sql';
 import python from 'highlight.js/lib/languages/python';
 import markdown from 'highlight.js/lib/languages/markdown';
-import { Button } from '@/frontend/ui/primitives/button';
-import { ArrowRight, Calendar, BookOpen, User } from 'lucide-react';
+import { BackButton } from '@/frontend/ui/shared/back-button';
+import { BookOpen, User } from 'lucide-react';
 import { SocialShare } from '../_components/social-share';
 import { CodeBlockEnhancer } from '../_components/code-block-enhancer';
 import { PostViewTracker } from '../_components/post-view-tracker';
 import { PostOwnerActions } from '../_components/post-owner-actions';
+import { PostPublishedAt } from '../_components/post-published-at';
 import {
   loadPublishedPostBySlug,
   loadCommunityPost,
@@ -175,18 +176,44 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
 
       <div className="max-w-7xl mx-auto">
         <article aria-label={excerpt}>
-          {/* Back Navigation */}
-          <nav aria-label="التَّنقُّل للخلف" className="mb-8 sm:mb-10">
-            <Link href="/community">
-              <Button
-                variant="ghost"
-                className="group rounded-full ps-3 pe-4 text-muted-foreground hover:text-foreground"
-              >
-                <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-                العودة إلى المجتمع
-              </Button>
-            </Link>
-          </nav>
+          {/* Back action + publisher share one row; actions sit at the far end */}
+          <div className="mb-8 sm:mb-10 flex flex-wrap items-center justify-between gap-x-3 gap-y-4">
+            <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
+              <BackButton />
+              {author?.name && (
+                <Link
+                  href={`/u/${encodeURIComponent(author.username)}`}
+                  aria-label={`الملف الشَّخصي لـ ${author.name}`}
+                  className="flex items-center gap-2.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40 hover:bg-muted/50 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                >
+                  {author.avatar_url?.trim() ? (
+                    <Image
+                      src={author.avatar_url}
+                      alt={author.name}
+                      width={28}
+                      height={28}
+                      className="rounded-full object-cover ring-2 ring-primary/20 shrink-0"
+                    />
+                  ) : (
+                    <div className="size-7 rounded-full bg-primary/15 flex items-center justify-center text-primary font-medium shrink-0">
+                      <User className="size-3.5" />
+                    </div>
+                  )}
+                  <span className="flex min-w-0 flex-col text-start">
+                    <span className="font-bold text-foreground leading-tight">{author.name}</span>
+                    <span className="text-[11px] text-muted-foreground leading-tight">
+                      <span dir="ltr">@{author.username}</span>
+                    </span>
+                  </span>
+                </Link>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <SocialShare url={postUrl} title={excerpt} />
+              <PostOwnerActions post={p} />
+            </div>
+          </div>
 
           {/* Layout Grid: Article Body & Sticky Sidebar */}
           <div
@@ -213,64 +240,25 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                   </div>
                 )}
 
-                <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground border-y border-border/40 py-4 sm:py-4.5">
-                  {author?.name && (
-                    <Link
-                      href={`/u/${encodeURIComponent(author.username)}`}
-                      aria-label={`الملف الشَّخصي لـ ${author.name}`}
-                      className="flex items-center gap-2.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40 hover:bg-muted/50 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-                    >
-                      {author.avatar_url?.trim() ? (
-                        <Image
-                          src={author.avatar_url}
-                          alt={author.name}
-                          width={28}
-                          height={28}
-                          className="rounded-full object-cover ring-2 ring-primary/20 shrink-0"
-                        />
-                      ) : (
-                        <div className="size-7 rounded-full bg-primary/15 flex items-center justify-center text-primary font-medium shrink-0">
-                          <User className="size-3.5" />
-                        </div>
-                      )}
-                      <span className="flex min-w-0 flex-col text-start">
-                        <span className="font-bold text-foreground leading-tight">
-                          {author.name}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground leading-tight">
-                          <span dir="ltr">@{author.username}</span>
-                        </span>
+                {postTags.length > 0 && (
+                  <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground border-y border-border/40 py-4 sm:py-4.5">
+                    {postTags.map((tag) => (
+                      <span
+                        key={tag.id}
+                        className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-bold text-primary"
+                      >
+                        #{tag.name}
                       </span>
-                    </Link>
-                  )}
-                  {p.published_at && (
-                    <div className="flex items-center gap-1.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40">
-                      <Calendar className="size-3.5 text-primary/70 shrink-0" />
-                      <span>
-                        {new Intl.DateTimeFormat('ar-SA', {
-                          year: 'numeric',
-                          month: 'long',
-                          day: 'numeric',
-                          calendar: 'islamic-umalqura',
-                          numberingSystem: 'latn',
-                        }).format(new Date(p.published_at))}
-                      </span>
-                    </div>
-                  )}
-                  {postTags.map((tag) => (
-                    <span
-                      key={tag.id}
-                      className="inline-flex items-center rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-xs font-bold text-primary"
-                    >
-                      #{tag.name}
-                    </span>
-                  ))}
-                  <div className="ms-auto flex items-center gap-2">
-                    <SocialShare url={postUrl} title={excerpt} />
-                    <PostOwnerActions post={p} />
+                    ))}
                   </div>
-                </div>
+                )}
               </header>
+
+              {p.published_at && (
+                <div className="mb-6 sm:mb-8 text-right">
+                  <PostPublishedAt publishedAt={p.published_at} />
+                </div>
+              )}
 
               <div className="cv-auto prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-headings:text-foreground prose-p:leading-relaxed prose-p:text-foreground/90 prose-p:mb-6 prose-a:text-primary prose-a:font-bold prose-a:no-underline hover:prose-a:underline prose-img:rounded-2xl prose-img:shadow-xl prose-img:border prose-img:border-border/50 prose-code:before:content-none prose-code:after:content-none prose-code:bg-muted/80 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md prose-code:text-sm prose-code:font-mono prose-code:border prose-code:border-border/40 prose-pre:relative prose-pre:bg-muted/90 prose-pre:border prose-pre:border-border/60 prose-pre:rounded-2xl prose-pre:shadow-md prose-blockquote:border-s-primary prose-blockquote:border-s-4 prose-blockquote:bg-muted/30 prose-blockquote:py-3 prose-blockquote:px-6 prose-blockquote:rounded-e-2xl prose-blockquote:not-italic prose-blockquote:text-foreground/90 prose-hr:border-border/50">
                 <ReactMarkdown

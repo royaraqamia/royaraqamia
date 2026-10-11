@@ -1,11 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
-import { ArrowRight, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { loadCommunityMember } from '@/backend/loaders/community';
 import { MemberAvatar } from '@/frontend/ui/shared/member-avatar';
 import { EmptyState } from '@/frontend/ui/primitives/empty-state';
-import { Button } from '@/frontend/ui/primitives/button';
+import { BackButton } from '@/frontend/ui/shared/back-button';
 import { PostCard } from '@/app/community/_components/post-card';
 
 export const revalidate = 60;
@@ -53,15 +52,7 @@ export default async function MemberProfilePage(props: { params: Promise<{ usern
   return (
     <div className="mx-auto max-w-4xl">
       <nav aria-label="التَّنقُّل للخلف" className="mb-6 sm:mb-8">
-        <Link href="/community">
-          <Button
-            variant="ghost"
-            className="group rounded-full ps-3 pe-4 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowRight className="size-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-            العودة إلى المجتمع
-          </Button>
-        </Link>
+        <BackButton />
       </nav>
 
       <header className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/40 p-6 shadow-sm sm:p-8">
