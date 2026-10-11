@@ -10,9 +10,10 @@ import {
 } from '@/frontend/ui/primitives/dialog';
 import { getShortLinkUrl } from '@/frontend/shared/linksnap/get-short-link-url';
 import { cn } from '@/frontend/shared/cn';
-import { Loader2, Download, AlertCircle, RotateCcw, QrCode } from 'lucide-react';
+import { Loader2, AlertCircle, RotateCcw, QrCode } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { hslToHex } from '@/frontend/shared/hsl-to-hex';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
 interface LinkQrModalProps {
   code: string;
@@ -115,23 +116,14 @@ export const LinkQrModal = memo(function LinkQrModal({
                     className="rounded-2xl border border-border/80 bg-background p-4 shadow-sm transition-safe duration-300 group-hover:scale-[1.01] group-hover:shadow-md [&>svg]:w-48 [&>svg]:h-48 [&>svg]:max-w-full [&>svg]:rounded-lg"
                     dangerouslySetInnerHTML={{ __html: svg }}
                   />
-                  <button
+                  <HeroCtaButton
                     type="button"
                     onClick={handleDownload}
-                    className={cn(
-                      'w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-xs text-primary-foreground',
-                      'bg-primary shadow-md shadow-primary/15 hover:bg-primary/95 hover:shadow-lg hover:shadow-primary/25',
-                      'transition-safe duration-200 ease-out cursor-pointer active:scale-[0.98]',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2'
-                    )}
+                    className="w-full sm:w-auto"
                     aria-label="تحميل الرَّمز بصيغة SVG"
                   >
-                    <Download
-                      aria-hidden="true"
-                      className="w-3.5 h-3.5 transition-transform duration-200 group-hover:-translate-y-0.5"
-                    />
                     <span>تحميل الرَّمز (SVG)</span>
-                  </button>
+                  </HeroCtaButton>
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center w-full text-center gap-3 p-4 animate-in fade-in-50 duration-200">

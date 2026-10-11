@@ -2,16 +2,7 @@
 
 import { useState } from 'react';
 import { m, useReducedMotion } from 'motion/react';
-import {
-  Link2,
-  RefreshCw,
-  AlertTriangle,
-  Check,
-  Copy,
-  Trash2,
-  Calendar,
-  Loader2,
-} from 'lucide-react';
+import { AlertTriangle, Check, Copy, Trash2, Calendar, Loader2 } from 'lucide-react';
 import { LinkRowCard } from './link-row-card';
 import { shorten } from '@/frontend/api/linksnap';
 import { DashboardEmptyState } from './dashboard-empty-state';
@@ -97,24 +88,9 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-display font-bold text-foreground flex items-center gap-2">
-          <Link2 aria-hidden="true" className="w-5 h-5 text-primary" />
-          <span>روابطك المختصَرة</span>
-        </h2>
+        <h2 className="text-2xl font-display font-bold text-foreground">روابطك المختصَرة</h2>
         <div className="flex items-center gap-2">
           <LinksnapSyncStatus />
-          <button
-            onClick={fetchLinks}
-            disabled={loading}
-            aria-label="تحديث القائمة"
-            className="p-2 text-muted-foreground hover:text-primary rounded-full hover:bg-muted transition-colors cursor-pointer press-scale focus-ring touch-target btn-press"
-            title="تحديث القائمة"
-          >
-            <RefreshCw
-              className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
-              role={loading ? 'status' : undefined}
-            />
-          </button>
         </div>
       </div>
 
@@ -166,7 +142,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
         <DashboardEmptyState />
       ) : (
         <m.div
-          initial={reducedMotion ? 'visible' : 'hidden'}
+          initial="hidden"
           animate="visible"
           variants={{
             hidden: {},
@@ -178,7 +154,7 @@ export function LinkDashboard({ token, refreshTrigger }: LinkDashboardProps) {
             <m.div
               key={link.clientId ?? link.code}
               variants={{
-                hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 12 },
+                hidden: { opacity: 0, y: 12 },
                 visible: { opacity: 1, y: 0 },
               }}
             >

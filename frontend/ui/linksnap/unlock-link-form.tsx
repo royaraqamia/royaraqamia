@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Lock, LoaderCircle, AlertCircle } from 'lucide-react';
 import { unlockLink } from '@/frontend/api/linksnap';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
 export function UnlockLinkForm({ code }: { code: string }) {
   const [password, setPassword] = useState('');
@@ -91,11 +92,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
               </p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3.5 text-sm font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-safe hover:bg-primary/90 hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:pointer-events-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cursor-pointer"
-            >
+            <HeroCtaButton type="submit" className="w-full" disabled={loading}>
               {loading ? (
                 <>
                   <LoaderCircle className="w-4 h-4 animate-spin" aria-hidden="true" />
@@ -104,7 +101,7 @@ export function UnlockLinkForm({ code }: { code: string }) {
               ) : (
                 <span>فتح الرَّابط</span>
               )}
-            </button>
+            </HeroCtaButton>
           </form>
 
           <footer className="mt-6 text-center text-xs text-slate-400 dark:text-slate-600">

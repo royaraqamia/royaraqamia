@@ -37,6 +37,7 @@ import {
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import type { ShortenedLink } from '@/frontend/api/linksnap';
 
 interface LinkEditDialogProps {
@@ -818,7 +819,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                 >
                   إلغاء
                 </Button>
-                <Button
+                <HeroCtaButton
                   type="submit"
                   disabled={
                     updateLoading ||
@@ -827,7 +828,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                     slugTooShort ||
                     !hasChanges
                   }
-                  className="flex-1 sm:flex-initial h-10 rounded-xl px-6 text-xs font-bold bg-primary text-primary-foreground hover:bg-primary/90 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 transition-safe duration-200 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 cursor-pointer"
+                  className="flex-1 sm:flex-initial"
                 >
                   {updateLoading ? (
                     <>
@@ -838,12 +839,9 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                       <span>جاري حفظ التعديلات...</span>
                     </>
                   ) : (
-                    <>
-                      <Check className="w-4 h-4" />
-                      <span>حفظ التغييرات</span>
-                    </>
+                    <span>حفظ التغييرات</span>
                   )}
-                </Button>
+                </HeroCtaButton>
               </div>
             </div>
           </form>

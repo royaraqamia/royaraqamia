@@ -1,6 +1,7 @@
 'use client';
 
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
 interface AdminErrorStateProps {
   error: string;
@@ -17,13 +18,9 @@ export function AdminErrorState({ error, onRetry }: AdminErrorStateProps) {
         <h2 className="text-base font-bold text-foreground">الوصول الأمني الإداري</h2>
         <p className="text-xs text-muted-foreground mt-1">{error}</p>
       </div>
-      <button
-        onClick={onRetry}
-        className="px-4 py-2 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-xs rounded-full transition-safe inline-flex items-center gap-1.5 cursor-pointer focus-ring touch-target btn-press"
-      >
-        <RefreshCw className="w-3.5 h-3.5" />
+      <HeroCtaButton type="button" onClick={onRetry} className="mx-auto">
         <span>إعادة محاولة التحقق</span>
-      </button>
+      </HeroCtaButton>
     </div>
   );
 }

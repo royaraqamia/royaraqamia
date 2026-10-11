@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { RefreshCw } from 'lucide-react';
 import { AdminSkeleton } from '@/frontend/ui/linksnap/loading-skeletons';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { AdminStatsCards } from './admin-stats-cards';
 import { AdminErrorState } from './admin-error-state';
 import { AdminLinksDirectory } from './admin-links-directory';
@@ -56,15 +56,14 @@ export function AdminPanel({ token }: AdminPanelProps) {
       {/* The section header in `app/admin/linksnap/layout.tsx` already names this
           view, so the panel contributes only its refresh control. */}
       <div className="flex sm:justify-end">
-        <button
+        <HeroCtaButton
+          type="button"
           onClick={fetchAdminStats}
           disabled={loading}
-          aria-busy={loading || undefined}
-          className="bg-muted/50 hover:bg-muted text-muted-foreground border-border focus-ring btn-press touch-target inline-flex min-h-11 w-full cursor-pointer items-center justify-center gap-2 rounded-full border px-4 py-2 text-sm font-bold transition-safe disabled:opacity-60 sm:w-auto"
+          className="w-full sm:w-auto"
         >
-          <RefreshCw className={`size-4 ${loading ? 'animate-spin' : ''}`} aria-hidden="true" />
-          <span>إعادة تحميل المقاييس</span>
-        </button>
+          <span>{loading ? 'جاري التحميل...' : 'إعادة تحميل المقاييس'}</span>
+        </HeroCtaButton>
       </div>
 
       {stats && (

@@ -20,6 +20,7 @@ import { hslToHex } from '@/frontend/shared/hsl-to-hex';
 import { toast } from 'sonner';
 import { useShortenLink } from '@/frontend/state/linksnap/use-shorten';
 import { useSlugAvailability } from '@/frontend/state/linksnap/use-slug-availability';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
 interface SingleUrlShortenerProps {
   token: string | null;
@@ -295,7 +296,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             <m.div
               id="single-url-error"
               role="alert"
-              initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               aria-live="polite"
               className="p-3 bg-destructive/10 border border-destructive/20 text-destructive text-xs rounded-lg font-medium"
@@ -304,11 +305,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             </m.div>
           )}
 
-          <button
-            type="submit"
-            disabled={loading || !originalUrl}
-            className="group relative w-full py-4 px-6 rounded-full bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500 text-white text-base font-bold transition-transform duration-300 hover:scale-[1.02] active:scale-[0.98] shadow-[0_10px_30px_-10px_rgba(147,51,234,0.5)] hover:shadow-[0_15px_35px_-5px_rgba(147,51,234,0.7)] border border-white/20 overflow-hidden flex items-center justify-center gap-2.5 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-purple-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-          >
+          <HeroCtaButton type="submit" className="w-full" disabled={loading || !originalUrl}>
             {loading ? (
               <>
                 <div
@@ -320,12 +317,12 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             ) : (
               <span>اختصار الرَّابط</span>
             )}
-          </button>
+          </HeroCtaButton>
         </m.form>
       ) : (
         <m.div
           key="success-view"
-          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={reducedMotion ? { opacity: 1 } : { opacity: 0, scale: 0.95 }}
           className="text-center py-4 space-y-6"
