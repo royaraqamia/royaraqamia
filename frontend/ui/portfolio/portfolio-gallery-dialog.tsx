@@ -94,7 +94,10 @@ export const PortfolioGalleryDialog = memo(function PortfolioGalleryDialog({
 
   return (
     <Dialog open={selectedItem !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 overflow-y-auto dialog-scrollbar">
+      <DialogContent
+        hideClose
+        className="max-w-4xl w-[calc(100%-32px)] p-0 rounded-3xl bg-[#080c16]/95 border border-white/15 overflow-y-auto dialog-scrollbar"
+      >
         {selectedItem !== null &&
           (() => {
             const item = portfolioItems[selectedItem]!;
