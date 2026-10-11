@@ -26,6 +26,11 @@ describe('Calendar', () => {
     expect(container.querySelector('[dir="rtl"]')).toBeInTheDocument();
   });
 
+  it('centers itself when the picker becomes a full-width mobile sheet', () => {
+    const { container } = render(<Calendar mode="single" month={MARCH_2024} />);
+    expect(container.querySelector('[dir="rtl"]')?.className).toContain('max-lg:mx-auto');
+  });
+
   it('points the nav chevrons outward for RTL', () => {
     const { container } = render(<Calendar mode="single" month={MARCH_2024} />);
     const buttons = container.querySelectorAll('nav button');

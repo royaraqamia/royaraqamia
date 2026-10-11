@@ -72,7 +72,11 @@ function CalendarChevron({ orientation, ...props }: ChevronProps) {
 const calendarClassNames: Partial<ClassNames> = {
   root: cn(
     'relative w-fit select-none rounded-2xl border border-border/80 bg-card p-4 text-card-foreground',
-    'shadow-xl shadow-black/40 transition-safe duration-300 sm:p-5'
+    'shadow-xl shadow-black/40 transition-safe duration-300 sm:p-5',
+    /* Below `lg` the picker renders inside a full-width bottom sheet (see
+       `responsive-sheet.tsx`); a `w-fit` block would otherwise stick to the
+       inline-start (right in RTL) edge and leave the rest of the sheet empty. */
+    'max-lg:mx-auto'
   ),
   months: 'relative flex flex-col gap-5 sm:flex-row sm:gap-7',
   month: 'relative w-full space-y-4',
