@@ -74,8 +74,8 @@ export class SpendtrackService {
     return this.repository.getUserCategories(userId);
   }
 
-  async getSyncSnapshot(userId: string): Promise<SpendtrackSyncSnapshot> {
-    return this.repository.getSyncSnapshot(userId);
+  async getSyncSnapshot(userId: string, since?: string | null): Promise<SpendtrackSyncSnapshot> {
+    return this.repository.getSyncSnapshot(userId, since);
   }
 
   async getTotalExpenses(

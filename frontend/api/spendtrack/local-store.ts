@@ -25,6 +25,7 @@ const CATEGORIES_STORE = 'categories';
 const EXPENSES_STORE = 'expenses';
 const BUDGETS_STORE = 'budgets';
 const RECURRING_STORE = 'recurring';
+const META_STORE = 'meta';
 
 /** A durable write-intent paired with the mutation that produced it. */
 interface OutboxIntent {
@@ -51,9 +52,10 @@ export interface RecurringWriteInput extends RecurringExpenseInput {}
 
 /**
  * Forward-only schema. v1 is the rendered data; v2 adds the Outbox alongside it
- * so a write and its replay-intent commit atomically in one transaction.
+ * so a write and its replay-intent commit atomically in one transaction; v3
+ * adds a `meta` store for the incremental sync cursor.
  */
-export const SPENDTRACK_STORE_VERSION = 2;
+export const SPENDTRACK_STORE_VERSION = 3;
 
 export const spendtrackStoreMigrations: readonly LocalStoreMigration[] = [
   {
@@ -71,6 +73,12 @@ export const spendtrackStoreMigrations: readonly LocalStoreMigration[] = [
     migrate: (db) => {
       // `seq` is auto-increment so replay order is the exact write order.
       db.createObjectStore(OUTBOX_STORE, { keyPath: 'seq', autoIncrement: true });
+    },
+  },
+  {
+    version: 3,
+    migrate: (db) => {
+      db.createObjectStore(META_STORE, { keyPath: 'key' });
     },
   },
 ];
@@ -637,19 +645,30 @@ export class SpendtrackLocalStore {
     );
   }
 
+  // --- Sync cursor ----------------------------------------------------------
+
+  /** The `server_updated_at` cursor the last sync advanced to, or null. */
+  async getSyncCursor(): Promise<string | null> {
+    const row = await this.getOne<{ key: string; value: string }>(META_STORE, 'syncCursor');
+    return row?.value ?? null;
+  }
+
+  async setSyncCursor(value: string): Promise<void> {
+    await this.commit([[META_STORE, { key: 'syncCursor', value }]]);
+  }
+
   /** Empties every owned store. */
   async clear(): Promise<void> {
-    const transaction = this.db.transaction(
-      [CATEGORIES_STORE, EXPENSES_STORE, BUDGETS_STORE, RECURRING_STORE, OUTBOX_STORE],
-      'readwrite'
-    );
-    for (const store of [
+    const stores = [
       CATEGORIES_STORE,
       EXPENSES_STORE,
       BUDGETS_STORE,
       RECURRING_STORE,
       OUTBOX_STORE,
-    ]) {
+      META_STORE,
+    ];
+    const transaction = this.db.transaction(stores, 'readwrite');
+    for (const store of stores) {
       transaction.objectStore(store).clear();
     }
     await transactionDone(transaction);

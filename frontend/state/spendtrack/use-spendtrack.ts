@@ -105,8 +105,13 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         // Guests own no server rows beyond the seeded defaults.
         if (isSignedIn) {
           try {
-            const snapshot = await getSyncSnapshot();
-            if (!cancelled) await store.mergeServerData(snapshot);
+            const since = await store.getSyncCursor();
+            const snapshot = await getSyncSnapshot(since);
+            if (!cancelled) {
+              await store.mergeServerData(snapshot);
+              // Advance the cursor so the next open fetches only newer rows.
+              if (snapshot.cursor) await store.setSyncCursor(snapshot.cursor);
+            }
           } catch (error) {
             logger.error('Failed to reconcile SpendTrack data with the server', {
               error: String(error),

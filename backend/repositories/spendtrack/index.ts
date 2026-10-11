@@ -62,14 +62,33 @@ export function createSpendtrackRepository(
       ) as Category[];
     },
 
-    async getSyncSnapshot(userId: string): Promise<SpendtrackSyncSnapshot> {
+    async getSyncSnapshot(userId: string, since?: string | null): Promise<SpendtrackSyncSnapshot> {
       // Deliberately unfiltered by `deleted_at`: tombstones are part of the
       // snapshot so a delete made on another device can be replayed here.
+      // `server_updated_at` is the incremental cursor: a lagging client clock
+      // (which `updated_at` follows) can't make a row invisible to a page.
+      let catsQ = supabase
+        .from('categories')
+        .select('*')
+        .or(`user_id.eq.${userId},is_default.eq.true`);
+      let expQ = supabase
+        .from('expenses')
+        .select('*, categories(name, color_hex)')
+        .eq('user_id', userId);
+      let budQ = supabase.from('budgets').select('*').eq('user_id', userId);
+      let recQ = supabase.from('recurring_expenses').select('*').eq('user_id', userId);
+      if (since) {
+        catsQ = catsQ.gt('server_updated_at', since);
+        expQ = expQ.gt('server_updated_at', since);
+        budQ = budQ.gt('server_updated_at', since);
+        recQ = recQ.gt('server_updated_at', since);
+      }
+
       const [cats, rawExpenses, rawBudgets, rawRecurring] = await Promise.all([
-        supabase.from('categories').select('*').or(`user_id.eq.${userId},is_default.eq.true`),
-        supabase.from('expenses').select('*, categories(name, color_hex)').eq('user_id', userId),
-        supabase.from('budgets').select('*').eq('user_id', userId),
-        supabase.from('recurring_expenses').select('*').eq('user_id', userId),
+        catsQ,
+        expQ,
+        budQ,
+        recQ,
       ]);
 
       const categories = (
@@ -94,7 +113,19 @@ export function createSpendtrackRepository(
         withOfflineFields(row as Record<string, unknown>)
       ) as RecurringExpense[];
 
-      return { categories, expenses, budgets, recurring };
+      // Advance the cursor to the newest row the server touched, so the next
+      // page carries only newer changes (never a whole-set re-scan).
+      const stamps = [
+        ...(cats.data ?? []),
+        ...(rawExpenses.data ?? []),
+        ...(rawBudgets.data ?? []),
+        ...(rawRecurring.data ?? []),
+      ]
+        .map((row) => (row as { server_updated_at?: string }).server_updated_at)
+        .filter((value): value is string => typeof value === 'string');
+      const cursor = stamps.length > 0 ? stamps.reduce((a, b) => (a > b ? a : b)) : (since ?? null);
+
+      return { categories, expenses, budgets, recurring, cursor };
     },
 
     async getTotalExpenses(
@@ -519,7 +550,8 @@ export function createSpendtrackRepository(
         .update({ deleted_at: stamp, updated_at: stamp })
         .eq('user_id', userId)
         .eq('month', month)
-        .is('deleted_at', null);
+        // LWW: a later delete re-stamps; an older replay can't revive.
+        .lte('updated_at', stamp);
       query = categoryId ? query.eq('category_id', categoryId) : query.is('category_id', null);
       const { error } = await query;
       if (error) throw new Error(error.message);
@@ -584,18 +616,21 @@ export function createSpendtrackRepository(
     ): Promise<void> {
       const { updatedAt, deletedAt, clientId: _clientId, ...fields } = input;
       void _clientId;
+      const stamp = updatedAt ?? nowIso();
       const resurrect = deletedAt === null;
       const row: Database['public']['Tables']['recurring_expenses']['Update'] = {
         ...fields,
-        updated_at: updatedAt ?? nowIso(),
+        updated_at: stamp,
       };
       if (deletedAt !== undefined) row.deleted_at = deletedAt;
 
+      // Last-write-wins on updated_at (ADR-0029).
       let query = supabase
         .from('recurring_expenses')
         .update(row)
         .eq('id', expenseId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .lte('updated_at', stamp);
       if (!resurrect) query = query.is('deleted_at', null);
       const { error } = await query;
       if (error) throw new Error(error.message);
@@ -612,7 +647,8 @@ export function createSpendtrackRepository(
         .update({ deleted_at: stamp, updated_at: stamp })
         .eq('id', expenseId)
         .eq('user_id', userId)
-        .is('deleted_at', null);
+        // LWW: a later delete re-stamps; an older replayed edit/undo can't revive.
+        .lte('updated_at', stamp);
       if (error) throw new Error(error.message);
     },
 
@@ -662,19 +698,23 @@ export function createSpendtrackRepository(
       input: { name: string; colorHex: string; updatedAt?: string; deletedAt?: string | null }
     ): Promise<void> {
       const { colorHex, updatedAt, deletedAt, ...rest } = input;
+      const stamp = updatedAt ?? nowIso();
       const resurrect = deletedAt === null;
       const row: Database['public']['Tables']['categories']['Update'] = {
         ...rest,
         color_hex: colorHex,
-        updated_at: updatedAt ?? nowIso(),
+        updated_at: stamp,
       };
       if (deletedAt !== undefined) row.deleted_at = deletedAt;
 
+      // Last-write-wins on updated_at (ADR-0029): a replayed older edit/undo
+      // must not clobber a newer write.
       let query = supabase
         .from('categories')
         .update(row)
         .eq('id', categoryId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .lte('updated_at', stamp);
       if (!resurrect) query = query.is('deleted_at', null);
 
       const { error } = await query;
@@ -692,7 +732,8 @@ export function createSpendtrackRepository(
         .update({ deleted_at: stamp, updated_at: stamp })
         .eq('id', categoryId)
         .eq('user_id', userId)
-        .is('deleted_at', null);
+        // LWW: a later delete re-stamps; an older replayed edit/undo can't revive.
+        .lte('updated_at', stamp);
 
       if (error) throw new Error(error.message);
     },

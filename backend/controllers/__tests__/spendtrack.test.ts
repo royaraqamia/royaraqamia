@@ -109,16 +109,30 @@ describe('spendtrack controller', () => {
     };
     mockService.getSyncSnapshot.mockResolvedValue(snapshot);
 
-    const result = await syncSpendtrack();
+    const result = await syncSpendtrack(new URLSearchParams());
 
     expect(result).toMatchObject({ status: 200, body: snapshot });
-    expect(mockService.getSyncSnapshot).toHaveBeenCalledWith('u-1');
+    expect(mockService.getSyncSnapshot).toHaveBeenCalledWith('u-1', null);
+  });
+
+  it('passes the since cursor through to the sync snapshot', async () => {
+    mockService.getSyncSnapshot.mockResolvedValue({
+      categories: [],
+      expenses: [],
+      budgets: [],
+      recurring: [],
+      cursor: '2026-10-11T00:00:00.000Z',
+    });
+
+    await syncSpendtrack(new URLSearchParams({ since: '2026-10-10T00:00:00.000Z' }));
+
+    expect(mockService.getSyncSnapshot).toHaveBeenCalledWith('u-1', '2026-10-10T00:00:00.000Z');
   });
 
   it('401s the sync snapshot without a session', async () => {
     mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
 
-    const result = await syncSpendtrack();
+    const result = await syncSpendtrack(new URLSearchParams());
 
     expect(result).toEqual(expect.objectContaining({ status: 401 }));
     expect(mockService.getSyncSnapshot).not.toHaveBeenCalled();

@@ -76,7 +76,7 @@ export interface BudgetWriteMeta {
 
 export interface SpendtrackRepository {
   getUserCategories(userId: string): Promise<Category[]>;
-  getSyncSnapshot(userId: string): Promise<SpendtrackSyncSnapshot>;
+  getSyncSnapshot(userId: string, since?: string | null): Promise<SpendtrackSyncSnapshot>;
   getTotalExpenses(
     userId: string,
     start: string,

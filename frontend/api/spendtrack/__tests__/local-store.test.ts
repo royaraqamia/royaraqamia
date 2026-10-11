@@ -51,6 +51,18 @@ describe('SpendtrackLocalStore', () => {
     store.close();
   });
 
+  it('persists the sync cursor and clears it with the store', async () => {
+    const store = await open();
+    expect(await store.getSyncCursor()).toBeNull();
+
+    await store.setSyncCursor('2026-10-11T00:00:00.000Z');
+    expect(await store.getSyncCursor()).toBe('2026-10-11T00:00:00.000Z');
+
+    await store.clear();
+    expect(await store.getSyncCursor()).toBeNull();
+    store.close();
+  });
+
   it('updates an expense in place and queues an update', async () => {
     const store = await open();
     const expense = await store.createExpense({

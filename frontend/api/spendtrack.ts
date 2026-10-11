@@ -71,9 +71,15 @@ export async function deleteExpense(expenseId: string): Promise<ActionState> {
   }
 }
 
-/** Full owned snapshot (incl. tombstones) for on-open reconciliation. */
-export async function getSyncSnapshot(): Promise<SpendtrackSyncSnapshot> {
-  return request<SpendtrackSyncSnapshot>('/spendtrack/api/sync');
+/**
+ * Owned snapshot (incl. tombstones) for on-open reconciliation. Pass the
+ * `cursor` from the previous sync as `since` to fetch only newer changes.
+ */
+export async function getSyncSnapshot(since?: string | null): Promise<SpendtrackSyncSnapshot> {
+  const params = new URLSearchParams();
+  if (since) params.set('since', since);
+  const qs = params.toString();
+  return request<SpendtrackSyncSnapshot>(`/spendtrack/api/sync${qs ? `?${qs}` : ''}`);
 }
 
 export async function getBudget(month: string, categoryId?: string): Promise<number | null> {

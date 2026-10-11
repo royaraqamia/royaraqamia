@@ -71,6 +71,12 @@ export interface SpendtrackSyncSnapshot {
   expenses: ExpenseWithCategory[];
   budgets: Budget[];
   recurring: RecurringExpense[];
+  /**
+   * Opaque cursor (`server_updated_at`) to pass as `since` on the next sync.
+   * The server advances it to the newest row returned, so the next page only
+   * carries rows the server has touched since. `null` before the first sync.
+   */
+  cursor: string | null;
 }
 
 export type Budget = OfflineFields & {
