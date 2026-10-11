@@ -42,6 +42,7 @@ export interface LeadSubmissionState {
   pending: number;
   failed: number;
   lastError: string | null;
+  lastFailedType: string | null;
   /** Forms with an intent still waiting in the Outbox, by kind. */
   pendingKinds: ReadonlySet<LeadFormKind>;
   submit: (input: LeadSubmitInput) => Promise<LeadSubmitOutcome>;
@@ -55,7 +56,13 @@ interface SubmitResult {
   status?: number;
 }
 
-const EMPTY_STATUS: SyncStatus = { syncing: false, pending: 0, failed: 0, lastError: null };
+const EMPTY_STATUS: SyncStatus = {
+  syncing: false,
+  pending: 0,
+  failed: 0,
+  lastError: null,
+  lastFailedType: null,
+};
 
 function isOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;
@@ -235,6 +242,7 @@ export function useLeadSubmission(): LeadSubmissionState {
       pending: status.pending,
       failed: status.failed,
       lastError: status.lastError,
+      lastFailedType: status.lastFailedType,
       pendingKinds,
       submit,
       retry,

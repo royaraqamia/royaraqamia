@@ -28,6 +28,7 @@ import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { withBearerUser } from '@/backend/transport/bearer-handler';
 import { withAdminUser } from '@/backend/transport/admin-handler';
 import { jsonResult } from '@/backend/transport/http-result';
+import { RepositoryError } from '@/backend/shared/repository-error';
 
 describe('handleAuthenticated', () => {
   beforeEach(() => {
@@ -117,6 +118,22 @@ describe('handleAuthenticated', () => {
       expect.objectContaining({ status: 400, body: { error: 'مبلغ غير صالح' } })
     );
     expect(mockCaptureException).toHaveBeenCalledTimes(1);
+  });
+
+  it('maps a repository failure to a retryable 500, not the domain policy status', async () => {
+    const result = await handleAuthenticated(
+      async () => ({ userId: 'u-1' }),
+      async () => {
+        throw new RepositoryError('createExpense', new Error('connection reset'));
+      },
+      { mapError: messageError(400, 'فشل') }
+    );
+
+    // Data-access failures stay retryable so an Offline Sync replay backs off
+    // instead of being marked permanently failed (ADR-0029).
+    expect(result).toMatchObject({ status: 500 });
+    // Already logged/reported at the repository seam — not captured twice.
+    expect(mockCaptureException).not.toHaveBeenCalled();
   });
 
   it('falls through to a 500 with the failure body when the policy declines', async () => {

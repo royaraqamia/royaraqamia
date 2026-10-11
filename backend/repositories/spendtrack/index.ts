@@ -11,6 +11,7 @@ import type {
   SpendtrackTransactionsResult,
 } from '@/shared/contracts/spendtrack';
 import type { SpendtrackRepository } from '@/backend/repositories/spendtrack/spendtrack-repository';
+import { guardRepositoryMethods } from '@/backend/shared/repository-error';
 
 const nowIso = () => new Date().toISOString();
 
@@ -49,7 +50,7 @@ export function createSpendtrackRepository(
     }
   }
 
-  return {
+  return guardRepositoryMethods<SpendtrackRepository>({
     async getUserCategories(userId: string): Promise<Category[]> {
       const { data } = (await supabase
         .from('categories')
@@ -766,5 +767,5 @@ export function createSpendtrackRepository(
       const { error } = await supabase.from('user_settings').insert({ user_id: userId, currency });
       if (error) throw new Error(error.message);
     },
-  };
+  });
 }

@@ -91,8 +91,14 @@ export async function handleAuthenticated<Identity>(
   try {
     return await run(raw as Identity);
   } catch (error) {
-    // Repository failures already logged and reported at the repository seam.
-    if (!isRepositoryError(error)) Sentry.captureException(error);
+    // A data-access failure is infrastructure, not the client's fault: answer
+    // 5xx so an Offline Sync replay backs off and retries rather than being
+    // marked a permanent failure (ADR-0029). It is already logged and reported
+    // at the repository seam, so it is not captured again here.
+    if (isRepositoryError(error)) {
+      return jsonResult(500, policy.whenFailed ?? FAILED_BODY);
+    }
+    Sentry.captureException(error);
     return policy.mapError?.(error) ?? jsonResult(500, policy.whenFailed ?? FAILED_BODY);
   }
 }

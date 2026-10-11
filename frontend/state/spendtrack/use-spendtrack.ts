@@ -32,11 +32,18 @@ export interface SpendtrackStoreState {
   pending: number;
   failed: number;
   lastError: string | null;
+  lastFailedType: string | null;
   retry: () => void;
   refresh: () => Promise<void>;
 }
 
-const EMPTY_STATUS: SyncStatus = { syncing: false, pending: 0, failed: 0, lastError: null };
+const EMPTY_STATUS: SyncStatus = {
+  syncing: false,
+  pending: 0,
+  failed: 0,
+  lastError: null,
+  lastFailedType: null,
+};
 
 /**
  * Opens the identity-scoped SpendTrack Local Store, seeds it once from the RSC
@@ -217,6 +224,7 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
       pending: status.pending,
       failed: status.failed,
       lastError: status.lastError,
+      lastFailedType: status.lastFailedType,
       retry,
       refresh,
     }),

@@ -9,6 +9,7 @@ function state(overrides: Partial<HabitSyncState> = {}): HabitSyncState {
     pending: 0,
     failed: 0,
     lastError: null,
+    lastFailedType: null,
     online: true,
     entries: [],
     pendingHabitIds: new Set(),

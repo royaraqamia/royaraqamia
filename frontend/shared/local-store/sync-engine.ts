@@ -19,6 +19,8 @@ export interface SyncStatus {
   pending: number;
   failed: number;
   lastError: string | null;
+  /** The Outbox intent type of the last permanent failure, e.g. `expense.update`. */
+  lastFailedType: string | null;
 }
 
 export interface SyncEngineOptions {
@@ -58,6 +60,7 @@ export interface SyncEngineDeps {
 export class SyncEngine {
   private syncing = false;
   private lastError: string | null = null;
+  private lastFailedType: string | null = null;
   private listeners: Array<(status: SyncStatus) => void> = [];
 
   private readonly isOnline: () => boolean;
@@ -87,6 +90,7 @@ export class SyncEngine {
       pending: entries.filter((e) => e.status === 'pending').length,
       failed: entries.filter((e) => e.status === 'failed').length,
       lastError: this.lastError,
+      lastFailedType: this.lastFailedType,
     };
   }
 
@@ -129,11 +133,13 @@ export class SyncEngine {
           await this.deps.transport.send(entry);
           await this.deps.store.removeOutbox(entry.seq);
           this.lastError = null;
+          this.lastFailedType = null;
         } catch (error) {
           const message = errorMessage(error);
           if (classifySyncError(error) === 'permanent') {
             // Surface and move on: one bad intent must not block the rest.
             this.lastError = message;
+            this.lastFailedType = entry.type;
             await this.deps.store.patchOutbox(entry.seq, { status: 'failed', lastError: message });
             logger.warn(`${this.options.logLabel} outbox intent failed permanently`, {
               type: entry.type,
@@ -162,6 +168,7 @@ export class SyncEngine {
   async retry(): Promise<void> {
     await this.deps.store.retryFailedOutbox();
     this.lastError = null;
+    this.lastFailedType = null;
     await this.flush();
   }
 }

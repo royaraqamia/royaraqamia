@@ -160,5 +160,7 @@ describe('HabitSyncEngine.flush', () => {
     expect(last.pending).toBe(0);
     expect(last.failed).toBe(1);
     expect(last.syncing).toBe(false);
+    // The failed intent's type is surfaced so a stuck sync is diagnosable.
+    expect(last.lastFailedType).toBe('habit.update');
   });
 });

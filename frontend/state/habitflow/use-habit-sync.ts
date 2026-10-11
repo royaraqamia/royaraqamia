@@ -22,7 +22,13 @@ export interface HabitSyncState extends SyncStatus {
   retry: () => void;
 }
 
-const IDLE: SyncStatus = { syncing: false, pending: 0, failed: 0, lastError: null };
+const IDLE: SyncStatus = {
+  syncing: false,
+  pending: 0,
+  failed: 0,
+  lastError: null,
+  lastFailedType: null,
+};
 
 function isOnline(): boolean {
   return typeof navigator === 'undefined' || navigator.onLine !== false;

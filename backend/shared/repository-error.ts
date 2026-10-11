@@ -49,6 +49,35 @@ export function isRepositoryError(value: unknown): value is RepositoryError {
   return value instanceof RepositoryError;
 }
 
+/**
+ * Wraps every method of a repository object so any throw crosses the seam as a
+ * `RepositoryError`. A data-access failure must be distinguishable from a
+ * domain rejection: the transport maps the former to 5xx (retryable) and the
+ * latter to 4xx, so a transient DB error never becomes a permanent Offline
+ * Sync failure (ADR-0029). A throw that is already a `RepositoryError` passes
+ * through untouched.
+ */
+export function guardRepositoryMethods<T extends object>(repository: T): T {
+  const wrapped: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(repository)) {
+    if (typeof value !== 'function') {
+      wrapped[key] = value;
+      continue;
+    }
+    wrapped[key] = async (...args: unknown[]) => {
+      try {
+        // `await` so an async rejection (the common case) is caught too, not
+        // just a synchronous throw.
+        return await (value as (...callArgs: unknown[]) => unknown)(...args);
+      } catch (error) {
+        if (isRepositoryError(error)) throw error;
+        throw repositoryFailure(key, error);
+      }
+    };
+  }
+  return wrapped as T;
+}
+
 // PostgREST returns this code when `.single()` matched no row: that is a genuine
 // absence, not a failure, so callers keep returning `null`.
 const POSTGREST_NO_ROWS = 'PGRST116';

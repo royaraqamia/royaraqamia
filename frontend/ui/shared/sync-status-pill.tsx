@@ -9,6 +9,9 @@ export interface SyncPillStatus {
   failed: number;
   online: boolean;
   retry: () => void;
+  /** Last permanent failure, surfaced as the retry button's tooltip. */
+  lastError?: string | null;
+  lastFailedType?: string | null;
 }
 
 /**
@@ -18,13 +21,16 @@ export interface SyncPillStatus {
  * fully-synced, connected flow renders nothing at all.
  */
 export function SyncStatusPill({ status }: { status: SyncPillStatus }) {
-  const { syncing, pending, failed, online, retry } = status;
+  const { syncing, pending, failed, online, retry, lastError, lastFailedType } = status;
+  const failureDetail = [lastFailedType, lastError].filter(Boolean).join(' — ');
 
   if (failed > 0) {
     return (
       <button
         type="button"
         onClick={retry}
+        title={failureDetail || undefined}
+        aria-label={failureDetail ? `فشل مزامنة ${failed}. آخر خطأ: ${failureDetail}` : undefined}
         aria-live="polite"
         className="inline-flex items-center gap-2 h-10 px-4 rounded-full border border-red-300/70 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 text-xs sm:text-sm font-bold shadow-sm transition-safe hover:bg-red-100 dark:hover:bg-red-950/70 active:scale-[0.97] cursor-pointer"
       >

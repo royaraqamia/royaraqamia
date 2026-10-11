@@ -29,6 +29,7 @@ export interface LinksnapStoreState {
   pending: number;
   failed: number;
   lastError: string | null;
+  lastFailedType: string | null;
   retry: () => void;
   refresh: () => Promise<void>;
   createLink: (input: LinkCreateInput) => Promise<ShortenedLink>;
@@ -37,7 +38,13 @@ export interface LinksnapStoreState {
   restoreLink: (clientId: string) => Promise<ShortenedLink>;
 }
 
-const EMPTY_STATUS: SyncStatus = { syncing: false, pending: 0, failed: 0, lastError: null };
+const EMPTY_STATUS: SyncStatus = {
+  syncing: false,
+  pending: 0,
+  failed: 0,
+  lastError: null,
+  lastFailedType: null,
+};
 
 function recordToLink(row: LinkRecord): ShortenedLink {
   return {
@@ -276,6 +283,7 @@ export function useLinksnap({
       pending: status.pending,
       failed: status.failed,
       lastError: status.lastError,
+      lastFailedType: status.lastFailedType,
       retry,
       refresh,
       createLink,
