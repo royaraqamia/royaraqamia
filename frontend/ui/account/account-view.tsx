@@ -3,7 +3,15 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { User, ClipboardList, Link2, ShieldCheck, LogOut, MessageCircle } from 'lucide-react';
+import {
+  User,
+  ClipboardList,
+  FileText,
+  Link2,
+  ShieldCheck,
+  LogOut,
+  MessageCircle,
+} from 'lucide-react';
 
 import { cn } from '@/frontend/shared/cn';
 import { useSession } from '@/frontend/state/session-provider';
@@ -107,6 +115,18 @@ export function AccountView() {
             <span className="flex items-center gap-2.5">
               <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
               <span>طلباتي</span>
+            </span>
+            <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
+              ←
+            </span>
+          </Link>
+        )}
+
+        {user && (
+          <Link href="/account/posts" className={rowClasses}>
+            <span className="flex items-center gap-2.5">
+              <FileText className="w-4 h-4 shrink-0 text-primary" />
+              <span>المنشورات</span>
             </span>
             <span className="text-primary/70 opacity-0 -translate-x-1 transition-safe duration-150 ease-out group-hover:opacity-100 group-hover:translate-x-0">
               ←

@@ -13,6 +13,7 @@ import {
   Download,
   ShieldCheck,
   ClipboardList,
+  FileText,
   Link2,
   MessageCircle,
 } from 'lucide-react';
@@ -175,6 +176,19 @@ export const UserDropdown = memo(function UserDropdown() {
                       <div className="flex items-center gap-2.5">
                         <ClipboardList className="w-4 h-4 shrink-0 text-primary" />
                         <span>طلباتي</span>
+                      </div>
+                    </Link>
+
+                    {/* My Posts — the account-based view of the member's own published posts */}
+                    <Link
+                      href="/account/posts"
+                      onClick={() => setIsOpen(false)}
+                      className="group flex w-full items-center justify-between gap-3 px-3 py-2.5 text-xs sm:text-sm font-medium text-foreground hover:bg-primary/10 hover:text-primary rounded-xl transition-safe duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                      role="menuitem"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <FileText className="w-4 h-4 shrink-0 text-primary" />
+                        <span>المنشورات</span>
                       </div>
                     </Link>
 
