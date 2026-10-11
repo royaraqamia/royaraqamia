@@ -309,11 +309,15 @@ export function createSpendtrackRepository(
         description: string | null;
         currency?: string | null;
         splits?: { category_id: string; amount: number; clientId?: string | null }[] | null;
+        clientId?: string | null;
         updatedAt?: string;
         deletedAt?: string | null;
       }
     ): Promise<void> {
-      const { splits, updatedAt, deletedAt, ...expense } = input;
+      // `clientId` is offline-write metadata, not an `expenses` column: leaving
+      // it in the update payload makes PostgREST reject the write (PGRST204).
+      const { splits, updatedAt, deletedAt, clientId: _clientId, ...expense } = input;
+      void _clientId;
       const resurrect = deletedAt === null;
 
       const row: Database['public']['Tables']['expenses']['Update'] = {
@@ -524,9 +528,14 @@ export function createSpendtrackRepository(
     async updateRecurringExpense(
       expenseId: string,
       userId: string,
-      input: RecurringExpenseInput & { updatedAt?: string; deletedAt?: string | null }
+      input: RecurringExpenseInput & {
+        clientId?: string | null;
+        updatedAt?: string;
+        deletedAt?: string | null;
+      }
     ): Promise<void> {
-      const { updatedAt, deletedAt, ...fields } = input;
+      const { updatedAt, deletedAt, clientId: _clientId, ...fields } = input;
+      void _clientId;
       const resurrect = deletedAt === null;
       const row: Database['public']['Tables']['recurring_expenses']['Update'] = {
         ...fields,

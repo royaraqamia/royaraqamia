@@ -35,6 +35,8 @@ export interface ExpenseUpdateInput {
   description: string | null;
   currency?: string | null;
   splits?: { category_id: string; amount: number; clientId?: string | null }[] | null;
+  /** Offline write metadata; stripped before it can reach the DB row. */
+  clientId?: string | null;
   updatedAt?: string;
   /** `null` clears a tombstone (resurrect); a timestamp tombstones the row. */
   deletedAt?: string | null;
@@ -60,6 +62,8 @@ export interface RecurringWriteInput extends RecurringExpenseInput {
 }
 
 export interface RecurringUpdateInput extends RecurringExpenseInput {
+  /** Offline write metadata; stripped before it can reach the DB row. */
+  clientId?: string | null;
   updatedAt?: string;
   deletedAt?: string | null;
 }
