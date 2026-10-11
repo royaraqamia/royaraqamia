@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.80.0] - 2026-10-11
+
+### Changed
+- unify dialog and bottom-sheet action footers
+- normalize add/edit habit dialog spacing
+
+### Added
+- edit profile name, photo, and handle in dialogs
+
+### Fixed
+- align budget card save button on tablet and desktop
+- stop sending non-uuid clientId on budget sync
+
 ## [1.79.1] - 2026-10-11
 
 ### Changed
