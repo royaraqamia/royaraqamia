@@ -60,3 +60,22 @@ export const UpdateUsernameSchema = z.object({
 });
 
 export type UpdateUsernameInput = z.infer<typeof UpdateUsernameSchema>;
+
+/** Display name shown beside a member's avatar across the site. */
+export const ProfileNameSchema = z.string().trim().min(1, 'الاسم مطلوب').max(80, 'الاسم طويل جدًا');
+
+export const UpdateNameSchema = z.object({
+  name: ProfileNameSchema,
+});
+
+export type UpdateNameInput = z.infer<typeof UpdateNameSchema>;
+
+/** Validation the avatar upload endpoint and the editor both enforce. */
+export const AVATAR_MAX_BYTES = 5 * 1024 * 1024;
+export const AVATAR_ALLOWED_MIME_TYPES = [
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+  'image/gif',
+  'image/avif',
+] as const;

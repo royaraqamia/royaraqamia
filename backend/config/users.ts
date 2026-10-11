@@ -10,6 +10,7 @@ import {
   createPublicUsersRepository,
   type PublicUsersRepository,
 } from '@/backend/repositories/users/public-users-repository';
+import { createAvatarStorageRepository } from '@/backend/repositories/users/avatar-storage-repository';
 import { AdminUsersService } from '@/backend/services/users/admin-users-service';
 import { ProfileService } from '@/backend/services/users/profile-service';
 
@@ -35,5 +36,6 @@ export function createProfileService(supabase?: SupabaseClient<Database>): Profi
   return new ProfileService({
     profiles: createUserProfileRepository(client),
     publicUsers: createPublicUsersRepository(client),
+    avatars: createAvatarStorageRepository(client),
   });
 }

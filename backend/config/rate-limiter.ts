@@ -83,6 +83,16 @@ export function usernameAvailabilityRateLimitPolicy(userId: string): RateLimitPo
   };
 }
 
+/** Avatar writes move a file through storage, so they are bounded separately. */
+export function avatarUploadRateLimitPolicy(userId: string): RateLimitPolicy {
+  return {
+    key: `avatar-upload:${userId}`,
+    limit: 10,
+    windowMs: 60 * 1000,
+    message: 'تم تجاوز حدّ الطلب: تحديث الصُّورة الشَّخصيَّة محدود بـ 10 مرّات في الدقيقة.',
+  };
+}
+
 export function unlockRateLimitPolicy(ip: string): RateLimitPolicy {
   return {
     key: `link-unlock:${ip}`,

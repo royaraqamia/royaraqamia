@@ -1,9 +1,17 @@
 import { createProfileService } from '@/backend/config/users';
-import { usernameAvailabilityRateLimitPolicy } from '@/backend/config/rate-limiter';
+import {
+  avatarUploadRateLimitPolicy,
+  usernameAvailabilityRateLimitPolicy,
+} from '@/backend/config/rate-limiter';
 import { checkRateLimitApi } from '@/backend/middleware/http';
-import { UsernameTakenError } from '@/backend/services/users/profile-service';
-import { UpdateUsernameSchema, UsernameSchema } from '@/shared/contracts/users';
+import { isSameOrigin } from '@/backend/transport/http';
+import {
+  AvatarValidationError,
+  UsernameTakenError,
+} from '@/backend/services/users/profile-service';
+import { UpdateNameSchema, UpdateUsernameSchema, UsernameSchema } from '@/shared/contracts/users';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import { messageError } from '@/backend/transport/authenticated-handler';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import { COMMUNITY_TAGS } from '@/backend/shared/community-cache-tags';
 
@@ -82,5 +90,88 @@ export async function updateUsername(body: Record<string, unknown>): Promise<Htt
     {
       mapError: () => jsonResult(500, { success: false, error: 'تعذَّر تحديث المعرِّف' }),
     }
+  );
+}
+
+/** Change the caller's display name. */
+export async function updateName(
+  body: Record<string, unknown>,
+  headers: Headers
+): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
+      const parsed = UpdateNameSchema.safeParse(body);
+      if (!parsed.success) {
+        return jsonResult(400, {
+          success: false,
+          error: parsed.error.issues[0]?.message ?? 'اسم غير صالح',
+        });
+      }
+
+      const { name } = await createProfileService(supabase).updateName(userId, parsed.data.name);
+      return jsonResult(
+        200,
+        { success: true, name },
+        { tags: [COMMUNITY_TAGS.members, COMMUNITY_TAGS.memberByUsername] }
+      );
+    },
+    { mapError: messageError(500, 'تعذَّر تحديث الاسم') }
+  );
+}
+
+/** Upload and set the caller's avatar. */
+export async function uploadAvatar(formData: FormData, headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
+      const rateLimitResult = await checkRateLimitApi(avatarUploadRateLimitPolicy(userId));
+      if (rateLimitResult) return rateLimitResult;
+
+      const file = formData.get('file');
+      if (!(file instanceof File)) {
+        return jsonResult(400, { success: false, error: 'لم يتم توفير صورة' });
+      }
+
+      try {
+        const { avatarUrl } = await createProfileService(supabase).updateAvatar(userId, file);
+        return jsonResult(
+          200,
+          { success: true, avatarUrl },
+          { tags: [COMMUNITY_TAGS.members, COMMUNITY_TAGS.memberByUsername] }
+        );
+      } catch (error) {
+        if (error instanceof AvatarValidationError) {
+          return jsonResult(400, { success: false, error: error.message });
+        }
+        throw error;
+      }
+    },
+    { mapError: messageError(500, 'تعذَّر رفع الصُّورة') }
+  );
+}
+
+/** Remove the caller's avatar and delete the stored object. */
+export async function removeAvatar(headers: Headers): Promise<HttpResult> {
+  return withAuthenticatedUser(
+    async ({ userId, supabase }) => {
+      if (!isSameOrigin(headers)) {
+        return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+      }
+
+      await createProfileService(supabase).removeAvatar(userId);
+      return jsonResult(
+        200,
+        { success: true, avatarUrl: null },
+        { tags: [COMMUNITY_TAGS.members, COMMUNITY_TAGS.memberByUsername] }
+      );
+    },
+    { mapError: messageError(500, 'تعذَّر حذف الصُّورة') }
   );
 }
