@@ -53,11 +53,11 @@ export const EditHabitModal = memo(function EditHabitModal({
     >
       <DialogContent
         hideClose
-        className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]"
+        className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 gap-0 rounded-[28px] border border-border/40 bg-background shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]"
       >
         <DialogTitle className="sr-only">تعديل خصائص العادة</DialogTitle>
 
-        <form onSubmit={onSubmit} className="px-6 sm:px-8 pt-8 pb-8 space-y-7 text-start" dir="rtl">
+        <form onSubmit={onSubmit} className="px-6 sm:px-8 pt-8 pb-8 space-y-6 text-start" dir="rtl">
           {formError && (
             <div
               id="edit-habit-error"
@@ -106,9 +106,7 @@ export const EditHabitModal = memo(function EditHabitModal({
 
           {/* Tracking Frequency Section */}
           <fieldset className="space-y-2.5 border-0 p-0 m-0">
-            <legend className="text-[13px] font-medium text-foreground/80 mb-2.5">
-              وتيرة التَّتبُّع
-            </legend>
+            <legend className="text-[13px] font-medium text-foreground/80">وتيرة التَّتبُّع</legend>
             <div className="flex p-1 bg-muted/30 rounded-xl border border-border/40 shadow-inner">
               <button
                 type="button"
@@ -139,7 +137,7 @@ export const EditHabitModal = memo(function EditHabitModal({
 
           {/* Optional Reminder Section */}
           <fieldset className="space-y-2.5 border-0 p-0 m-0">
-            <legend className="text-[13px] font-medium text-foreground/80 flex items-center gap-1.5 mb-1.5">
+            <legend className="text-[13px] font-medium text-foreground/80 flex items-center gap-1.5">
               <Bell className="w-4 h-4 text-muted-foreground/70" aria-hidden="true" />
               <span>وقت التذكير اليومي</span>
               <span className="text-[11px] text-muted-foreground/50 font-normal ms-1">
@@ -164,7 +162,7 @@ export const EditHabitModal = memo(function EditHabitModal({
               onClick={() => habit && onArchive(habit.id)}
               disabled={!habit}
               variant="ghost"
-              className="w-full sm:w-auto group hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-safe duration-300 rounded-xl px-5 py-5 sm:py-2.5 text-[14px] font-medium flex items-center justify-center gap-2"
+              className="w-full sm:w-auto group hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-safe duration-300 rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium flex items-center justify-center gap-2"
               id="btn-archive-habit"
             >
               <Trash2 className="w-4 h-4 transition-transform group-hover:scale-110 text-muted-foreground group-hover:text-destructive" />
@@ -176,7 +174,7 @@ export const EditHabitModal = memo(function EditHabitModal({
                 type="button"
                 variant="outline"
                 onClick={onClose}
-                className="w-full sm:w-auto rounded-xl px-5 py-5 sm:py-2.5 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-safe duration-300"
+                className="w-full sm:w-auto rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-safe duration-300"
               >
                 إلغاء
               </Button>
