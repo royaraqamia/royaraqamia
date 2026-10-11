@@ -94,10 +94,15 @@ export function RatesExplorer({ board }: RatesExplorerProps) {
     return null;
   }, [conversion, to, from, numericAmount]);
 
-  const basisCaption =
-    basisRelevant && effectiveBasis === 'parallel' && marketRelevant
-      ? (marketOptions.find((option) => option.key === activeMarket)?.name ?? null)
-      : null;
+  // Name the applied rate basis so the non-SYP result is never ambiguous: the
+  // parallel market (or its specific market when it spans several), or the
+  // official rate. SYP results keep their old-lira companion line instead.
+  const basisLabel = effectiveBasis === 'official' ? 'السِّعر الرَّسمي' : 'السُّوق الموازي';
+  const basisCaption = basisRelevant
+    ? effectiveBasis === 'parallel' && marketRelevant
+      ? (marketOptions.find((option) => option.key === activeMarket)?.name ?? basisLabel)
+      : basisLabel
+    : null;
 
   const marketAsOf = basisRelevant ? oldestParallelAsOf(board, [from, to]) : null;
   const staleMarketAsOf =

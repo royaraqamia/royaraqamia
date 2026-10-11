@@ -2,7 +2,6 @@ import type { Metadata } from 'next';
 import { Navbar } from '@/frontend/ui/Navbar';
 import { loadRatesBoard } from '@/backend/loaders/rates';
 import { RatesExplorer } from '@/frontend/ui/rates/RatesExplorer';
-import { RatesRefresh } from '@/frontend/ui/rates/rates-refresh';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const revalidate = 3600;
@@ -76,7 +75,7 @@ export default async function RatesPage() {
         <div className="cv-auto mx-auto max-w-3xl px-4">
           <header className="mb-10 text-center">
             <SectionTitle as="h1">
-              أسعار <SectionTitleHighlight>الصَّرف</SectionTitleHighlight>
+              <SectionTitleHighlight>أسعار الصَّرف</SectionTitleHighlight>
             </SectionTitle>
 
             {board ? (
@@ -100,7 +99,6 @@ export default async function RatesPage() {
                     قد تكون البيانات متأخِّرة
                   </span>
                 ) : null}
-                <RatesRefresh />
               </div>
             ) : null}
           </header>

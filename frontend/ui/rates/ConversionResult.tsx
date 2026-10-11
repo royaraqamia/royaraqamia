@@ -10,7 +10,8 @@ interface ConversionResultProps {
   targetCode: string;
   /** The SYP side restated in old lira (100 old = 1 new), when the target is SYP. */
   oldLiraAmount: number | null;
-  /** The market name note shown when the target is not SYP. */
+  /** The applied rate basis (parallel market / official) shown when the target
+   * is not SYP. SYP keeps its old-lira companion line instead. */
   basisCaption: string | null;
   /** Quote date of the market value when it lags the board (carried forward). */
   staleMarketAsOf: string | null;
