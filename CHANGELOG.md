@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.83.0] - 2026-10-11
+
+### Changed
+- give each feature item a rounded surface
+- hide close icon on confirm, portfolio and testimonial dialogs
+
+### Added
+- history-aware back button and local post timestamp
+- clamp future write times (ADR-0033) + multi-device e2e
+- incremental sync cursor, tombstone retention, write conformance
+
+### Fixed
+- retryable repository failures + diagnosable sync status
+- bold the requirements line and end summary lines with a period
+- last-write-wins for HabitFlow and LinkSnap writes
+
 ## [1.82.0] - 2026-10-11
 
 ### Changed
