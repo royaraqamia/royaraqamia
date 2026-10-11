@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.79.1] - 2026-10-11
+
+### Changed
+- note leaked-password protection is Pro-plan-only
+
+### Fixed
+- drop duplicate calendar card inside the date picker
+- clear the SECURITY DEFINER advisor findings
+- center calendar inside the mobile date-picker sheet
+- move pg_trgm out of the exposed public schema
+
 ## [1.79.0] - 2026-10-11
 
 ### Changed
