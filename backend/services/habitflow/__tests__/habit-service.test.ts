@@ -307,7 +307,7 @@ describe('HabitService', () => {
       const { repository, service } = makeRepo();
       (repository.deleteHabit as ReturnType<typeof vi.fn>).mockResolvedValue(true);
       await expect(service.deleteHabit('h-1')).resolves.toBe(true);
-      expect(repository.deleteHabit).toHaveBeenCalledWith('h-1');
+      expect(repository.deleteHabit).toHaveBeenCalledWith('h-1', undefined);
     });
 
     it('throws a 404 AppError when the habit does not exist', async () => {
@@ -317,7 +317,7 @@ describe('HabitService', () => {
         name: AppError.name,
         statusCode: 404,
       });
-      expect(repository.deleteHabit).toHaveBeenCalledWith('h-missing');
+      expect(repository.deleteHabit).toHaveBeenCalledWith('h-missing', undefined);
     });
   });
 

@@ -159,7 +159,8 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     if (updates.passwordHash !== undefined) {
       dbUpdates.password_hash = updates.passwordHash;
     }
-    dbUpdates.updated_at = meta?.updatedAt ?? new Date().toISOString();
+    const updatedAt = meta?.updatedAt ?? new Date().toISOString();
+    dbUpdates.updated_at = updatedAt;
     // `deletedAt: null` from an outbox replay is a resurrect (undo of a delete).
     const resurrect = meta?.deletedAt === null;
     if (meta?.deletedAt !== undefined) {
@@ -167,19 +168,39 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
     }
 
     const supabase = this.adminClient;
-    let query = supabase.from('short_links').update(dbUpdates).eq('code', code);
+
+    // Last-write-wins on the client write time (ADR-0029): a replayed older
+    // edit must not clobber a newer one — in particular a stale resurrect must
+    // not revive a row a newer delete tombstoned.
+    let query = supabase
+      .from('short_links')
+      .update(dbUpdates)
+      .eq('code', code)
+      .lte('updated_at', updatedAt);
     if (!resurrect) query = query.is('deleted_at', null);
-    const { data, error } = await query.select().single();
+    const { data, error } = await query.select();
 
     if (error) {
       throw new Error(`Failed to update short link: ${error.message}`);
     }
+    if (data && data.length > 0) {
+      // analytics_events.link_code references short_links.code with ON UPDATE
+      // CASCADE (see migration), so changing the slug re-points click history
+      // automatically.
+      return this.toDomain(data[0] as ShortLinkDbRow);
+    }
 
-    // analytics_events.link_code references short_links.code with ON UPDATE
-    // CASCADE (see migration), so changing the slug re-points click history
-    // automatically.
-
-    return this.toDomain(data as ShortLinkDbRow);
+    // No-op (filtered by LWW / already in the target state): return the current
+    // row so a stale replay is a success, not an error.
+    const { data: current } = await supabase
+      .from('short_links')
+      .select('*')
+      .eq('code', code)
+      .maybeSingle();
+    if (!current) {
+      throw new Error('Failed to update short link: not found');
+    }
+    return this.toDomain(current as ShortLinkDbRow);
   }
 
   async delete(code: string, userId: string, meta?: ShortLinkWriteMeta): Promise<boolean> {
@@ -192,7 +213,9 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
       .update({ deleted_at: stamp, updated_at: stamp })
       .eq('code', code)
       .eq('user_id', userId)
-      .is('deleted_at', null);
+      // LWW: apply only when this delete is not older than the row's last write,
+      // so a later delete re-stamps and still beats an older replayed edit/undo.
+      .lte('updated_at', stamp);
 
     if (error) {
       throw new Error(`Failed to delete short link: ${error.message}`);

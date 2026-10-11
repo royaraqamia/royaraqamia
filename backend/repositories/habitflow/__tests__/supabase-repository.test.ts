@@ -142,6 +142,17 @@ describe('SupabaseHabitRepository — offline write contract', () => {
   });
 
   describe('tombstone semantics', () => {
+    it('updateHabit applies last-write-wins on updated_at', async () => {
+      const { client, calls } = makeClient({ habits: { data: [habitRow], error: null } });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+      const updatedAt = '2026-08-05T00:00:00.000Z';
+
+      await repo.updateHabit('h-1', { name: 'قراءة', updatedAt });
+
+      expect(calls.some((c) => c.includes(`lte updated_at=${updatedAt}`))).toBe(true);
+      expect(calls.find((c) => c.includes('update'))).toContain(`"updated_at":"${updatedAt}"`);
+    });
+
     it('getHabits excludes tombstones', async () => {
       const { client, calls } = makeClient({ habits: { data: [habitRow], error: null } });
       const repo = new SupabaseHabitRepository(client, 'u-1');
@@ -151,16 +162,19 @@ describe('SupabaseHabitRepository — offline write contract', () => {
       expect(calls).toContain('habits:is deleted_at=null');
     });
 
-    it('deleteHabit sets deleted_at instead of hard-deleting', async () => {
+    it('deleteHabit tombstones with last-write-wins on updated_at', async () => {
       const { client, calls } = makeClient({ habits: { data: [habitRow], error: null } });
       const repo = new SupabaseHabitRepository(client, 'u-1');
+      const deletedAt = '2026-08-01T00:00:00.000Z';
 
-      await expect(repo.deleteHabit('h-1')).resolves.toBe(true);
+      await expect(repo.deleteHabit('h-1', { updatedAt: deletedAt })).resolves.toBe(true);
 
       const updateCall = calls.find((c) => c.includes('update'));
-      expect(updateCall).toContain('"deleted_at"');
+      expect(updateCall).toContain(`"deleted_at":"${deletedAt}"`);
+      // A replayed older delete is filtered, so it can't re-tombstone a newer
+      // resurrect; a later delete re-stamps.
+      expect(calls.some((c) => c.includes(`lte updated_at=${deletedAt}`))).toBe(true);
       expect(calls.some((c) => c.includes('delete') && !c.includes('deleted'))).toBe(false);
-      expect(calls).toContain('habits:is deleted_at=null');
     });
   });
 

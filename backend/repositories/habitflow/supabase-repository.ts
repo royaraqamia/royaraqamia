@@ -164,7 +164,8 @@ export class SupabaseHabitRepository implements HabitRepository {
     // newer undo wins over the earlier delete (ADR-0029).
     const resurrect = updates.deletedAt === null;
 
-    const dbUpdates: Record<string, unknown> = { updated_at: updates.updatedAt ?? nowIso() };
+    const updatedAt = updates.updatedAt ?? nowIso();
+    const dbUpdates: Record<string, unknown> = { updated_at: updatedAt };
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.frequency !== undefined) dbUpdates.frequency = updates.frequency;
     if (updates.archived !== undefined) dbUpdates.archived = updates.archived;
@@ -173,30 +174,55 @@ export class SupabaseHabitRepository implements HabitRepository {
     if (updates.reminderTime !== undefined) dbUpdates.reminder_time = updates.reminderTime;
     if (updates.deletedAt !== undefined) dbUpdates.deleted_at = updates.deletedAt;
 
-    let query = this.client.from('habits').update(dbUpdates).eq('id', id);
+    // Last-write-wins on updated_at (ADR-0029): a replayed older edit must not
+    // win — in particular a stale resurrect must not revive a row a newer
+    // delete tombstoned.
+    let query = this.client
+      .from('habits')
+      .update(dbUpdates)
+      .eq('id', id)
+      .lte('updated_at', updatedAt);
     if (!resurrect) query = query.is('deleted_at', null);
 
     if (this.userId) {
       query = query.eq('user_id', this.userId);
     }
 
-    const { data, error } = await query.select().single();
+    const { data, error } = await query.select();
 
     if (error) {
       throw error;
     }
+    if (data && data.length > 0) {
+      return toHabit(data[0] as HabitRow);
+    }
 
-    return toHabit(data);
+    // No-op (filtered by LWW / already in the target state): return the current
+    // row so a stale replay is a success, not an error.
+    let currentQuery = this.client.from('habits').select('*').eq('id', id);
+    if (this.userId) {
+      currentQuery = currentQuery.eq('user_id', this.userId);
+    }
+    const { data: currentRow } = await currentQuery.maybeSingle();
+    if (!currentRow) {
+      throw new AppError('العادة غير موجودة', 404);
+    }
+    return toHabit(currentRow as HabitRow);
   }
 
-  async deleteHabit(id: string): Promise<boolean> {
+  async deleteHabit(id: string, meta?: { updatedAt?: string }): Promise<boolean> {
     // Tombstone, not a hard delete: a replayed delete is therefore idempotent,
     // and reads exclude the row via `deleted_at is null`.
+    //
+    // LWW on the client write time (ADR-0029): apply only when this delete is
+    // not older than the row's last write, so a later delete re-stamps and
+    // still beats an older replayed edit/undo.
+    const stamp = meta?.updatedAt ?? nowIso();
     let query = this.client
       .from('habits')
-      .update({ deleted_at: nowIso(), updated_at: nowIso() })
+      .update({ deleted_at: stamp, updated_at: stamp })
       .eq('id', id)
-      .is('deleted_at', null);
+      .lte('updated_at', stamp);
 
     if (this.userId) {
       query = query.eq('user_id', this.userId);
@@ -209,12 +235,20 @@ export class SupabaseHabitRepository implements HabitRepository {
       return false;
     }
 
-    if (!data || data.length === 0) {
-      logger.error('Supabase deleteHabit: no rows updated');
-      return false;
-    }
+    if (data && data.length > 0) return true;
 
-    return true;
+    // No row matched: either already tombstoned or filtered by LWW — both mean
+    // the desired state already holds, so a replayed delete is an idempotent
+    // success rather than a 404. Only a genuinely absent habit is "not found".
+    let existsQuery = this.client
+      .from('habits')
+      .select('id', { count: 'exact', head: true })
+      .eq('id', id);
+    if (this.userId) {
+      existsQuery = existsQuery.eq('user_id', this.userId);
+    }
+    const { count } = await existsQuery;
+    return (count ?? 0) > 0;
   }
 
   async restoreFromBackup(input: HabitRestoreInput): Promise<void> {

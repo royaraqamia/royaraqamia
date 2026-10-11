@@ -18,5 +18,7 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  return toNextResponse(await deleteHabit(searchParams.get('id')));
+  const body = await req.json().catch(() => ({}));
+  const updatedAt = typeof body.updatedAt === 'string' ? body.updatedAt : undefined;
+  return toNextResponse(await deleteHabit(searchParams.get('id'), updatedAt));
 }

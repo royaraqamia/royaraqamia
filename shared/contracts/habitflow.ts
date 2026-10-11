@@ -70,7 +70,7 @@ export interface HabitRepository {
   getHabits(): Promise<Habit[]>;
   createHabit(habit: Omit<Habit, 'id' | 'createdAt' | 'archived'>): Promise<Habit>;
   updateHabit(id: string, updates: Partial<Habit>): Promise<Habit>;
-  deleteHabit(id: string): Promise<boolean>;
+  deleteHabit(id: string, meta?: { updatedAt?: string }): Promise<boolean>;
   getLogs(startDate: string, endDate: string): Promise<HabitLog[]>;
   toggleLog(
     habitId: string,

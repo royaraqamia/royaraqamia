@@ -87,9 +87,9 @@ export class HabitService {
     return `${match[1]}:${match[2]}`;
   }
 
-  async deleteHabit(id: string): Promise<boolean> {
+  async deleteHabit(id: string, meta?: { updatedAt?: string }): Promise<boolean> {
     if (!id) throw new AppError('معرِّف العادة مطلوب', 400);
-    const deleted = await this.repository.deleteHabit(id);
+    const deleted = await this.repository.deleteHabit(id, meta);
     if (!deleted) throw new AppError('العادة غير موجودة أو تعذّر أرشفتها', 404);
     return deleted;
   }

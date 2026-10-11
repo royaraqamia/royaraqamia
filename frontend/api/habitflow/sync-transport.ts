@@ -30,9 +30,10 @@ export function createHttpSyncTransport(): SyncTransport {
           });
           return;
         case 'habit.delete': {
-          const { id } = entry.payload as { id: string };
+          const { id, updatedAt } = entry.payload as { id: string; updatedAt?: string };
           await request(`/habitflow/api/habits?id=${encodeURIComponent(id)}`, {
             method: 'DELETE',
+            body: JSON.stringify({ updatedAt }),
           });
           return;
         }

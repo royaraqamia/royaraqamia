@@ -39,11 +39,11 @@ export async function updateHabit(body: Record<string, unknown>): Promise<HttpRe
   );
 }
 
-export async function deleteHabit(id: string | null): Promise<HttpResult> {
+export async function deleteHabit(id: string | null, updatedAt?: string): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { service, mode } = createHabitService(userId, supabase);
-      const success = await service.deleteHabit(id ?? '');
+      const success = await service.deleteHabit(id ?? '', { updatedAt });
       return jsonResult(200, { success, mode });
     },
     { mapError: errorResult }
