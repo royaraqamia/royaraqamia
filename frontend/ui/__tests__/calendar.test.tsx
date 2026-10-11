@@ -26,9 +26,14 @@ describe('Calendar', () => {
     expect(container.querySelector('[dir="rtl"]')).toBeInTheDocument();
   });
 
-  it('centers itself when the picker becomes a full-width mobile sheet', () => {
+  it('is frameless so the surrounding popover/sheet is the only card', () => {
+    /* A second card on the calendar would show as a duplicated panel nested in
+       the picker's sheet; the container owns the surface. */
     const { container } = render(<Calendar mode="single" month={MARCH_2024} />);
-    expect(container.querySelector('[dir="rtl"]')?.className).toContain('max-lg:mx-auto');
+    const root = container.querySelector('[dir="rtl"]');
+    expect(root?.className).toContain('mx-auto');
+    expect(root?.className).not.toContain('bg-card');
+    expect(root?.className).not.toContain('border-border/80');
   });
 
   it('points the nav chevrons outward for RTL', () => {
