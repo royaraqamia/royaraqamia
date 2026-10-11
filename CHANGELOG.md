@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.78.0] - 2026-10-11
+
+### Changed
+- remove duplicate dashboard heading
+- name conversion basis, unify title, and drop refresh control
+- unify page title size and highlight across products
+- rename المصروفات to المصاريف and polish dashboard UI
+- drop goal section and helper copy from habit dialogs
+
+### Added
+- add hideClose option to DialogContent
+- add my-posts page and nav link
+- link post authors to their public profile
+
 ## [1.77.0] - 2026-10-11
 
 ### Changed
