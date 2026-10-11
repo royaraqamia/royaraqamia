@@ -6,13 +6,7 @@ import { AtSign, Loader2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Input } from '@/frontend/ui/primitives/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/frontend/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { cn } from '@/frontend/shared/cn';
@@ -118,13 +112,12 @@ export function UsernameEditor() {
       </button>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className={dialogClassName}>
-          <DialogHeader className="space-y-1.5 text-start pe-0">
-            <DialogTitle className="text-lg font-bold">المعرِّف العام</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-              رابط ملفَّك الشَّخصي الذي يراه الجميع على المجتمع. يظهر في قائمة الأعضاء ونتائج البحث.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          hideClose
+          aria-describedby={undefined}
+          className={cn(dialogClassName, 'gap-0')}
+        >
+          <DialogTitle className="sr-only">المعرِّف العام</DialogTitle>
 
           <form onSubmit={handleSave} className="space-y-3">
             <div className="relative">

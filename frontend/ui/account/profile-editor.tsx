@@ -8,15 +8,10 @@ import { toast } from 'sonner';
 import { cn } from '@/frontend/shared/cn';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/frontend/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
+import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { useSession } from '@/frontend/state/session-provider';
 import { removeAvatar, updateName, uploadAvatar } from '@/frontend/api/me';
 import {
@@ -55,6 +50,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [removingAvatar, setRemovingAvatar] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [imageFailed, setImageFailed] = useState(false);
 
   useEffect(() => {
@@ -146,6 +142,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
       toast.error(error instanceof Error ? error.message : 'تعذَّر حذف الصُّورة');
     } finally {
       setRemovingAvatar(false);
+      setConfirmDeleteOpen(false);
     }
   };
 
@@ -214,13 +211,12 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
           if (!open) closeNameDialog();
         }}
       >
-        <DialogContent className={dialogClassName}>
-          <DialogHeader className="space-y-1.5 text-start pe-0">
-            <DialogTitle className="text-lg font-bold">تعديل الاسم</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-              الاسم الذي يظهر في حسابك وعبر خدماتنا.
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          hideClose
+          aria-describedby={undefined}
+          className={cn(dialogClassName, 'gap-0')}
+        >
+          <DialogTitle className="sr-only">تعديل الاسم</DialogTitle>
 
           <form onSubmit={saveName} className="space-y-4">
             <Input
@@ -257,13 +253,12 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
       </Dialog>
 
       <Dialog open={avatarDialogOpen} onOpenChange={setAvatarDialogOpen}>
-        <DialogContent className={dialogClassName}>
-          <DialogHeader className="space-y-1.5 text-start pe-0">
-            <DialogTitle className="text-lg font-bold">صُورة الحساب</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
-              {showAvatar ? 'يمكنك تغيير صُورتك أو حذفها.' : 'ارفع صُورة شخصيَّة تظهر بجانب اسمك.'}
-            </DialogDescription>
-          </DialogHeader>
+        <DialogContent
+          hideClose
+          aria-describedby={undefined}
+          className={cn(dialogClassName, 'gap-0')}
+        >
+          <DialogTitle className="sr-only">صُورة الحساب</DialogTitle>
 
           <div className="flex flex-col items-center gap-3 py-2">
             <span className="relative flex h-28 w-28 items-center justify-center overflow-hidden rounded-full border border-primary/20 bg-primary/10 text-3xl font-bold text-primary">
@@ -295,7 +290,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={handleRemoveAvatar}
+                  onClick={() => setConfirmDeleteOpen(true)}
                   disabled={removingAvatar || uploadingAvatar}
                   className="w-full sm:w-auto h-13 sm:h-14 rounded-xl px-5 text-[14px] font-medium text-destructive hover:bg-destructive/10 hover:text-destructive transition-safe duration-300"
                 >
@@ -334,6 +329,18 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
           </DialogActions>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={confirmDeleteOpen}
+        title="حذف الصُّورة"
+        message="هل أنت متأكِّد أنَّك تريد حذف صُورتك الشَّخصيَّة؟"
+        confirmLabel="حذف"
+        cancelLabel="إلغاء"
+        variant="danger"
+        isConfirming={removingAvatar}
+        onConfirm={handleRemoveAvatar}
+        onCancel={() => setConfirmDeleteOpen(false)}
+      />
     </section>
   );
 }
