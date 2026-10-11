@@ -327,7 +327,15 @@ export function createSpendtrackRepository(
       if (deletedAt !== undefined) row.deleted_at = deletedAt;
 
       let query = supabase.from('expenses').update(row).eq('id', expenseId).eq('user_id', userId);
-      if (!resurrect) query = query.is('deleted_at', null);
+      if (resurrect) {
+        // A replay carries `deletedAt: null` (the store reuses `expense.update`
+        // for undo), so a stale edit replayed after a newer delete must not
+        // revive the row. Last-write-wins on the tombstone: revive only when the
+        // row is live or this write is not older than the delete (ADR-0029).
+        if (updatedAt) query = query.or(`deleted_at.is.null,deleted_at.lte.${updatedAt}`);
+      } else {
+        query = query.is('deleted_at', null);
+      }
 
       const { error } = await query;
       if (error) throw new Error(error.message);
@@ -360,13 +368,19 @@ export function createSpendtrackRepository(
     ): Promise<void> {
       // Tombstone, not a hard delete: a replayed delete is idempotent, and reads
       // exclude the row via `deleted_at is null` (ADR-0029, ticket #166).
+      //
+      // LWW on the tombstone (`deleted_at` carries the client's delete time):
+      // apply when the row is live, or when this delete is newer than the
+      // existing tombstone. A later delete must re-stamp so it still wins over
+      // an older edit/undo replayed afterwards — otherwise a stale resurrect
+      // would revive the row.
       const stamp = meta?.updatedAt ?? nowIso();
       const { error } = await supabase
         .from('expenses')
         .update({ deleted_at: stamp, updated_at: stamp })
         .eq('id', expenseId)
         .eq('user_id', userId)
-        .is('deleted_at', null);
+        .or(`deleted_at.is.null,deleted_at.lt.${stamp}`);
 
       if (error) throw new Error(error.message);
     },

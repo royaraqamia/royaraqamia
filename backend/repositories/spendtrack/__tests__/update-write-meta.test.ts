@@ -37,6 +37,9 @@ class Builder {
   is(column: string, value: unknown) {
     return this.log(`is ${column}=${String(value)}`);
   }
+  or(filters: string) {
+    return this.log(`or ${filters}`);
+  }
   then<TResult1 = Result, TResult2 = never>(
     onfulfilled?: ((value: Result) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
@@ -74,6 +77,57 @@ describe('createSpendtrackRepository — offline write metadata never leaks to a
     expect(updateCall).not.toContain('client_id');
     expect(updateCall).toContain('"amount":5');
     expect(updateCall).toContain('"updated_at":"2026-10-10T00:00:00.000Z"');
+  });
+
+  it('guards a resurrect with last-write-wins on the tombstone', async () => {
+    const { client, calls } = makeClient();
+    const repo = createSpendtrackRepository(client);
+    const editAt = '2026-10-10T16:07:00.000Z';
+
+    await repo.updateExpense('e-1', 'u-1', {
+      amount: 1,
+      category_id: 'c-1',
+      date: '2026-10-10',
+      description: null,
+      updatedAt: editAt,
+      deletedAt: null,
+    });
+
+    // Only revive a row that is live, or whose tombstone is not newer than the
+    // replayed edit — a stale edit must never beat a newer delete.
+    expect(calls.some((c) => c.includes(`or deleted_at.is.null,deleted_at.lte.${editAt}`))).toBe(
+      true
+    );
+    expect(calls.find((c) => c.includes('update'))).toContain('"deleted_at":null');
+  });
+
+  it('a plain edit only touches live rows', async () => {
+    const { client, calls } = makeClient();
+    const repo = createSpendtrackRepository(client);
+
+    await repo.updateExpense('e-1', 'u-1', {
+      amount: 1,
+      category_id: 'c-1',
+      date: '2026-10-10',
+      description: null,
+      updatedAt: '2026-10-10T16:07:00.000Z',
+    });
+
+    expect(calls.some((c) => c.includes('is deleted_at=null'))).toBe(true);
+    expect(calls.some((c) => c.includes(':or '))).toBe(false);
+  });
+
+  it('re-stamps a delete with last-write-wins so a later delete still wins', async () => {
+    const { client, calls } = makeClient();
+    const repo = createSpendtrackRepository(client);
+    const deletedAt = '2026-10-10T16:07:20.000Z';
+
+    await repo.deleteExpense('e-1', 'u-1', { updatedAt: deletedAt });
+
+    expect(calls.some((c) => c.includes(`or deleted_at.is.null,deleted_at.lt.${deletedAt}`))).toBe(
+      true
+    );
+    expect(calls.find((c) => c.includes('update'))).toContain(`"deleted_at":"${deletedAt}"`);
   });
 
   it('strips clientId from the recurring expense update payload', async () => {
