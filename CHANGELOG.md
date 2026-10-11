@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.77.0] - 2026-10-11
+
+### Changed
+- use hero CTA buttons and trim dashboard header
+- align habit and spend dialog actions with hero CTA
+- use hero CTA variant for sign-in prompts and linksnap action
+
+### Added
+- rename habits list and add empty state
+- add create FAB and refine mobile date header
+- add create FAB and drop redundant dashboard UI
+- show freshness of cached public content (#170)
+
+### Fixed
+- eliminate reduced-motion hydration mismatches
+- require community_visible in posts public RLS read policy
+
 ## [1.76.1] - 2026-10-11
 
 ### Changed
