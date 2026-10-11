@@ -3,17 +3,7 @@
 import React, { useState } from 'react';
 import NextLink from 'next/link';
 import { m, AnimatePresence, useReducedMotion } from 'motion/react';
-import {
-  Link,
-  Copy,
-  Check,
-  Share2,
-  QrCode,
-  RotateCcw,
-  Lock,
-  LockOpen,
-  CloudOff,
-} from 'lucide-react';
+import { Copy, Check, Share2, QrCode, RotateCcw, LockOpen, CloudOff } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { getBaseUrl } from '@/frontend/shared/get-base-url';
 import { hslToHex } from '@/frontend/shared/hsl-to-hex';
@@ -159,23 +149,18 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
             >
               الرَّابط
             </label>
-            <div className="relative">
-              <Link
-                aria-hidden="true"
-                className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-primary"
-              />
-              <input
-                id="original-url"
-                type="url"
-                required
-                value={originalUrl}
-                onChange={(e) => setOriginalUrl(e.target.value)}
-                placeholder="https://example.com/very-long-url-path"
-                autoFocus
-                aria-describedby="single-url-error"
-                className="w-full pr-12 pl-4 py-3.5 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
-              />
-            </div>
+            <input
+              id="original-url"
+              type="url"
+              dir="ltr"
+              required
+              value={originalUrl}
+              onChange={(e) => setOriginalUrl(e.target.value)}
+              placeholder="https://example.com/very-long-url-path"
+              autoFocus
+              aria-describedby="single-url-error"
+              className="w-full px-4 py-3.5 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
+            />
           </div>
 
           {!token && (
@@ -206,7 +191,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 className="flex items-center w-full overflow-hidden bg-muted/50 border border-border rounded-full transition-safe"
                 dir="ltr"
               >
-                <span className="shrink-0 pr-3 text-sm text-muted-foreground font-bold select-none whitespace-nowrap py-3.5 leading-snug">
+                <span className="shrink-0 px-3 text-sm text-muted-foreground font-bold select-none whitespace-nowrap py-3.5 leading-snug">
                   {getBaseUrl()}/
                 </span>
                 <input
@@ -222,7 +207,7 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 />
               </div>
               <p className="text-xs text-muted-foreground font-medium">
-                3-16 حرفاً (أحرف، أرقام، - و _)
+                3-16 حرفًا (أحرف، أرقام، - و _)
               </p>
               {slugStatus !== 'idle' && (
                 <div
@@ -270,24 +255,15 @@ export function SingleUrlShortener({ token, onLinkCreated }: SingleUrlShortenerP
                 >
                   كلمة مرور (اختياري)
                 </label>
-                <div className="relative">
-                  <Lock
-                    aria-hidden="true"
-                    className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary"
-                  />
-                  <input
-                    id="link-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="يُطلب من الزائر قبل فتح الرَّابط"
-                    autoComplete="new-password"
-                    className="w-full pr-11 pl-4 py-3 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground font-medium mt-1">
-                  يُحفظ مشفّراً ولا يمكن استرجاعه لاحقاً.
-                </p>
+                <input
+                  id="link-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="يُطلَب من الزَّائر قبل فتح الرَّابط"
+                  autoComplete="new-password"
+                  className="w-full px-4 py-3 bg-muted/50 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-safe text-foreground"
+                />
               </div>
             </m.div>
           )}

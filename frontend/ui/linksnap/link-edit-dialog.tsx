@@ -534,7 +534,7 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
                   </span>
                 ) : (
                   <span className="text-muted-foreground/70">
-                    يتيح من 3 إلى 16 حرفاً (أحرف إنجليزية، أرقام، - و _)
+                    يتيح من 3 إلى 16 حرفًا (أحرف إنجليزية، أرقام، - و _)
                   </span>
                 )}
               </div>
