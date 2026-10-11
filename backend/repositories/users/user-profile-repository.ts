@@ -20,6 +20,8 @@ export interface UserProfile {
 
 export interface UserProfileRepository {
   upsert(input: UserProfileInput): Promise<void>;
+  /** Insert the row only if it does not exist; never overwrite an existing one. */
+  createIfAbsent(input: UserProfileInput): Promise<void>;
   getById(id: string): Promise<UserProfile | null>;
   updateProfile(
     id: string,
@@ -55,6 +57,24 @@ export function createUserProfileRepository(
         .from('users')
         .upsert(payload as UsersInsert)
         .maybeSingle();
+    },
+
+    async createIfAbsent(input) {
+      // `username` is deliberately omitted (trigger-filled), exactly as above.
+      type UsersInsert = Database['public']['Tables']['users']['Insert'];
+      const payload = {
+        id: input.id,
+        email: input.email,
+        name: input.name,
+        avatar_url: input.avatar_url ?? null,
+        created_at: new Date().toISOString(),
+      } satisfies Omit<UsersInsert, 'username'>;
+
+      const { error } = await supabase.from('users').insert(payload as UsersInsert);
+      // 23505 = unique_violation: the row already exists (the handle_new_user
+      // trigger, or a prior call), so there is nothing to do — and critically,
+      // nothing to overwrite.
+      if (error && error.code !== '23505') throw error;
     },
 
     async getById(id) {

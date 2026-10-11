@@ -63,12 +63,15 @@ export async function updateSession(request: NextRequest) {
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Ensure public.users record exists for Google OAuth users
+      // Ensure a public.users record exists for Google OAuth users, seeding it
+      // from the provider metadata only when absent. Never overwrite: the row is
+      // the user-editable profile (name, avatar), and an upsert here would revert
+      // edits and resurrect a deleted avatar on every fresh OAuth login.
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (user && user.app_metadata?.provider === 'google') {
-        await createUserProfileRepository(getAdminSupabase()).upsert({
+        await createUserProfileRepository(getAdminSupabase()).createIfAbsent({
           id: user.id,
           email: user.email ?? '',
           name: user.user_metadata?.full_name ?? user.user_metadata?.name ?? '',

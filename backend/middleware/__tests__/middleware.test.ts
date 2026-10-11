@@ -87,6 +87,7 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
     from: vi.fn(() => ({
       upsert: vi.fn(() => ({ maybeSingle: vi.fn() })),
+      insert: vi.fn(() => Promise.resolve({ error: null })),
     })),
   })),
 }));
