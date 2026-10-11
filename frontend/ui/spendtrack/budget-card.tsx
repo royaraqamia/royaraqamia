@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getBudget, setBudgetForMonth } from '@/frontend/api/spendtrack';
 import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
-import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
@@ -121,7 +121,7 @@ export function BudgetCard({
                     الميزانيَّة الحاليَّة
                   </span>
                   <p
-                    className="text-3xl font-extrabold tracking-tight text-foreground font-mono"
+                    className={`text-3xl font-extrabold tracking-tight text-foreground ${budget != null ? 'font-mono' : ''}`}
                     aria-live="polite"
                   >
                     {budget != null ? formatMoney(budget, currency) : 'غير مُحدَّدَة'}
@@ -199,13 +199,13 @@ export function BudgetCard({
                     onChange={(e) => setInput(e.target.value)}
                   />
                 </div>
-                <Button
+                <HeroCtaButton
                   type="submit"
                   disabled={saving}
-                  className="h-10 px-5 rounded-xl bg-primary text-primary-foreground font-medium text-xs shadow-xs hover:bg-primary/90 hover:shadow transition-safe active:scale-[0.98] disabled:opacity-50 shrink-0"
+                  className="h-10 gap-1.5 px-5 text-xs shrink-0"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ'}
-                </Button>
+                </HeroCtaButton>
               </div>
 
               {error && (

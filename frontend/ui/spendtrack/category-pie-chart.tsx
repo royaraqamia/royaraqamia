@@ -123,7 +123,7 @@ export function CategoryPieChart({
             لا توجد بيانات
           </p>
           <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-            أضِف مصروفات لرؤية توزيع الإنفاق حسب التَّصنيف
+            أضِف مصاريف لرؤية توزيع الإنفاق حسب التَّصنيف
           </p>
         </div>
       </div>

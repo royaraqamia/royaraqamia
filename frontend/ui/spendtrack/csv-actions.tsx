@@ -62,9 +62,9 @@ export function CsvActions() {
         size="sm"
         type="button"
         onClick={() => setImportOpen(true)}
-        className="h-9 px-3 gap-1.5 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
+        className="h-10 px-3.5 gap-2 text-xs sm:text-sm font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
       >
-        <Upload className="size-3.5" />
+        <Upload className="size-4" />
         استيراد
       </Button>
 
@@ -72,7 +72,7 @@ export function CsvActions() {
         <DialogContent className="sm:max-w-lg rounded-2xl border-border/80 bg-background/95 p-6 shadow-2xl">
           <DialogHeader className="space-y-2 text-start">
             <DialogTitle className="text-lg font-bold text-foreground">
-              استيراد المصروفات
+              استيراد المصاريف
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
               ارفع ملف CSV بالأعمدة:

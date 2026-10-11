@@ -63,7 +63,7 @@ export async function getExpenses(query: URLSearchParams): Promise<HttpResult> {
 
       return jsonResult(200, { expenses });
     },
-    { mapError: messageError(500, 'فشل تحميل المصروفات') }
+    { mapError: messageError(500, 'فشل تحميل المصاريف') }
   );
 }
 
@@ -84,7 +84,7 @@ export async function exportExpenses(query: URLSearchParams): Promise<HttpResult
 
       return jsonResult(200, { content });
     },
-    { mapError: messageError(500, 'فشل تصدير المصروفات') }
+    { mapError: messageError(500, 'فشل تصدير المصاريف') }
   );
 }
 
@@ -99,7 +99,7 @@ export async function importExpenses(body: Record<string, unknown>): Promise<Htt
       const result = await createSpendtrackService(supabase).importExpensesCsv(userId, content);
       return jsonResult(200, result, { revalidate: SPENDTRACK_LAYOUT_REVALIDATION });
     },
-    { mapError: messageError(500, 'فشل استيراد المصروفات') }
+    { mapError: messageError(500, 'فشل استيراد المصاريف') }
   );
 }
 
@@ -236,7 +236,7 @@ export async function getRecurringExpenses(): Promise<HttpResult> {
       const recurring = await createSpendtrackService(supabase).getRecurringExpenses(userId);
       return jsonResult(200, { recurring });
     },
-    { mapError: messageError(500, 'فشل تحميل المصروفات المتكررة') }
+    { mapError: messageError(500, 'فشل تحميل المصاريف المتكررة') }
   );
 }
 

@@ -61,7 +61,7 @@ export function DailyBarChart({ data, currency }: { data: DailySpending[]; curre
         <div className="max-w-xs space-y-1.5">
           <p className="text-base font-bold text-foreground tracking-tight">لا توجد بيانات</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            أضِف مصروفات لرؤية الاتِّجاهات اليوميَّة
+            أضِف مصاريف لرؤية الاتِّجاهات اليوميَّة
           </p>
         </div>
       </div>

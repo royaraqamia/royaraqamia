@@ -8,14 +8,7 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogTrigger,
-} from '@/frontend/ui/primitives/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/frontend/ui/primitives/dialog';
 import {
   Select,
   SelectContent,
@@ -72,7 +65,7 @@ export function RecurringExpenses({
   return (
     <Card
       className="group/card relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 shadow-sm transition-safe duration-300 hover:border-border/80 hover:shadow-md"
-      aria-label="المصروفات المُتكرِّرة"
+      aria-label="المصاريف المُتكرِّرة"
     >
       <CardHeader className="flex flex-row items-center justify-between gap-4 p-5 sm:p-6 pb-4 border-b border-border/40">
         <div className="flex items-center gap-3 min-w-0">
@@ -81,7 +74,7 @@ export function RecurringExpenses({
           </div>
           <div className="min-w-0">
             <CardTitle className="text-base font-bold tracking-tight text-foreground truncate">
-              المصروفات المُتكرِّرة
+              المصاريف المُتكرِّرة
             </CardTitle>
             <p className="text-xs text-muted-foreground truncate mt-0.5">
               جدولة واشتراكات تلقائيَّة
@@ -93,14 +86,10 @@ export function RecurringExpenses({
           currentMonth={currentMonth}
           currency={currency}
           trigger={
-            <Button
-              variant="default"
-              size="sm"
-              className="inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xs hover:shadow-sm active:scale-[0.98] transition-safe duration-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 shrink-0 cursor-pointer"
-            >
+            <HeroCtaButton className="h-10 gap-1.5 px-3.5 text-xs shrink-0 cursor-pointer">
               <Plus className="size-3.5" />
               <span>إضافة</span>
-            </Button>
+            </HeroCtaButton>
           }
         />
       </CardHeader>
@@ -110,7 +99,7 @@ export function RecurringExpenses({
             <div className="flex size-12 items-center justify-center rounded-2xl bg-background border border-border/50 text-muted-foreground/80 shadow-2xs mb-3">
               <Repeat className="size-6" />
             </div>
-            <p className="text-sm font-bold text-foreground">لا توجد مصروفات مُتكرِّرة بعد</p>
+            <p className="text-sm font-bold text-foreground">لا توجد مصاريف مُتكرِّرة بعد</p>
             <p className="mt-1 text-xs text-muted-foreground max-w-xs leading-relaxed text-balance">
               أضِف الفواتير والاشتراكات الشَّهريَّة ليتمَّ تسجيلها تلقائيًّا في الموعد المُحدَّد.
             </p>
@@ -265,15 +254,13 @@ function RecurringDialog({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
-      <DialogContent className="sm:max-w-lg w-[calc(100%-2rem)] max-w-full p-6 bg-card/95 border border-border/80 rounded-3xl shadow-2xl">
-        <DialogHeader className="text-start space-y-1">
-          <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
-            {item ? 'تعديل مصروف مُتكرِّر' : 'إضافة مصروف مُتكرِّر'}
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground leading-relaxed">
-            يُسجَّل تلقائيًّا كل شهر في اليوم المُحدَّد اعتبارًا من الشَّهر الحالي.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent
+        hideClose
+        className="sm:max-w-lg w-[calc(100%-2rem)] max-w-full p-6 bg-card/95 border border-border/80 rounded-3xl shadow-2xl"
+      >
+        <DialogTitle className="sr-only">
+          {item ? 'تعديل مصروف مُتكرِّر' : 'إضافة مصروف مُتكرِّر'}
+        </DialogTitle>
         <form onSubmit={handleSubmit} className="space-y-4 pt-2" noValidate>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">

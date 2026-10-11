@@ -268,7 +268,7 @@ function DebouncedSearch({ value, onChange }: { value: string; onChange: (v: str
         type="search"
         value={input}
         placeholder="ابحث في الوصف..."
-        aria-label="البحث في المصروفات"
+        aria-label="البحث في المصاريف"
         className="w-full h-10 sm:h-11 ps-10 pe-9 bg-background/80 hover:bg-accent/40 focus:bg-background border-border/60 hover:border-border focus:border-primary/50 rounded-xl transition-safe duration-200 text-xs sm:text-sm placeholder:text-muted-foreground/60 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0 focus-visible:outline-none shadow-xs"
         onChange={(e) => {
           const next = e.target.value;

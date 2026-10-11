@@ -54,7 +54,7 @@ export function ExpenseList({
     return (
       <EmptyState
         icon={Receipt}
-        title={hasFilters ? 'لا توجد نتائج تُطابق الفلترة' : 'لا توجد مصروفات بعد'}
+        title={hasFilters ? 'لا توجد نتائج تُطابق الفلترة' : 'لا توجد مصاريف بعد'}
         description={
           hasFilters ? 'حاول تغيير نطاق الفلترة' : 'ابدأ بتتبُّع إنفاقك بإضافة أوَّل مصروف'
         }
@@ -63,7 +63,7 @@ export function ExpenseList({
   }
 
   return (
-    <div className="w-full space-y-2.5" role="list" aria-label="قائمة المصروفات" aria-live="polite">
+    <div className="w-full space-y-2.5" role="list" aria-label="قائمة المصاريف" aria-live="polite">
       {expenses.map((expense) => (
         <ExpenseRow
           key={expense.id}

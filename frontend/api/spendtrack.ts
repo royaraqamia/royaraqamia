@@ -227,7 +227,7 @@ export async function importExpensesCsv(content: string): Promise<ImportResult> 
     );
     return { success: true, imported: data.imported, skipped: data.skipped, errors: data.errors };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : 'فشل استيراد المصروفات' };
+    return { error: error instanceof Error ? error.message : 'فشل استيراد المصاريف' };
   }
 }
 

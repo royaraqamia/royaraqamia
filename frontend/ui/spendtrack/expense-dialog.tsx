@@ -130,7 +130,10 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
         </DialogTrigger>
       )}
       {isOpen && (
-        <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
+        <DialogContent
+          hideClose
+          className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6"
+        >
           <DialogTitle className="sr-only">إضافة مصروف</DialogTitle>
           <ExpenseForm
             onSubmit={handleSubmit(onSubmit)}
@@ -209,7 +212,10 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
         </Button>
       </DialogTrigger>
       {isOpen && (
-        <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6">
+        <DialogContent
+          hideClose
+          className="w-[calc(100%-2rem)] max-w-md mx-auto rounded-3xl border border-neutral-200/80 bg-white p-6 sm:p-7 shadow-2xl dark:border-neutral-800/80 dark:bg-neutral-900 space-y-6"
+        >
           <DialogTitle className="sr-only">تعديل المصروف</DialogTitle>
           <ExpenseForm
             onSubmit={handleSubmit(onSubmit)}

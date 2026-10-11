@@ -36,7 +36,7 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'تتبُّع المصاريف',
   description:
-    'تتبَّع مصروفاتك اليوميَّة، حلِّل أنماط إنفاقك، وتحكَّم في ميزانيَّتك مع تتبُّع المصاريف.',
+    'تتبَّع مصاريفك اليوميَّة، حلِّل أنماط إنفاقك، وتحكَّم في ميزانيَّتك مع تتبُّع المصاريف.',
 };
 
 const PAGE_SIZE = 20;
@@ -500,7 +500,7 @@ export default async function DashboardPage(props: {
       <div className="space-y-6 pb-8">
         <header className="mb-10 text-center">
           <SectionTitle as="h1">
-            تتبُّع <SectionTitleHighlight>المصاريف</SectionTitleHighlight>
+            <SectionTitleHighlight>تتبُّع المصاريف</SectionTitleHighlight>
           </SectionTitle>
         </header>
 

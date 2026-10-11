@@ -85,7 +85,7 @@ export function CurrencySelector({ currency }: { currency?: string | null }) {
           <SelectItem
             key={currencyItem.code}
             value={currencyItem.code}
-            className="relative flex w-full cursor-pointer select-none items-center justify-between rounded-lg py-2 px-2.5 text-xs sm:text-sm font-medium outline-none transition-colors hover:bg-neutral-100/80 focus:bg-neutral-100 focus:text-neutral-900 dark:hover:bg-neutral-800/80 dark:focus:bg-neutral-800 dark:focus:text-neutral-100"
+            className="rounded-lg text-xs sm:text-sm hover:bg-neutral-100/80 focus:bg-neutral-100 focus:text-neutral-900 dark:hover:bg-neutral-800/80 dark:focus:bg-neutral-800 dark:focus:text-neutral-100"
           >
             <span className="flex items-center gap-2.5 min-w-0">
               <span className="inline-flex h-5 min-w-6 items-center justify-center rounded-md border border-neutral-200/70 bg-neutral-100/90 px-1.5 text-[11px] font-bold text-neutral-800 tabular-nums dark:border-neutral-700/70 dark:bg-neutral-800 dark:text-neutral-200">

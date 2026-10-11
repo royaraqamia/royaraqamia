@@ -7,8 +7,8 @@ import { CategoryList } from './category-list';
 import { CreateCategoryDialog } from './create-category-dialog';
 
 export const metadata: Metadata = {
-  title: 'تصنيفات المصروفات',
-  description: 'إدارة وتنظيم تصنيفات المصروفات في SpendTrack.',
+  title: 'تصنيفات المصاريف',
+  description: 'إدارة وتنظيم تصنيفات المصاريف في SpendTrack.',
 };
 
 export default async function CategoriesPage() {
