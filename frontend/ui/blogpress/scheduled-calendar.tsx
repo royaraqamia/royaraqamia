@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { m, useReducedMotion } from 'motion/react';
+import { m } from 'motion/react';
 import { ChevronRight, ChevronLeft, CalendarDays, FileText, Move, Pencil } from 'lucide-react';
 import type { Post } from '@/shared/contracts/blogpress';
 import { postExcerpt } from '@/shared/reading-time';
@@ -36,7 +36,6 @@ export function ScheduledCalendar({
   withReorder = false,
 }: ScheduledCalendarProps) {
   const router = useRouter();
-  const reducedMotion = useReducedMotion();
   const [cursor, setCursor] = useState(() => new Date());
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overKey, setOverKey] = useState<string | null>(null);
@@ -196,7 +195,7 @@ export function ScheduledCalendar({
                           setOverKey(null);
                         }}
                         variants={{
-                          hidden: reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 },
+                          hidden: { opacity: 0, y: 8 },
                           visible: { opacity: 1, y: 0 },
                         }}
                         initial="hidden"

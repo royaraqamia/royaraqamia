@@ -88,7 +88,7 @@ export function HabitCard({
         >
           {isCompleted && (
             <m.span
-              initial={reduce ? false : { scale: 0, rotate: -25 }}
+              initial={{ scale: 0, rotate: -25 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={reduce ? undefined : { type: 'spring', stiffness: 500, damping: 20 }}
               className="flex items-center justify-center"

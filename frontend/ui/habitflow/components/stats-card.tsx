@@ -17,17 +17,20 @@ function AnimatedValue({ value: raw, reduce }: { value: string; reduce: boolean 
   const suffix = match ? match[2] : '';
   const motionValue = useMotionValue(0);
   const springValue = useSpring(motionValue, { stiffness: 60, damping: 15 });
-  const [display, setDisplay] = useState(shouldAnimate ? '0' + suffix : raw);
+  const [display, setDisplay] = useState(match ? '0' + suffix : raw);
 
   useEffect(() => {
-    if (!shouldAnimate) return;
+    if (!shouldAnimate) {
+      setDisplay(raw);
+      return;
+    }
     const unsub = springValue.on('change', (v) => {
       const rounded = target % 1 === 0 ? Math.round(v) : v.toFixed(1);
       setDisplay(`${rounded}${suffix}`);
     });
     motionValue.set(target);
     return unsub;
-  }, [target, springValue, motionValue, suffix, shouldAnimate]);
+  }, [target, springValue, motionValue, suffix, shouldAnimate, raw]);
 
   return (
     <>
@@ -48,7 +51,7 @@ export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProp
 
   return (
     <m.div
-      initial={reduce ? false : { opacity: 0, y: 12 }}
+      initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={
         reduce
@@ -71,13 +74,7 @@ export function StatsCard({ icon: Icon, label, value, index = 0 }: StatsCardProp
 
         <div className="relative z-10 flex items-center gap-3.5 sm:gap-4 min-w-0">
           {/* Icon Badge with Ring & Micro-interaction */}
-          <div
-            className={`relative flex shrink-0 items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-xs transition-safe duration-300 ease-out ${
-              !reduce
-                ? 'group-hover:scale-110 group-hover:rotate-3 group-hover:bg-primary/15 group-hover:shadow-md group-hover:shadow-primary/10'
-                : ''
-            }`}
-          >
+          <div className="relative flex shrink-0 items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-xs transition-safe duration-300 ease-out motion-safe:group-hover:scale-110 motion-safe:group-hover:rotate-3 motion-safe:group-hover:bg-primary/15 motion-safe:group-hover:shadow-md motion-safe:group-hover:shadow-primary/10">
             <Icon className="w-5 h-5 sm:w-6 sm:h-6 transition-transform duration-300 group-hover:scale-105" />
           </div>
 

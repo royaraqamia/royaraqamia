@@ -69,7 +69,7 @@ function NotFoundState({ code }: { code: string }) {
       <div className="relative z-10 w-full max-w-3xl mx-auto">
         <m.div
           variants={staggerVariants}
-          initial={reduce ? false : 'hidden'}
+          initial="hidden"
           animate="visible"
           className="flex flex-col items-center text-center"
         >
@@ -87,7 +87,7 @@ function NotFoundState({ code }: { code: string }) {
           <m.div variants={fadeUp} className="mb-6 relative">
             <m.div
               className="relative flex size-20 md:size-24 items-center justify-center rounded-3xl bg-linear-to-br from-red-500 to-rose-700 shadow-xl shadow-red-500/25 ring-1 ring-white/20"
-              initial={reduce ? false : { scale: 0, rotate: -15 }}
+              initial={{ scale: 0, rotate: -15 }}
               animate={{ scale: 1, rotate: 0 }}
               transition={reduce ? undefined : { type: 'spring', stiffness: 260, damping: 20 }}
             >
@@ -270,14 +270,14 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
       `}</style>
 
       <div className="relative z-10 w-full max-w-3xl mx-auto">
-        <m.div variants={staggerVariants} initial={reduce ? false : 'hidden'} animate="visible">
+        <m.div variants={staggerVariants} initial="hidden" animate="visible">
           {/* Header Section */}
           <div className="mb-10 text-center flex flex-col items-center">
             {/* Glowing Icon Badge */}
             <m.div variants={fadeUp} className="mb-6 relative">
               <m.div
                 className="relative flex size-20 md:size-24 items-center justify-center rounded-3xl bg-linear-to-br from-primary to-accent-purple shadow-xl shadow-primary/25 ring-1 ring-white/20"
-                initial={reduce ? false : { scale: 0, rotate: -180 }}
+                initial={{ scale: 0, rotate: -180 }}
                 animate={{ scale: 1, rotate: 0 }}
                 transition={reduce ? undefined : { type: 'spring', stiffness: 220, damping: 18 }}
               >
@@ -353,7 +353,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                         <m.div
                           key={detail.label}
                           custom={i}
-                          initial={reduce ? false : { opacity: 0, x: -15 }}
+                          initial={{ opacity: 0, x: -15 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={
                             reduce
@@ -390,7 +390,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                     {/* QR Code Seal Box */}
                     <m.div
                       className="lg:col-span-5 flex flex-col items-center justify-center gap-4 rounded-2xl bg-linear-to-b from-neutral-100/80 to-neutral-200/40 dark:from-neutral-800/50 dark:to-neutral-900/50 border border-neutral-200/80 dark:border-neutral-800/80 p-6 text-center shadow-inner"
-                      initial={reduce ? false : { opacity: 0, scale: 0.95 }}
+                      initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
                       transition={reduce ? undefined : { delay: 0.35, duration: 0.4 }}
                     >
@@ -411,7 +411,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
           {/* Action Dock Bar */}
           <m.div
             className="no-print mt-8 flex flex-wrap items-center justify-center gap-3"
-            initial={reduce ? false : { opacity: 0, y: 15 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={reduce ? undefined : { delay: 0.5, duration: 0.4 }}
           >

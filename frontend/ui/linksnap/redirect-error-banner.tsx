@@ -20,7 +20,7 @@ export function RedirectErrorBanner({ error, onDismiss }: RedirectErrorBannerPro
       {error && (
         <m.div
           role="status"
-          initial={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -15 }}
+          initial={{ opacity: 0, y: -15 }}
           animate={{ opacity: 1, y: 0 }}
           exit={reducedMotion ? { opacity: 1 } : { opacity: 0, y: -15 }}
           className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-3 relative"

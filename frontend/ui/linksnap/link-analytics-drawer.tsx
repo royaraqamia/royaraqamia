@@ -129,7 +129,7 @@ export const LinkAnalyticsDrawer = memo(function LinkAnalyticsDrawer({
     <AnimatePresence>
       {isExpanded && (
         <m.div
-          initial={reducedMotion ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
+          initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={reducedMotion ? { height: 'auto', opacity: 1 } : { height: 0, opacity: 0 }}
           className="border-t border-border/50 bg-muted/30"

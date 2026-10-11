@@ -10,7 +10,7 @@ interface AnalyticsChartProps {
 
 export function AnalyticsChart({ stats }: AnalyticsChartProps) {
   const reducedMotion = useReducedMotion();
-  const [animate, setAnimate] = useState(reducedMotion ?? false);
+  const [animate, setAnimate] = useState(false);
   const [tooltipBg, setTooltipBg] = useState('240 8% 11%');
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export function AnalyticsChart({ stats }: AnalyticsChartProps) {
 
   return (
     <m.div
-      initial={reducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={reducedMotion ? { duration: 0 } : { duration: 0.25, ease: [0.33, 1, 0.68, 1] }}
       className="w-full bg-card p-6 rounded-xl border border-border shadow-sm card-lift"
