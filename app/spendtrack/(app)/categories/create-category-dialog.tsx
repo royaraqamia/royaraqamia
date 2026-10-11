@@ -7,6 +7,8 @@ import { z } from 'zod';
 import { createCategory } from '@/frontend/api/spendtrack';
 import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { toast } from 'sonner';
@@ -17,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/frontend/ui/primitives/dialog';
-import { Plus } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 
 const categorySchema = z.object({
   name: z.string().min(1, 'الاسم مطلوب'),
@@ -30,6 +32,7 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
   const context = useSpendtrackContext();
   const store = context?.store ?? null;
   const [pending, setPending] = useState(false);
+  const [open, setOpen] = useState(false);
   const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
   const [showToast, setShowToast] = useState(false);
 
@@ -88,8 +91,10 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
 
   return (
     <Dialog
-      onOpenChange={(open) => {
-        if (!open) reset();
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) reset();
       }}
     >
       <DialogTrigger asChild>
@@ -156,13 +161,23 @@ export const CreateCategoryDialog = memo(function CreateCategoryDialog() {
               {state.error}
             </p>
           )}
-          <Button
-            type="submit"
-            className="btn-lift w-full transition-safe duration-200 btn-press focus-ring touch-target"
-            disabled={pending}
+          <DialogActions
+            onCancel={() => {
+              setOpen(false);
+              reset();
+            }}
           >
-            {pending ? 'جاري الإنشاء...' : 'إنشاء'}
-          </Button>
+            <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
+              {pending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin shrink-0" />
+                  <span>جاري الإنشاء...</span>
+                </>
+              ) : (
+                'إنشاء'
+              )}
+            </HeroCtaButton>
+          </DialogActions>
         </form>
       </DialogContent>
     </Dialog>

@@ -6,6 +6,7 @@ import { Habit, HabitTargetPeriod } from '@/shared/contracts/habitflow';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { Input } from '@/frontend/ui/primitives/input';
 import { TimePicker } from '@/frontend/ui/primitives/time-picker';
 
@@ -156,45 +157,38 @@ export const EditHabitModal = memo(function EditHabitModal({
           </fieldset>
 
           {/* Footer Actions */}
-          <div className="pt-2 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-4">
-            <Button
-              type="button"
-              onClick={() => habit && onArchive(habit.id)}
-              disabled={!habit}
-              variant="ghost"
-              className="w-full sm:w-auto group hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-safe duration-300 rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium flex items-center justify-center gap-2"
-              id="btn-archive-habit"
-            >
-              <Trash2 className="w-4 h-4 transition-transform group-hover:scale-110 text-muted-foreground group-hover:text-destructive" />
-              <span>أرشفة العادة</span>
-            </Button>
-
-            <div className="flex flex-col-reverse sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <DialogActions
+            onCancel={onClose}
+            leading={
               <Button
                 type="button"
-                variant="outline"
-                onClick={onClose}
-                className="w-full sm:w-auto rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-safe duration-300"
+                onClick={() => habit && onArchive(habit.id)}
+                disabled={!habit}
+                variant="ghost"
+                className="w-full sm:w-auto group hover:bg-destructive/10 hover:text-destructive text-muted-foreground transition-safe duration-300 rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium flex items-center justify-center gap-2"
+                id="btn-archive-habit"
               >
-                إلغاء
+                <Trash2 className="w-4 h-4 transition-transform group-hover:scale-110 text-muted-foreground group-hover:text-destructive" />
+                <span>أرشفة العادة</span>
               </Button>
-              <HeroCtaButton
-                type="submit"
-                disabled={isSubmitting}
-                id="btn-submit-edit-habit"
-                className="w-full sm:w-auto"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin opacity-80" aria-hidden="true" />
-                    <span>جاري التَّطبيق...</span>
-                  </>
-                ) : (
-                  'تطبيق التَّغييرات'
-                )}
-              </HeroCtaButton>
-            </div>
-          </div>
+            }
+          >
+            <HeroCtaButton
+              type="submit"
+              disabled={isSubmitting}
+              id="btn-submit-edit-habit"
+              className="w-full sm:w-auto"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin opacity-80" aria-hidden="true" />
+                  <span>جاري التَّطبيق...</span>
+                </>
+              ) : (
+                'تطبيق التَّغييرات'
+              )}
+            </HeroCtaButton>
+          </DialogActions>
         </form>
       </DialogContent>
     </Dialog>

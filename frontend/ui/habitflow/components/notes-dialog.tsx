@@ -3,8 +3,9 @@
 import { useState, useEffect, memo } from 'react';
 import { BookOpenText, Loader2, Calendar, Sparkles } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
-import { Button } from '@/frontend/ui/primitives/button';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 
 interface NotesDialogProps {
   isOpen: boolean;
@@ -139,31 +140,26 @@ export const NotesDialog = memo(function NotesDialog({
           </div>
 
           {/* Action Footer */}
-          <div className="bg-muted/10 px-6 sm:px-8 py-5 border-t border-border/30 flex flex-col-reverse sm:flex-row items-center justify-end gap-3 rounded-b-4xl">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="w-full sm:w-auto rounded-xl px-6 py-2.5 text-sm font-bold border-border/50 bg-transparent hover:bg-muted/80 hover:text-foreground active:scale-[0.98] transition-safe duration-200 h-11"
-            >
-              إلغاء
-            </Button>
-            <Button
+          <DialogActions
+            onCancel={onClose}
+            className="bg-muted/10 px-6 sm:px-8 py-5 border-t border-border/30 rounded-b-4xl"
+          >
+            <HeroCtaButton
               type="submit"
               disabled={isSaving}
               id="btn-save-note"
-              className="w-full sm:w-auto rounded-xl px-8 py-2.5 text-sm font-bold shadow-lg shadow-primary/20 transition-safe duration-300 hover:-translate-y-0.5 hover:shadow-primary/30 active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:hover:translate-y-0 disabled:scale-100 disabled:cursor-not-allowed h-11 flex items-center justify-center gap-2.5 bg-primary text-primary-foreground hover:bg-primary/95"
+              className="w-full sm:w-auto"
             >
               {isSaving ? (
                 <>
-                  <Loader2 className="w-4.5 h-4.5 animate-spin" aria-hidden="true" />
+                  <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
                   <span>جاري الحفظ...</span>
                 </>
               ) : (
                 'حفظ الملاحظة'
               )}
-            </Button>
-          </div>
+            </HeroCtaButton>
+          </DialogActions>
         </form>
       </DialogContent>
     </Dialog>

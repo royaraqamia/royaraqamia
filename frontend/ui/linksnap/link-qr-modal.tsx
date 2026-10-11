@@ -14,6 +14,7 @@ import { Loader2, AlertCircle, RotateCcw, QrCode } from 'lucide-react';
 import { logger } from '@/frontend/shared/logger';
 import { hslToHex } from '@/frontend/shared/hsl-to-hex';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 
 interface LinkQrModalProps {
   code: string;
@@ -116,14 +117,6 @@ export const LinkQrModal = memo(function LinkQrModal({
                     className="rounded-2xl border border-border/80 bg-background p-4 shadow-sm transition-safe duration-300 group-hover:scale-[1.01] group-hover:shadow-md [&>svg]:w-48 [&>svg]:h-48 [&>svg]:max-w-full [&>svg]:rounded-lg"
                     dangerouslySetInnerHTML={{ __html: svg }}
                   />
-                  <HeroCtaButton
-                    type="button"
-                    onClick={handleDownload}
-                    className="w-full sm:w-auto"
-                    aria-label="تحميل الرَّمز بصيغة SVG"
-                  >
-                    <span>تحميل الرَّمز (SVG)</span>
-                  </HeroCtaButton>
                 </div>
               ) : error ? (
                 <div className="flex flex-col items-center justify-center w-full text-center gap-3 p-4 animate-in fade-in-50 duration-200">
@@ -169,6 +162,19 @@ export const LinkQrModal = memo(function LinkQrModal({
               )}
             </div>
           </div>
+
+          <DialogActions onCancel={() => onOpenChange(false)} className="pt-0">
+            {svg && (
+              <HeroCtaButton
+                type="button"
+                onClick={handleDownload}
+                className="w-full sm:w-auto"
+                aria-label="تحميل الرَّمز بصيغة SVG"
+              >
+                <span>تحميل الرَّمز (SVG)</span>
+              </HeroCtaButton>
+            )}
+          </DialogActions>
         </DialogContent>
       )}
     </Dialog>

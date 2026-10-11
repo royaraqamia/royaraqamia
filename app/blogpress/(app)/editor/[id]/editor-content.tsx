@@ -11,6 +11,8 @@ import {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { Input } from '@/frontend/ui/primitives/input';
 import {
   Dialog,
@@ -522,15 +524,9 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
               dir="ltr"
               className="min-h-11"
             />
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setLinkDialogOpen(false)}
-                className="rounded-full"
-              >
-                إلغاء
-              </Button>
-              <Button
+            <DialogActions onCancel={() => setLinkDialogOpen(false)} className="pt-0">
+              <HeroCtaButton
+                type="button"
                 onClick={() => {
                   const ed = editorRef.current?.editor;
                   if (ed && linkUrl) {
@@ -538,11 +534,11 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
                   }
                   setLinkDialogOpen(false);
                 }}
-                className="rounded-full"
+                className="w-full sm:w-auto"
               >
                 إدراج
-              </Button>
-            </div>
+              </HeroCtaButton>
+            </DialogActions>
           </div>
         </DialogContent>
       </Dialog>
@@ -613,18 +609,15 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
               </div>
             ))}
           </div>
-          <div className="flex justify-between gap-2 pt-2">
-            <Button
-              variant="outline"
-              onClick={() => setPublishDialogOpen(false)}
-              className="rounded-full"
-            >
-              العودة للتحرير
-            </Button>
-            <Button onClick={handlePublishAnyway} className="rounded-full">
+          <DialogActions
+            onCancel={() => setPublishDialogOpen(false)}
+            cancelLabel="العودة للتحرير"
+            className="pt-2"
+          >
+            <HeroCtaButton type="button" onClick={handlePublishAnyway} className="w-full sm:w-auto">
               نشر على أيِّ حال
-            </Button>
-          </div>
+            </HeroCtaButton>
+          </DialogActions>
         </DialogContent>
       </Dialog>
     </div>

@@ -7,17 +7,7 @@ import { Button } from '@/frontend/ui/primitives/button';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
 import { Badge } from '@/frontend/ui/primitives/badge';
 import { Skeleton } from '@/frontend/ui/primitives/skeleton';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/frontend/ui/primitives/alert-dialog';
+import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 import { m, AnimatePresence } from 'motion/react';
 import {
   Trash2,
@@ -141,50 +131,36 @@ function CertificateListItem({
                 <Pencil className="size-4" />
               </Link>
             </Button>
-            <AlertDialog open={isDeleteTarget} onOpenChange={onDeleteDialogChange}>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={deleting}
-                  aria-label="حذف"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 size-11 sm:size-10"
-                  onClick={() => onDeleteRequest(cert)}
-                >
-                  {deleting ? (
-                    <Loader2 className="size-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="size-4" />
-                  )}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>تأكيد الحذف</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    هل أنت متأكد من حذف شهادة{' '}
-                    <span className="font-bold text-foreground">{cert.student_name}</span>؟ لا يمكن
-                    التراجع عن هذا الإجراء.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>إلغاء</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={onConfirmDelete}
-                    className="bg-destructive hover:bg-destructive/90"
-                  >
-                    {deleting ? (
-                      <>
-                        <Loader2 className="size-4 animate-spin" />
-                        جاري الحذف...
-                      </>
-                    ) : (
-                      'حذف'
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              disabled={deleting}
+              aria-label="حذف"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10 size-11 sm:size-10"
+              onClick={() => onDeleteRequest(cert)}
+            >
+              {deleting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+            </Button>
+            <ConfirmDialog
+              open={isDeleteTarget}
+              title="تأكيد الحذف"
+              message={
+                <>
+                  هل أنت متأكد من حذف شهادة{' '}
+                  <span className="font-bold text-foreground">{cert.student_name}</span>؟ لا يمكن
+                  التراجع عن هذا الإجراء.
+                </>
+              }
+              confirmLabel={deleting ? 'جاري الحذف...' : 'حذف'}
+              cancelLabel="إلغاء"
+              isConfirming={deleting}
+              onConfirm={onConfirmDelete}
+              onCancel={() => onDeleteDialogChange(false)}
+            />
           </div>
         </CardContent>
       </Card>

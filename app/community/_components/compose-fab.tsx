@@ -10,9 +10,9 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { PostComposerDialog } from './post-composer-dialog';
 
 /**
@@ -75,9 +75,13 @@ export function ComposeFab() {
             </div>
           </div>
 
-          <DialogFooter className="sm:justify-center">
-            <SignInCta href={loginHref} onClick={() => setAuthPromptOpen(false)} />
-          </DialogFooter>
+          <DialogActions onCancel={() => setAuthPromptOpen(false)}>
+            <SignInCta
+              href={loginHref}
+              onClick={() => setAuthPromptOpen(false)}
+              className="w-full sm:w-auto"
+            />
+          </DialogActions>
         </DialogContent>
       </Dialog>
     </>

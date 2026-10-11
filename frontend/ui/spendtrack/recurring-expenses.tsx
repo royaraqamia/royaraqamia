@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
 import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/frontend/ui/primitives/dialog';
@@ -353,16 +354,18 @@ function RecurringDialog({
               <span>{error}</span>
             </div>
           )}
-          <HeroCtaButton type="submit" className="w-full" disabled={pending}>
-            {pending ? (
-              <>
-                <Loader2 className="size-4 animate-spin shrink-0" />
-                <span>جاري الحفظ...</span>
-              </>
-            ) : (
-              <span>{item ? 'حفظ التَّعديلات' : 'إضافة'}</span>
-            )}
-          </HeroCtaButton>
+          <DialogActions onCancel={() => setIsOpen(false)}>
+            <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
+              {pending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin shrink-0" />
+                  <span>جاري الحفظ...</span>
+                </>
+              ) : (
+                <span>{item ? 'حفظ التَّعديلات' : 'إضافة'}</span>
+              )}
+            </HeroCtaButton>
+          </DialogActions>
         </form>
       </DialogContent>
     </Dialog>

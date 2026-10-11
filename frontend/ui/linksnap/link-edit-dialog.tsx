@@ -36,8 +36,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
-import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import type { ShortenedLink } from '@/frontend/api/linksnap';
 
 interface LinkEditDialogProps {
@@ -802,48 +802,39 @@ export const LinkEditDialog = React.memo(function LinkEditDialog({
             )}
 
             {/* Footer Action Buttons */}
-            <div className="pt-4 sm:pt-5 flex flex-col-reverse sm:flex-row items-center justify-between gap-3 border-t border-border/50 dark:border-neutral-800/80">
-              <div className="text-[11px] text-muted-foreground/80 hidden sm:block">
-                اضغط{' '}
-                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">Ctrl</kbd> +{' '}
-                <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">Enter</kbd>{' '}
-                للحفظ السريع
-              </div>
-
-              <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  className="flex-1 sm:flex-initial h-10 rounded-xl px-5 text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted/80 border-border/70 transition-safe duration-200 active:scale-[0.98] cursor-pointer"
-                >
-                  إلغاء
-                </Button>
-                <HeroCtaButton
-                  type="submit"
-                  disabled={
-                    updateLoading ||
-                    slugStatus === 'taken' ||
-                    slugStatus === 'checking' ||
-                    slugTooShort ||
-                    !hasChanges
-                  }
-                  className="flex-1 sm:flex-initial"
-                >
-                  {updateLoading ? (
-                    <>
-                      <LoaderCircle
-                        className="w-4 h-4 animate-spin opacity-90"
-                        aria-hidden="true"
-                      />
-                      <span>جاري حفظ التعديلات...</span>
-                    </>
-                  ) : (
-                    <span>حفظ التغييرات</span>
-                  )}
-                </HeroCtaButton>
-              </div>
-            </div>
+            <DialogActions
+              onCancel={onClose}
+              className="pt-4 sm:pt-5 border-t border-border/50 dark:border-neutral-800/80"
+              leading={
+                <div className="text-[11px] text-muted-foreground/80 hidden sm:block">
+                  اضغط{' '}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">Ctrl</kbd> +{' '}
+                  <kbd className="px-1.5 py-0.5 rounded bg-muted font-mono text-[10px]">Enter</kbd>{' '}
+                  للحفظ السريع
+                </div>
+              }
+            >
+              <HeroCtaButton
+                type="submit"
+                disabled={
+                  updateLoading ||
+                  slugStatus === 'taken' ||
+                  slugStatus === 'checking' ||
+                  slugTooShort ||
+                  !hasChanges
+                }
+                className="w-full sm:w-auto"
+              >
+                {updateLoading ? (
+                  <>
+                    <LoaderCircle className="w-4 h-4 animate-spin opacity-90" aria-hidden="true" />
+                    <span>جاري حفظ التعديلات...</span>
+                  </>
+                ) : (
+                  <span>حفظ التغييرات</span>
+                )}
+              </HeroCtaButton>
+            </DialogActions>
           </form>
         </DialogContent>
       )}

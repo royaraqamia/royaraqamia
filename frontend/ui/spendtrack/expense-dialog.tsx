@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { useSaveExpense } from '@/frontend/state/spendtrack/use-expenses';
 import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { FabButton } from '@/frontend/ui/shared/fab-button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Label } from '@/frontend/ui/primitives/label';
@@ -137,6 +138,10 @@ export const CreateExpenseDialog = memo(function CreateExpenseDialog({
           <DialogTitle className="sr-only">إضافة مصروف</DialogTitle>
           <ExpenseForm
             onSubmit={handleSubmit(onSubmit)}
+            onCancel={() => {
+              setIsOpen(false);
+              reset();
+            }}
             register={register}
             control={control}
             errors={errors}
@@ -219,6 +224,10 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
           <DialogTitle className="sr-only">تعديل المصروف</DialogTitle>
           <ExpenseForm
             onSubmit={handleSubmit(onSubmit)}
+            onCancel={() => {
+              setIsOpen(false);
+              reset();
+            }}
             register={register}
             control={control}
             errors={errors}
@@ -236,6 +245,7 @@ export const EditExpenseDialog = memo(function EditExpenseDialog({
 
 function ExpenseForm({
   onSubmit,
+  onCancel,
   register,
   control,
   errors,
@@ -246,6 +256,7 @@ function ExpenseForm({
   currency,
 }: {
   onSubmit: (e: React.FormEvent) => void;
+  onCancel: () => void;
   register: ReturnType<typeof useForm<ExpenseFormValues>>['register'];
   control: ReturnType<typeof useForm<ExpenseFormValues>>['control'];
   errors: ReturnType<typeof useForm<ExpenseFormValues>>['formState']['errors'];
@@ -494,16 +505,18 @@ function ExpenseForm({
       )}
 
       {/* SUBMIT BUTTON */}
-      <HeroCtaButton type="submit" className="w-full mt-2" disabled={pending}>
-        {pending ? (
-          <>
-            <Loader2 className="size-4 animate-spin shrink-0" />
-            <span>جاري الحفظ...</span>
-          </>
-        ) : (
-          <span>{submitLabel}</span>
-        )}
-      </HeroCtaButton>
+      <DialogActions onCancel={onCancel}>
+        <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
+          {pending ? (
+            <>
+              <Loader2 className="size-4 animate-spin shrink-0" />
+              <span>جاري الحفظ...</span>
+            </>
+          ) : (
+            <span>{submitLabel}</span>
+          )}
+        </HeroCtaButton>
+      </DialogActions>
     </form>
   );
 }

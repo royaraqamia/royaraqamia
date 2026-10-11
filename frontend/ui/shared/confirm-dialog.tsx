@@ -1,7 +1,7 @@
 'use client';
 
-import { AlertTriangle, type LucideIcon } from 'lucide-react';
-import { memo } from 'react';
+import { AlertTriangle, Loader2, type LucideIcon } from 'lucide-react';
+import { memo, type ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -9,17 +9,21 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/frontend/ui/primitives/dialog';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 
 interface ConfirmDialogProps {
   open: boolean;
   title: string;
-  message: string;
+  message: ReactNode;
   confirmLabel: string;
   cancelLabel: string;
   onConfirm: () => void;
   onCancel: () => void;
   icon?: LucideIcon;
   variant?: 'danger' | 'default';
+  /** Locks the primary action and shows a spinner while the confirm runs. */
+  isConfirming?: boolean;
 }
 
 export const ConfirmDialog = memo(function ConfirmDialog({
@@ -32,6 +36,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
   onCancel,
   icon: Icon = AlertTriangle,
   variant = 'danger',
+  isConfirming = false,
 }: ConfirmDialogProps) {
   return (
     <Dialog
@@ -66,27 +71,25 @@ export const ConfirmDialog = memo(function ConfirmDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-6 sm:mt-8 flex flex-col-reverse sm:flex-row gap-3 w-full">
-          <button
-            type="button"
-            onClick={onCancel}
-            className="w-full sm:flex-1 py-2.5 px-4 text-sm font-bold text-foreground bg-muted hover:bg-muted/80 active:bg-muted/90 border border-border/40 rounded-xl sm:rounded-2xl transition-[background-color,border-color,box-shadow,transform] duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 active:scale-[0.98] touch-manipulation shadow-xs"
-          >
-            {cancelLabel}
-          </button>
-          <button
+        <DialogActions onCancel={onCancel} cancelLabel={cancelLabel} className="mt-6 sm:mt-8 pt-0">
+          <HeroCtaButton
             type="button"
             onClick={onConfirm}
             autoFocus
-            className={`w-full sm:flex-1 py-2.5 px-4 text-sm font-bold rounded-xl sm:rounded-2xl transition-[background-color,box-shadow,transform] duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-[0.98] touch-manipulation ${
-              variant === 'danger'
-                ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90 active:bg-destructive/95 shadow-md shadow-destructive/20 hover:shadow-lg hover:shadow-destructive/30 focus-visible:ring-destructive'
-                : 'bg-primary text-primary-foreground hover:bg-primary/90 active:bg-primary/95 shadow-md shadow-primary/20 hover:shadow-lg hover:shadow-primary/30 focus-visible:ring-primary'
-            }`}
+            disabled={isConfirming}
+            variant={variant === 'danger' ? 'hero-destructive' : 'hero'}
+            className="w-full sm:w-auto"
           >
-            {confirmLabel}
-          </button>
-        </div>
+            {isConfirming ? (
+              <>
+                <Loader2 className="size-4 animate-spin shrink-0" aria-hidden="true" />
+                <span>{confirmLabel}</span>
+              </>
+            ) : (
+              confirmLabel
+            )}
+          </HeroCtaButton>
+        </DialogActions>
       </DialogContent>
     </Dialog>
   );

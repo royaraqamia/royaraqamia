@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import {
   Dialog,
   DialogContent,
@@ -110,35 +112,30 @@ export function CsvActions() {
             )}
           </label>
 
-          <div className="flex items-center justify-end gap-2.5 pt-4">
-            <Button
-              variant="outline"
-              type="button"
-              onClick={() => {
-                setImportOpen(false);
-                setFileContent('');
-                setFileName(null);
-              }}
-              className="h-9 px-4 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
-            >
-              إلغاء
-            </Button>
-            <Button
+          <DialogActions
+            onCancel={() => {
+              setImportOpen(false);
+              setFileContent('');
+              setFileName(null);
+            }}
+            className="pt-4"
+          >
+            <HeroCtaButton
               type="button"
               onClick={handleImport}
               disabled={importing || !fileContent.trim()}
-              className="h-9 px-4 text-xs font-medium rounded-xl shadow-sm active:scale-95 transition-safe"
+              className="w-full sm:w-auto"
             >
               {importing ? (
-                <span className="flex items-center gap-1.5">
-                  <Loader2 className="size-3.5 animate-spin" />
-                  جاري الاستيراد...
-                </span>
+                <>
+                  <Loader2 className="size-4 animate-spin shrink-0" />
+                  <span>جاري الاستيراد...</span>
+                </>
               ) : (
                 'استيراد'
               )}
-            </Button>
-          </div>
+            </HeroCtaButton>
+          </DialogActions>
         </DialogContent>
       </Dialog>
     </>

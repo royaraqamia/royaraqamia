@@ -64,6 +64,8 @@ import {
 } from '@/frontend/shared/reading-time';
 import { toast } from 'sonner';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 
 interface PostListProps {
   posts: Post[];
@@ -362,6 +364,7 @@ const PostRow = memo(function PostRow({
   const wordCount = estimateWordCount(post.content);
   const readingTime = estimateReadingTime(post.content);
   const label = postExcerpt(post.content, post.meta_desc ?? '') || 'بدون عنوان';
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   return (
     <article
@@ -639,7 +642,7 @@ const PostRow = memo(function PostRow({
               <span>تصدير HTML</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator className="my-1 border-neutral-100 dark:border-neutral-800" />
-            <Dialog>
+            <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
               <DialogTrigger asChild>
                 <DropdownMenuItem
                   onSelect={(e) => e.preventDefault()}
@@ -658,60 +661,51 @@ const PostRow = memo(function PostRow({
                     هل أنت متأكِّد من حذف &ldquo;{label}&rdquo;؟ لا يمكن التَّراجع عن هذا الإجراء.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex items-center justify-end gap-2.5 mt-6">
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      type="button"
-                      className="rounded-xl text-xs font-medium h-9 px-4"
-                    >
-                      إلغاء
-                    </Button>
-                  </DialogTrigger>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="destructive"
-                      onClick={async () => {
-                        try {
-                          await deletePost(post.id);
-                          toast('تم حذف المنشور', {
-                            action: {
-                              label: 'تراجع',
-                              onClick: async () => {
-                                try {
-                                  await restorePost({
-                                    slug: post.slug,
-                                    content: post.content,
-                                    status: post.status,
-                                    cover_image: post.cover_image,
-                                    meta_title: post.meta_title,
-                                    meta_desc: post.meta_desc,
-                                    published_at: post.published_at,
-                                    publish_at: post.publish_at,
-                                    view_count: post.view_count ?? 0,
-                                    featured: post.featured,
-                                    community_visible: post.community_visible,
-                                    reading_time_minutes: post.reading_time_minutes ?? 0,
-                                    tagIds: tags.map((t) => t.id),
-                                  });
-                                  router.refresh();
-                                } catch {
-                                  toast.error('فشل استرجاع المنشور');
-                                }
-                              },
+                <DialogActions onCancel={() => setDeleteOpen(false)} className="mt-6">
+                  <HeroCtaButton
+                    type="button"
+                    variant="hero-destructive"
+                    onClick={async () => {
+                      setDeleteOpen(false);
+                      try {
+                        await deletePost(post.id);
+                        toast('تم حذف المنشور', {
+                          action: {
+                            label: 'تراجع',
+                            onClick: async () => {
+                              try {
+                                await restorePost({
+                                  slug: post.slug,
+                                  content: post.content,
+                                  status: post.status,
+                                  cover_image: post.cover_image,
+                                  meta_title: post.meta_title,
+                                  meta_desc: post.meta_desc,
+                                  published_at: post.published_at,
+                                  publish_at: post.publish_at,
+                                  view_count: post.view_count ?? 0,
+                                  featured: post.featured,
+                                  community_visible: post.community_visible,
+                                  reading_time_minutes: post.reading_time_minutes ?? 0,
+                                  tagIds: tags.map((t) => t.id),
+                                });
+                                router.refresh();
+                              } catch {
+                                toast.error('فشل استرجاع المنشور');
+                              }
                             },
-                          });
-                          router.refresh();
-                        } catch {
-                          toast.error('فشل حذف المنشور');
-                        }
-                      }}
-                      className="rounded-xl text-xs font-medium h-9 px-4 bg-red-600 hover:bg-red-700 text-white"
-                    >
-                      حذف
-                    </Button>
-                  </DialogTrigger>
-                </div>
+                          },
+                        });
+                        router.refresh();
+                      } catch {
+                        toast.error('فشل حذف المنشور');
+                      }
+                    }}
+                    className="w-full sm:w-auto"
+                  >
+                    حذف
+                  </HeroCtaButton>
+                </DialogActions>
               </DialogContent>
             </Dialog>
           </DropdownMenuContent>

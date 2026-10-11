@@ -7,8 +7,10 @@ import { z } from 'zod';
 import { updateCategory, deleteCategory } from '@/frontend/api/spendtrack';
 import { useSpendtrackContext } from '@/frontend/state/spendtrack/spendtrack-context';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { Input } from '@/frontend/ui/primitives/input';
-import { Pencil, Trash2, Tags } from 'lucide-react';
+import { Pencil, Trash2, Tags, Loader2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -96,6 +98,7 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
   const context = useSpendtrackContext();
   const store = context?.store ?? null;
   const [pending, setPending] = useState(false);
+  const [open, setOpen] = useState(false);
   const [state, setState] = useState<{ error?: string; success?: boolean } | undefined>(undefined);
 
   const {
@@ -138,7 +141,7 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
   }
 
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button
           variant="ghost"
@@ -206,13 +209,18 @@ const EditCategoryDialog = memo(function EditCategoryDialog({ category }: { cate
               {state.error}
             </p>
           )}
-          <Button
-            type="submit"
-            className="w-full transition-safe duration-200 btn-lift btn-press focus-ring touch-target"
-            disabled={pending}
-          >
-            {pending ? 'جاري الحفظ...' : 'حفظ'}
-          </Button>
+          <DialogActions onCancel={() => setOpen(false)}>
+            <HeroCtaButton type="submit" className="w-full sm:w-auto" disabled={pending}>
+              {pending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin shrink-0" />
+                  <span>جاري الحفظ...</span>
+                </>
+              ) : (
+                'حفظ'
+              )}
+            </HeroCtaButton>
+          </DialogActions>
         </form>
       </DialogContent>
     </Dialog>
@@ -273,25 +281,25 @@ const DeleteCategoryButton = memo(function DeleteCategoryButton({
           <p className="text-sm text-muted-foreground">
             هل أنت متأكد من حذف هذا التصنيف؟ لا يمكن التراجع عن هذا الإجراء.
           </p>
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setConfirmOpen(false)}
-              className="btn-press touch-target focus-ring"
-            >
-              إلغاء
-            </Button>
-            <form onSubmit={handleDelete}>
-              <Button
+          <DialogActions onCancel={() => setConfirmOpen(false)}>
+            <form onSubmit={handleDelete} className="w-full sm:w-auto">
+              <HeroCtaButton
                 type="submit"
-                variant="destructive"
+                variant="hero-destructive"
                 disabled={pending}
-                className="btn-press touch-target focus-ring"
+                className="w-full sm:w-auto"
               >
-                {pending ? 'جاري الحذف...' : 'حذف'}
-              </Button>
+                {pending ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin shrink-0" />
+                    <span>جاري الحذف...</span>
+                  </>
+                ) : (
+                  'حذف'
+                )}
+              </HeroCtaButton>
             </form>
-          </div>
+          </DialogActions>
           {state?.error && (
             <p className="text-sm text-destructive" role="alert">
               {state.error}

@@ -3,8 +3,8 @@
 import React, { memo } from 'react';
 import { AlertCircle, Loader2, Bell } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
-import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { Input } from '@/frontend/ui/primitives/input';
 import { TimePicker } from '@/frontend/ui/primitives/time-picker';
 import { HabitTargetPeriod } from '@/shared/contracts/habitflow';
@@ -153,15 +153,7 @@ export const AddHabitModal = memo(function AddHabitModal({
           </fieldset>
 
           {/* Footer Actions */}
-          <div className="pt-2 flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="w-full sm:w-auto rounded-xl px-5 h-13 sm:h-14 text-[14px] font-medium border-transparent bg-transparent hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-safe duration-300"
-            >
-              إلغاء
-            </Button>
+          <DialogActions onCancel={onClose}>
             <HeroCtaButton
               type="submit"
               disabled={isSubmitting}
@@ -177,7 +169,7 @@ export const AddHabitModal = memo(function AddHabitModal({
                 'حفظ العادة'
               )}
             </HeroCtaButton>
-          </div>
+          </DialogActions>
         </form>
       </DialogContent>
     </Dialog>

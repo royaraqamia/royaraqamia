@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/frontend/ui/primitives/button';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import {
   Dialog,
   DialogContent,
@@ -215,33 +217,25 @@ function ExpenseRow({
                 </div>
               )}
 
-              <div className="flex items-center justify-end gap-2.5 pt-4">
-                <Button
-                  variant="outline"
-                  type="button"
-                  onClick={() => setConfirmDeleteOpen(false)}
-                  className="h-9 px-4 text-xs font-medium rounded-xl border-border/80 hover:bg-accent active:scale-95 transition-safe"
-                >
-                  إلغاء
-                </Button>
-                <form action={formAction}>
-                  <Button
+              <DialogActions onCancel={() => setConfirmDeleteOpen(false)} className="pt-4">
+                <form action={formAction} className="w-full sm:w-auto">
+                  <HeroCtaButton
                     type="submit"
-                    variant="destructive"
+                    variant="hero-destructive"
                     disabled={pending}
-                    className="h-9 px-4 text-xs font-medium rounded-xl shadow-sm hover:shadow-destructive/20 active:scale-95 transition-safe"
+                    className="w-full sm:w-auto"
                   >
                     {pending ? (
-                      <span className="flex items-center gap-1.5">
-                        <Loader2 className="size-3.5 animate-spin" />
-                        جاري الحذف...
-                      </span>
+                      <>
+                        <Loader2 className="size-4 animate-spin shrink-0" />
+                        <span>جاري الحذف...</span>
+                      </>
                     ) : (
                       'حذف'
                     )}
-                  </Button>
+                  </HeroCtaButton>
                 </form>
-              </div>
+              </DialogActions>
             </DialogContent>
           </Dialog>
         </div>

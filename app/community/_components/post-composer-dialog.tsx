@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import { toast } from 'sonner';
-import { Button } from '@/frontend/ui/primitives/button';
 import { Label } from '@/frontend/ui/primitives/label';
 import { Textarea } from '@/frontend/ui/primitives/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/frontend/ui/primitives/dialog';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { DialogActions } from '@/frontend/ui/shared/dialog-actions';
 import { createPost, saveAndPublishPost, updatePost } from '@/frontend/api/blogpress';
 
 const BODY_MAX = 20000;
@@ -133,24 +134,16 @@ export function PostComposerDialog({
           </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            إلغاء
-          </Button>
-          <Button
+        <DialogActions onCancel={() => onOpenChange(false)}>
+          <HeroCtaButton
+            type="button"
             isLoading={pending}
             onClick={handleSubmit}
-            className="border-white/20 bg-linear-to-r from-purple-600 via-violet-600 to-indigo-600 text-white hover:from-purple-500 hover:via-violet-500 hover:to-indigo-500"
+            className="w-full sm:w-auto"
           >
-            {pending
-              ? isEdit
-                ? 'جاري الحفظ...'
-                : 'جاري النَّشر...'
-              : isEdit
-                ? 'حفظ التعديلات'
-                : 'نشر'}
-          </Button>
-        </div>
+            {isEdit ? 'حفظ التعديلات' : 'نشر'}
+          </HeroCtaButton>
+        </DialogActions>
       </DialogContent>
     </Dialog>
   );
