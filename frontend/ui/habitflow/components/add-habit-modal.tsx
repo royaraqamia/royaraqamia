@@ -1,7 +1,7 @@
 'use client';
 
 import React, { memo } from 'react';
-import { AlertCircle, Loader2, Bell, Target } from 'lucide-react';
+import { AlertCircle, Loader2, Bell } from 'lucide-react';
 import { Dialog, DialogContent, DialogTitle } from '@/frontend/ui/primitives/dialog';
 import { Button } from '@/frontend/ui/primitives/button';
 import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
@@ -31,16 +31,12 @@ export const AddHabitModal = memo(function AddHabitModal({
   isOpen,
   habitName,
   habitFrequency,
-  habitTarget,
-  habitTargetPeriod,
   habitReminderTime,
   formError,
   isSubmitting,
   onClose,
   onNameChange,
   onFrequencyChange,
-  onTargetChange,
-  onTargetPeriodChange,
   onReminderTimeChange,
   onSubmit,
 }: AddHabitModalProps) {
@@ -51,7 +47,10 @@ export const AddHabitModal = memo(function AddHabitModal({
         if (!open) onClose();
       }}
     >
-      <DialogContent className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]">
+      <DialogContent
+        hideClose
+        className="sm:max-w-120 w-[calc(100%-1.5rem)] mx-auto p-0 rounded-[28px] border border-border/40 bg-background shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] dark:shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)]"
+      >
         <DialogTitle className="sr-only">إنشاء عادة روتينيَّة</DialogTitle>
 
         <form onSubmit={onSubmit} className="px-6 sm:px-8 pt-8 pb-8 space-y-7 text-start" dir="rtl">
@@ -135,70 +134,6 @@ export const AddHabitModal = memo(function AddHabitModal({
             </div>
           </fieldset>
 
-          {/* Optional Goal Section */}
-          <fieldset className="space-y-3 border-0 p-0 m-0">
-            <legend className="text-[13px] font-medium text-foreground/80 flex items-center gap-1.5 mb-1.5">
-              <Target className="w-4 h-4 text-muted-foreground/70" aria-hidden="true" />
-              <span>هدف الإنجاز</span>
-              <span className="text-[11px] text-muted-foreground/50 font-normal ms-1">
-                (اختياري)
-              </span>
-            </legend>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <label
-                  htmlFor="input-add-habit-target"
-                  className="text-[11px] font-medium text-muted-foreground/70"
-                >
-                  عدد المرات
-                </label>
-                <Input
-                  type="number"
-                  min={1}
-                  max={100}
-                  value={habitTarget}
-                  onChange={(e) => onTargetChange(e.target.value)}
-                  placeholder="مثال: 5"
-                  id="input-add-habit-target"
-                  className="w-full h-11 px-4 rounded-xl border border-border/50 bg-muted/20 hover:bg-muted/40 focus:bg-background focus:border-primary focus:ring-4 focus:ring-primary/15 transition-safe duration-300 text-[14px] font-medium placeholder:text-muted-foreground/40"
-                />
-              </div>
-              <div className="space-y-2">
-                <label className="text-[11px] font-medium text-muted-foreground/70">
-                  الفترة الزمنية
-                </label>
-                <div className="flex p-1 bg-muted/30 rounded-xl border border-border/40 shadow-inner h-11">
-                  {(
-                    [
-                      ['week', 'أسبوعياً'],
-                      ['month', 'شهرياً'],
-                    ] as const
-                  ).map(([value, label]) => {
-                    const isSelected = habitTargetPeriod === value;
-                    return (
-                      <button
-                        key={value}
-                        type="button"
-                        onClick={() => onTargetPeriodChange(isSelected ? '' : value)}
-                        aria-pressed={isSelected}
-                        className={`flex-1 flex items-center justify-center text-[12px] font-medium rounded-lg transition-safe duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 focus-visible:ring-offset-background active:scale-[0.98] ${
-                          isSelected
-                            ? 'bg-background text-foreground shadow-sm ring-1 ring-border/50 font-bold'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                        }`}
-                      >
-                        {label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-            <p className="text-[11px] text-muted-foreground/50 leading-relaxed text-pretty">
-              متابعة التقدّم الإجمالي نحو تحقيق الهدف في الفترة المُحدّدة.
-            </p>
-          </fieldset>
-
           {/* Optional Reminder Section */}
           <fieldset className="space-y-2.5 border-0 p-0 m-0">
             <legend className="text-[13px] font-medium text-foreground/80 flex items-center gap-1.5 mb-1.5">
@@ -217,9 +152,6 @@ export const AddHabitModal = memo(function AddHabitModal({
                 triggerClassName="flex-1 h-12"
               />
             </div>
-            <p className="text-[11px] text-muted-foreground/50 leading-relaxed text-pretty">
-              إن لم تُحدد وقتاً، سيُرسل التذكير افتراضياً في الثامنة صباحاً.
-            </p>
           </fieldset>
 
           {/* Footer Actions */}
