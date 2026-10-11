@@ -26,7 +26,7 @@ export default async function CommunityPage() {
       {/* Main Content Area */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-2 sm:pt-4 relative z-10">
         <div className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
-          <SectionTitle>
+          <SectionTitle as="h1">
             <SectionTitleHighlight>المجتمع</SectionTitleHighlight>
           </SectionTitle>
         </div>

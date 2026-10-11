@@ -8,7 +8,7 @@ export default function LinkSnapAppPage() {
     <>
       <header className="mb-10 text-center">
         <SectionTitle as="h1">
-          اختصار <SectionTitleHighlight>الرَّوابط</SectionTitleHighlight>
+          <SectionTitleHighlight>اختصار الرَّوابط</SectionTitleHighlight>
         </SectionTitle>
       </header>
       <LinkSnapAppView />

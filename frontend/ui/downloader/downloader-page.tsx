@@ -73,7 +73,7 @@ export function DownloaderPage() {
     <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10 sm:py-16">
       <header className="flex flex-col items-center text-center">
         <SectionTitle as="h1">
-          مُنزِّل <SectionTitleHighlight>الوسائط</SectionTitleHighlight>
+          <SectionTitleHighlight>مُنزِّل الوسائط</SectionTitleHighlight>
         </SectionTitle>
       </header>
 

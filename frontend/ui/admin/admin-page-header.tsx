@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/frontend/shared/cn';
+import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 interface AdminPageHeaderProps {
   icon: LucideIcon;
@@ -34,9 +35,9 @@ export function AdminPageHeader({
         </div>
 
         <div className="min-w-0 flex-1">
-          <h1 className="text-foreground truncate text-xl font-bold tracking-tight sm:text-2xl">
-            {title}
-          </h1>
+          <SectionTitle as="h1" className="truncate">
+            <SectionTitleHighlight>{title}</SectionTitleHighlight>
+          </SectionTitle>
           {description && (
             <p className="text-muted-foreground mt-0.5 text-xs leading-relaxed text-pretty sm:text-sm">
               {description}

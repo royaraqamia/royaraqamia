@@ -40,7 +40,7 @@ export default async function HomePage({
     <>
       <header className="mb-6 text-center sm:mb-10">
         <SectionTitle as="h1">
-          تتبُّع <SectionTitleHighlight>العادات</SectionTitleHighlight>
+          <SectionTitleHighlight>تتبُّع العادات</SectionTitleHighlight>
         </SectionTitle>
       </header>
       <DashboardShell

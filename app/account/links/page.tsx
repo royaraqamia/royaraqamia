@@ -14,11 +14,11 @@ export default async function AccountLinksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="text-center flex flex-col items-center">
+      <header className="mb-10 text-center">
         <SectionTitle as="h1">
           <SectionTitleHighlight>الرَّوابط المختصَرة</SectionTitleHighlight>
         </SectionTitle>
-      </div>
+      </header>
 
       <MyLinksView />
     </div>
