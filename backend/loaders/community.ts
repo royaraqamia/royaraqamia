@@ -130,6 +130,27 @@ export interface CommunityMemberPage {
   nextCursor: string | null;
 }
 
+/** The signed-in member's own published posts, shown in the account area. */
+export const loadAccountPosts = unstable_cache(
+  async (authorId: string): Promise<{ posts: PostSummary[]; nextCursor: string | null }> => {
+    const feed = await pub().getPublishedFeed(
+      null,
+      '',
+      COMMUNITY_MEMBER_POSTS_PAGE_SIZE,
+      undefined,
+      authorId
+    );
+    const author = await createBlogpressAdminPostsModule().repository.getPostAuthor(authorId);
+
+    return {
+      posts: feed.posts.map((post) => ({ ...post, author })),
+      nextCursor: feed.nextCursor,
+    };
+  },
+  ['community-account-posts'],
+  { revalidate: COMMUNITY_CACHE_SECONDS, tags: [COMMUNITY_TAGS.index] }
+);
+
 /** A public member profile plus the first page of their published posts. */
 export const loadCommunityMember = unstable_cache(
   async (username: string): Promise<CommunityMemberPage | null> => {
@@ -143,7 +164,11 @@ export const loadCommunityMember = unstable_cache(
       undefined,
       member.id
     );
-    const author = { name: member.name, avatar_url: member.avatar_url };
+    const author = {
+      username: member.username,
+      name: member.name,
+      avatar_url: member.avatar_url,
+    };
 
     return {
       member,

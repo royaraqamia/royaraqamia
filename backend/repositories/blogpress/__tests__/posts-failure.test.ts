@@ -102,6 +102,7 @@ describe('blogpress posts repository failure contract', () => {
         data: [
           {
             id: 'u-1',
+            username: 'ruya',
             name: 'رؤى رقميّة',
             avatar_url: '/avatar.png',
             email: 'private@example.com',
@@ -112,7 +113,7 @@ describe('blogpress posts repository failure contract', () => {
     );
 
     await expect(repo.getPostAuthors(['u-1'])).resolves.toEqual({
-      'u-1': { name: 'رؤى رقميّة', avatar_url: '/avatar.png' },
+      'u-1': { username: 'ruya', name: 'رؤى رقميّة', avatar_url: '/avatar.png' },
     });
   });
 

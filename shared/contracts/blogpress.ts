@@ -23,6 +23,7 @@ export interface Post {
 
 /** Public publisher identity shown on feed cards — no private columns (e.g. email). */
 export interface PostAuthorSummary {
+  username: string;
   name: string | null;
   avatar_url: string | null;
 }
@@ -45,6 +46,7 @@ export interface PostTag {
 }
 
 export interface PostAuthor {
+  username: string;
   name: string | null;
   avatar_url: string | null;
   bio: string | null;

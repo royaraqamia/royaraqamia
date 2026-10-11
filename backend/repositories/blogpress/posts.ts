@@ -248,7 +248,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async getPostAuthor(authorId: string): Promise<PostAuthor | null> {
       const { data, error } = await supabase
         .from('users')
-        .select('name, avatar_url, bio')
+        .select('username, name, avatar_url, bio')
         .eq('id', authorId)
         .maybeSingle();
 
@@ -262,14 +262,18 @@ export function createPostsRepository(supabase: Client): PostsRepository {
 
       const { data, error } = await supabase
         .from('users')
-        .select('id, name, avatar_url')
+        .select('id, username, name, avatar_url')
         .in('id', authorIds);
 
       if (error) throw repositoryFailure('blogpress.getPostAuthors', error);
 
       const authors: Record<string, PostAuthorSummary> = {};
       for (const row of data ?? []) {
-        authors[row.id] = { name: row.name, avatar_url: row.avatar_url };
+        authors[row.id] = {
+          username: row.username,
+          name: row.name,
+          avatar_url: row.avatar_url,
+        };
       }
       return authors;
     },

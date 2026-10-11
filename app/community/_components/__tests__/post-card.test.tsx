@@ -72,7 +72,7 @@ describe('PostCard', () => {
       <PostCard
         post={{
           ...post,
-          author: { name: 'رؤى رقميّة', avatar_url: '/avatar.png' },
+          author: { username: 'ruya', name: 'رؤى رقميّة', avatar_url: '/avatar.png' },
         }}
         index={0}
       />

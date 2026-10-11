@@ -215,7 +215,11 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
 
                 <div className="mt-6 sm:mt-8 flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground border-y border-border/40 py-4 sm:py-4.5">
                   {author?.name && (
-                    <div className="flex items-center gap-2.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40 hover:bg-muted/50 transition-colors duration-200">
+                    <Link
+                      href={`/u/${encodeURIComponent(author.username)}`}
+                      aria-label={`الملف الشَّخصي لـ ${author.name}`}
+                      className="flex items-center gap-2.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40 hover:bg-muted/50 transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                    >
                       {author.avatar_url?.trim() ? (
                         <Image
                           src={author.avatar_url}
@@ -230,7 +234,7 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                         </div>
                       )}
                       <span className="font-bold text-foreground">{author.name}</span>
-                    </div>
+                    </Link>
                   )}
                   {p.published_at && (
                     <div className="flex items-center gap-1.5 bg-muted/30 px-3 py-1.5 rounded-full border border-border/40">

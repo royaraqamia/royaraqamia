@@ -48,14 +48,18 @@ export function PostCard({ post, index }: PostCardProps) {
       <div className="flex-1 flex flex-col justify-between p-6 sm:p-7 relative">
         <div>
           {post.author?.name && (
-            <div className="mb-3 flex items-center gap-2.5">
+            <Link
+              href={`/u/${encodeURIComponent(post.author.username)}`}
+              aria-label={`الملف الشَّخصي لـ ${post.author.name}`}
+              className="relative z-20 mb-3 flex w-fit items-center gap-2.5 rounded-full transition-safe duration-150 ease-out hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+            >
               {post.author.avatar_url?.trim() ? (
                 <Image
                   src={post.author.avatar_url}
                   alt={post.author.name}
                   width={28}
                   height={28}
-                  className="size-7 rounded-full object-cover ring-2 ring-primary/20 shrink-0"
+                  className="size-7 rounded-full object-cover ring-2 ring-primary/20 shrink-0 transition-transform duration-200 hover:scale-105"
                 />
               ) : (
                 <div className="size-7 rounded-full bg-primary/15 flex items-center justify-center text-primary shrink-0">
@@ -63,7 +67,7 @@ export function PostCard({ post, index }: PostCardProps) {
                 </div>
               )}
               <span className="text-xs font-bold text-foreground">{post.author.name}</span>
-            </div>
+            </Link>
           )}
 
           <Link
