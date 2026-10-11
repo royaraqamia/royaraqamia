@@ -11,6 +11,8 @@ interface DialogActionsProps {
   cancelLabel?: string;
   /** Optional start-side action rendered opposite the primary/cancel group (e.g. an archive button). */
   leading?: ReactNode;
+  /** Optional secondary action rendered between the primary and the cancel (e.g. a destructive button). */
+  secondary?: ReactNode;
   className?: string;
 }
 
@@ -25,6 +27,7 @@ export function DialogActions({
   onCancel,
   cancelLabel = 'إلغاء',
   leading,
+  secondary,
   className,
 }: DialogActionsProps) {
   return (
@@ -45,6 +48,7 @@ export function DialogActions({
         >
           {cancelLabel}
         </Button>
+        {secondary}
         {children}
       </div>
     </div>
