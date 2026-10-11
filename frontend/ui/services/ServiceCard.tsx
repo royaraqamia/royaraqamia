@@ -74,13 +74,13 @@ export function ServiceCard({ service }: { service: Service }) {
           {service.description}
         </p>
 
-        {/* Features List */}
+        {/* Features List — each point gets a rounded surface for visual weight */}
         <div className="grow flex flex-col">
-          <ul className="space-y-3.5 sm:space-y-4 mb-8 sm:mb-10 grow" role="list">
+          <ul className="space-y-3 sm:space-y-3.5 mb-8 sm:mb-10 grow" role="list">
             {service.features.map((feature, idx) => (
               <li
                 key={idx}
-                className="flex items-center justify-center group/item p-1.5 -mx-1.5 rounded-full hover:bg-white/3 transition-colors duration-200"
+                className="group/item flex items-center justify-center px-4 py-2.5 rounded-2xl border border-white/8 bg-white/4 transition-[background-color,border-color] duration-300 hover:border-white/16 hover:bg-white/8"
               >
                 <span
                   className={`bg-linear-to-r ${colors.textGradient} bg-clip-text text-transparent text-xs sm:text-sm md:text-base font-medium leading-relaxed text-center transition-[filter] duration-200 group-hover/item:brightness-125`}
