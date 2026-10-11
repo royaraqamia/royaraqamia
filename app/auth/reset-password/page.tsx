@@ -3,12 +3,12 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CircleAlert, CircleCheck, ArrowLeft } from 'lucide-react';
+import { CircleAlert, CircleCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import { resetPassword } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
-import { Button } from '@/frontend/ui/primitives/button';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { authLink } from '@/frontend/ui/auth/auth-links';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
 const isSuccessMessage = (msg: string) => msg.includes('تمَّ إرسال');
 
@@ -82,14 +82,16 @@ function ResetPasswordForm() {
           </div>
         )}
 
-        <Button
-          type="submit"
-          isLoading={isPending}
-          disabled={isPending}
-          className="w-full h-11 sm:h-12 font-bold text-white gradient-primary shadow-md hover:shadow-lg hover:brightness-105 active:scale-[0.99] transition-safe duration-200 rounded-full disabled:opacity-70 disabled:pointer-events-none cursor-pointer"
-        >
-          {isPending ? 'جاري الإرسال...' : 'إرسال رابط إعادة التَّعيين'}
-        </Button>
+        <HeroCtaButton type="submit" disabled={isPending} className="w-full">
+          {isPending ? (
+            <>
+              <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
+              <span>جاري الإرسال...</span>
+            </>
+          ) : (
+            'إرسال رابط إعادة التَّعيين'
+          )}
+        </HeroCtaButton>
       </form>
 
       <div className="flex justify-center mt-6 pt-2 border-t border-border/40">

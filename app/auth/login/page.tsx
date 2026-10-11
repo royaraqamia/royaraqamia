@@ -3,7 +3,7 @@
 import { Suspense, useState, lazy } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CircleAlert } from 'lucide-react';
+import { CircleAlert, Loader2 } from 'lucide-react';
 import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
 import { login, signInWithGoogle } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
@@ -12,6 +12,7 @@ import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { authLink } from '@/frontend/ui/auth/auth-links';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
 const Turnstile = lazy(() =>
   import('@/frontend/ui/shared/turnstile').then((m) => ({ default: m.Turnstile }))
@@ -112,13 +113,16 @@ function LoginForm() {
           </div>
         )}
 
-        <Button
-          type="submit"
-          isLoading={isPending}
-          className="w-full h-11 sm:h-12 rounded-full font-medium text-sm sm:text-base gradient-primary text-white transition-safe duration-300 ease-out hover:scale-[1.01] active:scale-[0.985] shadow-md hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer select-none"
-        >
-          {isPending ? 'جاري الدُّخول...' : 'تسجيل الدُّخول'}
-        </Button>
+        <HeroCtaButton type="submit" disabled={isPending} className="w-full">
+          {isPending ? (
+            <>
+              <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
+              <span>جاري الدُّخول...</span>
+            </>
+          ) : (
+            'تسجيل الدُّخول'
+          )}
+        </HeroCtaButton>
       </form>
 
       <div className="flex justify-center mt-3 sm:mt-4">

@@ -3,12 +3,13 @@
 import { Suspense, useState, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { CircleAlert, ArrowLeft, Clock, CircleCheckBig, CircleCheck } from 'lucide-react';
+import { CircleAlert, ArrowLeft, Clock, CircleCheckBig, CircleCheck, Loader2 } from 'lucide-react';
 import { OtpInput } from '@/frontend/ui/shared/otp-input';
 import { verifyOtp, resendOtp } from '@/frontend/api/auth';
 import { Button } from '@/frontend/ui/primitives/button';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { authLink } from '@/frontend/ui/auth/auth-links';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
 const OTP_EXPIRY_SECONDS = 5 * 60;
 const RESEND_COOLDOWN_SECONDS = 60;
@@ -203,14 +204,20 @@ function VerifyOtpForm() {
                 </div>
               )}
 
-              <Button
+              <HeroCtaButton
                 type="submit"
-                isLoading={isPending}
                 disabled={otp.length !== 6 || isPending}
-                className="w-full h-11 text-sm font-medium gradient-primary text-white rounded-full shadow-xs hover:scale-[1.01] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 transition-safe duration-200 disabled:opacity-50 disabled:hover:scale-100 disabled:cursor-not-allowed"
+                className="w-full"
               >
-                {isPending ? 'جاري التَّحقُّق...' : 'تحقُّق من الرَّمز'}
-              </Button>
+                {isPending ? (
+                  <>
+                    <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
+                    <span>جاري التَّحقُّق...</span>
+                  </>
+                ) : (
+                  'تحقُّق من الرَّمز'
+                )}
+              </HeroCtaButton>
             </form>
 
             <div className="text-center space-y-3 pt-2">

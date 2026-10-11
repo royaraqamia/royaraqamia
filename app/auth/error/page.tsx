@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
+import { HeroCtaButton, HeroCtaSheen } from '@/frontend/ui/shared/hero-cta-button';
 
 export default function AuthErrorPage() {
   return (
@@ -39,19 +40,14 @@ export default function AuthErrorPage() {
 
         {/* Primary Action Button */}
         <div className="w-full pt-1">
-          <Link
-            href="/auth/login"
-            className="group relative inline-flex items-center justify-center w-full h-11 px-6 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-slate-50 dark:text-slate-900 font-medium text-sm transition-safe duration-300 ease-out shadow-sm hover:shadow-md hover:scale-[1.01] active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 overflow-hidden"
-          >
-            <span className="relative z-10 flex items-center justify-center gap-2">
-              تسجيل الدُّخول
-            </span>
-            {/* Subtle Sheen Hover Layer */}
-            <span
-              className="absolute inset-0 bg-white/10 dark:bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              aria-hidden="true"
-            />
-          </Link>
+          <HeroCtaButton asChild className="w-full">
+            <Link href="/auth/login">
+              <HeroCtaSheen />
+              <span className="relative z-10 inline-flex items-center justify-center gap-2">
+                تسجيل الدُّخول
+              </span>
+            </Link>
+          </HeroCtaButton>
         </div>
       </section>
     </AuthCard>

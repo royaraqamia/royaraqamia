@@ -3,7 +3,7 @@
 import { Suspense, useState, lazy } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { CircleAlert, User, Mail, LockKeyhole } from 'lucide-react';
+import { CircleAlert, User, Mail, LockKeyhole, Loader2 } from 'lucide-react';
 import { GoogleLogo } from '@/frontend/ui/auth/GoogleLogo';
 import { signup, signInWithGoogle } from '@/frontend/api/auth';
 import { Input } from '@/frontend/ui/primitives/input';
@@ -12,6 +12,7 @@ import { PasswordInput } from '@/frontend/ui/auth/PasswordInput';
 import { AuthCard } from '@/frontend/ui/auth/AuthCard';
 import { AuthDivider } from '@/frontend/ui/auth/AuthDivider';
 import { authLink } from '@/frontend/ui/auth/auth-links';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
 
 const PasswordStrength = lazy(() =>
   import('@/frontend/ui/auth/PasswordStrength').then((m) => ({ default: m.PasswordStrength }))
@@ -158,13 +159,16 @@ function SignupForm() {
           )}
 
           {/* Primary Action Button */}
-          <Button
-            type="submit"
-            isLoading={isPending}
-            className="w-full h-11 sm:h-12 rounded-full font-medium gradient-primary text-white shadow-md hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] active:scale-[0.99] transition-safe duration-200 ease-out focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
-          >
-            {isPending ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
-          </Button>
+          <HeroCtaButton type="submit" disabled={isPending} className="w-full">
+            {isPending ? (
+              <>
+                <Loader2 className="size-4 shrink-0 animate-spin" aria-hidden="true" />
+                <span>جاري إنشاء الحساب...</span>
+              </>
+            ) : (
+              'إنشاء حساب'
+            )}
+          </HeroCtaButton>
         </form>
 
         <div className="my-5 sm:my-6">
