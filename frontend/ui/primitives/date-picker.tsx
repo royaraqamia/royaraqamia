@@ -67,7 +67,7 @@ const triggerIconClassNames =
   'size-4 shrink-0 text-muted-foreground/70 transition-colors duration-200 group-hover:text-foreground group-data-[state=open]:text-primary';
 
 const contentClassNames =
-  'w-auto overflow-hidden rounded-2xl border border-border/80 bg-popover/95 p-0 shadow-2xl shadow-black/40 sm:w-auto sm:p-0';
+  'w-auto overflow-hidden rounded-2xl border border-border/80 bg-popover p-0 shadow-2xl shadow-black/40 sm:w-auto sm:p-0';
 
 const disabledDayMatcher = (min?: Date, max?: Date): Matcher | undefined => {
   if (min && max) return { before: min, after: max };

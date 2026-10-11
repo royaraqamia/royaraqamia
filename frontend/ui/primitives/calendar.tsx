@@ -71,7 +71,7 @@ function CalendarChevron({ orientation, ...props }: ChevronProps) {
 
 const calendarClassNames: Partial<ClassNames> = {
   root: cn(
-    'relative w-fit select-none rounded-2xl border border-border/80 bg-card/95 p-4 text-card-foreground',
+    'relative w-fit select-none rounded-2xl border border-border/80 bg-card p-4 text-card-foreground',
     'shadow-xl shadow-black/40 transition-safe duration-300 sm:p-5'
   ),
   months: 'relative flex flex-col gap-5 sm:flex-row sm:gap-7',

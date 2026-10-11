@@ -95,7 +95,7 @@ export const PostSettingsDialog = memo(function PostSettingsDialog({
         <Settings className="size-4.5 transition-transform duration-300 ease-out hover:rotate-45" />
       </Button>
       {open && (
-        <DialogContent className="sm:max-w-lg md:max-w-xl w-[calc(100%-2rem)] p-0 gap-0 border border-border/60 bg-background/95 shadow-2xl rounded-2xl sm:rounded-3xl">
+        <DialogContent className="sm:max-w-lg md:max-w-xl w-[calc(100%-2rem)] p-0 gap-0 border border-border/60 bg-background shadow-2xl rounded-2xl sm:rounded-3xl">
           {/* Header */}
           <DialogHeader className="relative border-b border-border/40 bg-muted/30 px-5 sm:px-6 py-4.5 sm:py-5 text-right">
             <div className="flex items-center gap-3">

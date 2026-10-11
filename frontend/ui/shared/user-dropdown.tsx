@@ -121,7 +121,7 @@ export const UserDropdown = memo(function UserDropdown() {
               ref={panelRef}
               data-glass-panel
               style={style}
-              className="z-50 rounded-2xl bg-popover/90 border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto will-change-[transform,opacity] contain-layout contain-style max-lg:z-[11000] max-lg:max-h-[85dvh] max-lg:rounded-b-none max-lg:rounded-t-3xl max-lg:border-x-0 max-lg:border-b-0 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-lg:origin-bottom max-lg:slide-in-from-bottom-4"
+              className="z-50 rounded-2xl bg-popover border border-border/60 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 p-1.5 animate-in fade-in-0 zoom-in-95 origin-top-end overflow-y-auto will-change-[transform,opacity] contain-layout contain-style max-lg:z-[11000] max-lg:max-h-[85dvh] max-lg:rounded-b-none max-lg:rounded-t-3xl max-lg:border-x-0 max-lg:border-b-0 max-lg:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-lg:origin-bottom max-lg:slide-in-from-bottom-4"
               role="menu"
               aria-label="قائمة المستخدِم"
               onKeyDown={(e) => {

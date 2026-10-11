@@ -262,7 +262,7 @@ export function EditorToolbar({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="end"
-            className="max-h-64 min-w-40 overflow-y-auto rounded-xl border border-border/80 bg-background/95 p-1 shadow-lg"
+            className="max-h-64 min-w-40 overflow-y-auto rounded-xl border border-border/80 bg-background p-1 shadow-lg"
           >
             {CODE_LANGUAGES.map((lang) => (
               <DropdownMenuItem

@@ -337,7 +337,7 @@ function ExpenseForm({
               >
                 <SelectValue placeholder="اختر تصنيف" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 shadow-xl p-1 max-h-60">
+              <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xl p-1 max-h-60">
                 {categories.map((cat) => (
                   <SelectItem
                     key={cat.id}
@@ -453,7 +453,7 @@ function ExpenseForm({
               <SelectTrigger className="w-full h-11 px-3.5 bg-neutral-50/80 dark:bg-neutral-950/50 border border-neutral-200/90 dark:border-neutral-800 rounded-xl text-sm font-medium text-neutral-900 dark:text-neutral-100 transition-safe duration-200 ease-out hover:border-neutral-300 dark:hover:border-neutral-700 focus:ring-4 focus:ring-neutral-900/10 dark:focus:ring-neutral-100/10 focus:border-neutral-900 dark:focus:border-neutral-100 focus-visible:outline-none">
                 <SelectValue placeholder="العملة الأساسية" />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white/95 dark:bg-neutral-900/95 shadow-xl p-1 max-h-60">
+              <SelectContent className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 shadow-xl p-1 max-h-60">
                 <SelectItem
                   value={INHERIT_CURRENCY_VALUE}
                   className="rounded-lg py-2 px-3 text-sm font-medium cursor-pointer transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800 focus:bg-neutral-100 dark:focus:bg-neutral-800"

@@ -22,7 +22,7 @@ function CustomTooltip({
   if (!active || !payload?.length || !payload[0]) return null;
   const item = payload[0];
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border/80 bg-popover/95 px-3.5 py-2.5 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 transition-safe duration-200 will-change-[transform,opacity]">
+    <div className="relative overflow-hidden rounded-xl border border-border/80 bg-popover px-3.5 py-2.5 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 transition-safe duration-200 will-change-[transform,opacity]">
       <div className="flex items-center gap-2">
         <span className="size-2 rounded-full bg-primary ring-2 ring-primary/30" />
         <p className="text-xs font-medium text-muted-foreground tracking-wide">{label}</p>

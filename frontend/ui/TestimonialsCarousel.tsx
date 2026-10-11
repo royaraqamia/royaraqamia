@@ -245,7 +245,7 @@ export const TestimonialsCarousel = memo(function TestimonialsCarousel({
           if (!open) closeReviewSheet();
         }}
       >
-        <DialogContent className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-slate-950/95 text-slate-100 grid-rows-[minmax(0,1fr)] overflow-hidden">
+        <DialogContent className="p-0 gap-0 sm:max-w-xl border border-white/15 bg-slate-950 text-slate-100 grid-rows-[minmax(0,1fr)] overflow-hidden">
           {/* Mobile Handle Indicator */}
           <div className="absolute top-3 left-1/2 -translate-x-1/2 w-12 h-1.5 bg-white/20 rounded-full sm:hidden" />
 

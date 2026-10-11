@@ -136,7 +136,7 @@ export const NotificationDropdown = memo(function NotificationDropdown() {
               style={style}
               className={cn(
                 'z-50 overflow-hidden will-change-[transform,opacity] contain-layout contain-style',
-                'bg-popover/90 border border-border/80 shadow-2xl rounded-2xl',
+                'bg-popover border border-border/80 shadow-2xl rounded-2xl',
                 'animate-in fade-in-0 zoom-in-95 duration-200 ease-out',
                 'max-lg:z-[11000] max-lg:max-h-[85dvh] max-lg:rounded-b-none max-lg:rounded-t-3xl max-lg:border-x-0 max-lg:border-b-0 max-lg:slide-in-from-bottom-4'
               )}

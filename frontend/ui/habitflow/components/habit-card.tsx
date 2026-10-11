@@ -199,7 +199,7 @@ export function HabitCard({
           <DropdownMenuContent
             align="end"
             sideOffset={8}
-            className="min-w-48 rounded-xl shadow-lg border-zinc-200 dark:border-zinc-800 bg-white/95 dark:bg-zinc-900/95 p-1.5"
+            className="min-w-48 rounded-xl shadow-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-1.5"
           >
             <DropdownMenuItem
               onClick={() => onSkip(habit.id)}

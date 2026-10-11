@@ -41,7 +41,7 @@ export const ConfirmDialog = memo(function ConfirmDialog({
       }}
     >
       <DialogContent
-        className="sm:max-w-md w-[calc(100%-2rem)] mx-auto p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-border/80 bg-background/95 shadow-2xl"
+        className="sm:max-w-md w-[calc(100%-2rem)] mx-auto p-6 sm:p-8 rounded-2xl sm:rounded-3xl border border-border/80 bg-background shadow-2xl"
         onPointerDownOutside={(e) => {
           e.preventDefault();
           onCancel();
