@@ -98,6 +98,18 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
         await store.seedIfEmpty(seed);
         if (cancelled) return store.close();
 
+        // Reconcile with the server copy on every open (LWW, pending-aware), so
+        // edits made on another device show up here instead of the store
+        // silently diverging until a reinstall.
+        try {
+          await store.mergeServerData(seed);
+        } catch (error) {
+          logger.error('Failed to reconcile SpendTrack data with the server', {
+            error: String(error),
+          });
+        }
+        if (cancelled) return store.close();
+
         storeRef.current = store;
         await readIntoState(store);
         if (cancelled) return;

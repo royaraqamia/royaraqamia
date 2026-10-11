@@ -1,0 +1,28 @@
+-- ============================================================
+-- Drop the expenses updated_at trigger so offline LWW works
+--
+-- `public.expenses` carries a legacy BEFORE UPDATE trigger
+-- (`update_expenses_updated_at` -> `update_updated_at()`) that forces
+-- `NEW.updated_at = now()` on every write. Offline replay resolves conflicts
+-- by last-write-wins on the client-supplied `updated_at` (ADR-0029), so the
+-- trigger silently replaced that logical write time with server time and broke
+-- LWW: a stale replayed edit could clobber — or resurrect over — a newer
+-- delete, and legitimately out-of-order replays could not be ordered at all
+-- (observed as a row that stayed in the server total while the local list had
+-- already removed it).
+--
+-- Nothing depends on the trigger. Every write path in
+-- backend/repositories/spendtrack sets `updated_at` explicitly (create, update
+-- and delete), and the column keeps its `now()` default for any insert that
+-- omits it. The LWW guards land in the repository
+-- (`updateExpense`/`deleteExpense`) to match `setBudget`.
+--
+-- Only `expenses` is affected here; other tables' triggers (e.g. `posts`) are
+-- untouched.
+--
+-- Rollback:
+--   create trigger update_expenses_updated_at
+--     before update on public.expenses
+--     for each row execute function public.update_updated_at();
+
+drop trigger if exists update_expenses_updated_at on public.expenses;

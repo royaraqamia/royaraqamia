@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/frontend/ui/primitives/card';
-import { DollarSign, PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
+import { PieChartIcon, TrendingUp, Receipt } from 'lucide-react';
 import { CreateExpenseDialog } from '@/frontend/ui/spendtrack/expense-dialog';
-import { BudgetCard } from '@/frontend/ui/spendtrack/budget-card';
+import { BudgetCardLive } from '@/frontend/ui/spendtrack/budget-card-live';
+import { TotalSpendCardLive } from '@/frontend/ui/spendtrack/total-spend-card-live';
 import { RecurringExpenses } from '@/frontend/ui/spendtrack/recurring-expenses';
 import { ExpenseList } from '@/frontend/ui/spendtrack/expense-list';
 import { CategoryPieChartLazy, DailyBarChartLazy } from '@/frontend/ui/spendtrack/charts-lazy';
@@ -23,7 +24,7 @@ import {
   loadUserCategories,
   loadUserCurrency,
 } from '@/backend/loaders/spendtrack';
-import { DEFAULT_CURRENCY, formatMoney } from '@/shared/currency';
+import { DEFAULT_CURRENCY } from '@/shared/currency';
 import { CurrencySelector } from '@/frontend/ui/spendtrack/currency-selector';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 import { SpendtrackProvider } from '@/frontend/state/spendtrack/spendtrack-context';
@@ -104,39 +105,13 @@ async function TotalCard({
 }) {
   const data = await loadTotalExpenses(userId, start, end, catFilter);
   return (
-    <Card
-      className="group/card card-lift"
-      aria-label={`إجمالي الإنفاق: ${formatMoney(data ?? 0, currency)}`}
-    >
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">إجمالي الإنفاق</CardTitle>
-        <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 transition-colors duration-300 group-hover/card:bg-primary/15">
-          <DollarSign className="size-4 text-primary" />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl sm:text-3xl font-bold tracking-tight truncate" aria-live="polite">
-          {formatMoney(data ?? 0, currency)}
-        </p>
-        <p className="text-xs sm:text-sm text-muted-foreground mt-1">
-          {new Intl.DateTimeFormat('ar-SA', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            calendar: 'islamic-umalqura',
-            numberingSystem: 'latn',
-          }).format(new Date(start))}{' '}
-          إلى{' '}
-          {new Intl.DateTimeFormat('ar-SA', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            calendar: 'islamic-umalqura',
-            numberingSystem: 'latn',
-          }).format(new Date(end))}
-        </p>
-      </CardContent>
-    </Card>
+    <TotalSpendCardLive
+      initialTotal={data ?? 0}
+      start={start}
+      end={end}
+      filterCategories={catFilter ?? []}
+      currency={currency}
+    />
   );
 }
 
@@ -164,14 +139,18 @@ async function CreateExpenseButton({
 async function BudgetSection({ userId, currency }: { userId: string; currency: string }) {
   const now = new Date();
   const month = format(now, 'yyyy-MM');
-  const total =
-    (await loadTotalExpenses(
-      userId,
-      format(startOfMonth(now), 'yyyy-MM-dd'),
-      format(endOfMonth(now), 'yyyy-MM-dd'),
-      null
-    )) ?? 0;
-  return <BudgetCard month={month} total={total} currency={currency} />;
+  const start = format(startOfMonth(now), 'yyyy-MM-dd');
+  const end = format(endOfMonth(now), 'yyyy-MM-dd');
+  const total = (await loadTotalExpenses(userId, start, end, null)) ?? 0;
+  return (
+    <BudgetCardLive
+      month={month}
+      start={start}
+      end={end}
+      initialTotal={total}
+      currency={currency}
+    />
+  );
 }
 
 async function RecurringExpensesSection({

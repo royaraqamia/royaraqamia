@@ -40,6 +40,9 @@ class Builder {
   or(filters: string) {
     return this.log(`or ${filters}`);
   }
+  lte(column: string, value: unknown) {
+    return this.log(`lte ${column}=${String(value)}`);
+  }
   then<TResult1 = Result, TResult2 = never>(
     onfulfilled?: ((value: Result) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
@@ -79,7 +82,7 @@ describe('createSpendtrackRepository — offline write metadata never leaks to a
     expect(updateCall).toContain('"updated_at":"2026-10-10T00:00:00.000Z"');
   });
 
-  it('guards a resurrect with last-write-wins on the tombstone', async () => {
+  it('guards a resurrect with last-write-wins on updated_at', async () => {
     const { client, calls } = makeClient();
     const repo = createSpendtrackRepository(client);
     const editAt = '2026-10-10T16:07:00.000Z';
@@ -93,40 +96,39 @@ describe('createSpendtrackRepository — offline write metadata never leaks to a
       deletedAt: null,
     });
 
-    // Only revive a row that is live, or whose tombstone is not newer than the
-    // replayed edit — a stale edit must never beat a newer delete.
-    expect(calls.some((c) => c.includes(`or deleted_at.is.null,deleted_at.lte.${editAt}`))).toBe(
-      true
-    );
+    // A stale edit replayed after a newer delete must not revive the row: the
+    // update only applies when it is not older than the row's last write, and
+    // a resurrect skips the `deleted_at is null` filter.
+    expect(calls.some((c) => c.includes(`lte updated_at=${editAt}`))).toBe(true);
+    expect(calls.some((c) => c.includes('is deleted_at=null'))).toBe(false);
     expect(calls.find((c) => c.includes('update'))).toContain('"deleted_at":null');
   });
 
   it('a plain edit only touches live rows', async () => {
     const { client, calls } = makeClient();
     const repo = createSpendtrackRepository(client);
+    const editAt = '2026-10-10T16:07:00.000Z';
 
     await repo.updateExpense('e-1', 'u-1', {
       amount: 1,
       category_id: 'c-1',
       date: '2026-10-10',
       description: null,
-      updatedAt: '2026-10-10T16:07:00.000Z',
+      updatedAt: editAt,
     });
 
     expect(calls.some((c) => c.includes('is deleted_at=null'))).toBe(true);
-    expect(calls.some((c) => c.includes(':or '))).toBe(false);
+    expect(calls.some((c) => c.includes(`lte updated_at=${editAt}`))).toBe(true);
   });
 
-  it('re-stamps a delete with last-write-wins so a later delete still wins', async () => {
+  it('guards a delete with last-write-wins so an older replay is filtered', async () => {
     const { client, calls } = makeClient();
     const repo = createSpendtrackRepository(client);
     const deletedAt = '2026-10-10T16:07:20.000Z';
 
     await repo.deleteExpense('e-1', 'u-1', { updatedAt: deletedAt });
 
-    expect(calls.some((c) => c.includes(`or deleted_at.is.null,deleted_at.lt.${deletedAt}`))).toBe(
-      true
-    );
+    expect(calls.some((c) => c.includes(`lte updated_at=${deletedAt}`))).toBe(true);
     expect(calls.find((c) => c.includes('update'))).toContain(`"deleted_at":"${deletedAt}"`);
   });
 
