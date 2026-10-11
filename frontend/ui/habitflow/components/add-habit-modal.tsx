@@ -102,7 +102,7 @@ export const AddHabitModal = memo(function AddHabitModal({
           </section>
 
           {/* Tracking Frequency Section */}
-          <fieldset className="space-y-2.5 border-0 p-0 m-0">
+          <fieldset className="space-y-2.5 border-0 p-0 mx-0">
             <legend className="text-[13px] font-medium text-foreground/80">وتيرة التَّتبُّع</legend>
             <div className="flex p-1 bg-muted/30 rounded-xl border border-border/40 shadow-inner">
               <button
@@ -133,7 +133,7 @@ export const AddHabitModal = memo(function AddHabitModal({
           </fieldset>
 
           {/* Optional Reminder Section */}
-          <fieldset className="space-y-2.5 border-0 p-0 m-0">
+          <fieldset className="space-y-2.5 border-0 p-0 mx-0">
             <legend className="text-[13px] font-medium text-foreground/80 flex items-center gap-1.5">
               <Bell className="w-4 h-4 text-muted-foreground/70" aria-hidden="true" />
               <span>وقت التذكير اليومي</span>
