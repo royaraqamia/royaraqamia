@@ -194,7 +194,7 @@ export function BudgetCard({
                     min="0.01"
                     inputMode="decimal"
                     placeholder="0.00"
-                    className="ps-7 h-10 rounded-xl bg-muted/40 border-border/60 text-sm font-medium transition-safe focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:outline-none"
+                    className="ps-7 h-10 rounded-xl bg-muted/40 border-border/60 text-sm sm:text-sm font-medium transition-safe focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:outline-none"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                   />
@@ -202,7 +202,7 @@ export function BudgetCard({
                 <HeroCtaButton
                   type="submit"
                   disabled={saving}
-                  className="h-10 gap-1.5 px-5 text-xs shrink-0"
+                  className="h-10 gap-1.5 px-5 text-xs sm:h-10 sm:px-5 sm:text-xs shrink-0"
                 >
                   {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : 'حفظ'}
                 </HeroCtaButton>
