@@ -120,30 +120,38 @@ export function UsernameEditor() {
           <DialogTitle className="sr-only">المعرِّف العام</DialogTitle>
 
           <form onSubmit={handleSave} className="space-y-3">
-            <div className="relative">
-              <span
-                className="pointer-events-none absolute inset-s-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground"
-                dir="ltr"
-                aria-hidden="true"
+            <div className="space-y-2.5">
+              <label
+                htmlFor="username"
+                className="block text-[13px] font-medium text-foreground/80"
               >
-                @
-              </span>
-              <Input
-                id="username"
-                name="username"
-                value={value}
-                onChange={handleChange}
-                onBlur={() => setValue((current) => current.trim().toLowerCase())}
-                dir="ltr"
-                autoComplete="off"
-                spellCheck={false}
-                maxLength={30}
-                autoFocus
-                error={Boolean(shownError)}
-                aria-label="المعرِّف العام"
-                aria-describedby={feedback ? 'username-feedback' : undefined}
-                className="ps-8 font-medium"
-              />
+                المعرِّف العام
+              </label>
+              <div className="relative">
+                <span
+                  className="pointer-events-none absolute inset-s-3.5 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground"
+                  dir="ltr"
+                  aria-hidden="true"
+                >
+                  @
+                </span>
+                <Input
+                  id="username"
+                  name="username"
+                  value={value}
+                  onChange={handleChange}
+                  onBlur={() => setValue((current) => current.trim().toLowerCase())}
+                  dir="ltr"
+                  autoComplete="off"
+                  spellCheck={false}
+                  maxLength={30}
+                  autoFocus
+                  error={Boolean(shownError)}
+                  aria-label="المعرِّف العام"
+                  aria-describedby={feedback ? 'username-feedback' : undefined}
+                  className="ps-8 font-medium"
+                />
+              </div>
             </div>
 
             {feedback && (

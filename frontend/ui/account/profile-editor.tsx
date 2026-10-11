@@ -173,7 +173,7 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
             </span>
           )}
         </span>
-        <span className="absolute -bottom-0.5 -end-0.5 flex size-5 items-center justify-center rounded-full border border-primary/20 bg-primary text-primary-foreground shadow-sm transition-transform duration-200 group-hover:scale-110">
+        <span className="absolute -bottom-0.5 -inset-e-0.5 flex size-5 items-center justify-center rounded-full border border-primary/20 bg-primary text-primary-foreground shadow-sm transition-transform duration-200 group-hover:scale-110">
           <Camera className="size-3" aria-hidden="true" />
         </span>
       </button>
@@ -219,18 +219,27 @@ export function ProfileEditor({ userName, userEmail, avatarUrl }: ProfileEditorP
           <DialogTitle className="sr-only">تعديل الاسم</DialogTitle>
 
           <form onSubmit={saveName} className="space-y-4">
-            <Input
-              autoFocus
-              value={nameValue}
-              onChange={(event) => {
-                setNameValue(event.target.value);
-                if (nameError) setNameError(null);
-              }}
-              maxLength={80}
-              autoComplete="name"
-              error={Boolean(nameError)}
-              aria-label="الاسم"
-            />
+            <div className="space-y-2.5">
+              <label
+                htmlFor="profile-name"
+                className="block text-[13px] font-medium text-foreground/80"
+              >
+                الاسم
+              </label>
+              <Input
+                id="profile-name"
+                autoFocus
+                value={nameValue}
+                onChange={(event) => {
+                  setNameValue(event.target.value);
+                  if (nameError) setNameError(null);
+                }}
+                maxLength={80}
+                autoComplete="name"
+                error={Boolean(nameError)}
+                aria-label="الاسم"
+              />
+            </div>
             {nameError && (
               <p className="text-xs font-medium text-destructive" role="alert">
                 {nameError}
