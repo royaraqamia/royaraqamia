@@ -233,7 +233,14 @@ export default async function CommunityPostPage(props: { params: Promise<{ slug:
                           <User className="size-3.5" />
                         </div>
                       )}
-                      <span className="font-bold text-foreground">{author.name}</span>
+                      <span className="flex min-w-0 flex-col text-start">
+                        <span className="font-bold text-foreground leading-tight">
+                          {author.name}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground leading-tight">
+                          <span dir="ltr">@{author.username}</span>
+                        </span>
+                      </span>
                     </Link>
                   )}
                   {p.published_at && (

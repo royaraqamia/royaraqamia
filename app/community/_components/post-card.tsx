@@ -66,7 +66,14 @@ export function PostCard({ post, index }: PostCardProps) {
                   <User className="size-3.5" />
                 </div>
               )}
-              <span className="text-xs font-bold text-foreground">{post.author.name}</span>
+              <span className="flex min-w-0 flex-col text-start">
+                <span className="truncate text-xs font-bold text-foreground">
+                  {post.author.name}
+                </span>
+                <span className="truncate text-[11px] font-medium text-muted-foreground">
+                  <span dir="ltr">@{post.author.username}</span>
+                </span>
+              </span>
             </Link>
           )}
 
