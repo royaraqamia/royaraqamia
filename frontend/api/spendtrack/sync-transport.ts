@@ -57,12 +57,20 @@ export function createSpendtrackHttpSyncTransport(): SyncTransport {
           });
           return;
         }
-        case 'budget.set':
+        case 'budget.set': {
+          // `clientId` is dropped: budgets are keyed server-side on
+          // (user_id, month, category_id) and the local `month#category` key is
+          // not a UUID, so forwarding it would fail the uuid `client_id` column
+          // permanently. Dropping it here also heals intents queued before the
+          // fix without a store migration.
+          const { clientId, ...payload } = entry.payload as { clientId?: unknown };
+          void clientId;
           await request('/spendtrack/api/budget', {
             method: 'PUT',
-            body: JSON.stringify(entry.payload),
+            body: JSON.stringify(payload),
           });
           return;
+        }
         case 'budget.delete': {
           const { month, categoryId, updatedAt } = entry.payload as {
             month: string;

@@ -83,6 +83,10 @@ describe('SpendtrackLocalStore', () => {
     expect(budgets[0]?.amount).toBe(2000);
     expect(budgets[0]?.id).toBe(budgetKey('2026-08', null));
 
+    const setIntents = (await store.getOutbox()).filter((e) => e.type === 'budget.set');
+    expect(setIntents.at(-1)?.payload).toMatchObject({ month: '2026-08', amount: 2000 });
+    expect(setIntents.at(-1)?.payload).not.toHaveProperty('clientId');
+
     await store.deleteBudget('2026-08', null);
     expect(await store.getBudgets('2026-08')).toHaveLength(0);
     store.close();

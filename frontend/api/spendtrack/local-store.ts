@@ -372,11 +372,14 @@ export class SpendtrackLocalStore {
     await this.commit([[BUDGETS_STORE, record]], {
       entity: 'budget',
       type: 'budget.set',
+      // No `clientId`: the server dedupes budgets on (user_id, month,
+      // category_id), and the local key (`month#category`) is not a UUID, so it
+      // must not travel as the uuid `client_id` column (rejected → permanent
+      // sync failure).
       payload: {
         month,
         amount,
         categoryId: categoryId ?? null,
-        clientId: id,
         updatedAt: now,
       },
     });

@@ -54,6 +54,28 @@ describe('createSpendtrackHttpSyncTransport', () => {
     });
   });
 
+  it('replays a budget set as a PUT without the non-uuid clientId', async () => {
+    const transport = createSpendtrackHttpSyncTransport();
+    await transport.send(
+      entry('budget.set', {
+        month: '2026-08',
+        amount: 1000,
+        categoryId: null,
+        clientId: '2026-08#',
+        updatedAt: '2026-08-01T00:00:00Z',
+      })
+    );
+    expect(request).toHaveBeenCalledWith('/spendtrack/api/budget', {
+      method: 'PUT',
+      body: JSON.stringify({
+        month: '2026-08',
+        amount: 1000,
+        categoryId: null,
+        updatedAt: '2026-08-01T00:00:00Z',
+      }),
+    });
+  });
+
   it('replays a budget delete with the month and category in the query', async () => {
     const transport = createSpendtrackHttpSyncTransport();
     await transport.send(entry('budget.delete', { month: '2026-08', categoryId: 'c-1' }));
