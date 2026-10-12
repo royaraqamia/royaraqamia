@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.85.1] - 2026-10-12
+
+### Fixed
+- make the browser detector prove it can read a symbol
+
 ## [1.85.0] - 2026-10-12
 
 ### Added
