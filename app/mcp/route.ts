@@ -10,10 +10,8 @@ import { corsHeaders, optionsResponse } from '@/backend/services/mcp/oauth-http'
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
-// Stateless mode never pushes server-initiated events, but SDK GET requests
-// still open a standalone SSE stream that some clients hold open forever.
-// Cap the function so a lingering stream cannot pin an execution to the
-// platform maximum (observed 300s timeouts in production).
+// Applies to POST/DELETE (tool calls can be slow). GET no longer needs a
+// generous budget — see the note on the GET handler below.
 export const maxDuration = 60;
 
 /**
@@ -67,8 +65,44 @@ export async function POST(request: NextRequest): Promise<Response> {
   return withCorsHeaders(await handleRequest(request));
 }
 
-export async function GET(request: NextRequest): Promise<Response> {
-  return withCorsHeaders(await handleRequest(request));
+/**
+ * A stateless server has nothing to push, so the standalone SSE stream that the
+ * Streamable HTTP transport opens on GET carries no data: the client holds the
+ * connection until the platform kills it, then immediately reconnects.
+ *
+ * That cost was **2,779 sixty-second timeouts on `/mcp` in seven days**
+ * (`Vercel Runtime Timeout Error`, 12 callers, one every ~61s while a client was
+ * connected) — a function pinned for a full minute, every minute, per client.
+ * It was the largest single consumer of Fluid Active CPU on this project, and it
+ * also produced the `refreshSession failed` error storm through the reconnect
+ * loop. Capping the route at 60s (what this replaced) only shortened each pin.
+ *
+ * The MCP Streamable HTTP spec allows exactly this answer: a server that does
+ * not offer an SSE stream MUST reply to GET with 405. Clients then stay on
+ * POST, which is all a stateless server needs. The response is cacheable so the
+ * reconnect attempts are absorbed by the CDN instead of the function.
+ */
+export function GET(): Response {
+  return withCorsHeaders(
+    new Response(
+      JSON.stringify({
+        jsonrpc: '2.0',
+        id: null,
+        error: {
+          code: -32000,
+          message: 'This MCP server does not offer an SSE stream. Use POST.',
+        },
+      }),
+      {
+        status: 405,
+        headers: {
+          Allow: 'POST, DELETE, OPTIONS',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'public, s-maxage=3600',
+        },
+      }
+    )
+  );
 }
 
 export async function DELETE(request: NextRequest): Promise<Response> {
