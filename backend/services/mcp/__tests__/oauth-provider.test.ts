@@ -146,6 +146,7 @@ describe('createMcpOAuthProvider', () => {
   describe('exchangeCodeForTokens', () => {
     it('issues a token pair for a valid code', async () => {
       mockRepo.getAuthCode.mockResolvedValue(mockCodeRecord);
+      mockRepo.markAuthCodeUsed.mockResolvedValue(true);
       mockRepo.createToken.mockResolvedValue(undefined);
 
       const response = await provider.exchangeCodeForTokens({
@@ -163,6 +164,24 @@ describe('createMcpOAuthProvider', () => {
         refresh_token: 'opaque-token',
         scope: 'community.read',
       });
+    });
+
+    it('rejects a code lost to a concurrent redemption and issues no tokens', async () => {
+      // The row still looks unused when read; the atomic claim fails because a
+      // racing request flipped used_at first (RFC 6749 §4.1.2 replay guard).
+      mockRepo.getAuthCode.mockResolvedValue(mockCodeRecord);
+      mockRepo.markAuthCodeUsed.mockResolvedValue(false);
+
+      await expect(
+        provider.exchangeCodeForTokens({
+          code: 'code-1',
+          codeVerifier: PKCE_VERIFIER,
+          client: mockClient,
+          redirectUri: 'http://localhost:3000/callback',
+        })
+      ).rejects.toMatchObject({ code: 'invalid_grant' });
+
+      expect(mockRepo.createToken).not.toHaveBeenCalled();
     });
 
     it('rejects an already-used code', async () => {

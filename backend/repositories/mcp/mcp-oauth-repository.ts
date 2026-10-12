@@ -76,7 +76,12 @@ export interface McpOAuthRepository {
     expiresAt: Date;
   }): Promise<void>;
   getAuthCode(codeHash: string): Promise<McpAuthCodeRecord | null>;
-  markAuthCodeUsed(id: string): Promise<void>;
+  /**
+   * Atomically claim an authorization code for single use. Returns `true` only
+   * for the caller that flipped `used_at` from null; concurrent callers get
+   * `false` (RFC 6749 §4.1.2 one-time-use guarantee).
+   */
+  markAuthCodeUsed(id: string): Promise<boolean>;
 
   createToken(input: {
     tokenHash: string;
@@ -152,11 +157,15 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
     },
 
     async markAuthCodeUsed(id) {
-      const { error } = await (supabase as any)
+      const { data, error } = await (supabase as any)
         .from(AUTH_CODES_TABLE)
         .update({ used_at: new Date().toISOString() })
-        .eq('id', id);
+        .eq('id', id)
+        .is('used_at', null)
+        .select('id')
+        .maybeSingle();
       if (error) throw error;
+      return data !== null;
     },
 
     async createToken(input) {

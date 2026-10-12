@@ -229,7 +229,14 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
         throw new McpOAuthError(400, 'invalid_grant', 'PKCE verification failed');
       }
 
-      await repo.markAuthCodeUsed(codeRow.id);
+      const claimed = await repo.markAuthCodeUsed(codeRow.id);
+      if (!claimed) {
+        throw new McpOAuthError(
+          400,
+          'invalid_grant',
+          'Authorization code is invalid or already used'
+        );
+      }
 
       return issueTokenPair(repo, {
         client: input.client,
