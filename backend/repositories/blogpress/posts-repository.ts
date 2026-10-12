@@ -36,7 +36,7 @@ export interface PostsRepository {
   listPostsByAuthor(authorId: string, categorySlug?: string): Promise<Post[]>;
   getPostExcerptById(id: string): Promise<string | null>;
   getPostForUser(id: string, userId: string): Promise<Post | null>;
-  createPost(authorId: string): Promise<{ id: string }>;
+  createPost(authorId: string, input?: PostInput): Promise<{ id: string }>;
   updatePost(postId: string, authorId: string, data: PostInput): Promise<void>;
   saveAndPublishPost(postId: string, authorId: string, data: PostInput): Promise<{ slug: string }>;
   publishPost(postId: string, authorId: string): Promise<{ slug: string }>;

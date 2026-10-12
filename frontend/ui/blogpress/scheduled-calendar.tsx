@@ -1,10 +1,18 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { m } from 'motion/react';
-import { ChevronRight, ChevronLeft, CalendarDays, FileText, Move, Pencil } from 'lucide-react';
+import {
+  ChevronRight,
+  ChevronLeft,
+  CalendarDays,
+  FileText,
+  Move,
+  Pencil,
+  CloudOff,
+} from 'lucide-react';
 import type { Post } from '@/shared/contracts/blogpress';
 import { postExcerpt } from '@/shared/reading-time';
 import { cn } from '@/frontend/shared/cn';
@@ -40,6 +48,20 @@ export function ScheduledCalendar({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overKey, setOverKey] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [online, setOnline] = useState(
+    typeof navigator === 'undefined' || navigator.onLine !== false
+  );
+
+  useEffect(() => {
+    const sync = () => setOnline(typeof navigator === 'undefined' || navigator.onLine !== false);
+    sync();
+    window.addEventListener('online', sync);
+    window.addEventListener('offline', sync);
+    return () => {
+      window.removeEventListener('online', sync);
+      window.removeEventListener('offline', sync);
+    };
+  }, []);
 
   const year = cursor.getFullYear();
   const month = cursor.getMonth();
@@ -73,6 +95,11 @@ export function ScheduledCalendar({
   const nextMonth = () => setCursor(new Date(year, month + 1, 1));
 
   const reschedule = async (postId: string, target: Date) => {
+    // Scheduling writes a shared-feed row, so it is online-only (ADR-0031).
+    if (!online) {
+      toast.error('يتطلَّب تغيير الجدولة اتصالاً بالإنترنت');
+      return;
+    }
     setBusy(true);
     try {
       await schedulePost(postId, target.toISOString());
@@ -86,7 +113,7 @@ export function ScheduledCalendar({
   };
 
   const handleDrop = (postId: string, targetKey: string) => {
-    if (!withReorder || busy || !postId) return;
+    if (!withReorder || busy || !online || !postId) return;
     const [y, m, d] = targetKey.split('-').map(Number);
     if (!y || !m || !d) return;
     const source = scheduled.find((p) => p.id === postId);
@@ -123,7 +150,16 @@ export function ScheduledCalendar({
           {cursor.toLocaleDateString('ar-SA-u-nu-latn', { month: 'long', year: 'numeric' })}
         </h2>
 
-        {withReorder ? (
+        {!online && withReorder ? (
+          <span
+            role="status"
+            aria-live="polite"
+            className="inline-flex items-center gap-2 rounded-full border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs font-bold text-warning"
+          >
+            <CloudOff className="size-3.5" />
+            تغيير الجدولة يتطلَّب اتصالاً
+          </span>
+        ) : withReorder ? (
           <span className="inline-flex items-center gap-2 text-xs font-bold text-muted-foreground">
             <Move className="size-4 text-primary" />
             اسحب لتغيير الموعد

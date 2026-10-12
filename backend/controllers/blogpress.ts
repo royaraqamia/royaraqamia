@@ -8,6 +8,7 @@ import {
   PostTagIdsSchema,
   BulkPostsActionSchema,
   SchedulePostSchema,
+  type PostInput,
 } from '@/shared/contracts/community';
 import { RestorePostSnapshotSchema } from '@/shared/contracts/blogpress';
 import {
@@ -27,11 +28,21 @@ function publishRevalidation(slug: string): RevalidationHint[] {
   return [...postRevalidation(slug), { path: '/sitemap.xml' }];
 }
 
-export async function createPost(): Promise<HttpResult> {
+export async function createPost(body?: Record<string, unknown> | null): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
+      // An offline replay sends the draft it minted locally; an online "new post"
+      // sends nothing and the server mints the id (ADR-0029).
+      let input: PostInput | undefined;
+      if (body && Object.keys(body).length > 0) {
+        const validated = PostSchema.safeParse(body);
+        if (!validated.success) {
+          return jsonResult(200, { errors: validated.error.flatten().fieldErrors });
+        }
+        input = validated.data;
+      }
       const { repository } = createBlogpressPostsModule(supabase);
-      const { id } = await repository.createPost(userId);
+      const { id } = await repository.createPost(userId, input);
       return jsonResult(200, { id });
     },
     { mapError: messageError(500, 'فشل إنشاء المنشور') }

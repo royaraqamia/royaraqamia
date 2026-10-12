@@ -81,6 +81,15 @@ const filters: { label: string; value: PostStatus | 'all' }[] = [
   { label: 'منشور', value: 'published' },
 ];
 
+/** Publishing is online-only (ADR-0031); returns false and says so when offline. */
+function requireConnection(): boolean {
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+    toast.error('يتطلَّب النَّشر اتصالاً بالإنترنت');
+    return false;
+  }
+  return true;
+}
+
 export const PostList = memo(function PostList({
   posts,
   categories,
@@ -124,6 +133,7 @@ export const PostList = memo(function PostList({
   );
 
   const runBulkAction = async (action: 'publish' | 'unpublish' | 'delete' | 'setCategory') => {
+    if ((action === 'publish' || action === 'unpublish') && !requireConnection()) return;
     const affected = await bulk.run(action, action === 'setCategory' ? categoryId : undefined);
     if (affected === null) return;
     bulk.clear();
@@ -542,6 +552,7 @@ const PostRow = memo(function PostRow({
             {post.status === 'draft' ? (
               <DropdownMenuItem
                 onClick={async () => {
+                  if (!requireConnection()) return;
                   try {
                     await publishPost(post.id);
                     router.refresh();
@@ -557,6 +568,7 @@ const PostRow = memo(function PostRow({
             ) : (
               <DropdownMenuItem
                 onClick={async () => {
+                  if (!requireConnection()) return;
                   try {
                     if (post.status === 'scheduled') {
                       await publishPost(post.id);
