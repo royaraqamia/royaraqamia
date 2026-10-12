@@ -6,7 +6,16 @@ import type { Post } from '@/shared/contracts/blogpress';
 
 const AUTOSAVE_DEBOUNCE_MS = 1200;
 
-export function usePostAutosave(post: Post) {
+/** Persists the draft fields; resolves `true` once they are safely stored. */
+export type PostPersist = (fields: {
+  slug: string;
+  content: string;
+  cover_image: string;
+  meta_title: string;
+  meta_desc: string;
+}) => Promise<boolean>;
+
+export function usePostAutosave(post: Post, persist?: PostPersist) {
   const [content, setContent] = useState(post.content ?? '');
   const [slug, setSlug] = useState(post.slug);
   const [coverImage, setCoverImage] = useState(post.cover_image ?? '');
@@ -23,6 +32,8 @@ export function usePostAutosave(post: Post) {
   const metaDescRef = useRef(metaDesc);
   const isDirtyRef = useRef(false);
   const isSavingRef = useRef(false);
+  const persistRef = useRef(persist);
+  persistRef.current = persist;
 
   useEffect(() => {
     contentRef.current = content;
@@ -64,11 +75,22 @@ export function usePostAutosave(post: Post) {
       meta_desc: metaDescRef.current,
     };
     try {
-      const result = await updatePost(post.id, fields);
-      if (result?.message === 'تمَّ حفظ المنشور') {
-        isDirtyRef.current = false;
-        setIsDirty(false);
-        setLastSaved(new Date());
+      // Local-first: when the editor hands us a Local Store writer, the write
+      // lands in IndexedDB and an Outbox intent carries it to the server.
+      if (persistRef.current) {
+        const saved = await persistRef.current(fields);
+        if (saved) {
+          isDirtyRef.current = false;
+          setIsDirty(false);
+          setLastSaved(new Date());
+        }
+      } else {
+        const result = await updatePost(post.id, fields);
+        if (result?.message === 'تمَّ حفظ المنشور') {
+          isDirtyRef.current = false;
+          setIsDirty(false);
+          setLastSaved(new Date());
+        }
       }
     } catch {
       // Silently fail on auto-save

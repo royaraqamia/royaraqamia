@@ -31,5 +31,12 @@ export default async function EditorPage(props: { params: Promise<{ id: string }
     repository.getPostTags(post.id),
   ]);
 
-  return <EditorContent post={post} availableTags={availableTags} initialPostTags={postTags} />;
+  return (
+    <EditorContent
+      post={post}
+      userId={session.userId}
+      availableTags={availableTags}
+      initialPostTags={postTags}
+    />
+  );
 }

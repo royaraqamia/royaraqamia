@@ -7,6 +7,9 @@ export interface PostFields {
   cover_image: string;
   meta_title: string;
   meta_desc: string;
+  /** Offline write contract (ADR-0029): client-minted id and logical write time. */
+  clientId?: string;
+  updatedAt?: string;
 }
 
 export async function restorePost(
@@ -18,8 +21,11 @@ export async function restorePost(
   });
 }
 
-export async function createPost(): Promise<{ id: string }> {
-  return request<{ id: string }>('/api/blogpress/posts', { method: 'POST' });
+export async function createPost(payload?: PostFields & { id?: string }): Promise<{ id: string }> {
+  return request<{ id: string }>('/api/blogpress/posts', {
+    method: 'POST',
+    body: payload ? JSON.stringify(payload) : undefined,
+  });
 }
 
 export async function updatePost(

@@ -5,6 +5,10 @@ export type PostStatus = 'draft' | 'published' | 'scheduled';
 export interface Post {
   id: string;
   author_id: string;
+  /** Client-minted identity for the offline write contract (ADR-0029). */
+  client_id?: string | null;
+  /** Tombstone marker; a deleted draft stays as a row and reads filter it out. */
+  deleted_at?: string | null;
   slug: string;
   content: string | null;
   status: PostStatus;

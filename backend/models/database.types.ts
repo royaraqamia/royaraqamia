@@ -1037,10 +1037,12 @@ export type Database = {
       posts: {
         Row: {
           author_id: string;
+          client_id: string | null;
           community_visible: boolean;
           content: string | null;
           cover_image: string | null;
           created_at: string;
+          deleted_at: string | null;
           featured: boolean;
           id: string;
           meta_desc: string | null;
@@ -1055,10 +1057,12 @@ export type Database = {
         };
         Insert: {
           author_id: string;
+          client_id?: string | null;
           community_visible?: boolean;
           content?: string | null;
           cover_image?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           featured?: boolean;
           id?: string;
           meta_desc?: string | null;
@@ -1073,10 +1077,12 @@ export type Database = {
         };
         Update: {
           author_id?: string;
+          client_id?: string | null;
           community_visible?: boolean;
           content?: string | null;
           cover_image?: string | null;
           created_at?: string;
+          deleted_at?: string | null;
           featured?: boolean;
           id?: string;
           meta_desc?: string | null;

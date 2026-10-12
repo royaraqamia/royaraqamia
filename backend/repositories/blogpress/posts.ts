@@ -368,13 +368,29 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       return (data as Post) ?? null;
     },
 
-    async createPost(authorId: string): Promise<{ id: string }> {
+    async createPost(authorId: string, input?: PostInput): Promise<{ id: string }> {
+      // An offline-created draft carries the id its device minted (ADR-0029), so
+      // the row the server creates is the same row the Local Store already keys
+      // on and a replayed write is an idempotent upsert, never a duplicate.
+      const id = input?.id ?? input?.clientId ?? crypto.randomUUID();
+      const clientId = input?.clientId ?? id;
       const { data, error } = await supabase
         .from('posts')
-        .insert({
-          author_id: authorId,
-          slug: `post-${crypto.randomUUID().slice(0, 8)}`,
-        })
+        .upsert(
+          {
+            id,
+            author_id: authorId,
+            client_id: clientId,
+            slug: input?.slug ?? `post-${id.slice(0, 8)}`,
+            content: input?.content ?? null,
+            cover_image: input?.cover_image ?? null,
+            meta_title: input?.meta_title ?? null,
+            meta_desc: input?.meta_desc ?? null,
+            reading_time_minutes: input?.content ? estimateReadingTime(input.content) : 0,
+            updated_at: input?.updatedAt ?? new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        )
         .select('id')
         .single();
 
@@ -384,16 +400,29 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     },
 
     async updatePost(postId: string, authorId: string, data: PostInput): Promise<void> {
-      const { error } = await supabase
-        .from('posts')
-        .update({
-          ...data,
-          ...(data.content !== undefined
-            ? { reading_time_minutes: estimateReadingTime(data.content) }
-            : {}),
-        })
-        .eq('id', postId)
-        .eq('author_id', authorId);
+      // Never spread `data`: its camelCase offline fields are not DB columns and
+      // PostgREST rejects them (PGRST204). Build the payload column by column.
+      const payload: Database['public']['Tables']['posts']['Update'] = {
+        updated_at: data.updatedAt ?? new Date().toISOString(),
+        ...(data.slug !== undefined ? { slug: data.slug } : {}),
+        ...(data.content !== undefined
+          ? { content: data.content, reading_time_minutes: estimateReadingTime(data.content) }
+          : {}),
+        ...(data.cover_image !== undefined ? { cover_image: data.cover_image } : {}),
+        ...(data.meta_title !== undefined ? { meta_title: data.meta_title } : {}),
+        ...(data.meta_desc !== undefined ? { meta_desc: data.meta_desc } : {}),
+        ...(data.status !== undefined ? { status: data.status } : {}),
+        ...(data.publish_at !== undefined ? { publish_at: data.publish_at } : {}),
+        ...(data.clientId !== undefined ? { client_id: data.clientId } : {}),
+      };
+
+      let query = supabase.from('posts').update(payload).eq('id', postId).eq('author_id', authorId);
+
+      // Last-write-wins (ADR-0029): a replayed older edit must not invert a
+      // newer server state; a fresh online save has no bound.
+      if (data.updatedAt) query = query.lte('updated_at', data.updatedAt);
+
+      const { error } = await query;
 
       if (error) {
         throw new Error(error.message);
@@ -408,13 +437,17 @@ export function createPostsRepository(supabase: Client): PostsRepository {
       const { data: updated, error } = await supabase
         .from('posts')
         .update({
-          ...data,
+          slug: data.slug,
+          ...(data.content !== undefined
+            ? { content: data.content, reading_time_minutes: estimateReadingTime(data.content) }
+            : {}),
+          ...(data.cover_image !== undefined ? { cover_image: data.cover_image } : {}),
+          ...(data.meta_title !== undefined ? { meta_title: data.meta_title } : {}),
+          ...(data.meta_desc !== undefined ? { meta_desc: data.meta_desc } : {}),
           status: 'published',
           published_at: new Date().toISOString(),
           community_visible: true,
-          ...(data.content !== undefined
-            ? { reading_time_minutes: estimateReadingTime(data.content) }
-            : {}),
+          updated_at: new Date().toISOString(),
         })
         .eq('id', postId)
         .eq('author_id', authorId)
@@ -433,6 +466,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
           status: 'published',
           published_at: new Date().toISOString(),
           community_visible: true,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', postId)
         .eq('author_id', authorId)
@@ -450,6 +484,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .update({
           status: 'draft',
           published_at: null,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', postId)
         .eq('author_id', authorId)
@@ -471,6 +506,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
         .update({
           status: 'scheduled',
           publish_at: publishAt,
+          updated_at: new Date().toISOString(),
         })
         .eq('id', postId)
         .eq('author_id', authorId)
@@ -513,6 +549,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
           featured: snapshot.featured,
           community_visible: snapshot.community_visible,
           reading_time_minutes: snapshot.reading_time_minutes,
+          updated_at: new Date().toISOString(),
         })
         .select('id')
         .single();
@@ -525,7 +562,7 @@ export function createPostsRepository(supabase: Client): PostsRepository {
     async setPostFeatured(postId: string, authorId: string, featured: boolean): Promise<void> {
       const { error } = await supabase
         .from('posts')
-        .update({ featured })
+        .update({ featured, updated_at: new Date().toISOString() })
         .eq('id', postId)
         .eq('author_id', authorId);
 
@@ -691,8 +728,13 @@ export function createPostsRepository(supabase: Client): PostsRepository {
               status: 'published' as const,
               published_at: new Date().toISOString(),
               community_visible: true,
+              updated_at: new Date().toISOString(),
             }
-          : { status: 'draft' as const, published_at: null }
+          : {
+              status: 'draft' as const,
+              published_at: null,
+              updated_at: new Date().toISOString(),
+            }
       ) satisfies Partial<Database['public']['Tables']['posts']['Row']> & {
         published_at: string | null;
       };

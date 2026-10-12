@@ -21,11 +21,24 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/frontend/ui/primitives/dialog';
-import { ArrowRight, Loader2, Check, X, Save, Send, Upload, Focus, PanelRight } from 'lucide-react';
-import { updatePost, saveAndPublishPost, setPostTags, createTag } from '@/frontend/api/blogpress';
+import {
+  ArrowRight,
+  Loader2,
+  Check,
+  X,
+  Save,
+  Send,
+  Upload,
+  Focus,
+  PanelRight,
+  CloudOff,
+} from 'lucide-react';
+import { saveAndPublishPost, setPostTags, createTag } from '@/frontend/api/blogpress';
 import { toast } from 'sonner';
 import TiptapEditor, { TiptapEditorRef } from './tiptap-editor';
 import type { Post, PostTag } from '@/shared/contracts/blogpress';
+import { SyncStatusPill } from '@/frontend/ui/shared/sync-status-pill';
+import { useBlogpressStore } from '@/frontend/state/blogpress/use-blogpress-store';
 import { postExcerpt } from '@/shared/reading-time';
 import { estimateWordCount, formatReadingTimeLong } from '@/frontend/shared/reading-time';
 import { estimateContentStats } from '@/frontend/shared/blogpress/content-stats';
@@ -39,14 +52,55 @@ import { EditorReadingProgress } from '@/frontend/ui/blogpress/editor-reading-pr
 
 interface EditorContentProps {
   post: Post;
+  userId: string;
   availableTags: PostTag[];
   initialPostTags: PostTag[];
 }
 
-export function EditorContent({ post, availableTags, initialPostTags }: EditorContentProps) {
+export function EditorContent({
+  post,
+  userId,
+  availableTags,
+  initialPostTags,
+}: EditorContentProps) {
   const router = useRouter();
   const editorRef = useRef<TiptapEditorRef>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
+  const { store, ready, draft, sync } = useBlogpressStore(post, userId);
+  // Object URLs created for offline blobs this session, so a save can persist
+  // the durable `blogpress-media:<id>` placeholder instead of a dead blob URL.
+  const mediaMapRef = useRef(new Map<string, string>());
+  const toStored = useCallback((value: string): string => {
+    let result = value;
+    for (const [objectUrl, placeholder] of mediaMapRef.current) {
+      result = result.split(objectUrl).join(placeholder);
+    }
+    return result;
+  }, []);
+  const persist = useCallback(
+    async (fields: {
+      slug: string;
+      content: string;
+      cover_image: string;
+      meta_title: string;
+      meta_desc: string;
+    }): Promise<boolean> => {
+      if (!store) return false;
+      await store.saveDraft({
+        id: post.id,
+        clientId: draft?.clientId ?? post.id,
+        slug: fields.slug,
+        content: toStored(fields.content),
+        coverImage: toStored(fields.cover_image),
+        metaTitle: fields.meta_title,
+        metaDesc: fields.meta_desc,
+        status: post.status,
+        isNew: draft?.isNew ?? false,
+      });
+      return true;
+    },
+    [store, post.id, post.status, draft?.clientId, draft?.isNew, toStored]
+  );
   const {
     content,
     setContent,
@@ -63,7 +117,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
     isSaving,
     saveAllFields,
     markSaved,
-  } = usePostAutosave(post);
+  } = usePostAutosave(post, persist);
   const {
     isUploading,
     isCoverUploading,
@@ -77,6 +131,9 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
   } = usePostUpload({
     onImageInserted: (url, fileName) => editorRef.current?.insertImage(url, fileName),
     onCoverChange: setCoverImage,
+    store,
+    postId: post.id,
+    onMediaStored: (objectUrl, placeholder) => mediaMapRef.current.set(objectUrl, placeholder),
   });
   const [pending, startTransition] = useTransition();
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
@@ -133,18 +190,18 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
     };
     startTransition(async () => {
       try {
-        const result = await updatePost(post.id, fields);
-        if (result?.message === 'تمَّ حفظ المنشور') {
+        const saved = await persist(fields);
+        if (saved) {
           markSaved();
           toast.success('تمَّ حفظ المنشور');
-        } else if (result?.errors) {
-          toast.error('خطأ في التَّحقُّق من البيانات');
+        } else {
+          toast.error('حدث خطأ في الحفظ');
         }
       } catch {
         toast.error('حدث خطأ في الحفظ');
       }
     });
-  }, [post.id, slug, setSlug, content, coverImage, metaTitle, metaDesc, resolveSlug, markSaved]);
+  }, [slug, setSlug, content, coverImage, metaTitle, metaDesc, resolveSlug, markSaved, persist]);
 
   const persistPostTags = useCallback(
     (next: PostTag[]) => {
@@ -203,13 +260,19 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
   );
 
   const handlePublish = useCallback(async () => {
+    // Publishing is inherently online-only (ADR-0031): the shared Community feed
+    // is server-authoritative, so there is no offline publish to queue.
+    if (!sync.online) {
+      toast.error('يتطلَّب النَّشر اتصالاً بالإنترنت');
+      return;
+    }
     const finalSlug = resolveSlug(slug);
     if (finalSlug !== slug) setSlug(finalSlug);
-    const currentContent = editorRef.current?.getMarkdown() ?? content;
+    const currentContent = toStored(editorRef.current?.getMarkdown() ?? content);
     const fields = {
       slug: finalSlug,
       content: currentContent,
-      cover_image: coverImage,
+      cover_image: toStored(coverImage),
       meta_title: metaTitle,
       meta_desc: metaDesc,
     };
@@ -229,6 +292,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
       }
     });
   }, [
+    sync.online,
     post.id,
     slug,
     setSlug,
@@ -239,14 +303,19 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
     resolveSlug,
     router,
     markSaved,
+    toStored,
   ]);
 
   const handlePublishClick = useCallback(() => {
+    if (!sync.online) {
+      toast.error('يتطلَّب النَّشر اتصالاً بالإنترنت');
+      return;
+    }
     const checks = getPublishChecks();
     const failed = checks.filter((c) => !c.passed && !c.optional);
     if (failed.length > 0) setPublishDialogOpen(true);
     else handlePublish();
-  }, [getPublishChecks, handlePublish]);
+  }, [getPublishChecks, handlePublish, sync.online]);
 
   const handlePublishAnyway = useCallback(() => {
     setPublishDialogOpen(false);
@@ -274,7 +343,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
   const publishChecks = getPublishChecks();
 
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="flex h-dvh flex-col" data-blogpress-ready={ready ? 'true' : 'false'}>
       <EditorReadingProgress scrollContainerRef={editorContainerRef} />
       <div className="flex items-center justify-between border-b border-border/50 px-4 py-2.5 bg-background/80">
         <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -291,6 +360,7 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
             <ArrowRight className="size-4" />
           </Button>
           <span className="truncate text-sm font-bold text-muted-foreground">تحرير المنشور</span>
+          <SyncStatusPill status={sync} />
         </div>
         <div className="flex items-center gap-1">
           <input
@@ -469,6 +539,16 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
             )}
           </div>
           <div className="flex items-center gap-2">
+            {!sync.online && post.status === 'draft' && (
+              <span
+                role="status"
+                aria-live="polite"
+                className="inline-flex items-center gap-1.5 rounded-full border border-warning/30 bg-warning/10 px-3 py-1.5 text-xs font-bold text-warning"
+              >
+                <CloudOff className="size-3.5" />
+                النَّشر يتطلَّب اتصالاً
+              </span>
+            )}
             <Button
               type="button"
               variant="outline"
@@ -491,7 +571,8 @@ export function EditorContent({ post, availableTags, initialPostTags }: EditorCo
               <Button
                 size="sm"
                 onClick={handlePublishClick}
-                disabled={pending}
+                disabled={pending || !sync.online}
+                title={sync.online ? undefined : 'يتطلَّب النَّشر اتصالاً بالإنترنت'}
                 className="transition-smooth shadow-sm hover:shadow-md min-h-11 rounded-full"
               >
                 {pending ? (

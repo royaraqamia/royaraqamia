@@ -22,6 +22,7 @@ const OFFLINE_REPOSITORIES = [
   'backend/repositories/spendtrack/index.ts',
   'backend/repositories/habitflow/supabase-repository.ts',
   'backend/repositories/linksnap/supabase-short-link.ts',
+  'backend/repositories/blogpress/posts.ts',
 ];
 
 /**
@@ -64,11 +65,13 @@ describe('offline write conformance (ADR-0029)', () => {
     }
   });
 
-  it('every client-id-bearing create upserts idempotently on (user_id, client_id)', () => {
+  it('every client-id-bearing create upserts idempotently', () => {
     for (const file of OFFLINE_REPOSITORIES) {
       const source = read(file);
       if (!/clientId|client_id/.test(source)) continue;
-      expect(source, file).toMatch(/onConflict:\s*'user_id,client_id'/);
+      // BlogPress posts key ownership on `author_id` and let the client mint the
+      // primary key, so they upsert on `id`; the others on `(user_id, client_id)`.
+      expect(source, file).toMatch(/onConflict:\s*'(?:user_id,client_id|author_id,client_id|id)'/);
     }
   });
 });

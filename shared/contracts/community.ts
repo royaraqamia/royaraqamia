@@ -13,6 +13,10 @@ export const PostSchema = z.object({
   meta_desc: z.string().max(160).optional(),
   status: z.enum(['draft', 'published', 'scheduled']).optional(),
   publish_at: z.string().nullable().optional(),
+  /** Offline write contract (ADR-0029): client-minted ids and logical write time. */
+  id: z.string().uuid('معرِّف منشور غير صالح').optional(),
+  clientId: z.string().uuid('معرِّف منشور غير صالح').optional(),
+  updatedAt: z.string().optional(),
 });
 
 export type PostInput = z.infer<typeof PostSchema>;
