@@ -407,7 +407,7 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                         className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
                       >
                         <ScanBarcode className="size-3.5" />
-                        أو امسح الرَّمز بماسِح الرُّموز
+                        أو امسح الرَّمز بماسح QR و Barcode
                       </Link>
                     </m.div>
                   </div>

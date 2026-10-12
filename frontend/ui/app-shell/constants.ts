@@ -72,7 +72,7 @@ export const APP_PRODUCTS: AppProductDef[] = [
   },
   {
     id: 'scan',
-    label: 'ماسِح الرُّموز',
+    label: 'ماسح QR و Barcode',
     appPath: '/scan',
     landingPath: '/scan',
     icon: ScanBarcode,

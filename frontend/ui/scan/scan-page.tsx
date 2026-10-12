@@ -21,7 +21,6 @@ import {
   SCAN_RESULT_KIND_LABELS,
   classifyScanPayload,
 } from '@/shared/contracts/scan';
-import { SCAN_FAQ_ITEMS } from './scan-faq';
 import { computeFrameTransform, displayToFrame, frameToDisplay } from './overlay';
 import {
   FrameGrabber,
@@ -405,12 +404,8 @@ export function ScanPage() {
 
       <header className="flex flex-col items-center gap-3 text-center">
         <SectionTitle as="h1">
-          <SectionTitleHighlight>ماسِح الرُّموز</SectionTitleHighlight>
+          <SectionTitleHighlight>ماسح QR و Barcode</SectionTitleHighlight>
         </SectionTitle>
-        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
-          اقرأ أيَّ رمز QR أو باركود بكاميرا هاتفك، أو ارفع صورة تحتوي عليه. تتمُّ القراءة كلُّها
-          على جهازك، ولا يُرسَل أيُّ إطار من الكاميرا ولا أيُّ صورة إلى أيِّ خادم.
-        </p>
       </header>
 
       <div className={cn('flex flex-col gap-4', hit && 'hidden')}>
@@ -444,9 +439,6 @@ export function ScanPage() {
                     {status === 'starting' ? <Loader2 className="animate-spin" /> : <Camera />}
                     {status === 'starting' ? 'جاري تشغيل الكاميرا…' : 'تشغيل الكاميرا'}
                   </Button>
-                  <p className="text-xs text-white/60">
-                    لن تُشغَّل الكاميرا إلا بعد ضغطك على الزِّرّ.
-                  </p>
                 </div>
               )}
 
@@ -505,11 +497,6 @@ export function ScanPage() {
                 {busy ? 'جاري القراءة…' : 'اختيار صورة'}
               </Button>
             </div>
-
-            <p className="text-center text-xs leading-relaxed text-muted-foreground">
-              لا يُحفَظ أيُّ سجلٍّ لعمليَّات المسح، ولا يُرسَل أيُّ شيء إلى خادمنا. الرَّابط الممسوح
-              لا يُفتح تلقائيًّا أبدًا: تُعرَض لك وجهته الحقيقيَّة أوَّلًا.
-            </p>
           </CardContent>
         </Card>
       </div>
@@ -522,23 +509,6 @@ export function ScanPage() {
           onRescan={rescan}
         />
       )}
-
-      <section className="flex flex-col gap-3" aria-labelledby="scan-faq-heading">
-        <SectionTitle as="h2" size="card" id="scan-faq-heading" className="text-center">
-          أسئلة شائعة
-        </SectionTitle>
-        {SCAN_FAQ_ITEMS.map((item) => (
-          <details
-            key={item.question}
-            className="group rounded-2xl border border-border/60 bg-card/95 p-4 transition-safe open:border-violet-500/40"
-          >
-            <summary className="cursor-pointer list-none text-base font-bold text-foreground [&::-webkit-details-marker]:hidden">
-              {item.question}
-            </summary>
-            <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{item.answer}</p>
-          </details>
-        ))}
-      </section>
     </div>
   );
 }

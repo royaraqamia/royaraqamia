@@ -3,7 +3,7 @@ import { Navbar } from '@/frontend/ui/Navbar';
 
 export const metadata: Metadata = {
   title: {
-    default: 'ماسِح رُموز QR والباركود',
+    default: 'ماسح QR و Barcode',
     template: '%s | رؤيَة رقَميَّة',
   },
   description:

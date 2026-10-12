@@ -171,7 +171,7 @@ _Avoid_: Extractor, downloader service, ripper
 The public tool that reads a QR or barcode held in front of the camera, or present in an
 uploaded image, and reports what it contains. Free and anonymous; a traffic utility, not a
 paid offering. Distinct from a Certificate Code lookup, which asks about one known identifier.
-_Sold as_: ماسِح الرُّموز
+_Sold as_: ماسح QR و Barcode
 _Avoid_: QR reader, barcode app, decoder
 
 **Scan**:
