@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.83.4] - 2026-10-12
+
+### Fixed
+- close stale Local Store connections on versionchange
+- never cache product sync APIs and repair cacheFirst fallback
+
 ## [1.83.3] - 2026-10-12
 
 ### Fixed
