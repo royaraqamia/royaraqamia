@@ -165,6 +165,26 @@ The external backend that turns a media link into a downloadable file. The site 
 extract or convert media itself.
 _Avoid_: Extractor, downloader service, ripper
 
+### Scanner
+
+**Scanner**:
+The public tool that reads a QR or barcode held in front of the camera, or present in an
+uploaded image, and reports what it contains. Free and anonymous; a traffic utility, not a
+paid offering. Distinct from a Certificate Code lookup, which asks about one known identifier.
+_Sold as_: ماسِح الرُّموز
+_Avoid_: QR reader, barcode app, decoder
+
+**Scan**:
+One act of reading one code with the Scanner, from the camera or an image. It is complete the
+moment a payload is read: it is not a lookup, and it stores nothing.
+_Avoid_: Read, capture, decode, query
+
+**Scan Result**:
+What a Scan produced — the decoded payload together with the type the Scanner detected for it
+(link, email, phone, WiFi, contact, location, one-time password, or plain text). It is
+transient: it lives only in the page, never on the server and never on disk.
+_Avoid_: Output, decoded value, reading
+
 ### Exchange Rates
 
 **Currency**:
