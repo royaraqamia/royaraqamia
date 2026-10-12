@@ -11,8 +11,10 @@ layered triggers plus a day-guard:
   `public.dispatch_github_workflow` (a SECURITY DEFINER function reading a fine-grained PAT from
   the Vault, ideally dedicated to this repository and scoped to `Actions: write`), firing the
   planner at 03:00 UTC to the minute.
-- **Chained:** the implementer is woken by `workflow_run` the moment the planner completes, so it
-  always sees that day's fresh issues — no offset to race.
+- **Chained:** when the planner finishes it dispatches the implementer through the Actions
+  dispatch API, so the implementer always sees that day's fresh issues — no offset to race.
+  (Not `workflow_run`: opencode's GitHub runner accepts only a fixed set of event types and
+  rejects `workflow_run` outright — the bug that previously broke this link.)
 - **Backstops:** the original `schedule` triggers stay, needing no configuration, for when the
   external dispatcher or its secret is unavailable.
 - **Catch-up:** `issue-automation-health.yml` checks the age of each workflow's last success,
@@ -31,8 +33,9 @@ layered triggers plus a day-guard:
 - **Widen the planner→implementer offset.** Rejected: still races whenever the planner slips, and
   wastes a full day's latency instead of fixing the ordering.
 - **React to the `issues: [labeled]` event.** Rejected for the reason in ADR 0026: GitHub does not
-  run workflows in response to events caused by the default `GITHUB_TOKEN`. `workflow_dispatch` and
-  `workflow_run` are exempt from that rule, which is what makes chaining and re-dispatch work.
+  run workflows in response to events caused by the default `GITHUB_TOKEN`. `workflow_dispatch` —
+  called directly through the dispatch API, as both the planner chain and the health catch-up do —
+  is exempt from that rule, which is what makes chaining and re-dispatch work.
 - **One external trigger, no guards.** Rejected: any overlap between the external dispatch and the
   scheduled backstop would double-run the pipeline.
 - **A token in an env var instead of the Vault.** Rejected: the trigger runs in the database, and

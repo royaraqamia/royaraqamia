@@ -6,20 +6,22 @@
 # DeepSeek 4.1 Flash phase implements it and writes /tmp/result.json; a final script
 # records the outcome on the issue.
 #
-# Triggers (see ADR 0032). The implementer is woken by `workflow_run` the moment the
-# Issue Planner finishes, so it always sees that day's freshly filed issues — no
-# fixed three-hour clock offset to race against. The 06:00 UTC schedule is a
-# no-config backstop for the case where the planner never completes, and the
-# `issue-automation-health` workflow can re-dispatch directly. The `Daily guard` step
-# makes those redundant triggers idempotent — only the first successful run on a given
-# UTC day does any work, preserving the one-issue-a-day contract and never letting a
-# late backstop suppress the next day's run.
+# Triggers (see ADR 0032). The implementer is woken by the Issue Planner dispatching
+# it the moment it finishes (`workflow_dispatch` via the Actions API), so it always
+# sees that day's freshly filed issues — no fixed three-hour clock offset to race
+# against. The 06:00 UTC schedule is a no-config backstop for the case where the
+# planner never completes, and the `issue-automation-health` workflow can re-dispatch
+# directly. The `Daily guard` step makes those redundant triggers idempotent — only
+# the first successful run on a given UTC day does any work, preserving the
+# one-issue-a-day contract and never letting a late backstop suppress the next day's
+# run.
 #
-# It polls (schedule/workflow_run/dispatch) rather than reacting to the
-# `issues: [labeled]` event on purpose: GitHub does not run workflows in response to
-# events caused by the default GITHUB_TOKEN, so a label-event trigger would never
-# fire for planner-created issues. `workflow_run` and `workflow_dispatch` are exempt
-# from that rule. See ADR 0026.
+# The planner cannot chain the implementer with a `workflow_run` trigger: opencode's
+# GitHub runner rejects that event type, so the planner calls the Actions dispatch API
+# instead. It polls (schedule/dispatch) rather than reacting to the `issues: [labeled]`
+# event on purpose: GitHub does not run workflows in response to events caused by the
+# default GITHUB_TOKEN, so a label-event trigger would never fire for planner-created
+# issues. `workflow_dispatch` is exempt from that rule. See ADR 0026.
 #
 # Setup (repo secrets), shared with the other OpenCode workflows:
 #   OPENCODE_API_KEY      - https://opencode.ai/auth (free models bill $0)
@@ -41,11 +43,8 @@ name: 'Issue Implementer'
 on:
   schedule:
     # 06:00 UTC = 09:00 Damascus (UTC+3, no DST) — daily backstop. The primary
-    # trigger is `workflow_run` once the planner finishes.
+    # trigger is the planner dispatching this workflow once it finishes.
     - cron: '0 6 * * *'
-  workflow_run:
-    workflows: ['Issue Planner']
-    types: [completed]
   workflow_dispatch:
     inputs:
       force:
@@ -66,15 +65,12 @@ concurrency:
 
 jobs:
   implement:
-    # A failed planner still leaves the backlog to drain, but a cancelled one is a
-    # no-op, so only skip the chain when the planner was explicitly cancelled.
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'cancelled'
     runs-on: ubuntu-latest
     timeout-minutes: 100
 
     steps:
       - name: Daily guard
-        # Idempotency for the redundant triggers: the `workflow_run` chain, the 06:00
+        # Idempotency for the redundant triggers: the planner's dispatch, the 06:00
         # schedule and the health-monitor catch-up all point here. Only the first
         # successful run on a given UTC day does work; the rest exit immediately. The
         # window is the calendar day, not a rolling one, so a backstop that lands

@@ -43,7 +43,8 @@ stranger cannot hand the implementer instructions by opening an issue.
 ## Revision
 
 ADR 0032 replaces the fixed three-hour offset and the "load-bearing schedule" assumption: the
-planner is now triggered punctually by a pg_cron dispatch, the implementer is chained by
-`workflow_run`, both `schedule` triggers are backstops, a health workflow re-dispatches a missed
+planner is now triggered punctually by a pg_cron dispatch, the implementer is chained by the
+planner dispatching it (not `workflow_run`, which opencode's GitHub runner rejects), both
+`schedule` triggers are backstops, a health workflow re-dispatches a missed
 day, and a calendar-day day-guard keeps the redundant triggers idempotent. The reasoning above about
 `GITHUB_TOKEN`-caused events no longer applies to the implementer's trigger.

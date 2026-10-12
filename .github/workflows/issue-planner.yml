@@ -14,13 +14,13 @@
 # re-dispatches a missed day. The `Daily guard` step makes those redundant triggers
 # idempotent — only the first successful run on a given UTC day does any work, so an
 # extra trigger never double-files issues and a late backstop can never suppress the
-# next day's run. The implementer is woken by
-# `workflow_run` on this workflow's success, not by a fixed clock offset.
+# next day's run. On completion this workflow dispatches the implementer through the
+# Actions dispatch API, not a fixed clock offset.
 #
 # The planner runs on a schedule/dispatch rather than reacting to events on purpose:
 # GitHub does not run workflows in response to events caused by the default
 # GITHUB_TOKEN, so an implementer woken by the `issues: [labeled]` event these issues
-# would cause could never fire. `workflow_run` and `workflow_dispatch` are exempt
+# would cause could never fire. `workflow_dispatch` (called via the API) is exempt
 # from that rule. See ADR 0026.
 #
 # Setup (repo secrets), shared with the other OpenCode workflows:
@@ -52,7 +52,7 @@ on:
 
 permissions:
   id-token: write
-  actions: read
+  actions: write
   contents: read
   issues: write
 
@@ -272,3 +272,24 @@ jobs:
               core.info('Created issue #' + issue.data.number + ': ' + title);
             }
             core.info('Issue Planner published ' + created + ' issue(s).');
+
+      - name: Wake the Issue Implementer
+        # The implementer's triggers are `schedule` + `workflow_dispatch` only —
+        # opencode's GitHub runner rejects the `workflow_run` event type — so the
+        # planner chains it here through the Actions dispatch API. `always()` so a
+        # failed planner still lets the implementer drain the backlog; standing down
+        # when the guard did avoids a pointless second dispatch on a backstop run.
+        if: always() && steps.guard.outputs.run == 'true'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        with:
+          script: |
+            try {
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'issue-implementer.yml',
+              });
+              core.info('Dispatched issue-implementer.yml.');
+            } catch (err) {
+              core.warning('Could not dispatch the Issue Implementer: ' + err.message);
+            }
