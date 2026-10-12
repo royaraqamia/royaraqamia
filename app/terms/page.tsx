@@ -38,7 +38,7 @@ export default function TermsPage() {
         {/* Modern SaaS Header */}
         <header className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
           <SectionTitle as="h1">
-            شروط <SectionTitleHighlight>الاستخدام</SectionTitleHighlight>
+            <SectionTitleHighlight>شروط الاستخدام</SectionTitleHighlight>
           </SectionTitle>
         </header>
 
