@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.85.0] - 2026-10-12
+
+### Added
+- rename the Scanner and trim its page copy
+
+### Fixed
+- fall back to the WASM engine when the browser detector cannot answer
+
 ## [1.84.1] - 2026-10-12
 
 ### Changed
