@@ -79,8 +79,10 @@ export async function POST(request: NextRequest): Promise<Response> {
  *
  * The MCP Streamable HTTP spec allows exactly this answer: a server that does
  * not offer an SSE stream MUST reply to GET with 405. Clients then stay on
- * POST, which is all a stateless server needs. The response is cacheable so the
- * reconnect attempts are absorbed by the CDN instead of the function.
+ * POST, which is all a stateless server needs. Measured after deploy: Vercel
+ * does not cache a 405 (`X-Vercel-Cache: MISS`), so a lingering client still
+ * costs one invocation per reconnect — but a few milliseconds of CPU instead of
+ * a function pinned for 60 seconds, which is what the budget was paying for.
  */
 export function GET(): Response {
   return withCorsHeaders(
