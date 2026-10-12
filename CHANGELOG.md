@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.83.5] - 2026-10-12
+
+### Fixed
+- make authorization-code exchange atomic to prevent replay
+
 ## [1.83.4] - 2026-10-12
 
 ### Fixed
