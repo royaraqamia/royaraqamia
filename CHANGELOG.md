@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.84.0] - 2026-10-12
+
+### Changed
+- highlight full page titles to match other pages
+- define the Scanner and record ADRs 0034-0035
+
+### Added
+- add the public QR and barcode Scanner
+
 ## [1.83.9] - 2026-10-12
 
 ### Changed

@@ -36,7 +36,7 @@ export default function SecurityPage() {
           {/* Hero Header Section */}
           <header className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
             <SectionTitle as="h1">
-              سياسة <SectionTitleHighlight>الأمان</SectionTitleHighlight>
+              <SectionTitleHighlight>سياسة الأمان</SectionTitleHighlight>
             </SectionTitle>
           </header>
 

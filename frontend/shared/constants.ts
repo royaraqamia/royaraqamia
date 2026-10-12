@@ -34,6 +34,15 @@ export function getCanonicalOrigin(): string {
 /** Single source of truth for text direction; consumed by `<html dir>` and Radix's DirectionProvider. */
 export const DIRECTION = 'rtl' as const;
 
+/**
+ * Where the Scanner's decoding engine is served from. `scripts/sync-zxing-wasm.mjs`
+ * copies the binary out of `node_modules` into `public/` on every dev run and
+ * build, so it always matches the installed version and stays on our own origin —
+ * the library's default is a jsDelivr URL, which our CSP forbids and ADR-0035
+ * rules out.
+ */
+export const SCANNER_WASM_PATH = '/zxing_reader.wasm';
+
 export const IS_DEVELOPMENT = process.env.NODE_ENV === 'development';
 export const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 

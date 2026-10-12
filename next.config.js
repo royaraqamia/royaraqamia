@@ -7,7 +7,7 @@ const { withSentryConfig } = require('@sentry/nextjs/config');
 /** @type {import('next').NextConfig} */
 const csp = `
 default-src 'self';
-script-src 'self' 'unsafe-inline' https://challenges.cloudflare.com ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ''};
+script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://challenges.cloudflare.com ${process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : ''};
 style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
 font-src 'self' https://fonts.gstatic.com data:;
 img-src 'self' data: https: blob: https://*.supabase.co;
@@ -139,7 +139,10 @@ const nextConfig = {
           { key: 'X-DNS-Prefetch-Control', value: 'on' },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=(), payment=()',
+            // `camera=(self)` is what the Scanner needs (ADR-0035). `self`, never
+            // `*`: a wildcard would let any third-party frame we ever embed
+            // borrow a visitor's camera. Nothing else is granted.
+            value: 'camera=(self), microphone=(), geolocation=(), payment=()',
           },
         ],
       },

@@ -56,6 +56,11 @@ const SITEMAP_ENTRIES: SitemapEntryConfig[] = [
     priority: 0.8,
   },
   {
+    path: '/scan',
+    changeFrequency: 'monthly',
+    priority: 0.8,
+  },
+  {
     path: '/verify',
     changeFrequency: 'monthly',
     priority: 0.6,

@@ -38,7 +38,7 @@ export default function PrivacyPage() {
         {/* Hero Header */}
         <header className="text-center flex flex-col items-center mb-8 sm:mb-10 lg:mb-12">
           <SectionTitle as="h1">
-            سياسة <SectionTitleHighlight>الخصوصيَّة</SectionTitleHighlight>
+            <SectionTitleHighlight>سياسة الخصوصيَّة</SectionTitleHighlight>
           </SectionTitle>
         </header>
 
