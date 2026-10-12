@@ -47,6 +47,33 @@ describe('openLocalStore', () => {
     v2.close();
   });
 
+  it('yields to a higher-version open from another tab', async () => {
+    const factory = new IDBFactory();
+
+    const stale = await openLocalStore('store-f', habitMigrations(false), factory);
+    const fresh = await openLocalStore('store-f', habitMigrations(true), factory);
+
+    expect([...fresh.objectStoreNames].sort()).toEqual(['a', 'b']);
+    // The stale connection closed itself so the upgrade was never blocked.
+    expect(() => stale.transaction('a')).toThrow();
+    fresh.close();
+  });
+
+  it('signals when it closes itself for a newer schema version', async () => {
+    const factory = new IDBFactory();
+    let versionChanges = 0;
+
+    await openLocalStore('store-g', habitMigrations(false), factory, {
+      onVersionChange: () => {
+        versionChanges += 1;
+      },
+    });
+    const fresh = await openLocalStore('store-g', habitMigrations(true), factory);
+
+    expect(versionChanges).toBe(1);
+    fresh.close();
+  });
+
   it('rejects a chain that is not strictly increasing', () => {
     expect(() =>
       openLocalStore(

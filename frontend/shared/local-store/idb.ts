@@ -7,11 +7,24 @@
  * migration; a new one is appended. `openLocalStore` refuses a chain whose
  * versions are not strictly increasing, so a bad migration can't silently
  * run twice or out of order.
+ *
+ * A connection also yields to a newer schema version opened by another tab:
+ * without that, a stale tab keeps the upgrade blocked and every read, write and
+ * Outbox flush fails until the user closes it by hand.
  */
 export interface LocalStoreMigration {
   /** Strictly increasing across the chain; each runs exactly once, in order. */
   version: number;
   migrate: (db: IDBDatabase, transaction: IDBTransaction, oldVersion: number) => void;
+}
+
+export interface OpenLocalStoreOptions {
+  /**
+   * Called after this connection closes itself because another tab opened a
+   * newer schema version. A caller can use it to prompt a reload; nothing
+   * reloads automatically.
+   */
+  onVersionChange?: () => void;
 }
 
 export function isIndexedDbSupported(): boolean {
@@ -38,7 +51,8 @@ function assertForwardOnly(migrations: readonly LocalStoreMigration[]): void {
 export function openLocalStore(
   dbName: string,
   migrations: readonly LocalStoreMigration[],
-  factory: IDBFactory = globalThis.indexedDB
+  factory: IDBFactory = globalThis.indexedDB,
+  options: OpenLocalStoreOptions = {}
 ): Promise<IDBDatabase> {
   assertForwardOnly(migrations);
 
@@ -62,7 +76,16 @@ export function openLocalStore(
       }
     };
 
-    request.onsuccess = () => resolve(request.result);
+    request.onsuccess = () => {
+      const db = request.result;
+      // Yield to a newer schema version from another tab: closing the stale
+      // connection lets that tab's open proceed instead of being blocked.
+      db.onversionchange = () => {
+        db.close();
+        options.onVersionChange?.();
+      };
+      resolve(db);
+    };
     request.onerror = () =>
       reject(request.error ?? new Error(`Failed to open Local Store ${dbName}`));
     request.onblocked = () => reject(new Error(`Local Store ${dbName} is blocked by another tab`));
