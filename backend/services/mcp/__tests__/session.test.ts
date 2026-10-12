@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { resolveMcpContext, invalidateTokenCache, clearAllTokenCache } from '../session';
+import {
+  resolveMcpContext,
+  invalidateTokenCache,
+  invalidateUserCache,
+  clearAllTokenCache,
+} from '../session';
 import type { McpTokenRecord } from '@/backend/repositories/mcp/mcp-oauth-repository';
 
 const mockTokenRecord: McpTokenRecord = {
@@ -166,6 +171,33 @@ describe('invalidateTokenCache', () => {
     await resolveMcpContext('token');
 
     // Should call repo twice since cache was invalidated
+    expect(mockRepo.getTokenByHash).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a token revoked after it was cached, without waiting for the TTL', async () => {
+    mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+    expect(await resolveMcpContext('token')).not.toBeNull();
+
+    // Simulate POST /mcp/revoke: the row is now revoked and the cache entry is
+    // dropped, so the very next request re-reads the DB instead of the cache.
+    mockRepo.getTokenByHash.mockResolvedValue({
+      ...mockTokenRecord,
+      revoked_at: '2026-01-01T00:00:00Z',
+    });
+    invalidateTokenCache('hash-token');
+
+    expect(await resolveMcpContext('token')).toBeNull();
+  });
+});
+
+describe('invalidateUserCache', () => {
+  it('clears cached contexts for the user, forcing a re-read', async () => {
+    mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+
+    await resolveMcpContext('token');
+    invalidateUserCache('user-123');
+    await resolveMcpContext('token');
+
     expect(mockRepo.getTokenByHash).toHaveBeenCalledTimes(2);
   });
 });

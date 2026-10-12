@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createHash } from 'node:crypto';
 import { createMcpOAuthProvider, McpOAuthError, ACCESS_TOKEN_TTL_MS } from '../oauth-provider';
+import { invalidateTokenCache, invalidateUserCache } from '../token-cache';
 
 const PKCE_VERIFIER = 'verifier';
 const PKCE_CHALLENGE = createHash('sha256').update(PKCE_VERIFIER, 'utf8').digest('base64url');
@@ -69,6 +70,14 @@ vi.mock('@/backend/repositories/mcp/mcp-token-crypto', () => ({
   encryptSecret: vi.fn((p: string) => `enc(${p})`),
   decryptSecret: vi.fn((p: string) => `dec(${p})`),
   constantTimeEqual: vi.fn((a: string, b: string) => a === b),
+}));
+
+vi.mock('@/backend/services/mcp/token-cache', () => ({
+  getCachedContext: vi.fn(),
+  setCachedContext: vi.fn(),
+  invalidateTokenCache: vi.fn(),
+  invalidateUserCache: vi.fn(),
+  clearAllTokenCache: vi.fn(),
 }));
 
 describe('createMcpOAuthProvider', () => {
@@ -267,6 +276,30 @@ describe('createMcpOAuthProvider', () => {
       );
     });
 
+    it('invalidates the cached context for the superseded access token', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+      mockRepo.getAccessTokenByRefreshHash.mockResolvedValue({
+        ...mockTokenRecord,
+        id: 'tok-access',
+        kind: 'access',
+        token_hash: 'access-hash',
+        refresh_token_hash: 'refresh-hash',
+      });
+
+      await provider.refreshAccessToken({ refreshToken: 'refresh-1', client: mockClient });
+
+      expect(invalidateTokenCache).toHaveBeenCalledWith('access-hash');
+    });
+
+    it('invalidates nothing when the paired access row was swept (expired)', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+      mockRepo.getAccessTokenByRefreshHash.mockResolvedValue(null);
+
+      await provider.refreshAccessToken({ refreshToken: 'refresh-1', client: mockClient });
+
+      expect(invalidateTokenCache).not.toHaveBeenCalled();
+    });
+
     it('rejects a revoked refresh token', async () => {
       mockRepo.getTokenByHash.mockResolvedValue({
         ...mockTokenRecord,
@@ -341,13 +374,43 @@ describe('createMcpOAuthProvider', () => {
       await expect(
         provider.revokeToken({ token: 'nope', client: mockClient })
       ).resolves.toBeUndefined();
+
+      expect(invalidateTokenCache).not.toHaveBeenCalled();
+    });
+
+    it('invalidates the cached context for a revoked access token', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue({
+        ...mockTokenRecord,
+        kind: 'access',
+        token_hash: 'access-hash',
+      });
+
+      await provider.revokeToken({ token: 'access-1', client: mockClient });
+
+      expect(invalidateTokenCache).toHaveBeenCalledWith('access-hash');
+    });
+
+    it('invalidates the paired access token cache entry when a refresh token is revoked', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+      mockRepo.getAccessTokenByRefreshHash.mockResolvedValue({
+        ...mockTokenRecord,
+        id: 'tok-access',
+        kind: 'access',
+        token_hash: 'access-hash',
+      });
+
+      await provider.revokeToken({ token: 'refresh-1', client: mockClient });
+
+      expect(invalidateTokenCache).toHaveBeenCalledWith('refresh-hash');
+      expect(invalidateTokenCache).toHaveBeenCalledWith('access-hash');
     });
   });
 
   describe('revokeAllUserTokens', () => {
-    it('revokes all tokens for a user', async () => {
+    it('revokes all tokens for a user and drops their cached contexts', async () => {
       await provider.revokeAllUserTokens('user-123');
       expect(mockRepo.revokeAllUserTokens).toHaveBeenCalledWith('user-123');
+      expect(invalidateUserCache).toHaveBeenCalledWith('user-123');
     });
   });
 });

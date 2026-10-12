@@ -10,6 +10,7 @@ import {
   hashToken,
 } from '@/backend/repositories/mcp/mcp-token-crypto';
 import { ALL_SCOPES, type McpScope } from './scope';
+import { invalidateTokenCache, invalidateUserCache } from './token-cache';
 
 /**
  * OAuth 2.1 authorization-server logic for the public MCP server.
@@ -275,9 +276,14 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
       // the data plane persists the rotated Supabase refresh token there.
       const accessRow = await repo.getAccessTokenByRefreshHash(refreshHash);
 
-      // Rotation: revoke the old pair, then issue a brand-new pair.
+      // Rotation: revoke the old pair, then issue a brand-new pair. Drop any
+      // cached context for the superseded access token so it stops authorizing
+      // requests immediately, not up to 5 minutes later.
       await repo.revokeToken(refreshRow.id);
-      if (accessRow) await repo.revokeToken(accessRow.id);
+      if (accessRow) {
+        await repo.revokeToken(accessRow.id);
+        invalidateTokenCache(accessRow.token_hash);
+      }
 
       return issueTokenPair(repo, {
         client: input.client,
@@ -310,15 +316,20 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
         throw new McpOAuthError(400, 'invalid_grant', 'Token was issued to another client');
       }
       await repo.revokeToken(row.id);
+      // A cached context for this token must not keep authorizing requests.
+      invalidateTokenCache(row.token_hash);
       if (row.kind === 'refresh') {
         const accessRow = await repo.getAccessTokenByRefreshHash(row.token_hash);
-        if (accessRow) await repo.revokeToken(accessRow.id);
+        if (accessRow) {
+          await repo.revokeToken(accessRow.id);
+          invalidateTokenCache(accessRow.token_hash);
+        }
       }
     },
 
     async revokeAllUserTokens(userId) {
       await repo.revokeAllUserTokens(userId);
-      return Promise.resolve();
+      invalidateUserCache(userId);
     },
   };
 }

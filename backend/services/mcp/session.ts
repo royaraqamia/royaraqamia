@@ -1,6 +1,7 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { createMcpOAuthRepository } from '@/backend/repositories/mcp/mcp-oauth-repository';
 import { McpScope } from './scope';
+import { getCachedContext, setCachedContext } from './token-cache';
 import { env } from '@/backend/config/env';
 import { isAdmin } from '@/backend/shared/admin-validator';
 import { logger } from '@/backend/shared/logger';
@@ -20,8 +21,6 @@ export interface McpUserContext {
   tokenExpiresAt: number | null;
   supabase: SupabaseClient<any>;
 }
-
-const TOKEN_CACHE = new Map<string, { ctx: McpUserContext; expiresAt: number }>();
 
 /**
  * Build a user-scoped Supabase client using a live access token from the
@@ -77,9 +76,9 @@ export async function resolveMcpContext(
   const tokenHash = (await import('@/backend/repositories/mcp/mcp-token-crypto')).hashToken(
     bearerToken
   );
-  const cached = TOKEN_CACHE.get(tokenHash);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.ctx;
+  const cached = getCachedContext(tokenHash);
+  if (cached) {
+    return cached;
   }
 
   const repo = createMcpOAuthRepository();
@@ -148,7 +147,7 @@ export async function resolveMcpContext(
 
   // Cache for 5 minutes or until token expiry, whichever is sooner
   const ttl = Math.min(5 * 60 * 1000, new Date(tokenRow.expires_at).getTime() - Date.now());
-  TOKEN_CACHE.set(tokenHash, { ctx, expiresAt: Date.now() + Math.max(ttl, 1000) });
+  setCachedContext(tokenHash, ctx, ttl);
 
   return ctx;
 }
@@ -171,19 +170,4 @@ function anonymousContext(): McpUserContext {
   };
 }
 
-export function invalidateTokenCache(tokenHash: string): void {
-  TOKEN_CACHE.delete(tokenHash);
-}
-
-export function clearAllTokenCache(): void {
-  TOKEN_CACHE.clear();
-}
-
-/**
- * Invalidate all cached contexts for a user (on "revoke all sessions").
- */
-export function invalidateUserCache(_userId: string): void {
-  // We don't have a direct mapping from userId -> tokenHash in cache.
-  // Invalidate entire cache; it's small and short-lived anyway.
-  TOKEN_CACHE.clear();
-}
+export { invalidateTokenCache, clearAllTokenCache, invalidateUserCache } from './token-cache';
