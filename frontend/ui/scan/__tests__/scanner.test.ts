@@ -4,6 +4,7 @@
 // pixels behind it.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { SCAN_FIXTURE_PAYLOAD } from '@/frontend/ui/scan/detector-fixture';
 import { createScanEngine } from '@/frontend/ui/scan/scanner';
 
 class FakeImageData {
@@ -24,20 +25,33 @@ class FakeWorker {
   terminate() {}
 }
 
-type DetectorBehaviour = 'answers' | 'unavailable' | 'stalls';
+/** How the stood-up native detector behaves when it is handed a symbol. */
+type DetectorBehaviour = 'reads' | 'blank' | 'unavailable' | 'stalls';
+
+function nativeReading(rawValue: string, format = 'qr_code') {
+  return {
+    rawValue,
+    format,
+    boundingBox: { x: 4, y: 8, width: 16, height: 32 },
+  };
+}
 
 function stubNativeDetector(
   behaviour: DetectorBehaviour,
-  { formats = ['qr_code', 'ean_13'], found = [] as unknown[] } = {}
+  { formats = ['qr_code', 'ean_13'], extra = [] as unknown[] } = {}
 ) {
-  const detect = vi.fn(() => {
+  const detect = vi.fn((source: unknown) => {
+    void source;
     if (behaviour === 'stalls') return new Promise<never>(() => {});
     if (behaviour === 'unavailable') {
       return Promise.reject(
         new DOMException('Barcode detection service unavailable', 'NotSupportedError')
       );
     }
-    return Promise.resolve(found);
+    // `blank` is the Android failure this exists to catch: the detector answers
+    // every frame, including the one it should know the answer to, with nothing.
+    if (behaviour === 'blank') return Promise.resolve(extra);
+    return Promise.resolve([nativeReading(SCAN_FIXTURE_PAYLOAD), ...extra]);
   });
 
   class Detector {
@@ -60,15 +74,25 @@ afterEach(() => {
 });
 
 describe('createScanEngine', () => {
-  it('uses the browser detector while it answers', async () => {
-    stubNativeDetector('answers');
+  it('keeps the browser detector while it reads the symbol we know', async () => {
+    stubNativeDetector('reads');
 
     const engine = await createScanEngine();
 
     expect(engine.kind).toBe('native');
+    expect(engine.detail).toContain('qr_code');
   });
 
-  it('falls back to the WASM worker when the browser detector has no service behind it', async () => {
+  it('falls back to the WASM worker when the browser detector reads nothing at all', async () => {
+    stubNativeDetector('blank');
+
+    const engine = await createScanEngine();
+
+    expect(engine.kind).toBe('wasm');
+    expect(engine.detail).toContain('failed the check');
+  });
+
+  it('falls back when the browser detector has no service behind it', async () => {
     stubNativeDetector('unavailable');
 
     const engine = await createScanEngine();
@@ -87,7 +111,7 @@ describe('createScanEngine', () => {
   });
 
   it('prefers the WASM worker over a detector that knows none of our formats', async () => {
-    stubNativeDetector('answers', { formats: ['nonsense'] });
+    stubNativeDetector('reads', { formats: ['nonsense'] });
 
     const engine = await createScanEngine();
 
@@ -95,25 +119,27 @@ describe('createScanEngine', () => {
   });
 
   it('reports a native detection in frame coordinates', async () => {
-    stubNativeDetector('answers', {
-      found: [
-        {
-          rawValue: 'https://example.com',
-          format: 'qr_code',
-          boundingBox: { x: 4, y: 8, width: 16, height: 32 },
-        },
-      ],
-    });
+    stubNativeDetector('reads');
 
     const engine = await createScanEngine();
     const codes = await engine.detect(new FakeImageData(8, 8) as unknown as ImageData);
 
     expect(codes).toEqual([
       {
-        rawValue: 'https://example.com',
+        rawValue: SCAN_FIXTURE_PAYLOAD,
         format: 'qr_code',
         box: { x: 4, y: 8, width: 16, height: 32 },
       },
     ]);
+  });
+
+  it('hands the detector the fixture symbol as its first question', async () => {
+    const detect = stubNativeDetector('reads');
+
+    await createScanEngine();
+
+    const [asked] = detect.mock.calls[0] as unknown as [ImageData];
+    expect(asked.width).toBe(asked.height);
+    expect(asked.width).toBeGreaterThan(100);
   });
 });

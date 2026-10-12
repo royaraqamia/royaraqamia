@@ -5,6 +5,7 @@
 // shape, so the page never knows which one it is talking to (ADR-0035).
 
 import { SCAN_FORMATS } from '@/shared/contracts/scan';
+import { SCAN_FIXTURE_PAYLOAD, scanFixtureFrame } from './detector-fixture';
 import type { DetectedCode, ScanFrameRequest, ScanFrameResponse } from './scan-worker';
 
 /** The widest frame handed to a detector while scanning live video. */
@@ -19,6 +20,8 @@ export const SCAN_MAX_UPLOAD_BYTES = 12 * 1024 * 1024;
 export interface ScanEngine {
   /** Which decoder answered: the browser's own, or our WASM worker. */
   readonly kind: 'native' | 'wasm';
+  /** One line naming the decoder and the formats it was asked for, for field diagnostics. */
+  readonly detail: string;
   detect(image: ImageData): Promise<DetectedCode[]>;
   dispose(): void;
 }
@@ -68,20 +71,20 @@ function withDetectTimeout<T>(answer: Promise<T>): Promise<T> {
 }
 
 /**
- * Whether the detector actually answers.
+ * Whether the detector can read a symbol we know the answer to.
  *
- * Chrome on Android builds its barcode backend as a component that may be
- * missing on the device: constructing a `BarcodeDetector` still succeeds, but
- * every `detect()` rejects with `NotSupportedError` ("Barcode detection service
- * unavailable"). Taken on trust, that is a camera preview that reads nothing and
- * an upload that always fails, so the detector is asked once — on a blank frame,
- * before a visitor is waiting on it — and the WASM engine takes over otherwise
- * (ADR-0035 rejects a native detector that cannot keep the promise).
+ * Existing is not the same as answering, and answering is not the same as
+ * working. Chrome on Android builds its barcode backend as a component that may
+ * be missing on the device, and a detector without it reports nothing for every
+ * frame — the camera preview reads nothing, uploads fail, and no error is raised
+ * to give the game away. So the detector has to read one known symbol before it
+ * is handed the camera; anything less and the WASM engine takes over (ADR-0035
+ * rejects a native detector that cannot keep the promise).
  */
-async function nativeDetectorAnswers(detector: NativeBarcodeDetector): Promise<boolean> {
+async function nativeDetectorReadsFixture(detector: NativeBarcodeDetector): Promise<boolean> {
   try {
-    await withDetectTimeout(detector.detect(new ImageData(64, 64)));
-    return true;
+    const found = await withDetectTimeout(detector.detect(scanFixtureFrame()));
+    return found.some((code) => code.rawValue === SCAN_FIXTURE_PAYLOAD);
   } catch {
     return false;
   }
@@ -105,11 +108,18 @@ function toDetectedCode(code: NativeDetectedBarcode): DetectedCode {
  * promise. A native detector that knows only `qr_code` would silently break the
  * "any QR & barcode" promise, so a thin one is rejected in favour of the worker.
  */
+/** Whether this browser exposes its own barcode detector at all. */
+function hasBarcodeDetector(): boolean {
+  return Boolean(
+    (globalThis as unknown as { BarcodeDetector?: NativeBarcodeDetectorConstructor })
+      .BarcodeDetector
+  );
+}
+
 async function createNativeEngine(): Promise<ScanEngine | null> {
   const Detector = (globalThis as unknown as { BarcodeDetector?: NativeBarcodeDetectorConstructor })
     .BarcodeDetector;
   if (!Detector) return null;
-
   let formats: string[] = [...SCAN_FORMATS];
   try {
     const supported = await Detector.getSupportedFormats?.();
@@ -124,10 +134,11 @@ async function createNativeEngine(): Promise<ScanEngine | null> {
   try {
     const detector = new Detector({ formats });
     // Constructing a detector proves nothing: on Android the service behind it
-    // can be absent, and asking is the only way to find out.
-    if (!(await nativeDetectorAnswers(detector))) return null;
+    // can be absent, and reading a symbol we know is the only way to find out.
+    if (!(await nativeDetectorReadsFixture(detector))) return null;
     return {
       kind: 'native',
+      detail: `native (${formats.join(', ')})`,
       async detect(image) {
         const found = await withDetectTimeout(detector.detect(image));
         return found.map(toDetectedCode);
@@ -141,7 +152,7 @@ async function createNativeEngine(): Promise<ScanEngine | null> {
   }
 }
 
-function createWasmEngine(): ScanEngine {
+function createWasmEngine(detail = 'wasm (self-hosted zxing)'): ScanEngine {
   const worker = new Worker(new URL('./scan-worker.ts', import.meta.url), { type: 'module' });
   const pending = new Map<
     number,
@@ -166,6 +177,7 @@ function createWasmEngine(): ScanEngine {
 
   return {
     kind: 'wasm',
+    detail,
     detect(image) {
       nextId += 1;
       const id = nextId;
@@ -190,7 +202,13 @@ function createWasmEngine(): ScanEngine {
 
 /** The best decoder this device can offer. */
 export async function createScanEngine(): Promise<ScanEngine> {
-  return (await createNativeEngine()) ?? createWasmEngine();
+  const native = await createNativeEngine();
+  if (native) return native;
+  // Naming *why* the browser's detector was passed over is the difference
+  // between a bug report we can act on and one we cannot.
+  return createWasmEngine(
+    hasBarcodeDetector() ? 'wasm (native detector present, but it failed the check)' : undefined
+  );
 }
 
 /**

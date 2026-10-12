@@ -23,6 +23,12 @@ import {
 } from '@/shared/contracts/scan';
 import { computeFrameTransform, displayToFrame, frameToDisplay } from './overlay';
 import {
+  ScanDebugPanel,
+  describeFrame,
+  useScanDebug,
+  type ScanDiagnostics,
+} from './scan-debug-panel';
+import {
   FrameGrabber,
   SCAN_MAX_FRAME_WIDTH,
   SCAN_MAX_UPLOAD_BYTES,
@@ -87,6 +93,10 @@ export function ScanPage() {
   const cooldownRef = useRef(0);
   const frameErrorsRef = useRef(0);
 
+  const debug = useScanDebug();
+  const debugRef = useRef<ScanDiagnostics | null>(null);
+  const [diagnostics, setDiagnostics] = useState<ScanDiagnostics | null>(null);
+
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -120,6 +130,60 @@ export function ScanPage() {
       return engine;
     });
     return enginePromiseRef.current;
+  }
+
+  // Mirrors of `status` and `error` for the diagnostics panel, which samples on
+  // a timer rather than on every state change.
+  const statusMirrorRef = useRef<Status>('idle');
+  const errorMirrorRef = useRef<string | null>(null);
+  useEffect(() => {
+    statusMirrorRef.current = status;
+  }, [status]);
+  useEffect(() => {
+    errorMirrorRef.current = error;
+  }, [error]);
+
+  // The panel samples a mutable record instead of re-rendering on every frame:
+  // ten decodes a second must not cost ten renders.
+  useEffect(() => {
+    if (!debug) return;
+    debugRef.current = {
+      status: 'idle',
+      engine: 'not started',
+      video: 'no camera',
+      frames: 0,
+      errors: 0,
+      codes: 0,
+      frame: 'no frame yet',
+      error: '-',
+    };
+    const timer = window.setInterval(() => {
+      const current = debugRef.current;
+      if (!current) return;
+      current.status = statusMirrorRef.current;
+      current.error = errorMirrorRef.current ?? '-';
+      setDiagnostics({ ...current });
+    }, 500);
+    return () => {
+      window.clearInterval(timer);
+      debugRef.current = null;
+      setDiagnostics(null);
+    };
+  }, [debug]);
+
+  /** Records what one grabbed frame looked like, when the panel is on. */
+  function noteFrame(frame: ImageData) {
+    const current = debugRef.current;
+    if (!current) return;
+    current.frames += 1;
+    current.errors = frameErrorsRef.current;
+    const video = videoRef.current;
+    current.video = video
+      ? `${video.videoWidth}x${video.videoHeight} readyState=${video.readyState}`
+      : 'no camera';
+    // A pass over every pixel is not free, and a sample says everything a
+    // decoder needs to know: is this frame black, or is it the room?
+    if (current.frames % 5 === 1) current.frame = describeFrame(frame);
   }
 
   function clearOverlay() {
@@ -247,11 +311,15 @@ export function ScanPage() {
       const frame = grabber.grab(video, video.videoWidth, video.videoHeight, SCAN_MAX_FRAME_WIDTH);
       if (frame) {
         frameSizeRef.current = { width: frame.width, height: frame.height };
+        // Diagnostics read the frame before the WASM engine is handed (and
+        // detaches) its pixels.
+        if (debugRef.current) noteFrame(frame);
         try {
           const codes = await engine.detect(frame);
           if (!runningRef.current) return;
           frameErrorsRef.current = 0;
           codesRef.current = codes;
+          if (debugRef.current) debugRef.current.codes = codes.length;
           drawOverlay();
           const pick = largestCode(codes);
           if (pick) {
@@ -293,7 +361,8 @@ export function ScanPage() {
       // Warm the decoder before the camera opens: on the WASM path the engine
       // still has to be fetched and instantiated, and doing that afterwards
       // drops the first frames on the floor.
-      await ensureEngine();
+      const engine = await ensureEngine();
+      if (debugRef.current) debugRef.current.engine = engine.detail;
 
       const stream = await navigator.mediaDevices.getUserMedia({
         video: {
@@ -526,6 +595,8 @@ export function ScanPage() {
           onRescan={rescan}
         />
       )}
+
+      {diagnostics && <ScanDebugPanel diagnostics={diagnostics} />}
     </div>
   );
 }
