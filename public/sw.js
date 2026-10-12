@@ -75,7 +75,14 @@ async function cacheFirst(request) {
     }
     return response;
   } catch {
-    return caches.match(request);
+    // The earlier match was already falsy, so never resolve to `undefined`:
+    // respondWith(undefined) throws. Fall back to the offline page for
+    // navigations and a clean 503 for everything else.
+    if (isNavigationRequest(request)) {
+      const fallback = await caches.match(FALLBACK_URL);
+      if (fallback) return fallback;
+    }
+    return new Response('Offline', { status: 503 });
   }
 }
 

@@ -77,6 +77,11 @@ describe('sw-routing predicates', () => {
       '/spendtrack/app',
       '/linksnap/app',
       '/blogpress/app',
+      '/habitflow/api/habits',
+      '/spendtrack/api/sync',
+      '/linksnap/api/links',
+      '/linksnap/api/admin/stats',
+      '/habitflow/api/auth/user',
     ]) {
       expect(routing.isNeverCache(u(path))).toBe(true);
     }
