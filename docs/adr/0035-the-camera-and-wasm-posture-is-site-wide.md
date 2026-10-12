@@ -31,3 +31,14 @@ ever lands — accepted as the cost of iOS support, and mitigated by self-hostin
 the origin. `'unsafe-eval'` is still not permitted. A future public tool that wants the camera
 inherits the permission without a header change; a future tool that must not have it needs an
 explicit override.
+
+## Amendment (2026-10-12): existing is not the same as working
+
+Chrome on Android builds its barcode backend as a component that can be missing on the device. A
+`BarcodeDetector` constructed without it still looks fine, but every `detect()` rejects with
+`NotSupportedError` ("Barcode detection service unavailable") — a camera preview that reads nothing
+and an upload that always fails. The Scanner therefore asks the native detector for one blank frame
+before it hands it the camera, and bounds every decode with a timeout: a detector that cannot
+answer, or stops answering mid-session, is dropped for the WASM worker. That is the same rule as
+rejecting a detector that knows too few formats — the engine has to keep the promise, not merely
+exist.

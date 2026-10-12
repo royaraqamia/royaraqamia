@@ -38,6 +38,55 @@ interface NativeBarcodeDetectorConstructor {
   getSupportedFormats?: () => Promise<string[]>;
 }
 
+/** How long one decode may take before the detector behind it is given up on. */
+const DETECT_TIMEOUT_MS = 4000;
+
+/**
+ * The detector's answer, or a rejection when it takes too long.
+ *
+ * A stalled decode is worse than a failed one: the frame loop serialises on it,
+ * so a promise that never settles means nothing is ever read again and the
+ * visitor is left with a live preview that does nothing.
+ */
+function withDetectTimeout<T>(answer: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error('انتهت مهلة قراءة الرَّمز.')),
+      DETECT_TIMEOUT_MS
+    );
+    answer.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error: unknown) => {
+        clearTimeout(timer);
+        reject(error instanceof Error ? error : new Error('تعذَّرت قراءة الرَّمز.'));
+      }
+    );
+  });
+}
+
+/**
+ * Whether the detector actually answers.
+ *
+ * Chrome on Android builds its barcode backend as a component that may be
+ * missing on the device: constructing a `BarcodeDetector` still succeeds, but
+ * every `detect()` rejects with `NotSupportedError` ("Barcode detection service
+ * unavailable"). Taken on trust, that is a camera preview that reads nothing and
+ * an upload that always fails, so the detector is asked once — on a blank frame,
+ * before a visitor is waiting on it — and the WASM engine takes over otherwise
+ * (ADR-0035 rejects a native detector that cannot keep the promise).
+ */
+async function nativeDetectorAnswers(detector: NativeBarcodeDetector): Promise<boolean> {
+  try {
+    await withDetectTimeout(detector.detect(new ImageData(64, 64)));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function toDetectedCode(code: NativeDetectedBarcode): DetectedCode {
   return {
     rawValue: code.rawValue,
@@ -74,10 +123,13 @@ async function createNativeEngine(): Promise<ScanEngine | null> {
 
   try {
     const detector = new Detector({ formats });
+    // Constructing a detector proves nothing: on Android the service behind it
+    // can be absent, and asking is the only way to find out.
+    if (!(await nativeDetectorAnswers(detector))) return null;
     return {
       kind: 'native',
       async detect(image) {
-        const found = await detector.detect(image);
+        const found = await withDetectTimeout(detector.detect(image));
         return found.map(toDetectedCode);
       },
       dispose() {

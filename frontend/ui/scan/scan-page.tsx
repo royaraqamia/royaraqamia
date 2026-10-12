@@ -51,6 +51,9 @@ const SCAN_INTERVAL_MS = 120;
 /** After a hit, ignore the same code for a moment so a rescan does not bounce back. */
 const RESCAN_COOLDOWN_MS = 1200;
 
+/** Consecutive decode failures that mean the decoder, not the frame, is broken. */
+const SCAN_MAX_FRAME_ERRORS = 10;
+
 function cameraErrorMessage(caught: unknown): string {
   const name = caught instanceof DOMException ? caught.name : '';
   switch (name) {
@@ -82,6 +85,7 @@ export function ScanPage() {
   const disposedRef = useRef(false);
   const nextRunRef = useRef(0);
   const cooldownRef = useRef(0);
+  const frameErrorsRef = useRef(0);
 
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -246,6 +250,7 @@ export function ScanPage() {
         try {
           const codes = await engine.detect(frame);
           if (!runningRef.current) return;
+          frameErrorsRef.current = 0;
           codesRef.current = codes;
           drawOverlay();
           const pick = largestCode(codes);
@@ -254,7 +259,18 @@ export function ScanPage() {
             return;
           }
         } catch {
-          // One undecodable frame must not end the session.
+          // One undecodable frame is normal — a hand shakes, a frame blurs. Ten
+          // in a row is a decoder that has stopped working (Chrome on Android
+          // can lose its barcode service mid-session), and saying so beats a
+          // preview that reads nothing until the visitor gives up.
+          frameErrorsRef.current += 1;
+          if (frameErrorsRef.current >= SCAN_MAX_FRAME_ERRORS) {
+            stopCamera();
+            setError(
+              'تعذَّر قراءة الرَّمز بكاميرا هذا الجهاز. ارفع صورة تحتوي على الرَّمز بدلًا من ذلك.'
+            );
+            return;
+          }
         }
       }
     }
@@ -265,6 +281,7 @@ export function ScanPage() {
   async function startCamera() {
     setError(null);
     setStatus('starting');
+    frameErrorsRef.current = 0;
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setStatus('idle');
