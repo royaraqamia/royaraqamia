@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.84.1] - 2026-10-12
+
+### Changed
+- BlogPress offline drafts implemented; all gates pass.
+
 ## [1.84.0] - 2026-10-12
 
 ### Changed
