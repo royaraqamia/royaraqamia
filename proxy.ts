@@ -46,5 +46,14 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  // Middleware runs before the cache lookup, so every path matched here costs
+  // one invocation. On Hobby the binding budgets are Function Invocations and
+  // Fluid Active CPU, and most requests to this site are assets that need
+  // neither an auth decision nor the country cookie. Excluding them is safe:
+  // the middleware only ever acts on navigations and API calls (`/admin`,
+  // `/blogpress`, `/auth/*` carry no extension; the API layer authenticates
+  // itself with `withAuthenticatedUser`).
+  matcher: [
+    '/((?!_next/static|_next/image|monitoring|favicon\\.ico|manifest\\.json|sw\\.js|sw-version\\.js|sw-push-config\\.js|sw-routing\\.js|design-system/|\\.well-known/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|css|js|mjs|map|json|txt|xml|woff|woff2|ttf|otf|mp4|webmanifest)$).*)',
+  ],
 };

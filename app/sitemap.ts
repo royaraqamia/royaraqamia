@@ -5,7 +5,13 @@ import { loadPublishedPostSitemapEntries } from '@/backend/loaders/community';
 // The sitemap reads published posts from the DB, so it is ISR rather than
 // build-static. This keeps newly scheduled/auto-published posts flowing in even
 // when they bypass the blogpress controller's revalidation hint.
-export const revalidate = 60;
+//
+// 300s (not 60s): the published filter admits `scheduled AND publish_at <= now`
+// rows without any write, so time is the only signal for those — but crawlers
+// re-fetch this URL constantly and every regeneration is an ISR write plus
+// render CPU. Publishing revalidates `/sitemap.xml` explicitly, so only the
+// scheduled-publish path depends on this window.
+export const revalidate = 300;
 
 interface SitemapEntryConfig {
   path: string;

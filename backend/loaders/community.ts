@@ -12,7 +12,7 @@ import type { PublicUser } from '@/shared/contracts/users';
 import type { CommunitySearchResult } from '@/shared/contracts/community';
 import { COMMUNITY_TAGS } from '@/backend/shared/community-cache-tags';
 
-const COMMUNITY_CACHE_SECONDS = 60;
+const COMMUNITY_CACHE_SECONDS = 300;
 
 const pub = () => createBlogpressPostsModule(getPublicSupabase()).repository;
 

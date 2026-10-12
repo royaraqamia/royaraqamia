@@ -7,7 +7,7 @@ import { EmptyState } from '@/frontend/ui/primitives/empty-state';
 import { BackButton } from '@/frontend/ui/shared/back-button';
 import { PostCard } from '@/app/community/_components/post-card';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 function displayName(member: { name: string | null; username: string }): string {
   return member.name?.trim() || `@${member.username}`;

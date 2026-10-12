@@ -8,7 +8,7 @@ import { CommunityMembersPanel, CommunityMembersStrip } from './_components/comm
 import { ComposeFab } from './_components/compose-fab';
 import { COMMUNITY_PAGE_SIZE } from './_components/constants';
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export const metadata: Metadata = {
   title: 'المجتمع',

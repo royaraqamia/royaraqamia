@@ -16,7 +16,11 @@ function loadSentry(): Promise<SentryModule> {
         environment: process.env.VERCEL_ENV || process.env.NODE_ENV || 'development',
         release: appVersion.releaseVersion,
         integrations: [],
-        tracesSampleRate: IS_PRODUCTION ? 0.1 : 0,
+        // Sentry events leave the browser through the `/monitoring` tunnel, and
+        // every tunnelled event is a Vercel function invocation. Client
+        // transactions are the highest-volume, lowest-signal events, so they are
+        // sampled hard; exceptions are not sampled and are unaffected.
+        tracesSampleRate: IS_PRODUCTION ? 0.01 : 0,
       });
       return sentry;
     });

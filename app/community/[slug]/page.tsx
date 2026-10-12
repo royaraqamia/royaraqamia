@@ -53,7 +53,7 @@ const highlightLanguages: Record<string, LanguageFn> = {
 
 const highlightOptions = { languages: highlightLanguages, detect: false } as const;
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export async function generateStaticParams(): Promise<{ slug: string }[]> {
   const slugs = await loadPublishedPostSlugs();

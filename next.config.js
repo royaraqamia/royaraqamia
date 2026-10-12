@@ -33,9 +33,14 @@ const nextConfig = {
   poweredByHeader: false,
   transpilePackages: ['motion'],
   experimental: {
+    // Every client navigation/prefetch that misses this cache is a full RSC
+    // function invocation. On Hobby the Fluid Active CPU budget (4h/month) is
+    // the binding limit, so the client cache is the cheapest place to remove
+    // invocations: 30s/300s was refetching shared layouts constantly on a site
+    // whose data changes on publish (tag-invalidated), not on a timer.
     staleTimes: {
-      dynamic: 30,
-      static: 300,
+      dynamic: 120,
+      static: 1800,
     },
     // Expand lucide-react named imports to per-icon modules so only used
     // glyphs are bundled instead of the barrel's icon map.
@@ -43,6 +48,22 @@ const nextConfig = {
   },
   typescript: {
     ignoreBuildErrors: true,
+  },
+  // Keep files that can never be `require`d at runtime out of the traced set
+  // copied into each function bundle: source maps, test files, and package
+  // metadata. Note this is defensive, not the storage fix — Functions Storage on
+  // Hobby (10 GB) is dominated by the *number* of retained deployments, which is
+  // what `.github/workflows/prune-deployments.yml` addresses. The broad
+  // `test/`+`docs/` directory patterns are deliberately left out: some packages
+  // ship runtime files in those directories, and the saving is unmeasured.
+  outputFileTracingExcludes: {
+    '/*': [
+      '**/*.map',
+      '**/*.test.*',
+      '**/*.spec.*',
+      '**/__tests__/**',
+      '**/{README,CHANGELOG,LICENSE,license}*',
+    ],
   },
   images: {
     formats: ['image/avif', 'image/webp'],
@@ -125,7 +146,7 @@ const nextConfig = {
       {
         source: '/community/:path*',
         headers: [
-          { key: 'Cache-Control', value: 'public, s-maxage=60, stale-while-revalidate=600' },
+          { key: 'Cache-Control', value: 'public, s-maxage=300, stale-while-revalidate=1800' },
         ],
       },
       // The homepage is fully static (prerendered at build); let the CDN serve
@@ -201,13 +222,33 @@ const sentryWebpackPluginOptions = {
   release: process.env.SENTRY_RELEASE ?? `v${process.env.npm_package_version}`,
   silent: true,
   dryRun: !process.env.SENTRY_AUTH_TOKEN,
-  widenClientFileUpload: true,
+  // Source maps are only useful if they are uploaded. With no auth token there
+  // is nothing to upload, so skip generating them (`.next/server` was 77% maps
+  // on a local build) — those bytes otherwise land in every deployment's
+  // function payload. With a token, upload then delete them from the output.
+  sourcemaps: process.env.SENTRY_AUTH_TOKEN
+    ? { deleteSourcemapsAfterUpload: true }
+    : { disable: true },
+  // Client events are tunnelled through `/monitoring`, a Vercel function
+  // invocation per event (the CSP forbids direct sentry.io calls, so the tunnel
+  // stays). Keeping it cheap is a sampling problem — see the client trace rate
+  // in frontend/shared/sentry.ts.
   tunnelRoute: '/monitoring',
-  hideSourceMaps: true,
+  // Middleware runs on nearly every request here, so Sentry's per-invocation
+  // transaction wrapping is the most expensive place it can be enabled. The
+  // middleware only reads cookies and geo headers; errors there surface
+  // through the route handlers anyway.
+  autoInstrumentMiddleware: false,
+  // Annotating every JSX element with data-sentry-* attributes inflates the RSC
+  // payload and the client chunks; we do not use component-name search.
+  reactComponentAnnotation: { enabled: false },
+  // The daily rates refresh is already covered by its own logging.
+  automaticVercelMonitors: false,
   webpack: {
+    // NOTE: `hideSourceMaps`, `widenClientFileUpload`, `reactComponentAnnotation`
+    // and `automaticVercelMonitors` do not live here in SDK v11 — the previous
+    // values were silently ignored. See the top-level options above.
     treeshake: { removeDebugLogging: true },
-    automaticVercelMonitors: true,
-    reactComponentAnnotation: { enabled: true },
   },
 };
 
