@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.83.8] - 2026-10-12
+
+### Fixed
+- pace deployment pruning around Vercel's deletion rate limit
+
 ## [1.83.7] - 2026-10-12
 
 ### Changed
