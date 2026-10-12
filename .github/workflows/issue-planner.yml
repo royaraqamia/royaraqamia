@@ -161,7 +161,7 @@ jobs:
         id: plan
         if: steps.guard.outputs.run == 'true'
         timeout-minutes: 35
-        uses: anomalyco/opencode/github@57fa34f23599f65dd1027f9caac31e6c576ce644 # v1.18.21
+        uses: anomalyco/opencode/github@1c63fe9afeff4ead2623e9bbb2e2bc40e6205c0b # v1.18.21
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
