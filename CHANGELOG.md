@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.83.1] - 2026-10-12
+
+### Changed
+- bump motion from 13.5.0 to 14.0.0
+- bump the minor-and-patch group with 44 updates
+- bump anomalyco/opencode/github
+- bump the minor-and-patch group with 5 updates
+
 ## [1.83.0] - 2026-10-11
 
 ### Changed
