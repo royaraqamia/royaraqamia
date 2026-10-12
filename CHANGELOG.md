@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.85.2] - 2026-10-12
+
+### Changed
+- drop the diagnostics panel now that the cause is known
+
 ## [1.85.1] - 2026-10-12
 
 ### Fixed
