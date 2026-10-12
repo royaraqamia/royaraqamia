@@ -203,12 +203,18 @@ function createWasmEngine(detail = 'wasm (self-hosted zxing)'): ScanEngine {
 /** The best decoder this device can offer. */
 export async function createScanEngine(): Promise<ScanEngine> {
   const native = await createNativeEngine();
-  if (native) return native;
-  // Naming *why* the browser's detector was passed over is the difference
-  // between a bug report we can act on and one we cannot.
-  return createWasmEngine(
-    hasBarcodeDetector() ? 'wasm (native detector present, but it failed the check)' : undefined
-  );
+  const engine =
+    native ??
+    // Naming *why* the browser's detector was passed over is the difference
+    // between a bug report we can act on and one we cannot.
+    createWasmEngine(
+      hasBarcodeDetector() ? 'wasm (native detector present, but it failed the check)' : undefined
+    );
+
+  // Which decoder a device ended up with is the first thing worth knowing when
+  // a camera session reads nothing in the field.
+  console.info(`[scan] decoding with ${engine.detail}`);
+  return engine;
 }
 
 /**

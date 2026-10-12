@@ -66,6 +66,9 @@ function stubNativeDetector(
 beforeEach(() => {
   vi.stubGlobal('ImageData', FakeImageData);
   vi.stubGlobal('Worker', FakeWorker);
+  // The engine announces itself on the console for field diagnosis; the tests
+  // assert that it does, so the line cannot quietly disappear.
+  vi.spyOn(console, 'info').mockImplementation(() => {});
 });
 
 afterEach(() => {
@@ -81,6 +84,15 @@ describe('createScanEngine', () => {
 
     expect(engine.kind).toBe('native');
     expect(engine.detail).toContain('qr_code');
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('native'));
+  });
+
+  it('says so on the console when the browser detector was passed over', async () => {
+    stubNativeDetector('blank');
+
+    await createScanEngine();
+
+    expect(console.info).toHaveBeenCalledWith(expect.stringContaining('failed the check'));
   });
 
   it('falls back to the WASM worker when the browser detector reads nothing at all', async () => {

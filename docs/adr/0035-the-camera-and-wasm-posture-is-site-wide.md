@@ -41,5 +41,7 @@ game away. The Scanner therefore makes the native detector read one symbol it kn
 (`scripts/generate-scan-fixture.mjs` writes it) before it is handed the camera, and bounds every
 decode with a timeout: a detector that cannot read that symbol, or stops answering mid-session, is
 dropped for the WASM worker. That is the same rule as rejecting a detector that knows too few
-formats — the engine has to keep the promise, not merely exist. `/scan?debug=scan` shows which
-engine a device ended up with, and whether the frames reaching it are live or black.
+formats — the engine has to keep the promise, not merely exist. The engine a device ended up with
+is announced once on the console (`[scan] decoding with …`) — which is how the Android detector
+above was confirmed in the field, on a phone whose native detector answered every frame with
+nothing.
