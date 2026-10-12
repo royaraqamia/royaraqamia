@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.83.6] - 2026-10-12
+
+### Fixed
+- invalidate the token cache on revoke and rotation
+
 ## [1.83.5] - 2026-10-12
 
 ### Fixed
