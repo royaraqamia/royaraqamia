@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.83.2] - 2026-10-12
+
+### Changed
+- bump the minor-and-patch group across 1 directory with 2 updates
+
+### Fixed
+- chain the issue implementer via dispatch, not workflow_run
+
 ## [1.83.1] - 2026-10-12
 
 ### Changed
