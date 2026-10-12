@@ -4,7 +4,8 @@ import { type RefObject } from 'react';
 import { Button } from '@/frontend/ui/primitives/button';
 import { Input } from '@/frontend/ui/primitives/input';
 import { Card, CardContent } from '@/frontend/ui/primitives/card';
-import { Hash, ScanLine, CheckCircle2, AlertCircle, Search } from 'lucide-react';
+import { Hash, ScanBarcode, ScanLine, CheckCircle2, AlertCircle, Search } from 'lucide-react';
+import Link from 'next/link';
 import { m } from 'motion/react';
 import { cardVariants } from './verify-variants';
 
@@ -80,6 +81,14 @@ export function VerifySearchCard({
                 COMP-2026-UHVW9SG5
               </code>
             </button>
+
+            <Link
+              href="/scan"
+              className="group inline-flex items-center gap-1.5 rounded-lg px-2 py-1 transition-colors hover:bg-muted hover:text-foreground"
+            >
+              <ScanBarcode className="size-3.5 text-primary/80 transition-transform group-hover:scale-110" />
+              <span>أو امسح رمز الشَّهادة بالكاميرا</span>
+            </Link>
 
             {isValidFormat === false && code.length >= 5 && (
               <m.div

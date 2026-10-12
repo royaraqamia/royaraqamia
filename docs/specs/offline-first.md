@@ -19,13 +19,14 @@ user action is ever lost.
 
 ## Scope
 
-| Surface                                                               | Offline read                  | Offline write |
-| --------------------------------------------------------------------- | ----------------------------- | ------------- |
-| Public content (Community, Rates, Certificates/Verify, Showcase)      | Yes — SWR cache               | No            |
-| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress            | Yes — from Local Store        | Yes — Outbox  |
-| Non-inventory leads — Training Application, Project Request, Retainer | n/a                           | Yes — Outbox  |
-| Consultation Booking (reserves Availability Slots)                    | cached availability read-only | No            |
-| Auth, Push, Media Downloader, Rates refresh, MCP, Admin               | No                            | No            |
+| Surface                                                               | Offline read                    | Offline write |
+| --------------------------------------------------------------------- | ------------------------------- | ------------- |
+| Public content (Community, Rates, Certificates/Verify, Showcase)      | Yes — SWR cache                 | No            |
+| Scanner (decodes on the device; owns no server surface)               | Yes — once the engine is cached | No            |
+| Account tools — HabitFlow, SpendTrack, LinkSnap, BlogPress            | Yes — from Local Store          | Yes — Outbox  |
+| Non-inventory leads — Training Application, Project Request, Retainer | n/a                             | Yes — Outbox  |
+| Consultation Booking (reserves Availability Slots)                    | cached availability read-only   | No            |
+| Auth, Push, Media Downloader, Rates refresh, MCP, Admin               | No                              | No            |
 
 ## Architecture
 

@@ -1,5 +1,5 @@
 {
-  "measure": ["/"],
+  "measure": ["/", "/scan"],
   "default": {
     "totalGzipKb": 560,
     "jsGzipKb": 260,
@@ -7,5 +7,11 @@
     "htmlGzipKb": 63,
     "fontsGzipKb": 170
   },
-  "routes": {}
+  "routes": {
+    "/scan": {
+      "comment": "The Scanner owns no server surface, so its budget is the initial bundle alone: the decoder and the result card are lazy, and the ~1 MB WASM engine is a static asset fetched only once a visitor actually scans.",
+      "totalGzipKb": 500,
+      "jsGzipKb": 250
+    }
+  }
 }

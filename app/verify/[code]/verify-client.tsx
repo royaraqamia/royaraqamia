@@ -18,6 +18,7 @@ import {
   Check,
   ExternalLink,
   Search,
+  ScanBarcode,
 } from 'lucide-react';
 import { m, useReducedMotion } from 'motion/react';
 import Link from 'next/link';
@@ -401,6 +402,13 @@ function CertificateFound({ certificate }: { certificate: PublicCertificate }) {
                           className="[&_svg]:w-36 [&_svg]:h-36 md:[&_svg]:w-40 md:[&_svg]:h-40"
                         />
                       </div>
+                      <Link
+                        href="/scan"
+                        className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs text-neutral-500 transition-colors hover:bg-neutral-200/60 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-100"
+                      >
+                        <ScanBarcode className="size-3.5" />
+                        أو امسح الرَّمز بماسِح الرُّموز
+                      </Link>
                     </m.div>
                   </div>
                 </CardContent>

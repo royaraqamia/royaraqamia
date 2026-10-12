@@ -6,6 +6,7 @@ import {
   GraduationCap,
   Link2,
   NotebookPen,
+  ScanBarcode,
   ScanLine,
   Wallet,
   type LucideIcon,
@@ -21,6 +22,7 @@ export type AppProduct =
   | 'consultation'
   | 'training'
   | 'downloader'
+  | 'scan'
   | 'community';
 
 export interface AppProductDef {
@@ -67,6 +69,13 @@ export const APP_PRODUCTS: AppProductDef[] = [
     appPath: '/downloader',
     landingPath: '/downloader',
     icon: Download,
+  },
+  {
+    id: 'scan',
+    label: 'ماسِح الرُّموز',
+    appPath: '/scan',
+    landingPath: '/scan',
+    icon: ScanBarcode,
   },
   {
     id: 'linksnap',
