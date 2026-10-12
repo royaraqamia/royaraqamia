@@ -33,6 +33,7 @@
     "perf:baseline": "node scripts/perf-baseline.mjs",
     "perf:baseline:update": "node scripts/perf-baseline.mjs --update-baseline",
     "perf:check": "node scripts/perf-baseline.mjs --check",
+    "prune:deployments": "node scripts/prune-deployments.mjs",
     "prepare": "husky"
   },
   "dependencies": {

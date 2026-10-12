@@ -1,0 +1,75 @@
+name: 'Prune Deployments'
+
+# Vercel Hobby counts Deployment Storage and Functions Storage as sums over
+# *all retained deployments* of the project, 10 GB each, with no overage and no
+# automatic retention. This repository pushes ~20 commits/day plus a release
+# commit per release, so several hundred deployments pile up within a month and
+# both storage meters climb while the site is idle — that was 7.06/10 GB and
+# 4.88/10 GB on 2026-10-12.
+#
+# This job deletes everything except the newest `keep` deployments, always
+# preserving Vercel's rollback candidates and the current production deployment.
+# It runs daily rather than weekly because the meters grow ~20 deployments/day:
+# pruning daily keeps them flat at ~1.3 GB instead of sawtoothing up towards the
+# cap between runs. It does not reduce the deployment *rate*; the release
+# pipeline keeps creating one deployment per push (see
+# scripts/prune-deployments.mjs for why the alternative — skipping the
+# `[skip ci]` release commit — was not taken).
+#
+# Run the workflow manually with dry_run first if you want to see the list.
+
+on:
+  schedule:
+    # Daily, off-peak (03:41 UTC).
+    - cron: '41 3 * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'List what would be deleted without deleting anything'
+        type: boolean
+        default: true
+      keep:
+        description: 'How many of the newest deployments to keep'
+        type: string
+        default: '60'
+
+concurrency:
+  group: prune-deployments
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  prune:
+    name: Prune deployments
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          install-web-deps: 'false'
+          cache-next: 'false'
+
+      - name: Prune
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          # A scheduled run prunes for real; a manual run defaults to a dry run.
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+          KEEP: ${{ inputs.keep || '60' }}
+        run: |
+          set -euo pipefail
+
+          args=(--keep="${KEEP}" --min-age-days=1)
+          if [ "${DRY_RUN}" = "true" ]; then
+            args+=(--dry-run)
+          fi
+
+          node scripts/prune-deployments.mjs "${args[@]}"
