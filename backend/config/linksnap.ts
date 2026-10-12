@@ -13,6 +13,7 @@ import { GetSystemStatsService } from '@/backend/services/linksnap/get-system-st
 import { UnlockLinkService } from '@/backend/services/linksnap/unlock-link';
 import {
   RedirectUrlService,
+  type DeferredWork,
   type LinkClickedNotifier,
 } from '@/backend/services/linksnap/redirect-url';
 import { getAdminSupabase, getPublicSupabase } from '@/backend/config/supabase';
@@ -72,11 +73,12 @@ export function createGetSystemStatsService(): GetSystemStatsService {
   return new GetSystemStatsService(createAdminRepository(), env.adminEmails);
 }
 
-export function createRedirectUrlService(): RedirectUrlService {
+export function createRedirectUrlService(defer?: DeferredWork): RedirectUrlService {
   return new RedirectUrlService(
     createShortLinkRepository(),
     createAnalyticsRepository(),
-    createLinkClickedNotifier()
+    createLinkClickedNotifier(),
+    defer
   );
 }
 

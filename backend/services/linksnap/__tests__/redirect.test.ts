@@ -138,6 +138,80 @@ describe('RedirectUrlService.execute', () => {
     expect(analyticsRepository.recordClick).not.toHaveBeenCalled();
   });
 
+  it('rejects a code outside the code alphabet without querying the repository', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+
+    const service = new RedirectUrlService(shortLinkRepository, analyticsRepository);
+
+    // Scanner traffic that is not shaped like a code (`/wp-admin` is, and still
+    // costs a lookup) and decoded junk that cannot be one. Generated codes are
+    // alphanumeric, custom codes are sanitized to `[a-zA-Z0-9_-]`, so anything
+    // outside that alphabet used to cost a Supabase round-trip and a redirect
+    // into a full `/linksnap` render for no reason.
+    for (const code of [
+      'caf\u00e9',
+      'a b',
+      'quote"',
+      'a/b',
+      '\u0645\u0631\u062d\u0628\u0627',
+      'a'.repeat(65),
+    ]) {
+      await expect(
+        service.execute(code, { referrer: null, userAgent: null, ipCountry: null })
+      ).rejects.toMatchObject({ kind: 'invalid' });
+    }
+
+    expect(shortLinkRepository.findByCode).not.toHaveBeenCalled();
+  });
+
+  it('documents that word-shaped scanner paths still reach the lookup', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+    const service = new RedirectUrlService(shortLinkRepository, analyticsRepository);
+
+    // Shape alone cannot reject these; blocking them is the edge firewall's job.
+    await expect(
+      service.execute('wp-admin', { referrer: null, userAgent: null, ipCountry: null })
+    ).rejects.toMatchObject({ kind: 'not-found' });
+    expect(shortLinkRepository.findByCode).toHaveBeenCalledWith('wp-admin');
+  });
+
+  it('still resolves custom codes that use the full sanitized alphabet', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ...linkFixture,
+      code: 'my-link_2026',
+    });
+    (analyticsRepository.recordClick as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'x' });
+
+    const service = new RedirectUrlService(shortLinkRepository, analyticsRepository);
+
+    await expect(
+      service.execute('my-link_2026', { referrer: null, userAgent: null, ipCountry: null })
+    ).resolves.toBe('https://example.com');
+    expect(shortLinkRepository.findByCode).toHaveBeenCalledWith('my-link_2026');
+  });
+
+  it('defers the click write through the injected defer hook', async () => {
+    const { shortLinkRepository, analyticsRepository } = makeDeps();
+    (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue(linkFixture);
+    const deferred: Promise<unknown>[] = [];
+    (analyticsRepository.recordClick as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'x' });
+
+    const service = new RedirectUrlService(
+      shortLinkRepository,
+      analyticsRepository,
+      undefined,
+      (promise) => deferred.push(promise)
+    );
+
+    await service.execute('abc123', { referrer: null, userAgent: null, ipCountry: null });
+
+    expect(deferred).toHaveLength(1);
+    await expect(deferred[0]).resolves.toEqual({ id: 'x' });
+  });
+
   it('throws password-protected when the link has a password hash', async () => {
     const { shortLinkRepository, analyticsRepository } = makeDeps();
     (shortLinkRepository.findByCode as ReturnType<typeof vi.fn>).mockResolvedValue({

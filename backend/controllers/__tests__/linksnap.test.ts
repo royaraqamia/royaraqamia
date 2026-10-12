@@ -4,6 +4,8 @@ const mockGetAuthenticatedUser = vi.fn();
 const mockListLinks = { execute: vi.fn() };
 const mockBulkAction = { execute: vi.fn() };
 const mockModerate = { execute: vi.fn() };
+const mockRedirect = { execute: vi.fn() };
+const mockRedirectFactory = vi.fn((_defer?: unknown) => mockRedirect);
 
 vi.mock('@sentry/nextjs', () => ({ captureException: vi.fn() }));
 
@@ -30,10 +32,16 @@ vi.mock('@/backend/config/linksnap', () => ({
   createShortenUrlService: () => ({ execute: vi.fn() }),
   createUnlockLinkService: () => ({ execute: vi.fn() }),
   createUpdateLinkService: () => ({ execute: vi.fn() }),
-  createRedirectUrlService: () => ({ execute: vi.fn() }),
+  createRedirectUrlService: (defer: unknown) => mockRedirectFactory(defer),
 }));
 
-import { bulkLinkAction, listLinks, moderateLink } from '@/backend/controllers/linksnap';
+import {
+  bulkLinkAction,
+  listLinks,
+  moderateLink,
+  redirectShortCode,
+} from '@/backend/controllers/linksnap';
+import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
 
 function link(overrides: Record<string, unknown> = {}) {
   return {
@@ -121,5 +129,64 @@ describe('linksnap controller', () => {
     await moderateLink('Bearer token', { code: 'abc123', isBlocked: true });
 
     expect(mockModerate.execute).toHaveBeenCalledWith('admin@b.com', 'abc123', true);
+  });
+});
+
+describe('redirectShortCode', () => {
+  const info = { referrer: null, userAgent: null, ipCountry: null, origin: 'https://x.test' };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('answers a code that cannot exist with a cacheable 404 instead of a render', async () => {
+    mockRedirect.execute.mockRejectedValue(
+      new ShortLinkRedirectError('Short link not found.', 'invalid')
+    );
+
+    const result = await redirectShortCode('caf\u00e9', info);
+
+    expect(result).toEqual({
+      status: 404,
+      body: null,
+      headers: { 'Cache-Control': 'public, s-maxage=3600' },
+    });
+  });
+
+  it('caches the reserved-path 404 the same way', async () => {
+    mockRedirect.execute.mockRejectedValue(
+      new ShortLinkRedirectError('Short link not found.', 'reserved')
+    );
+
+    const result = await redirectShortCode('does.not.exist', info);
+
+    expect(result).toEqual({
+      status: 404,
+      body: null,
+      headers: { 'Cache-Control': 'public, s-maxage=3600' },
+    });
+  });
+
+  it('still redirects unknown-but-possible codes to the linksnap error page', async () => {
+    mockRedirect.execute.mockRejectedValue(
+      new ShortLinkRedirectError('Short link not found.', 'not-found')
+    );
+
+    const result = await redirectShortCode('missing', info);
+
+    expect(result).toEqual({
+      status: 302,
+      redirect: 'https://royaraqamia.com/linksnap?error=not-found&code=missing',
+    });
+  });
+
+  it('forwards the defer hook to the service so clicks survive the response', async () => {
+    mockRedirect.execute.mockResolvedValue('https://example.com');
+    const defer = vi.fn();
+
+    const result = await redirectShortCode('abc123', info, defer);
+
+    expect(result).toEqual({ status: 302, redirect: 'https://example.com' });
+    expect(mockRedirectFactory).toHaveBeenCalledWith(defer);
   });
 });

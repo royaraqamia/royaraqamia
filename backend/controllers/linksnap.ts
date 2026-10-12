@@ -21,11 +21,22 @@ import {
   slugAvailabilityRateLimitPolicy,
   unlockRateLimitPolicy,
 } from '@/backend/config/rate-limiter';
-import { ShortLinkRedirectError } from '@/backend/services/linksnap/redirect-url';
+import {
+  type DeferredWork,
+  ShortLinkRedirectError,
+} from '@/backend/services/linksnap/redirect-url';
 import { getLinkStatus } from '@/backend/services/linksnap/link-status';
 import type { AnalyticsDateRange } from '@/backend/repositories/linksnap/analytics-repository';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withBearerUser } from '@/backend/transport/bearer-handler';
+
+/**
+ * Codes that cannot exist (reserved paths, wrong alphabet) are answered here
+ * and cached at the edge. Scanner traffic is a large share of the requests that
+ * reach this route, and without a cache header each hit costs an invocation to
+ * say "no" again.
+ */
+const NOT_FOUND_CACHE_HEADERS = { 'Cache-Control': 'public, s-maxage=3600' };
 
 function parseDate(value: unknown): Date | undefined {
   if (typeof value !== 'string' || !value.trim()) return undefined;
@@ -360,10 +371,11 @@ export async function redirectShortCode(
     userAgent: string | null;
     ipCountry: string | null;
     origin: string;
-  }
+  },
+  defer?: DeferredWork
 ): Promise<HttpResult> {
   try {
-    const originalUrl = await createRedirectUrlService().execute(code, {
+    const originalUrl = await createRedirectUrlService(defer).execute(code, {
       referrer: info.referrer,
       userAgent: info.userAgent,
       ipCountry: info.ipCountry,
@@ -372,7 +384,14 @@ export async function redirectShortCode(
     return { status: 302, redirect: originalUrl };
   } catch (err: unknown) {
     if (err instanceof ShortLinkRedirectError && err.kind === 'reserved') {
-      return jsonResult(404, null);
+      return jsonResult(404, null, { headers: NOT_FOUND_CACHE_HEADERS });
+    }
+
+    // A code that cannot exist (wrong alphabet, too long) never reaches the
+    // database and is not worth a render: answer the scanner with a cacheable
+    // 404 instead of redirecting it into the `/linksnap` error page.
+    if (err instanceof ShortLinkRedirectError && err.kind === 'invalid') {
+      return jsonResult(404, null, { headers: NOT_FOUND_CACHE_HEADERS });
     }
 
     const errorMessage = err instanceof Error ? err.message : 'Unknown error';
