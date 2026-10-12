@@ -16,6 +16,7 @@
 | `npm run perf:baseline`                     | Shipped-weight report + budget status (needs `npm run build`; see `docs/performance.md`) |
 | `npm run perf:check`                        | Same, but exits 1 on a budget breach (run in CI)                                         |
 | `npm run perf:baseline:update`              | Re-record `perf/baseline.json` after an intended change                                  |
+| `npm run prune:deployments -- --dry-run`    | List the Vercel deployments a prune would delete (see `docs/vercel-usage.md`)            |
 | `npm run version:next`                      | Version next rehearsal                                                                   |
 
 ## Runtime metrics
@@ -59,6 +60,11 @@ Four `.github/workflows` drive the OpenCode agent (DeepSeek 4.1 Flash):
 **Manual override:** `vercel deploy` (preview) or `vercel deploy --prod` (production). Or use the `deploy-to-vercel` skill.
 
 **Linked project:** Use `vercel create_git_project` for repo-linked auto-deploys.
+
+**Retained deployments:** Hobby charges Deployment Storage and Functions Storage
+across _all_ retained deployments and never prunes them, so
+`.github/workflows/prune-deployments.yml` deletes everything but the newest 25
+weekly. Budget, measurements and levers: `docs/vercel-usage.md`.
 
 ## Release versioning
 
