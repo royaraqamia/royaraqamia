@@ -1,4 +1,4 @@
-import { HabitRepository, Habit, HabitLog, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import { HabitRepository, Habit, HabitLog, HabitRestoreSchema } from '@/shared/contracts/habitflow';
 import { AppError } from '@/backend/shared/errors';
 
 export interface HabitBackupPayload {
@@ -70,11 +70,14 @@ export class HabitBackupService {
     return rows.join('\n');
   }
 
-  async restoreBackup(input: { habits: unknown; logs: unknown }): Promise<void> {
-    if (!Array.isArray(input.habits) || !Array.isArray(input.logs)) {
+  async restoreBackup(input: unknown): Promise<void> {
+    const parsed = HabitRestoreSchema.safeParse(input);
+    if (!parsed.success) {
       throw new AppError('Invalid backup format. Must contain habits and logs arrays.', 400);
     }
 
-    await this.repository.restoreFromBackup(input as HabitRestoreInput);
+    // Validate before delegating: the repository clears the user's data first,
+    // so a malformed element must be rejected before that wipe is reachable.
+    await this.repository.restoreFromBackup(parsed.data);
   }
 }

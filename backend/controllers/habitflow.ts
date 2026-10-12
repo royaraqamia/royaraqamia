@@ -3,7 +3,7 @@ import { createHabitBackupService, createHabitService } from '@/backend/config/h
 import { errorResult } from '@/backend/middleware/http';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
-import type { Habit, HabitRestoreInput } from '@/shared/contracts/habitflow';
+import type { Habit } from '@/shared/contracts/habitflow';
 
 export async function getHabits(): Promise<HttpResult> {
   return withAuthenticatedUser(
@@ -140,11 +140,11 @@ export async function exportHabitsCsv(): Promise<HttpResult> {
   );
 }
 
-export async function restoreBackup(body: HabitRestoreInput): Promise<HttpResult> {
+export async function restoreBackup(body: unknown): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId, supabase }) => {
       const { service, mode } = createHabitBackupService(userId, supabase);
-      await service.restoreBackup({ habits: body.habits, logs: body.logs });
+      await service.restoreBackup(body);
       return jsonResult(200, { success: true, mode });
     },
     { mapError: errorResult }

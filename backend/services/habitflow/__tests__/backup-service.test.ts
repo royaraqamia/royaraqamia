@@ -1,7 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { HabitBackupService } from '@/backend/services/habitflow/backup-service';
 import { AppError } from '@/backend/shared/errors';
-import type { HabitRepository, Habit, HabitLog } from '@/shared/contracts/habitflow';
+import {
+  HABIT_BACKUP_HABITS_MAX,
+  HABIT_BACKUP_LOGS_MAX,
+  type HabitRepository,
+  type Habit,
+  type HabitLog,
+} from '@/shared/contracts/habitflow';
 
 function makeRepository() {
   const repository: HabitRepository = {
@@ -116,5 +122,47 @@ describe('HabitBackupService.restoreBackup', () => {
     await service.restoreBackup(input);
 
     expect(repository.restoreFromBackup).toHaveBeenCalledWith(input);
+  });
+
+  it('rejects a non-object element before deleting anything', async () => {
+    const repository = makeRepository();
+    const service = new HabitBackupService(repository);
+
+    await expect(service.restoreBackup({ habits: [1], logs: [] })).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    expect(repository.restoreFromBackup).not.toHaveBeenCalled();
+  });
+
+  it('rejects an element missing required fields before deleting anything', async () => {
+    const repository = makeRepository();
+    const service = new HabitBackupService(repository);
+
+    await expect(
+      service.restoreBackup({ habits: [{ id: 'h-1', frequency: 'daily' }], logs: [] })
+    ).rejects.toMatchObject({ statusCode: 400 });
+    expect(repository.restoreFromBackup).not.toHaveBeenCalled();
+  });
+
+  it('rejects an over-cap habits array before deleting anything', async () => {
+    const repository = makeRepository();
+    const service = new HabitBackupService(repository);
+    const habits = Array.from({ length: HABIT_BACKUP_HABITS_MAX + 1 }, () => habitFixture);
+
+    await expect(service.restoreBackup({ habits, logs: [] })).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    expect(repository.restoreFromBackup).not.toHaveBeenCalled();
+  });
+
+  it('rejects an over-cap logs array before deleting anything', async () => {
+    const repository = makeRepository();
+    const service = new HabitBackupService(repository);
+    const logs = Array.from({ length: HABIT_BACKUP_LOGS_MAX + 1 }, () => logFixture);
+
+    await expect(service.restoreBackup({ habits: [], logs })).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    expect(repository.restoreFromBackup).not.toHaveBeenCalled();
   });
 });

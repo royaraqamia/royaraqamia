@@ -94,31 +94,45 @@ export interface HabitRepository {
   getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }>;
 }
 
-export interface HabitBackupHabit {
-  id: string;
-  name: string;
-  frequency: string;
-  archived?: boolean;
-  createdAt?: string;
-  target?: number | null;
-  targetPeriod?: HabitTargetPeriod | null;
-  reminderTime?: string | null;
-}
+/** Caps that bound a restore payload before the destructive clear-then-insert. */
+export const HABIT_BACKUP_HABITS_MAX = 1000;
+export const HABIT_BACKUP_LOGS_MAX = 100_000;
 
-export interface HabitBackupLog {
-  id: string;
-  habitId: string;
-  date: string;
-  completed: boolean;
-  completedAt?: string | null;
-  kind?: string;
-  note?: string | null;
-}
+/**
+ * One habit inside an imported backup. Optional fields stay permissive for
+ * older backups, while the fields the restore maps are enforced so a malformed
+ * element is rejected before anything is deleted.
+ */
+export const HabitBackupHabitSchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1).max(120),
+  frequency: z.string().min(1),
+  archived: z.boolean().optional(),
+  createdAt: z.string().optional(),
+  target: z.number().int().nullable().optional(),
+  targetPeriod: z.enum(['week', 'month']).nullable().optional(),
+  reminderTime: z.string().nullable().optional(),
+});
 
-export interface HabitRestoreInput {
-  habits: HabitBackupHabit[];
-  logs: HabitBackupLog[];
-}
+export const HabitBackupLogSchema = z.object({
+  id: z.string().min(1),
+  habitId: z.string().min(1),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  completed: z.boolean(),
+  completedAt: z.string().nullable().optional(),
+  kind: z.string().optional(),
+  note: z.string().max(500).nullable().optional(),
+});
+
+/** Validated restore payload; parsed before the repository is allowed to wipe. */
+export const HabitRestoreSchema = z.object({
+  habits: z.array(HabitBackupHabitSchema).max(HABIT_BACKUP_HABITS_MAX),
+  logs: z.array(HabitBackupLogSchema).max(HABIT_BACKUP_LOGS_MAX),
+});
+
+export type HabitBackupHabit = z.infer<typeof HabitBackupHabitSchema>;
+export type HabitBackupLog = z.infer<typeof HabitBackupLogSchema>;
+export type HabitRestoreInput = z.infer<typeof HabitRestoreSchema>;
 
 export interface HabitStats {
   currentStreak: number;
