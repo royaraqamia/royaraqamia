@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.83.7] - 2026-10-12
+
+### Changed
+- record the Hobby usage budget and what it costs to exceed it
+- prune retained Vercel deployments daily
+- reject impossible codes before the database and defer click writes
+- cut Fluid Active CPU, function invocations and ISR churn
+
+### Fixed
+- answer GET /mcp with 405 instead of an SSE stream nothing can complete
+
 ## [1.83.6] - 2026-10-12
 
 ### Fixed
