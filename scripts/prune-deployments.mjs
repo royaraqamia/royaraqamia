@@ -33,7 +33,18 @@ const PAGE_SIZE = 100;
  */
 const DEFAULT_KEEP = 60;
 const DEFAULT_MIN_AGE_DAYS = 1;
-const DEFAULT_MAX_DELETE = 400;
+/**
+ * Vercel rate-limits deployment deletion to roughly 200 per 10 minutes
+ * (`429 rate_limited`, code `now-rm`). Stay under it and let the next scheduled
+ * run pick up the remainder rather than spraying failures: the daily cron
+ * converges within a day or two from any starting point.
+ */
+const DEFAULT_MAX_DELETE = 180;
+
+/** A `429` from the deployment-deletion endpoint, as opposed to a real failure. */
+export function isRateLimited(status, body) {
+  return status === 429 || body?.error?.code === 'rate_limited';
+}
 
 export function parseArgs(argv) {
   const flags = { 'dry-run': false };
@@ -160,6 +171,7 @@ async function main() {
 
   let deleted = 0;
   let failed = 0;
+  let paused = false;
   for (const deployment of batch) {
     const id = deployment.uid ?? deployment.id;
     const query = new URLSearchParams({ teamId });
@@ -170,15 +182,27 @@ async function main() {
     if (ok) {
       deleted++;
       console.log(`  deleted ${id} (${deployment.url ?? 'no url'})`);
-    } else {
-      failed++;
-      console.log(`  failed  ${id} (${status}): ${JSON.stringify(body)?.slice(0, 200)}`);
+      continue;
     }
+    if (isRateLimited(status, body)) {
+      paused = true;
+      break;
+    }
+    failed++;
+    console.log(`  failed  ${id} (${status}): ${JSON.stringify(body)?.slice(0, 200)}`);
   }
 
-  console.log(`Deleted ${deleted} deployment(s); ${failed} failed.`);
-  // A prune that deletes nothing because the API changed should be visible.
-  if (!dryRun && deleted === 0 && batch.length > 0) process.exit(1);
+  const remaining = batch.length - deleted;
+  if (paused) {
+    console.log(
+      `Paused on Vercel's deletion rate limit (~200 per 10 minutes). ${remaining} ` +
+        `deployment(s) left; the next scheduled run prunes them.`
+    );
+  }
+  console.log(`Deleted ${deleted} deployment(s); ${failed} failed; ${remaining} deferred.`);
+  // A prune that deletes nothing while the API answers must be visible — but a
+  // rate-limit pause after real deletions is normal convergence, not a failure.
+  if (!dryRun && deleted === 0 && failed > 0) process.exit(1);
 }
 
 /**

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseArgs, selectForDeletion } from '../prune-deployments.mjs';
+import { isRateLimited, parseArgs, selectForDeletion } from '../prune-deployments.mjs';
 
 const DAY = 24 * 60 * 60 * 1000;
 const NOW = Date.parse('2026-10-12T00:00:00.000Z');
@@ -74,5 +74,18 @@ describe('parseArgs', () => {
       keep: '25',
       'min-age-days': '3',
     });
+  });
+});
+
+describe('isRateLimited', () => {
+  it('recognises the 429 that Vercel returns past ~200 deletions per 10 minutes', () => {
+    expect(isRateLimited(429, { error: { code: 'rate_limited', name: 'now-rm' } })).toBe(true);
+    expect(isRateLimited(403, { error: { code: 'rate_limited' } })).toBe(true);
+  });
+
+  it('does not swallow a real failure', () => {
+    expect(isRateLimited(403, { error: { code: 'forbidden' } })).toBe(false);
+    expect(isRateLimited(404, { error: { code: 'not_found' } })).toBe(false);
+    expect(isRateLimited(200, null)).toBe(false);
   });
 });
