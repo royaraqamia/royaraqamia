@@ -10,17 +10,40 @@ import {
   subscribeToPush,
   unsubscribeFromPush,
 } from '@/frontend/api/push';
+import {
+  hasNativePushToken,
+  healNativePushRegistration,
+  installNativePushHandlers,
+  isNativePushSupported,
+  registerNativePush,
+  unregisterNativePush,
+} from '@/frontend/api/push-native';
 import { VAPID_PUBLIC_KEY } from '@/frontend/shared/constants';
 import { cn } from '@/frontend/shared/cn';
 
 type PushToggleState =
-  { kind: 'unsupported' } | { kind: 'denied' } | { kind: 'enabled' } | { kind: 'disabled' };
+  | { kind: 'checking' }
+  | { kind: 'unsupported' }
+  | { kind: 'denied' }
+  | { kind: 'enabled' }
+  | { kind: 'disabled' };
 
 export function PushNotificationToggle() {
-  const [state, setState] = useState<PushToggleState>({ kind: 'unsupported' });
+  const [state, setState] = useState<PushToggleState>({ kind: 'checking' });
   const [busy, setBusy] = useState(false);
+  // The shell and the browser reach push through different transports, and the
+  // answer only exists on the client (the bridge is injected after hydration).
+  const [native, setNative] = useState(false);
 
-  const refreshState = useCallback(async () => {
+  const refreshState = useCallback(async (isNative: boolean) => {
+    if (isNative) {
+      // Inside the app the token registry is the source of truth: a stored token
+      // means this device is registered, whatever the browser would report.
+      setState(
+        isPushDisabledByUser() || !hasNativePushToken() ? { kind: 'disabled' } : { kind: 'enabled' }
+      );
+      return;
+    }
     if (!isPushSupported()) {
       setState({ kind: 'unsupported' });
       return;
@@ -42,14 +65,27 @@ export function PushNotificationToggle() {
   }, []);
 
   useEffect(() => {
-    void refreshState();
+    const isNative = isNativePushSupported();
+    setNative(isNative);
+    if (isNative) {
+      installNativePushHandlers();
+      // Refresh a token FCM may have rotated while the app was closed.
+      healNativePushRegistration();
+    }
+    void refreshState(isNative);
   }, [refreshState]);
 
   // Auto-heal: permission already granted but no subscription yet, or the
   // existing subscription was bound to a rotated application server key
   // (VAPID regeneration). Re-subscribe automatically in both cases. Endpoint
   // rotation while no page is open is handled inside the service worker.
+  //
+  // The transport question is asked here directly rather than read off state:
+  // this effect runs in the same commit as the one that sets `native`, so state
+  // would still say "web" inside the shell and the WebView would be subscribed
+  // to a transport that cannot deliver.
   useEffect(() => {
+    if (isNativePushSupported()) return;
     if (!isPushSupported()) return;
     if (Notification.permission !== 'granted') return;
     if (isPushDisabledByUser()) return;
@@ -74,6 +110,19 @@ export function PushNotificationToggle() {
     if (busy) return;
     setBusy(true);
     try {
+      if (native) {
+        if (state.kind === 'enabled') {
+          await unregisterNativePush();
+          setState({ kind: 'disabled' });
+          return;
+        }
+        const result = await registerNativePush();
+        if (result === 'registered') setState({ kind: 'enabled' });
+        else if (result === 'denied') setState({ kind: 'denied' });
+        else setState({ kind: 'disabled' });
+        return;
+      }
+
       if (state.kind === 'enabled') {
         await unsubscribeFromPush();
         setState({ kind: 'disabled' });
@@ -88,6 +137,10 @@ export function PushNotificationToggle() {
     }
   };
 
+  // Nothing to render until the bridge question is answered, so the browser-only
+  // "unsupported" message never flashes inside the app.
+  if (state.kind === 'checking') return null;
+
   if (state.kind === 'unsupported') {
     return (
       <div className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] text-muted-foreground/60">
@@ -101,7 +154,11 @@ export function PushNotificationToggle() {
     return (
       <div className="flex items-center justify-center gap-1.5 px-3 py-2.5 text-[11px] text-muted-foreground/70">
         <Ban size={14} className="shrink-0" />
-        <span>الإشعارات محظورة في المتصفِّح — فعِّلها من إعدادات الموقع</span>
+        <span>
+          {native
+            ? 'الإشعارات محظورة في النظام — فعِّلها من إعدادات التطبيق'
+            : 'الإشعارات محظورة في المتصفِّح — فعِّلها من إعدادات الموقع'}
+        </span>
       </div>
     );
   }

@@ -3,6 +3,7 @@ import {
   NATIVE_AUTH_CALLBACK_URL,
   isNativeApp,
   nativePlatform,
+  nativePlugin,
   openInSystemBrowser,
 } from '../native-shell';
 
@@ -96,6 +97,31 @@ describe('openInSystemBrowser', () => {
     });
 
     await expect(openInSystemBrowser(GOOGLE)).resolves.toBe(false);
+  });
+});
+
+describe('nativePlugin', () => {
+  it('returns the plugin registered on the bridge', () => {
+    const register = vi.fn();
+    setBridge({ isNativePlatform: () => true, Plugins: { PushNotifications: { register } } });
+
+    expect(nativePlugin<{ register: unknown }>('PushNotifications')?.register).toBe(register);
+  });
+
+  it('returns undefined when the plugin is not installed', () => {
+    setBridge({ isNativePlatform: () => true, Plugins: {} });
+
+    expect(nativePlugin('PushNotifications')).toBeUndefined();
+  });
+
+  it('returns undefined without a bridge', () => {
+    expect(nativePlugin('PushNotifications')).toBeUndefined();
+  });
+
+  it('ignores a non-object plugin entry', () => {
+    setBridge({ isNativePlatform: () => true, Plugins: { PushNotifications: 'nope' } });
+
+    expect(nativePlugin('PushNotifications')).toBeUndefined();
   });
 });
 

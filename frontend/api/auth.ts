@@ -1,6 +1,7 @@
 import { request } from '@/frontend/transport/http';
 import { createClient } from '@/frontend/transport/supabase/client';
 import { isNativeApp, openInSystemBrowser } from '@/frontend/shared/native-shell';
+import { unregisterNativePush } from '@/frontend/api/push-native';
 import type { Session, User } from '@supabase/supabase-js';
 
 export type { Session, User };
@@ -39,11 +40,17 @@ export function subscribeToSessionChanges(listener: SessionChangeListener): () =
 }
 
 export async function signOutSession(): Promise<void> {
+  // Every sign-out path drops the device token; see `logout()`.
+  await unregisterNativePush();
   const client = await createClient();
   await client.auth.signOut();
 }
 
 export async function logout(): Promise<void> {
+  // Drop this device's native push token while the session still authorizes the
+  // call, so the next person to use the phone does not inherit the
+  // notifications. Best-effort: never block a sign-out on it.
+  await unregisterNativePush();
   try {
     await request('/auth/api/logout', { method: 'POST' });
   } catch {

@@ -4,24 +4,16 @@ import type {
 } from '@/backend/repositories/push/push-subscriptions-repository';
 import type { PushPayload } from '@/shared/contracts/push';
 import { logger } from '@/backend/shared/logger';
+import {
+  DEFAULT_MAX_CONCURRENCY,
+  DEFAULT_RETRY_DELAY_MS,
+  MAX_SEND_ATTEMPTS,
+  isTransientSendError,
+  mapWithConcurrency,
+  sleep,
+} from '@/backend/services/push/dispatch';
 
 const TTL_SECONDS = 86400;
-const DEFAULT_MAX_CONCURRENCY = 10;
-const MAX_SEND_ATTEMPTS = 3;
-const DEFAULT_RETRY_DELAY_MS = 200;
-const RETRYABLE_STATUS_CODES = new Set([408, 429, 500, 502, 503, 504]);
-const TRANSIENT_ERROR_PATTERNS = [
-  'ECONNRESET',
-  'EPIPE',
-  'ETIMEDOUT',
-  'ECONNREFUSED',
-  'EAI_AGAIN',
-  'ENOTFOUND',
-  'socket hang up',
-  'socket disconnected',
-  'network socket',
-  'TLS',
-] as const;
 
 export interface WebPushSendOptions {
   TTL?: number;
@@ -51,17 +43,6 @@ export interface PushServiceOptions {
   retryDelayMs?: number;
 }
 
-function isTransientSendError(error: unknown): boolean {
-  const status = (error as PushWebPushError).statusCode;
-  if (status && RETRYABLE_STATUS_CODES.has(status)) return true;
-  const message = String(error instanceof Error ? error.message : error);
-  return TRANSIENT_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
 function isEndpointAllowed(endpoint: string, allowlist: string[]): boolean {
   let host: string;
   try {
@@ -78,21 +59,6 @@ function isEndpointAllowed(endpoint: string, allowlist: string[]): boolean {
     }
     return host === trimmed;
   });
-}
-
-export async function mapWithConcurrency<T>(
-  items: T[],
-  limit: number,
-  fn: (item: T) => Promise<void>
-): Promise<void> {
-  let index = 0;
-  const workers = Array.from({ length: Math.max(1, Math.min(limit, items.length)) }, async () => {
-    while (index < items.length) {
-      const current = index++;
-      await fn(items[current]!);
-    }
-  });
-  await Promise.all(workers);
 }
 
 /**

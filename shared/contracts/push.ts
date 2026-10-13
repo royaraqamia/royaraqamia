@@ -14,12 +14,28 @@ export const PushUnsubscribeSchema = z.object({
   endpoint: z.url(),
 });
 
+/**
+ * A native device token: the FCM registration id the Capacitor shell receives
+ * from its push plugin. Unlike a Web Push subscription it carries no keys — the
+ * transport authenticates with the Firebase service account, not the browser.
+ */
+export const PushDeviceTokenSchema = z.object({
+  token: z.string().trim().min(1).max(4096),
+  platform: z.enum(['android', 'ios']).default('android'),
+});
+
+export const PushDeviceUnregisterSchema = z.object({
+  token: z.string().trim().min(1).max(4096),
+});
+
 export const PushWebhookSchema = z.object({
   user_ids: z.array(z.string().uuid()).min(1).max(10000),
 });
 
 export type PushSubscriptionInput = z.infer<typeof PushSubscriptionSchema>;
 export type PushWebhookInput = z.infer<typeof PushWebhookSchema>;
+export type PushDeviceTokenInput = z.infer<typeof PushDeviceTokenSchema>;
+export type PushDeviceUnregisterInput = z.infer<typeof PushDeviceUnregisterSchema>;
 
 export interface PushPayload {
   title: string;

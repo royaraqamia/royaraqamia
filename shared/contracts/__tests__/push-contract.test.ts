@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
+  PushDeviceTokenSchema,
+  PushDeviceUnregisterSchema,
   PushSubscriptionSchema,
   PushWebhookSchema,
   toPushUrl,
@@ -101,6 +103,62 @@ describe('PushWebhookSchema', () => {
   it('rejects garbage input', () => {
     expect(PushWebhookSchema.safeParse(null).success).toBe(false);
     expect(PushWebhookSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('PushDeviceTokenSchema', () => {
+  it('accepts an FCM token with a platform', () => {
+    const result = PushDeviceTokenSchema.safeParse({
+      token: 'fMs6Q0abcDEF:APA91bH-1234567890',
+      platform: 'android',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('defaults the platform to android when the client omits it', () => {
+    const result = PushDeviceTokenSchema.safeParse({ token: 'fMs6Q0abcDEF' });
+    expect(result.success).toBe(true);
+    expect(result.success && result.data.platform).toBe('android');
+  });
+
+  it('trims surrounding whitespace from the token', () => {
+    const result = PushDeviceTokenSchema.safeParse({ token: '  token-value  ' });
+    expect(result.success && result.data.token).toBe('token-value');
+  });
+
+  it('rejects an unknown platform', () => {
+    expect(PushDeviceTokenSchema.safeParse({ token: 'x', platform: 'windows' }).success).toBe(
+      false
+    );
+  });
+
+  it('rejects an empty or blank token', () => {
+    expect(PushDeviceTokenSchema.safeParse({ token: '' }).success).toBe(false);
+    expect(PushDeviceTokenSchema.safeParse({ token: '   ' }).success).toBe(false);
+  });
+
+  it('rejects an oversized token', () => {
+    expect(PushDeviceTokenSchema.safeParse({ token: 'x'.repeat(4097) }).success).toBe(false);
+  });
+
+  it('rejects garbage input', () => {
+    expect(PushDeviceTokenSchema.safeParse(null).success).toBe(false);
+    expect(PushDeviceTokenSchema.safeParse({}).success).toBe(false);
+  });
+});
+
+describe('PushDeviceUnregisterSchema', () => {
+  it('accepts a token', () => {
+    expect(PushDeviceUnregisterSchema.safeParse({ token: 'fMs6Q0abcDEF' }).success).toBe(true);
+  });
+
+  it('rejects a blank token', () => {
+    expect(PushDeviceUnregisterSchema.safeParse({ token: '  ' }).success).toBe(false);
+  });
+
+  it('rejects garbage input', () => {
+    expect(PushDeviceUnregisterSchema.safeParse(null).success).toBe(false);
+    expect(PushDeviceUnregisterSchema.safeParse({ token: 42 }).success).toBe(false);
   });
 });
 

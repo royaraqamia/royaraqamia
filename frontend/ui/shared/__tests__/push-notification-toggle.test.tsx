@@ -6,6 +6,7 @@ const { mocks } = vi.hoisted(() => ({
   mocks: {
     isPushSupported: vi.fn(),
     isPushDisabledByUser: vi.fn(),
+    setPushDisabledByUser: vi.fn(),
     applicationServerKeyMatches: vi.fn(),
     subscribeToPush: vi.fn(),
     unsubscribeFromPush: vi.fn(),
@@ -13,7 +14,19 @@ const { mocks } = vi.hoisted(() => ({
   },
 }));
 
+const { nativeMocks } = vi.hoisted(() => ({
+  nativeMocks: {
+    isNativePushSupported: vi.fn(),
+    hasNativePushToken: vi.fn(),
+    registerNativePush: vi.fn(),
+    unregisterNativePush: vi.fn(),
+    healNativePushRegistration: vi.fn(),
+    installNativePushHandlers: vi.fn(),
+  },
+}));
+
 vi.mock('@/frontend/api/push', () => mocks);
+vi.mock('@/frontend/api/push-native', () => nativeMocks);
 
 function installGlobals({ existing = false } = {}) {
   const subscription = {
@@ -47,6 +60,10 @@ beforeEach(() => {
   mocks.refreshSubscriptionLiveness.mockResolvedValue(undefined);
   mocks.subscribeToPush.mockResolvedValue('subscribed');
   mocks.unsubscribeFromPush.mockResolvedValue(undefined);
+  nativeMocks.isNativePushSupported.mockReturnValue(false);
+  nativeMocks.hasNativePushToken.mockReturnValue(false);
+  nativeMocks.registerNativePush.mockResolvedValue('registered');
+  nativeMocks.unregisterNativePush.mockResolvedValue(undefined);
   installGlobals();
 });
 
@@ -115,6 +132,63 @@ describe('PushNotificationToggle auto-heal', () => {
     fireEvent.click(screen.getByRole('button'));
     await waitFor(() => {
       expect(mocks.unsubscribeFromPush).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+describe('PushNotificationToggle inside the native shell', () => {
+  beforeEach(() => {
+    nativeMocks.isNativePushSupported.mockReturnValue(true);
+  });
+
+  it('never touches the browser push path', async () => {
+    render(<PushNotificationToggle />);
+
+    const button = await screen.findByRole('button');
+    expect(button).toHaveTextContent('تفعيل إشعارات الجهاز');
+    expect(nativeMocks.installNativePushHandlers).toHaveBeenCalledTimes(1);
+    expect(nativeMocks.healNativePushRegistration).toHaveBeenCalledTimes(1);
+    expect(mocks.subscribeToPush).not.toHaveBeenCalled();
+  });
+
+  it('registers the device token through the native transport', async () => {
+    render(<PushNotificationToggle />);
+    const button = await screen.findByRole('button');
+
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(nativeMocks.registerNativePush).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button')).toHaveTextContent('إيقاف إشعارات الجهاز');
+    });
+  });
+
+  it('shows the native blocked message when the permission is refused', async () => {
+    nativeMocks.registerNativePush.mockResolvedValue('denied');
+    render(<PushNotificationToggle />);
+    fireEvent.click(await screen.findByRole('button'));
+
+    await waitFor(() => {
+      expect(screen.getByText(/إعدادات التطبيق/)).toBeTruthy();
+    });
+  });
+
+  it('unregisters a device that already has a token', async () => {
+    nativeMocks.hasNativePushToken.mockReturnValue(true);
+    render(<PushNotificationToggle />);
+
+    const button = await screen.findByRole('button');
+    expect(button).toHaveTextContent('إيقاف إشعارات الجهاز');
+
+    fireEvent.click(button);
+
+    await waitFor(() => {
+      expect(nativeMocks.unregisterNativePush).toHaveBeenCalledTimes(1);
+    });
+    await waitFor(() => {
+      expect(screen.getByRole('button')).toHaveTextContent('تفعيل إشعارات الجهاز');
     });
   });
 });

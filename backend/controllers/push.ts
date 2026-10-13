@@ -1,11 +1,15 @@
 import { timingSafeEqual } from 'crypto';
 import { getAuthUser } from '@/backend/middleware/auth-guard';
 import { createPushSubscriptionsRepository } from '@/backend/repositories/push/supabase-repository';
+import { createDevicePushTokensRepository } from '@/backend/repositories/push/supabase-device-tokens-repository';
 import { checkRateLimit } from '@/backend/config/rate-limiter';
 import { createPushNotifier, runAfter } from '@/backend/config/push';
-import { mapWithConcurrency } from '@/backend/services/push/push-service';
+import { getAdminSupabase } from '@/backend/config/supabase';
+import { mapWithConcurrency } from '@/backend/services/push/dispatch';
 import { env } from '@/backend/config/env';
 import {
+  PushDeviceTokenSchema,
+  PushDeviceUnregisterSchema,
   PushSubscriptionSchema,
   PushUnsubscribeSchema,
   PushWebhookSchema,
@@ -15,6 +19,8 @@ import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 
 const SUBSCRIBE_RATE_LIMIT = 20;
 const SUBSCRIBE_RATE_WINDOW_MS = 3600_000;
+const DEVICE_RATE_LIMIT = 20;
+const DEVICE_RATE_WINDOW_MS = 3600_000;
 const WEBHOOK_RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 export async function subscribePush(body: unknown, headers: Headers): Promise<HttpResult> {
@@ -83,6 +89,78 @@ export async function unsubscribePush(body: unknown, headers: Headers): Promise<
 
 function utcDateKey(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Registers (or refreshes) the calling device's FCM token.
+ *
+ * The write runs with the admin client on purpose: a token is unique per
+ * install, so when one user signs out and another signs in on the same phone the
+ * row has to change owner — a hand-over that "own rows only" RLS cannot express.
+ * The owner is still taken from the session, never from the body.
+ */
+export async function registerDeviceToken(body: unknown, headers: Headers): Promise<HttpResult> {
+  try {
+    const { user } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
+    }
+    if (!isSameOrigin(headers)) {
+      return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+    }
+
+    const parsed = PushDeviceTokenSchema.safeParse(body);
+    if (!parsed.success) {
+      return jsonResult(400, { success: false, error: 'بيانات الجهاز غير صحيحة' });
+    }
+
+    const allowed = await checkRateLimit(
+      `push:device:${user.id}`,
+      DEVICE_RATE_LIMIT,
+      DEVICE_RATE_WINDOW_MS
+    );
+    if (!allowed) {
+      return jsonResult(429, { success: false, error: 'تم تجاوز حد تسجيل الأجهزة' });
+    }
+
+    await createDevicePushTokensRepository(getAdminSupabase()).upsert(user.id, {
+      token: parsed.data.token,
+      platform: parsed.data.platform,
+      userAgent: headers.get('user-agent'),
+    });
+
+    return jsonResult(200, { success: true });
+  } catch {
+    return jsonResult(500, { success: false, error: 'فشل تسجيل الجهاز' });
+  }
+}
+
+/**
+ * Drops a token when the user signs out, so the next person to use the device
+ * does not inherit their notifications. Caller-scoped: RLS is the guarantee that
+ * this can only ever delete the caller's own row.
+ */
+export async function unregisterDeviceToken(body: unknown, headers: Headers): Promise<HttpResult> {
+  try {
+    const { user, supabase } = await getAuthUser();
+    if (!user) {
+      return jsonResult(401, { success: false, error: 'غير مصرح. يرجى تسجيل الدخول.' });
+    }
+    if (!isSameOrigin(headers)) {
+      return jsonResult(403, { success: false, error: 'طلب غير مسموح' });
+    }
+
+    const parsed = PushDeviceUnregisterSchema.safeParse(body);
+    if (!parsed.success) {
+      return jsonResult(400, { success: false, error: 'بيانات الجهاز غير صحيحة' });
+    }
+
+    await createDevicePushTokensRepository(supabase).removeByToken(user.id, parsed.data.token);
+
+    return jsonResult(200, { success: true });
+  } catch {
+    return jsonResult(500, { success: false, error: 'فشل إلغاء تسجيل الجهاز' });
+  }
 }
 
 /**

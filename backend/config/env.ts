@@ -92,6 +92,23 @@ export const env = {
   get pushWebhookToken(): string | undefined {
     return read('PUSH_WEBHOOK_TOKEN');
   },
+  get fcmProjectId(): string | undefined {
+    return read('FCM_PROJECT_ID');
+  },
+  get fcmClientEmail(): string | undefined {
+    return read('FCM_CLIENT_EMAIL');
+  },
+  /**
+   * The Firebase service account's PEM private key. Environment variables cannot
+   * carry real newlines, so the value arrives with the literal `\n` escapes the
+   * downloaded JSON uses; normalising here keeps every use site from having to
+   * remember that.
+   */
+  get fcmPrivateKey(): string | undefined {
+    const raw = read('FCM_PRIVATE_KEY');
+    if (raw === undefined || raw.trim() === '') return undefined;
+    return raw.includes('\\n') ? raw.replace(/\\n/g, '\n') : raw;
+  },
   get cronSecret(): string | undefined {
     return read('CRON_SECRET');
   },

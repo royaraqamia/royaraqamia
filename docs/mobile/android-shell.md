@@ -170,30 +170,30 @@ Until both are listed, Supabase refuses the redirect and the visitor lands on
 Chrome opens a Custom Tab, so the app side of the handoff is real; the Supabase side
 cannot be verified from here.
 
-### 2. Push notifications (FCM) — blocked on credentials, not on code
+### 2. Push notifications (FCM) — implemented; credentials are environment state
 
-Web Push (VAPID) does not exist in an Android WebView, so OS-level push needs FCM. The
-native side is already ready: `@capacitor/push-notifications` is installed,
-`POST_NOTIFICATIONS` is declared, and the default notification channel is registered.
+Web Push (VAPID) does not exist in an Android WebView, so OS-level push uses FCM instead
+(ADR-0038). The whole path is in place: `device_push_tokens` (migration
+`20261013120000`, RLS own-rows), `POST`/`DELETE /api/push/devices`, the FCM HTTP v1 sender
+with the service-account assertion, `PushFanout` delivering to Web Push and FCM together,
+and the client half in `frontend/api/push-native.ts` — driven by the same toggle, reached
+through the bridge rather than an npm import.
 
-What is still missing cannot be produced from the repository:
+What remains is configuration, not code:
 
-1. **A Firebase project.** Register `com.royaraqamia.app`, then drop
-   `google-services.json` into `android/app/` (git-ignored). Without it Gradle logs
-   "Push Notifications won't work" and the build still succeeds.
-2. **A service-account key** for the server-side sender, server-only, alongside
-   `VAPID_PRIVATE_KEY`.
-3. **A `device_push_tokens` table** (`id, user_id, token unique, platform, created_at,
-updated_at`, RLS `own rows` — mirroring `push_subscriptions`, which cannot be reused
-   because its `endpoint`/`p256dh`/`auth` columns describe a browser subscription, not
-   a device token), plus a `POST /api/push/devices` route for the client to register a
-   token.
-4. **Regenerated Supabase types.** `backend/models/database.types.ts` is generated, so
-   adding the table requires a `supabase gen types` run against the project — the
-   repository cannot typecheck a query against a table its generated types do not know.
+1. **`google-services.json`** in `android/app/` — git-ignored, downloaded from the Firebase
+   console for `com.royaraqamia.app`. Without it Gradle logs "Push Notifications won't
+   work" and the build still succeeds.
+2. **Three environment variables** in Vercel (Production, Preview, Development), from the
+   service-account JSON generated under Project settings → Service accounts:
+   `FCM_PROJECT_ID`, `FCM_CLIENT_EMAIL`, `FCM_PRIVATE_KEY`. The private key is the PEM with
+   its newlines escaped as `\n` — that is how the downloaded JSON already carries it, and
+   `backend/config/env.ts` normalises it back. With any of the three missing the channel is
+   a no-op rather than an error.
+3. **A rebuild** of the APK/AAB so the shell picks up the messaging SDK.
 
-Do not write the client half before the endpoint exists: it would post a token to a route
-that is not there.
+The service-account JSON itself must never be committed or dropped next to the keystore
+backup: it can send to every device in the project.
 
 ### 3. Publishing to Google Play
 

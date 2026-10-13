@@ -22,8 +22,8 @@ interface BrowserPlugin {
 interface CapacitorBridge {
   isNativePlatform?: () => boolean;
   getPlatform?: () => string;
-  /** Registered by the native layer; `Browser` only exists inside the shell. */
-  Plugins?: Record<string, BrowserPlugin>;
+  /** Registered by the native layer; only present inside the shell. */
+  Plugins?: Record<string, unknown>;
 }
 
 /**
@@ -54,12 +54,22 @@ export function nativePlatform(): 'android' | 'ios' | 'web' {
 }
 
 /**
+ * Reads a plugin off the injected bridge. `undefined` when there is no shell or
+ * the plugin is not installed, so callers degrade to plain web behaviour
+ * instead of throwing on a missing bridge.
+ */
+export function nativePlugin<T>(name: string): T | undefined {
+  const plugin = bridge()?.Plugins?.[name];
+  return typeof plugin === 'object' && plugin !== null ? (plugin as T) : undefined;
+}
+
+/**
  * Opens a URL outside the WebView, in the system browser. Resolves `false` when
  * there is no shell or the plugin call fails, so callers can fall back to an
  * ordinary navigation instead of leaving a dead button.
  */
 export async function openInSystemBrowser(url: string): Promise<boolean> {
-  const browser = bridge()?.Plugins?.Browser;
+  const browser = nativePlugin<BrowserPlugin>('Browser');
   if (!isNativeApp() || typeof browser?.open !== 'function') return false;
 
   try {

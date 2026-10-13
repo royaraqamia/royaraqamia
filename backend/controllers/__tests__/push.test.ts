@@ -4,6 +4,8 @@ const mockGetAuthUser = vi.fn();
 const mockCheckRateLimit = vi.fn();
 const mockUpsert = vi.fn();
 const mockRemoveByEndpoint = vi.fn();
+const mockDeviceUpsert = vi.fn();
+const mockDeviceRemoveByToken = vi.fn();
 const mockSendToUsers = vi.fn();
 const mockEnv: { baseUrl: string; pushWebhookToken?: string } = {
   baseUrl: 'https://royaraqamia.com',
@@ -29,6 +31,17 @@ vi.mock('@/backend/repositories/push/supabase-repository', () => ({
     upsert: mockUpsert,
     removeByEndpoint: mockRemoveByEndpoint,
   }),
+}));
+
+vi.mock('@/backend/repositories/push/supabase-device-tokens-repository', () => ({
+  createDevicePushTokensRepository: () => ({
+    upsert: mockDeviceUpsert,
+    removeByToken: mockDeviceRemoveByToken,
+  }),
+}));
+
+vi.mock('@/backend/config/supabase', () => ({
+  getAdminSupabase: () => ({ kind: 'admin-client' }),
 }));
 
 vi.mock('@/backend/config/env', () => ({
@@ -68,6 +81,8 @@ describe('push controller', () => {
     mockCheckRateLimit.mockResolvedValue(true);
     mockUpsert.mockResolvedValue(undefined);
     mockRemoveByEndpoint.mockResolvedValue(undefined);
+    mockDeviceUpsert.mockResolvedValue(undefined);
+    mockDeviceRemoveByToken.mockResolvedValue(undefined);
   });
 
   describe('subscribePush', () => {
@@ -198,6 +213,136 @@ describe('push controller', () => {
 
       expect(result.status).toBe(200);
       expect(mockRemoveByEndpoint).toHaveBeenCalledWith('u-1', validBody.endpoint);
+    });
+  });
+
+  describe('registerDeviceToken', () => {
+    const deviceBody = { token: 'fMs6Q0abcDEF:APA91bH-1234567890' };
+
+    it('returns 401 when unauthenticated', async () => {
+      mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
+      const { registerDeviceToken } = await importControllers();
+
+      const result = await registerDeviceToken(deviceBody, sameOriginHeaders());
+
+      expect(result.status).toBe(401);
+      expect(mockDeviceUpsert).not.toHaveBeenCalled();
+    });
+
+    it('rejects cross-site requests with 403', async () => {
+      const { registerDeviceToken } = await importControllers();
+
+      const result = await registerDeviceToken(deviceBody, crossOriginHeaders());
+
+      expect(result.status).toBe(403);
+      expect(mockDeviceUpsert).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 for an invalid token', async () => {
+      const { registerDeviceToken } = await importControllers();
+
+      expect((await registerDeviceToken({ token: '' }, sameOriginHeaders())).status).toBe(400);
+      expect((await registerDeviceToken({}, sameOriginHeaders())).status).toBe(400);
+      expect(
+        (await registerDeviceToken({ token: 'x', platform: 'windows' }, sameOriginHeaders())).status
+      ).toBe(400);
+      expect(mockDeviceUpsert).not.toHaveBeenCalled();
+    });
+
+    it('returns 429 when the rate limit is exceeded', async () => {
+      mockCheckRateLimit.mockResolvedValue(false);
+      const { registerDeviceToken } = await importControllers();
+
+      const result = await registerDeviceToken(deviceBody, sameOriginHeaders());
+
+      expect(result.status).toBe(429);
+      expect(mockCheckRateLimit).toHaveBeenCalledWith('push:device:u-1', 20, 3600_000);
+      expect(mockDeviceUpsert).not.toHaveBeenCalled();
+    });
+
+    it('registers the token against the session user with the default platform', async () => {
+      const { registerDeviceToken } = await importControllers();
+
+      const result = await registerDeviceToken(deviceBody, sameOriginHeaders());
+
+      expect(result.status).toBe(200);
+      expect(mockDeviceUpsert).toHaveBeenCalledWith('u-1', {
+        token: deviceBody.token,
+        platform: 'android',
+        userAgent: 'Chrome/128',
+      });
+    });
+
+    it('uses the session user id even when the body names another owner', async () => {
+      const { registerDeviceToken } = await importControllers();
+
+      await registerDeviceToken({ ...deviceBody, user_id: 'attacker-id' }, sameOriginHeaders());
+
+      expect(mockDeviceUpsert.mock.calls[0]?.[0]).toBe('u-1');
+    });
+
+    it('accepts an explicit platform', async () => {
+      const { registerDeviceToken } = await importControllers();
+
+      await registerDeviceToken({ ...deviceBody, platform: 'ios' }, sameOriginHeaders());
+
+      expect(mockDeviceUpsert).toHaveBeenCalledWith(
+        'u-1',
+        expect.objectContaining({ platform: 'ios' })
+      );
+    });
+
+    it('returns 500 when the repository write fails', async () => {
+      mockDeviceUpsert.mockRejectedValue(new Error('db down'));
+      const { registerDeviceToken } = await importControllers();
+
+      expect((await registerDeviceToken(deviceBody, sameOriginHeaders())).status).toBe(500);
+    });
+  });
+
+  describe('unregisterDeviceToken', () => {
+    const deviceBody = { token: 'fMs6Q0abcDEF:APA91bH-1234567890' };
+
+    it('returns 401 when unauthenticated', async () => {
+      mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
+      const { unregisterDeviceToken } = await importControllers();
+
+      const result = await unregisterDeviceToken(deviceBody, sameOriginHeaders());
+
+      expect(result.status).toBe(401);
+      expect(mockDeviceRemoveByToken).not.toHaveBeenCalled();
+    });
+
+    it('rejects cross-site requests with 403', async () => {
+      const { unregisterDeviceToken } = await importControllers();
+
+      const result = await unregisterDeviceToken(deviceBody, crossOriginHeaders());
+
+      expect(result.status).toBe(403);
+      expect(mockDeviceRemoveByToken).not.toHaveBeenCalled();
+    });
+
+    it('returns 400 for an invalid body', async () => {
+      const { unregisterDeviceToken } = await importControllers();
+
+      expect((await unregisterDeviceToken({}, sameOriginHeaders())).status).toBe(400);
+      expect(mockDeviceRemoveByToken).not.toHaveBeenCalled();
+    });
+
+    it('deletes scoped to the session user', async () => {
+      const { unregisterDeviceToken } = await importControllers();
+
+      const result = await unregisterDeviceToken(deviceBody, sameOriginHeaders());
+
+      expect(result.status).toBe(200);
+      expect(mockDeviceRemoveByToken).toHaveBeenCalledWith('u-1', deviceBody.token);
+    });
+
+    it('returns 500 when the delete fails', async () => {
+      mockDeviceRemoveByToken.mockRejectedValue(new Error('db down'));
+      const { unregisterDeviceToken } = await importControllers();
+
+      expect((await unregisterDeviceToken(deviceBody, sameOriginHeaders())).status).toBe(500);
     });
   });
 
