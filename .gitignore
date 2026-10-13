@@ -80,6 +80,8 @@ public/zxing_reader.wasm
 # (see docs/mobile/android-shell.md) and is referenced by keystore.properties.
 /keystore.properties
 /android/.gradle/
+# Kotlin 2.x build session state, written by a Gradle build.
+/android/.kotlin/
 /android/local.properties
 /android/build/
 /android/app/build/
