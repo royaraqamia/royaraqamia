@@ -67,13 +67,17 @@
     '/admin',
     '/account',
     '/mcp',
+    '/api/training',
+    '/api/project-requests',
+    '/api/retainers',
+    '/api/consultation',
     '/habitflow/api',
     '/spendtrack/api',
     '/linksnap/api',
-    '/habitflow/app',
-    '/spendtrack/app',
-    '/linksnap/app',
-    '/blogpress/app',
+    '/habitflow',
+    '/spendtrack',
+    '/linksnap',
+    '/blogpress',
   ];
 
   function isNeverCache(url) {

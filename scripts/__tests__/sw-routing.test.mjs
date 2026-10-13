@@ -73,16 +73,31 @@ describe('sw-routing predicates', () => {
       '/admin/training',
       '/account/submissions',
       '/mcp/connect',
-      '/habitflow/app',
-      '/spendtrack/app',
-      '/linksnap/app',
-      '/blogpress/app',
+      '/habitflow',
+      '/spendtrack',
+      '/linksnap',
+      '/blogpress',
+      '/spendtrack/categories',
+      '/blogpress/calendar',
+      '/linksnap/unlock/ABC',
       '/habitflow/api/habits',
       '/spendtrack/api/sync',
       '/linksnap/api/links',
       '/linksnap/api/admin/stats',
       '/habitflow/api/auth/user',
+      '/api/training/cohorts',
+      '/api/project-requests/abc',
+      '/api/retainers/abc',
+      '/api/consultation/bookings',
     ]) {
+      expect(routing.isNeverCache(u(path))).toBe(true);
+    }
+  });
+
+  it('is never-cache for per-user account-tool shells (route groups are not in the URL)', () => {
+    // `app/<tool>/(app)/page.tsx` is served at `/<tool>`, not `/<tool>/app`, and
+    // the shell embeds per-user seeds, so the bare tool path must bypass the cache.
+    for (const path of ['/habitflow', '/spendtrack', '/linksnap', '/blogpress']) {
       expect(routing.isNeverCache(u(path))).toBe(true);
     }
   });
