@@ -1,5 +1,6 @@
 import { request } from '@/frontend/transport/http';
 import { createClient } from '@/frontend/transport/supabase/client';
+import { isNativeApp, openInSystemBrowser } from '@/frontend/shared/native-shell';
 import type { Session, User } from '@supabase/supabase-js';
 
 export type { Session, User };
@@ -158,5 +159,13 @@ export async function signInWithGoogle(redirectTo?: string): Promise<void> {
     method: 'POST',
     body: JSON.stringify({ redirectTo: redirectTo ?? undefined }),
   });
+
+  // Google refuses to serve its consent screen to an embedded WebView
+  // (`disallowed_useragent`), so inside the Android shell the handoff goes to
+  // the system browser. Returning from it is the app's job — see
+  // NATIVE_AUTH_CALLBACK_URL. On the web this is the plain navigation it always
+  // was.
+  if (isNativeApp() && (await openInSystemBrowser(res.url))) return;
+
   window.location.assign(res.url);
 }
