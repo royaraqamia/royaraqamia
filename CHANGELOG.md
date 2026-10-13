@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.87.1] - 2026-10-13
+
+### Changed
+- ignore the Kotlin build session directory
+
 ## [1.87.0] - 2026-10-13
 
 ### Changed
