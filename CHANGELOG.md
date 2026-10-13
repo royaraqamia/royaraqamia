@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.85.7] - 2026-10-13
+
+### Fixed
+- carry the client updatedAt so log writes honour last-write-wins
+- treat an empty metal feed as a failed Rate Sync Run
+
 ## [1.85.6] - 2026-10-13
 
 ### Fixed
