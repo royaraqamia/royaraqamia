@@ -43,6 +43,11 @@ const scope = self as unknown as {
   postMessage: (message: ScanFrameResponse) => void;
 };
 
+// Deliberately no `event.origin` check: a dedicated worker only ever hears from the
+// document that created it, and for worker messages the property is the empty string
+// (`event.source` is null too), so an origin equality check would silently drop every
+// frame and leave the page with no decoder at all. CodeQL's `js/missing-origin-check`
+// alert here is dismissed on that basis; it applies to `window` message handlers.
 scope.onmessage = async (event) => {
   const { id, image } = event.data;
   try {
