@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.85.3] - 2026-10-13
+
+### Changed
+- say why the decode worker has no origin check
+
+### Fixed
+- mint a dedicated Supabase session per MCP grant
+
 ### Fixed
 - mint a dedicated Supabase session for each MCP grant instead of copying the browser's
   rotating refresh token, and retire a grant whose bridge session is gone so the client
