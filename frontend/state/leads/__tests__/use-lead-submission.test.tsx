@@ -114,4 +114,28 @@ describe('useLeadSubmission', () => {
     expect(await store.getOutbox()).toHaveLength(0);
     store.close();
   });
+
+  // The engine owns the channel now (#200); the hook's job is to dispose it.
+  // Disposal is what stops a flush that lands after teardown from posting to a
+  // closed channel — proven at the engine level in
+  // `shared/local-store/__tests__/sync-engine.test.ts`.
+  it('closes its broadcast channel when it unmounts', async () => {
+    const closed: string[] = [];
+    const originalClose = BroadcastChannel.prototype.close;
+    BroadcastChannel.prototype.close = function (this: BroadcastChannel) {
+      closed.push(this.name);
+      return originalClose.call(this);
+    };
+
+    try {
+      const { result, unmount } = renderHook(() => useLeadSubmission());
+      await waitFor(() => expect(result.current.ready).toBe(true));
+
+      unmount();
+
+      expect(closed).toContain('leads-sync');
+    } finally {
+      BroadcastChannel.prototype.close = originalClose;
+    }
+  });
 });
