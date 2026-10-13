@@ -41,8 +41,8 @@
               embedded WebView, so sign-in leaves for the system browser and
               comes back on this scheme; MainActivity maps it onto the https
               callback so the code is exchanged inside the WebView's own cookie
-              jar. Keep in sync with NATIVE_REDIRECT_SCHEME in
-              frontend/shared/native-shell.ts and the Supabase redirect allowlist.
+              jar. Keep in sync with NATIVE_OAUTH_CALLBACK_URL in
+              shared/contracts/auth.ts and the Supabase redirect allowlist.
             -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />

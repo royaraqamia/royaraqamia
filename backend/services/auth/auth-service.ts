@@ -5,7 +5,9 @@ import {
   verifyOtp,
 } from '@/backend/shared/otp/generator';
 import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
+import { NATIVE_OAUTH_CALLBACK_URL } from '@/shared/contracts/auth';
 import { safeRedirect } from '@/shared/safe-redirect';
+import { logger } from '@/backend/shared/logger';
 import { normalizeEmail } from '@/shared/email';
 import type { PendingLoginStore } from '@/backend/shared/auth/pending-login-store';
 import type { AuthGateway } from '@/backend/clients/auth-gateway';
@@ -32,6 +34,17 @@ export type UpdatePasswordResult =
   { ok: true; redirectUrl: string } | { ok: false; message: string };
 
 export type OAuthResult = { ok: true; url: string } | { ok: false; message: string };
+
+export type OAuthCallbackResult =
+  { ok: true; redirectUrl: string } | { ok: false; message: string };
+
+export interface SignInWithOAuthOptions {
+  /**
+   * Set when the flow started inside the Android shell, so the consent screen
+   * returns to the app instead of the site. See NATIVE_OAUTH_CALLBACK_URL.
+   */
+  nativeShell?: boolean;
+}
 
 const OTP_ATTEMPT_CAS_MAX_RETRIES = 3;
 
@@ -596,8 +609,19 @@ export class AuthService {
     }
   }
 
-  async signInWithOAuth(provider: 'google', redirectTo?: string): Promise<OAuthResult> {
-    const callbackUrl = new URL(`${this.siteUrl}/auth/callback`);
+  async signInWithOAuth(
+    provider: 'google',
+    redirectTo?: string,
+    options: SignInWithOAuthOptions = {}
+  ): Promise<OAuthResult> {
+    // The shell cannot receive the redirect on the site's path: the consent
+    // screen runs in the system browser, whose cookie jar is not the WebView's,
+    // so the PKCE verifier it would need to finish is not there. Sending the
+    // return trip to the app's own scheme, and letting the app reload the
+    // equivalent https URL, keeps the exchange where the flow began.
+    const callbackUrl = new URL(
+      options.nativeShell ? NATIVE_OAUTH_CALLBACK_URL : `${this.siteUrl}/auth/callback`
+    );
     const safeNext = safeRedirect(redirectTo);
     if (safeNext !== '/') {
       callbackUrl.searchParams.set('next', safeNext);
@@ -612,5 +636,30 @@ export class AuthService {
       return { ok: false, message: 'تعذر بدء تسجيل الدخول عبر جوجل' };
     }
     return { ok: true, url };
+  }
+
+  /**
+   * Finishes the Google round trip: exchanges the authorization code for a
+   * session and decides where the visitor lands. The redirect it returns is
+   * always site-relative, because `next` is user-supplied and only a path can be
+   * trusted through `safeRedirect`.
+   */
+  async completeOAuthSignIn(input: {
+    code: string;
+    next: string | null;
+  }): Promise<OAuthCallbackResult> {
+    if (!input.code) {
+      return { ok: false, message: 'لم يعُد رمز التَّفويض من Google' };
+    }
+
+    const { error } = await this.gateway.exchangeCodeForSession(input.code);
+    if (error) {
+      // The provider's own words are useful in the log and useless (and noisy)
+      // in a URL, so the visitor sees a plain failure and the detail stays here.
+      logger.error('OAuth code exchange failed', { error: error.message });
+      return { ok: false, message: 'فشل إتمام تسجيل الدُّخول عبر Google' };
+    }
+
+    return { ok: true, redirectUrl: safeRedirect(input.next) };
   }
 }

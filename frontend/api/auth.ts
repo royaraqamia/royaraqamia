@@ -157,7 +157,7 @@ export async function updatePassword(data: {
 export async function signInWithGoogle(redirectTo?: string): Promise<void> {
   const res = await request<{ url: string }>('/auth/api/google', {
     method: 'POST',
-    body: JSON.stringify({ redirectTo: redirectTo ?? undefined }),
+    body: JSON.stringify({ redirectTo: redirectTo ?? undefined, nativeShell: isNativeApp() }),
   });
 
   // Google refuses to serve its consent screen to an embedded WebView

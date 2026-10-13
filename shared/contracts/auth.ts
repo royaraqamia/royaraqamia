@@ -26,3 +26,19 @@ export const UpdatePasswordSchema = z.object({
     .regex(/[0-9]/, 'كلمة المرور يجب أن تحتوي على رقم')
     .regex(/[^A-Za-z0-9]/, 'كلمة المرور يجب أن تحتوي على رمز خاص'),
 });
+
+/**
+ * Where Google's consent screen returns to when the flow was started inside the
+ * Android shell.
+ *
+ * It has to be the app's own scheme rather than a path on the site: the consent
+ * screen runs in the system browser, which has its own cookie jar, so the PKCE
+ * verifier and the session cookie would end up in the wrong one. The system
+ * browser cannot open a custom scheme, hands it to the app, and the app reloads
+ * the equivalent https URL inside its WebView, where the exchange belongs.
+ *
+ * Three places must agree on this string, and none of them can import the other:
+ * `frontend/shared/native-shell.ts`, the intent filter in
+ * `android/app/src/main/AndroidManifest.xml`, and Supabase's redirect allowlist.
+ */
+export const NATIVE_OAUTH_CALLBACK_URL = 'royar://auth/callback';

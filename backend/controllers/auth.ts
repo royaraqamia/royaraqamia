@@ -1,5 +1,6 @@
 import { createServerAuthService } from '@/backend/config/auth';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
+import { safeRedirect } from '@/shared/safe-redirect';
 import type {
   LoginResult,
   OAuthResult,
@@ -135,7 +136,8 @@ export async function signInWithGoogle(body: Record<string, unknown>): Promise<H
   const authService = await createServerAuthService();
   const result: OAuthResult = await authService.signInWithOAuth(
     'google',
-    (body.redirectTo as string | undefined) ?? undefined
+    (body.redirectTo as string | undefined) ?? undefined,
+    { nativeShell: body.nativeShell === true }
   );
 
   if (!result.ok) {
@@ -143,6 +145,32 @@ export async function signInWithGoogle(body: Record<string, unknown>): Promise<H
   }
 
   return jsonResult(200, { url: result.url });
+}
+
+/**
+ * Resolves where `/auth/callback` should send the visitor. Returns a
+ * site-relative path, so the route can resolve it against the request's own
+ * origin and stays immune to a hostile `next` (which only ever survives as a
+ * safe path, or is dropped in favour of the login page).
+ */
+export async function completeOAuthSignIn(
+  searchParams: URLSearchParams
+): Promise<{ location: string }> {
+  const next = searchParams.get('next');
+  const authService = await createServerAuthService();
+  const result = await authService.completeOAuthSignIn({
+    code: searchParams.get('code') ?? '',
+    next,
+  });
+
+  if (result.ok) {
+    return { location: result.redirectUrl };
+  }
+
+  const params = new URLSearchParams({ error: 'oauth_failed' });
+  const safeNext = safeRedirect(next);
+  if (safeNext !== '/') params.set('redirect', safeNext);
+  return { location: `/auth/login?${params.toString()}` };
 }
 
 export async function logout(): Promise<HttpResult> {

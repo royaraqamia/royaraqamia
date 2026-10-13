@@ -1,3 +1,4 @@
+import { NATIVE_OAUTH_CALLBACK_URL } from '@/shared/contracts/auth';
 import { logger } from '@/frontend/shared/logger';
 
 /**
@@ -26,15 +27,11 @@ interface CapacitorBridge {
 }
 
 /**
- * The scheme the app registers so a flow that left the WebView (Google's
- * consent screen) can come back to it. Must stay in sync with the intent
- * filter in `android/app/src/main/AndroidManifest.xml` and with the Supabase
- * redirect allowlist.
+ * Where the system browser hands a finished OAuth flow back to the app. Defined
+ * once, in `shared/contracts/auth.ts`, beside the server that sends the flow
+ * there; the Android intent filter is the third place that must agree.
  */
-export const NATIVE_REDIRECT_SCHEME = 'royar';
-
-/** Where the system browser hands a finished OAuth flow back to the app. */
-export const NATIVE_AUTH_CALLBACK_URL = `${NATIVE_REDIRECT_SCHEME}://auth/callback`;
+export const NATIVE_AUTH_CALLBACK_URL = NATIVE_OAUTH_CALLBACK_URL;
 
 function bridge(): CapacitorBridge | undefined {
   return (globalThis as { Capacitor?: CapacitorBridge }).Capacitor;

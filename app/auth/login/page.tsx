@@ -22,8 +22,13 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get('redirect') ?? '/';
   const sessionExpired = searchParams.get('session_expired') === '1';
+  const oauthFailed = searchParams.get('error') === 'oauth_failed';
   const [message, setMessage] = useState<string | null>(
-    sessionExpired ? 'انتهت صلاحيَّة الجلسة. يُرجَى تسجيل الدُّخول مرَّة أخرى.' : null
+    sessionExpired
+      ? 'انتهت صلاحيَّة الجلسة. يُرجَى تسجيل الدُّخول مرَّة أخرى.'
+      : oauthFailed
+        ? 'فشل تسجيل الدُّخول عبر Google. يُرجَى المحاولة مرَّة أخرى.'
+        : null
   );
   const [isPending, setIsPending] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);

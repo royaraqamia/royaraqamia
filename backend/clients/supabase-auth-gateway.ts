@@ -62,6 +62,14 @@ export function createSupabaseAuthGateway(
       };
     },
 
+    async exchangeCodeForSession(code) {
+      // This writes the session cookies through the server client's `setAll`, so
+      // it must run where cookies are writable — a route handler, not a Server
+      // Component. Its PKCE verifier comes from the same cookie jar.
+      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      return { error: error ? { message: error.message } : null };
+    },
+
     async resetPasswordForEmail(email, redirectTo) {
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
       return { error: error ? { message: error.message } : null };

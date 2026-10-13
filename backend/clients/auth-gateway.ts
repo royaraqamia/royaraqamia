@@ -26,6 +26,11 @@ export interface AuthGateway {
     provider: 'google',
     redirectTo: string
   ): Promise<{ url: string | null; error: { message: string } | null }>;
+  /**
+   * Completes an OAuth round trip. Must be called on the same cookie jar that
+   * began it: the PKCE verifier it needs lives there.
+   */
+  exchangeCodeForSession(code: string): Promise<{ error: { message: string } | null }>;
   resetPasswordForEmail(
     email: string,
     redirectTo: string
