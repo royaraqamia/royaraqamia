@@ -75,6 +75,33 @@ describe('safeRedirect', () => {
     expect(safeRedirect('%252F%252Fevil.com')).toBe('/');
     expect(safeRedirect('%2F%252Fevil.com')).toBe('/');
   });
+
+  it('rejects candidates containing control characters', () => {
+    expect(safeRedirect('/%09/evil.com')).toBe('/');
+    expect(safeRedirect('/%0a/evil.com')).toBe('/');
+    expect(safeRedirect('/%0d/evil.com')).toBe('/');
+    expect(safeRedirect('/%0d%0a/%2f%2fevil.com')).toBe('/');
+    expect(safeRedirect('/foo\u007fbar')).toBe('/');
+    expect(safeRedirect('/foo\u0000bar')).toBe('/');
+  });
+
+  it('keeps every accepted candidate same-origin', () => {
+    const origin = 'https://royaraqamia.com';
+    const inputs = [
+      '/ok',
+      '/account',
+      '/%09/evil.com',
+      '/%0a/evil.com',
+      '/%0d/evil.com',
+      '/%0d%0a/%2f%2fevil.com',
+      '//evil.com',
+      'https://evil.com',
+      'javascript:alert(1)',
+    ];
+    for (const input of inputs) {
+      expect(new URL(safeRedirect(input), origin).origin).toBe(origin);
+    }
+  });
 });
 
 describe('isSafeRedirect', () => {
@@ -86,6 +113,7 @@ describe('isSafeRedirect', () => {
     expect(isSafeRedirect('https://evil.com')).toBe(false);
     expect(isSafeRedirect('javascript:alert(1)')).toBe(false);
     expect(isSafeRedirect('dashboard')).toBe(false);
+    expect(isSafeRedirect('/%09/evil.com')).toBe(false);
     expect(isSafeRedirect(null)).toBe(false);
     expect(isSafeRedirect('')).toBe(false);
   });
@@ -108,6 +136,10 @@ describe('isSafeRedirect', () => {
       'data:text/html;base64,PHNjcmlwdD4=',
       'dashboard',
       '%zz%zz',
+      '/%09/evil.com',
+      '/%0a/evil.com',
+      '/%0d/evil.com',
+      '/%0d%0a/%2f%2fevil.com',
       '',
     ];
 

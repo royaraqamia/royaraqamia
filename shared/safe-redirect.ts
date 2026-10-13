@@ -14,6 +14,12 @@ export function safeRedirect(to: string | null | undefined, fallback: string = '
       decoded = decodeURIComponent(decoded);
     } while (decoded !== prev);
 
+    // Reject C0 control characters and DEL: the WHATWG URL parser strips
+    // tab/LF/CR, so a decoded leading `/\t/` would collapse to `//`.
+    for (let i = 0; i < decoded.length; i++) {
+      const code = decoded.charCodeAt(i);
+      if (code <= 0x1f || code === 0x7f) return fallback;
+    }
     if (!decoded.startsWith('/')) return fallback;
     if (/^\/[/\\]/.test(decoded)) return fallback;
     if (/^(javascript|data|vbscript):/i.test(decoded)) return fallback;
