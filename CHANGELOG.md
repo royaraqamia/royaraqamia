@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.85.10] - 2026-10-13
+
+### Fixed
+- gate expense split replacement on the last-write-wins update
+
 ## [1.85.9] - 2026-10-13
 
 ### Changed
