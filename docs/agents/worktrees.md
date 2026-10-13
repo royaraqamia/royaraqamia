@@ -84,6 +84,14 @@ worktrees alone. The human is unaffected: only agent tool calls pass through the
 Verified end to end: in the canonical checkout `git commit --allow-empty --dry-run` comes back
 `permission.rejected` with the message from `decide.ts`; the same command in a worktree runs.
 
+When it denies you, the remedy is the rule itself: move the session into a worktree (`session_move`
+
+- this is how the first commit of this contract was landed) or work in one from the start.
+
+It is a guardrail, not a security boundary. It matches commands that begin with `git`, so a wrapper
+(`cmd /c git commit ...`) slips past, and a session whose directory cannot be resolved is allowed
+rather than blocked.
+
 ## Clean up
 
 ```powershell
