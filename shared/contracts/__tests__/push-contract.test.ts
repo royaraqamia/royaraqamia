@@ -109,7 +109,7 @@ describe('PushWebhookSchema', () => {
 describe('PushDeviceTokenSchema', () => {
   it('accepts an FCM token with a platform', () => {
     const result = PushDeviceTokenSchema.safeParse({
-      token: 'test-token:APA91bH-1234567890',
+      token: 'test-token-1',
       platform: 'android',
     });
     expect(result.success).toBe(true);
