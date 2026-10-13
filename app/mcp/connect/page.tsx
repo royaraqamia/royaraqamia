@@ -10,6 +10,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/frontend/ui/primitives/card';
+import { HeroCtaButton } from '@/frontend/ui/shared/hero-cta-button';
+import { SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,8 +73,10 @@ export default async function ConnectPage({
   return (
     <main className="min-h-dvh flex items-center justify-center p-4 sm:p-6 bg-background text-foreground">
       <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>السَّماح بالوصول</CardTitle>
+        <CardHeader className="text-center">
+          <CardTitle>
+            <SectionTitleHighlight>السَّماح بالوصول</SectionTitleHighlight>
+          </CardTitle>
           <CardDescription>
             يطلب تطبيق «{client.client_name ?? 'MCP'}» الوصول إلى بياناتك في رؤيَة رقَميَّة.
           </CardDescription>
@@ -85,15 +89,9 @@ export default async function ConnectPage({
             <input type="hidden" name="state" value={state} />
             <input type="hidden" name="code_challenge" value={codeChallenge} />
             <input type="hidden" name="code_challenge_method" value={codeChallengeMethod} />
-            <Button
-              type="submit"
-              name="action"
-              value="approve"
-              className="w-full"
-              variant="default"
-            >
+            <HeroCtaButton type="submit" name="action" value="approve" className="w-full">
               السَّماح
-            </Button>
+            </HeroCtaButton>
             <Button type="submit" name="action" value="deny" className="w-full" variant="outline">
               رفض
             </Button>
