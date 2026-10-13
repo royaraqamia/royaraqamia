@@ -22,7 +22,7 @@ function makeRecord(overrides: Partial<DevicePushTokenRecord> = {}): DevicePushT
   return {
     id: 'token-1',
     userId: 'u-1',
-    token: 'fMs6Q0abcDEF',
+    token: 'test-token',
     platform: 'android',
     userAgent: 'Android 14',
     createdAt: '2026-10-13T08:00:00.000Z',
@@ -94,7 +94,7 @@ describe('FcmPushService', () => {
 
     expect(repository.findByUserId).toHaveBeenCalledWith('u-1');
     expect(adapter.send).toHaveBeenCalledTimes(2);
-    expect(adapter.send).toHaveBeenNthCalledWith(1, 'fMs6Q0abcDEF', payload);
+    expect(adapter.send).toHaveBeenNthCalledWith(1, 'test-token', payload);
     expect(adapter.send).toHaveBeenNthCalledWith(2, 'second-token', payload);
   });
 
@@ -123,7 +123,7 @@ describe('FcmPushService', () => {
 
     await service.sendToUser('u-1', payload);
 
-    expect(repository.removeToken).toHaveBeenCalledWith('fMs6Q0abcDEF');
+    expect(repository.removeToken).toHaveBeenCalledWith('test-token');
     expect(loggerWarn).toHaveBeenCalledWith(
       'Pruning dead device push token',
       expect.objectContaining({ userId: 'u-1' })

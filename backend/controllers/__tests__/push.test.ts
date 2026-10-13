@@ -217,7 +217,7 @@ describe('push controller', () => {
   });
 
   describe('registerDeviceToken', () => {
-    const deviceBody = { token: 'fMs6Q0abcDEF:APA91bH-1234567890' };
+    const deviceBody = { token: 'test-token' };
 
     it('returns 401 when unauthenticated', async () => {
       mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });
@@ -301,7 +301,7 @@ describe('push controller', () => {
   });
 
   describe('unregisterDeviceToken', () => {
-    const deviceBody = { token: 'fMs6Q0abcDEF:APA91bH-1234567890' };
+    const deviceBody = { token: 'test-token' };
 
     it('returns 401 when unauthenticated', async () => {
       mockGetAuthUser.mockResolvedValue({ user: null, supabase: {} });

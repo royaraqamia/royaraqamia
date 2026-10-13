@@ -9,7 +9,7 @@ function makeRow(overrides: Partial<Row> = {}): Row {
   return {
     id: 'token-1',
     user_id: 'u-1',
-    token: 'fMs6Q0abcDEF',
+    token: 'test-token',
     platform: 'android',
     user_agent: 'Mozilla/5.0 (Linux; Android 14)',
     created_at: '2026-10-13T08:00:00.000Z',
@@ -73,7 +73,7 @@ describe('createDevicePushTokensRepository', () => {
       const repo = createDevicePushTokensRepository(client);
 
       await repo.upsert('u-1', {
-        token: 'fMs6Q0abcDEF',
+        token: 'test-token',
         platform: 'android',
         userAgent: 'Mozilla/5.0 (Linux; Android 14)',
       });
@@ -81,7 +81,7 @@ describe('createDevicePushTokensRepository', () => {
       expect(upsert).toHaveBeenCalledWith(
         expect.objectContaining({
           user_id: 'u-1',
-          token: 'fMs6Q0abcDEF',
+          token: 'test-token',
           platform: 'android',
           user_agent: 'Mozilla/5.0 (Linux; Android 14)',
         }),
@@ -124,7 +124,7 @@ describe('createDevicePushTokensRepository', () => {
         {
           id: 'token-1',
           userId: 'u-1',
-          token: 'fMs6Q0abcDEF',
+          token: 'test-token',
           platform: 'android',
           userAgent: 'Mozilla/5.0 (Linux; Android 14)',
           createdAt: '2026-10-13T08:00:00.000Z',
@@ -173,10 +173,10 @@ describe('createDevicePushTokensRepository', () => {
       const { client, deleteFn, deleteFilters } = makeClient();
       const repo = createDevicePushTokensRepository(client);
 
-      await repo.removeByToken('u-1', 'fMs6Q0abcDEF');
+      await repo.removeByToken('u-1', 'test-token');
 
       expect(deleteFn).toHaveBeenCalled();
-      expect(deleteFilters[0]).toEqual(['eq:user_id=u-1', 'eq:token=fMs6Q0abcDEF']);
+      expect(deleteFilters[0]).toEqual(['eq:user_id=u-1', 'eq:token=test-token']);
     });
 
     it('throws when the delete fails', async () => {
@@ -191,9 +191,9 @@ describe('createDevicePushTokensRepository', () => {
       const { client, deleteFilters } = makeClient();
       const repo = createDevicePushTokensRepository(client);
 
-      await repo.removeToken('fMs6Q0abcDEF');
+      await repo.removeToken('test-token');
 
-      expect(deleteFilters[0]).toEqual(['eq:token=fMs6Q0abcDEF']);
+      expect(deleteFilters[0]).toEqual(['eq:token=test-token']);
     });
 
     it('throws when the prune fails (service decides severity)', async () => {

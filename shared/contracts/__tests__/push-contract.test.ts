@@ -109,14 +109,14 @@ describe('PushWebhookSchema', () => {
 describe('PushDeviceTokenSchema', () => {
   it('accepts an FCM token with a platform', () => {
     const result = PushDeviceTokenSchema.safeParse({
-      token: 'fMs6Q0abcDEF:APA91bH-1234567890',
+      token: 'test-token:APA91bH-1234567890',
       platform: 'android',
     });
     expect(result.success).toBe(true);
   });
 
   it('defaults the platform to android when the client omits it', () => {
-    const result = PushDeviceTokenSchema.safeParse({ token: 'fMs6Q0abcDEF' });
+    const result = PushDeviceTokenSchema.safeParse({ token: 'test-token' });
     expect(result.success).toBe(true);
     expect(result.success && result.data.platform).toBe('android');
   });
@@ -149,7 +149,7 @@ describe('PushDeviceTokenSchema', () => {
 
 describe('PushDeviceUnregisterSchema', () => {
   it('accepts a token', () => {
-    expect(PushDeviceUnregisterSchema.safeParse({ token: 'fMs6Q0abcDEF' }).success).toBe(true);
+    expect(PushDeviceUnregisterSchema.safeParse({ token: 'test-token' }).success).toBe(true);
   });
 
   it('rejects a blank token', () => {

@@ -20,4 +20,9 @@ useDefault = true
     # Modern Supabase publishable/anon tokens (matched against the detected
     # secret itself, which does not carry the NEXT_PUBLIC_ variable name).
     '''sb_publishable_[A-Za-z0-9_-]+''',
+    # FCM device-token test fixture, pinned as an exact literal rather than a
+    # token shape so a real registration token committed later is still caught.
+    # The value only exists in history (commit b7acd101) — the tree now uses a
+    # low-entropy placeholder — but the weekly full-history scan still sees it.
+    '''fMs6Q0abcDEF''',
   ]
