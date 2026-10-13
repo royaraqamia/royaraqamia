@@ -169,6 +169,10 @@ export class RatesService {
         throw new Error('fiat provider returned no rates');
       }
 
+      if (Object.keys(metalPrices).length === 0) {
+        throw new Error('metal provider returned no prices');
+      }
+
       const quoteDate = latestQuoteDate || this.now().toISOString().slice(0, 10);
       const snapshot = await this.repository.insertSnapshot({
         base_currency: RATE_BASE_CURRENCY,

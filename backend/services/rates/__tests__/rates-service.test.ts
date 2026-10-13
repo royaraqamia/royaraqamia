@@ -104,7 +104,9 @@ describe('RatesService.refresh', () => {
     (fiatProvider.fetchRates as ReturnType<typeof vi.fn>).mockResolvedValue({
       quotes: [{ code: 'SYP', rate: 122.24, date: '2026-10-04' }],
     });
-    (metalProvider.fetchPrices as ReturnType<typeof vi.fn>).mockResolvedValue({ prices: [] });
+    (metalProvider.fetchPrices as ReturnType<typeof vi.fn>).mockResolvedValue({
+      prices: [{ code: 'XAU', pricePerOunceUsd: 2000, updatedAt: '2026-10-04T06:00:00Z' }],
+    });
     (variantProvider.fetchVariants as ReturnType<typeof vi.fn>).mockResolvedValue([
       { code: 'SYP', official: 122, parallel: 138, date: '2026-10-04' },
     ]);
@@ -150,6 +152,26 @@ describe('RatesService.refresh', () => {
 
     await expect(service.refresh()).rejects.toThrow('no rates');
     expect(repository.insertSnapshot).not.toHaveBeenCalled();
+  });
+
+  it('fails when the metal feed is empty', async () => {
+    const repository = makeRepo({
+      startSyncRun: vi.fn().mockResolvedValue('run-4'),
+      insertSnapshot: vi.fn(),
+      finishSyncRun: vi.fn().mockResolvedValue(undefined),
+    });
+    const { service, fiatProvider, metalProvider } = makeService(repository);
+    (fiatProvider.fetchRates as ReturnType<typeof vi.fn>).mockResolvedValue({
+      quotes: [{ code: 'SAR', rate: 3.75, date: '2026-10-04' }],
+    });
+    (metalProvider.fetchPrices as ReturnType<typeof vi.fn>).mockResolvedValue({ prices: [] });
+
+    await expect(service.refresh()).rejects.toThrow('no prices');
+    expect(repository.insertSnapshot).not.toHaveBeenCalled();
+    expect(repository.finishSyncRun).toHaveBeenCalledWith(
+      'run-4',
+      expect.objectContaining({ status: 'failure', error: 'metal provider returned no prices' })
+    );
   });
 });
 
