@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.86.0] - 2026-10-13
+
+### Changed
+- document the shell, its measured limits and the decision
+
+### Added
+- publish App Links verification for the Android shell
+- let the site detect the Android shell and reach the system browser
+- build the app as a Capacitor shell over the live site
+
 ## [1.85.12] - 2026-10-13
 
 ### Changed
