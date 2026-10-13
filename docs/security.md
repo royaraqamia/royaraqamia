@@ -50,10 +50,12 @@ All MCP routes (`/mcp`, `/register`, `/token`, `/connect/consent`) are Upstash-l
 1. Generate a new 64-char hex key: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 2. Replace the value in the deployment env and redeploy. Old `session_enc` rows immediately
    become undecryptable — that is the intended kill switch, not a bug.
-3. Connected MCP clients get failures/401 on next use and must re-run the OAuth browser flow;
-   the data plane retires the grant (access + refresh rows) so the client's next refresh is
-   answered `invalid_grant` and it re-authorizes on its own — no manual cleanup required
-   (sweeper prunes dead rows at 03:30 daily).
+3. Connected MCP clients get 401 on next use; the data plane retires the grant (access + refresh
+   rows) so the client's next refresh is answered `invalid_grant` and it reaches its
+   re-authorize path instead of the silent retry that used to loop. OpenCode models that state
+   separately from a hard failure (a `needs_auth` status), so the user is asked to authorize
+   rather than shown a broken server; no manual DB cleanup is required (the sweeper prunes dead
+   rows at 03:30 daily).
 4. Suspected key compromise: perform steps 1–2 AND delete every row in `mcp_oauth_tokens`/
    `mcp_oauth_auth_codes`, then treat the incident as a user-session compromise: rotate
    Supabase secrets, audit admin actions, notify ADMIN_EMAILS users.

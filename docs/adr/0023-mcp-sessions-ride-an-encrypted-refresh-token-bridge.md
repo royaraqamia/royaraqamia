@@ -62,9 +62,12 @@ Two changes:
 - **Retire dead grants.** When the bridge cannot be revived — the refresh token is
   definitively rejected, the ciphertext will not decrypt (key rotation, the intended kill
   switch), or the row carries no session — the data plane revokes the grant's access _and_
-  refresh rows. The client's next refresh is then answered `invalid_grant`, which makes it drop
-  the credential and re-run the browser flow. Transient failures (network, 429, 5xx, a rotated
-  publishable key) revoke nothing. Retirements log a reason code so the rate is countable.
+  refresh rows. The client's next refresh is then answered `invalid_grant`, which routes it to
+  re-authorization instead of the silent retry that used to loop: the MCP SDK's whole 401
+  recovery hangs off `authProvider.onUnauthorized`, and its `Server returned 401 after
+re-authentication` failure is reachable only when a refresh _succeeded_ and the retry was
+  rejected anyway. Transient failures (network, 429, 5xx, a rotated publishable key) revoke
+  nothing. Retirements log a reason code so the rate is countable.
 
 Kill switches that still work, unchanged: `revokeAllUserTokens`, RFC 7009 `/mcp/revoke`, the
 sweeper, key rotation, and signing out of the site — `auth.signOut()` defaults to scope
