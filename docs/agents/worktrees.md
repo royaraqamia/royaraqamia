@@ -69,6 +69,21 @@ without `--cd` runs the implementer **in the parent's tree**. Point every dispat
 node "<skill-dir>/scripts/relay.mjs" --brief brief.txt --model <provider/model> --cd <worktree dir>
 ```
 
+## Enforcement (machine-local)
+
+The rule above is a convention, so this machine enforces it. An OpenCode plugin denies `git commit`
+and `git push` for agent tool calls whose session sits in the canonical checkout, and leaves
+worktrees alone. The human is unaffected: only agent tool calls pass through the hook.
+
+- Decision logic: `scripts/agent-guard/decide.ts` (tracked, unit-tested in `npm test`).
+- Wiring: `.opencode/plugins/shared-tree-guard/index.ts` - **machine-local**, because `.opencode/` is
+  gitignored. `.gitignore` keeps it out of `git status` in every checkout.
+- If it is ever missing, restore it: copy the file back and run `npm install` in `.opencode/`
+  (the V2 plugin type package is `@opencode/plugin`; `.opencode/package.json` is machine-local too).
+
+Verified end to end: in the canonical checkout `git commit --allow-empty --dry-run` comes back
+`permission.rejected` with the message from `decide.ts`; the same command in a worktree runs.
+
 ## Clean up
 
 ```powershell

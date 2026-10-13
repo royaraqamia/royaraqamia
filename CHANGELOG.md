@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- refuse `git commit` and `git push` from agent sessions in the shared checkout, so agents land work
+  from a worktree
+
 ## [1.85.8] - 2026-10-13
 
 ### Changed

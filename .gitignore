@@ -2,6 +2,10 @@
 
 # dependencies
 /node_modules
+# OpenCode config is per-machine: `.opencode/.gitignore` covers the canonical checkout, and these
+# cover worktrees, which do not get that file. The shared-tree guard plugin lives in plugins/.
+/.opencode/node_modules
+/.opencode/plugins/
 /.pnp
 .pnp.*
 .yarn/*
