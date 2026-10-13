@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|locale|smallestScreenSize|screenLayout|uiMode|navigation|density"
+            android:name=".MainActivity"
+            android:label="@string/title_activity_main"
+            android:theme="@style/AppTheme.NoActionBarLaunch"
+            android:launchMode="singleTask"
+            android:exported="true">
+
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!--
+              Deep links. The shell serves the live site, so a link to our own
+              origin should open the app rather than a browser tab: autoVerify
+              makes Android confirm us against
+              https://royaraqamia.com/.well-known/assetlinks.json, which lists
+              both the release and the debug signing certificate.
+            -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="royaraqamia.com" />
+            </intent-filter>
+
+            <!--
+              The OAuth return trip. Google refuses its consent screen in an
+              embedded WebView, so sign-in leaves for the system browser and
+              comes back on this scheme; MainActivity maps it onto the https
+              callback so the code is exchanged inside the WebView's own cookie
+              jar. Keep in sync with NATIVE_REDIRECT_SCHEME in
+              frontend/shared/native-shell.ts and the Supabase redirect allowlist.
+            -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="royar" android:host="auth" />
+            </intent-filter>
+
+        </activity>
+
+        <!--
+          FCM needs a channel on Android 8+; this is the one the system falls
+          back to when a push does not name its own.
+        -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="default" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths"></meta-data>
+        </provider>
+    </application>
+
+    <!-- Permissions -->
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required from Android 13 to show any notification, including FCM pushes. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+</manifest>

@@ -73,3 +73,18 @@ public/zxing_reader.wasm
 
 # Sentry Config File
 .env.sentry-build-plugin
+
+# Capacitor / Android
+# The native project is source and is committed; only build output and
+# machine-local state are not. The upload keystore lives *outside* the repo
+# (see docs/mobile/android-shell.md) and is referenced by keystore.properties.
+/keystore.properties
+/android/.gradle/
+/android/local.properties
+/android/build/
+/android/app/build/
+/android/app/release/
+/android/app/src/main/assets/public/
+/android/capacitor-cordova-android-plugins/
+*.jks
+*.keystore
