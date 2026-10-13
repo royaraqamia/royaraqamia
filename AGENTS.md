@@ -29,6 +29,8 @@ do { Start-Sleep 2 } while (-not (Get-NetTCPConnection -LocalPort 3000 -State Li
 taskkill /PID $p.Id /T /F
 ```
 
+**Work in a worktree — never commit in a tree another agent may be writing to.** The canonical checkout is shared, and concurrent `git` there has silently lost a commit and published other agents' unpushed work. Create a worktree (`worktree_create`, or `git worktree add -b <task> origin/main`), land your work by pushing from it, then remove it. Setup, delegated `--cd`, and cleanup: [docs/agents/worktrees.md](docs/agents/worktrees.md).
+
 **Core architecture rule:** `controller → service → repository/client`. Controllers are thin. Repositories are the only code that knows the DB. All DI wiring in `backend/config/`.
 
 **Edge middleware lives in `proxy.ts`** (repo root) — Next.js 16 renamed `middleware.ts` to `proxy.ts` (exported function `proxy`). There is **no `middleware.ts`**; don't go looking for one. It runs `backend/middleware/session.ts` (`updateSession`) + the country cookie.
@@ -43,6 +45,7 @@ taskkill /PID $p.Id /T /F
 - [Performance baseline & budget](docs/performance.md)
 - [Vercel usage budget (Hobby)](docs/vercel-usage.md)
 - [Available skills](docs/skills.md)
+- [Working in a worktree](docs/agents/worktrees.md)
 
 ## Agent skills
 

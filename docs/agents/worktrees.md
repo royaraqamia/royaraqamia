@@ -1,0 +1,77 @@
+# Working in a worktree
+
+One writer per working tree. The canonical checkout (`D:\Projects\royaraqamia` on this machine) is
+shared: the human and any number of agent sessions can be in it at the same time, and concurrent
+`git` there is not safe. Agents land work from their own worktree; the canonical checkout belongs to
+whoever is sitting in it.
+
+## What goes wrong in a shared tree
+
+Measured on 2026-10-13, every one of these silent:
+
+1. **A commit disappears.** Two `git commit`s racing for `index.lock` left the changes unstaged and
+   created **no commit at all** — no reflog entry, and nothing that surfaced as an error. It was
+   recoverable only because a patch had been dumped first.
+2. **You publish someone else's work.** Pushing from the shared tree sends every commit in it,
+   including another agent's unpushed commits (`0d2e0baa`, `ba77538a` were published this way).
+3. **You inherit their work.** A new worktree starts at the canonical checkout's current HEAD, so
+   anything unpushed sitting there comes with it.
+
+## Create one
+
+Prefer the harness tool — it returns the directory and registers the worktree with OpenCode:
+
+```
+worktree_create({ name: "<task>" })
+```
+
+On this machine that lands under OpenCode's app-data share
+(`C:\Users\Asus\.local\share\opencode\worktree\<id>\<name>`) at the **canonical checkout's current
+HEAD, detached**. When that tree holds unpushed commits you do not want to carry, start from
+`origin/main` instead — and put the work on a branch so the push has a name:
+
+```powershell
+git worktree add -b <task-branch> <dir> origin/main
+```
+
+## Make it runnable
+
+A fresh worktree has no `node_modules` and no `.env` (both gitignored), so nothing runs until you add
+them. Junctioning the canonical `node_modules` and copying `.env` is enough for the gate commands —
+measured: `npx vitest run ...` passed (20 tests, 2.3s) and `git status` stayed clean.
+
+```powershell
+$wt = "<worktree dir>"
+New-Item -ItemType Junction -Path "$wt\node_modules" -Target "D:\Projects\royaraqamia\node_modules"
+Copy-Item "D:\Projects\royaraqamia\.env" "$wt\.env"
+```
+
+**Never run `npm install` / `npm ci` in a junctioned worktree.** An install replaces `node_modules`,
+and a recursive delete of a junction on Windows can follow it into the canonical tree. When a task
+needs a real install, give the worktree its own `node_modules` (`npm ci --prefer-offline`) and leave
+the junction out.
+
+## Land the work
+
+Commit in the worktree, confirm the commit exists (`git log --oneline -1` — a lost commit looks like a
+successful one), then push to `main` (the release train and Vercel deploy follow) or open a PR.
+
+## Delegated agents
+
+`opencode-delegate`'s `relay.mjs` defaults `--cd` to the caller's working directory, so a dispatch
+without `--cd` runs the implementer **in the parent's tree**. Point every dispatch at a worktree:
+
+```powershell
+node "<skill-dir>/scripts/relay.mjs" --brief brief.txt --model <provider/model> --cd <worktree dir>
+```
+
+## Clean up
+
+```powershell
+git worktree list              # find them
+git worktree remove <dir>      # remove one (refuses while dirty)
+git worktree prune             # drop records for directories already gone
+```
+
+`worktree_remove` does the same, with force as an explicit opt-in — force only after checking that
+nothing unlanded is in there.

@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- require agents to land work from their own worktree instead of the shared checkout
+
 ## [1.85.7] - 2026-10-13
 
 ### Fixed
