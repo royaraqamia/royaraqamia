@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.88.2] - 2026-10-13
+
+### Changed
+- test(push): stop the device-token fixtures tripping gitleaks
+
 ## [1.88.1] - 2026-10-13
 
 ### Changed
