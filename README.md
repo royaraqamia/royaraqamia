@@ -373,6 +373,8 @@ Pushing to `main` runs the Code Quality gate; on success the `Release` workflow 
    - anything else → **patch** (`X.Y.Z+1`)
 3. Bumps `package.json#version`, writes `CHANGELOG.md` (Keep-a-Changelog), commits `chore(release): vX.Y.Z [skip ci]`, tags, and creates a GitHub Release with notes from the changelog section.
 
+Entries already written under `[Unreleased]` are folded into the released section — one header per change type — and `[Unreleased]` is emptied. A commit that authored its own `[Unreleased]` entry is not restated as a generated subject line, so each change appears exactly once.
+
 Vercel's Git integration auto-deploys the `[skip ci]` release commit (GitHub Actions skip it; Vercel does not). The double deploy this creates is intentional — the release commit is the canonical deployed artifact.
 
 ### Where the version is shown
