@@ -404,10 +404,15 @@ export function createSpendtrackRepository(
       if (!resurrect) query = query.is('deleted_at', null);
       query = query.lte('updated_at', row.updated_at);
 
-      const { error } = await query;
+      // `.select('id')` makes the guarded write report the rows it matched, so
+      // the split replacement below can be skipped when the write was filtered
+      // (a stale replay older than the stored row, or a tombstoned row). Without
+      // it a filtered replay would still delete/replace `expense_splits`,
+      // corrupting the allocation against the row's newer values (ticket #188).
+      const { data: updated, error } = await query.select('id');
       if (error) throw new Error(error.message);
 
-      if (splits !== undefined) {
+      if (splits !== undefined && updated && updated.length > 0) {
         const { error: delError } = await supabase
           .from('expense_splits')
           .delete()

@@ -43,6 +43,9 @@ class Builder {
   lte(column: string, value: unknown) {
     return this.log(`lte ${column}=${String(value)}`);
   }
+  select(columns: string) {
+    return this.log(`select ${columns}`);
+  }
   then<TResult1 = Result, TResult2 = never>(
     onfulfilled?: ((value: Result) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
