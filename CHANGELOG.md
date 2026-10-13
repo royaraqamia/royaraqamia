@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.87.2] - 2026-10-13
+
 ### Fixed
 - let the Sync Engine own its BroadcastChannel, so a flush that lands after a hook unmounts can no
   longer post to a closed channel and reject unhandled
