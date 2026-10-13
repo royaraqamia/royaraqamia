@@ -3,7 +3,7 @@ import type { NextRequest, NextResponse } from 'next/server';
 
 const mockGetClient = vi.fn();
 const mockGetUser = vi.fn();
-const mockGetSession = vi.fn();
+const mockMint = vi.fn();
 const mockCreateAuthorizationCode = vi.fn();
 
 vi.mock('@/backend/config/env', () => ({
@@ -21,9 +21,16 @@ vi.mock('@/backend/services/mcp/oauth-provider', () => ({
   }),
 }));
 
+vi.mock('@/backend/services/mcp/bridge-session', () => ({
+  createMcpBridgeSessionMinter: () => ({ mint: mockMint }),
+}));
+
 vi.mock('@/backend/config/supabase', () => ({
   createServerSupabaseClient: () => ({
-    auth: { getUser: () => mockGetUser(), getSession: () => mockGetSession() },
+    // No `getSession` on purpose: the consent route must take identity from
+    // getUser() and mint its own bridge session, never read the browser's
+    // refresh token. If the route reaches for it again, this mock throws.
+    auth: { getUser: () => mockGetUser() },
   }),
 }));
 
@@ -78,6 +85,7 @@ function makeReq(
 beforeEach(() => {
   vi.clearAllMocks();
   mockGetClient.mockResolvedValue(client);
+  mockMint.mockResolvedValue({ refreshToken: 'bridge-refresh-token' });
   mockCreateAuthorizationCode.mockResolvedValue({
     code: 'auth-code-123',
     redirectUri: 'https://client.example/callback',
@@ -88,9 +96,6 @@ describe('POST /mcp/connect/consent', () => {
   it('rejects cross-site submissions with 403 and issues no authorization code', async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
-    });
-    mockGetSession.mockResolvedValue({
-      data: { session: { refresh_token: 'refresh-token' } },
     });
     const res = (await POST(
       makeReq(
@@ -103,14 +108,12 @@ describe('POST /mcp/connect/consent', () => {
     // No redirect to the client's callback with a code.
     expect(res.headers.get('location')).toBeNull();
     expect(mockCreateAuthorizationCode).not.toHaveBeenCalled();
+    expect(mockMint).not.toHaveBeenCalled();
   });
 
   it('rejects requests with no origin or sec-fetch-site signal', async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
-    });
-    mockGetSession.mockResolvedValue({
-      data: { session: { refresh_token: 'refresh-token' } },
     });
     const res = (await POST(makeReq(makeForm(), new Headers()))) as NextResponse & {
       headers: Headers;
@@ -121,12 +124,9 @@ describe('POST /mcp/connect/consent', () => {
     expect(mockCreateAuthorizationCode).not.toHaveBeenCalled();
   });
 
-  it('accepts a matching site origin and issues the authorization code', async () => {
+  it('mints a bridge session and issues the authorization code', async () => {
     mockGetUser.mockResolvedValue({
       data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
-    });
-    mockGetSession.mockResolvedValue({
-      data: { session: { refresh_token: 'refresh-token' } },
     });
     const res = (await POST(
       makeReq(makeForm(), new Headers({ origin: 'https://royaraqamia.com' }))
@@ -136,14 +136,33 @@ describe('POST /mcp/connect/consent', () => {
     const location = res.headers.get('location') ?? '';
     expect(location).toContain('code=auth-code-123');
     expect(location).toContain('state=state-123');
+    // The grant is backed by a session minted for this user, not by the
+    // browser's own refresh token.
+    expect(mockMint).toHaveBeenCalledWith('admin@royaraqamia.com');
     expect(mockCreateAuthorizationCode).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'u-1' })
+      expect.objectContaining({
+        userId: 'u-1',
+        sessionEnc: expect.any(String),
+      })
     );
+  });
+
+  it('answers server_error when the bridge session cannot be minted', async () => {
+    mockGetUser.mockResolvedValue({
+      data: { user: { id: 'u-1', email: 'admin@royaraqamia.com' } },
+    });
+    mockMint.mockResolvedValue(null);
+    const res = (await POST(
+      makeReq(makeForm(), new Headers({ origin: 'https://royaraqamia.com' }))
+    )) as NextResponse & { headers: Headers; status: number };
+
+    expect(res.status).toBe(302);
+    expect(res.headers.get('location') ?? '').toContain('error=server_error');
+    expect(mockCreateAuthorizationCode).not.toHaveBeenCalled();
   });
 
   it('redirects to login when the session is missing, preserving the consent query', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null } });
-    mockGetSession.mockResolvedValue({ data: { session: null } });
     const res = (await POST(makeReq(makeForm()))) as NextResponse & {
       headers: Headers;
       status: number;

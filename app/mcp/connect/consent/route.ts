@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
+import { createMcpBridgeSessionMinter } from '@/backend/services/mcp/bridge-session';
 import { encryptSecret } from '@/backend/repositories/mcp/mcp-token-crypto';
 import { isSameOrigin, getClientIp } from '@/backend/transport/http';
 import { checkRateLimitApi } from '@/backend/middleware/http';
@@ -15,9 +16,12 @@ export const runtime = 'nodejs';
 /**
  * Consent submission for the OAuth flow (RFC 6749 §4.1.2).
  *
- * Reads the user's Supabase session from the browser cookies, encrypts the
- * refresh token so the MCP data-plane can build a user-scoped client later,
- * and issues an authorization code (redirecting to the client's redirect_uri).
+ * Reads the user's identity from the browser cookies, mints a *dedicated*
+ * Supabase session for the grant (see `bridge-session.ts` — the browser's own
+ * refresh token must never be copied, it is rotated by the browser), encrypts
+ * the bridge refresh token so the MCP data-plane can build a user-scoped client
+ * later, and issues an authorization code (redirecting to the client's
+ * redirect_uri).
  */
 export async function POST(req: NextRequest) {
   const rateLimited = await checkRateLimitApi({
@@ -74,15 +78,12 @@ export async function POST(req: NextRequest) {
 
   const cookieStore = await cookies();
   const supabase = await createServerSupabaseClient(cookieStore);
-  // getUser() for identity (avoids the getSession() `.user` deprecation
-  // warning); getSession() only for the refresh_token we need to encrypt.
+  // Identity only — never the session's refresh token, which the browser keeps
+  // rotating underneath us.
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-  if (!user || !session?.refresh_token) {
+  if (!user) {
     // Session missing/expired — send the browser user to login and bring them
     // back to the consent page afterwards so they can re-submit their choice.
     const consentUrl = new URL('/mcp/connect', req.url);
@@ -112,8 +113,18 @@ export async function POST(req: NextRequest) {
     return oauthErrorRedirect(redirectUri, 'invalid_scope', state, 'No valid scopes requested');
   }
 
+  const bridge = await createMcpBridgeSessionMinter().mint(user.email ?? '');
+  if (!bridge) {
+    return oauthErrorRedirect(
+      redirectUri,
+      'server_error',
+      state,
+      'Could not start a session for this connection'
+    );
+  }
+
   try {
-    const sessionEnc = encryptSecret(session.refresh_token);
+    const sessionEnc = encryptSecret(bridge.refreshToken);
     const { code } = await provider.createAuthorizationCode({
       client,
       redirectUri,

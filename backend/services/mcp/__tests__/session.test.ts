@@ -4,6 +4,7 @@ import {
   invalidateTokenCache,
   invalidateUserCache,
   clearAllTokenCache,
+  isBridgeSessionDead,
 } from '../session';
 import type { McpTokenRecord } from '@/backend/repositories/mcp/mcp-oauth-repository';
 
@@ -21,10 +22,16 @@ const mockTokenRecord: McpTokenRecord = {
   last_used_at: null,
 };
 
+const supabaseMocks = vi.hoisted(() => ({
+  refreshSession: vi.fn(),
+  getUser: vi.fn(),
+}));
+
 const mockRepo = {
   getTokenByHash: vi.fn(),
   touchTokenLastUsed: vi.fn(),
   updateTokenSessionEnc: vi.fn(),
+  revokeToken: vi.fn(),
 };
 
 // Mock the oauth repository module
@@ -47,19 +54,8 @@ vi.mock('@/backend/repositories/mcp/mcp-token-crypto', () => ({
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({
     auth: {
-      refreshSession: vi.fn().mockResolvedValue({
-        data: {
-          session: {
-            access_token: 'fresh-access-token',
-            refresh_token: 'rotated-refresh-token',
-          },
-        },
-        error: null,
-      }),
-      getUser: vi.fn().mockResolvedValue({
-        data: { user: { id: 'user-123', email: 'user@example.com' } },
-        error: null,
-      }),
+      refreshSession: supabaseMocks.refreshSession,
+      getUser: supabaseMocks.getUser,
     },
     from: vi.fn(),
   })),
@@ -85,6 +81,19 @@ describe('resolveMcpContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     clearAllTokenCache();
+    supabaseMocks.refreshSession.mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'fresh-access-token',
+          refresh_token: 'rotated-refresh-token',
+        },
+      },
+      error: null,
+    });
+    supabaseMocks.getUser.mockResolvedValue({
+      data: { user: { id: 'user-123', email: 'user@example.com' } },
+      error: null,
+    });
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
   });
@@ -159,6 +168,83 @@ describe('resolveMcpContext', () => {
     const ctx = await resolveMcpContext('admin-token');
     expect(ctx!.scopes).toEqual(['community.read']);
     expect(ctx!.isAdmin).toBe(false);
+  });
+
+  it('revokes the grant when the bridge session is dead, so the client re-authorizes', async () => {
+    const refreshRow: McpTokenRecord = {
+      ...mockTokenRecord,
+      id: 'refresh-456',
+      kind: 'refresh',
+      token_hash: 'refresh-hash',
+      refresh_token_hash: null,
+    };
+    mockRepo.getTokenByHash
+      .mockResolvedValueOnce(mockTokenRecord)
+      .mockResolvedValueOnce(refreshRow);
+    supabaseMocks.refreshSession.mockResolvedValue({
+      data: { session: null },
+      error: {
+        name: 'AuthApiError',
+        status: 400,
+        code: 'refresh_token_already_used',
+        message: 'Invalid Refresh Token: Already Used',
+      },
+    });
+
+    expect(await resolveMcpContext('valid-token')).toBeNull();
+
+    // Access row and its refresh row are both retired, so the client's next
+    // /mcp/token refresh answers invalid_grant and restarts the browser flow
+    // instead of looping on 401.
+    expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-123');
+    expect(mockRepo.revokeToken).toHaveBeenCalledWith('refresh-456');
+  });
+
+  it('keeps the credentials when the session refresh fails transiently', async () => {
+    mockRepo.getTokenByHash.mockResolvedValue(mockTokenRecord);
+    supabaseMocks.refreshSession.mockResolvedValue({
+      data: { session: null },
+      error: { name: 'AuthApiError', status: 503, message: 'Service Unavailable' },
+    });
+
+    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(mockRepo.revokeToken).not.toHaveBeenCalled();
+  });
+
+  it('revokes the grant when the stored bridge token cannot be decrypted', async () => {
+    mockRepo.getTokenByHash.mockResolvedValue({
+      ...mockTokenRecord,
+      session_enc: 'encrypted-with-a-rotated-key',
+    });
+
+    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-123');
+  });
+});
+
+describe('isBridgeSessionDead', () => {
+  it.each([
+    ['refresh_token_already_used', 400],
+    ['refresh_token_not_found', 400],
+    ['session_expired', 403],
+    ['user_banned', 403],
+  ])('treats %s as a dead bridge session', (code, status) => {
+    expect(isBridgeSessionDead({ code, status, message: 'anything' })).toBe(true);
+  });
+
+  it('never treats a transient or configuration failure as dead', () => {
+    expect(
+      isBridgeSessionDead({ code: 'invalid_api_key', status: 401, message: 'Invalid API key' })
+    ).toBe(false);
+    expect(isBridgeSessionDead({ status: 503, message: 'Service Unavailable' })).toBe(false);
+    expect(isBridgeSessionDead({ status: 429, message: 'Too many requests' })).toBe(false);
+    expect(isBridgeSessionDead(undefined)).toBe(false);
+    expect(isBridgeSessionDead(new Error('fetch failed'))).toBe(false);
+  });
+
+  it('falls back to a bare 400 that names the refresh token', () => {
+    expect(isBridgeSessionDead({ status: 400, message: 'Invalid Refresh Token' })).toBe(true);
+    expect(isBridgeSessionDead({ status: 400, message: 'Bad Request' })).toBe(false);
   });
 });
 

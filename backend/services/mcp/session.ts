@@ -1,7 +1,11 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { createMcpOAuthRepository } from '@/backend/repositories/mcp/mcp-oauth-repository';
+import {
+  createMcpOAuthRepository,
+  type McpOAuthRepository,
+  type McpTokenRecord,
+} from '@/backend/repositories/mcp/mcp-oauth-repository';
 import { McpScope } from './scope';
-import { getCachedContext, setCachedContext } from './token-cache';
+import { getCachedContext, invalidateTokenCache, setCachedContext } from './token-cache';
 import { env } from '@/backend/config/env';
 import { isAdmin } from '@/backend/shared/admin-validator';
 import { logger } from '@/backend/shared/logger';
@@ -22,6 +26,69 @@ export interface McpUserContext {
   supabase: SupabaseClient<any>;
 }
 
+type UserScopedClientResult =
+  | { ok: true; client: SupabaseClient<any>; refreshToken: string }
+  | { ok: false; reauthRequired: boolean };
+
+/**
+ * GoTrue's answer to a refresh token it will never honour again. Anything that
+ * does not name one of these is transient (network, 429, 5xx) or a deploy
+ * misconfiguration (a rotated publishable key answers `invalid_api_key`), and
+ * must NOT cost the user their credentials — see `isBridgeSessionDead`.
+ */
+const DEAD_BRIDGE_SESSION_CODES: ReadonlySet<string> = new Set([
+  'refresh_token_not_found',
+  'refresh_token_already_used',
+  'session_not_found',
+  'session_expired',
+  'user_not_found',
+  'user_banned',
+]);
+
+/**
+ * Whether a failed session refresh means this grant's bridge session is gone for
+ * good, so the grant must be revoked and the user asked to authorize again.
+ *
+ * Deliberately narrow. Revoking on a transient failure would sign a working user
+ * out; missing a genuine death merely repeats today's 401 (the client's refresh
+ * still answers 200, so nothing self-heals).
+ */
+export function isBridgeSessionDead(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const { code, status, message } = error as {
+    code?: unknown;
+    status?: unknown;
+    message?: unknown;
+  };
+  if (typeof code === 'string' && DEAD_BRIDGE_SESSION_CODES.has(code)) return true;
+  // Older GoTrue builds omit `code` and answer a bare 400 with a message.
+  return status === 400 && typeof message === 'string' && /refresh token|session/i.test(message);
+}
+
+/**
+ * The bridge session is gone and no MCP token can revive it. Revoke this grant's
+ * access *and* refresh rows so the client's next `/mcp/token` refresh is answered
+ * `invalid_grant`, which makes the client drop its credential and re-run the
+ * browser authorization. Without this, refresh keeps succeeding and the client
+ * loops on 401 forever (the failure mode `docs/security.md` step 3 assumes away).
+ */
+export async function abandonDeadBridgeSession(
+  repo: McpOAuthRepository,
+  accessRow: McpTokenRecord
+): Promise<void> {
+  try {
+    await repo.revokeToken(accessRow.id);
+    invalidateTokenCache(accessRow.token_hash);
+    if (!accessRow.refresh_token_hash) return;
+    const refreshRow = await repo.getTokenByHash(accessRow.refresh_token_hash);
+    if (!refreshRow) return;
+    await repo.revokeToken(refreshRow.id);
+    invalidateTokenCache(refreshRow.token_hash);
+  } catch (err) {
+    logger.warn('[MCP:SESSION] failed to revoke a dead bridge session', { err });
+  }
+}
+
 /**
  * Build a user-scoped Supabase client using a live access token from the
  * stored refresh token. The client enforces RLS and satisfies the
@@ -33,10 +100,12 @@ export interface McpUserContext {
 async function buildUserScopedClient(
   _userId: string,
   storedRefreshToken: string
-): Promise<{ client: SupabaseClient<any>; refreshToken: string } | null> {
+): Promise<UserScopedClientResult> {
   const supabaseUrl = env.supabaseUrl;
   const publishableKey = env.supabasePublishableKey;
-  if (!supabaseUrl || !publishableKey) return null;
+  // A missing URL/key is a deploy misconfiguration, not a dead user session:
+  // never let it revoke credentials.
+  if (!supabaseUrl || !publishableKey) return { ok: false, reauthRequired: false };
 
   const client = createClient(supabaseUrl, publishableKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -51,22 +120,25 @@ async function buildUserScopedClient(
     });
     if (error || !data.session?.access_token) {
       logger.error('[MCP:SESSION] refreshSession failed:', { message: error?.message });
-      return null;
+      return { ok: false, reauthRequired: isBridgeSessionDead(error) };
     }
     return {
+      ok: true,
       client,
       refreshToken: data.session.refresh_token ?? storedRefreshToken,
     };
   } catch (err) {
     logger.error('[MCP:SESSION] refreshSession exception:', { err });
-    return null;
+    return { ok: false, reauthRequired: false };
   }
 }
 
 /**
  * Resolve an MCP access token to a McpUserContext.
  * Caches the context per token until the access token expires.
- * Returns null for invalid/revoked/expired tokens.
+ * Returns null for invalid/revoked/expired tokens, and for tokens whose bridge
+ * session is dead — in which case the grant is revoked first so the client
+ * re-authorizes instead of looping on 401.
  */
 export async function resolveMcpContext(
   bearerToken: string | null | undefined
@@ -92,7 +164,10 @@ export async function resolveMcpContext(
   await repo.touchTokenLastUsed(tokenRow.id);
 
   const sessionEnc = tokenRow.session_enc;
-  if (!sessionEnc) return null;
+  if (!sessionEnc) {
+    await abandonDeadBridgeSession(repo, tokenRow);
+    return null;
+  }
 
   let storedRefreshToken: string;
   try {
@@ -100,11 +175,18 @@ export async function resolveMcpContext(
       await import('@/backend/repositories/mcp/mcp-token-crypto')
     ).decryptSecret(sessionEnc);
   } catch {
+    // Undecryptable means the encryption key was rotated (or the row is
+    // corrupt): the bridge can never be revived, so retire the grant and let the
+    // client re-run the browser flow — the intended kill switch, not a 401 loop.
+    await abandonDeadBridgeSession(repo, tokenRow);
     return null;
   }
 
   const userScoped = await buildUserScopedClient(tokenRow.user_id, storedRefreshToken);
-  if (!userScoped) return null;
+  if (!userScoped.ok) {
+    if (userScoped.reauthRequired) await abandonDeadBridgeSession(repo, tokenRow);
+    return null;
+  }
 
   // Supabase rotates the refresh token on every refresh. Persist the rotated
   // token back so subsequent MCP requests (after the token cache expires) can

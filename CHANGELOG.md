@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- mint a dedicated Supabase session for each MCP grant instead of copying the browser's
+  rotating refresh token, and retire a grant whose bridge session is gone so the client
+  re-authorizes instead of looping on 401
+
 ## [1.85.2] - 2026-10-12
 
 ### Changed
