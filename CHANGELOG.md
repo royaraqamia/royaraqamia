@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- log a reason code when an MCP grant is retired, so the retirement rate is countable in
+  production (`rejected` / `undecryptable` / `no-session`)
+
 ## [1.85.3] - 2026-10-13
 
 ### Changed

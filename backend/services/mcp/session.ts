@@ -72,10 +72,22 @@ export function isBridgeSessionDead(error: unknown): boolean {
  * browser authorization. Without this, refresh keeps succeeding and the client
  * loops on 401 forever (the failure mode `docs/security.md` step 3 assumes away).
  */
+export type DeadBridgeReason = 'rejected' | 'undecryptable' | 'no-session';
+
 export async function abandonDeadBridgeSession(
   repo: McpOAuthRepository,
-  accessRow: McpTokenRecord
+  accessRow: McpTokenRecord,
+  reason: DeadBridgeReason
 ): Promise<void> {
+  // Observable on purpose: retiring a grant pushes the user back through the
+  // browser flow, so the rate and reason have to be countable in the logs.
+  // `rejected` means the session was superseded or revoked; `undecryptable`
+  // means MCP_TOKEN_ENCRYPTION_KEY has rotated.
+  logger.warn('[MCP:SESSION] retired a dead bridge grant', {
+    reason,
+    clientId: accessRow.client_id,
+    userId: accessRow.user_id,
+  });
   try {
     await repo.revokeToken(accessRow.id);
     invalidateTokenCache(accessRow.token_hash);
@@ -165,7 +177,7 @@ export async function resolveMcpContext(
 
   const sessionEnc = tokenRow.session_enc;
   if (!sessionEnc) {
-    await abandonDeadBridgeSession(repo, tokenRow);
+    await abandonDeadBridgeSession(repo, tokenRow, 'no-session');
     return null;
   }
 
@@ -178,13 +190,13 @@ export async function resolveMcpContext(
     // Undecryptable means the encryption key was rotated (or the row is
     // corrupt): the bridge can never be revived, so retire the grant and let the
     // client re-run the browser flow — the intended kill switch, not a 401 loop.
-    await abandonDeadBridgeSession(repo, tokenRow);
+    await abandonDeadBridgeSession(repo, tokenRow, 'undecryptable');
     return null;
   }
 
   const userScoped = await buildUserScopedClient(tokenRow.user_id, storedRefreshToken);
   if (!userScoped.ok) {
-    if (userScoped.reauthRequired) await abandonDeadBridgeSession(repo, tokenRow);
+    if (userScoped.reauthRequired) await abandonDeadBridgeSession(repo, tokenRow, 'rejected');
     return null;
   }
 

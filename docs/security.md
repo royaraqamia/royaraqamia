@@ -30,8 +30,9 @@
 
 The public MCP server stores a consenting user's Supabase session AES-256-GCM-encrypted
 (`session_enc`, ADR 0023). The session is one the server _mints_ for that grant, not a copy of
-the browser's — a copied token is rotated away by the browser and then killed by Supabase
-reuse detection (ADR 0023 amendment). The encryption key never lives next to the ciphertext:
+the browser's — a borrowed token is refused as soon as the browser rotates past it, which is
+what used to brick connected clients (ADR 0023 amendment). The encryption key never lives next
+to the ciphertext:
 it is `MCP_TOKEN_ENCRYPTION_KEY` env, absent from the database. A DB dump alone is useless; a
 dump **plus** the key means an attacker can mint real Supabase sessions for MCP-consenting
 users, but blast radius stays bounded by:

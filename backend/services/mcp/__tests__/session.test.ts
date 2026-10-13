@@ -77,6 +77,12 @@ vi.mock('@/backend/shared/admin-validator', () => ({
   isAdmin: (email: string, emails: string[]) => emails.includes(email.toLowerCase()),
 }));
 
+vi.mock('@/backend/shared/logger', () => ({
+  logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+}));
+
+import { logger } from '@/backend/shared/logger';
+
 describe('resolveMcpContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -198,6 +204,11 @@ describe('resolveMcpContext', () => {
     // instead of looping on 401.
     expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-123');
     expect(mockRepo.revokeToken).toHaveBeenCalledWith('refresh-456');
+    // ...and the retirement is countable in the logs, with its reason.
+    expect(logger.warn).toHaveBeenCalledWith(
+      '[MCP:SESSION] retired a dead bridge grant',
+      expect.objectContaining({ reason: 'rejected', userId: 'user-123' })
+    );
   });
 
   it('keeps the credentials when the session refresh fails transiently', async () => {
@@ -219,6 +230,21 @@ describe('resolveMcpContext', () => {
 
     expect(await resolveMcpContext('valid-token')).toBeNull();
     expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-123');
+    expect(logger.warn).toHaveBeenCalledWith(
+      '[MCP:SESSION] retired a dead bridge grant',
+      expect.objectContaining({ reason: 'undecryptable' })
+    );
+  });
+
+  it('retires a grant that carries no session at all', async () => {
+    mockRepo.getTokenByHash.mockResolvedValue({ ...mockTokenRecord, session_enc: null });
+
+    expect(await resolveMcpContext('valid-token')).toBeNull();
+    expect(mockRepo.revokeToken).toHaveBeenCalledWith('tok-123');
+    expect(logger.warn).toHaveBeenCalledWith(
+      '[MCP:SESSION] retired a dead bridge grant',
+      expect.objectContaining({ reason: 'no-session' })
+    );
   });
 });
 
