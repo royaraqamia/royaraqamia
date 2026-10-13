@@ -4,8 +4,12 @@ import {
   hashOtp,
   verifyOtp,
 } from '@/backend/shared/otp/generator';
-import { LoginSchema, SignupSchema, UpdatePasswordSchema } from '@/shared/contracts/auth';
-import { NATIVE_OAUTH_CALLBACK_URL } from '@/shared/contracts/auth';
+import {
+  LoginSchema,
+  NATIVE_OAUTH_CALLBACK_URL,
+  SignupSchema,
+  UpdatePasswordSchema,
+} from '@/shared/contracts/auth';
 import { safeRedirect } from '@/shared/safe-redirect';
 import { logger } from '@/backend/shared/logger';
 import { normalizeEmail } from '@/shared/email';
