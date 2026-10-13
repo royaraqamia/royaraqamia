@@ -65,7 +65,7 @@ version _name_ as a version code, so the mapping lives in `android/app/build.gra
 | ------------------------------------ | ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Load the live site                   | `capacitor.config.ts` `server.url`                    | Working                                                                                |
 | Deep links (App Links + `royar://`)  | manifest intent filters, `MainActivity.webUrlFor`     | Working                                                                                |
-| Custom-scheme OAuth return           | manifest + `MainActivity`                             | Handler ready; **blocked on `/auth/callback`** (below)                                 |
+| Custom-scheme OAuth return           | manifest + `MainActivity`                             | Working — needs two Supabase allowlist entries (below)                                 |
 | Splash, status bar, RTL, back button | `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                |
 | Native file save / share             | `@capacitor/filesystem`, `@capacitor/share` installed | Installed, unused by app code yet                                                      |
 | Biometric lock                       | `@capgo/capacitor-native-biometric` installed         | Installed, unused by app code yet                                                      |
@@ -152,25 +152,23 @@ exercised by targeting the activity explicitly, which bypasses that check.
 
 ## Open items
 
-### 1. `/auth/callback` does not exist
+### 1. Google sign-in: one manual step left
 
-`AuthService.signInWithOAuth` sends Supabase a `redirectTo` of
-`${siteUrl}/auth/callback`, and `frontend/ui/linksnap` already reacts to `oauth_failed`
-and `code` parameters coming back there — but there is **no route** at `app/auth/callback`.
-Google sign-in therefore cannot complete, in the app or in a browser, until that route
-exists. It is pre-existing and out of scope here; what changed is that the app no longer
-hits Google's `disallowed_useragent` wall on the way, because
-`signInWithGoogle` now hands the URL to the system browser when it detects the shell
-(`frontend/api/auth.ts`).
+The flow is implemented (ADR-0037): `app/auth/callback/route.ts` exchanges the code for a
+session, `/auth/api/google` sends the shell's callback to `royar://auth/callback` instead
+of a path on the site, and `MainActivity` maps that back onto the https URL inside the
+WebView so the exchange happens on the cookie jar that started it.
 
-To finish it:
+What no code in this repository can do: **add the redirect URLs to Supabase's allowlist**
+(Authentication → URL Configuration):
 
-1. Add `app/auth/callback/route.ts` exchanging the PKCE code with `@supabase/ssr` and
-   redirecting to `next`.
-2. Add `royar://auth/callback` (and `https://royaraqamia.com/auth/callback`) to the
-   Supabase Auth redirect allowlist.
-3. Have the native shell ask for `NATIVE_AUTH_CALLBACK_URL` as the `redirectTo` and treat
-   the existing `?error=oauth_failed` shape as the failure path.
+- `https://royaraqamia.com/auth/callback` — the web flow
+- `royar://auth/callback` — the shell
+
+Until both are listed, Supabase refuses the redirect and the visitor lands on
+`/auth/login?error=oauth_failed`. Verified on the emulator: `Browser.open` resolves and
+Chrome opens a Custom Tab, so the app side of the handoff is real; the Supabase side
+cannot be verified from here.
 
 ### 2. Push notifications (FCM) — blocked on credentials, not on code
 
