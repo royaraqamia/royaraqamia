@@ -26,7 +26,7 @@ export interface SyncStatus {
 export interface SyncEngineOptions {
   /** Web Locks name: exactly one tab across the origin flushes at a time. */
   lockName: string;
-  /** BroadcastChannel name: other tabs refresh after a flush. */
+  /** BroadcastChannel the engine owns: opened on first use, closed by `dispose()`. */
   channelName: string;
   /** Human label for log lines, e.g. `HabitFlow`. */
   logLabel: string;
@@ -43,8 +43,6 @@ export interface SyncEngineDeps {
   now?: () => number;
   random?: () => number;
   onStatus?: (status: SyncStatus) => void;
-  /** Wakes other tabs after a flush so they refresh their view. */
-  broadcast?: (message: { type: string }) => void;
 }
 
 /**
@@ -56,12 +54,25 @@ export interface SyncEngineDeps {
  *
  * Product-agnostic: the transport knows the endpoints, the options name the
  * lock/channel. HabitFlow and SpendTrack each wrap this with their own.
+ *
+ * The engine also owns its BroadcastChannel: it opens one from `channelName`
+ * on first use, announces a completed flush on it, and closes it in `dispose()`.
+ * Owning it here (rather than each hook wiring `broadcast` by hand) is what
+ * lets `dispose()` drop the reference so a flush that lands after teardown
+ * cannot post to a closed channel (#200).
  */
 export class SyncEngine {
   private syncing = false;
   private lastError: string | null = null;
   private lastFailedType: string | null = null;
   private listeners: Array<(status: SyncStatus) => void> = [];
+
+  /** Opened on first broadcast or `onSync`; `disposed` keeps it shut for good. */
+  private channel: BroadcastChannel | null = null;
+  private channelOpened = false;
+  private disposed = false;
+  /** Run when a sibling tab announces a completed flush. */
+  private syncListeners: Array<() => void> = [];
 
   private readonly isOnline: () => boolean;
   private readonly now: () => number;
@@ -81,6 +92,48 @@ export class SyncEngine {
     return () => {
       this.listeners = this.listeners.filter((l) => l !== listener);
     };
+  }
+
+  /**
+   * Registers a callback for a sibling tab's completed flush (so this tab can
+   * refresh). Opening the channel is what makes the engine reachable; `dispose`
+   * unregisters and silences it. Returns an unsubscribe.
+   */
+  onSync(listener: () => void): () => void {
+    this.syncListeners.push(listener);
+    this.openChannel();
+    return () => {
+      this.syncListeners = this.syncListeners.filter((l) => l !== listener);
+    };
+  }
+
+  /**
+   * Closes the owned channel and drops its reference. A flush still in flight
+   * when the owner unmounts then skips its broadcast instead of posting to a
+   * closed channel (which throws `InvalidStateError`); safe to call twice.
+   */
+  dispose(): void {
+    this.disposed = true;
+    this.channel?.close();
+    this.channel = null;
+    this.syncListeners = [];
+  }
+
+  private openChannel(): BroadcastChannel | null {
+    if (this.channelOpened || this.disposed) return this.channel;
+    this.channelOpened = true;
+    if (typeof BroadcastChannel !== 'undefined') {
+      this.channel = new BroadcastChannel(this.options.channelName);
+      this.channel.onmessage = (event) => {
+        if ((event.data as { type?: string } | null)?.type !== this.options.syncedMessage) return;
+        for (const listener of this.syncListeners) listener();
+      };
+    }
+    return this.channel;
+  }
+
+  private broadcastSynced(): void {
+    this.openChannel()?.postMessage({ type: this.options.syncedMessage });
   }
 
   async status(): Promise<SyncStatus> {
@@ -160,7 +213,7 @@ export class SyncEngine {
       }
     } finally {
       await this.setSyncing(false);
-      this.deps.broadcast?.({ type: this.options.syncedMessage });
+      this.broadcastSynced();
     }
   }
 

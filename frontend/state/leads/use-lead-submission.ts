@@ -103,7 +103,6 @@ export function useLeadSubmission(): LeadSubmissionState {
     let cancelled = false;
     let opened: LeadsLocalStore | null = null;
     let engine: SyncEngine | null = null;
-    let channel: BroadcastChannel | null = null;
 
     const refreshEntries = async (store: LeadsLocalStore) => {
       const next = await store.getOutbox();
@@ -128,7 +127,6 @@ export function useLeadSubmission(): LeadSubmissionState {
               setStatus(next);
               void refreshEntries(store);
             },
-            broadcast: (message) => channel?.postMessage(message),
           },
           {
             lockName: LEADS_SYNC_LOCK,
@@ -138,11 +136,7 @@ export function useLeadSubmission(): LeadSubmissionState {
           }
         );
         engineRef.current = engine;
-
-        if (typeof BroadcastChannel !== 'undefined') {
-          channel = new BroadcastChannel(LEADS_SYNC_CHANNEL);
-          channel.onmessage = () => void refreshEntries(store);
-        }
+        engine.onSync(() => void refreshEntries(store));
 
         void engine.flush();
         return unsubscribe;
@@ -153,7 +147,7 @@ export function useLeadSubmission(): LeadSubmissionState {
 
     return () => {
       cancelled = true;
-      channel?.close();
+      engine?.dispose();
       opened?.close();
       engineRef.current = null;
       storeRef.current = null;

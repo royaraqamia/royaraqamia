@@ -3,11 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { Post } from '@/shared/contracts/blogpress';
 import { BlogpressLocalStore, type BlogpressDraft } from '@/frontend/api/blogpress/local-store';
-import {
-  BlogpressSyncEngine,
-  BLOGPRESS_SYNC_CHANNEL,
-  type SyncStatus,
-} from '@/frontend/api/blogpress/sync-engine';
+import { BlogpressSyncEngine, type SyncStatus } from '@/frontend/api/blogpress/sync-engine';
 import { createBlogpressHttpSyncTransport } from '@/frontend/api/blogpress/sync-transport';
 import {
   GUEST_IDENTITY,
@@ -115,13 +111,10 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
   useEffect(() => {
     if (!store) return;
 
-    const channel =
-      typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(BLOGPRESS_SYNC_CHANNEL) : null;
     const engine = new BlogpressSyncEngine({
       store,
       transport: createBlogpressHttpSyncTransport(store),
       isSignedIn: () => true,
-      broadcast: (message) => channel?.postMessage(message),
     });
     engineRef.current = engine;
 
@@ -133,7 +126,7 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
     window.addEventListener('online', runSync);
     window.addEventListener('focus', runSync);
     document.addEventListener('visibilitychange', onVisibility);
-    if (channel) channel.onmessage = () => runSync();
+    engine.onSync(runSync);
 
     const unsubscribe = engine.subscribe((next) => {
       setStatus(next);
@@ -150,7 +143,7 @@ export function useBlogpressStore(post: Post, userId: string): BlogpressStoreSta
       window.removeEventListener('online', runSync);
       window.removeEventListener('focus', runSync);
       document.removeEventListener('visibilitychange', onVisibility);
-      channel?.close();
+      engine.dispose();
       engineRef.current = null;
     };
   }, [store, post.id]);

@@ -1,10 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { HabitLocalStore } from '@/frontend/api/habitflow/local-store';
-import {
-  HabitSyncEngine,
-  SYNC_CHANNEL,
-  type SyncStatus,
-} from '@/frontend/api/habitflow/sync-engine';
+import { HabitSyncEngine, type SyncStatus } from '@/frontend/api/habitflow/sync-engine';
 import { createHttpSyncTransport } from '@/frontend/api/habitflow/sync-transport';
 import { ApiClient } from '@/frontend/api/habitflow/habit-api';
 import type { OutboxEntry } from '@/frontend/shared/local-store/outbox';
@@ -94,17 +90,10 @@ export function useHabitSync(
       return;
     }
 
-    // `let` so cleanup can drop the reference. `channel?.` guards a *missing*
-    // channel, not a closed one: a flush still in flight when this effect cleans
-    // up would otherwise post to the closed channel and reject unhandled.
-    let channel =
-      typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(SYNC_CHANNEL) : null;
-
     const engine = new HabitSyncEngine({
       store,
       transport: createHttpSyncTransport(),
       isSignedIn: () => isSignedIn,
-      broadcast: (message) => channel?.postMessage(message),
     });
     engineRef.current = engine;
 
@@ -131,7 +120,7 @@ export function useHabitSync(
     window.addEventListener('online', runSync);
     window.addEventListener('focus', runSync);
     document.addEventListener('visibilitychange', onVisibility);
-    if (channel) channel.onmessage = () => void pull();
+    engine.onSync(() => void pull());
 
     // Every status emit is a chance for the Outbox mirror to change (a flush
     // removed or re-armed entries), so refresh it alongside the counts.
@@ -146,8 +135,7 @@ export function useHabitSync(
       window.removeEventListener('online', runSync);
       window.removeEventListener('focus', runSync);
       document.removeEventListener('visibilitychange', onVisibility);
-      channel?.close();
-      channel = null;
+      engine.dispose();
       engineRef.current = null;
     };
   }, [store, isSignedIn]);

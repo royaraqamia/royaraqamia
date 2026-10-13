@@ -115,7 +115,6 @@ export function useLinksnap({
     let cancelled = false;
     let opened: LinksnapLocalStore | null = null;
     let engine: SyncEngine | null = null;
-    let channel: BroadcastChannel | null = null;
 
     LinksnapLocalStore.open(identity)
       .then(async (store) => {
@@ -150,7 +149,6 @@ export function useLinksnap({
             transport: createLinksnapHttpSyncTransport(() => tokenRef.current),
             isSignedIn: () => isSignedIn,
             onStatus: (next) => setStatus(next),
-            broadcast: (message) => channel?.postMessage(message),
           },
           {
             lockName: LINKSNAP_SYNC_LOCK,
@@ -160,13 +158,9 @@ export function useLinksnap({
           }
         );
         engineRef.current = engine;
-
-        if (typeof BroadcastChannel !== 'undefined') {
-          channel = new BroadcastChannel(LINKSNAP_SYNC_CHANNEL);
-          channel.onmessage = () => {
-            void readIntoState(store);
-          };
-        }
+        engine.onSync(() => {
+          void readIntoState(store);
+        });
 
         void engine.flush();
       })
@@ -177,7 +171,7 @@ export function useLinksnap({
 
     return () => {
       cancelled = true;
-      channel?.close();
+      engine?.dispose();
       opened?.close();
       engineRef.current = null;
       storeRef.current = null;

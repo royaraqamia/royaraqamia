@@ -84,7 +84,6 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
     let cancelled = false;
     let opened: SpendtrackLocalStore | null = null;
     let engine: SyncEngine | null = null;
-    let channel: BroadcastChannel | null = null;
 
     SpendtrackLocalStore.open(identity)
       .then(async (store) => {
@@ -143,7 +142,6 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
             transport: createSpendtrackHttpSyncTransport(),
             isSignedIn: () => isSignedIn,
             onStatus: (next) => setStatus(next),
-            broadcast: (message) => channel?.postMessage(message),
           },
           {
             lockName: SPENDTRACK_SYNC_LOCK,
@@ -153,13 +151,9 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
           }
         );
         engineRef.current = engine;
-
-        if (typeof BroadcastChannel !== 'undefined') {
-          channel = new BroadcastChannel(SPENDTRACK_SYNC_CHANNEL);
-          channel.onmessage = () => {
-            void readIntoState(store);
-          };
-        }
+        engine.onSync(() => {
+          void readIntoState(store);
+        });
 
         void engine.flush();
       })
@@ -169,7 +163,7 @@ export function useSpendtrack(seed: SpendtrackSeed): SpendtrackStoreState {
 
     return () => {
       cancelled = true;
-      channel?.close();
+      engine?.dispose();
       opened?.close();
       engineRef.current = null;
       storeRef.current = null;
