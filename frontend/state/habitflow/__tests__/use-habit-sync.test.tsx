@@ -4,6 +4,8 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 
 const sent: string[] = [];
+/** When set, `send` parks on it — lets a test hold a flush open across unmount. */
+let sendGate: Promise<void> | null = null;
 
 vi.mock('@/frontend/api/habitflow/sync-transport', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/frontend/api/habitflow/sync-transport')>();
@@ -12,6 +14,7 @@ vi.mock('@/frontend/api/habitflow/sync-transport', async (importOriginal) => {
     createHttpSyncTransport: () => ({
       send: async (entry: { type: string }) => {
         sent.push(entry.type);
+        if (sendGate) await sendGate;
       },
     }),
   };
@@ -31,6 +34,7 @@ describe('useHabitSync', () => {
   beforeEach(() => {
     globalThis.indexedDB = new IDBFactory();
     sent.length = 0;
+    sendGate = null;
   });
 
   it('flushes the account outbox on mount', async () => {
@@ -82,5 +86,39 @@ describe('useHabitSync', () => {
     const { result } = renderHook(() => useHabitSync(store, false, vi.fn()));
     expect(result.current.online).toBe(true);
     store.close();
+  });
+
+  it('does not post on a closed channel when a flush lands after unmount', async () => {
+    const store = await HabitLocalStore.open(userIdentity('u-1'));
+    await store.createHabit({ name: 'قراءة', frequency: 'daily' });
+
+    const rejections: unknown[] = [];
+    const onRejection = (reason: unknown) => rejections.push(reason);
+    process.on('unhandledRejection', onRejection);
+
+    let releaseSend: () => void = () => {};
+    sendGate = new Promise<void>((resolve) => {
+      releaseSend = resolve;
+    });
+
+    try {
+      const { unmount } = renderHook(() => useHabitSync(store, true, vi.fn()));
+
+      // The flush parks inside `send`, so the engine still owes a broadcast.
+      await waitFor(() => expect(sent).toContain('habit.create'));
+
+      // Cleanup closes the channel while that flush is still in flight.
+      unmount();
+      releaseSend();
+
+      await waitFor(async () => expect(await store.getOutbox()).toHaveLength(0));
+      // Give a rejection raised by the late broadcast a tick to surface.
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    } finally {
+      process.off('unhandledRejection', onRejection);
+      store.close();
+    }
+
+    expect(rejections).toEqual([]);
   });
 });

@@ -94,7 +94,10 @@ export function useHabitSync(
       return;
     }
 
-    const channel =
+    // `let` so cleanup can drop the reference. `channel?.` guards a *missing*
+    // channel, not a closed one: a flush still in flight when this effect cleans
+    // up would otherwise post to the closed channel and reject unhandled.
+    let channel =
       typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(SYNC_CHANNEL) : null;
 
     const engine = new HabitSyncEngine({
@@ -144,6 +147,7 @@ export function useHabitSync(
       window.removeEventListener('focus', runSync);
       document.removeEventListener('visibilitychange', onVisibility);
       channel?.close();
+      channel = null;
       engineRef.current = null;
     };
   }, [store, isSignedIn]);
