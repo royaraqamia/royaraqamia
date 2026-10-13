@@ -1,5 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { McpUserContext } from '../session';
+import {
+  createCertificateHandler,
+  updateCertificateHandler,
+  deleteCertificateHandler,
+  listCertificatesHandler,
+  getCertificateHandler,
+} from '../tools/certificates';
+import { effectiveScopes } from '../scope';
 
 const adminCtx: McpUserContext = {
   userId: 'u1',
@@ -23,9 +31,6 @@ const nonAdminCtx: McpUserContext = {
 
 const noScopeCtx: McpUserContext = { ...adminCtx, scopes: [] };
 
-const repoPath = '@/backend/repositories/certificates';
-const servicePath = '@/backend/services/certificates/certificates-service';
-
 const sampleCertificate = {
   id: 'c1',
   certificate_code: 'COMP-2026-A1B2C3D4',
@@ -39,32 +44,47 @@ const sampleCertificate = {
   created_at: '2026-01-01T00:00:00.000Z',
 };
 
-function mockService() {
-  const create = vi.fn().mockResolvedValue(sampleCertificate);
-  const update = vi.fn().mockResolvedValue({ ...sampleCertificate, student_name: 'مريم' });
-  const del = vi.fn().mockResolvedValue(undefined);
-  const list = vi.fn().mockResolvedValue({ data: [sampleCertificate], total: 1 });
-  const getById = vi.fn().mockResolvedValue(sampleCertificate);
+// One import of the tools module, with the repository and service it reaches
+// for replaced once for the whole file. Re-running `vi.resetModules()` plus a
+// fresh dynamic import per case re-built this module graph (and its zod
+// schemas) ten times, which pushed the first case past Vitest's 5s default
+// under parallel load — see #194. The service mock is reset, not re-imported.
+const service = vi.hoisted(() => ({
+  create: vi.fn(),
+  update: vi.fn(),
+  delete: vi.fn(),
+  list: vi.fn(),
+  getById: vi.fn(),
+}));
 
-  vi.doMock(repoPath, () => ({ createCertificatesRepository: vi.fn() }));
-  vi.doMock(servicePath, () => ({
-    CertificatesService: class {
-      create = create;
-      update = update;
-      delete = del;
-      list = list;
-      getById = getById;
-    },
-  }));
+vi.mock('@/backend/repositories/certificates', () => ({
+  createCertificatesRepository: vi.fn(),
+}));
 
-  return { create, update, delete: del, list, getById };
-}
+vi.mock('@/backend/services/certificates/certificates-service', () => ({
+  CertificatesService: class {
+    create = service.create;
+    update = service.update;
+    delete = service.delete;
+    list = service.list;
+    getById = service.getById;
+  },
+}));
 
 describe('admin certificate tools', () => {
-  beforeEach(() => vi.resetModules());
+  beforeEach(() => {
+    service.create.mockReset().mockResolvedValue(sampleCertificate);
+    service.update.mockReset().mockResolvedValue({ ...sampleCertificate, student_name: 'مريم' });
+    service.delete.mockReset().mockResolvedValue(undefined);
+    service.list.mockReset().mockResolvedValue({ data: [sampleCertificate], total: 1 });
+    service.getById.mockReset().mockResolvedValue(sampleCertificate);
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
 
   it('createCertificateHandler requires certificates.write scope', async () => {
-    const { createCertificateHandler } = await import('../tools/certificates');
     const result = await createCertificateHandler(
       {
         student_name: 'أحمد',
@@ -79,7 +99,6 @@ describe('admin certificate tools', () => {
   });
 
   it('createCertificateHandler rejects non-admin users even with the scope', async () => {
-    const { createCertificateHandler } = await import('../tools/certificates');
     const result = await createCertificateHandler(
       {
         student_name: 'أحمد',
@@ -94,8 +113,6 @@ describe('admin certificate tools', () => {
   });
 
   it('createCertificateHandler issues via the service for admins', async () => {
-    const { create } = mockService();
-    const { createCertificateHandler } = await import('../tools/certificates');
     const result = await createCertificateHandler(
       {
         student_name: 'أحمد',
@@ -106,7 +123,7 @@ describe('admin certificate tools', () => {
       adminCtx
     );
     expect(result.isError).toBeFalsy();
-    expect(create).toHaveBeenCalledWith(
+    expect(service.create).toHaveBeenCalledWith(
       expect.objectContaining({
         student_name: 'أحمد',
         course_name: 'برمجة الويب',
@@ -119,15 +136,13 @@ describe('admin certificate tools', () => {
   });
 
   it('updateCertificateHandler merges partial fields', async () => {
-    const { update, getById } = mockService();
-    const { updateCertificateHandler } = await import('../tools/certificates');
     const result = await updateCertificateHandler(
       { id: 'c1', student_name: 'مريم', format: 'json' },
       adminCtx
     );
     expect(result.isError).toBeFalsy();
-    expect(getById).toHaveBeenCalledWith('c1');
-    expect(update).toHaveBeenCalledWith(
+    expect(service.getById).toHaveBeenCalledWith('c1');
+    expect(service.update).toHaveBeenCalledWith(
       'c1',
       expect.objectContaining({ student_name: 'مريم', course_name: 'برمجة الويب' })
     );
@@ -135,31 +150,21 @@ describe('admin certificate tools', () => {
   });
 
   it('updateCertificateHandler reports a missing certificate', async () => {
-    vi.doMock(repoPath, () => ({ createCertificatesRepository: vi.fn() }));
-    vi.doMock(servicePath, () => ({
-      CertificatesService: class {
-        getById = vi.fn().mockResolvedValue(null);
-      },
-    }));
+    service.getById.mockResolvedValue(null);
 
-    const { updateCertificateHandler } = await import('../tools/certificates');
     const result = await updateCertificateHandler({ id: 'missing', format: 'json' }, adminCtx);
     expect(result.isError).toBe(true);
     expect(result.content[0]?.text).toContain('No certificate found');
   });
 
   it('deleteCertificateHandler deletes for admins', async () => {
-    const { delete: del } = mockService();
-    const { deleteCertificateHandler } = await import('../tools/certificates');
     const result = await deleteCertificateHandler({ id: 'c1', format: 'json' }, adminCtx);
     expect(result.isError).toBeFalsy();
-    expect(del).toHaveBeenCalledWith('c1');
+    expect(service.delete).toHaveBeenCalledWith('c1');
     expect(result.structuredContent?.message).toContain('deleted');
   });
 
   it('listCertificatesHandler lists with pagination', async () => {
-    mockService();
-    const { listCertificatesHandler } = await import('../tools/certificates');
     const result = await listCertificatesHandler(
       { page: 1, page_size: 20, format: 'json' },
       adminCtx
@@ -170,8 +175,6 @@ describe('admin certificate tools', () => {
   });
 
   it('getCertificateHandler returns the public shape', async () => {
-    mockService();
-    const { getCertificateHandler } = await import('../tools/certificates');
     const result = await getCertificateHandler({ id: 'c1', format: 'json' }, adminCtx);
     expect(result.isError).toBeFalsy();
     expect(result.structuredContent?.certificate_code).toBe('COMP-2026-A1B2C3D4');
@@ -179,14 +182,8 @@ describe('admin certificate tools', () => {
   });
 
   it('getCertificateHandler reports a missing certificate', async () => {
-    vi.doMock(repoPath, () => ({ createCertificatesRepository: vi.fn() }));
-    vi.doMock(servicePath, () => ({
-      CertificatesService: class {
-        getById = vi.fn().mockResolvedValue(null);
-      },
-    }));
+    service.getById.mockResolvedValue(null);
 
-    const { getCertificateHandler } = await import('../tools/certificates');
     const result = await getCertificateHandler({ id: 'missing', format: 'json' }, adminCtx);
     expect(result.isError).toBe(true);
     expect(result.content[0]?.text).toContain('No certificate found');
@@ -194,13 +191,11 @@ describe('admin certificate tools', () => {
 
   it('admin tools require an admin in effectiveScopes', async () => {
     vi.stubEnv('ADMIN_EMAILS', 'admin@example.com');
-    const { effectiveScopes } = await import('../scope');
     expect(effectiveScopes('user@example.com', ['certificates.write', 'community.read'])).toEqual([
       'community.read',
     ]);
     expect(
       effectiveScopes('admin@example.com', ['certificates.write', 'admin', 'community.read'])
     ).toEqual(['certificates.write', 'admin', 'community.read']);
-    vi.unstubAllEnvs();
   });
 });
