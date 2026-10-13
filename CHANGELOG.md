@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- merge the duplicated `@/shared/contracts/auth` import in the auth service
+
 ## [1.86.0] - 2026-10-13
 
 ### Changed
