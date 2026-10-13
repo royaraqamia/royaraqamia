@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.85.12] - 2026-10-13
+
+### Changed
+- import the admin-tools module once instead of per case
+
+### Fixed
+- fold [Unreleased] entries into the release section
+- drop the sync channel reference when the effect cleans up
+
 ## [1.85.11] - 2026-10-13
 
 ### Changed
