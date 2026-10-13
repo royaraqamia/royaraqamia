@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.royaraqamia.app",
+      "sha256_cert_fingerprints": [
+        "D0:A8:C0:88:4E:7E:DE:DF:31:56:2D:01:A0:3B:18:10:2F:52:FE:EF:EA:88:D2:B8:ED:5C:7A:06:CB:AB:2A:C7",
+        "E4:DB:F2:28:91:85:1E:D6:AF:CF:36:E0:6C:96:23:58:1E:AC:A0:A8:80:D9:48:37:D0:C6:C2:EF:98:DB:C3:C0"
+      ]
+    }
+  }
+]
