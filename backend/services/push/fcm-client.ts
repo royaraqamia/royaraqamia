@@ -18,6 +18,8 @@ export interface FcmSendError extends Error {
   statusCode?: number;
   /** FCM's machine-readable reason, e.g. `UNREGISTERED`. */
   errorCode?: string;
+  /** FCM named `message.token` as the offending field. */
+  invalidToken?: boolean;
 }
 
 export interface FcmAdapter {
@@ -65,32 +67,52 @@ export function createServiceAccountAssertion(options: {
 }
 
 /**
- * FCM tells a sender a token is dead in two ways: `UNREGISTERED` (app
- * uninstalled or token rotated) and `SENDER_ID_MISMATCH` (the token belongs to
- * another Firebase project — a stale build, or a token from a different app).
- * Only those prune. `INVALID_ARGUMENT` is NOT treated as dead: it also covers a
+ * FCM tells a sender a token is dead in three ways: `UNREGISTERED` (app
+ * uninstalled or token rotated), `SENDER_ID_MISMATCH` (the token belongs to
+ * another Firebase project — a stale build, or a token from a different app),
+ * and `INVALID_ARGUMENT` *when FCM names the token as the offending field*
+ * (observed live: a bogus token answers `INVALID_ARGUMENT` with
+ * `fieldViolations[].field = "message.token"`).
+ *
+ * `INVALID_ARGUMENT` on its own is NOT treated as dead: it also covers a
  * malformed message, and pruning every token over a payload bug would be a
- * self-inflicted outage.
+ * self-inflicted outage. Only a violation that names the token counts.
  */
 export function isDeadTokenError(error: unknown): boolean {
-  const code = (error as FcmSendError).errorCode;
-  return code === 'UNREGISTERED' || code === 'SENDER_ID_MISMATCH';
+  const { errorCode, invalidToken } = error as FcmSendError;
+  if (errorCode === 'UNREGISTERED' || errorCode === 'SENDER_ID_MISMATCH') return true;
+  return errorCode === 'INVALID_ARGUMENT' && invalidToken === true;
 }
 
 function toSendError(status: number, body: unknown): FcmSendError {
   const detail = (
     body as {
-      error?: { status?: string; details?: Array<{ errorCode?: string }> };
+      error?: {
+        status?: string;
+        details?: Array<{
+          errorCode?: string;
+          field?: string;
+          fieldViolations?: Array<{ field?: string }>;
+        }>;
+      };
     }
   )?.error;
+  const details = detail?.details ?? [];
   const errorCode =
-    detail?.details?.find((entry) => typeof entry?.errorCode === 'string')?.errorCode ??
-    detail?.status;
+    details.find((entry) => typeof entry?.errorCode === 'string')?.errorCode ?? detail?.status;
+  // FCM reports the offending field either inline or nested under
+  // `fieldViolations`; both shapes are treated the same.
+  const invalidToken = details.some(
+    (entry) =>
+      entry?.field === 'message.token' ||
+      entry?.fieldViolations?.some((violation) => violation?.field === 'message.token')
+  );
   const error = new Error(
     `FCM send failed (${status}${errorCode ? ` ${errorCode}` : ''})`
   ) as FcmSendError;
   error.statusCode = status;
   error.errorCode = errorCode;
+  error.invalidToken = invalidToken;
   return error;
 }
 

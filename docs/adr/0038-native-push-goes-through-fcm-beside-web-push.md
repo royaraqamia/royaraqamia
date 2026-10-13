@@ -27,10 +27,12 @@ broadcast — reaches both transports without knowing either exists.
 - **Importing `@capacitor/push-notifications` in the web client.** Rejected for the same
   reason as ADR-0036's bridge: the package's JavaScript is a web implementation the shell
   never runs. The plugin is read off the injected bridge.
-- **Pruning a token when FCM answers `INVALID_ARGUMENT`.** Rejected: that error also covers
-  a malformed message, so one payload bug would delete every token in the table. Only
-  `UNREGISTERED` and `SENDER_ID_MISMATCH` — the two answers that mean "this token is gone"
-  — prune.
+- **Pruning a token when FCM answers `INVALID_ARGUMENT`.** Rejected as a blanket rule: that
+  error also covers a malformed message, so one payload bug would delete every token in the
+  table. Probing the live API showed how to be precise instead — a bogus token answers
+  `INVALID_ARGUMENT` with `fieldViolations[].field = "message.token"` — so
+  `UNREGISTERED`, `SENDER_ID_MISMATCH`, and an `INVALID_ARGUMENT` that names the token are
+  the three answers that prune.
 - **A stale-token sweep, mirroring `sweep_stale_push_subscriptions`.** Not needed: FCM
   reports a dead token at send time, which is exactly when the dispatch path can act on it.
 

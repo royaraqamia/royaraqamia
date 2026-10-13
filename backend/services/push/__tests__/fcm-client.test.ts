@@ -261,4 +261,72 @@ describe('createFcmAdapter', () => {
     expect((caught as FcmSendError).statusCode).toBe(400);
     expect(isDeadTokenError(caught)).toBe(false);
   });
+
+  it('prunes when INVALID_ARGUMENT names the token as the offending field', async () => {
+    // Verbatim shape from the live API (a bogus token), which is why the rule
+    // is narrower than "400 means dead": the field violation is what tells a
+    // broken token apart from a broken message.
+    const { adapter } = makeAdapter((url) =>
+      url.includes('oauth2.googleapis.com')
+        ? tokenOk()
+        : jsonResponse(400, {
+            error: {
+              code: 400,
+              message: 'The registration token is not a valid FCM registration token',
+              status: 'INVALID_ARGUMENT',
+              details: [
+                {
+                  '@type': 'type.googleapis.com/google.firebase.fcm.v1.FcmError',
+                  errorCode: 'INVALID_ARGUMENT',
+                },
+                {
+                  '@type': 'type.googleapis.com/google.rpc.BadRequest',
+                  fieldViolations: [
+                    {
+                      field: 'message.token',
+                      description: 'The registration token is not a valid FCM registration token',
+                    },
+                  ],
+                },
+              ],
+            },
+          })
+    );
+
+    let caught: unknown;
+    try {
+      await adapter.send('t', payload);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect((caught as FcmSendError).invalidToken).toBe(true);
+    expect(isDeadTokenError(caught)).toBe(true);
+  });
+
+  it('does not prune when INVALID_ARGUMENT names another field', async () => {
+    const { adapter } = makeAdapter((url) =>
+      url.includes('oauth2.googleapis.com')
+        ? tokenOk()
+        : jsonResponse(400, {
+            error: {
+              status: 'INVALID_ARGUMENT',
+              details: [
+                { errorCode: 'INVALID_ARGUMENT' },
+                { fieldViolations: [{ field: 'message.notification.title' }] },
+              ],
+            },
+          })
+    );
+
+    let caught: unknown;
+    try {
+      await adapter.send('t', payload);
+    } catch (error) {
+      caught = error;
+    }
+
+    expect((caught as FcmSendError).invalidToken).toBe(false);
+    expect(isDeadTokenError(caught)).toBe(false);
+  });
 });

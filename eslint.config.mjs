@@ -23,6 +23,11 @@ export default [
       'scripts/',
       'eslint-rules/',
       '.agents/',
+      // The native project: Gradle/Java/Kotlin plus generated build output
+      // (android/app/build/, git-ignored). Nothing in it is JavaScript we write,
+      // and linting the intermediates only produces noise about Capacitor's
+      // own generated bridge script.
+      'android/',
       // Hand-written service worker: global function declarations are required
       // by the SW scope, so `no-implicit-globals` / `array-callback-return` false-positive.
       'public/sw.js',
