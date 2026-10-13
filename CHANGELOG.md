@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- shred the encrypted bridge session when a grant is revoked, so a disconnected client leaves
+  no replayable credential behind for a later database dump
+
 ## [1.85.5] - 2026-10-13
 
 ### Changed

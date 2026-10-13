@@ -72,3 +72,17 @@ re-authentication` failure is reachable only when a refresh _succeeded_ and the 
 Kill switches that still work, unchanged: `revokeAllUserTokens`, RFC 7009 `/mcp/revoke`, the
 sweeper, key rotation, and signing out of the site — `auth.signOut()` defaults to scope
 `global`, so it revokes every session the user holds, bridge sessions included.
+
+Revocation is also a shred. Revoking a row (`/mcp/revoke`, `revokeAllUserTokens`, retirement)
+nulls its `session_enc` in the same update, so a disconnected grant leaves no replayable
+credential in the table; rotation reads the ciphertext it carries forward _before_ revoking for
+the same reason.
+
+The Supabase session itself is deliberately _not_ revoked on top of that. In every retirement
+path we have, GoTrue has already refused or invalidated the session
+(`refresh_token_not_found`, `session_expired`, `user_banned`), or the ciphertext will not
+decrypt and there is nothing left to revoke with. The case that would need it is a _live_
+client-initiated revoke — and there, revoking means revoking whichever session the row holds,
+which for pre-amendment rows is the user's **browser** session. That would sign them out of the
+site, so it needs a recorded marker saying the session is this grant's own; that is its own
+piece of work, not something to approximate here.

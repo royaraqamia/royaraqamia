@@ -67,3 +67,67 @@ describe('createMcpOAuthRepository.markAuthCodeUsed', () => {
     await expect(repo.markAuthCodeUsed('code-1')).rejects.toThrow('update failed');
   });
 });
+
+/**
+ * Revocation is also a shred. `session_enc` is the encrypted Supabase session
+ * the data plane drains, so a revoked row must stop carrying it: otherwise a
+ * disconnected grant leaves a replayable credential behind, and a later
+ * key-rotation runbook step ("delete the rows") would have nothing extra to do.
+ */
+function makeRevokeClient(updateError: Error | null = null) {
+  const eq = vi.fn().mockResolvedValue({ error: updateError });
+  const update = vi.fn(() => ({ eq }));
+  const from = vi.fn((table: string) => {
+    if (table !== 'mcp_oauth_tokens') throw new Error(`unexpected table: ${table}`);
+    return { update };
+  });
+
+  const client = { from } as unknown as SupabaseClient<Database>;
+  return { client, from, update, eq };
+}
+
+describe('createMcpOAuthRepository.revokeToken', () => {
+  it('marks the row revoked and shreds the encrypted bridge session', async () => {
+    const { client, from, update, eq } = makeRevokeClient();
+    const repo = createMcpOAuthRepository(client);
+
+    await repo.revokeToken('tok-1');
+
+    expect(from).toHaveBeenCalledWith('mcp_oauth_tokens');
+    expect(update).toHaveBeenCalledWith({
+      revoked_at: expect.any(String),
+      session_enc: null,
+    });
+    expect(eq).toHaveBeenCalledWith('id', 'tok-1');
+  });
+
+  it('throws when the update fails', async () => {
+    const { client } = makeRevokeClient(new Error('revoke failed'));
+    const repo = createMcpOAuthRepository(client);
+
+    await expect(repo.revokeToken('tok-1')).rejects.toThrow('revoke failed');
+  });
+});
+
+describe('createMcpOAuthRepository.revokeAllUserTokens', () => {
+  it('shreds every bridge session the user holds, not just their access rows', async () => {
+    const { client, from, update, eq } = makeRevokeClient();
+    const repo = createMcpOAuthRepository(client);
+
+    await repo.revokeAllUserTokens('user-1');
+
+    expect(from).toHaveBeenCalledWith('mcp_oauth_tokens');
+    expect(update).toHaveBeenCalledWith({
+      revoked_at: expect.any(String),
+      session_enc: null,
+    });
+    expect(eq).toHaveBeenCalledWith('user_id', 'user-1');
+  });
+
+  it('throws when the update fails', async () => {
+    const { client } = makeRevokeClient(new Error('revoke all failed'));
+    const repo = createMcpOAuthRepository(client);
+
+    await expect(repo.revokeAllUserTokens('user-1')).rejects.toThrow('revoke all failed');
+  });
+});

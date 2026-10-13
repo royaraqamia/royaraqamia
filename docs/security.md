@@ -38,7 +38,8 @@ dump **plus** the key means an attacker can mint real Supabase sessions for MCP-
 users, but blast radius stays bounded by:
 
 - RLS (native, user-scoped clients — never service-role impersonation),
-- token revocation (`/mcp/revoke` + `revoked_at` on every use),
+- token revocation (`/mcp/revoke` + `revoked_at` on every use), which also shreds the row's
+  stored bridge ciphertext,
 - the daily pg_cron sweeper deleting expired/revoked rows.
 
 All MCP routes (`/mcp`, `/register`, `/token`, `/connect/consent`) are Upstash-limited

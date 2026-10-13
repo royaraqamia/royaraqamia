@@ -8,6 +8,12 @@ import { getAdminSupabase } from '@/backend/config/supabase';
  * All token/code secrets are stored SHA-256-hashed; `session_enc` holds the
  * AES-256-GCM-encrypted Supabase refresh token used to build the user-scoped
  * data client for a session.
+ *
+ * Revoking a token is also a *shred*: the revoked row stops carrying
+ * `session_enc`. A disconnected grant must not leave the encrypted bridge
+ * session lying around for a future database dump to replay, and nothing reads
+ * `session_enc` after `revoked_at` is set. Rotation therefore has to read the
+ * ciphertext it passes forward *before* it revokes the rows it replaces.
  */
 
 export interface McpOAuthClientRecord {
@@ -220,9 +226,10 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
     },
 
     async revokeToken(id) {
+      // Revoking shreds the bridge ciphertext — see the module note.
       const { error } = await (supabase as any)
         .from(TOKENS_TABLE)
-        .update({ revoked_at: new Date().toISOString() })
+        .update({ revoked_at: new Date().toISOString(), session_enc: null })
         .eq('id', id);
       if (error) throw error;
     },
@@ -230,7 +237,7 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
     async revokeAllUserTokens(userId) {
       const { error } = await (supabase as any)
         .from(TOKENS_TABLE)
-        .update({ revoked_at: new Date().toISOString() })
+        .update({ revoked_at: new Date().toISOString(), session_enc: null })
         .eq('user_id', userId);
       if (error) throw error;
     },

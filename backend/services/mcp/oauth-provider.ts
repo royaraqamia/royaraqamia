@@ -278,7 +278,9 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
 
       // Rotation: revoke the old pair, then issue a brand-new pair. Drop any
       // cached context for the superseded access token so it stops authorizing
-      // requests immediately, not up to 5 minutes later.
+      // requests immediately, not up to 5 minutes later. Both rows were read
+      // above on purpose — revoking shreds `session_enc`, and `issueTokenPair`
+      // below still needs the encrypted session to carry forward.
       await repo.revokeToken(refreshRow.id);
       if (accessRow) {
         await repo.revokeToken(accessRow.id);
