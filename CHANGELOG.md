@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.85.9] - 2026-10-13
+
+### Changed
+- say how to get out of a denial, and what the guard does not cover
+
+### Fixed
+- refuse agent commits in the shared checkout
+
 ### Changed
 - refuse `git commit` and `git push` from agent sessions in the shared checkout, so agents land work
   from a worktree
