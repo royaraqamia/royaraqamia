@@ -11,9 +11,34 @@ import {
   stripType,
   groupCommits,
   changelogSection,
+  changelogSectionFromGroups,
+  mergeChangelogGroups,
+  composeReleaseSection,
+  unreleasedRegion,
+  unreleasedBody,
+  parseChangelogSections,
+  countChangelogEntries,
+  dropDocumentingCommits,
+  applyChangelogSection,
   applyLockfileVersion,
   gradeWindows,
 } from '../release-tools.mjs';
+
+const CHANGELOG_FIXTURE = [
+  '# Changelog',
+  '',
+  '## [Unreleased]',
+  '',
+  '### Fixed',
+  "- mint a dedicated Supabase session for each MCP grant instead of copying the browser's",
+  '  rotating refresh token, and retire a grant whose bridge session is gone',
+  '',
+  '## [1.85.2] - 2026-10-12',
+  '',
+  '### Changed',
+  '- drop the diagnostics panel now that the cause is known',
+  '',
+].join('\n');
 
 describe('release-tools', () => {
   describe('parseTag / formatTag', () => {
@@ -231,6 +256,109 @@ describe('release-tools', () => {
       const section = changelogSection({ major: 1, minor: 5, patch: 0 }, '2026-08-12', []);
       expect(section).not.toContain('### Added');
       expect(section).toContain('## [1.5.0] - 2026-08-12');
+    });
+  });
+
+  describe('[Unreleased] body extraction', () => {
+    it('reads the body between the Unreleased header and the next release', () => {
+      expect(unreleasedBody(CHANGELOG_FIXTURE)).toBe(
+        [
+          '',
+          '### Fixed',
+          "- mint a dedicated Supabase session for each MCP grant instead of copying the browser's",
+          '  rotating refresh token, and retire a grant whose bridge session is gone',
+          '',
+        ].join('\n')
+      );
+    });
+
+    it('reports the 1-based line span used for blame', () => {
+      expect(unreleasedRegion(CHANGELOG_FIXTURE)).toEqual({ startLine: 4, endLine: 8 });
+    });
+
+    it('tolerates a missing Unreleased header', () => {
+      expect(unreleasedBody('# Changelog\n')).toBe('');
+      expect(unreleasedRegion('# Changelog\n')).toBeNull();
+    });
+
+    it('groups written entries by type, keeping multi-line bodies intact', () => {
+      const groups = parseChangelogSections(unreleasedBody(CHANGELOG_FIXTURE));
+      expect(groups.Added).toEqual([]);
+      expect(groups.Changed).toEqual([]);
+      expect(groups.Fixed).toEqual([
+        "mint a dedicated Supabase session for each MCP grant instead of copying the browser's\n" +
+          '  rotating refresh token, and retire a grant whose bridge session is gone',
+      ]);
+      expect(countChangelogEntries(groups)).toBe(1);
+    });
+  });
+
+  describe('mergeChangelogGroups / composeReleaseSection', () => {
+    it('folds written entries under the generated headers, once each', () => {
+      const merged = mergeChangelogGroups(
+        { Added: [], Fixed: ['a'], Changed: ['c'] },
+        { Added: ['f'], Fixed: ['a', 'b'], Changed: [] }
+      );
+      expect(merged.Fixed).toEqual(['a', 'b']);
+      expect(merged.Changed).toEqual(['c']);
+      expect(merged.Added).toEqual(['f']);
+    });
+
+    it('cuts 1.85.3 as one section per change type, no restated change', () => {
+      const commits = [
+        {
+          hash: 'a'.repeat(40),
+          subject: 'fix(mcp): mint a dedicated Supabase session per MCP grant',
+        },
+        {
+          hash: 'b'.repeat(40),
+          subject: 'docs(scan): say why the decode worker has no origin check',
+        },
+      ];
+      const generated = groupCommits(
+        dropDocumentingCommits(commits, new Set([commits[0].hash])).map((c) => c.subject)
+      );
+      const written = parseChangelogSections(unreleasedBody(CHANGELOG_FIXTURE));
+      const section = composeReleaseSection(
+        { major: 1, minor: 85, patch: 3 },
+        '2026-10-13',
+        generated,
+        written
+      );
+
+      expect(section.match(/^### Fixed$/gm)).toHaveLength(1);
+      expect(section.match(/^### Changed$/gm)).toHaveLength(1);
+      expect(section).toContain('say why the decode worker has no origin check');
+      expect(section).toContain('mint a dedicated Supabase session for each MCP grant');
+      expect(section).not.toContain('per MCP grant');
+    });
+  });
+
+  describe('applyChangelogSection', () => {
+    const section = composeReleaseSection(
+      { major: 1, minor: 85, patch: 3 },
+      '2026-10-13',
+      { Added: [], Fixed: [], Changed: ['say why the decode worker has no origin check'] },
+      parseChangelogSections(unreleasedBody(CHANGELOG_FIXTURE))
+    );
+
+    it('cuts the section in and empties the Unreleased body', () => {
+      const next = applyChangelogSection(CHANGELOG_FIXTURE, section);
+      expect(next).toContain('## [Unreleased]\n\n## [1.85.3] - 2026-10-13');
+      expect(unreleasedBody(next).trim()).toBe('');
+      expect(next).toContain('## [1.85.2] - 2026-10-12');
+    });
+
+    it('moves the written entry under the new version instead of stranding it', () => {
+      const next = applyChangelogSection(CHANGELOG_FIXTURE, section);
+      const cut = next.slice(next.indexOf('## [1.85.3]'), next.indexOf('## [1.85.2]'));
+      expect(cut.match(/^### Fixed$/gm)).toHaveLength(1);
+      expect(cut).toContain('each MCP grant');
+      expect(next.match(/^### Fixed$/gm)).toHaveLength(1);
+    });
+
+    it('seeds a fresh file with the header', () => {
+      expect(applyChangelogSection('', section)).toContain('## [1.85.3] - 2026-10-13');
     });
   });
 

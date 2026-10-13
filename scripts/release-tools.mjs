@@ -98,15 +98,54 @@ export function groupCommits(commitMessages) {
   return groups;
 }
 
-export function changelogSection(version, date, commitMessages) {
-  const groups = groupCommits(commitMessages);
+const EMPTY_GROUPS = () => ({ Added: [], Fixed: [], Changed: [] });
+
+function normalizeEntry(entry) {
+  return String(entry).replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/** Renders a dated Keep-a-Changelog section from ready-made groups. */
+export function changelogSectionFromGroups(version, date, groups) {
   const lines = [`## [${formatTag(version)}] - ${date}`];
   for (const section of ALL_CHANGED) {
-    const entries = groups[section];
-    if (!entries || entries.length === 0) continue;
+    const entries = groups?.[section] ?? [];
+    if (entries.length === 0) continue;
     lines.push('', `### ${section}`, ...entries.map((entry) => `- ${entry}`));
   }
   return `${lines.join('\n')}\n`;
+}
+
+export function changelogSection(version, date, commitMessages) {
+  return changelogSectionFromGroups(version, date, groupCommits(commitMessages));
+}
+
+/**
+ * Folds the entries already written under `[Unreleased]` into the generated
+ * ones: one list per change type, generated first, then written, with a
+ * verbatim repeat dropped. This is what keeps a release to a single `### Fixed`
+ * header instead of restating a change once as a subject and once as prose.
+ */
+export function mergeChangelogGroups(generated, written) {
+  const merged = EMPTY_GROUPS();
+  for (const section of ALL_CHANGED) {
+    const seen = new Set();
+    for (const entry of [...(generated?.[section] ?? []), ...(written?.[section] ?? [])]) {
+      const key = normalizeEntry(entry);
+      if (key.length === 0 || seen.has(key)) continue;
+      seen.add(key);
+      merged[section].push(entry);
+    }
+  }
+  return merged;
+}
+
+/** The release section for a cut, from generated subjects plus written entries. */
+export function composeReleaseSection(version, date, generatedGroups, writtenGroups) {
+  return changelogSectionFromGroups(
+    version,
+    date,
+    mergeChangelogGroups(generatedGroups, writtenGroups)
+  );
 }
 
 export const CHANGELOG_HEADER = `# Changelog
@@ -119,13 +158,110 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 `;
 
-export function readCommittedMessages(fromRef, toRef = 'HEAD') {
-  const raw = git(['log', '--no-merges', '--format=%s', `${fromRef}..${toRef}`], null);
+export function readCommits(fromRef, toRef = 'HEAD') {
+  const raw = git(['log', '--no-merges', '--format=%H %s', `${fromRef}..${toRef}`], null);
   if (raw === null) return [];
   return raw
     .split('\n')
     .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+    .filter((line) => line.length >= 40)
+    .map((line) => ({ hash: line.slice(0, 40), subject: line.slice(41) }));
+}
+
+export function readCommittedMessages(fromRef, toRef = 'HEAD') {
+  return readCommits(fromRef, toRef).map((commit) => commit.subject);
+}
+
+/**
+ * The line span (1-based, inclusive) of the body under `## [Unreleased]`,
+ * excluding the header line itself. `null` when the header is absent; the span
+ * is empty (`endLine < startLine`) when nothing has been written yet.
+ */
+export function unreleasedRegion(changelogText) {
+  const lines = String(changelogText ?? '').split('\n');
+  const start = lines.findIndex((line) => /^##\s*\[Unreleased\]\s*$/.test(line));
+  if (start < 0) return null;
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^##\s*\[/.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+  return { startLine: start + 2, endLine: end };
+}
+
+export function unreleasedBody(changelogText) {
+  const region = unreleasedRegion(changelogText);
+  if (!region) return '';
+  return String(changelogText ?? '')
+    .split('\n')
+    .slice(region.startLine - 1, region.endLine)
+    .join('\n');
+}
+
+/**
+ * Groups the hand-written `[Unreleased]` entries by change type, dropping the
+ * leading `- ` so they render exactly like generated subject lines. Indented
+ * continuation lines stay attached to their entry.
+ */
+export function parseChangelogSections(bodyText) {
+  const groups = EMPTY_GROUPS();
+  let section = null;
+  let entry = -1;
+  for (const line of String(bodyText ?? '').split('\n')) {
+    const header = /^###\s+(Added|Fixed|Changed)\s*$/i.exec(line);
+    if (header) {
+      const name = header[1].toLowerCase();
+      section = name[0].toUpperCase() + name.slice(1);
+      entry = -1;
+      continue;
+    }
+    if (!section) {
+      entry = -1;
+      continue;
+    }
+    if (line.startsWith('- ')) {
+      groups[section].push(line.slice(2));
+      entry = groups[section].length - 1;
+      continue;
+    }
+    if (entry >= 0 && /^\s+\S/.test(line)) {
+      groups[section][entry] += `\n${line}`;
+      continue;
+    }
+    entry = -1;
+  }
+  return groups;
+}
+
+export function countChangelogEntries(groups) {
+  return ALL_CHANGED.reduce((total, section) => total + (groups?.[section]?.length ?? 0), 0);
+}
+
+/**
+ * The hex commits that authored the current `[Unreleased]` body. A commit that
+ * writes its own entry there is documented by it, so its subject must not be
+ * restated in the release section.
+ */
+export function changelogOwningCommits(changelogText) {
+  const region = unreleasedRegion(changelogText);
+  if (!region || region.endLine < region.startLine) return new Set();
+  const raw = git(
+    ['blame', '--porcelain', '-L', `${region.startLine},${region.endLine}`, '--', 'CHANGELOG.md'],
+    null
+  );
+  if (raw === null) return new Set();
+  const hashes = new Set();
+  for (const line of raw.split('\n')) {
+    const match = /^([0-9a-f]{40}) /.exec(line);
+    if (match) hashes.add(match[1]);
+  }
+  return hashes;
+}
+
+export function dropDocumentingCommits(commits, owningHashes) {
+  return commits.filter((commit) => !owningHashes.has(commit.hash));
 }
 
 function sortTagsAscending(rawTags) {
@@ -215,23 +351,47 @@ export function syncLockfileVersion(version) {
   return lock;
 }
 
-export function upsertChangelog(sectionText) {
-  const changelogPath = resolve(ROOT, 'CHANGELOG.md');
-  let current = '';
+const CHANGELOG_PATH = resolve(ROOT, 'CHANGELOG.md');
+
+export function readChangelog() {
   try {
-    current = readFileSync(changelogPath, 'utf8');
+    return readFileSync(CHANGELOG_PATH, 'utf8');
   } catch {
-    current = '';
+    return '';
   }
+}
+
+/**
+ * Cuts the release section into the file *and empties the `[Unreleased]` body*,
+ * so a written entry moves under the version header instead of being stranded
+ * there and restated by the next section.
+ */
+export function applyChangelogSection(changelogText, sectionText) {
+  const current = String(changelogText ?? '');
   if (current.trim().length === 0) {
-    const next = `${CHANGELOG_HEADER}\n${sectionText}`;
-    writeFileSync(changelogPath, next, 'utf8');
-    return next;
+    return `${CHANGELOG_HEADER}\n${sectionText}`;
   }
-  const insertAt = current.indexOf('## [Unreleased]');
-  const marker = insertAt >= 0 ? current.indexOf('\n', insertAt) + 1 : 0;
-  const next = `${current.slice(0, marker)}\n${sectionText}${current.slice(marker)}`;
-  writeFileSync(changelogPath, next, 'utf8');
+  const lines = current.split('\n');
+  const start = lines.findIndex((line) => /^##\s*\[Unreleased\]\s*$/.test(line));
+  if (start < 0) {
+    return `${CHANGELOG_HEADER}\n${sectionText}${current}`;
+  }
+  let end = lines.length;
+  for (let i = start + 1; i < lines.length; i++) {
+    if (/^##\s*\[/.test(lines[i])) {
+      end = i;
+      break;
+    }
+  }
+  const before = lines.slice(0, start + 1).join('\n');
+  const after = lines.slice(end).join('\n');
+  const head = `${before}\n\n${sectionText}`;
+  return after ? `${head}\n${after}` : head;
+}
+
+export function upsertChangelog(sectionText) {
+  const next = applyChangelogSection(readChangelog(), sectionText);
+  writeFileSync(CHANGELOG_PATH, next, 'utf8');
   return next;
 }
 
@@ -243,6 +403,28 @@ function readArgs() {
     return i >= 0 ? args[i + 1] : undefined;
   };
   return { has, valueOf };
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Grades the commits in `from..HEAD` into a release section, folding in any
+ * entries already written under `[Unreleased]`. A commit that authored one of
+ * those entries (via blame) is dropped from the generated list, so the change is
+ * not restated once as a subject line and once as prose.
+ */
+function buildReleaseSection(version, from) {
+  const changelogText = readChangelog();
+  const written = parseChangelogSections(unreleasedBody(changelogText));
+  const hasWritten = countChangelogEntries(written) > 0;
+  const commits = from ? readCommits(from) : [];
+  const documented = hasWritten ? changelogOwningCommits(changelogText) : new Set();
+  const generated = groupCommits(
+    dropDocumentingCommits(commits, documented).map((commit) => commit.subject)
+  );
+  return composeReleaseSection(version, today(), generated, hasWritten ? written : null);
 }
 
 function main() {
@@ -272,11 +454,14 @@ function main() {
   if (has('--next')) {
     const lastTag = readLatestTag();
     const from = lastTag ?? git(['rev-list', '--max-parents=0', 'HEAD'], 'HEAD');
-    const messages = from ? readCommittedMessages(from) : [];
-    const next = nextVersionFromMessages(lastTag, messages);
+    const commits = from ? readCommits(from) : [];
+    const next = nextVersionFromMessages(
+      lastTag,
+      commits.map((commit) => commit.subject)
+    );
     process.stdout.write(`${formatTag(next)}\n`);
     if (dryRun) {
-      process.stdout.write(changelogSection(next, new Date().toISOString().slice(0, 10), messages));
+      process.stdout.write(buildReleaseSection(next, from));
     }
     return;
   }
@@ -287,11 +472,9 @@ function main() {
     bumpPackageVersion(version);
     const lastTag = readLatestTag();
     const from = lastTag ?? git(['rev-list', '--max-parents=0', 'HEAD'], 'HEAD');
-    const messages = from ? readCommittedMessages(from) : [];
-    const section = changelogSection(
+    const section = buildReleaseSection(
       parseTag(version) ?? { major: 0, minor: 0, patch: 0 },
-      new Date().toISOString().slice(0, 10),
-      messages
+      from
     );
     upsertChangelog(section);
     const notesFile = valueOf('--notes-file');
