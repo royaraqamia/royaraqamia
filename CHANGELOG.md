@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.85.5] - 2026-10-13
+
+### Changed
+- say what the client actually does when a grant is retired
+
+### Fixed
+- match the never-cache list to the real account-tool routes
+
 ## [1.85.4] - 2026-10-13
 
 ### Changed
