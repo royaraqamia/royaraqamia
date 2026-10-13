@@ -18,6 +18,9 @@
 | `npm run perf:baseline:update`              | Re-record `perf/baseline.json` after an intended change                                              |
 | `npm run prune:deployments -- --dry-run`    | List the Vercel deployments a prune would delete (see `docs/vercel-usage.md`)                        |
 | `npm run version:next`                      | Version next rehearsal                                                                               |
+| `npm run android:apk`                       | Debug APK (syncs the native project first) — see `docs/mobile/android-shell.md`                      |
+| `npm run android:release`                   | Signed release APK                                                                                   |
+| `npm run android:aab`                       | Signed App Bundle for a Play upload                                                                  |
 
 ## Runtime metrics
 

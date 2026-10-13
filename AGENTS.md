@@ -45,6 +45,7 @@ taskkill /PID $p.Id /T /F
 - [Performance baseline & budget](docs/performance.md)
 - [Vercel usage budget (Hobby)](docs/vercel-usage.md)
 - [Available skills](docs/skills.md)
+- [Android shell (APK / AAB)](docs/mobile/android-shell.md)
 - [Working in a worktree](docs/agents/worktrees.md)
 
 ## Agent skills
