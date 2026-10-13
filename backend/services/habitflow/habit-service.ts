@@ -37,6 +37,9 @@ export class HabitService {
       ...(data.archived !== undefined && { archived: data.archived }),
       // An Outbox replay of an undo clears the tombstone (deletedAt: null).
       ...(data.deletedAt !== undefined && { deletedAt: data.deletedAt }),
+      // Carry the client write time: the repository's LWW predicate compares it
+      // against the stored row, so a stale replay can't clobber a newer edit.
+      ...(data.updatedAt !== undefined && { updatedAt: data.updatedAt }),
       ...this.normalizeGoalFields(data),
     });
   }
@@ -104,11 +107,18 @@ export class HabitService {
     date: string;
     completed: boolean;
     clientId?: string;
+    updatedAt?: string;
   }): Promise<HabitLog> {
     if (!data.habitId || !data.date || data.completed === undefined) {
       throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
     }
-    return this.repository.toggleLog(data.habitId, data.date, data.completed, data.clientId);
+    return this.repository.toggleLog(
+      data.habitId,
+      data.date,
+      data.completed,
+      data.clientId,
+      data.updatedAt
+    );
   }
 
   async setHabitLogKind(data: {
@@ -116,6 +126,7 @@ export class HabitService {
     date: string;
     kind: HabitLogKind | 'none';
     clientId?: string;
+    updatedAt?: string;
   }): Promise<HabitLog> {
     if (!data.habitId || !data.date) {
       throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
@@ -124,7 +135,7 @@ export class HabitService {
     if (kind !== 'complete' && kind !== 'skip' && kind !== 'miss' && kind !== 'none') {
       throw new AppError('نوع تسجيل غير صالح', 400);
     }
-    return this.repository.setLogKind(data.habitId, data.date, kind, data.clientId);
+    return this.repository.setLogKind(data.habitId, data.date, kind, data.clientId, data.updatedAt);
   }
 
   async setHabitLogNote(data: {
@@ -132,6 +143,7 @@ export class HabitService {
     date: string;
     note: string | null;
     clientId?: string;
+    updatedAt?: string;
   }): Promise<HabitLog> {
     if (!data.habitId || !data.date) {
       throw new AppError('حقول مطلوبة مفقودة للتسجيل', 400);
@@ -142,7 +154,7 @@ export class HabitService {
           ? null
           : data.note.trim().slice(0, 500)
         : null;
-    return this.repository.setLogNote(data.habitId, data.date, note, data.clientId);
+    return this.repository.setLogNote(data.habitId, data.date, note, data.clientId, data.updatedAt);
   }
 
   async getLogs(startDate: string, endDate: string): Promise<HabitLog[]> {

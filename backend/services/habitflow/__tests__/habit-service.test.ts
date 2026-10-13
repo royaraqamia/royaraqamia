@@ -294,6 +294,26 @@ describe('HabitService', () => {
         targetPeriod: null,
       });
     });
+
+    it('forwards the client write time for last-write-wins', async () => {
+      const { repository, service } = makeRepo();
+      (repository.updateHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
+      const updatedAt = '2026-08-05T10:00:00.000Z';
+
+      await service.updateHabit('h-1', { name: 'قراءة', updatedAt });
+
+      expect(repository.updateHabit).toHaveBeenCalledWith('h-1', { name: 'قراءة', updatedAt });
+    });
+
+    it('forwards the write time on an undo replay (deletedAt: null)', async () => {
+      const { repository, service } = makeRepo();
+      (repository.updateHabit as ReturnType<typeof vi.fn>).mockResolvedValue(habitFixture);
+      const updatedAt = '2026-08-05T10:00:00.000Z';
+
+      await service.updateHabit('h-1', { deletedAt: null, updatedAt });
+
+      expect(repository.updateHabit).toHaveBeenCalledWith('h-1', { deletedAt: null, updatedAt });
+    });
   });
 
   describe('deleteHabit', () => {
@@ -346,7 +366,35 @@ describe('HabitService', () => {
       await expect(
         service.toggleHabitLog({ habitId: 'h-1', date: '2026-08-02', completed: true })
       ).resolves.toEqual(logFixture);
-      expect(repository.toggleLog).toHaveBeenCalledWith('h-1', '2026-08-02', true, undefined);
+      expect(repository.toggleLog).toHaveBeenCalledWith(
+        'h-1',
+        '2026-08-02',
+        true,
+        undefined,
+        undefined
+      );
+    });
+
+    it('forwards the client write time for last-write-wins', async () => {
+      const { repository, service } = makeRepo();
+      (repository.toggleLog as ReturnType<typeof vi.fn>).mockResolvedValue(logFixture);
+      const updatedAt = '2026-08-02T10:00:00.000Z';
+
+      await service.toggleHabitLog({
+        habitId: 'h-1',
+        date: '2026-08-02',
+        completed: true,
+        clientId: 'c-1',
+        updatedAt,
+      });
+
+      expect(repository.toggleLog).toHaveBeenCalledWith(
+        'h-1',
+        '2026-08-02',
+        true,
+        'c-1',
+        updatedAt
+      );
     });
   });
 
@@ -389,7 +437,35 @@ describe('HabitService', () => {
       await expect(
         service.setHabitLogKind({ habitId: 'h-1', date: '2026-08-02', kind: 'skip' })
       ).resolves.toEqual(skipLog);
-      expect(repository.setLogKind).toHaveBeenCalledWith('h-1', '2026-08-02', 'skip', undefined);
+      expect(repository.setLogKind).toHaveBeenCalledWith(
+        'h-1',
+        '2026-08-02',
+        'skip',
+        undefined,
+        undefined
+      );
+    });
+
+    it('forwards the client write time for last-write-wins', async () => {
+      const { repository, service } = makeRepo();
+      (repository.setLogKind as ReturnType<typeof vi.fn>).mockResolvedValue(logFixture);
+      const updatedAt = '2026-08-02T10:00:00.000Z';
+
+      await service.setHabitLogKind({
+        habitId: 'h-1',
+        date: '2026-08-02',
+        kind: 'miss',
+        clientId: 'c-1',
+        updatedAt,
+      });
+
+      expect(repository.setLogKind).toHaveBeenCalledWith(
+        'h-1',
+        '2026-08-02',
+        'miss',
+        'c-1',
+        updatedAt
+      );
     });
   });
 
@@ -415,6 +491,7 @@ describe('HabitService', () => {
         'h-1',
         '2026-08-02',
         'يوم رائع',
+        undefined,
         undefined
       );
     });
@@ -431,6 +508,7 @@ describe('HabitService', () => {
         'h-1',
         '2026-08-02',
         null,
+        undefined,
         undefined
       );
       expect(repository.setLogNote).toHaveBeenNthCalledWith(
@@ -438,7 +516,30 @@ describe('HabitService', () => {
         'h-1',
         '2026-08-02',
         null,
+        undefined,
         undefined
+      );
+    });
+
+    it('forwards the client write time for last-write-wins', async () => {
+      const { repository, service } = makeRepo();
+      (repository.setLogNote as ReturnType<typeof vi.fn>).mockResolvedValue(logFixture);
+      const updatedAt = '2026-08-02T10:00:00.000Z';
+
+      await service.setHabitLogNote({
+        habitId: 'h-1',
+        date: '2026-08-02',
+        note: 'ملاحظة',
+        clientId: 'c-1',
+        updatedAt,
+      });
+
+      expect(repository.setLogNote).toHaveBeenCalledWith(
+        'h-1',
+        '2026-08-02',
+        'ملاحظة',
+        'c-1',
+        updatedAt
       );
     });
   });

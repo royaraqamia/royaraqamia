@@ -10,6 +10,10 @@ interface Result {
 /**
  * Minimal PostgREST-shaped fake: records the builder chain per table so tests
  * can assert the exact filters (notably the tombstone filter) and conflict key.
+ *
+ * A table's result may be a queue: each terminal call (await / single /
+ * maybeSingle) consumes the next entry, so a test can script "fetch existing,
+ * then filtered update, then re-fetch the winner".
  */
 class Builder {
   constructor(
@@ -69,12 +73,21 @@ class Builder {
   }
 }
 
-function makeClient(results: Record<string, Result> = {}) {
+function makeClient(results: Record<string, Result | Result[]> = {}) {
   const calls: string[] = [];
-  const from = vi.fn(
-    (table: string) =>
-      new Builder(table, calls, () => results[table] ?? { data: null, error: null })
-  );
+  const cursors: Record<string, number> = {};
+  const from = vi.fn((table: string) => {
+    const entry = results[table];
+    const next = (): Result => {
+      if (Array.isArray(entry)) {
+        const index = Math.min(cursors[table] ?? 0, entry.length - 1);
+        cursors[table] = (cursors[table] ?? 0) + 1;
+        return entry[index]!;
+      }
+      return entry ?? { data: null, error: null };
+    };
+    return new Builder(table, calls, next);
+  });
   const client = { from } as unknown as SupabaseClient;
   return { client, calls, from };
 }
@@ -153,6 +166,52 @@ describe('SupabaseHabitRepository — offline write contract', () => {
       expect(calls.find((c) => c.includes('update'))).toContain(`"updated_at":"${updatedAt}"`);
     });
 
+    it('a stale edit is a no-op that returns the newer row', async () => {
+      const newerRow = { ...habitRow, name: 'قراءة يومية', updated_at: '2026-08-05T00:00:00.000Z' };
+      const { client } = makeClient({
+        habits: [
+          // The update matched nothing: the stored row is newer.
+          { data: [], error: null },
+          // Re-read of the winning row.
+          { data: newerRow, error: null },
+        ],
+      });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const result = await repo.updateHabit('h-1', {
+        name: 'اسم قديم',
+        updatedAt: '2026-08-01T00:00:00.000Z',
+      });
+
+      expect(result.name).toBe('قراءة يومية');
+      expect(result.updatedAt).toBe('2026-08-05T00:00:00.000Z');
+    });
+
+    it('a stale undo does not revive a newer tombstone', async () => {
+      const tombstone = {
+        ...habitRow,
+        name: 'قراءة',
+        deleted_at: '2026-08-05T00:00:00.000Z',
+        updated_at: '2026-08-05T00:00:00.000Z',
+      };
+      const { client, calls } = makeClient({
+        habits: [
+          { data: [], error: null },
+          { data: tombstone, error: null },
+        ],
+      });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const result = await repo.updateHabit('h-1', {
+        deletedAt: null,
+        updatedAt: '2026-08-01T00:00:00.000Z',
+      });
+
+      // The resurrect was filtered, so the tombstone survives.
+      expect(result.deletedAt).toBe('2026-08-05T00:00:00.000Z');
+      expect(calls.some((c) => c.includes('lte updated_at=2026-08-01T00:00:00.000Z'))).toBe(true);
+    });
+
     it('getHabits excludes tombstones', async () => {
       const { client, calls } = makeClient({ habits: { data: [habitRow], error: null } });
       const repo = new SupabaseHabitRepository(client, 'u-1');
@@ -190,16 +249,119 @@ describe('SupabaseHabitRepository — offline write contract', () => {
 
     it('toggleLog stamps updated_at and passes through the client id', async () => {
       const legacyLog = { ...logRow, client_id: null };
+      const updated = { ...legacyLog, client_id: '22222222-2222-7222-8222-222222222222' };
       const { client, calls } = makeClient({
-        habit_logs: { data: legacyLog, error: null },
+        habit_logs: [
+          { data: legacyLog, error: null },
+          { data: [updated], error: null },
+        ],
       });
       const repo = new SupabaseHabitRepository(client, 'u-1');
 
-      await repo.toggleLog('h-1', '2026-08-02', true, '22222222-2222-7222-8222-222222222222');
+      const result = await repo.toggleLog(
+        'h-1',
+        '2026-08-02',
+        true,
+        '22222222-2222-7222-8222-222222222222'
+      );
 
       const updateCall = calls.find((c) => c.includes('update'));
       expect(updateCall).toContain('"updated_at"');
       expect(updateCall).toContain('"client_id":"22222222-2222-7222-8222-222222222222"');
+      expect(result.clientId).toBe('22222222-2222-7222-8222-222222222222');
+    });
+  });
+
+  describe('log last-write-wins', () => {
+    const newerAt = '2026-08-05T00:00:00.000Z';
+    const olderAt = '2026-08-01T00:00:00.000Z';
+    const newerLog = { ...logRow, updated_at: newerAt };
+
+    it('toggleLog gates the row update on the client write time', async () => {
+      const applied = { ...logRow, completed: false, log_kind: 'none', updated_at: newerAt };
+      const { client, calls } = makeClient({
+        habit_logs: [
+          { data: logRow, error: null },
+          { data: [applied], error: null },
+        ],
+      });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const result = await repo.toggleLog('h-1', '2026-08-02', false, undefined, newerAt);
+
+      expect(calls.some((c) => c.includes(`lte updated_at=${newerAt}`))).toBe(true);
+      expect(calls.find((c) => c.includes('update'))).toContain(`"updated_at":"${newerAt}"`);
+      expect(result.completed).toBe(false);
+    });
+
+    it('a stale toggle is a no-op that returns the newer row', async () => {
+      const { client, calls } = makeClient({
+        habit_logs: [
+          { data: newerLog, error: null },
+          // The LWW predicate filtered the update: nothing came back.
+          { data: [], error: null },
+          // Re-read of the winning row.
+          { data: newerLog, error: null },
+        ],
+      });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const result = await repo.toggleLog('h-1', '2026-08-02', false, undefined, olderAt);
+
+      expect(calls.some((c) => c.includes(`lte updated_at=${olderAt}`))).toBe(true);
+      expect(result.updatedAt).toBe(newerAt);
+      expect(result.completed).toBe(true);
+    });
+
+    it('setLogKind applies the same gate and returns the winner when stale', async () => {
+      const { client, calls } = makeClient({
+        habit_logs: [
+          { data: newerLog, error: null },
+          { data: [], error: null },
+          { data: newerLog, error: null },
+        ],
+      });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const result = await repo.setLogKind('h-1', '2026-08-02', 'miss', undefined, olderAt);
+
+      expect(calls.some((c) => c.includes(`lte updated_at=${olderAt}`))).toBe(true);
+      expect(result.kind).toBe('complete');
+      expect(result.updatedAt).toBe(newerAt);
+    });
+
+    it('setLogNote applies the same gate and returns the winner when stale', async () => {
+      const { client, calls } = makeClient({
+        habit_logs: [
+          { data: newerLog, error: null },
+          { data: [], error: null },
+          { data: newerLog, error: null },
+        ],
+      });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      const result = await repo.setLogNote('h-1', '2026-08-02', 'ملاحظة قديمة', undefined, olderAt);
+
+      expect(calls.some((c) => c.includes(`lte updated_at=${olderAt}`))).toBe(true);
+      expect(result.updatedAt).toBe(newerAt);
+    });
+
+    it('falls back to a server stamp when no client time is supplied', async () => {
+      const { client, calls } = makeClient({
+        habit_logs: [
+          { data: logRow, error: null },
+          { data: [logRow], error: null },
+        ],
+      });
+      const repo = new SupabaseHabitRepository(client, 'u-1');
+
+      await repo.toggleLog('h-1', '2026-08-02', true);
+
+      const updateCall = calls.find((c) => c.startsWith('habit_logs:update'))!;
+      const row = JSON.parse(updateCall.slice('habit_logs:update '.length)) as {
+        updated_at: string;
+      };
+      expect(new Date(row.updated_at).toISOString()).toBe(row.updated_at);
     });
   });
 });

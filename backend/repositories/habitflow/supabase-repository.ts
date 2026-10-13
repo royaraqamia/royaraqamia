@@ -357,8 +357,13 @@ export class SupabaseHabitRepository implements HabitRepository {
     habitId: string,
     date: string,
     completed: boolean,
-    clientId?: string
+    clientId?: string,
+    updatedAt?: string
   ): Promise<HabitLog> {
+    // LWW on the client write time (ADR-0029): a replayed older toggle must not
+    // overwrite newer state. Absent a client time, stamp server now as before.
+    const stamp = updatedAt ?? nowIso();
+
     let fetchQuery = this.client
       .from('habit_logs')
       .select('*')
@@ -376,8 +381,6 @@ export class SupabaseHabitRepository implements HabitRepository {
       throw fetchError;
     }
 
-    let result: LogRow;
-
     if (existing) {
       let updateQuery = this.client
         .from('habit_logs')
@@ -385,55 +388,63 @@ export class SupabaseHabitRepository implements HabitRepository {
           completed,
           completed_at: completed ? nowIso() : null,
           log_kind: completed ? 'complete' : 'none',
-          updated_at: nowIso(),
+          updated_at: stamp,
           ...(clientId && !existing.client_id ? { client_id: clientId } : {}),
         })
-        .eq('id', existing.id);
+        .eq('id', existing.id)
+        .lte('updated_at', stamp);
 
       if (this.userId) {
         updateQuery = updateQuery.eq('user_id', this.userId);
       }
 
-      const { data, error } = await updateQuery.select().single();
+      const { data, error } = await updateQuery.select();
 
       if (error) {
         throw error;
       }
-      result = data;
-    } else {
-      const { data, error } = await this.client
-        .from('habit_logs')
-        .insert({
-          ...(clientId ? { id: clientId } : {}),
-          habit_id: habitId,
-          date,
-          completed,
-          completed_at: completed ? nowIso() : null,
-          log_kind: completed ? 'complete' : 'none',
-          user_id: this.userId,
-          client_id: clientId ?? null,
-          updated_at: nowIso(),
-        })
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
+      if (data && data.length > 0) {
+        return toLog(data[0] as LogRow);
       }
-      result = data;
+
+      // Filtered by LWW: the stored row is newer, so the replayed write is a
+      // no-op success that returns the winning row rather than an error.
+      return this.getCurrentLog(habitId, date);
     }
 
-    return toLog(result);
+    const { data, error } = await this.client
+      .from('habit_logs')
+      .insert({
+        ...(clientId ? { id: clientId } : {}),
+        habit_id: habitId,
+        date,
+        completed,
+        completed_at: completed ? nowIso() : null,
+        log_kind: completed ? 'complete' : 'none',
+        user_id: this.userId,
+        client_id: clientId ?? null,
+        updated_at: stamp,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      throw error;
+    }
+    return toLog(data);
   }
 
   async setLogKind(
     habitId: string,
     date: string,
     kind: HabitLogKind | 'none',
-    clientId?: string
+    clientId?: string,
+    updatedAt?: string
   ): Promise<HabitLog> {
     const completed = kind === 'complete';
     const completedAt = completed ? nowIso() : null;
+    // LWW on the client write time (ADR-0029).
+    const stamp = updatedAt ?? nowIso();
 
     let fetchQuery = this.client
       .from('habit_logs')
@@ -459,21 +470,28 @@ export class SupabaseHabitRepository implements HabitRepository {
           completed,
           completed_at: completedAt,
           log_kind: kind,
-          updated_at: nowIso(),
+          updated_at: stamp,
           ...(clientId && !existing.client_id ? { client_id: clientId } : {}),
         })
-        .eq('id', existing.id);
+        .eq('id', existing.id)
+        .lte('updated_at', stamp);
 
       if (this.userId) {
         updateQuery = updateQuery.eq('user_id', this.userId);
       }
 
-      const { data, error } = await updateQuery.select().single();
+      const { data, error } = await updateQuery.select();
 
       if (error) {
         throw error;
       }
-      return toLog(data);
+      if (data && data.length > 0) {
+        return toLog(data[0] as LogRow);
+      }
+
+      // Filtered by LWW: return the winning row so a stale replay is a no-op
+      // success rather than an error.
+      return this.getCurrentLog(habitId, date);
     }
 
     const { data, error } = await this.client
@@ -487,7 +505,7 @@ export class SupabaseHabitRepository implements HabitRepository {
         log_kind: kind,
         user_id: this.userId,
         client_id: clientId ?? null,
-        updated_at: nowIso(),
+        updated_at: stamp,
       })
       .select()
       .single();
@@ -502,8 +520,12 @@ export class SupabaseHabitRepository implements HabitRepository {
     habitId: string,
     date: string,
     note: string | null,
-    clientId?: string
+    clientId?: string,
+    updatedAt?: string
   ): Promise<HabitLog> {
+    // LWW on the client write time (ADR-0029).
+    const stamp = updatedAt ?? nowIso();
+
     let fetchQuery = this.client
       .from('habit_logs')
       .select('*')
@@ -526,21 +548,28 @@ export class SupabaseHabitRepository implements HabitRepository {
         .from('habit_logs')
         .update({
           note,
-          updated_at: nowIso(),
+          updated_at: stamp,
           ...(clientId && !existing.client_id ? { client_id: clientId } : {}),
         })
-        .eq('id', existing.id);
+        .eq('id', existing.id)
+        .lte('updated_at', stamp);
 
       if (this.userId) {
         updateQuery = updateQuery.eq('user_id', this.userId);
       }
 
-      const { data, error } = await updateQuery.select().single();
+      const { data, error } = await updateQuery.select();
 
       if (error) {
         throw error;
       }
-      return toLog(data);
+      if (data && data.length > 0) {
+        return toLog(data[0] as LogRow);
+      }
+
+      // Filtered by LWW: return the winning row so a stale replay is a no-op
+      // success rather than an error.
+      return this.getCurrentLog(habitId, date);
     }
 
     const { data, error } = await this.client
@@ -555,7 +584,7 @@ export class SupabaseHabitRepository implements HabitRepository {
         note,
         user_id: this.userId,
         client_id: clientId ?? null,
-        updated_at: nowIso(),
+        updated_at: stamp,
       })
       .select()
       .single();
@@ -564,5 +593,33 @@ export class SupabaseHabitRepository implements HabitRepository {
       throw error;
     }
     return toLog(data);
+  }
+
+  /**
+   * The current row for a (habit, date) pair, returned when a log write is
+   * filtered by last-write-wins — mirrors `updateHabit`'s no-op path so a stale
+   * replay stays a success instead of surfacing an error.
+   */
+  private async getCurrentLog(habitId: string, date: string): Promise<HabitLog> {
+    let query = this.client
+      .from('habit_logs')
+      .select('*')
+      .eq('habit_id', habitId)
+      .eq('date', date)
+      .is('deleted_at', null);
+
+    if (this.userId) {
+      query = query.eq('user_id', this.userId);
+    }
+
+    const { data, error } = await query.maybeSingle();
+
+    if (error) {
+      throw error;
+    }
+    if (!data) {
+      throw new AppError('السجل غير موجود', 404);
+    }
+    return toLog(data as LogRow);
   }
 }

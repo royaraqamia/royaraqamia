@@ -72,23 +72,27 @@ export interface HabitRepository {
   updateHabit(id: string, updates: Partial<Habit>): Promise<Habit>;
   deleteHabit(id: string, meta?: { updatedAt?: string }): Promise<boolean>;
   getLogs(startDate: string, endDate: string): Promise<HabitLog[]>;
+  /** `updatedAt` is the client write time that drives LWW (ADR-0029). */
   toggleLog(
     habitId: string,
     date: string,
     completed: boolean,
-    clientId?: string
+    clientId?: string,
+    updatedAt?: string
   ): Promise<HabitLog>;
   setLogKind(
     habitId: string,
     date: string,
     kind: HabitLogKind | 'none',
-    clientId?: string
+    clientId?: string,
+    updatedAt?: string
   ): Promise<HabitLog>;
   setLogNote(
     habitId: string,
     date: string,
     note: string | null,
-    clientId?: string
+    clientId?: string,
+    updatedAt?: string
   ): Promise<HabitLog>;
   restoreFromBackup(input: HabitRestoreInput): Promise<void>;
   getLocalData(): Promise<{ habits: Habit[]; logs: HabitLog[] }>;

@@ -23,6 +23,13 @@ describe('HabitWriteSchema', () => {
     expect(HabitWriteSchema.safeParse({ ...base, reminderTime: '21:30' }).success).toBe(true);
     expect(HabitWriteSchema.safeParse({ ...base, reminderTime: '25:00' }).success).toBe(false);
   });
+
+  it('accepts the client write time that drives LWW', () => {
+    expect(
+      HabitWriteSchema.safeParse({ ...base, updatedAt: '2026-08-02T10:00:00.000Z' }).success
+    ).toBe(true);
+    expect(HabitWriteSchema.safeParse({ ...base, updatedAt: 'not-a-date' }).success).toBe(false);
+  });
 });
 
 describe('HabitLogWriteSchema', () => {
@@ -38,5 +45,12 @@ describe('HabitLogWriteSchema', () => {
 
   it('rejects an unknown kind', () => {
     expect(HabitLogWriteSchema.safeParse({ ...base, kind: 'whatever' }).success).toBe(false);
+  });
+
+  it('accepts the client write time that drives LWW', () => {
+    expect(
+      HabitLogWriteSchema.safeParse({ ...base, updatedAt: '2026-08-02T10:00:00.000Z' }).success
+    ).toBe(true);
+    expect(HabitLogWriteSchema.safeParse({ ...base, updatedAt: 'not-a-date' }).success).toBe(false);
   });
 });
