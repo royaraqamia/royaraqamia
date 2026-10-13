@@ -7,8 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.87.0] - 2026-10-13
+
 ### Changed
+- record the shell OAuth decision and update the runbook
 - merge the duplicated `@/shared/contracts/auth` import in the auth service
+
+### Added
+- complete the Google round trip in a callback route
 
 ## [1.86.0] - 2026-10-13
 
