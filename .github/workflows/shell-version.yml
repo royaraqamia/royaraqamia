@@ -1,0 +1,41 @@
+name: 'Shell Version'
+
+# The Android shell's version counter is what decides whether an installed APK is
+# told about a newer one (ADR-0043). Nothing about building a web page can tell
+# whether the APK changed, so this is the check that keeps the counter tracking
+# the native side: a pull request that touches android/**, the Capacitor config,
+# or a Capacitor plugin dependency has to move it.
+#
+# It runs `node scripts/android-shell-version.mjs`, which reads two files and
+# shells out to `git` — no Android toolchain, no npm install — so it can afford
+# to run on every pull request instead of on a path filter.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: shell-version-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shell-version:
+    name: A native change moves the shell version
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          # The comparison is against the base commit, so the whole history of
+          # this branch has to be here.
+          fetch-depth: 0
+
+      - name: Compare the shell version with this change
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || 'HEAD~1' }}
+        run: node scripts/android-shell-version.mjs --check "$BASE"

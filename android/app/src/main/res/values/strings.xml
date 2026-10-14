@@ -4,4 +4,15 @@
     <string name="title_activity_main">رؤيَة رقَميَّة</string>
     <string name="package_name">com.royaraqamia.app</string>
     <string name="custom_url_scheme">com.royaraqamia.app</string>
+
+    <!-- The shell's own update prompt (ADR-0043). Native, because the page
+         cannot be relied on to carry it: the Capacitor bridge is missing on the
+         WebViews this app supports. -->
+    <string name="shell_update_title">تحديث التطبيق</string>
+    <string name="shell_update_message">يتوفَّر إصدار جديد من التطبيق. تنزيله الآن؟</string>
+    <string name="shell_update_install">تنزيل التحديث</string>
+    <string name="shell_update_later">لاحقًا</string>
+    <string name="shell_update_required_title">تحديث مطلوب</string>
+    <string name="shell_update_required_message">هذا الإصدار من التطبيق لم يعد مدعومًا. حدِّث التطبيق للمتابعة.</string>
+    <string name="shell_update_no_handler">لا يوجد تطبيق على هذا الجهاز يمكنه فتح رابط التنزيل.</string>
 </resources>

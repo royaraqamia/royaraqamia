@@ -68,4 +68,6 @@ becomes worth revisiting, now that there is a surface to render it on.
 
 `e2e/sw-update.spec.ts` pins the announcement: nothing is offered while the document is current, a
 waiting worker is announced, declining leaves the document and the offer alone, and after a refresh the
-gesture is what moves the document — once, with no loop.
+gesture is what moves the document — once, with no loop. The one case where the page holds its offer
+back — the shell announcing its own update natively (ADR-0043) — has its case there too: a shell user
+agent and a routed manifest, with a waiting worker behind it and a prompt that stays down.

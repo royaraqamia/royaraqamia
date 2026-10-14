@@ -1,66 +1,106 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { UpdatePrompt } from '../update-prompt';
 
-const state = vi.hoisted(() => ({
-  updateAvailable: false,
-  shellPending: false,
-  applyUpdate: vi.fn(),
+const pwa = vi.hoisted(() => ({ updateAvailable: false, applyUpdate: vi.fn() }));
+
+const shell = vi.hoisted(() => ({
+  state: {
+    updatePending: false,
+    unsupported: false,
+    installedCode: null as number | null,
+    latestCode: null as number | null,
+  },
+  listeners: new Set<() => void>(),
 }));
 
 vi.mock('@/frontend/ui/PWAProvider', () => ({
-  usePWAContext: () => ({
-    updateAvailable: state.updateAvailable,
-    applyUpdate: state.applyUpdate,
-  }),
+  usePWAContext: () => ({ updateAvailable: pwa.updateAvailable, applyUpdate: pwa.applyUpdate }),
 }));
 
 vi.mock('@/frontend/shared/shell-update', () => ({
-  isShellUpdatePending: () => state.shellPending,
+  SHELL_UPDATE_IDLE: {
+    updatePending: false,
+    unsupported: false,
+    installedCode: null,
+    latestCode: null,
+  },
+  // The same object every time: `useSyncExternalStore` treats a fresh snapshot
+  // per call as an infinite loop.
+  getShellUpdateState: () => shell.state,
+  subscribeShellUpdate: (listener: () => void) => {
+    shell.listeners.add(listener);
+    return () => shell.listeners.delete(listener);
+  },
 }));
+
+function setShellBehind(behind: boolean) {
+  shell.state = { ...shell.state, updatePending: behind };
+  act(() => {
+    for (const listener of shell.listeners) listener();
+  });
+}
 
 describe('UpdatePrompt', () => {
   beforeEach(() => {
-    state.updateAvailable = false;
-    state.shellPending = false;
-    state.applyUpdate = vi.fn();
+    pwa.updateAvailable = false;
+    pwa.applyUpdate = vi.fn();
+    shell.state = {
+      updatePending: false,
+      unsupported: false,
+      installedCode: null,
+      latestCode: null,
+    };
+    shell.listeners.clear();
   });
 
-  it('renders nothing while the document is on the current build', () => {
+  it('renders nothing while the document is current', () => {
     const { container } = render(<UpdatePrompt />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('announces the waiting build and applies it on the gesture', () => {
-    state.updateAvailable = true;
+    pwa.updateAvailable = true;
     render(<UpdatePrompt />);
 
     expect(screen.getByTestId('update-prompt')).toHaveTextContent('يتوفَّر إصدار جديد');
 
     fireEvent.click(screen.getByRole('button', { name: 'تحديث الآن' }));
 
-    expect(state.applyUpdate).toHaveBeenCalledTimes(1);
+    expect(pwa.applyUpdate).toHaveBeenCalledTimes(1);
     expect(screen.getByRole('button', { name: 'جارٍ التحديث…' })).toBeDisabled();
   });
 
   it('stays down once declined, without touching the update', () => {
-    state.updateAvailable = true;
+    pwa.updateAvailable = true;
     const { container } = render(<UpdatePrompt />);
 
     fireEvent.click(screen.getByRole('button', { name: 'لاحقًا' }));
 
     expect(container).toBeEmptyDOMElement();
-    expect(state.applyUpdate).not.toHaveBeenCalled();
+    expect(pwa.applyUpdate).not.toHaveBeenCalled();
   });
 
-  it('leaves the one prompt to the shell while its own update is pending', () => {
-    // The APK install brings the web build with it, so asking for a reload as
-    // well would be two prompts for one update (ADR-0042).
-    state.updateAvailable = true;
-    state.shellPending = true;
+  it('holds back while the shell is announcing its own update', () => {
+    // Installing the new APK brings the newest web build with it, so a reload
+    // offer underneath the shell's own prompt would be a second one for the same
+    // update (ADR-0043). The shell's prompt is native; this is the whole of the
+    // page's half.
+    pwa.updateAvailable = true;
+    render(<UpdatePrompt />);
+    setShellBehind(true);
 
-    const { container } = render(<UpdatePrompt />);
+    expect(screen.queryByTestId('update-prompt')).toBeNull();
+  });
 
-    expect(container).toBeEmptyDOMElement();
+  it('comes back if the shell turns out to be current after all', () => {
+    pwa.updateAvailable = true;
+    render(<UpdatePrompt />);
+    setShellBehind(true);
+    expect(screen.queryByTestId('update-prompt')).toBeNull();
+
+    setShellBehind(false);
+
+    expect(screen.getByTestId('update-prompt')).toBeInTheDocument();
   });
 });

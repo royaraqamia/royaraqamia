@@ -41,7 +41,9 @@
     "android:release": "npm run android:sync && node scripts/android.mjs release",
     "android:aab": "npm run android:sync && node scripts/android.mjs aab",
     "android:verify-bridge": "node scripts/verify-bridge.mjs",
+    "android:shell-version": "node scripts/android-shell-version.mjs",
     "android:assets": "node scripts/generate-android-assets.mjs",
+    "android:test": "npm run android:sync && node scripts/android.mjs test",
     "prepare": "husky"
   },
   "dependencies": {

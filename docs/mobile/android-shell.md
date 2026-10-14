@@ -55,16 +55,23 @@ Point the shell at a local dev server (an emulator reaches the host on `10.0.2.2
 $env:CAPACITOR_SERVER_URL = 'http://10.0.2.2:3000'; npm run android:apk
 ```
 
-`versionsName`/`versionCode` come from `package.json#version` at Gradle configure time —
-`versionCode = major * 10000 + minor * 100 + patch`. The Play Store will not accept a
-version _name_ as a version code, so the mapping lives in `android/app/build.gradle`.
+`versionsName`/`versionCode`: `versionName` is `package.json#version` plus the shell counter
+(`1.91.0+shell.1`), which is what a support conversation wants — the site build and the native build in
+one string. `versionCode` is **only** the counter, from `android/shell-version.properties`, and moves
+only when the shell itself changes (ADR-0043): deriving it from `package.json` would make every web
+deploy look like a new APK to the update check that compares it against `public/android/latest.json`.
+`npm run android:shell-version` reads it, `-- --bump` moves it, and
+`.github/workflows/shell-version.yml` fails a pull request that changed the shell without moving it.
 
 ## What the shell wires up
 
 | Capability                           | Where                                                 | State                                                                                  |
 | ------------------------------------ | ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| capability                           | where                                                 | state                                                                                  |
+| ------------------------------------ | ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Load the live site                   | `capacitor.config.ts` `server.url`                    | Working                                                                                |
 | Announcing web updates               | `frontend/ui/shared/update-prompt.tsx`                | Working — in-page, so it shows in the shell too                                        |
+| Announcing a new APK                 | `ShellUpdatePrompt`, `public/android/latest.json`     | Working — a native dialog; installing it in place is Stage 2                           |
 | Deep links (App Links + `royar://`)  | manifest intent filters, `MainActivity.webUrlFor`     | Working                                                                                |
 | Custom-scheme OAuth return           | manifest + `MainActivity`                             | Working — needs two Supabase allowlist entries (below)                                 |
 | Splash, status bar, RTL, back button | `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                |
@@ -206,28 +213,47 @@ that a shell which loads all of its content remotely is a gray area reviewers ca
 (App Store compliance is discussed in ADR-0036) — an APK distributed directly avoids that
 question entirely, which is where this project is pointed.
 
-### 4. Announcing a shell update: the page-side contract
+### 4. Announcing a shell update
 
-The page announces web builds on its own (ADR-0042), but it cannot install an APK. The shell therefore
-owns its own announcement, and the two must not both speak: `MainActivity` publishes
+Both halves exist: the shell announces its own APK (ADR-0043) and the page holds its own offer back while
+that is pending. What is left is installing it in place.
 
-```js
-window.__royaraqamiaShell = { versionCode: 1234, updatePending: true };
+**What is in place.** `ShellUpdate` reads `/android/latest.json` (published from
+`public/android/latest.json`) and compares its `versionCode` with `BuildConfig.VERSION_CODE`, which comes
+from `android/shell-version.properties` rather than from `package.json`. `ShellUpdatePrompt` asks the
+user natively when a newer APK exists — an `AlertDialog`, at most every six hours and on a fresh launch —
+and the site stays quiet meanwhile, because `MainActivity` appends `RoyaraqamiaShell/<code>` to the
+WebView's user agent and the page compares that with the same manifest.
+
+It is native for a reason worth remembering: the page cannot reach the shell reliably. With
+`server.url` set, Capacitor injects its bridge through a proxy, and on the WebView the app still meets on
+older devices a failed proxied request leaves the document without `window.Capacitor` at all — measured
+on the API 30 emulator (WebView 83), where a page-driven version of this existed, registered itself, and
+was invisible to the page.
+
+**What is not.** The dialog opens the published APK in the browser; it does not download and hand the
+file to the system installer. That is Stage 2, and it needs `REQUEST_INSTALL_PACKAGES`, the "install
+unknown apps" flow, a download verified against the manifest's `sha256` before it is offered, and a
+device to prove it on. The manifest already carries `sha256`, `sizeBytes`, and `apkUrl` for it.
+
+**Publishing is manual, deliberately.** Building the APK needs the upload keystore, which lives outside
+the repository and must never be lost; putting it in CI as well is a decision about where the backup
+lives. The sequence when the shell changes:
+
+```powershell
+npm run android:shell-version -- --bump   # moves android/shell-version.properties
+npm run android:release                   # signed APK
+# attach it to the release named by public/android/latest.json's apkUrl,
+# then set that manifest's versionCode / versionName to match
 ```
 
-before the page loads, and `frontend/shared/shell-update.ts` reads it. While `updatePending` is true the
-in-page prompt stays down, because installing the APK brings the new web build with it. Absent (a
-browser, or a shell that does not set it) reads as "no shell update pending".
+The counter is what the check compares, so a bump with no published APK tells shells nothing (the
+published code is not ahead of theirs) — the safe direction. A manifest test refuses a manifest that
+names an APK newer than the counter in the tree.
 
-The native half is **not built**. When it is, the shape that fits this repo — a directly distributed
-APK, no Play account (open item 3) — is: the shell compares its own `versionCode` against a published
-manifest, and when it is behind it offers to download and install that APK itself
-(`REQUEST_INSTALL_PACKAGES`, a `FileProvider` URI, and `ACTION_VIEW` for
-`application/vnd.android.package-archive`). Two constraints worth carrying into that work: only a build
-signed with the same key can update an installed app (which is why the keystore backup at the top is not
-optional), and the shell needs its **own** version counter — `versionCode` derived from
-`package.json#version` moves on every web release, which would announce an APK that does not exist
-every time the site deploys.
+**Counter notes.** It starts at 20000: the previous scheme derived `versionCode` from the site version
+(`1.91.0` → 19100), and a device with that build installed refuses anything lower — the first drill
+ended in `INSTALL_FAILED_VERSION_DOWNGRADE` against `1.88.4` with a counter of 1.
 
 ## Where the plan this came from was wrong
 

@@ -35,6 +35,9 @@ const TASKS = {
     label: 'signed App Bundle (Play upload)',
   },
   clean: { gradle: ['clean'], artifact: null, label: 'clean' },
+  // The shell's JVM unit tests (ADR-0043): no device, no emulator — the update
+  // decision is arithmetic and parsing, and it is worth checking without adb.
+  test: { gradle: ['testDebugUnitTest'], artifact: null, label: 'JVM unit tests' },
 };
 
 const task = TASKS[process.argv[2]];

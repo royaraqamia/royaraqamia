@@ -21,6 +21,8 @@
 | `npm run prune:deployments -- --dry-run`    | List the Vercel deployments a prune would delete (see `docs/vercel-usage.md`)                                                                                                             |
 | `npm run version:next`                      | Version next rehearsal                                                                                                                                                                    |
 | `npm run android:apk`                       | Debug APK (syncs the native project first) — see `docs/mobile/android-shell.md`                                                                                                           |
+| `npm run android:test`                      | The shell's JVM unit tests (the update decision) — no device needed (ADR-0043)                                                                                                            |
+| `npm run android:shell-version`             | Read the Android shell's version counter; `-- --bump` moves it, `-- --check <ref>` is what CI runs (ADR-0043)                                                                             |
 | `npm run android:release`                   | Signed release APK                                                                                                                                                                        |
 | `npm run android:aab`                       | Signed App Bundle for a Play upload                                                                                                                                                       |
 
