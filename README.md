@@ -203,7 +203,7 @@ supabase db push
 
 Migrations are applied in filename order. New schema changes should always be added as a new numbered migration file, never by editing existing ones.
 
-> **The repo and the project are compared in CI.** `supabase/migrations/` and the project's recorded history must name the same versions, because they have two writers: a merged migration file plus a manual `supabase db push`, and the agent pipeline applying SQL to the project through the Supabase MCP `apply_migration` tool before review. A disagreement fails `Migration Drift` (ADR 0040) — nightly as well, since an out-of-band apply has no pull request here. Run it yourself with `npm run check:migrations`; see [supabase.md](docs/supabase.md#drift-check).
+> **Merged migrations apply themselves.** `Migration Drift` compares `supabase/migrations/` with the project's recorded history (ADR 0040), and on `main` it is ordered plan → vet → apply → verify: once a migration file is merged, `supabase db push` runs on its own, so nobody drives a migration by hand (ADR 0041). That needs the `SUPABASE_DB_PASSWORD` secret — without it the job says so and what a merge left pending shows up as drift. Anything destructive (`DROP TABLE`/`COLUMN`, `TRUNCATE`, RLS off, Auth or Storage writes, unbounded deletes) is refused and waits for a person. Check it yourself with `npm run check:migrations`; see [supabase.md](docs/supabase.md#drift-check-and-apply).
 
 ### 5. Start the development server
 

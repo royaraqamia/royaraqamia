@@ -23,12 +23,12 @@ When the agent has Supabase MCP access:
 - Base schema lives on remote project (first migration `20260718105449` is an intentional stub) — add new changes as NEW files only
 - Prefer additive, reversible migrations; include a rollback note in the PR body
 
-## Drift check
+## Drift check and apply
 
 `supabase/migrations/` and the linked project's `supabase_migrations.schema_migrations` are compared
 in CI: `.github/workflows/migration-drift.yml` runs `scripts/check-migration-drift.mjs` on pull
 requests and pushes that touch migrations, nightly, and on demand. A pull-request run is only a
-check; every other run also reconciles one `opencode:alert` tracking issue — it opens when the check
+check; every other run also reconciles one `opencode:alert` tracking issue — it opens when the job
 fails (an out-of-band `apply_migration` has no pull request here to comment on) and closes it as soon
 as the two sides agree again. Run it by hand with the two variables the agent workflows already use:
 
@@ -38,21 +38,42 @@ SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... npm run check:migrations
 
 It fails in both directions, and says which one it found:
 
-| Finding                                                | What it means                                                                                                       | What to do                                                                                                                                                         |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A file the project has no version for                  | Production is behind the repo, so deployed code may expect schema that is not there                                 | `supabase db push`, then re-run the check                                                                                                                          |
-| A recorded version with no file                        | Production is ahead: schema or a policy was applied out of band, unreviewed, with no migration file to roll it back | Add the file the project is missing, or, once you have decided production is wrong, revert the record with `supabase migration repair --status reverted <version>` |
-| It cannot read the history (non-2xx, or an empty list) | Wrong `SUPABASE_PROJECT_REF`, an expired token, or a changed API shape                                              | Fix the credential. The check deliberately refuses to report "in sync" when it cannot look                                                                         |
+| Finding                                                | What it means                                                                                                                                                     | What to do                                                                                                                                                         |
+| ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A file the project has no version for                  | Production is behind the repo, so deployed code may expect schema that is not there. On a pull request this is a notice — main applies what the pull request adds | On `main`, `SUPABASE_DB_PASSWORD` lets the job apply it; by hand, `supabase db push`, then re-run the check                                                        |
+| A recorded version with no file                        | Production is ahead: schema or a policy was applied out of band, unreviewed, with no migration file to roll it back                                               | Add the file the project is missing, or, once you have decided production is wrong, revert the record with `supabase migration repair --status reverted <version>` |
+| It cannot read the history (non-2xx, or an empty list) | Wrong `SUPABASE_PROJECT_REF`, an expired token, or a changed API shape                                                                                            | Fix the credential. The check deliberately refuses to report "in sync" when it cannot look                                                                         |
+
+### Applying
+
+On `main` the job is ordered plan → vet → apply → verify, so a migration that was merged (and
+therefore reviewed) still lands in production without anyone driving it:
+
+- **Plan:** `supabase db push --linked --dry-run` prints exactly what a merge would apply. It needs
+  nothing but `SUPABASE_ACCESS_TOKEN`, and it reports rather than gates.
+- **Vet:** `scripts/check-migration-safety.mjs` reads the pending files and refuses the whole run if
+  any of them drops a table or column, truncates, turns row level security off, writes to `auth.users`
+  or Storage, drops an object it does not recreate, or deletes rows without a `WHERE`. Those are the
+  entries in "Forbidden without explicit human approval" below, and they stay pending: a person reads
+  the file and applies it with `supabase db push` after approving it.
+- **Apply:** `supabase db push --linked --yes`, which needs `SUPABASE_DB_PASSWORD` (the secret the CLI
+  documents for CI). Without it the job skips the apply with a warning, and what a merge left pending
+  shows up as drift instead — the reason to add the secret.
+- **Verify:** the drift check runs strictly afterwards, so "it applied" is not a claim: the project's
+  recorded versions are read back and compared.
+
+`workflow_dispatch` takes `project-ref` (compare against another project) and `apply` (apply now
+rather than wait for the next push). The alert path is drillable without touching production:
+`gh workflow run 'Migration Drift' -f project-ref=<a ref that does not exist>` opens the tracking
+issue, and a second dispatch with no input closes it.
 
 A file the project must never have goes into `KNOWN_LOCAL_ONLY`, and an
 intentional project-only version into `KNOWN_REMOTE_ONLY` — both at the top of the
-script, next to the reason. Neither list holds anything: the first run (PR #217,
+drift script, next to the reason. Neither list holds anything: the first run (PR #217,
 2026-10-14) compared 108 repo files against 108 recorded versions and found the
 two sides identical, the base-schema stub included. The check compares version ids
 only, so editing an applied migration stays invisible to it: this is a detector,
-not a review. The alert path is drillable without touching production:
-`gh workflow run 'Migration Drift' -f project-ref=<a ref that does not exist>` opens the tracking
-issue, and a second dispatch with no input closes it.
+not a review. See ADR 0040 (the check) and ADR 0041 (the apply).
 
 ## Forbidden without explicit human approval
 
