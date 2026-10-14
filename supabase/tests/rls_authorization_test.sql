@@ -8,7 +8,7 @@ begin;
 
 create extension if not exists pgtap;
 
-select plan(12);
+select plan(18);
 
 -- is_admin(): identity from the verified JWT, allowlist from app_settings, and no
 -- dependence on the non-authoritative users.is_admin column.
@@ -132,6 +132,41 @@ reset role;
 select ok(
   has_table_privilege('service_role', 'public.retainers', 'insert'),
   'service_role can insert retainers'
+);
+
+-- Certificate reads: anon holds only the public projection, so the PII columns
+-- are refused at the privilege level before row filtering. The row-scoped
+-- owner/admin policies for `authenticated` live in
+-- 20261014105746_narrow_certificate_public_read.sql.
+
+select ok(
+  not has_table_privilege('anon', 'public.certificates', 'select'),
+  'anon has no table-wide SELECT on certificates'
+);
+
+select ok(
+  has_column_privilege('anon', 'public.certificates', 'certificate_code', 'select'),
+  'anon can read the certificate code'
+);
+
+select ok(
+  not has_column_privilege('anon', 'public.certificates', 'recipient_email', 'select'),
+  'anon cannot read recipient_email'
+);
+
+select ok(
+  not has_column_privilege('anon', 'public.certificates', 'recipient_user_ids', 'select'),
+  'anon cannot read recipient_user_ids'
+);
+
+select ok(
+  not has_column_privilege('anon', 'public.certificates', 'created_by', 'select'),
+  'anon cannot read created_by'
+);
+
+select ok(
+  has_table_privilege('authenticated', 'public.certificates', 'select'),
+  'authenticated holds the table-wide SELECT grant, constrained by RLS'
 );
 
 select * from finish();

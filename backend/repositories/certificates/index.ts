@@ -9,6 +9,45 @@ import type {
 import { sanitizeOrFilterTerm } from '@/backend/shared/postgrest-or-filter';
 import { isNotFoundError, repositoryFailure } from '@/backend/shared/repository-error';
 
+/**
+ * The columns the public verify projection exposes. The `anon` role is granted
+ * SELECT on exactly these columns (see the migration that narrows the
+ * certificate read path), and PostgREST rejects `select('*')` once a column is
+ * not granted - so every public read names this list explicitly.
+ */
+const PUBLIC_CERTIFICATE_COLUMNS =
+  'id, certificate_code, student_name, course_name, issue_date, expiration_date, grade_or_status, created_at';
+
+type PublicCertificateRow = Pick<
+  Certificate,
+  | 'id'
+  | 'certificate_code'
+  | 'student_name'
+  | 'course_name'
+  | 'issue_date'
+  | 'expiration_date'
+  | 'grade_or_status'
+  | 'created_at'
+>;
+
+/** Widen a public-projection row back to the full `Certificate` shape, leaving
+ * the private recipient/admin columns null - they are never read on this path. */
+function toCertificate(row: PublicCertificateRow): Certificate {
+  return {
+    id: row.id,
+    certificate_code: row.certificate_code,
+    student_name: row.student_name,
+    course_name: row.course_name,
+    issue_date: row.issue_date,
+    expiration_date: row.expiration_date,
+    grade_or_status: row.grade_or_status,
+    created_at: row.created_at,
+    recipient_email: null,
+    recipient_user_ids: [],
+    created_by: null,
+  };
+}
+
 export function createCertificatesRepository(
   supabase: SupabaseClient<Database>
 ): CertificatesRepository {
@@ -16,7 +55,7 @@ export function createCertificatesRepository(
     async getByCode(code: string): Promise<Certificate | null> {
       const { data, error } = await supabase
         .from('certificates')
-        .select('*')
+        .select(PUBLIC_CERTIFICATE_COLUMNS)
         .eq('certificate_code', code)
         .single();
 
@@ -25,7 +64,7 @@ export function createCertificatesRepository(
         throw repositoryFailure('certificates.getByCode', error);
       }
 
-      return data ? (data as Certificate) : null;
+      return data ? toCertificate(data) : null;
     },
 
     async getCodes(): Promise<string[]> {
@@ -82,13 +121,13 @@ export function createCertificatesRepository(
     async listByRecipient(userId: string): Promise<Certificate[]> {
       const { data, error } = await supabase
         .from('certificates')
-        .select('*')
+        .select(PUBLIC_CERTIFICATE_COLUMNS)
         .contains('recipient_user_ids', [userId])
         .order('issue_date', { ascending: false });
 
       if (error) throw repositoryFailure('certificates.listByRecipient', error);
 
-      return (data as Certificate[]) ?? [];
+      return (data ?? []).map((row) => toCertificate(row));
     },
 
     async create(input: CertificateCreateInput): Promise<Certificate> {
