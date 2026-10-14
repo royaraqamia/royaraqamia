@@ -1,0 +1,145 @@
+# Fails when `supabase/migrations/` and the linked project's recorded migration
+# history disagree.
+#
+# Two writers keep those lists and nothing compared them: a pull request adds a
+# migration file and `supabase db push` applies it by hand, while the autonomous
+# issue pipeline applies the same SQL to the project through the Supabase MCP
+# `apply_migration` tool before a human reads the pull request. Either direction
+# of disagreement is a production incident waiting to be noticed:
+#
+#   - a file the project has no version for -> deployed code expects schema that
+#     production does not have;
+#   - a recorded version the repo has no file for -> schema or a policy nobody
+#     reviewed, with no migration file to roll it back.
+#
+# The pull-request and push runs catch a merge that moved one side; the nightly
+# run catches an out-of-band `apply_migration`, which has no pull request here at
+# all, and keeps one tracking issue open until the two sides agree again.
+#
+# Deliberately not a required check yet: it depends on the Management API and on
+# repository secrets. Wire it into branch protection once it has run green for a
+# while. See docs/supabase.md ("Drift check") and ADR 0040.
+
+name: 'Migration Drift'
+
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/check-migration-drift.mjs'
+      - 'scripts/__tests__/migration-drift.test.mjs'
+      - '.github/workflows/migration-drift.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'scripts/check-migration-drift.mjs'
+      - '.github/workflows/migration-drift.yml'
+  schedule:
+    # 05:23 UTC, an hour before the health heartbeat, so a drift that arrives
+    # with an overnight implementer run is visible the same morning.
+    - cron: '23 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: migration-drift-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' }}
+
+jobs:
+  drift:
+    name: Repo migrations match the linked project
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+          install-web-deps: 'false'
+          cache-next: 'false'
+
+      - name: Compare supabase/migrations with the linked project
+        id: drift
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+        run: node scripts/check-migration-drift.mjs
+
+      # The nightly run is the one with no pull request to comment on, so it is
+      # the one that has to leave something a human reads. Same single-alert
+      # channel as .github/workflows/issue-automation-health.yml, and it closes
+      # again on the first clean night.
+      - name: Reconcile the drift alert issue
+        if: always() && github.event_name == 'schedule'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
+        env:
+          DRIFT_OUTCOME: ${{ steps.drift.outcome }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const LABEL = 'opencode:alert';
+            const TITLE = 'Migration drift: supabase/migrations and the linked project disagree';
+            const healthy = process.env.DRIFT_OUTCOME === 'success';
+            const runUrl = context.serverUrl + '/' + owner + '/' + repo + '/actions/runs/' + context.runId;
+
+            const open = await github.paginate(github.rest.issues.listForRepo, {
+              owner, repo, state: 'open', labels: LABEL, per_page: 100,
+            });
+            const existing = open.find((i) => !i.pull_request && i.title === TITLE);
+
+            if (healthy) {
+              if (!existing) {
+                core.info('In sync; no alert to raise.');
+                return;
+              }
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: existing.number,
+                body: 'Recovered: the nightly check found the two sides in sync again (' + runUrl + ').',
+              });
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'closed' });
+              core.info('Closed drift alert #' + existing.number + '.');
+              return;
+            }
+
+            const body = [
+              'The nightly migration-drift check found that `supabase/migrations` and the linked',
+              "project's recorded migration history disagree.",
+              '',
+              'That usually means schema was applied to the project through the Supabase MCP',
+              '`apply_migration` tool (the issue pipeline does this before review) and never landed as',
+              'a merged migration file — or a merged migration file was never pushed.',
+              '',
+              'The failing run says which direction it is and what to do: ' + runUrl,
+              '',
+              'See `docs/supabase.md` ("Drift check") and ADR 0040.',
+              '',
+              '_Maintained by `.github/workflows/migration-drift.yml`._',
+            ].join('\n');
+
+            if (existing) {
+              await github.rest.issues.update({ owner, repo, issue_number: existing.number, body });
+              core.info('Updated drift alert #' + existing.number + '.');
+              return;
+            }
+
+            try {
+              await github.rest.issues.createLabel({
+                owner, repo, name: LABEL, color: 'b60205',
+                description: 'An autonomous pipeline needs a human',
+              });
+            } catch (err) {
+              if (err.status !== 422) throw err;
+            }
+            const created = await github.rest.issues.create({
+              owner, repo, title: TITLE, body, labels: [LABEL],
+            });
+            core.info('Opened drift alert #' + created.data.number + '.');

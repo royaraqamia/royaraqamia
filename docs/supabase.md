@@ -23,6 +23,34 @@ When the agent has Supabase MCP access:
 - Base schema lives on remote project (first migration `20260718105449` is an intentional stub) — add new changes as NEW files only
 - Prefer additive, reversible migrations; include a rollback note in the PR body
 
+## Drift check
+
+`supabase/migrations/` and the linked project's `supabase_migrations.schema_migrations` are compared
+in CI: `.github/workflows/migration-drift.yml` runs `scripts/check-migration-drift.mjs` on pull
+requests and pushes that touch migrations, nightly (it opens, and later closes, one tracking issue —
+an out-of-band `apply_migration` has no pull request here to comment on), and on demand. Run it by
+hand with the two variables the agent workflows already use:
+
+```bash
+SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... npm run check:migrations
+```
+
+It fails in both directions, and says which one it found:
+
+| Finding                                                | What it means                                                                                                       | What to do                                                                                                                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A file the project has no version for                  | Production is behind the repo, so deployed code may expect schema that is not there                                 | `supabase db push`, then re-run the check                                                                                                                          |
+| A recorded version with no file                        | Production is ahead: schema or a policy was applied out of band, unreviewed, with no migration file to roll it back | Add the file the project is missing, or, once you have decided production is wrong, revert the record with `supabase migration repair --status reverted <version>` |
+| It cannot read the history (non-2xx, or an empty list) | Wrong `SUPABASE_PROJECT_REF`, an expired token, or a changed API shape                                              | Fix the credential. The check deliberately refuses to report "in sync" when it cannot look                                                                         |
+
+A file the project must never have goes into `KNOWN_LOCAL_ONLY`, and an
+intentional project-only version into `KNOWN_REMOTE_ONLY` — both at the top of the
+script, next to the reason. Neither list holds anything: the first run (PR #217,
+2026-10-14) compared 108 repo files against 108 recorded versions and found the
+two sides identical, the base-schema stub included. The check compares version ids
+only, so editing an applied migration stays invisible to it: this is a detector,
+not a review.
+
 ## Forbidden without explicit human approval
 
 - Destructive DDL (`DROP TABLE/COLUMN`, `TRUNCATE`)

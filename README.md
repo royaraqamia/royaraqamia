@@ -203,6 +203,8 @@ supabase db push
 
 Migrations are applied in filename order. New schema changes should always be added as a new numbered migration file, never by editing existing ones.
 
+> **The repo and the project are compared in CI.** `supabase/migrations/` and the project's recorded history must name the same versions, because they have two writers: a merged migration file plus a manual `supabase db push`, and the agent pipeline applying SQL to the project through the Supabase MCP `apply_migration` tool before review. A disagreement fails `Migration Drift` (ADR 0040) — nightly as well, since an out-of-band apply has no pull request here. Run it yourself with `npm run check:migrations`; see [supabase.md](docs/supabase.md#drift-check).
+
 ### 5. Start the development server
 
 ```bash
