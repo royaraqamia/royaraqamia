@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.91.2] - 2026-10-14
+
+### Fixed
+- sign out a grant's own Supabase session on a live revoke
+
 ## [1.91.1] - 2026-10-14
 
 ### Fixed
