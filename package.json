@@ -1,6 +1,6 @@
 {
   "name": "رؤيَة رقَميَّة",
-  "version": "1.89.2",
+  "version": "1.89.3",
   "description": "نبني منتجات رقميَّة برؤية رياديَّة، تنفع النَّاس وتمكث في الأرض؛ كما نُقدِّم للطُّلاب والخرِّيجين الجدد تدريبًا احترافيًّا متكاملًا لبناء التَّطبيقات.",
   "author": "م. أيْهَم العَلي",
   "license": "UNLICENSED",
@@ -30,7 +30,7 @@
     "version:next": "node scripts/release-tools.mjs --next --dry-run",
     "version:replay": "node scripts/release-tools.mjs --replay",
     "check:env-docs": "node scripts/check-env-docs.mjs",
-  "check:migrations": "node scripts/check-migration-drift.mjs",
+    "check:migrations": "node scripts/check-migration-drift.mjs",
     "perf:baseline": "node scripts/perf-baseline.mjs",
     "perf:baseline:update": "node scripts/perf-baseline.mjs --update-baseline",
     "perf:check": "node scripts/perf-baseline.mjs --check",
