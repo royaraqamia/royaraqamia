@@ -2,25 +2,26 @@
 
 ## Development commands
 
-| Command                                     | Purpose                                                                                              |
-| ------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| `npm ci`                                    | Install deps (clean install)                                                                         |
-| `npx tsc --noEmit`                          | Type check                                                                                           |
-| `npm run lint` / `npm run lint:fix`         | ESLint / auto-fix                                                                                    |
-| `npx prettier --check .` / `npm run format` | Format check / write                                                                                 |
-| `npm test`                                  | Unit tests (Vitest, single run)                                                                      |
-| `npm run test:watch`                        | Unit tests (watch mode)                                                                              |
-| `npx vitest run <path>`                     | Single test file                                                                                     |
-| `npm run build`                             | Full build (wasm engine → icons → version → tsc → next build). Requires `NEXT_PUBLIC_WHATSAPP_PHONE` |
-| `npm run check:env-docs`                    | Env docs check                                                                                       |
-| `npm run perf:baseline`                     | Shipped-weight report + budget status (needs `npm run build`; see `docs/performance.md`)             |
-| `npm run perf:check`                        | Same, but exits 1 on a budget breach (run in CI)                                                     |
-| `npm run perf:baseline:update`              | Re-record `perf/baseline.json` after an intended change                                              |
-| `npm run prune:deployments -- --dry-run`    | List the Vercel deployments a prune would delete (see `docs/vercel-usage.md`)                        |
-| `npm run version:next`                      | Version next rehearsal                                                                               |
-| `npm run android:apk`                       | Debug APK (syncs the native project first) — see `docs/mobile/android-shell.md`                      |
-| `npm run android:release`                   | Signed release APK                                                                                   |
-| `npm run android:aab`                       | Signed App Bundle for a Play upload                                                                  |
+| Command                                     | Purpose                                                                                                                                                                                   |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm ci`                                    | Install deps (clean install)                                                                                                                                                              |
+| `npx tsc --noEmit`                          | Type check                                                                                                                                                                                |
+| `npm run lint` / `npm run lint:fix`         | ESLint / auto-fix                                                                                                                                                                         |
+| `npx prettier --check .` / `npm run format` | Format check / write                                                                                                                                                                      |
+| `npm test`                                  | Unit tests (Vitest, single run)                                                                                                                                                           |
+| `npm run test:watch`                        | Unit tests (watch mode)                                                                                                                                                                   |
+| `npx vitest run <path>`                     | Single test file                                                                                                                                                                          |
+| `npm run build`                             | Full build (wasm engine → icons → version → tsc → next build). Requires `NEXT_PUBLIC_WHATSAPP_PHONE`                                                                                      |
+| `npm run check:env-docs`                    | Env docs check                                                                                                                                                                            |
+| `npm run check:migrations`                  | Migration drift check: `supabase/migrations/` vs the linked project (needs `SUPABASE_ACCESS_TOKEN` + `SUPABASE_PROJECT_REF`; see `docs/supabase.md`). Also the `Migration Drift` workflow |
+| `npm run perf:baseline`                     | Shipped-weight report + budget status (needs `npm run build`; see `docs/performance.md`)                                                                                                  |
+| `npm run perf:check`                        | Same, but exits 1 on a budget breach (run in CI)                                                                                                                                          |
+| `npm run perf:baseline:update`              | Re-record `perf/baseline.json` after an intended change                                                                                                                                   |
+| `npm run prune:deployments -- --dry-run`    | List the Vercel deployments a prune would delete (see `docs/vercel-usage.md`)                                                                                                             |
+| `npm run version:next`                      | Version next rehearsal                                                                                                                                                                    |
+| `npm run android:apk`                       | Debug APK (syncs the native project first) — see `docs/mobile/android-shell.md`                                                                                                           |
+| `npm run android:release`                   | Signed release APK                                                                                                                                                                        |
+| `npm run android:aab`                       | Signed App Bundle for a Play upload                                                                                                                                                       |
 
 ## Runtime metrics
 
