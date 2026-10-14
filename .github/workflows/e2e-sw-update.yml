@@ -1,0 +1,71 @@
+name: 'E2E: Worker Swap'
+
+# The only automated check that the app lands on a new build by itself (ADR-0039).
+# It needs a production build and a real browser, so it runs on the surfaces that
+# can break it instead of on every pull request. Playwright's `webServer` builds
+# and starts the app because GitHub sets CI.
+#
+# NOTE: a path-filtered workflow reports no check when nothing matches, so this
+# must not be made a required status check on `main`.
+#
+# The other specs under e2e/ are gated behind their own env flags (a test user,
+# a preview deployment, a real push subscription); this job is not the place to
+# grow them.
+
+on:
+  pull_request:
+    paths:
+      - 'public/sw.js'
+      - 'public/sw-routing.js'
+      - 'frontend/shared/sw-update.ts'
+      - 'frontend/shared/use-pwa.ts'
+      - 'frontend/ui/PWAProvider.tsx'
+      - 'scripts/generate-icons.mjs'
+      - 'e2e/sw-update.spec.ts'
+      - 'playwright.config.ts'
+      - '.github/workflows/e2e-sw-update.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-sw-update-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  sw-update:
+    name: Worker swap reloads the document
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Build Environment
+        uses: ./.github/actions/setup-environment
+        with:
+          node-version: '22'
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      # `SW_UPDATE_E2E=1` un-skips the spec; the deploy it simulates is a rewrite
+      # of the git-ignored `public/sw-version.js` that the worker imports.
+      - name: Worker swap reaches a running client
+        run: npx playwright test e2e/sw-update.spec.ts --project=existing-tests
+        env:
+          SW_UPDATE_E2E: '1'
+          NEXT_PUBLIC_WHATSAPP_PHONE: '963968478904'
+          NEXT_PUBLIC_SUPABASE_URL: 'https://ievboaylytxgtijconak.supabase.co'
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_S6OJdmRtfmL_trKAY1ypqQ_WZYRjVK2'
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Upload failure artifacts
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sw-update-failure
+          path: node_modules/.playwright/test-results/
+          retention-days: 7
