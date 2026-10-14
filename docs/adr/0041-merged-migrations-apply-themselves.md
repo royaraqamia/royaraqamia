@@ -17,10 +17,11 @@ worse than the manual step it removes:
   `auth.users` or Storage, drops an object the same file does not recreate, or deletes rows without a
   `WHERE`. That list is "Forbidden without explicit human approval" from docs/supabase.md, mechanised
   — the policy was already written, it just had nobody to enforce it.
-- **Apply.** `supabase db push --linked --yes`, with `SUPABASE_DB_PASSWORD` (the variable the CLI
-  documents for CI). Without the secret the apply is skipped with a warning and the migration stays
-  pending, which the verify step then reports: the failure mode of the missing secret is a loud
-  "production is behind", never a quiet success.
+- **Apply.** `supabase db push --linked --yes`, on `SUPABASE_ACCESS_TOKEN`: linking a project is
+  enough for the CLI to mint its own login role, which the plan step exercises on every push with the
+  same credentials. `SUPABASE_DB_PASSWORD` is passed through when the repository has one — the CLI's
+  documented CI path — and if the apply cannot connect or write, the verify step reports the
+  migration as still pending and the alert links to the run.
 - **Verify.** The drift check runs strictly afterwards, so nothing here claims success on the
   strength of a command that exited zero: the project's recorded versions are read back and compared
   with the files.
@@ -40,7 +41,7 @@ convenient the head start.
   `apply_migration` is the next decision, not this one; until then the applier is a no-op whenever the
   agent already applied its own migration.)
 - **Applying through the Management API's `POST /database/migrations`** (what the MCP tool calls),
-  with the access token alone and no new secret. Rejected: that endpoint assigns the version itself,
+  which also needs no database password. Rejected: that endpoint assigns the version itself,
   so the recorded version would stop matching the file name and the drift check would then report the
   repo and the project as out of sync after every apply — or the comparison would have to match on
   names, which is a weaker identity than a version. `db push` records the file's own version, which is
@@ -64,14 +65,16 @@ create policy x ...` idiom the repo uses everywhere.
 ## Consequences
 
 The applier is the only thing in the repo that writes DDL to production on its own, and it does that
-only for files that were merged, only for statements the vet allows, and only with a secret the
-repository owner sets. Everything else — the destructive statements, and the migrations the agent
-pipeline still applies itself — keeps a human in the loop.
+only for files that were merged, and only for statements the vet allows. Everything else — the
+destructive statements, and the migrations the agent pipeline still applies itself — keeps a human in
+the loop.
 
-`SUPABASE_DB_PASSWORD` joins `SUPABASE_ACCESS_TOKEN` as a database credential in CI. It is the
-variable the Supabase CLI's own documentation recommends for a CI environment, and it grants what the
-CLI grants: applying migrations. Rotating the project's database password means updating this secret
-as well, or the apply step fails and the drift alert says a merged migration is pending.
+It needs no new secret: `SUPABASE_ACCESS_TOKEN` is enough, because linking a project lets the CLI mint
+its own login role, and the plan step connects with exactly those credentials on every push. Setting
+`SUPABASE_DB_PASSWORD` is still honoured, and is the path the CLI's own CI documentation recommends —
+worth doing if the login role ever turns out to be narrower than the CLI needs, because the apply then
+does not depend on it. The token's blast radius is what it always was: it can already apply migrations
+through the Management API.
 
 Because the apply happens on the push to main, it races the Vercel deploy of the same commit: the
 migration runs in seconds while the build takes minutes, so the schema is normally in place before the
