@@ -40,13 +40,20 @@ vi.mock('@/backend/repositories/mcp/mcp-oauth-repository', () => ({
   McpOAuthRepository: {} as any,
 }));
 
-// Mock token crypto
+// Mock token crypto. `readBridgeSession` mirrors the real marker: a ciphertext
+// the mint path wrote reads as ours, any other row reads as borrowed.
 vi.mock('@/backend/repositories/mcp/mcp-token-crypto', () => ({
   hashToken: vi.fn((t: string) => `hash-${t}`),
-  decryptSecret: vi.fn((enc: string) => {
-    if (enc === 'encrypted-refresh-token') return 'supabase-refresh-token';
+  readBridgeSession: vi.fn((enc: string) => {
+    if (enc === 'encrypted-refresh-token') {
+      return { refreshToken: 'supabase-refresh-token', owned: true };
+    }
+    if (enc === 'borrowed-browser-session') {
+      return { refreshToken: 'supabase-refresh-token', owned: false };
+    }
     throw new Error('decrypt failed');
   }),
+  encryptBridgeSession: vi.fn((t: string) => `bridge-${t}`),
   encryptSecret: vi.fn((t: string) => `enc-${t}`),
 }));
 
@@ -151,6 +158,25 @@ describe('resolveMcpContext', () => {
     expect(ctx!.scopes).toEqual(['community.read', 'linksnap.read']);
     expect(ctx!.supabase).toBeDefined();
     expect(mockRepo.touchTokenLastUsed).toHaveBeenCalledWith('tok-123');
+    // Re-encrypted with the ownership marker intact, or a later revoke would
+    // leave this session running (ADR 0023).
+    expect(mockRepo.updateTokenSessionEnc).toHaveBeenCalledWith(
+      'tok-123',
+      'bridge-rotated-refresh-token'
+    );
+  });
+
+  it('keeps a borrowed bridge session unmarked when it re-encrypts the rotation', async () => {
+    mockRepo.getTokenByHash.mockResolvedValue({
+      ...mockTokenRecord,
+      session_enc: 'borrowed-browser-session',
+    });
+
+    const ctx = await resolveMcpContext('valid-token');
+
+    // A pre-amendment row still drains — it is a usable session — but rotating it
+    // must not stamp "this session is ours" onto the user's browser session.
+    expect(ctx).not.toBeNull();
     expect(mockRepo.updateTokenSessionEnc).toHaveBeenCalledWith(
       'tok-123',
       'enc-rotated-refresh-token'

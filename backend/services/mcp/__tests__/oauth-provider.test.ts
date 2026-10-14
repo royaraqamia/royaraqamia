@@ -45,6 +45,14 @@ const mockTokenRecord = {
   last_used_at: null,
 };
 
+/**
+ * A ciphertext the mint path wrote (marked as ours) versus a pre-amendment row
+ * (a copy of the user's browser session). Only the first may be signed out.
+ */
+const OWNED_SESSION_ENC = 'mcp-bridge-1-enc';
+const BORROWED_SESSION_ENC = 'enc-session';
+const OWNED_REFRESH_TOKEN = `rt(${OWNED_SESSION_ENC})`;
+
 const mockRepo = {
   getClient: vi.fn(),
   createClient: vi.fn(),
@@ -57,12 +65,15 @@ const mockRepo = {
   touchTokenLastUsed: vi.fn(),
   revokeToken: vi.fn(),
   revokeAllUserTokens: vi.fn(),
+  listUserSessionEncs: vi.fn(),
   listUserGrants: vi.fn(),
   revokeUserClientTokens: vi.fn(),
   deleteUserClientAuthCodes: vi.fn(),
   deleteUserAuthCodes: vi.fn(),
   deleteExpired: vi.fn(),
 };
+
+const mockBridgeSessions = { revoke: vi.fn() };
 
 vi.mock('@/backend/repositories/mcp/mcp-oauth-repository', () => ({
   createMcpOAuthRepository: () => mockRepo,
@@ -73,6 +84,12 @@ vi.mock('@/backend/repositories/mcp/mcp-token-crypto', () => ({
   generateOpaqueToken: vi.fn(() => 'opaque-token'),
   encryptSecret: vi.fn((p: string) => `enc(${p})`),
   decryptSecret: vi.fn((p: string) => `dec(${p})`),
+  // Mirrors the real marker (see mcp-token-crypto): the mint path's ciphertext is
+  // ours, anything older is borrowed and must never be revoked.
+  readBridgeSession: vi.fn((payload: string) => ({
+    refreshToken: `rt(${payload})`,
+    owned: payload.includes(OWNED_SESSION_ENC),
+  })),
   constantTimeEqual: vi.fn((a: string, b: string) => a === b),
 }));
 
@@ -89,7 +106,17 @@ describe('createMcpOAuthProvider', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    provider = createMcpOAuthProvider({ repo: mockRepo as any });
+    // Per-test defaults: clearAllMocks keeps implementations, so a value set by
+    // one test would otherwise answer the next one's reads.
+    mockRepo.getTokenByHash.mockResolvedValue(null);
+    mockRepo.getAccessTokenByRefreshHash.mockResolvedValue(null);
+    mockRepo.getAuthCode.mockResolvedValue(null);
+    mockRepo.listUserSessionEncs.mockResolvedValue([]);
+    mockBridgeSessions.revoke.mockResolvedValue(true);
+    provider = createMcpOAuthProvider({
+      repo: mockRepo as any,
+      bridgeSessions: mockBridgeSessions as any,
+    });
   });
 
   describe('registerClient', () => {
@@ -408,6 +435,68 @@ describe('createMcpOAuthProvider', () => {
       expect(invalidateTokenCache).toHaveBeenCalledWith('refresh-hash');
       expect(invalidateTokenCache).toHaveBeenCalledWith('access-hash');
     });
+
+    it('signs out the grant’s own bridge session when the refresh token is revoked', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue({
+        ...mockTokenRecord,
+        session_enc: OWNED_SESSION_ENC,
+      });
+
+      await provider.revokeToken({ token: 'refresh-1', client: mockClient });
+
+      // "Revoking a grant releases Supabase access" has to be true of the live
+      // case too, not just of the retirement that GoTrue already killed.
+      expect(mockBridgeSessions.revoke).toHaveBeenCalledWith(OWNED_REFRESH_TOKEN);
+    });
+
+    it('signs out the rotated ciphertext the paired access row carries too', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue({
+        ...mockTokenRecord,
+        session_enc: OWNED_SESSION_ENC,
+      });
+      // The data plane writes each rotation back to the access row, so the two
+      // rows of one grant can name two different (both live) refresh tokens.
+      mockRepo.getAccessTokenByRefreshHash.mockResolvedValue({
+        ...mockTokenRecord,
+        id: 'tok-access',
+        kind: 'access',
+        token_hash: 'access-hash',
+        session_enc: `rotated-${OWNED_SESSION_ENC}`,
+      });
+
+      await provider.revokeToken({ token: 'refresh-1', client: mockClient });
+
+      expect(mockBridgeSessions.revoke).toHaveBeenCalledWith(OWNED_REFRESH_TOKEN);
+      expect(mockBridgeSessions.revoke).toHaveBeenCalledWith(`rt(rotated-${OWNED_SESSION_ENC})`);
+    });
+
+    it('leaves a borrowed browser session alone', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue({
+        ...mockTokenRecord,
+        session_enc: BORROWED_SESSION_ENC,
+      });
+
+      await provider.revokeToken({ token: 'refresh-1', client: mockClient });
+
+      // Pre-amendment rows hold a copy of the user's browser session: signing it
+      // out would sign them out of the website (ADR 0023).
+      expect(mockBridgeSessions.revoke).not.toHaveBeenCalled();
+    });
+
+    it('keeps the session alive when only the access token is revoked', async () => {
+      mockRepo.getTokenByHash.mockResolvedValue({
+        ...mockTokenRecord,
+        kind: 'access',
+        token_hash: 'access-hash',
+        session_enc: OWNED_SESSION_ENC,
+      });
+
+      await provider.revokeToken({ token: 'access-1', client: mockClient });
+
+      // The refresh row is untouched and can still mint a pair, so the grant is
+      // alive and its session has to stay usable.
+      expect(mockBridgeSessions.revoke).not.toHaveBeenCalled();
+    });
   });
 
   describe('revokeAllUserTokens', () => {
@@ -421,6 +510,52 @@ describe('createMcpOAuthProvider', () => {
       await provider.revokeAllUserTokens('user-123');
 
       expect(mockRepo.deleteUserAuthCodes).toHaveBeenCalledWith('user-123');
+    });
+
+    it('signs out every minted bridge session it strands, and nothing else', async () => {
+      mockRepo.listUserSessionEncs.mockResolvedValue([
+        BORROWED_SESSION_ENC,
+        OWNED_SESSION_ENC,
+        OWNED_SESSION_ENC,
+      ]);
+
+      await provider.revokeAllUserTokens('user-123');
+
+      expect(mockRepo.listUserSessionEncs).toHaveBeenCalledWith('user-123');
+      // The borrowed row is a browser session; the duplicate is one session
+      // named by both rows of a pair.
+      expect(mockBridgeSessions.revoke).toHaveBeenCalledTimes(1);
+      expect(mockBridgeSessions.revoke).toHaveBeenCalledWith(OWNED_REFRESH_TOKEN);
+    });
+
+    it('reads the ciphertexts before the shred that would take them away', async () => {
+      const order: string[] = [];
+      mockRepo.listUserSessionEncs.mockImplementation(async () => {
+        order.push('read');
+        return [];
+      });
+      mockRepo.revokeAllUserTokens.mockImplementation(async () => {
+        order.push('revoke');
+      });
+
+      await provider.revokeAllUserTokens('user-123');
+
+      expect(order).toEqual(['read', 'revoke']);
+    });
+
+    it('still resolves when a sign-out fails, and does not fail the other ones', async () => {
+      mockRepo.listUserSessionEncs.mockResolvedValue([
+        OWNED_SESSION_ENC,
+        `other-${OWNED_SESSION_ENC}`,
+      ]);
+      mockBridgeSessions.revoke
+        .mockRejectedValueOnce(new Error('GoTrue down'))
+        .mockResolvedValueOnce(true);
+
+      // The tokens are already revoked: a session that will not sign out must not
+      // turn a successful disconnect into a 500, nor withhold its sibling.
+      await expect(provider.revokeAllUserTokens('user-123')).resolves.toBeUndefined();
+      expect(mockBridgeSessions.revoke).toHaveBeenCalledTimes(2);
     });
   });
 
@@ -456,6 +591,17 @@ describe('createMcpOAuthProvider', () => {
 
       expect(mockRepo.deleteUserClientAuthCodes).toHaveBeenCalledWith('user-123', 'client-1');
       expect(mockRepo.deleteUserAuthCodes).not.toHaveBeenCalled();
+    });
+
+    it('signs out that client’s minted session, and only that client’s', async () => {
+      mockRepo.listUserSessionEncs.mockResolvedValue([OWNED_SESSION_ENC]);
+
+      await provider.revokeUserClient('user-123', 'client-1');
+
+      // The lookup is scoped, so another client's live session is never touched —
+      // disconnecting one app must not sign the user out of another.
+      expect(mockRepo.listUserSessionEncs).toHaveBeenCalledWith('user-123', 'client-1');
+      expect(mockBridgeSessions.revoke).toHaveBeenCalledWith(OWNED_REFRESH_TOKEN);
     });
   });
 });

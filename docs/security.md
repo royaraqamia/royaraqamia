@@ -39,15 +39,19 @@ users, but blast radius stays bounded by:
 
 - RLS (native, user-scoped clients — never service-role impersonation),
 - token revocation (`/mcp/revoke` + `revoked_at` on every use), which also shreds the row's
-  stored bridge ciphertext. A signed-in user can revoke without holding a client secret from the
-  account area (`/account/connected-apps`, `DELETE /api/me/mcp/connected-apps[/{clientId}]`), which
-  is also `revokeAllUserTokens`'s production caller and drops the client's live authorization
-  codes, because a code carries a bridge ciphertext of its own and exchanges for a fresh pair,
+  stored bridge ciphertext and signs out the Supabase session the grant minted. A signed-in user
+  can revoke without holding a client secret from the account area (`/account/connected-apps`,
+  `DELETE /api/me/mcp/connected-apps[/{clientId}]`), which is also `revokeAllUserTokens`'s
+  production caller and drops the client's live authorization codes, because a code carries a
+  bridge ciphertext of its own and exchanges for a fresh pair,
 - the daily pg_cron sweeper deleting expired/revoked rows.
 
-A disconnect from the account area revokes MCP tokens only. The grant's Supabase session is
-deliberately left alone: no row records that a session is the grant's own, and for a
-pre-amendment row it is the user's _browser_ session (ADR 0023).
+A disconnect revokes MCP tokens _and_ releases the grant's Supabase session, so a disconnected
+client cannot go on reading through a bridge session it no longer owns. Only a session this server
+minted is signed out: a bridge ciphertext records its own provenance (ADR 0023's 2026-10-14
+amendment), and a pre-amendment row holds a copy of the user's _browser_ session, which is left
+alone — signing it out would sign them out of the website. Retirement paths make no such call,
+because GoTrue has already invalidated those sessions or the ciphertext will not decrypt.
 
 All MCP routes (`/mcp`, `/register`, `/token`, `/connect/consent`) are Upstash-limited
 (fail-closed); registration also enforces https-only redirect URIs with a localhost exception

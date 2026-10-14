@@ -364,6 +364,79 @@ describe('createMcpOAuthRepository.listUserGrants', () => {
   });
 });
 
+/**
+ * The read side of a live revoke: a user's live bridge ciphertexts, read *before*
+ * the shred that would take them away, optionally narrowed to one grant.
+ */
+function makeSessionEncClient(
+  options: { rows?: Array<{ session_enc: string | null }>; error?: Error | null } = {}
+) {
+  const result = { data: options.rows ?? [], error: options.error ?? null };
+  // `not` doubles as the chain link (when a client filter follows) and as the
+  // awaited result of the user-scoped read.
+  const clientEq = vi.fn().mockResolvedValue(result);
+  const not = vi.fn(() => Object.assign(Promise.resolve(result), { eq: clientEq }));
+  const userEq = vi.fn(() => ({ not }));
+  const select = vi.fn(() => ({ eq: userEq }));
+
+  const from = vi.fn((table: string) => {
+    if (table !== 'mcp_oauth_tokens') throw new Error(`unexpected table: ${table}`);
+    return { select };
+  });
+
+  const client = { from } as unknown as SupabaseClient<Database>;
+  return { client, from, select, userEq, not, clientEq };
+}
+
+describe('createMcpOAuthRepository.listUserSessionEncs', () => {
+  it('reads this user’s live ciphertexts, ignoring shredded rows', async () => {
+    const { client, select, userEq, not, clientEq } = makeSessionEncClient({
+      rows: [{ session_enc: 'enc-a' }, { session_enc: null }, { session_enc: 'enc-b' }],
+    });
+
+    await expect(createMcpOAuthRepository(client).listUserSessionEncs('user-1')).resolves.toEqual([
+      'enc-a',
+      'enc-b',
+    ]);
+
+    expect(select).toHaveBeenCalledWith('session_enc');
+    expect(userEq).toHaveBeenCalledWith('user_id', 'user-1');
+    // A row without a ciphertext is a revoked or retired one: there is nothing
+    // left in it to revoke.
+    expect(not).toHaveBeenCalledWith('session_enc', 'is', null);
+    expect(clientEq).not.toHaveBeenCalled();
+  });
+
+  it('narrows to one client’s grant when asked for a single disconnect', async () => {
+    const { client, userEq, clientEq } = makeSessionEncClient({
+      rows: [{ session_enc: 'enc-a' }],
+    });
+
+    await expect(
+      createMcpOAuthRepository(client).listUserSessionEncs('user-1', 'client-1')
+    ).resolves.toEqual(['enc-a']);
+
+    expect(userEq).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(clientEq).toHaveBeenCalledWith('client_id', 'client-1');
+  });
+
+  it('reports no sessions when the user holds none', async () => {
+    const { client } = makeSessionEncClient({ rows: [] });
+
+    await expect(createMcpOAuthRepository(client).listUserSessionEncs('user-1')).resolves.toEqual(
+      []
+    );
+  });
+
+  it('throws when the read fails', async () => {
+    const { client } = makeSessionEncClient({ error: new Error('tokens down') });
+
+    await expect(createMcpOAuthRepository(client).listUserSessionEncs('user-1')).rejects.toThrow(
+      'tokens down'
+    );
+  });
+});
+
 /** `revokeUserClientTokens` chains two `.eq()`s: user, then client. */
 function makeClientRevokeClient(updateError: Error | null = null) {
   const clientEq = vi.fn().mockResolvedValue({ error: updateError });

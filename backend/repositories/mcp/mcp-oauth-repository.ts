@@ -127,6 +127,15 @@ export interface McpOAuthRepository {
   revokeToken(id: string): Promise<void>;
   revokeAllUserTokens(userId: string): Promise<void>;
   /**
+   * The bridge ciphertexts a user's live rows hold, so a live revoke can sign
+   * out the sessions it is about to strand. Must be read *before* revoking:
+   * revoking shreds `session_enc` in the same update.
+   *
+   * `clientId` narrows to one grant. Revoked rows are absent by construction —
+   * they no longer carry a ciphertext.
+   */
+  listUserSessionEncs(userId: string, clientId?: string): Promise<string[]>;
+  /**
    * The user's live grants, one row per connected client. A grant is live while
    * it holds at least one unrevoked, unexpired *refresh* token: access rows come
    * and go with their 1h TTL and the daily sweep, the refresh row is the grant.
@@ -282,6 +291,23 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
         .update({ revoked_at: new Date().toISOString(), session_enc: null })
         .eq('user_id', userId);
       if (error) throw error;
+    },
+
+    async listUserSessionEncs(userId, clientId) {
+      // `session_enc is not null` is what makes this the live set, whatever else
+      // the rows have been through: revoking and retiring both shred it.
+      let query = (supabase as any)
+        .from(TOKENS_TABLE)
+        .select('session_enc')
+        .eq('user_id', userId)
+        .not('session_enc', 'is', null);
+      if (clientId) query = query.eq('client_id', clientId);
+
+      const { data, error } = await query;
+      if (error) throw error;
+      return ((data ?? []) as Array<{ session_enc: string | null }>)
+        .map((row) => row.session_enc)
+        .filter((sessionEnc): sessionEnc is string => typeof sessionEnc === 'string');
     },
 
     async listUserGrants(userId, now) {
