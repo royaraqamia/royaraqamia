@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.90.0] - 2026-10-14
+
+### Changed
+- call the account surface's resource a connected app
+
+### Added
+- let users disconnect a connected MCP client
+
+### Fixed
+- read a grant's last use, and kill in-flight consents on disconnect
+
 ## [1.89.6] - 2026-10-14
 
 ### Changed
