@@ -11,7 +11,6 @@ import {
   stripType,
   groupCommits,
   changelogSection,
-  changelogSectionFromGroups,
   mergeChangelogGroups,
   composeReleaseSection,
   unreleasedRegion,
