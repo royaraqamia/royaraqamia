@@ -296,6 +296,12 @@ The set of responses the service worker must never store — auth, mutations, ad
 anything marked `no-store`/`private`.
 _Avoid_: blacklist, do-not-cache, exclusions
 
+**Worker swap**:
+The moment a newly installed service worker takes control of a document the previous one served.
+The document replaces itself instead of asking, so a client is never left running a build whose
+caches `activate` has already deleted (ADR-0039).
+_Avoid_: update, SW update, version prompt
+
 **Tombstone**:
 A soft delete (`deleted_at`) that records a removal so it can sync to other devices without losing
 the row's identity.

@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { requestPersistentStorage } from './persistent-storage';
+import { watchWorkerUpdates } from './sw-update';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -12,24 +13,18 @@ export interface PWAState {
   canInstall: boolean;
   isInstalled: boolean;
   isOnline: boolean;
-  hasUpdate: boolean;
   registration: ServiceWorkerRegistration | null;
 }
 
-type PWAUpdateCallback = (registration: ServiceWorkerRegistration) => void;
-
-export function usePWA(onUpdateAvailable?: PWAUpdateCallback) {
+export function usePWA() {
   const [state, setState] = useState<PWAState>({
     canInstall: false,
     isInstalled: false,
     isOnline: true,
-    hasUpdate: false,
     registration: null,
   });
 
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const onUpdateRef = useRef(onUpdateAvailable);
-  onUpdateRef.current = onUpdateAvailable;
 
   useEffect(() => {
     setState((prev) => ({ ...prev, isOnline: navigator.onLine }));
@@ -64,32 +59,8 @@ export function usePWA(onUpdateAvailable?: PWAUpdateCallback) {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((reg) => {
         setState((prev) => ({ ...prev, registration: reg }));
-        reg.onupdatefound = () => {
-          const installingWorker = reg.installing;
-          if (installingWorker) {
-            installingWorker.onstatechange = () => {
-              if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                setState((prev) => ({ ...prev, hasUpdate: true }));
-                onUpdateRef.current?.(reg);
-              }
-            };
-          }
-        };
       });
 
-      const onControllerChange = () => {
-        setState((prev) => ({ ...prev, hasUpdate: false }));
-      };
-      navigator.serviceWorker.addEventListener('controllerchange', onControllerChange);
-
-      return () => {
-        navigator.serviceWorker.removeEventListener('controllerchange', onControllerChange);
-        window.removeEventListener('online', handleOnline);
-        window.removeEventListener('offline', handleOffline);
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
-        window.removeEventListener('appinstalled', handleAppInstalled);
-      };
-    } else {
       return () => {
         window.removeEventListener('online', handleOnline);
         window.removeEventListener('offline', handleOffline);
@@ -97,6 +68,23 @@ export function usePWA(onUpdateAvailable?: PWAUpdateCallback) {
         window.removeEventListener('appinstalled', handleAppInstalled);
       };
     }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  /**
+   * Keeps the document on the build its worker serves, with no prompt and no
+   * gesture: see `sw-update.ts` and ADR-0039 for why that is the only option
+   * inside the Android shell.
+   */
+  useEffect(() => {
+    if (!('serviceWorker' in navigator)) return;
+    return watchWorkerUpdates(navigator.serviceWorker);
   }, []);
 
   const promptInstall = useCallback(async () => {
@@ -108,9 +96,5 @@ export function usePWA(onUpdateAvailable?: PWAUpdateCallback) {
     return outcome === 'accepted';
   }, [installPrompt]);
 
-  const dismissUpdate = useCallback(() => {
-    setState((prev) => ({ ...prev, hasUpdate: false }));
-  }, []);
-
-  return { ...state, promptInstall, dismissUpdate };
+  return { ...state, promptInstall };
 }
