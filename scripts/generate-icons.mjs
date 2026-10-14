@@ -3,6 +3,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 import path from 'path';
 import { execSync } from 'child_process';
+import { TARGET_DISC_RATIO, artworkDiscRatio, artworkScaleFor, measure } from './logo-shape.mjs';
 
 const PURPLE = { r: 120, g: 104, b: 234 };
 const OUT_DIR = 'public/icons';
@@ -12,6 +13,11 @@ const MASTER = 'public/logo.webp';
 // purple background) so the glyph sits comfortably inside Android's minimum
 // maskable safe zone (a centered circle with a radius of 40% of the icon width).
 const TILE_SCALE = 0.86;
+
+/** The artwork's own disc proportion, measured off the master. */
+const ARTWORK_RATIO = await artworkDiscRatio(MASTER, PURPLE);
+/** The scale that puts the notification icon's disc at the app's `TARGET_DISC_RATIO`. */
+const NOTIFICATION_ARTWORK_SCALE = artworkScaleFor(ARTWORK_RATIO);
 
 // "any" icons: full-bleed purple tile carrying the same artwork as the maskable
 // set. Desktop install UIs render these unmasked, so a border or inner circle
@@ -58,9 +64,27 @@ async function tileFullBleed(file, size) {
     .toFile(file);
 }
 
+// Notification icon: the app's proportion, not the artwork's — the disc at
+// `TARGET_DISC_RATIO` of the icon, which is what the launcher icon and the splash
+// logo read as. The artwork is scaled up and its purple edges cropped to get
+// there; the "any" icons above keep the artwork's own 51.7% because they are what
+// the PWA's installed icon is drawn from.
 async function generateNotificationIcon() {
-  await sharp(MASTER)
-    .resize(NOTIFICATION_SIZE, NOTIFICATION_SIZE, { fit: 'fill' })
+  const art = Math.round(NOTIFICATION_SIZE * NOTIFICATION_ARTWORK_SCALE);
+  const inset = Math.round((art - NOTIFICATION_SIZE) / 2);
+  const logo = await sharp(MASTER)
+    .resize(art, art, { fit: 'fill' })
+    .extract({ left: inset, top: inset, width: NOTIFICATION_SIZE, height: NOTIFICATION_SIZE })
+    .toBuffer();
+  await sharp({
+    create: {
+      width: NOTIFICATION_SIZE,
+      height: NOTIFICATION_SIZE,
+      channels: 3,
+      background: PURPLE,
+    },
+  })
+    .composite([{ input: logo, gravity: 'center' }])
     .png()
     .toFile(`${OUT_DIR}/notification-icon-${NOTIFICATION_SIZE}x${NOTIFICATION_SIZE}.png`);
 }
@@ -279,6 +303,16 @@ async function validate() {
       const corners = await cornerPixels(notifFp, NOTIFICATION_SIZE);
       if (!corners.TL.r || !corners.TL.a) {
         console.error(`  ✗ notification icon: must be the opaque full-bleed logo`);
+        errors++;
+      }
+      const notif = await measure(notifFp, PURPLE);
+      const expected = Math.round(TARGET_DISC_RATIO * NOTIFICATION_SIZE);
+      if (Math.abs(notif.disc - expected) > 2) {
+        console.error(
+          `  ✗ notification icon: disc ${notif.disc}px, expected ${expected}px — it must carry ` +
+            `the app's ${(100 * TARGET_DISC_RATIO).toFixed(0)}%, not the artwork's ` +
+            `${(100 * ARTWORK_RATIO).toFixed(1)}%`
+        );
         errors++;
       }
     }
