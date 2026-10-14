@@ -31,6 +31,7 @@
     "version:replay": "node scripts/release-tools.mjs --replay",
     "check:env-docs": "node scripts/check-env-docs.mjs",
     "check:migrations": "node scripts/check-migration-drift.mjs",
+    "check:migrations:safety": "node scripts/check-migration-safety.mjs",
     "perf:baseline": "node scripts/perf-baseline.mjs",
     "perf:baseline:update": "node scripts/perf-baseline.mjs --update-baseline",
     "perf:check": "node scripts/perf-baseline.mjs --check",

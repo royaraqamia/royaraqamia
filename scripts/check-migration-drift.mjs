@@ -29,7 +29,7 @@ import { resolve } from 'path';
 import { fileURLToPath } from 'url';
 
 const PROJECT_ROOT = process.cwd();
-const MIGRATIONS_DIR = resolve(PROJECT_ROOT, 'supabase/migrations');
+export const MIGRATIONS_DIR = resolve(PROJECT_ROOT, 'supabase/migrations');
 const API_ROOT = 'https://api.supabase.com/v1/projects';
 
 /**
@@ -150,6 +150,12 @@ export async function main({
   );
   log(`repo files: ${local.length}   project history: ${remote.length}`);
 
+  // A pull request is allowed to be ahead: the migration it adds is applied by
+  // main after the merge (docs/supabase.md, "Drift check"). Everything else —
+  // main, the schedule, a dispatch — has to be level, and a recorded version the
+  // repo has no file for is always a failure, wherever it is seen.
+  const strict = (env.MIGRATION_DRIFT_STRICT ?? '1') !== '0';
+
   if (missingRemotely.length === 0 && extraRemotely.length === 0) {
     log('In sync.');
     return 0;
@@ -158,13 +164,15 @@ export async function main({
   if (missingRemotely.length > 0) {
     log('');
     log(
-      `${missingRemotely.length} migration(s) the project has not applied — production is behind:`
+      strict
+        ? `${missingRemotely.length} migration(s) the project has not applied — production is behind:`
+        : `${missingRemotely.length} migration(s) not applied yet, which main does after the merge:`
     );
     for (const version of missingRemotely) {
       const file = local.find((m) => m.version === version)?.file ?? `${version}_*.sql`;
       log(`  - ${file}`);
     }
-    log('  Fix: supabase db push (then re-run this check).');
+    if (strict) log('  Fix: supabase db push (then re-run this check).');
   }
 
   if (extraRemotely.length > 0) {
@@ -184,7 +192,7 @@ export async function main({
 
   log('');
   log('See docs/supabase.md ("Drift check").');
-  return 1;
+  return extraRemotely.length > 0 || strict ? 1 : 0;
 }
 
 const invokedDirectly =

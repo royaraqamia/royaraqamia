@@ -184,4 +184,36 @@ describe('main', () => {
     expect(await main({ env, log, fetchImpl, localDir: inSync })).toBe(1);
     expect(lines.join('\n')).toContain('no recorded migrations at all');
   });
+
+  // A pull request that adds a migration is ahead of the project by definition:
+  // main applies it after the merge, so being ahead is a notice there and a
+  // failure everywhere else (see docs/supabase.md, "Drift check").
+  describe('relaxed for a pull request', () => {
+    const relaxed = { ...env, MIGRATION_DRIFT_STRICT: '0' };
+
+    it('passes when the only difference is a file the project has not applied', async () => {
+      const { lines, log } = collect();
+      const fetchImpl = async () =>
+        jsonResponse({ migrations: [{ version: '20260101000000', name: 'first' }] });
+
+      expect(await main({ env: relaxed, log, fetchImpl, localDir: drifted })).toBe(0);
+      const output = lines.join('\n');
+      expect(output).toContain('20260102000000_second.sql');
+      expect(output).toContain('main does after the merge');
+    });
+
+    it('still fails on a recorded version the repo has no file for', async () => {
+      const { lines, log } = collect();
+      const fetchImpl = async () =>
+        jsonResponse({
+          migrations: [
+            { version: '20260101000000', name: 'first' },
+            { version: '20260103000000', name: 'applied_out_of_band' },
+          ],
+        });
+
+      expect(await main({ env: relaxed, log, fetchImpl, localDir: inSync })).toBe(1);
+      expect(lines.join('\n')).toContain('20260103000000');
+    });
+  });
 });
