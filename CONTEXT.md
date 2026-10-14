@@ -305,6 +305,19 @@ happens, so a client is never left running a build whose caches `activate` has a
 instead of applying it silently (ADR-0042).
 _Avoid_: update, SW update, auto-update
 
+**Shell version**:
+The Android shell's own version counter (`android/shell-version.properties`), independent of the site
+version, and the number Android itself compares when deciding whether an APK may replace the installed
+one. It moves only when the shell itself changes, because the shell loads the live site: a web release
+changes nothing about the installed app (ADR-0043).
+_Avoid_: app version, build number, versionCode
+
+**Shell update**:
+A newer APK published at `public/android/latest.json`, announced by the shell's own native prompt while
+the site holds its web offer back. Distinct from a worker swap, which is the web build updating itself
+within the same install (ADR-0042).
+_Avoid_: app update, force update
+
 **Tombstone**:
 A soft delete (`deleted_at`) that records a removal so it can sync to other devices without losing
 the row's identity.

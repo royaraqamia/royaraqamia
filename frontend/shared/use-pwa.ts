@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { requestPersistentStorage } from './persistent-storage';
+import { observeShellUpdate } from './shell-update';
 import { applyWorkerUpdate, watchWorkerUpdates } from './sw-update';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -94,6 +95,13 @@ export function usePWA() {
         ),
     });
   }, []);
+
+  /**
+   * The other update channel: inside the Android shell a new APK is something to
+   * be told about too (ADR-0043). A browser has no such bridge, and the observer
+   * is a no-op there.
+   */
+  useEffect(() => observeShellUpdate(), []);
 
   /** Moves this document onto the waiting build, replacing it once. */
   const applyUpdate = useCallback(() => {

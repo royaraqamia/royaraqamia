@@ -210,6 +210,61 @@ test('a waiting worker is announced, and the prompt is how a document takes it',
 });
 
 /**
+ * One offer at a time (ADR-0043). Inside the shell a newer APK is announced
+ * natively, so the page holds its own reload offer back while the shell's is
+ * pending. To the page the shell is two things and nothing else: a token in its
+ * user agent, and the manifest it fetches from its own origin — so that is what
+ * this stands up, with a genuinely waiting worker behind it.
+ */
+test('the shell keeps the page quiet while it announces its own update', async ({ browser }) => {
+  test.setTimeout(180_000);
+
+  const context = await browser.newContext({
+    serviceWorkers: 'allow',
+    userAgent:
+      'Mozilla/5.0 (Linux; Android 11; sdk_gphone_x86) AppleWebKit/537.36 (KHTML, like Gecko) ' +
+      'Chrome/83.0.4103.106 Mobile Safari/537.36 RoyaraqamiaShell/20000',
+  });
+  const page = await context.newPage();
+
+  // The published APK is one shell ahead of this one.
+  await page.route('**/android/latest.json', (route) =>
+    route.fulfill({
+      json: {
+        versionCode: 20001,
+        minSupportedVersionCode: 20000,
+        apkUrl: 'https://example.test/shell.apk',
+      },
+    })
+  );
+
+  writeFileSync(VERSION_SCRIPT, original ?? '');
+  await page.goto('/rates', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
+    timeout: 30_000,
+  });
+  await page.waitForTimeout(7_000);
+
+  writeFileSync(
+    VERSION_SCRIPT,
+    `self.CACHE_VERSION = '${DEPLOY_MARKER}';\nself.ASSET_VERSION = '';\n`
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await page.waitForFunction(
+    async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting),
+    null,
+    { timeout: 30_000 }
+  );
+
+  // A web update is genuinely waiting, and the page still says nothing: the
+  // shell is the one with an update to talk about.
+  await page.waitForTimeout(3_000);
+  await expect(page.getByTestId('update-prompt')).toBeHidden();
+
+  await context.close();
+});
+
+/**
  * The other half of the decision, and the reason the mechanism above is worth
  * having: a swap waits for the previous worker's clients to go away. A reload
  * does not release a waiting worker (measured 2026-10-14), and the shell's next

@@ -3,6 +3,7 @@ package com.royaraqamia.app;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.webkit.WebView;
 
 import androidx.annotation.Nullable;
 
@@ -28,10 +29,52 @@ public class MainActivity extends BridgeActivity {
     private static final String WEB_ORIGIN = "https://" + WEB_HOST;
     private static final String REDIRECT_SCHEME = "royar";
 
+    private ShellUpdatePrompt shellUpdate;
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         openFromIntent(getIntent(), false);
+        // Both of these need the bridge, so they run after Capacitor has created
+        // it: the shell's version for the page to read, and the update check that
+        // may end in a prompt.
+        announceShellVersion();
+        shellUpdate = new ShellUpdatePrompt(this, getBridge() != null ? getBridge().getServerUrl() : null);
+        shellUpdate.maybeCheck(true);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        // A shell that was in the background for a day should have another look;
+        // `ShellUpdatePrompt` throttles this to once every few hours.
+        if (shellUpdate != null) shellUpdate.maybeCheck(false);
+    }
+
+    @Override
+    public void onDestroy() {
+        if (shellUpdate != null) shellUpdate.shutdown();
+        super.onDestroy();
+    }
+
+    /**
+     * Names the shell in the WebView's user agent.
+     *
+     * The page cannot ask the shell which version it is — on the WebViews this app
+     * meets, the Capacitor bridge is not there to ask through (ADR-0043) — so the
+     * shell states it where every document can read it. This is what lets the site
+     * hold its own prompt back while the shell is asking about its update.
+     */
+    private void announceShellVersion() {
+        Bridge bridge = getBridge();
+        WebView webView = bridge != null ? bridge.getWebView() : null;
+        if (webView == null) return;
+
+        String userAgent = webView.getSettings().getUserAgentString();
+        if (userAgent == null || userAgent.contains(ShellUpdate.USER_AGENT_TOKEN)) return;
+
+        webView.getSettings()
+                .setUserAgentString(userAgent + " " + ShellUpdate.USER_AGENT_TOKEN + "/" + BuildConfig.VERSION_CODE);
     }
 
     @Override
