@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.89.0] - 2026-10-14
+
+### Changed
+- run the worker-swap guard on the paths that can break it
+
+### Added
+- reload the document on a worker swap instead of prompting
+
 ## [1.88.4] - 2026-10-14
 
 ### Changed
