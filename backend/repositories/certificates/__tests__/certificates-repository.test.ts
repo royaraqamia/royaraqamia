@@ -25,7 +25,10 @@ function makeClient(result: unknown) {
   builder.then = (onFulfilled: (value: unknown) => unknown) =>
     Promise.resolve(result).then(onFulfilled);
   const from = vi.fn(() => builder);
-  return { client: { from } as unknown as SupabaseClient<Database> };
+  return {
+    client: { from } as unknown as SupabaseClient<Database>,
+    select: builder.select as ReturnType<typeof vi.fn>,
+  };
 }
 
 const CERTIFICATE = {
@@ -41,6 +44,9 @@ const CERTIFICATE = {
   created_by: null,
   created_at: '2026-01-01T00:00:00.000Z',
 };
+
+const PUBLIC_COLUMNS =
+  'id, certificate_code, student_name, course_name, issue_date, expiration_date, grade_or_status, created_at';
 
 const DB_ERROR = { message: 'db down', code: '08006' };
 const NO_ROWS = { message: 'no rows', code: 'PGRST116' };
@@ -107,5 +113,25 @@ describe('certificates repository failure contract', () => {
     const repo = createCertificatesRepository(makeClient({ data: null, error: DB_ERROR }).client);
 
     await expect(repo.listByRecipient('u-1')).rejects.toBeInstanceOf(RepositoryError);
+  });
+
+  it('reads only the public projection from getByCode, never `*`', async () => {
+    const { client, select } = makeClient({ data: CERTIFICATE, error: null });
+    const repo = createCertificatesRepository(client);
+
+    await repo.getByCode('COMP-2026-ABCDEFGH');
+
+    expect(select).toHaveBeenCalledWith(PUBLIC_COLUMNS);
+    expect(select).not.toHaveBeenCalledWith('*');
+  });
+
+  it('reads only the public projection from listByRecipient, never `*`', async () => {
+    const { client, select } = makeClient({ data: [CERTIFICATE], error: null });
+    const repo = createCertificatesRepository(client);
+
+    await repo.listByRecipient('u-1');
+
+    expect(select).toHaveBeenCalledWith(PUBLIC_COLUMNS);
+    expect(select).not.toHaveBeenCalledWith('*');
   });
 });
