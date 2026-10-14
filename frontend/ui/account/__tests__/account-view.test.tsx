@@ -70,7 +70,7 @@ describe('AccountView', () => {
     );
     expect(screen.getByRole('link', { name: /التَّطبيقات المتَّصلة/ })).toHaveAttribute(
       'href',
-      '/account/connections'
+      '/account/connected-apps'
     );
     expect(screen.getByRole('button', { name: 'تسجيل الخروج' })).toBeInTheDocument();
     expect(screen.queryByText('سجِّل الدُّخول إلى حسابك')).not.toBeInTheDocument();

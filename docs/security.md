@@ -40,7 +40,7 @@ users, but blast radius stays bounded by:
 - RLS (native, user-scoped clients — never service-role impersonation),
 - token revocation (`/mcp/revoke` + `revoked_at` on every use), which also shreds the row's
   stored bridge ciphertext. A signed-in user can revoke without holding a client secret from the
-  account area (`/account/connections`, `DELETE /api/me/mcp/connections[/{clientId}]`), which is
+  account area (`/account/connected-apps`, `DELETE /api/me/mcp/connected-apps[/{clientId}]`), which is
   also `revokeAllUserTokens`'s production caller,
 - the daily pg_cron sweeper deleting expired/revoked rows.
 

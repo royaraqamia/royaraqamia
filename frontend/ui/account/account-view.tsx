@@ -121,7 +121,7 @@ export function AccountView() {
         )}
 
         {user && (
-          <Link href="/account/connections" className={rowClasses}>
+          <Link href="/account/connected-apps" className={rowClasses}>
             <span className="flex items-center gap-2.5">
               <Plug className="w-4 h-4 shrink-0 text-primary" />
               <span>التَّطبيقات المتَّصلة</span>

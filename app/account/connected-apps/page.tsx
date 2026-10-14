@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 import { requireAuth } from '@/backend/middleware/auth-guard';
-import { McpConnectionsView } from '@/frontend/ui/account/mcp-connections-view';
+import { McpConnectedAppsView } from '@/frontend/ui/account/mcp-connected-apps-view';
 import { SectionTitle, SectionTitleHighlight } from '@/frontend/ui/shared/section-title';
 
 export const metadata: Metadata = {
@@ -10,8 +10,8 @@ export const metadata: Metadata = {
     'التَّطبيقات الخارجيَّة المتَّصلة بحسابك عبر بروتوكول سياق النَّماذج (MCP)، مع إمكانيَّة فصل أيٍّ منها في أيِّ وقت.',
 };
 
-export default async function AccountConnectionsPage() {
-  await requireAuth('/auth/login?redirect=/account/connections');
+export default async function AccountConnectedAppsPage() {
+  await requireAuth('/auth/login?redirect=/account/connected-apps');
 
   return (
     <div className="space-y-6">
@@ -21,7 +21,7 @@ export default async function AccountConnectionsPage() {
         </SectionTitle>
       </header>
 
-      <McpConnectionsView />
+      <McpConnectedAppsView />
     </div>
   );
 }

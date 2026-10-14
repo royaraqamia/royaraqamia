@@ -89,9 +89,9 @@ piece of work, not something to approximate here.
 
 ## Addendum (2026-10-14): the user-facing disconnect now exists
 
-The account area lists a user's live Grants (`/account/connections`) and disconnects one client
-(`DELETE /api/me/mcp/connections/{clientId}`) or every client
-(`DELETE /api/me/mcp/connections`), which is `revokeAllUserTokens`'s production caller at last.
+The account area lists a user's live Grants (`/account/connected-apps`) and disconnects one client
+(`DELETE /api/me/mcp/connected-apps/{clientId}`) or every client
+(`DELETE /api/me/mcp/connected-apps`), which is `revokeAllUserTokens`'s production caller at last.
 Both paths go through the same shred described above.
 
 The deferred half is unchanged: neither revokes the Supabase session, for the reason in the

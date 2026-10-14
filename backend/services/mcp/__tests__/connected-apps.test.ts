@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-import { createMcpConnectionService } from '../connections';
+import { createMcpConnectedAppService } from '../connected-apps';
 import type { McpOAuthProvider } from '../oauth-provider';
 
 /**
@@ -17,7 +17,7 @@ function makeProvider() {
 }
 
 function makeService(provider: ReturnType<typeof makeProvider>) {
-  return createMcpConnectionService({ provider: provider as unknown as McpOAuthProvider });
+  return createMcpConnectedAppService({ provider: provider as unknown as McpOAuthProvider });
 }
 
 const GRANT = {
@@ -27,7 +27,7 @@ const GRANT = {
   last_used_at: '2026-10-13T10:00:00.000Z',
 };
 
-describe('createMcpConnectionService.list', () => {
+describe('createMcpConnectedAppService.list', () => {
   let provider: ReturnType<typeof makeProvider>;
 
   beforeEach(() => {
@@ -51,9 +51,9 @@ describe('createMcpConnectionService.list', () => {
   it('carries an unnamed client through as a null name', async () => {
     provider.listUserGrants.mockResolvedValue([{ ...GRANT, client_name: null }]);
 
-    const [connection] = await makeService(provider).list('user-1');
+    const [connectedApp] = await makeService(provider).list('user-1');
 
-    expect(connection?.clientName).toBeNull();
+    expect(connectedApp?.clientName).toBeNull();
   });
 
   it('orders by most recent activity', async () => {
@@ -62,9 +62,9 @@ describe('createMcpConnectionService.list', () => {
       { ...GRANT, client_id: 'new', last_used_at: '2026-10-13T10:00:00.000Z' },
     ]);
 
-    const connections = await makeService(provider).list('user-1');
+    const connectedApps = await makeService(provider).list('user-1');
 
-    expect(connections.map((c) => c.clientId)).toEqual(['new', 'old']);
+    expect(connectedApps.map((c) => c.clientId)).toEqual(['new', 'old']);
   });
 
   it('sorts a never-used grant by when it connected instead of last', async () => {
@@ -78,9 +78,9 @@ describe('createMcpConnectionService.list', () => {
       { ...GRANT, client_id: 'used', last_used_at: '2026-10-01T10:00:00.000Z' },
     ]);
 
-    const connections = await makeService(provider).list('user-1');
+    const connectedApps = await makeService(provider).list('user-1');
 
-    expect(connections.map((c) => c.clientId)).toEqual(['quiet', 'used']);
+    expect(connectedApps.map((c) => c.clientId)).toEqual(['quiet', 'used']);
   });
 
   it('propagates a repository failure instead of reporting an empty list', async () => {
@@ -90,7 +90,7 @@ describe('createMcpConnectionService.list', () => {
   });
 });
 
-describe('createMcpConnectionService.disconnect', () => {
+describe('createMcpConnectedAppService.disconnect', () => {
   it('disconnects exactly one client', async () => {
     const provider = makeProvider();
 
@@ -110,7 +110,7 @@ describe('createMcpConnectionService.disconnect', () => {
   });
 });
 
-describe('createMcpConnectionService.disconnectAll', () => {
+describe('createMcpConnectedAppService.disconnectAll', () => {
   it('revokes every MCP token the user holds', async () => {
     const provider = makeProvider();
 

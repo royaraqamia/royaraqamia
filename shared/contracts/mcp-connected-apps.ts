@@ -5,7 +5,7 @@
  * live tokens one client holds for one user), so `clientId` is what a disconnect
  * addresses and nothing about the tokens crosses this boundary.
  */
-export interface McpConnection {
+export interface McpConnectedApp {
   /**
    * The connected client as the grant's token rows carry it: the registration's
    * own row id, *not* the `client_id` text the client registered with. It is
@@ -19,13 +19,13 @@ export interface McpConnection {
   lastUsedAt: string | null;
 }
 
-export interface McpConnectionListResult {
+export interface McpConnectedAppListResult {
   success: boolean;
-  data?: McpConnection[];
+  data?: McpConnectedApp[];
   error?: string;
 }
 
-export interface McpConnectionActionResult {
+export interface McpConnectedAppActionResult {
   success: boolean;
   error?: string;
 }

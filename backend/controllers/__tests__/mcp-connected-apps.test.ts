@@ -13,7 +13,7 @@ vi.mock('@/backend/config/identity', async () => {
 });
 
 vi.mock('@/backend/config/mcp', () => ({
-  createDefaultMcpConnectionService: () => ({
+  createDefaultMcpConnectedAppService: () => ({
     list: mockList,
     disconnect: mockDisconnect,
     disconnectAll: mockDisconnectAll,
@@ -21,10 +21,10 @@ vi.mock('@/backend/config/mcp', () => ({
 }));
 
 import {
-  disconnectAllMcpConnections,
-  disconnectMcpConnection,
-  listMcpConnections,
-} from '@/backend/controllers/mcp-connections';
+  disconnectAllMcpConnectedApps,
+  disconnectMcpConnectedApp,
+  listMcpConnectedApps,
+} from '@/backend/controllers/mcp-connected-apps';
 
 const SAME_ORIGIN = new Headers({ 'sec-fetch-site': 'same-origin' });
 const CROSS_SITE = new Headers({ 'sec-fetch-site': 'cross-site' });
@@ -32,7 +32,7 @@ const CROSS_SITE = new Headers({ 'sec-fetch-site': 'cross-site' });
 const SESSION = { user: { id: 'user-1', email: 'user@example.com' }, client: {} };
 const SIGNED_OUT = { user: null, client: {} };
 
-const CONNECTIONS = [
+const CONNECTED_APPS = [
   {
     clientId: 'client-1',
     clientName: 'Claude Code',
@@ -41,24 +41,24 @@ const CONNECTIONS = [
   },
 ];
 
-describe('mcp-connections controller: listMcpConnections', () => {
+describe('mcp-connected-apps controller: listMcpConnectedApps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetAuthUser.mockResolvedValue(SESSION);
-    mockList.mockResolvedValue(CONNECTIONS);
+    mockList.mockResolvedValue(CONNECTED_APPS);
   });
 
   it('returns the signed-in user’s grants', async () => {
-    const result = await listMcpConnections();
+    const result = await listMcpConnectedApps();
 
-    expect(result).toMatchObject({ status: 200, body: { success: true, data: CONNECTIONS } });
+    expect(result).toMatchObject({ status: 200, body: { success: true, data: CONNECTED_APPS } });
     expect(mockList).toHaveBeenCalledWith('user-1');
   });
 
   it('answers 401 when signed out and never reaches the service', async () => {
     mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
 
-    const result = await listMcpConnections();
+    const result = await listMcpConnectedApps();
 
     expect(result).toMatchObject({ status: 401 });
     expect(mockList).not.toHaveBeenCalled();
@@ -67,7 +67,7 @@ describe('mcp-connections controller: listMcpConnections', () => {
   it('answers a readable 500 on a genuine failure', async () => {
     mockList.mockRejectedValue(new Error('db down'));
 
-    const result = await listMcpConnections();
+    const result = await listMcpConnectedApps();
 
     expect(result).toMatchObject({
       status: 500,
@@ -76,7 +76,7 @@ describe('mcp-connections controller: listMcpConnections', () => {
   });
 });
 
-describe('mcp-connections controller: disconnectMcpConnection', () => {
+describe('mcp-connected-apps controller: disconnectMcpConnectedApp', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetAuthUser.mockResolvedValue(SESSION);
@@ -84,14 +84,14 @@ describe('mcp-connections controller: disconnectMcpConnection', () => {
   });
 
   it('disconnects the addressed client for the session user', async () => {
-    const result = await disconnectMcpConnection('client-1', SAME_ORIGIN);
+    const result = await disconnectMcpConnectedApp('client-1', SAME_ORIGIN);
 
     expect(result).toMatchObject({ status: 200, body: { success: true } });
     expect(mockDisconnect).toHaveBeenCalledWith('user-1', 'client-1');
   });
 
   it('refuses a cross-site request before touching the grant', async () => {
-    const result = await disconnectMcpConnection('client-1', CROSS_SITE);
+    const result = await disconnectMcpConnectedApp('client-1', CROSS_SITE);
 
     expect(result).toMatchObject({
       status: 403,
@@ -103,7 +103,7 @@ describe('mcp-connections controller: disconnectMcpConnection', () => {
   it('answers 401 when signed out', async () => {
     mockGetAuthUser.mockResolvedValue(SIGNED_OUT);
 
-    const result = await disconnectMcpConnection('client-1', SAME_ORIGIN);
+    const result = await disconnectMcpConnectedApp('client-1', SAME_ORIGIN);
 
     expect(result).toMatchObject({ status: 401 });
     expect(mockDisconnect).not.toHaveBeenCalled();
@@ -112,7 +112,7 @@ describe('mcp-connections controller: disconnectMcpConnection', () => {
   it('reports a failure instead of a silent success', async () => {
     mockDisconnect.mockRejectedValue(new Error('shred failed'));
 
-    const result = await disconnectMcpConnection('client-1', SAME_ORIGIN);
+    const result = await disconnectMcpConnectedApp('client-1', SAME_ORIGIN);
 
     expect(result).toMatchObject({
       status: 500,
@@ -121,7 +121,7 @@ describe('mcp-connections controller: disconnectMcpConnection', () => {
   });
 });
 
-describe('mcp-connections controller: disconnectAllMcpConnections', () => {
+describe('mcp-connected-apps controller: disconnectAllMcpConnectedApps', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockGetAuthUser.mockResolvedValue(SESSION);
@@ -129,14 +129,14 @@ describe('mcp-connections controller: disconnectAllMcpConnections', () => {
   });
 
   it('disconnects every client the session user has', async () => {
-    const result = await disconnectAllMcpConnections(SAME_ORIGIN);
+    const result = await disconnectAllMcpConnectedApps(SAME_ORIGIN);
 
     expect(result).toMatchObject({ status: 200, body: { success: true } });
     expect(mockDisconnectAll).toHaveBeenCalledWith('user-1');
   });
 
   it('refuses a cross-site request', async () => {
-    const result = await disconnectAllMcpConnections(CROSS_SITE);
+    const result = await disconnectAllMcpConnectedApps(CROSS_SITE);
 
     expect(result).toMatchObject({ status: 403 });
     expect(mockDisconnectAll).not.toHaveBeenCalled();
@@ -145,7 +145,7 @@ describe('mcp-connections controller: disconnectAllMcpConnections', () => {
   it('reports a failure instead of a silent success', async () => {
     mockDisconnectAll.mockRejectedValue(new Error('shred failed'));
 
-    const result = await disconnectAllMcpConnections(SAME_ORIGIN);
+    const result = await disconnectAllMcpConnectedApps(SAME_ORIGIN);
 
     expect(result).toMatchObject({
       status: 500,

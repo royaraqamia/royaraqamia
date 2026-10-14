@@ -4,12 +4,12 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Plug, Plus, RefreshCw, Unplug } from 'lucide-react';
 
-import type { McpConnection } from '@/shared/contracts/mcp-connections';
+import type { McpConnectedApp } from '@/shared/contracts/mcp-connected-apps';
 import {
-  disconnectAllMcpConnections,
-  disconnectMcpConnection,
-  getMcpConnections,
-} from '@/frontend/api/mcp-connections';
+  disconnectAllMcpConnectedApps,
+  disconnectMcpConnectedApp,
+  getMcpConnectedApps,
+} from '@/frontend/api/mcp-connected-apps';
 import { calculateTimeAgo, formatHijriDate } from '@/frontend/shared/format';
 import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
 
@@ -20,19 +20,19 @@ import { ConfirmDialog } from '@/frontend/ui/shared/confirm-dialog';
  * server is the record of what is still live: a revocation that half-succeeded
  * must not look complete because the client removed the row optimistically.
  */
-export function McpConnectionsView() {
-  const [connections, setConnections] = useState<McpConnection[] | null>(null);
+export function McpConnectedAppsView() {
+  const [connectedApps, setConnectedApps] = useState<McpConnectedApp[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [target, setTarget] = useState<McpConnection | 'all' | null>(null);
+  const [target, setTarget] = useState<McpConnectedApp | 'all' | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
   const load = useCallback(async () => {
     setLoadFailed(false);
     try {
-      setConnections(await getMcpConnections());
+      setConnectedApps(await getMcpConnectedApps());
     } catch {
-      setConnections(null);
+      setConnectedApps(null);
       setLoadFailed(true);
     }
   }, []);
@@ -49,8 +49,8 @@ export function McpConnectionsView() {
 
     const result =
       target === 'all'
-        ? await disconnectAllMcpConnections()
-        : await disconnectMcpConnection(target.clientId);
+        ? await disconnectAllMcpConnectedApps()
+        : await disconnectMcpConnectedApp(target.clientId);
 
     setIsDisconnecting(false);
     setTarget(null);
@@ -81,7 +81,7 @@ export function McpConnectionsView() {
     );
   }
 
-  if (connections === null) {
+  if (connectedApps === null) {
     return (
       <div className="space-y-2.5" aria-busy="true" aria-label="جاري التَّحميل...">
         <div className="h-20 rounded-2xl border border-border/40 bg-muted/40 animate-pulse" />
@@ -90,7 +90,7 @@ export function McpConnectionsView() {
     );
   }
 
-  const hasConnections = connections.length > 0;
+  const hasConnectedApps = connectedApps.length > 0;
 
   return (
     <div className="space-y-4">
@@ -103,37 +103,37 @@ export function McpConnectionsView() {
         </p>
       )}
 
-      {hasConnections ? (
+      {hasConnectedApps ? (
         <>
           <ul className="space-y-2.5">
-            {connections.map((connection) => (
+            {connectedApps.map((connectedApp) => (
               <li
-                key={connection.clientId}
+                key={connectedApp.clientId}
                 className="flex items-center justify-between gap-3 rounded-2xl border border-border/50 bg-card/60 px-4 py-3.5"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   <Plug aria-hidden="true" className="h-4 w-4 shrink-0 text-primary" />
                   <div className="min-w-0 space-y-1">
                     <p className="truncate text-sm font-bold text-foreground sm:text-base">
-                      {connection.clientName ?? 'تطبيق MCP'}
+                      {connectedApp.clientName ?? 'تطبيق MCP'}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       <span>
                         آخر استخدام:{' '}
-                        {connection.lastUsedAt
-                          ? calculateTimeAgo(connection.lastUsedAt)
+                        {connectedApp.lastUsedAt
+                          ? calculateTimeAgo(connectedApp.lastUsedAt)
                           : 'لم يُستخدم بعد'}
                       </span>
                       <span aria-hidden="true"> · </span>
-                      <span>متَّصل منذ {formatHijriDate(connection.connectedAt)}</span>
+                      <span>متَّصل منذ {formatHijriDate(connectedApp.connectedAt)}</span>
                     </p>
                   </div>
                 </div>
 
                 <button
                   type="button"
-                  onClick={() => setTarget(connection)}
-                  aria-label={`فصل ${connection.clientName ?? 'تطبيق MCP'}`}
+                  onClick={() => setTarget(connectedApp)}
+                  aria-label={`فصل ${connectedApp.clientName ?? 'تطبيق MCP'}`}
                   className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2 text-xs font-bold text-destructive/90 transition-safe duration-150 ease-out hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive/30 sm:text-sm"
                 >
                   <Unplug aria-hidden="true" className="h-4 w-4 shrink-0" />

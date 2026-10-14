@@ -2,14 +2,14 @@ import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vite
 import { render, screen, cleanup, fireEvent, waitFor, within } from '@testing-library/react';
 
 const mocks = vi.hoisted(() => ({
-  getMcpConnections: vi.fn(),
-  disconnectMcpConnection: vi.fn(),
-  disconnectAllMcpConnections: vi.fn(),
+  getMcpConnectedApps: vi.fn(),
+  disconnectMcpConnectedApp: vi.fn(),
+  disconnectAllMcpConnectedApps: vi.fn(),
 }));
 
-vi.mock('@/frontend/api/mcp-connections', () => mocks);
+vi.mock('@/frontend/api/mcp-connected-apps', () => mocks);
 
-import { McpConnectionsView } from '../mcp-connections-view';
+import { McpConnectedAppsView } from '../mcp-connected-apps-view';
 
 const CLAUDE = {
   clientId: 'client-1',
@@ -38,16 +38,16 @@ beforeAll(() => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mocks.getMcpConnections.mockResolvedValue([CLAUDE, OPENCODE]);
-  mocks.disconnectMcpConnection.mockResolvedValue({ success: true });
-  mocks.disconnectAllMcpConnections.mockResolvedValue({ success: true });
+  mocks.getMcpConnectedApps.mockResolvedValue([CLAUDE, OPENCODE]);
+  mocks.disconnectMcpConnectedApp.mockResolvedValue({ success: true });
+  mocks.disconnectAllMcpConnectedApps.mockResolvedValue({ success: true });
 });
 
 afterEach(cleanup);
 
-describe('McpConnectionsView', () => {
+describe('McpConnectedAppsView', () => {
   it('lists the connected clients with their activity', async () => {
-    render(<McpConnectionsView />);
+    render(<McpConnectedAppsView />);
 
     expect(await screen.findByText('Claude Code')).toBeInTheDocument();
     expect(screen.getByText('OpenCode')).toBeInTheDocument();
@@ -60,17 +60,17 @@ describe('McpConnectionsView', () => {
   });
 
   it('falls back to a generic name for an unnamed client', async () => {
-    mocks.getMcpConnections.mockResolvedValue([{ ...CLAUDE, clientName: null }]);
+    mocks.getMcpConnectedApps.mockResolvedValue([{ ...CLAUDE, clientName: null }]);
 
-    render(<McpConnectionsView />);
+    render(<McpConnectedAppsView />);
 
     expect(await screen.findByText('تطبيق MCP')).toBeInTheDocument();
   });
 
-  it('shows an empty state that points at the connection guide', async () => {
-    mocks.getMcpConnections.mockResolvedValue([]);
+  it('shows an empty state that points at the MCP guide', async () => {
+    mocks.getMcpConnectedApps.mockResolvedValue([]);
 
-    render(<McpConnectionsView />);
+    render(<McpConnectedAppsView />);
 
     expect(await screen.findByText('لا توجد تطبيقات متَّصلة')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /ربط تطبيق جديد/ })).toHaveAttribute(
@@ -81,50 +81,53 @@ describe('McpConnectionsView', () => {
   });
 
   it('disconnects one client only after the user confirms', async () => {
-    render(<McpConnectionsView />);
+    render(<McpConnectedAppsView />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'فصل Claude Code' }));
-    expect(mocks.disconnectMcpConnection).not.toHaveBeenCalled();
+    expect(mocks.disconnectMcpConnectedApp).not.toHaveBeenCalled();
 
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'فصل' }));
 
-    await waitFor(() => expect(mocks.disconnectMcpConnection).toHaveBeenCalledWith('client-1'));
-    expect(mocks.disconnectAllMcpConnections).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.disconnectMcpConnectedApp).toHaveBeenCalledWith('client-1'));
+    expect(mocks.disconnectAllMcpConnectedApps).not.toHaveBeenCalled();
     // The list is re-read from the server rather than filtered locally.
-    await waitFor(() => expect(mocks.getMcpConnections).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mocks.getMcpConnectedApps).toHaveBeenCalledTimes(2));
   });
 
   it('surfaces a failed disconnect instead of pretending it worked', async () => {
-    mocks.disconnectMcpConnection.mockResolvedValue({ success: false, error: 'الخدمة غير متاحة' });
-    render(<McpConnectionsView />);
+    mocks.disconnectMcpConnectedApp.mockResolvedValue({
+      success: false,
+      error: 'الخدمة غير متاحة',
+    });
+    render(<McpConnectedAppsView />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'فصل Claude Code' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'فصل' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('الخدمة غير متاحة');
-    expect(mocks.getMcpConnections).toHaveBeenCalledTimes(1);
+    expect(mocks.getMcpConnectedApps).toHaveBeenCalledTimes(1);
   });
 
   it('disconnects every client when that is confirmed', async () => {
-    render(<McpConnectionsView />);
+    render(<McpConnectedAppsView />);
 
     fireEvent.click(await screen.findByRole('button', { name: 'فصل كل التَّطبيقات' }));
     const dialog = await screen.findByRole('dialog');
     fireEvent.click(within(dialog).getByRole('button', { name: 'فصل الكل' }));
 
-    await waitFor(() => expect(mocks.disconnectAllMcpConnections).toHaveBeenCalled());
-    expect(mocks.disconnectMcpConnection).not.toHaveBeenCalled();
+    await waitFor(() => expect(mocks.disconnectAllMcpConnectedApps).toHaveBeenCalled());
+    expect(mocks.disconnectMcpConnectedApp).not.toHaveBeenCalled();
   });
 
   it('offers a retry when the list cannot be read', async () => {
-    mocks.getMcpConnections.mockRejectedValue(new Error('غير مصرح'));
-    render(<McpConnectionsView />);
+    mocks.getMcpConnectedApps.mockRejectedValue(new Error('غير مصرح'));
+    render(<McpConnectedAppsView />);
 
     expect(await screen.findByText('تعذّر تحميل التَّطبيقات المتَّصلة.')).toBeInTheDocument();
 
-    mocks.getMcpConnections.mockResolvedValue([CLAUDE]);
+    mocks.getMcpConnectedApps.mockResolvedValue([CLAUDE]);
     fireEvent.click(screen.getByRole('button', { name: 'إعادة المحاولة' }));
 
     expect(await screen.findByText('Claude Code')).toBeInTheDocument();

@@ -1,11 +1,11 @@
-import { createDefaultMcpConnectionService } from '@/backend/config/mcp';
+import { createDefaultMcpConnectedAppService } from '@/backend/config/mcp';
 import { jsonResult, type HttpResult } from '@/backend/transport/http-result';
 import { isSameOrigin } from '@/backend/transport/http';
 import { withAuthenticatedUser } from '@/backend/transport/session-handler';
 import type {
-  McpConnectionActionResult,
-  McpConnectionListResult,
-} from '@/shared/contracts/mcp-connections';
+  McpConnectedAppActionResult,
+  McpConnectedAppListResult,
+} from '@/shared/contracts/mcp-connected-apps';
 
 /**
  * The account area's "connected apps" surface: which MCP clients reach the
@@ -17,11 +17,11 @@ import type {
  * a user has no way to address a grant they own but hold no secret for.
  */
 
-export async function listMcpConnections(): Promise<HttpResult> {
+export async function listMcpConnectedApps(): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId }) => {
-      const data = await createDefaultMcpConnectionService().list(userId);
-      return jsonResult(200, { success: true, data } satisfies McpConnectionListResult);
+      const data = await createDefaultMcpConnectedAppService().list(userId);
+      return jsonResult(200, { success: true, data } satisfies McpConnectedAppListResult);
     },
     { whenFailed: { success: false, error: 'تعذّر تحميل التَّطبيقات المتَّصلة.' } }
   );
@@ -33,7 +33,7 @@ export async function listMcpConnections(): Promise<HttpResult> {
  * already true, and answering differently would let one user probe for another's
  * client_ids.
  */
-export async function disconnectMcpConnection(
+export async function disconnectMcpConnectedApp(
   clientId: string,
   headers: Headers
 ): Promise<HttpResult> {
@@ -43,29 +43,29 @@ export async function disconnectMcpConnection(
         return jsonResult(403, {
           success: false,
           error: 'طلب غير مسموح',
-        } satisfies McpConnectionActionResult);
+        } satisfies McpConnectedAppActionResult);
       }
 
-      await createDefaultMcpConnectionService().disconnect(userId, clientId);
-      return jsonResult(200, { success: true } satisfies McpConnectionActionResult);
+      await createDefaultMcpConnectedAppService().disconnect(userId, clientId);
+      return jsonResult(200, { success: true } satisfies McpConnectedAppActionResult);
     },
     { whenFailed: { success: false, error: 'تعذّر فصل التَّطبيق.' } }
   );
 }
 
 /** Disconnects every MCP client the user has. Leaves their site session alone. */
-export async function disconnectAllMcpConnections(headers: Headers): Promise<HttpResult> {
+export async function disconnectAllMcpConnectedApps(headers: Headers): Promise<HttpResult> {
   return withAuthenticatedUser(
     async ({ userId }) => {
       if (!isSameOrigin(headers)) {
         return jsonResult(403, {
           success: false,
           error: 'طلب غير مسموح',
-        } satisfies McpConnectionActionResult);
+        } satisfies McpConnectedAppActionResult);
       }
 
-      await createDefaultMcpConnectionService().disconnectAll(userId);
-      return jsonResult(200, { success: true } satisfies McpConnectionActionResult);
+      await createDefaultMcpConnectedAppService().disconnectAll(userId);
+      return jsonResult(200, { success: true } satisfies McpConnectedAppActionResult);
     },
     { whenFailed: { success: false, error: 'تعذّر فصل التَّطبيقات.' } }
   );
