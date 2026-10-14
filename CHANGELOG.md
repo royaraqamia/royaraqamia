@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.89.6] - 2026-10-14
+
+### Changed
+- apply with the access token, not a new secret
+
 ## [1.89.5] - 2026-10-14
 
 ### Changed
