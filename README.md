@@ -381,8 +381,9 @@ Vercel's Git integration auto-deploys the `[skip ci]` release commit (GitHub Act
 
 - `GET /api/version` returns `version` (the unchanged deployment fingerprint), plus `releaseVersion`, `commit`, `ref`, `env`, and `releasedAt`.
 - `frontend/shared/sw-update.ts` re-checks for a new worker while the document is visible and reloads
-  the document once when a swapped worker takes control (ADR-0039) — no prompt, and no refresh needed
-  inside the Android shell.
+  the document once when a swapped worker takes control (ADR-0039) — no prompt. A swap waits for the
+  previous worker's clients to go away, so a client moves to a new deploy on its next launch (inside
+  the Android shell, its next cold start), not on a refresh.
 - Sentry releases are tagged with `releaseVersion` (server, edge, and client).
 
 ### Commands

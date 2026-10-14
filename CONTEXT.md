@@ -297,9 +297,11 @@ anything marked `no-store`/`private`.
 _Avoid_: blacklist, do-not-cache, exclusions
 
 **Worker swap**:
-The moment a newly installed service worker takes control of a document the previous one served.
-The document replaces itself instead of asking, so a client is never left running a build whose
-caches `activate` has already deleted (ADR-0039).
+The moment a newly installed service worker takes control of a document the previous one served. It
+happens once the previous worker's clients are gone, so it lands on a client's next launch (inside the
+Android shell, its next cold start) rather than on a refresh. The document replaces itself instead of
+asking, so a client is never left running a build whose caches `activate` has already deleted
+(ADR-0039).
 _Avoid_: update, SW update, version prompt
 
 **Tombstone**:
