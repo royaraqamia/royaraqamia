@@ -14,9 +14,11 @@ So drift is **a build failure**, not a review habit. `.github/workflows/migratio
 `scripts/check-migration-drift.mjs`, which reads the version ids out of `supabase/migrations/*.sql`
 and asks the project for its recorded list over the same Management API endpoint the Supabase CLI's
 `migration list --linked` uses (`GET /v1/projects/{ref}/database/migrations`). It runs on pull
-requests and pushes that touch migrations, nightly, and on demand; the nightly run opens (and later
-closes) a single tracking issue, because an out-of-band `apply_migration` has no pull request here
-to comment on.
+requests and pushes that touch migrations, nightly, and on demand; every run except a pull request
+also reconciles a single tracking issue, because an out-of-band `apply_migration` has no pull request
+here to comment on. Opening it is the failure case and closing it is the recovery, so a drift fixed
+during the day does not wait for the next night, and both halves are drillable on demand (dispatch
+with a project ref that does not exist, then without one).
 
 Both directions fail, for different reasons. A file the project has no version for means the
 deployed code may expect schema production does not have. A recorded version the repo has no file
