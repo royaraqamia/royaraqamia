@@ -55,6 +55,26 @@ export interface McpTokenRecord {
   last_used_at: string | null;
 }
 
+/**
+ * One connected MCP client, folded from the live token rows of a single user.
+ * `client_id` is the token rows' value — the client registration's row id, not
+ * the `client_id` text the client registered with. `client_name` is filled from
+ * the registration so the account surface never reads the clients table itself.
+ */
+export interface McpUserGrantRecord {
+  client_id: string;
+  client_name: string | null;
+  connected_at: string;
+  last_used_at: string | null;
+}
+
+/** The columns `listUserGrants` folds; the rest of a token row never leaves here. */
+interface GrantRow {
+  client_id: string;
+  created_at: string;
+  last_used_at: string | null;
+}
+
 const CLIENTS_TABLE = 'mcp_oauth_clients';
 const AUTH_CODES_TABLE = 'mcp_oauth_auth_codes';
 const TOKENS_TABLE = 'mcp_oauth_tokens';
@@ -105,6 +125,14 @@ export interface McpOAuthRepository {
   updateTokenSessionEnc(id: string, sessionEnc: string): Promise<void>;
   revokeToken(id: string): Promise<void>;
   revokeAllUserTokens(userId: string): Promise<void>;
+  /**
+   * The user's live grants, one row per connected client. A grant is live while
+   * it holds at least one unrevoked, unexpired *refresh* token: access rows come
+   * and go with their 1h TTL and the daily sweep, the refresh row is the grant.
+   */
+  listUserGrants(userId: string, now: Date): Promise<McpUserGrantRecord[]>;
+  /** Shred every token the user holds for one client — a per-client disconnect. */
+  revokeUserClientTokens(userId: string, clientId: string): Promise<void>;
   deleteExpired(now: Date): Promise<void>;
 }
 
@@ -242,6 +270,55 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
       if (error) throw error;
     },
 
+    async listUserGrants(userId, now) {
+      const { data, error } = await (supabase as any)
+        .from(TOKENS_TABLE)
+        .select('client_id, created_at, last_used_at')
+        .eq('user_id', userId)
+        .eq('kind', 'refresh')
+        .is('revoked_at', null)
+        .gt('expires_at', now.toISOString());
+      if (error) throw error;
+
+      const grants = foldGrants((data ?? []) as GrantRow[]);
+      if (grants.length === 0) return grants;
+
+      // The tokens table carries the client's *row id* in `client_id` (see
+      // `issueTokenPair`), and no label, so the names come from a second read
+      // keyed on that id. A client whose registration was pruned keeps its grant
+      // and shows as unnamed rather than disappearing from a list it can still
+      // reach.
+      const { data: clients, error: clientsError } = await (supabase as any)
+        .from(CLIENTS_TABLE)
+        .select('id, client_name')
+        .in(
+          'id',
+          grants.map((grant) => grant.client_id)
+        );
+      if (clientsError) throw clientsError;
+
+      const names = new Map<string, string | null>(
+        ((clients ?? []) as Array<{ id: string; client_name: string | null }>).map((client) => [
+          client.id,
+          client.client_name,
+        ])
+      );
+      return grants.map((grant) => ({
+        ...grant,
+        client_name: names.get(grant.client_id) ?? null,
+      }));
+    },
+
+    async revokeUserClientTokens(userId, clientId) {
+      // Revoking shreds the bridge ciphertext — see the module note.
+      const { error } = await (supabase as any)
+        .from(TOKENS_TABLE)
+        .update({ revoked_at: new Date().toISOString(), session_enc: null })
+        .eq('user_id', userId)
+        .eq('client_id', clientId);
+      if (error) throw error;
+    },
+
     async deleteExpired(now) {
       const { error } = await (supabase as any)
         .from(TOKENS_TABLE)
@@ -250,4 +327,44 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
       if (error) throw error;
     },
   };
+}
+
+/**
+ * One grant per client. A re-consent leaves the earlier refresh row alive, so one
+ * client can hold several: the earliest `created_at` is when it connected, the
+ * latest `last_used_at` is when it was last seen.
+ *
+ * Timestamps are compared as instants, never as strings: PostgREST renders
+ * `timestamptz` with an offset, and ordering those lexicographically is only
+ * right while every row happens to share one.
+ */
+function foldGrants(rows: GrantRow[]): McpUserGrantRecord[] {
+  const grants = new Map<string, McpUserGrantRecord>();
+
+  for (const row of rows) {
+    const existing = grants.get(row.client_id);
+    if (!existing) {
+      grants.set(row.client_id, {
+        client_id: row.client_id,
+        client_name: null,
+        connected_at: row.created_at,
+        last_used_at: row.last_used_at,
+      });
+      continue;
+    }
+
+    if (Date.parse(row.created_at) < Date.parse(existing.connected_at)) {
+      existing.connected_at = row.created_at;
+    }
+
+    const usedAt = row.last_used_at;
+    if (usedAt !== null) {
+      const best = existing.last_used_at;
+      if (best === null || Date.parse(usedAt) > Date.parse(best)) {
+        existing.last_used_at = usedAt;
+      }
+    }
+  }
+
+  return [...grants.values()];
 }

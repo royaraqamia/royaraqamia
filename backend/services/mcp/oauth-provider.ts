@@ -3,6 +3,7 @@ import {
   createMcpOAuthRepository,
   type McpOAuthClientRecord,
   type McpOAuthRepository,
+  type McpUserGrantRecord,
 } from '@/backend/repositories/mcp/mcp-oauth-repository';
 import {
   constantTimeEqual,
@@ -151,6 +152,19 @@ export interface McpOAuthProvider {
 
   /** Revoke every session a user has issued (sign out everywhere). */
   revokeAllUserTokens(userId: string): Promise<void>;
+
+  /**
+   * The user's live grants — one row per connected MCP client. This is what the
+   * account area lists; nothing here is derived from a bearer token, so the page
+   * a user disconnects from is the same page they review.
+   */
+  listUserGrants(userId: string): Promise<McpUserGrantRecord[]>;
+
+  /**
+   * Disconnect one client: revoke every token it holds for this user, leaving
+   * their other clients (and their browser session) alone.
+   */
+  revokeUserClient(userId: string, clientId: string): Promise<void>;
 }
 
 export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAuthProvider {
@@ -331,6 +345,19 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
 
     async revokeAllUserTokens(userId) {
       await repo.revokeAllUserTokens(userId);
+      invalidateUserCache(userId);
+    },
+
+    async listUserGrants(userId) {
+      return repo.listUserGrants(userId, new Date());
+    },
+
+    async revokeUserClient(userId, clientId) {
+      await repo.revokeUserClientTokens(userId, clientId);
+      // Coarse on purpose. Dropping every cached context this user holds costs
+      // their other clients one re-resolve and cannot leave a revoked context
+      // authorizing a request; a per-client invalidator would buy nothing but a
+      // narrower filter here.
       invalidateUserCache(userId);
     },
   };

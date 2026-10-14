@@ -39,8 +39,14 @@ users, but blast radius stays bounded by:
 
 - RLS (native, user-scoped clients — never service-role impersonation),
 - token revocation (`/mcp/revoke` + `revoked_at` on every use), which also shreds the row's
-  stored bridge ciphertext,
+  stored bridge ciphertext. A signed-in user can revoke without holding a client secret from the
+  account area (`/account/connections`, `DELETE /api/me/mcp/connections[/{clientId}]`), which is
+  also `revokeAllUserTokens`'s production caller,
 - the daily pg_cron sweeper deleting expired/revoked rows.
+
+A disconnect from the account area revokes MCP tokens only. The grant's Supabase session is
+deliberately left alone: no row records that a session is the grant's own, and for a
+pre-amendment row it is the user's _browser_ session (ADR 0023).
 
 All MCP routes (`/mcp`, `/register`, `/token`, `/connect/consent`) are Upstash-limited
 (fail-closed); registration also enforces https-only redirect URIs with a localhost exception

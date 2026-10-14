@@ -309,6 +309,22 @@ A soft delete (`deleted_at`) that records a removal so it can sync to other devi
 the row's identity.
 _Avoid_: soft delete, deleted flag, marker
 
+### MCP
+
+**Connected App**:
+An external MCP client (Claude Code, OpenCode, Codex, Cursor, …) that a User has authorized to
+reach their data. Each one appears in the account area, where the User can disconnect it without
+signing out of the site.
+_Sold as_: التَّطبيقات المتَّصلة
+_Avoid_: Integration, plugin, add-on, connector
+
+**Grant**:
+One User's authorization of one Connected App — the set of live OAuth tokens that client holds for
+them, not a single token and not the OAuth `grant_type` of a request. A Grant is live until it is
+disconnected or swept, and disconnecting one leaves the User's other Grants and their site session
+alone.
+_Avoid_: Permission, consent, access token, connection
+
 ### Shared
 
 **Admin**:
