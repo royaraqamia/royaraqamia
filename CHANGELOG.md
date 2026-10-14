@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.89.4] - 2026-10-14
+
+### Changed
+- reconcile the drift alert on every run but a pull request
+
 ## [1.89.3] - 2026-10-14
 
 ### Changed
