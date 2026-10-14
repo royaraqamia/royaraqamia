@@ -8,7 +8,6 @@ const SW_PATH = '/sw.js';
 
 interface PWAContextValue extends PWAState {
   promptInstall: () => Promise<boolean | undefined>;
-  dismissUpdate: () => void;
 }
 
 const PWAContext = createContext<PWAContextValue | null>(null);
@@ -23,15 +22,12 @@ export function usePWAContext() {
 
 interface PWAProviderProps {
   children: ReactNode;
-  onUpdateAvailable?: () => void;
 }
 
-export function PWAProvider({ children, onUpdateAvailable }: PWAProviderProps) {
+export function PWAProvider({ children }: PWAProviderProps) {
   const registered = useRef(false);
 
-  const pwa = usePWA(() => {
-    onUpdateAvailable?.();
-  });
+  const pwa = usePWA();
 
   useEffect(() => {
     if (registered.current) return;

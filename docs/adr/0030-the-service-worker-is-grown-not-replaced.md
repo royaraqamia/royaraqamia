@@ -1,5 +1,8 @@
 # The hand-rolled service worker is grown, not replaced by Workbox or Serwist
 
+> **Superseded in part by [ADR 0039](0039-a-worker-swap-reloads-the-document.md)**, which drops the
+> "update available" prompt this ADR assumed in favour of reloading the document on a worker swap.
+
 `public/sw.js` already carries logic a framework would fight: content-hashed asset versioning,
 Web Push including `pushsubscriptionchange`, and origin-checked `message` handling. We decided to
 **keep the hand-rolled worker** and grow it — cache tiers, the never-cache list, an outbox flush
@@ -21,6 +24,6 @@ modules rather than growing inline.
 
 We own cache strategy and Background Sync registration. The worker's `activate` cleanup touches
 Cache Storage only — **never IndexedDB** — so the Local Store and Outbox survive every update. New
-workers install as _waiting_ and activation stays governed by the existing "update available"
-prompt; we never auto-`skipWaiting` destructively. Because owned writes are idempotent
-(ADR-0029), a flush interrupted by a worker restart is safe to replay.
+workers install as _waiting_ and we never auto-`skipWaiting` destructively; what replaces the
+document once a swapped worker takes control is ADR-0039, not an update prompt. Because owned writes
+are idempotent (ADR-0029), a flush interrupted by a worker restart is safe to replay.
