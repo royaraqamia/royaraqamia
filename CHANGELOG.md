@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.89.1] - 2026-10-14
+
+### Changed
+- Certificate PII exposure fixed via RLS/grant split.
+
 ## [1.89.0] - 2026-10-14
 
 ### Changed
