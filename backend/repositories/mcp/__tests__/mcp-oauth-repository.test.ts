@@ -131,3 +131,331 @@ describe('createMcpOAuthRepository.revokeAllUserTokens', () => {
     await expect(repo.revokeAllUserTokens('user-1')).rejects.toThrow('revoke all failed');
   });
 });
+
+/**
+ * The read side of the account surface: one grant per connected client, folded
+ * from that user's live token rows — the refresh rows date it, the access rows
+ * show its use — plus the client registration's name.
+ */
+function makeGrantsClient(
+  options: {
+    rows?: Array<{
+      client_id: string;
+      kind: 'access' | 'refresh';
+      created_at: string;
+      last_used_at: string | null;
+    }> | null;
+    tokensError?: Error | null;
+    clients?: Array<{ id: string; client_name: string | null }> | null;
+    clientsError?: Error | null;
+  } = {}
+) {
+  const gt = vi.fn().mockResolvedValue({
+    data: options.rows ?? [],
+    error: options.tokensError ?? null,
+  });
+  const is = vi.fn(() => ({ gt }));
+  const eq = vi.fn(() => ({ eq, is }));
+  const selectTokens = vi.fn(() => ({ eq }));
+
+  const clientsIn = vi.fn().mockResolvedValue({
+    data: options.clients ?? [],
+    error: options.clientsError ?? null,
+  });
+  const selectClients = vi.fn(() => ({ in: clientsIn }));
+
+  const from = vi.fn((table: string) => {
+    if (table === 'mcp_oauth_tokens') return { select: selectTokens };
+    if (table === 'mcp_oauth_clients') return { select: selectClients };
+    throw new Error(`unexpected table: ${table}`);
+  });
+
+  const client = { from } as unknown as SupabaseClient<Database>;
+  return { client, eq, is, gt, selectTokens, selectClients, clientsIn };
+}
+
+describe('createMcpOAuthRepository.listUserGrants', () => {
+  const NOW = new Date('2026-10-14T00:00:00.000Z');
+
+  it('reads this user’s live rows of both kinds', async () => {
+    const { client, selectTokens, eq, is, gt } = makeGrantsClient();
+
+    await createMcpOAuthRepository(client).listUserGrants('user-1', NOW);
+
+    expect(selectTokens).toHaveBeenCalledWith('client_id, kind, created_at, last_used_at');
+    // Both kinds in one read: the refresh row is the grant, the access row is
+    // the only row that carries a use worth showing.
+    expect(eq).toHaveBeenCalledTimes(1);
+    expect(eq).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(is).toHaveBeenCalledWith('revoked_at', null);
+    expect(gt).toHaveBeenCalledWith('expires_at', NOW.toISOString());
+  });
+
+  it('dates a grant from its refresh rows and shows use from its access row', async () => {
+    const { client, selectClients, clientsIn } = makeGrantsClient({
+      rows: [
+        {
+          client_id: 'client-1',
+          kind: 'refresh',
+          created_at: '2026-10-01T10:00:00Z',
+          last_used_at: null,
+        },
+        {
+          client_id: 'client-1',
+          kind: 'access',
+          created_at: '2026-08-01T10:00:00Z',
+          last_used_at: '2026-08-01T11:00:00Z',
+        },
+        {
+          client_id: 'client-1',
+          kind: 'refresh',
+          created_at: '2026-09-01T10:00:00Z',
+          last_used_at: null,
+        },
+        {
+          client_id: 'client-1',
+          kind: 'access',
+          created_at: '2026-10-01T10:00:00Z',
+          last_used_at: '2026-10-13T10:00:00Z',
+        },
+      ],
+      clients: [{ id: 'client-1', client_name: 'Claude Code' }],
+    });
+
+    await expect(createMcpOAuthRepository(client).listUserGrants('user-1', NOW)).resolves.toEqual([
+      {
+        client_id: 'client-1',
+        client_name: 'Claude Code',
+        // The earliest *refresh* row dates the grant; the older access row does not.
+        connected_at: '2026-09-01T10:00:00Z',
+        // The newest stamp on any live row; refresh rows are never stamped.
+        last_used_at: '2026-10-13T10:00:00Z',
+      },
+    ]);
+    // The token rows carry the client's row id, so the name is keyed on `id`.
+    expect(selectClients).toHaveBeenCalledWith('id, client_name');
+    expect(clientsIn).toHaveBeenCalledWith('id', ['client-1']);
+  });
+
+  it('keeps the newest stamp when a later access row has not been used yet', async () => {
+    const { client } = makeGrantsClient({
+      rows: [
+        {
+          client_id: 'client-1',
+          kind: 'refresh',
+          created_at: '2026-09-01T10:00:00Z',
+          last_used_at: null,
+        },
+        {
+          client_id: 'client-1',
+          kind: 'access',
+          created_at: '2026-10-13T09:00:00Z',
+          last_used_at: null,
+        },
+        {
+          client_id: 'client-1',
+          kind: 'access',
+          created_at: '2026-10-12T09:00:00Z',
+          last_used_at: '2026-10-12T09:30:00Z',
+        },
+      ],
+    });
+
+    const [grant] = await createMcpOAuthRepository(client).listUserGrants('user-1', NOW);
+
+    expect(grant?.last_used_at).toBe('2026-10-12T09:30:00Z');
+  });
+
+  it('reports no grant when a client holds only access rows', async () => {
+    const { client, selectClients } = makeGrantsClient({
+      rows: [
+        {
+          client_id: 'client-1',
+          kind: 'access',
+          created_at: '2026-10-13T09:00:00Z',
+          last_used_at: '2026-10-13T09:00:00Z',
+        },
+      ],
+    });
+
+    // No refresh row means the pair is gone: the client cannot refresh and is
+    // not a connection the account area should offer to disconnect.
+    await expect(createMcpOAuthRepository(client).listUserGrants('user-1', NOW)).resolves.toEqual(
+      []
+    );
+    expect(selectClients).not.toHaveBeenCalled();
+  });
+
+  it('compares timestamps as instants, not as strings', async () => {
+    // 07:00-03:00 is 10:00Z, an hour *before* the 13:00Z row whose string sorts first.
+    const { client } = makeGrantsClient({
+      rows: [
+        {
+          client_id: 'client-1',
+          kind: 'refresh',
+          created_at: '2026-09-01T13:00:00Z',
+          last_used_at: null,
+        },
+        {
+          client_id: 'client-1',
+          kind: 'refresh',
+          created_at: '2026-09-01T07:00:00-03:00',
+          last_used_at: null,
+        },
+      ],
+    });
+
+    const [grant] = await createMcpOAuthRepository(client).listUserGrants('user-1', NOW);
+
+    expect(grant?.connected_at).toBe('2026-09-01T07:00:00-03:00');
+  });
+
+  it('keeps a grant whose registration is gone, unnamed', async () => {
+    const { client } = makeGrantsClient({
+      rows: [
+        {
+          client_id: 'client-1',
+          kind: 'refresh',
+          created_at: '2026-09-01T10:00:00Z',
+          last_used_at: null,
+        },
+      ],
+      clients: [],
+    });
+
+    const [grant] = await createMcpOAuthRepository(client).listUserGrants('user-1', NOW);
+
+    expect(grant).toMatchObject({ client_id: 'client-1', client_name: null });
+  });
+
+  it('skips the client lookup when the user has no live grants', async () => {
+    const { client, selectClients } = makeGrantsClient({ rows: [] });
+
+    await expect(createMcpOAuthRepository(client).listUserGrants('user-1', NOW)).resolves.toEqual(
+      []
+    );
+    expect(selectClients).not.toHaveBeenCalled();
+  });
+
+  it('throws when the token read fails', async () => {
+    const { client } = makeGrantsClient({ tokensError: new Error('tokens down') });
+
+    await expect(createMcpOAuthRepository(client).listUserGrants('user-1', NOW)).rejects.toThrow(
+      'tokens down'
+    );
+  });
+
+  it('throws when the client lookup fails', async () => {
+    const { client } = makeGrantsClient({
+      rows: [
+        {
+          client_id: 'client-1',
+          kind: 'refresh',
+          created_at: '2026-09-01T10:00:00Z',
+          last_used_at: null,
+        },
+      ],
+      clientsError: new Error('clients down'),
+    });
+
+    await expect(createMcpOAuthRepository(client).listUserGrants('user-1', NOW)).rejects.toThrow(
+      'clients down'
+    );
+  });
+});
+
+/** `revokeUserClientTokens` chains two `.eq()`s: user, then client. */
+function makeClientRevokeClient(updateError: Error | null = null) {
+  const clientEq = vi.fn().mockResolvedValue({ error: updateError });
+  const userEq = vi.fn(() => ({ eq: clientEq }));
+  const update = vi.fn(() => ({ eq: userEq }));
+  const from = vi.fn((table: string) => {
+    if (table !== 'mcp_oauth_tokens') throw new Error(`unexpected table: ${table}`);
+    return { update };
+  });
+
+  const client = { from } as unknown as SupabaseClient<Database>;
+  return { client, update, userEq, clientEq };
+}
+
+describe('createMcpOAuthRepository.revokeUserClientTokens', () => {
+  it('shreds only that client’s rows for that user', async () => {
+    const { client, update, userEq, clientEq } = makeClientRevokeClient();
+
+    await createMcpOAuthRepository(client).revokeUserClientTokens('user-1', 'client-1');
+
+    expect(update).toHaveBeenCalledWith({
+      revoked_at: expect.any(String),
+      session_enc: null,
+    });
+    expect(userEq).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(clientEq).toHaveBeenCalledWith('client_id', 'client-1');
+  });
+
+  it('throws when the update fails', async () => {
+    const { client } = makeClientRevokeClient(new Error('disconnect failed'));
+
+    await expect(
+      createMcpOAuthRepository(client).revokeUserClientTokens('user-1', 'client-1')
+    ).rejects.toThrow('disconnect failed');
+  });
+});
+
+/**
+ * A live authorization code exchanges for a fresh token pair and carries its own
+ * bridge ciphertext, so a disconnect has to drop it too — otherwise a client
+ * mid-exchange mints a grant the revoke has already passed.
+ */
+function makeAuthCodeDeleteClient(deleteError: Error | null = null) {
+  const clientEq = vi.fn().mockResolvedValue({ error: deleteError });
+  // Doubles as the chain link (`.eq()` returns the client-scoped filter) and as
+  // the awaited result of the user-scoped delete, which has only one `.eq()`.
+  const userEq = vi.fn(() => ({ eq: clientEq, error: deleteError }));
+  const deleteFrom = vi.fn(() => ({ eq: userEq }));
+  const from = vi.fn((table: string) => {
+    if (table !== 'mcp_oauth_auth_codes') throw new Error(`unexpected table: ${table}`);
+    return { delete: deleteFrom };
+  });
+
+  const client = { from } as unknown as SupabaseClient<Database>;
+  return { client, deleteFrom, userEq, clientEq };
+}
+
+describe('createMcpOAuthRepository.deleteUserClientAuthCodes', () => {
+  it('drops one client’s codes for that user only', async () => {
+    const { client, deleteFrom, userEq, clientEq } = makeAuthCodeDeleteClient();
+
+    await createMcpOAuthRepository(client).deleteUserClientAuthCodes('user-1', 'client-1');
+
+    expect(deleteFrom).toHaveBeenCalled();
+    expect(userEq).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(clientEq).toHaveBeenCalledWith('client_id', 'client-1');
+  });
+
+  it('throws when the delete fails', async () => {
+    const { client } = makeAuthCodeDeleteClient(new Error('code delete failed'));
+
+    await expect(
+      createMcpOAuthRepository(client).deleteUserClientAuthCodes('user-1', 'client-1')
+    ).rejects.toThrow('code delete failed');
+  });
+});
+
+describe('createMcpOAuthRepository.deleteUserAuthCodes', () => {
+  it('drops every code the user holds, across clients', async () => {
+    const { client, userEq, clientEq } = makeAuthCodeDeleteClient();
+
+    await createMcpOAuthRepository(client).deleteUserAuthCodes('user-1');
+
+    expect(userEq).toHaveBeenCalledWith('user_id', 'user-1');
+    expect(clientEq).not.toHaveBeenCalled();
+  });
+
+  it('throws when the delete fails', async () => {
+    const { client } = makeAuthCodeDeleteClient(new Error('code delete failed'));
+
+    await expect(createMcpOAuthRepository(client).deleteUserAuthCodes('user-1')).rejects.toThrow(
+      'code delete failed'
+    );
+  });
+});

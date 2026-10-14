@@ -86,3 +86,16 @@ client-initiated revoke — and there, revoking means revoking whichever session
 which for pre-amendment rows is the user's **browser** session. That would sign them out of the
 site, so it needs a recorded marker saying the session is this grant's own; that is its own
 piece of work, not something to approximate here.
+
+## Addendum (2026-10-14): the user-facing disconnect now exists
+
+The account area lists a user's live Grants (`/account/connected-apps`) and disconnects one client
+(`DELETE /api/me/mcp/connected-apps/{clientId}`) or every client
+(`DELETE /api/me/mcp/connected-apps`), which is `revokeAllUserTokens`'s production caller at last.
+Both paths go through the same shred described above, and drop the client's live authorization
+codes with it: a code carries a bridge ciphertext and exchanges for a fresh token pair, so leaving
+one behind would let a client mid-exchange mint a grant the revoke had already passed.
+
+The deferred half is unchanged: neither revokes the Supabase session, for the reason in the
+paragraph above — nothing yet records that a session is a grant's own, and for a pre-amendment
+row revoking it would sign the user out of the site.

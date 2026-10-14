@@ -57,6 +57,10 @@ const mockRepo = {
   touchTokenLastUsed: vi.fn(),
   revokeToken: vi.fn(),
   revokeAllUserTokens: vi.fn(),
+  listUserGrants: vi.fn(),
+  revokeUserClientTokens: vi.fn(),
+  deleteUserClientAuthCodes: vi.fn(),
+  deleteUserAuthCodes: vi.fn(),
   deleteExpired: vi.fn(),
 };
 
@@ -411,6 +415,47 @@ describe('createMcpOAuthProvider', () => {
       await provider.revokeAllUserTokens('user-123');
       expect(mockRepo.revokeAllUserTokens).toHaveBeenCalledWith('user-123');
       expect(invalidateUserCache).toHaveBeenCalledWith('user-123');
+    });
+
+    it('drops live authorization codes so a mid-exchange client cannot mint a new grant', async () => {
+      await provider.revokeAllUserTokens('user-123');
+
+      expect(mockRepo.deleteUserAuthCodes).toHaveBeenCalledWith('user-123');
+    });
+  });
+
+  describe('listUserGrants', () => {
+    it('asks the repository for the user’s live grants as of now', async () => {
+      const grants = [
+        {
+          client_id: 'client-1',
+          client_name: 'Claude Code',
+          connected_at: '2026-09-01T10:00:00Z',
+          last_used_at: null,
+        },
+      ];
+      mockRepo.listUserGrants.mockResolvedValue(grants);
+
+      await expect(provider.listUserGrants('user-123')).resolves.toEqual(grants);
+      expect(mockRepo.listUserGrants).toHaveBeenCalledWith('user-123', expect.any(Date));
+    });
+  });
+
+  describe('revokeUserClient', () => {
+    it('revokes one client’s tokens and drops the user’s cached contexts', async () => {
+      await provider.revokeUserClient('user-123', 'client-1');
+
+      expect(mockRepo.revokeUserClientTokens).toHaveBeenCalledWith('user-123', 'client-1');
+      // Coarse and deliberate: a cached context must never outlive its revocation.
+      expect(invalidateUserCache).toHaveBeenCalledWith('user-123');
+      expect(mockRepo.revokeAllUserTokens).not.toHaveBeenCalled();
+    });
+
+    it('drops that client’s live authorization codes, and only that client’s', async () => {
+      await provider.revokeUserClient('user-123', 'client-1');
+
+      expect(mockRepo.deleteUserClientAuthCodes).toHaveBeenCalledWith('user-123', 'client-1');
+      expect(mockRepo.deleteUserAuthCodes).not.toHaveBeenCalled();
     });
   });
 });

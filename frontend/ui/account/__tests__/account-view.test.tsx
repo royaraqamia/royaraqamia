@@ -68,6 +68,10 @@ describe('AccountView', () => {
       'href',
       '/account/submissions'
     );
+    expect(screen.getByRole('link', { name: /التَّطبيقات المتَّصلة/ })).toHaveAttribute(
+      'href',
+      '/account/connected-apps'
+    );
     expect(screen.getByRole('button', { name: 'تسجيل الخروج' })).toBeInTheDocument();
     expect(screen.queryByText('سجِّل الدُّخول إلى حسابك')).not.toBeInTheDocument();
   });
