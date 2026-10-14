@@ -38,6 +38,10 @@ npx vercel metrics vercel.speed_insights.ttfb_ms --aggregation p75 --since 7d --
 
 - `npm run test:e2e` — Playwright (needs `E2E_TEST_EMAIL` + `E2E_TEST_PASSWORD`)
 - `npx playwright test --grep responsive` — viewport suite
+- `CI=true SW_UPDATE_E2E=1 npx playwright test e2e/sw-update.spec.ts` — worker-swap guard
+  (ADR-0039; needs a production build, which `CI=true` makes Playwright perform). It also runs in
+  the `E2E: Worker Swap` workflow, on pull requests that touch the worker, the update watcher or
+  `generate-icons.mjs`.
 
 ## Load testing
 
