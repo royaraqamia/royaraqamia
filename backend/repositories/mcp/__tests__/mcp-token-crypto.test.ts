@@ -4,6 +4,8 @@ import {
   generateOpaqueToken,
   encryptSecret,
   decryptSecret,
+  encryptBridgeSession,
+  readBridgeSession,
   constantTimeEqual,
 } from '../mcp-token-crypto';
 
@@ -54,6 +56,42 @@ describe('encryptSecret / decryptSecret', () => {
     delete process.env.MCP_TOKEN_ENCRYPTION_KEY;
     expect(() => encryptSecret('x')).toThrow(/MCP_TOKEN_ENCRYPTION_KEY/);
     process.env.MCP_TOKEN_ENCRYPTION_KEY = 'a'.repeat(64);
+  });
+});
+
+/**
+ * The ownership marker. Only a session this repo minted may be signed out when a
+ * grant is revoked, so every ciphertext the mint path writes carries a marker
+ * inside it, and a row written before ADR 0023's amendment reads as borrowed.
+ */
+describe('encryptBridgeSession / readBridgeSession', () => {
+  it('round-trips a minted session and marks it ours', () => {
+    const session = readBridgeSession(encryptBridgeSession('bridge-refresh-token'));
+
+    expect(session).toEqual({ refreshToken: 'bridge-refresh-token', owned: true });
+  });
+
+  it('reads a pre-amendment ciphertext as borrowed, token intact', () => {
+    // Rows written before the amendment hold a copy of the *browser* session,
+    // encrypted without a marker. They must still drain as a working bridge —
+    // they just must never be revoked.
+    expect(readBridgeSession(encryptSecret('browser-refresh-token'))).toEqual({
+      refreshToken: 'browser-refresh-token',
+      owned: false,
+    });
+  });
+
+  it('keeps the marker off the ciphertext itself', () => {
+    const encrypted = encryptBridgeSession('bridge-refresh-token');
+
+    expect(encrypted).not.toContain('mcp-bridge');
+    expect(encrypted).not.toContain('bridge-refresh-token');
+  });
+
+  it('only reads a marker that was inside an authenticated ciphertext', () => {
+    // The marker is plaintext *inside* the AES-GCM payload, so a marker written
+    // on the outside is not a marker at all: it does not decrypt.
+    expect(() => readBridgeSession('mcp-bridge:1:stolen-token')).toThrow();
   });
 });
 

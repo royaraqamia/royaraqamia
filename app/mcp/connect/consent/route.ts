@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { createServerSupabaseClient } from '@/backend/config/supabase';
 import { createMcpOAuthProvider } from '@/backend/services/mcp/oauth-provider';
 import { createMcpBridgeSessionMinter } from '@/backend/services/mcp/bridge-session';
-import { encryptSecret } from '@/backend/repositories/mcp/mcp-token-crypto';
+import { encryptBridgeSession } from '@/backend/repositories/mcp/mcp-token-crypto';
 import { isSameOrigin, getClientIp } from '@/backend/transport/http';
 import { checkRateLimitApi } from '@/backend/middleware/http';
 import { toNextResponse } from '@/backend/transport/http-result';
@@ -124,7 +124,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const sessionEnc = encryptSecret(bridge.refreshToken);
+    // Marked as ours so a later revoke may sign this session out (ADR 0023).
+    const sessionEnc = encryptBridgeSession(bridge.refreshToken);
     const { code } = await provider.createAuthorizationCode({
       client,
       redirectUri,

@@ -9,7 +9,9 @@ import {
   constantTimeEqual,
   generateOpaqueToken,
   hashToken,
+  readBridgeSession,
 } from '@/backend/repositories/mcp/mcp-token-crypto';
+import { createMcpBridgeSessionRevoker, type McpBridgeSessionRevoker } from './bridge-session';
 import { ALL_SCOPES, type McpScope } from './scope';
 import { invalidateTokenCache, invalidateUserCache } from './token-cache';
 
@@ -57,6 +59,8 @@ export class McpOAuthError extends Error {
 
 export interface McpOAuthProviderDeps {
   repo?: McpOAuthRepository;
+  /** Signs out the grant's own minted bridge sessions when a live revoke strands them. */
+  bridgeSessions?: McpBridgeSessionRevoker;
 }
 
 export interface TokenResponse {
@@ -143,7 +147,11 @@ export interface McpOAuthProvider {
   /** Validate a bearer access token for the MCP resource server. */
   verifyAccessToken(bearerToken: string): Promise<VerifiedAccessToken | null>;
 
-  /** Revoke an access or refresh token (RFC 7009). */
+  /**
+   * Revoke an access or refresh token (RFC 7009). Revoking a *refresh* token
+   * ends the grant, so the Supabase session the grant minted is signed out with
+   * it; an access token on its own leaves the grant (and its session) alive.
+   */
   revokeToken(input: {
     token: string;
     client: McpOAuthClientRecord;
@@ -153,7 +161,9 @@ export interface McpOAuthProvider {
   /**
    * Revoke every session a user has issued (sign out everywhere). Live
    * authorization codes go too, or a client mid-exchange would mint a fresh pair
-   * from the one call the disconnect had already passed.
+   * from the one call the disconnect had already passed. The Supabase sessions
+   * those grants minted are signed out as well, so a disconnect releases the
+   * access rather than merely the MCP tokens.
    */
   revokeAllUserTokens(userId: string): Promise<void>;
 
@@ -168,13 +178,15 @@ export interface McpOAuthProvider {
    * Disconnect one client: revoke every token it holds for this user, leaving
    * their other clients (and their browser session) alone. A live authorization
    * code is dropped in the same breath, so consent already granted cannot be
-   * exchanged for a fresh grant after the disconnect.
+   * exchanged for a fresh grant after the disconnect. That client's minted
+   * Supabase session is signed out too; no other client's is.
    */
   revokeUserClient(userId: string, clientId: string): Promise<void>;
 }
 
 export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAuthProvider {
   const repo = deps.repo ?? createMcpOAuthRepository();
+  const bridgeSessions = deps.bridgeSessions ?? createMcpBridgeSessionRevoker();
 
   return {
     async getClient(clientId) {
@@ -337,22 +349,33 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
       if (row.client_id !== input.client.id) {
         throw new McpOAuthError(400, 'invalid_grant', 'Token was issued to another client');
       }
+      // The paired access row is read before anything is revoked: revoking shreds
+      // `session_enc`, and the bridge session it names may still need signing out.
+      const accessRow =
+        row.kind === 'refresh' ? await repo.getAccessTokenByRefreshHash(row.token_hash) : null;
       await repo.revokeToken(row.id);
       // A cached context for this token must not keep authorizing requests.
       invalidateTokenCache(row.token_hash);
+      if (accessRow) {
+        await repo.revokeToken(accessRow.id);
+        invalidateTokenCache(accessRow.token_hash);
+      }
+      // Only revoking the refresh token ends the grant — the access token alone
+      // can be replaced from the refresh row, so its bridge session must stay
+      // usable. Where the grant does end, the session goes with it.
       if (row.kind === 'refresh') {
-        const accessRow = await repo.getAccessTokenByRefreshHash(row.token_hash);
-        if (accessRow) {
-          await repo.revokeToken(accessRow.id);
-          invalidateTokenCache(accessRow.token_hash);
-        }
+        await revokeOwnedBridgeSessions(bridgeSessions, [row.session_enc, accessRow?.session_enc]);
       }
     },
 
     async revokeAllUserTokens(userId) {
+      // Read before the shred below: the tokens are already revoked by the time
+      // the sign-outs run, and their ciphertexts are gone.
+      const sessionEncs = await repo.listUserSessionEncs(userId);
       await repo.revokeAllUserTokens(userId);
       await repo.deleteUserAuthCodes(userId);
       invalidateUserCache(userId);
+      await revokeOwnedBridgeSessions(bridgeSessions, sessionEncs);
     },
 
     async listUserGrants(userId) {
@@ -360,6 +383,7 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
     },
 
     async revokeUserClient(userId, clientId) {
+      const sessionEncs = await repo.listUserSessionEncs(userId, clientId);
       await repo.revokeUserClientTokens(userId, clientId);
       await repo.deleteUserClientAuthCodes(userId, clientId);
       // Coarse on purpose. Dropping every cached context this user holds costs
@@ -367,8 +391,48 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
       // authorizing a request; a per-client invalidator would buy nothing but a
       // narrower filter here.
       invalidateUserCache(userId);
+      await revokeOwnedBridgeSessions(bridgeSessions, sessionEncs);
     },
   };
+}
+
+/**
+ * Sign out the sessions a *live* revoke has just stranded.
+ *
+ * A retired grant needs none of this: every retirement path has GoTrue's own
+ * refusal behind it (`refresh_token_not_found`, `session_expired`,
+ * `user_banned`) or a ciphertext that will not decrypt, so there is nothing left
+ * to revoke and no call is made (ADR 0023). This is the other case — RFC 7009
+ * `/mcp/revoke`, or one of the account area's two disconnects — where the bridge
+ * session is still perfectly usable and would otherwise outlive the grant that
+ * owned it.
+ *
+ * Only a marked ciphertext is signed out. An unmarked one is a pre-amendment row
+ * holding a copy of the user's *browser* session, and signing that out would sign
+ * them out of the website; `readBridgeSession` is what tells the two apart.
+ *
+ * Best effort throughout, and deliberately *after* the caller's revoke: the
+ * tokens are already revoked and the ciphertext already shredded, so a failure
+ * here costs the user a still-live Supabase session, never a working grant.
+ * `allSettled`, not `all`: one session that will not sign out must not withhold
+ * the others, and a revoke that has already succeeded must never fail on this.
+ */
+async function revokeOwnedBridgeSessions(
+  revoker: McpBridgeSessionRevoker,
+  ciphertexts: Array<string | null | undefined>
+): Promise<void> {
+  const owned = new Set<string>();
+  for (const payload of ciphertexts) {
+    if (!payload) continue;
+    try {
+      const session = readBridgeSession(payload);
+      if (session.owned) owned.add(session.refreshToken);
+    } catch {
+      // Undecryptable (the encryption key rotated): the session cannot even be
+      // named, let alone revoked.
+    }
+  }
+  await Promise.allSettled([...owned].map((refreshToken) => revoker.revoke(refreshToken)));
 }
 
 function authenticateClient(client: McpOAuthClientRecord, clientSecret?: string): void {

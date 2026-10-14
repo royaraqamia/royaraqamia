@@ -34,6 +34,49 @@ export function encryptSecret(plaintext: string): string {
   return `${iv.toString('base64url')}.${tag.toString('base64url')}.${encrypted.toString('base64url')}`;
 }
 
+/**
+ * The ownership marker on a bridge ciphertext — the record that the session
+ * inside it is one we minted for a grant (ADR 0023's 2026-10-13 amendment).
+ *
+ * Before that amendment, consent copied the user's *browser* refresh token into
+ * `session_enc`, and rows from that era still exist. Signing one of those out on
+ * revocation would sign the user out of the website, so only a marked ciphertext
+ * may ever be revoked; an unmarked one is read as borrowed and left alone.
+ *
+ * The marker rides inside the ciphertext rather than in a column so it travels
+ * with the secret through every rewrite. `refreshAccessToken` carries the
+ * ciphertext forward verbatim, and the data plane re-encrypts a rotated token
+ * through `readBridgeSession`/`encryptBridgeSession`, which carries the marker by
+ * construction. Supabase refresh tokens are opaque URL-safe strings and never
+ * contain `:`, so no borrowed plaintext can be mistaken for a marked one.
+ */
+const BRIDGE_SESSION_PREFIX = 'mcp-bridge:1:';
+
+export interface BridgeSessionSecret {
+  /** The Supabase refresh token the bridge drains. */
+  refreshToken: string;
+  /** True only when this repo minted the session — never a browser's. */
+  owned: boolean;
+}
+
+/** Encrypt the bridge session minted for a grant, marking it as ours. */
+export function encryptBridgeSession(refreshToken: string): string {
+  return encryptSecret(`${BRIDGE_SESSION_PREFIX}${refreshToken}`);
+}
+
+/**
+ * Read a `session_enc` value, marker and all. Unmarked ciphertext (pre-amendment
+ * rows) reads as borrowed rather than throwing: it is still a usable bridge
+ * session, it just is not ours to revoke.
+ */
+export function readBridgeSession(payload: string): BridgeSessionSecret {
+  const plaintext = decryptSecret(payload);
+  if (!plaintext.startsWith(BRIDGE_SESSION_PREFIX)) {
+    return { refreshToken: plaintext, owned: false };
+  }
+  return { refreshToken: plaintext.slice(BRIDGE_SESSION_PREFIX.length), owned: true };
+}
+
 export function decryptSecret(payload: string): string {
   const key = requireEncryptionKey();
   const [ivPart, tagPart, dataPart] = payload.split('.');

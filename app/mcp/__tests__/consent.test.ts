@@ -41,6 +41,7 @@ vi.mock('next/headers', () => ({
   }),
 }));
 
+import { readBridgeSession } from '@/backend/repositories/mcp/mcp-token-crypto';
 import { POST } from '@/app/mcp/connect/consent/route';
 
 const client = {
@@ -145,6 +146,13 @@ describe('POST /mcp/connect/consent', () => {
         sessionEnc: expect.any(String),
       })
     );
+    // ...and marked as one of ours, so a later revoke may sign it out instead of
+    // leaving it alive behind a disconnected grant (ADR 0023).
+    const { sessionEnc } = mockCreateAuthorizationCode.mock.calls[0]![0];
+    expect(readBridgeSession(sessionEnc)).toEqual({
+      refreshToken: 'bridge-refresh-token',
+      owned: true,
+    });
   });
 
   it('answers server_error when the bridge session cannot be minted', async () => {

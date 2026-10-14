@@ -83,9 +83,9 @@ path we have, GoTrue has already refused or invalidated the session
 (`refresh_token_not_found`, `session_expired`, `user_banned`), or the ciphertext will not
 decrypt and there is nothing left to revoke with. The case that would need it is a _live_
 client-initiated revoke — and there, revoking means revoking whichever session the row holds,
-which for pre-amendment rows is the user's **browser** session. That would sign them out of the
-site, so it needs a recorded marker saying the session is this grant's own; that is its own
-piece of work, not something to approximate here.
+which for pre-amendment rows is the user's **browser** session. That would sign them out of
+the site, so it needs a recorded marker saying the session is this grant's own; that is its own
+piece of work, not something to approximate here. (Landed as the 2026-10-14 amendment below.)
 
 ## Addendum (2026-10-14): the user-facing disconnect now exists
 
@@ -99,3 +99,43 @@ one behind would let a client mid-exchange mint a grant the revoke had already p
 The deferred half is unchanged: neither revokes the Supabase session, for the reason in the
 paragraph above — nothing yet records that a session is a grant's own, and for a pre-amendment
 row revoking it would sign the user out of the site.
+
+## Amendment (2026-10-14): a live revoke signs out the grant's own session
+
+That last paragraph is superseded: the marker it was waiting on now exists, and a _live_ revoke
+signs out the session the grant minted. "Revoking a grant releases Supabase access" is now true of
+a client-initiated revoke, not only of the retirement paths GoTrue had already killed.
+
+**A session says whether it is ours.** A bridge ciphertext now carries a marker inside its
+plaintext (`mcp-bridge:1:`, `mcp-token-crypto`), written by the one place a session is minted —
+consent — and read through `readBridgeSession`. A ciphertext without it is a pre-amendment row
+holding a copy of the user's browser session, and is never revoked. The marker lives in the
+ciphertext rather than in a new column because it then travels with the secret for free:
+`refreshAccessToken` carries the ciphertext forward verbatim, and the data plane re-encrypts a
+rotated token the way it read it, so a marked row stays marked and a borrowed row stays borrowed.
+It also needs no migration, no backfill applied to rows whose provenance we would be guessing at,
+and no timestamp heuristic — the ciphertext itself is the record, and it is authenticated by
+AES-GCM, so it cannot be forged without the key.
+
+**The three live revokes share one helper.** RFC 7009 `/mcp/revoke`, `revokeAllUserTokens` and
+`revokeUserClient` all read the ciphertexts _before_ the shred that would take them away, revoke
+their rows, and only then have each marked session refreshed into an access token and logged out
+at `scope=local`. Order matters in both directions: the sign-outs run after the revocation so a
+session that will not die can never fail a disconnect that has already succeeded
+(`Promise.allSettled`), and each distinct refresh token is signed out once even though a grant's
+access and refresh rows both name it.
+
+Only a revoke that ends the grant signs anything out. `revokeToken` on a _refresh_ token is that
+case; an _access_ token alone can still be replaced from the refresh row, so that grant — and its
+session — must stay usable. Scope `local` is load-bearing: `global` would revoke the browser's
+session, which is the harm this whole marker exists to avoid.
+
+Retirement paths are untouched and still make no network call: they are the paths where GoTrue has
+already refused the session or the ciphertext will not decrypt, and they revoke at the repository
+layer, below the provider helper, so the two can never be confused.
+
+One residue, deliberately left alone: a live authorization code carries a bridge ciphertext of its
+own, and a disconnect drops the code (above) without signing out the session it minted. That
+session is narrow — it needs a consent that was approved and then never exchanged inside the
+code's 10-minute life — and revoking it is a different question, because the code has no token
+pair to shred and nothing has ever refreshed it.

@@ -182,10 +182,15 @@ export async function resolveMcpContext(
   }
 
   let storedRefreshToken: string;
+  let sessionOwned: boolean;
   try {
-    storedRefreshToken = (
-      await import('@/backend/repositories/mcp/mcp-token-crypto')
-    ).decryptSecret(sessionEnc);
+    const bridge = (await import('@/backend/repositories/mcp/mcp-token-crypto')).readBridgeSession(
+      sessionEnc
+    );
+    storedRefreshToken = bridge.refreshToken;
+    // Whether this session is ours to revoke later (ADR 0023): the marker has to
+    // survive the rotation below, or a revoke would leave the session behind.
+    sessionOwned = bridge.owned;
   } catch {
     // Undecryptable means the encryption key was rotated (or the row is
     // corrupt): the bridge can never be revived, so retire the grant and let the
@@ -207,9 +212,12 @@ export async function resolveMcpContext(
   try {
     const rotated = userScoped.refreshToken;
     if (rotated && rotated !== storedRefreshToken) {
-      const newEnc = (await import('@/backend/repositories/mcp/mcp-token-crypto')).encryptSecret(
-        rotated
-      );
+      const crypto = await import('@/backend/repositories/mcp/mcp-token-crypto');
+      // Re-encrypt the way the row was written: a marked row stays ours across
+      // the rotation, an unmarked (pre-amendment) one stays borrowed.
+      const newEnc = sessionOwned
+        ? crypto.encryptBridgeSession(rotated)
+        : crypto.encryptSecret(rotated);
       await repo.updateTokenSessionEnc(tokenRow.id, newEnc);
     }
   } catch (err) {
