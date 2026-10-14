@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { join, relative, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { DISC_TOLERANCE_PX, TARGET_DISC_RATIO, measure } from '../logo-shape.mjs';
@@ -60,12 +60,6 @@ const launcherFiles = readdirSync(RES)
       join(RES, dir, file)
     )
   );
-
-/** Every `drawable*` folder: where a stale splash bitmap would hide. */
-const drawableDirs = readdirSync(RES).filter((name) => name.startsWith('drawable'));
-
-/** The splash's logo drawable, which the layer-list centres. */
-const splashLogoFile = join(RES, 'drawable-xxxhdpi', 'splash_logo.png');
 
 /** The favicons: the master circle-cropped at 100%, disc and all. */
 const faviconFiles = ['favicon-192x192.png', 'favicon-512x512.png'].map((name) =>
@@ -131,7 +125,7 @@ describe('the logo is one shape on every surface', () => {
   });
 
   it("reads at the chosen proportion on the app's own surfaces", async () => {
-    const files = [notificationFile, ...launcherFiles, splashLogoFile];
+    const files = [notificationFile, ...launcherFiles];
     const drifts = [];
     for (const file of files) {
       const { disc, tile, image } = await measure(file, PURPLE);
@@ -159,44 +153,83 @@ describe('the logo is one shape on every surface', () => {
     expect(drifts).toEqual([]);
   });
 
-  it('draws the splash as a centred dp-sized disc, never a stretched bitmap', async () => {
-    // The plugin hands the drawable to `setBackground` on launch, so a bitmap is
-    // stretched to fill and `androidScaleType` never applies — measured on the
-    // API 30 emulator, a 1:2 frame came out 190x180px. The layer-list draws its
-    // item by gravity and dp size instead, and `drawable/splash.xml` is also the
-    // launch theme's starting-window background. The drawable's own proportion is
-    // checked with the app's other surfaces, above.
+  it('draws the splash from the launch theme, with no splash asset left', () => {
+    // #212: the platform splash on Android 12+ and `core-splashscreen` below it
+    // both read `AppTheme.NoActionBarLaunch`, and both draw the launcher icon — so
+    // a splash-specific drawable, bitmap or colour would be a second splash, and a
+    // plugin duration would be a second, unsynchronised dismissal.
     const drifts = [];
-    for (const dir of drawableDirs) {
-      const frame = join(RES, dir, 'splash.png');
-      if (existsSync(frame)) {
-        drifts.push(
-          `${shown(frame)}: a bitmap frame — it would be stretched and would win ` +
-            'resource selection over drawable/splash.xml'
-        );
+
+    for (const name of readdirSync(RES, { recursive: true }).map(String)) {
+      if (!/(^|[\\/])splash/i.test(name)) continue;
+      drifts.push(`${shown(join(RES, name))}: no splash-specific resource may exist`);
+    }
+
+    const styles = readFileSync(join(RES, 'values', 'styles.xml'), 'utf8');
+    const launch = /<style name="AppTheme\.NoActionBarLaunch"[^>]*>([\s\S]*?)<\/style>/.exec(
+      styles
+    );
+    if (!launch) {
+      drifts.push('values/styles.xml: no AppTheme.NoActionBarLaunch theme');
+    } else {
+      if (!/parent="Theme\.SplashScreen"/.test(launch[0])) {
+        drifts.push('AppTheme.NoActionBarLaunch: parent must be Theme.SplashScreen');
+      }
+      for (const item of [
+        '<item name="windowSplashScreenBackground">#0f172a</item>',
+        '<item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>',
+        '<item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>',
+      ]) {
+        if (!launch[1].includes(item)) drifts.push(`AppTheme.NoActionBarLaunch: missing ${item}`);
+      }
+      if (launch[1].includes('@drawable/splash')) {
+        drifts.push('AppTheme.NoActionBarLaunch: must not point at a splash drawable');
       }
     }
 
-    const { image } = await measure(splashLogoFile, PURPLE);
-    if (image.at(0, 0).a !== 0) {
-      drifts.push(`${shown(splashLogoFile)}: corners must be transparent — it is a disc`);
+    const manifest = readFileSync(
+      join(ROOT, 'android', 'app', 'src', 'main', 'AndroidManifest.xml'),
+      'utf8'
+    );
+    if (!manifest.includes('android:theme="@style/AppTheme.NoActionBarLaunch"')) {
+      drifts.push('AndroidManifest.xml: MainActivity must launch with AppTheme.NoActionBarLaunch');
     }
 
-    // xxxhdpi: the logo is 4x its dp size, and the layer-list must place it at
-    // exactly that, so the splash and the launcher icon agree on the disc.
-    const xml = readFileSync(join(RES, 'drawable', 'splash.xml'), 'utf8');
-    const dp = image.width / 4;
-    for (const expected of [
-      `android:width="${dp}dp"`,
-      `android:height="${dp}dp"`,
-      'android:gravity="center"',
-      '@drawable/splash_logo',
-    ]) {
-      if (!xml.includes(expected)) drifts.push(`drawable/splash.xml: missing ${expected}`);
+    // Below API 31 the theme is read by the compat library, which the activity has
+    // to install before `super.onCreate` replaces the starting window.
+    const activity = readFileSync(
+      join(
+        ROOT,
+        'android',
+        'app',
+        'src',
+        'main',
+        'java',
+        'com',
+        'royaraqamia',
+        'app',
+        'MainActivity.java'
+      ),
+      'utf8'
+    );
+    const installed = activity.indexOf('SplashScreen.installSplashScreen(this);');
+    const created = activity.indexOf('super.onCreate(savedInstanceState);');
+    if (installed < 0 || created < 0 || installed > created) {
+      drifts.push('MainActivity: installSplashScreen() must run before super.onCreate()');
     }
-    const colour = readFileSync(join(RES, 'values', 'splash_background.xml'), 'utf8');
-    if (!colour.includes('#0f172a')) {
-      drifts.push('values/splash_background.xml: must be the shell background #0f172a');
+
+    // The plugin and its fixed `launchShowDuration` are what #212 retires; any of
+    // these coming back restores the second splash.
+    for (const [file, needle] of [
+      ['capacitor.config.ts', 'SplashScreen'],
+      ['capacitor.config.ts', 'launchShowDuration'],
+      ['package.json', '@capacitor/splash-screen'],
+      ['android/capacitor.settings.gradle', 'capacitor-splash-screen'],
+      ['android/app/capacitor.build.gradle', 'capacitor-splash-screen'],
+    ]) {
+      if (readFileSync(join(ROOT, file), 'utf8').includes(needle)) {
+        drifts.push(`${file}: still references ${needle}`);
+      }
     }
 
     expect(drifts).toEqual([]);

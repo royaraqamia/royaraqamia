@@ -41,13 +41,11 @@ const config: CapacitorConfig = {
     webContentsDebuggingEnabled: process.env.NODE_ENV !== 'production',
   },
   plugins: {
-    SplashScreen: {
-      launchShowDuration: 1200,
-      launchAutoHide: true,
-      backgroundColor: '#0f172a',
-      androidSplashResourceName: 'splash',
-      showSpinner: false,
-    },
+    // No splash plugin: the splash is the launch theme
+    // (`android/app/src/main/res/values/styles.xml`), drawn by the platform on
+    // Android 12+ and by `core-splashscreen` below it. The plugin only ever drew
+    // its own dialog on API <= 30, for a fixed 1200ms that had no relationship to
+    // when this remote-URL shell's WebView was ready — see issue #212.
     StatusBar: {
       // The site owns its own header, so it must not be drawn under the status
       // bar — overlaying it would put the navbar's first row beneath the clock.

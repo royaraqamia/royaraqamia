@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 /**
- * Generates the Android launcher icon and splash drawables from the same artwork
- * the PWA ships, so the app and the installed PWA read as one product: one logo,
- * one purple, one proportion. `scripts/logo-shape.mjs` holds the measurements
- * this file's `validate()` step is written against.
+ * Generates the Android launcher icon layers from the same artwork the PWA ships,
+ * so the app and the installed PWA read as one product: one logo, one purple, one
+ * proportion. `scripts/logo-shape.mjs` holds the measurements this file's
+ * `validate()` step is written against.
+ *
+ * The splash is not generated here. It is the launch theme, drawing the launcher
+ * icon itself, so there is no splash-specific asset to keep in step — see #212 and
+ * `android/app/src/main/res/values/styles.xml`.
  *
  * Hand-written rather than delegated to `@capacitor/assets`: that package pulls a
  * transitive `tar` with a critical advisory, and
@@ -25,7 +29,6 @@ import {
 } from './logo-shape.mjs';
 
 const BRAND_PURPLE = '#7868ea';
-const SHELL_BACKGROUND = '#0f172a';
 const SOURCE = 'public/icons/icon-1024x1024.png';
 const RES = 'android/app/src/main/res';
 
@@ -43,19 +46,6 @@ const ADAPTIVE_DP = 108;
  * 1.47x larger than its canvas proportion.
  */
 const LAUNCHER_MAGNIFICATION = 1.47;
-/**
- * The splash logo's size in dp — the whole disc, drawn at its intrinsic size.
- *
- * A dp value, not a frame size, because the plugin draws the launch splash as a
- * *view background* (`SplashScreen.java`: `parent.setBackground(splash)`), so a
- * bitmap is stretched to the view's bounds with FILL and `androidScaleType`
- * never applies on launch — measured on the API 30 emulator, a 1:2 frame came
- * out 190x180px. A layer-list instead draws its items by gravity and dp size
- * (`drawable/splash.xml`), which keeps the logo a circle of exactly this size on
- * any screen shape. Android 12+ does not use any of this at launch: the platform
- * splash draws the launcher icon itself, at 160dp — see #212.
- */
-const SPLASH_LOGO_DP = 96;
 
 function rgb(hex) {
   const value = hex.replace('#', '');
@@ -67,7 +57,6 @@ function rgb(hex) {
 }
 
 const PURPLE = rgb(BRAND_PURPLE);
-const SHELL = rgb(SHELL_BACKGROUND);
 
 if (!fs.existsSync(SOURCE)) {
   console.error(`Missing ${SOURCE}. Run: node scripts/generate-icons.mjs`);
@@ -79,9 +68,9 @@ const ARTWORK_RATIO = await artworkDiscRatio(SOURCE, PURPLE);
 /**
  * The two scales that reach `TARGET_DISC_RATIO`, per surface.
  *
- * A surface drawn at its own size — the legacy launcher icon, the round icon,
- * the splash logo — gets the artwork larger than its logo box, cropping purple to
- * hit the target. The adaptive canvas is different: a launcher magnifies its
+ * A surface drawn at its own size — the legacy launcher icon, the round icon —
+ * gets the artwork larger than its logo box, cropping purple to hit the target.
+ * The adaptive canvas is different: a launcher magnifies its
  * visible centre, so the same target is reached by dividing that magnification
  * out. Both are one expression, so moving `TARGET_DISC_RATIO` moves every surface
  * together.
@@ -135,7 +124,7 @@ async function adaptiveForeground(size, file) {
 
 /**
  * The artwork cut to an inscribed disc: transparent corners, for
- * `android:roundIcon` and for the splash. Scaled first, so the white disc sits at
+ * `android:roundIcon`. Scaled first, so the white disc sits at
  * `TARGET_DISC_RATIO` of the purple disc rather than at the artwork's own share.
  */
 async function discTile(size) {
@@ -153,62 +142,6 @@ async function discTile(size) {
     .composite([{ input: mask, blend: 'dest-in' }])
     .png()
     .toBuffer();
-}
-
-/**
- * Splash: one logo drawable and an XML layer-list that centres it, instead of
- * bitmaps sized to a screen.
- *
- * Nothing masks a splash, so drawing the square tile painted a purple *square*
- * on a dark frame — a shape the logo wears nowhere else — and a bitmap frame
- * stretched to fill comes out an ellipse. The layer-list draws its items by
- * gravity at their declared dp size, which is the one shape that cannot be
- * stretched by whichever surface renders it. `styles.xml`'s launch theme uses
- * the same resource as the starting window's background, and that is the surface
- * a cold start shows first.
- */
-async function writeSplashResources(written) {
-  const logoFile = path.join(RES, 'drawable-xxxhdpi', 'splash_logo.png');
-  fs.mkdirSync(path.dirname(logoFile), { recursive: true });
-  fs.writeFileSync(logoFile, await discTile(SPLASH_LOGO_DP * 4));
-  written.push(`${logoFile} (${SPLASH_LOGO_DP * 4}²)`);
-
-  const colourFile = path.join(RES, 'values', 'splash_background.xml');
-  fs.writeFileSync(
-    colourFile,
-    '<?xml version="1.0" encoding="utf-8"?>\n' +
-      '<resources>\n' +
-      `    <color name="splash_background">${SHELL_BACKGROUND}</color>\n` +
-      '</resources>\n'
-  );
-  written.push(colourFile);
-
-  const drawableFile = path.join(RES, 'drawable', 'splash.xml');
-  fs.writeFileSync(
-    drawableFile,
-    '<?xml version="1.0" encoding="utf-8"?>\n' +
-      '<!-- Auto-generated by scripts/generate-android-assets.mjs — do not edit by hand. -->\n' +
-      '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">\n' +
-      '    <item android:drawable="@color/splash_background" />\n' +
-      '    <item\n' +
-      `        android:width="${SPLASH_LOGO_DP}dp"\n` +
-      `        android:height="${SPLASH_LOGO_DP}dp"\n` +
-      '        android:gravity="center"\n' +
-      '        android:drawable="@drawable/splash_logo" />\n' +
-      '</layer-list>\n'
-  );
-  written.push(drawableFile);
-
-  // A `splash.png` in any density or orientation folder would win resource
-  // selection over `drawable/splash.xml` on a device that matches it, bringing
-  // the stretched bitmap back. The sizes Capacitor's template shipped are gone;
-  // this is what a tree that still has one finds out.
-  for (const dir of fs.readdirSync(RES).filter((name) => name.startsWith('drawable'))) {
-    const stale = path.join(RES, dir, 'splash.png');
-    if (!fs.existsSync(stale)) continue;
-    fs.rmSync(stale);
-    written.push(`${stale} (removed)`);
-  }
 }
 
 function writeBackgroundColour() {
@@ -290,44 +223,19 @@ async function validate() {
     await expectArtwork(foreground, canvas, ADAPTIVE_ARTWORK_SCALE);
   }
 
-  // The splash is one logo drawable and one layer-list, so the checks are the
-  // drawable's proportion and the XML's numbers — plus that no stretched frame
-  // survived the change, since a `splash.png` in a density folder would win
-  // resource selection over `drawable/splash.xml`.
-  const splashLogo = path.join(RES, 'drawable-xxxhdpi', 'splash_logo.png');
-  await expectDisc(splashLogo, SPLASH_LOGO_DP * 4, TARGET_DISC_RATIO, 'the disc');
-  await expectArtwork(splashLogo, SPLASH_LOGO_DP * 4, 1);
-  if (fs.existsSync(splashLogo)) {
-    const { image } = await measure(splashLogo, PURPLE);
-    if (image.at(0, 0).a !== 0) {
-      console.error(`  ✗ ${where(splashLogo)}: corners must be transparent — it is a disc`);
+  // No splash asset may exist at all: the launch theme draws the launcher icon
+  // itself (#212), so anything splash-named here would be a second splash on
+  // API <= 30 — a drawable, a bitmap frame, or the colour the layer-list read.
+  for (const dir of fs.readdirSync(RES).filter((name) => name.startsWith('drawable'))) {
+    for (const file of fs.readdirSync(path.join(RES, dir))) {
+      if (!/^splash/i.test(file)) continue;
+      console.error(`  ✗ ${where(path.join(RES, dir, file))}: no splash asset may exist`);
       errors += 1;
     }
   }
-
-  const splashXml = path.join(RES, 'drawable', 'splash.xml');
-  const xml = fs.existsSync(splashXml) ? fs.readFileSync(splashXml, 'utf8') : '';
-  if (!xml.includes('@color/splash_background') || !xml.includes('@drawable/splash_logo')) {
-    console.error(`  ✗ ${where(splashXml)}: must be a layer-list over the shell background`);
-    errors += 1;
-  }
-  if (!xml.includes(`android:width="${SPLASH_LOGO_DP}dp"`)) {
-    console.error(`  ✗ ${where(splashXml)}: the logo must be ${SPLASH_LOGO_DP}dp across`);
-    errors += 1;
-  }
-  const colourFile = path.join(RES, 'values', 'splash_background.xml');
-  const colour = fs.existsSync(colourFile) ? fs.readFileSync(colourFile, 'utf8') : '';
-  if (!colour.includes(SHELL_BACKGROUND)) {
-    console.error(`  ✗ ${where(colourFile)}: must be the shell background ${SHELL_BACKGROUND}`);
-    errors += 1;
-  }
-  for (const dir of fs.readdirSync(RES).filter((name) => name.startsWith('drawable'))) {
-    const stale = path.join(RES, dir, 'splash.png');
-    if (!fs.existsSync(stale)) continue;
-    console.error(
-      `  ✗ ${where(stale)}: a bitmap frame would be stretched to fill and would win ` +
-        'resource selection over drawable/splash.xml'
-    );
+  for (const name of fs.readdirSync(path.join(RES, 'values'))) {
+    if (!/^splash/i.test(name)) continue;
+    console.error(`  ✗ ${where(path.join(RES, 'values', name))}: no splash asset may exist`);
     errors += 1;
   }
 
@@ -366,8 +274,6 @@ for (const [density, scale] of Object.entries(DENSITIES)) {
   await adaptiveForeground(adaptive.size, adaptive.file);
   written.push(`${adaptive.file} (${adaptive.size}²)`);
 }
-
-await writeSplashResources(written);
 
 written.push(writeBackgroundColour());
 
