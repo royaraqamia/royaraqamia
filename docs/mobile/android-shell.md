@@ -64,6 +64,7 @@ version _name_ as a version code, so the mapping lives in `android/app/build.gra
 | Capability                           | Where                                                 | State                                                                                  |
 | ------------------------------------ | ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
 | Load the live site                   | `capacitor.config.ts` `server.url`                    | Working                                                                                |
+| Announcing web updates               | `frontend/ui/shared/update-prompt.tsx`                | Working — in-page, so it shows in the shell too                                        |
 | Deep links (App Links + `royar://`)  | manifest intent filters, `MainActivity.webUrlFor`     | Working                                                                                |
 | Custom-scheme OAuth return           | manifest + `MainActivity`                             | Working — needs two Supabase allowlist entries (below)                                 |
 | Splash, status bar, RTL, back button | `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                |
@@ -204,6 +205,29 @@ privacy policy URL, the Data safety form, a content rating, and store listing as
 that a shell which loads all of its content remotely is a gray area reviewers can question
 (App Store compliance is discussed in ADR-0036) — an APK distributed directly avoids that
 question entirely, which is where this project is pointed.
+
+### 4. Announcing a shell update: the page-side contract
+
+The page announces web builds on its own (ADR-0042), but it cannot install an APK. The shell therefore
+owns its own announcement, and the two must not both speak: `MainActivity` publishes
+
+```js
+window.__royaraqamiaShell = { versionCode: 1234, updatePending: true };
+```
+
+before the page loads, and `frontend/shared/shell-update.ts` reads it. While `updatePending` is true the
+in-page prompt stays down, because installing the APK brings the new web build with it. Absent (a
+browser, or a shell that does not set it) reads as "no shell update pending".
+
+The native half is **not built**. When it is, the shape that fits this repo — a directly distributed
+APK, no Play account (open item 3) — is: the shell compares its own `versionCode` against a published
+manifest, and when it is behind it offers to download and install that APK itself
+(`REQUEST_INSTALL_PACKAGES`, a `FileProvider` URI, and `ACTION_VIEW` for
+`application/vnd.android.package-archive`). Two constraints worth carrying into that work: only a build
+signed with the same key can update an installed app (which is why the keystore backup at the top is not
+optional), and the shell needs its **own** version counter — `versionCode` derived from
+`package.json#version` moves on every web release, which would announce an APK that does not exist
+every time the site deploys.
 
 ## Where the plan this came from was wrong
 

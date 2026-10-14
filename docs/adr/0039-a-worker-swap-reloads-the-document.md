@@ -6,6 +6,11 @@ the document is visible the app re-checks for a new worker on `visibilitychange`
 15-minute interval, and when a _swapped_ worker takes control the document reloads once
 (`frontend/shared/sw-update.ts`). There is no "update available" prompt, and no `skipWaiting`.
 
+> **Reconsidered 2026-10-14 — see ADR-0042.** The swap half of this stands. The rejection of a prompt
+> does not: it rested on "the shell has no chrome to hang it on", which is not true of a prompt the
+> page itself renders, and the measurement below is precisely the case a prompt is for — a client that
+> is never relaunched has no way to hear about the build that is already downloaded and waiting.
+
 **What a swap waits for, measured 2026-10-14** (Chromium through Playwright, and the same behaviour
 seen on the production deployment): a deploy installs the new worker while the tab is open, and the
 worker then stays _waiting_ across a reload, with the previous build's caches still serving the page,
@@ -27,11 +32,11 @@ for in-page work because writes are idempotent and queued in the Outbox (ADR-002
 
 ## Considered Options
 
-- **An "update available" prompt.** Rejected, and removed where it half-existed: it cannot reach the
-  one client that needs it (the shell has no chrome to hang it on), and its version-probe half polled
-  `/api/version` every 60 s to render nothing. The flags it set were read by no component. Worth
-  remembering that it is the only option considered here that would update an _open_ tab in session,
-  so a requirement of "without a relaunch, ever" points back to it.
+- **An "update available" prompt.** Rejected here, and removed where it half-existed: its version-probe
+  half polled `/api/version` every 60 s to render nothing, and the flags it set were read by no
+  component. **Reinstated by ADR-0042** in the form that answers the objection — rendered by the page
+  rather than by browser chrome, driven by the browser's own `waiting` state instead of a poll, and
+  offering a gesture rather than taking one.
 - **`skipWaiting` in the worker's `install`.** Rejected: it activates a new worker under open
   documents mid-flight, the destructive swap ADR-0030 rules out, changing the cache tiers while a page
   is still rendering from them. This is what would have to change for an open tab to move without a

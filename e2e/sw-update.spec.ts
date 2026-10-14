@@ -134,6 +134,82 @@ test('a deploy reaches a running client without a reload loop', async ({ browser
 });
 
 /**
+ * ADR-0042: the announcement is the *first* half of the update channel — a build
+ * that is downloaded and waiting is worth telling the user about, because a
+ * refresh does not release it (measured 2026-10-14 above). Declining is a real
+ * answer; the gesture is what moves the document, and it still moves it once.
+ */
+test('a waiting worker is announced, and the prompt is how a document takes it', async ({
+  browser,
+}) => {
+  test.setTimeout(180_000);
+
+  const context = await browser.newContext({ serviceWorkers: 'allow' });
+
+  await context.addInitScript(() => {
+    const probe = { loads: Number(window.name || 0) + 1, checks: 0 };
+    window.name = String(probe.loads);
+    (window as unknown as { __swProbe: typeof probe }).__swProbe = probe;
+  });
+
+  const page = await context.newPage();
+  const loads = () =>
+    page
+      .evaluate(() => (window as unknown as { __swProbe: { loads: number } }).__swProbe.loads)
+      .catch(() => -1);
+
+  writeFileSync(VERSION_SCRIPT, original ?? '');
+  await page.goto('/rates', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
+    timeout: 30_000,
+  });
+  await page.waitForTimeout(7_000);
+
+  const settled = await loads();
+  // Nothing is waiting yet, so there is nothing to announce.
+  await expect(page.getByTestId('update-prompt')).toBeHidden();
+
+  writeFileSync(
+    VERSION_SCRIPT,
+    `self.CACHE_VERSION = '${DEPLOY_MARKER}';\nself.ASSET_VERSION = '';\n`
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+
+  // The announcement: a build is downloaded and waiting, and the document is
+  // still on the previous one — the prompt tells the truth when it says so.
+  await expect(page.getByTestId('update-prompt')).toBeVisible({ timeout: 30_000 });
+  expect(
+    await page.evaluate(async () =>
+      Boolean((await navigator.serviceWorker.getRegistration())?.waiting)
+    )
+  ).toBe(true);
+  expect(await loads()).toBe(settled);
+
+  // Declining is respected: no reload, and no repeated asking in this document.
+  await page.getByRole('button', { name: 'لاحقًا' }).click();
+  await expect(page.getByTestId('update-prompt')).toBeHidden();
+  expect(await loads()).toBe(settled);
+
+  // A refresh is exactly the case the prompt exists for: it does not release the
+  // waiting worker (ADR-0039, measured above), it re-asks in the new document,
+  // and this time the gesture is the way through.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await expect(page.getByTestId('update-prompt')).toBeVisible({ timeout: 30_000 });
+  await page.getByRole('button', { name: 'تحديث الآن' }).click();
+
+  // One reload for the gesture, plus the one the refresh already made.
+  await expect.poll(loads, { timeout: 30_000 }).toBe(settled + 2);
+  await expect(page.getByTestId('update-prompt')).toBeHidden();
+  expect(await page.evaluate(async () => (await caches.keys()).join(','))).toContain(DEPLOY_MARKER);
+
+  // No loop: the tab settles on the build its worker serves.
+  await page.waitForTimeout(3_000);
+  expect(await loads()).toBe(settled + 2);
+
+  await context.close();
+});
+
+/**
  * The other half of the decision, and the reason the mechanism above is worth
  * having: a swap waits for the previous worker's clients to go away. A reload
  * does not release a waiting worker (measured 2026-10-14), and the shell's next
