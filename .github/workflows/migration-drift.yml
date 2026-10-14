@@ -12,9 +12,12 @@
 #   - a recorded version the repo has no file for -> schema or a policy nobody
 #     reviewed, with no migration file to roll it back.
 #
-# The pull-request and push runs catch a merge that moved one side; the nightly
-# run catches an out-of-band `apply_migration`, which has no pull request here at
-# all, and keeps one tracking issue open until the two sides agree again.
+# The pull-request run is a check with no side effects. Every other run — a push
+# to main, the nightly schedule, a manual dispatch — also reconciles one tracking
+# issue: it opens when the check fails (the case an out-of-band `apply_migration`
+# produces, with no pull request here to comment on) and closes it as soon as the
+# two sides agree again, so a drift fixed during the day does not wait for the
+# next night.
 #
 # Deliberately not a required check yet: it depends on the Management API and on
 # repository secrets. Wire it into branch protection once it has run green for a
@@ -40,6 +43,10 @@ on:
     # with an overnight implementer run is visible the same morning.
     - cron: '23 5 * * *'
   workflow_dispatch:
+    inputs:
+      project-ref:
+        description: 'Compare against this project ref instead of SUPABASE_PROJECT_REF (a drill, or a non-production project)'
+        required: false
 
 permissions:
   contents: read
@@ -70,15 +77,16 @@ jobs:
         id: drift
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_PROJECT_REF: ${{ inputs.project-ref || secrets.SUPABASE_PROJECT_REF }}
         run: node scripts/check-migration-drift.mjs
 
-      # The nightly run is the one with no pull request to comment on, so it is
-      # the one that has to leave something a human reads. Same single-alert
-      # channel as .github/workflows/issue-automation-health.yml, and it closes
-      # again on the first clean night.
+      # A pull request comments through its own check, so only the runs that have
+      # no pull request to comment on get an issue. Same single-alert channel as
+      # .github/workflows/issue-automation-health.yml. The alert path can be
+      # drilled without touching production: dispatch with a bogus `project-ref`
+      # to open it, then dispatch again with none to close it.
       - name: Reconcile the drift alert issue
-        if: always() && github.event_name == 'schedule'
+        if: always() && github.event_name != 'pull_request'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         env:
           DRIFT_OUTCOME: ${{ steps.drift.outcome }}
@@ -103,7 +111,7 @@ jobs:
               }
               await github.rest.issues.createComment({
                 owner, repo, issue_number: existing.number,
-                body: 'Recovered: the nightly check found the two sides in sync again (' + runUrl + ').',
+                body: 'Recovered: the drift check found the two sides in sync again (' + runUrl + ').',
               });
               await github.rest.issues.update({ owner, repo, issue_number: existing.number, state: 'closed' });
               core.info('Closed drift alert #' + existing.number + '.');
@@ -111,14 +119,15 @@ jobs:
             }
 
             const body = [
-              'The nightly migration-drift check found that `supabase/migrations` and the linked',
-              "project's recorded migration history disagree.",
+              'The migration-drift check failed: `supabase/migrations` and the linked project do not',
+              'agree, or the check could not read the project at all (' + context.eventName + ', ' + runUrl + ').',
               '',
-              'That usually means schema was applied to the project through the Supabase MCP',
-              '`apply_migration` tool (the issue pipeline does this before review) and never landed as',
-              'a merged migration file — or a merged migration file was never pushed.',
+              'When it is a disagreement, it is usually schema applied to the project through the',
+              'Supabase MCP `apply_migration` tool (the issue pipeline does this before review) that',
+              'never landed as a merged migration file — or a merged migration file that was never',
+              'pushed.',
               '',
-              'The failing run says which direction it is and what to do: ' + runUrl,
+              'The failing run says which of the two it is, and what to do: ' + runUrl,
               '',
               'See `docs/supabase.md` ("Drift check") and ADR 0040.',
               '',

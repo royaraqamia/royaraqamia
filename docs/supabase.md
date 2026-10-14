@@ -27,9 +27,10 @@ When the agent has Supabase MCP access:
 
 `supabase/migrations/` and the linked project's `supabase_migrations.schema_migrations` are compared
 in CI: `.github/workflows/migration-drift.yml` runs `scripts/check-migration-drift.mjs` on pull
-requests and pushes that touch migrations, nightly (it opens, and later closes, one tracking issue —
-an out-of-band `apply_migration` has no pull request here to comment on), and on demand. Run it by
-hand with the two variables the agent workflows already use:
+requests and pushes that touch migrations, nightly, and on demand. A pull-request run is only a
+check; every other run also reconciles one `opencode:alert` tracking issue — it opens when the check
+fails (an out-of-band `apply_migration` has no pull request here to comment on) and closes it as soon
+as the two sides agree again. Run it by hand with the two variables the agent workflows already use:
 
 ```bash
 SUPABASE_ACCESS_TOKEN=... SUPABASE_PROJECT_REF=... npm run check:migrations
@@ -49,7 +50,9 @@ script, next to the reason. Neither list holds anything: the first run (PR #217,
 2026-10-14) compared 108 repo files against 108 recorded versions and found the
 two sides identical, the base-schema stub included. The check compares version ids
 only, so editing an applied migration stays invisible to it: this is a detector,
-not a review.
+not a review. The alert path is drillable without touching production:
+`gh workflow run 'Migration Drift' -f project-ref=<a ref that does not exist>` opens the tracking
+issue, and a second dispatch with no input closes it.
 
 ## Forbidden without explicit human approval
 
