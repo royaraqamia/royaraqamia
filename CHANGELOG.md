@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.88.4] - 2026-10-14
+
+### Changed
+- override uuid to ^11.1.1 for GHSA-w5hq-g745-h8pq (#211)
+- drop the unused changelogSectionFromGroups import
+
+### Fixed
+- use the log-injection sanitizer shape CodeQL recognises
+- match the DevTools target by host and keep bridge logs to one line
+
 ## [1.88.3] - 2026-10-13
 
 ### Changed
