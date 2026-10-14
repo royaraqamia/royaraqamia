@@ -51,16 +51,20 @@ function isExpectedOrigin(url) {
 /**
  * Device-supplied text (target URLs, user agent, evaluated values) goes into the log
  * verbatim otherwise, and a value carrying a newline forges extra lines — the output here
- * is read by a human deciding whether the bridge is live. Collapse control characters so
- * one fact stays one line.
+ * is read by a human deciding whether the bridge is live. Strip line terminators and the
+ * remaining control characters so one fact stays one line.
+ *
+ * The first replace has to keep this exact shape: CodeQL's log-injection query recognises
+ * only a `\n`-matching replace whose replacement is the empty string as a sanitizer
+ * (`StringReplaceSanitizer` in LogInjectionQuery.qll), so collapsing newlines to a space
+ * would read better but leaves the alert open.
  */
 function oneLine(value) {
   return (
     String(value)
-      // Newlines, including the exotic ones, are what forges a log line.
-      .replace(/[\r\n\u0085\u2028\u2029]+/g, ' ')
-      // Remaining control characters (ANSI escapes and friends) have no place in a log line.
-      .replace(/[\u0000-\u001f\u007f-\u009f]/g, '')
+      .replace(/\n/g, '')
+      // CR, NEL, LS, PS and the rest of the control characters (ANSI escapes and friends).
+      .replace(/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/g, '')
   );
 }
 
