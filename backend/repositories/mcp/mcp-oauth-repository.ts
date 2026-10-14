@@ -71,6 +71,7 @@ export interface McpUserGrantRecord {
 /** The columns `listUserGrants` folds; the rest of a token row never leaves here. */
 interface GrantRow {
   client_id: string;
+  kind: 'access' | 'refresh';
   created_at: string;
   last_used_at: string | null;
 }
@@ -129,10 +130,23 @@ export interface McpOAuthRepository {
    * The user's live grants, one row per connected client. A grant is live while
    * it holds at least one unrevoked, unexpired *refresh* token: access rows come
    * and go with their 1h TTL and the daily sweep, the refresh row is the grant.
+   *
+   * `last_used_at` comes from the access row, because that is the only row the
+   * data plane stamps (`resolveMcpContext` touches the row a bearer token
+   * resolves to, and only access rows resolve). Read the refresh rows for the
+   * grant's existence and the access rows for its use.
    */
   listUserGrants(userId: string, now: Date): Promise<McpUserGrantRecord[]>;
   /** Shred every token the user holds for one client — a per-client disconnect. */
   revokeUserClientTokens(userId: string, clientId: string): Promise<void>;
+  /**
+   * Drop one client's live authorization codes. A code exchanges for a fresh
+   * token pair and carries a bridge ciphertext of its own, so a disconnect that
+   * leaves it behind lets the grant resurrect inside its 10-minute TTL.
+   */
+  deleteUserClientAuthCodes(userId: string, clientId: string): Promise<void>;
+  /** Drop every live authorization code the user holds — a full disconnect. */
+  deleteUserAuthCodes(userId: string): Promise<void>;
   deleteExpired(now: Date): Promise<void>;
 }
 
@@ -273,9 +287,8 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
     async listUserGrants(userId, now) {
       const { data, error } = await (supabase as any)
         .from(TOKENS_TABLE)
-        .select('client_id, created_at, last_used_at')
+        .select('client_id, kind, created_at, last_used_at')
         .eq('user_id', userId)
-        .eq('kind', 'refresh')
         .is('revoked_at', null)
         .gt('expires_at', now.toISOString());
       if (error) throw error;
@@ -319,6 +332,23 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
       if (error) throw error;
     },
 
+    async deleteUserClientAuthCodes(userId, clientId) {
+      const { error } = await (supabase as any)
+        .from(AUTH_CODES_TABLE)
+        .delete()
+        .eq('user_id', userId)
+        .eq('client_id', clientId);
+      if (error) throw error;
+    },
+
+    async deleteUserAuthCodes(userId) {
+      const { error } = await (supabase as any)
+        .from(AUTH_CODES_TABLE)
+        .delete()
+        .eq('user_id', userId);
+      if (error) throw error;
+    },
+
     async deleteExpired(now) {
       const { error } = await (supabase as any)
         .from(TOKENS_TABLE)
@@ -330,9 +360,15 @@ export function createMcpOAuthRepository(supabase = getAdminSupabase()): McpOAut
 }
 
 /**
- * One grant per client. A re-consent leaves the earlier refresh row alive, so one
- * client can hold several: the earliest `created_at` is when it connected, the
- * latest `last_used_at` is when it was last seen.
+ * One grant per client, from that client's live rows of both kinds.
+ *
+ * The refresh rows define the grant: a re-consent leaves the earlier one alive, so
+ * a client can hold several, and the earliest `created_at` among them is when it
+ * connected. The access rows carry the use: the data plane stamps only the row a
+ * bearer token resolves to, and only access rows resolve, so the newest stamp on
+ * any of the grant's live rows is when it was last seen. That stamp is at most as
+ * old as the current access row, which is created without one and replaced on
+ * every rotation — a grant that has just rotated reads as unused, which is true.
  *
  * Timestamps are compared as instants, never as strings: PostgREST renders
  * `timestamptz` with an offset, and ordering those lexicographically is only
@@ -342,13 +378,15 @@ function foldGrants(rows: GrantRow[]): McpUserGrantRecord[] {
   const grants = new Map<string, McpUserGrantRecord>();
 
   for (const row of rows) {
+    if (row.kind !== 'refresh') continue;
+
     const existing = grants.get(row.client_id);
     if (!existing) {
       grants.set(row.client_id, {
         client_id: row.client_id,
         client_name: null,
         connected_at: row.created_at,
-        last_used_at: row.last_used_at,
+        last_used_at: null,
       });
       continue;
     }
@@ -356,13 +394,16 @@ function foldGrants(rows: GrantRow[]): McpUserGrantRecord[] {
     if (Date.parse(row.created_at) < Date.parse(existing.connected_at)) {
       existing.connected_at = row.created_at;
     }
+  }
 
+  for (const row of rows) {
+    const grant = grants.get(row.client_id);
     const usedAt = row.last_used_at;
-    if (usedAt !== null) {
-      const best = existing.last_used_at;
-      if (best === null || Date.parse(usedAt) > Date.parse(best)) {
-        existing.last_used_at = usedAt;
-      }
+    if (!grant || usedAt === null) continue;
+
+    const best = grant.last_used_at;
+    if (best === null || Date.parse(usedAt) > Date.parse(best)) {
+      grant.last_used_at = usedAt;
     }
   }
 

@@ -150,7 +150,11 @@ export interface McpOAuthProvider {
     clientSecret?: string;
   }): Promise<void>;
 
-  /** Revoke every session a user has issued (sign out everywhere). */
+  /**
+   * Revoke every session a user has issued (sign out everywhere). Live
+   * authorization codes go too, or a client mid-exchange would mint a fresh pair
+   * from the one call the disconnect had already passed.
+   */
   revokeAllUserTokens(userId: string): Promise<void>;
 
   /**
@@ -162,7 +166,9 @@ export interface McpOAuthProvider {
 
   /**
    * Disconnect one client: revoke every token it holds for this user, leaving
-   * their other clients (and their browser session) alone.
+   * their other clients (and their browser session) alone. A live authorization
+   * code is dropped in the same breath, so consent already granted cannot be
+   * exchanged for a fresh grant after the disconnect.
    */
   revokeUserClient(userId: string, clientId: string): Promise<void>;
 }
@@ -345,6 +351,7 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
 
     async revokeAllUserTokens(userId) {
       await repo.revokeAllUserTokens(userId);
+      await repo.deleteUserAuthCodes(userId);
       invalidateUserCache(userId);
     },
 
@@ -354,6 +361,7 @@ export function createMcpOAuthProvider(deps: McpOAuthProviderDeps = {}): McpOAut
 
     async revokeUserClient(userId, clientId) {
       await repo.revokeUserClientTokens(userId, clientId);
+      await repo.deleteUserClientAuthCodes(userId, clientId);
       // Coarse on purpose. Dropping every cached context this user holds costs
       // their other clients one re-resolve and cannot leave a revoked context
       // authorizing a request; a per-client invalidator would buy nothing but a

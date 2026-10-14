@@ -40,8 +40,9 @@ users, but blast radius stays bounded by:
 - RLS (native, user-scoped clients — never service-role impersonation),
 - token revocation (`/mcp/revoke` + `revoked_at` on every use), which also shreds the row's
   stored bridge ciphertext. A signed-in user can revoke without holding a client secret from the
-  account area (`/account/connected-apps`, `DELETE /api/me/mcp/connected-apps[/{clientId}]`), which is
-  also `revokeAllUserTokens`'s production caller,
+  account area (`/account/connected-apps`, `DELETE /api/me/mcp/connected-apps[/{clientId}]`), which
+  is also `revokeAllUserTokens`'s production caller and drops the client's live authorization
+  codes, because a code carries a bridge ciphertext of its own and exchanges for a fresh pair,
 - the daily pg_cron sweeper deleting expired/revoked rows.
 
 A disconnect from the account area revokes MCP tokens only. The grant's Supabase session is

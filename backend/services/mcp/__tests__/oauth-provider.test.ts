@@ -59,6 +59,8 @@ const mockRepo = {
   revokeAllUserTokens: vi.fn(),
   listUserGrants: vi.fn(),
   revokeUserClientTokens: vi.fn(),
+  deleteUserClientAuthCodes: vi.fn(),
+  deleteUserAuthCodes: vi.fn(),
   deleteExpired: vi.fn(),
 };
 
@@ -414,6 +416,12 @@ describe('createMcpOAuthProvider', () => {
       expect(mockRepo.revokeAllUserTokens).toHaveBeenCalledWith('user-123');
       expect(invalidateUserCache).toHaveBeenCalledWith('user-123');
     });
+
+    it('drops live authorization codes so a mid-exchange client cannot mint a new grant', async () => {
+      await provider.revokeAllUserTokens('user-123');
+
+      expect(mockRepo.deleteUserAuthCodes).toHaveBeenCalledWith('user-123');
+    });
   });
 
   describe('listUserGrants', () => {
@@ -441,6 +449,13 @@ describe('createMcpOAuthProvider', () => {
       // Coarse and deliberate: a cached context must never outlive its revocation.
       expect(invalidateUserCache).toHaveBeenCalledWith('user-123');
       expect(mockRepo.revokeAllUserTokens).not.toHaveBeenCalled();
+    });
+
+    it('drops that client’s live authorization codes, and only that client’s', async () => {
+      await provider.revokeUserClient('user-123', 'client-1');
+
+      expect(mockRepo.deleteUserClientAuthCodes).toHaveBeenCalledWith('user-123', 'client-1');
+      expect(mockRepo.deleteUserAuthCodes).not.toHaveBeenCalled();
     });
   });
 });

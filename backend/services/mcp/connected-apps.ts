@@ -10,9 +10,10 @@ import { createMcpOAuthProvider, type McpOAuthProvider } from './oauth-provider'
  *
  * A grant is live until every token it holds is revoked or swept. Disconnecting
  * one client must not touch the user's other clients, their browser session, or
- * their Supabase session: revocation shreds the stored bridge ciphertext
- * (ADR 0023), which is what makes the disconnected client unable to act, while
- * signing out of the site remains a separate, bigger hammer.
+ * their Supabase session: revocation shreds the stored bridge ciphertext and
+ * drops the client's live authorization codes (ADR 0023), which is what makes the
+ * disconnected client unable to act, while signing out of the site remains a
+ * separate, bigger hammer.
  */
 
 export interface McpConnectedAppsDeps {
