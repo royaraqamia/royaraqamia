@@ -37,11 +37,36 @@ npm run android:verify-bridge   # on a connected device: is the native bridge li
 ```
 
 The launcher icon and splash are generated from `public/icons/icon-1024x1024.png`, the
-same artwork the PWA ships, so the two installs look like one product. The adaptive
-background is the brand purple, which is why the tile's own edges disappear under any
-launcher mask. `scripts/generate-android-assets.mjs` does this by hand rather than through
+same artwork the PWA ships, so the two installs look like one product: one purple, one logo.
+How large the logo _reads_ is a chosen number, `TARGET_DISC_RATIO` (0.64) — the middle the owner
+picked after being shown the two extremes on the emulator: 76% with the artwork drawn across the
+adaptive canvas, 52% inset to the 72dp safe zone. The extremes exist because the launcher draws
+the adaptive canvas's visible centre magnified, measured at **1.47x** on the API 30 Pixel
+Launcher, so that one surface divides the magnification out (`ADAPTIVE_ARTWORK_SCALE`) while the
+notification icon, the legacy and round launcher icons and the splash logo scale the artwork
+instead, cropping purple. The PWA's own icon set keeps the artwork's 51.7%, since that is what
+the installed PWA's icon is drawn from. The splash draws the disc on `#0f172a`, because nothing
+masks a splash and the square tile was the one place the logo appeared square.
+`scripts/generate-android-assets.mjs` does this by hand rather than through
 `@capacitor/assets`, whose transitive `tar` carries a critical advisory that would fail
-`security-scan.yml`'s `npm audit --audit-level=high`.
+`security-scan.yml`'s `npm audit --audit-level=high`. It measures every asset it writes
+against its surface's target and exits non-zero on a miss, and
+`scripts/__tests__/icon-shape.test.mjs` holds the committed files to the same proportions in
+`npm test` (`scripts/logo-shape.mjs` is the measurement both use).
+
+The splash is **one logo drawable and an XML layer-list**, not a bitmap per screen
+(`drawable/splash.xml` + `drawable-xxxhdpi/splash_logo.png`). That is forced by the plugin, not
+chosen: on launch it hands the drawable to `setBackground` on a view
+(`SplashScreen.java`), so a bitmap is stretched to fill, `androidScaleType` never applies
+([its docs say so](https://github.com/ionic-team/capacitor-plugins)), and our 1:2 frames came
+out 190x180px on the API 30 emulator. A layer-list draws its item by gravity at a declared dp
+size instead, so the disc cannot be stretched by any screen shape — and the launch theme uses
+the same resource as the starting window, which is the surface a cold start actually shows
+first. It is 96dp, the size the frames were designed around. On **Android 12+ none of this
+renders at launch**: the platform splash draws the launcher icon itself in a **160dp**
+visible circle, so the two OS families show different splash sizes rather than two logos in a
+row. Removing the plugin entirely settles that and drops the last splash-specific asset —
+[#212](https://github.com/royaraqamia/royaraqamia/issues/212).
 
 Install on a device or emulator:
 
