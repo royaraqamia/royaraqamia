@@ -72,6 +72,10 @@ test('a deploy reaches a running client without a reload loop', async ({ browser
       .evaluate(() => (window as unknown as { __swProbe: SwProbe }).__swProbe.loads)
       .catch(() => -1);
 
+  // The start state has to be the built version, whatever a previous test or a
+  // crashed run left in the generated version script.
+  writeFileSync(VERSION_SCRIPT, original ?? '');
+
   await page.goto('/rates', { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
     timeout: 30_000,
@@ -125,6 +129,81 @@ test('a deploy reaches a running client without a reload loop', async ({ browser
 
   const cacheKeys = await page.evaluate(async () => (await caches.keys()).join(','));
   expect(cacheKeys).toContain(DEPLOY_MARKER);
+
+  await context.close();
+});
+
+/**
+ * The other half of the decision, and the reason the mechanism above is worth
+ * having: a swap waits for the previous worker's clients to go away. A reload
+ * does not release a waiting worker (measured 2026-10-14), and the shell's next
+ * cold start does — so a client moves to a new deploy on its next launch.
+ */
+test('a refresh keeps the previous build; the next cold start takes the new one', async ({
+  browser,
+}) => {
+  test.setTimeout(180_000);
+
+  const previousCache = (original ?? '').split("'")[1] ?? '';
+  expect(previousCache).toMatch(/^royaraqamia-v/);
+
+  const context = await browser.newContext({ serviceWorkers: 'allow' });
+  const page = await context.newPage();
+
+  const cacheKeys = () => page.evaluate(async () => (await caches.keys()).join(','));
+  const hasWaiting = () =>
+    page.evaluate(async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting));
+
+  // Start from the build this test is going to replace, so the outcome does not
+  // depend on what the test above left behind.
+  writeFileSync(VERSION_SCRIPT, original ?? '');
+
+  await page.goto('/rates', { waitUntil: 'domcontentloaded' });
+  await page.waitForFunction(() => navigator.serviceWorker.controller !== null, null, {
+    timeout: 30_000,
+  });
+  // Let the registration's own update check finish before the deploy.
+  await page.waitForTimeout(7_000);
+  expect(await cacheKeys()).toContain(previousCache);
+
+  writeFileSync(
+    VERSION_SCRIPT,
+    `self.CACHE_VERSION = '${DEPLOY_MARKER}';\nself.ASSET_VERSION = '';\n`
+  );
+  await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+  await page.waitForFunction(
+    async () => Boolean((await navigator.serviceWorker.getRegistration())?.waiting),
+    null,
+    { timeout: 30_000 }
+  );
+
+  // A refresh keeps the previous build: the waiting worker survives the
+  // navigation, and the page is still served by the previous worker's caches.
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(8_000);
+  expect(await hasWaiting()).toBe(true);
+  const afterRefresh = await cacheKeys();
+  expect(afterRefresh).toContain(previousCache);
+
+  // A fresh browsing context — the shell's next cold start — is what releases
+  // it; `activate` then deletes the previous build's caches.
+  await page.close();
+  const relaunched = await context.newPage();
+  await relaunched.goto('/rates', { waitUntil: 'domcontentloaded' });
+  await expect
+    .poll(
+      async () =>
+        (await relaunched.evaluate(async () => (await caches.keys()).join(','))).includes(
+          previousCache
+        ),
+      {
+        timeout: 30_000,
+      }
+    )
+    .toBe(false);
+  expect(await relaunched.evaluate(async () => (await caches.keys()).join(','))).toContain(
+    DEPLOY_MARKER
+  );
 
   await context.close();
 });
