@@ -299,10 +299,11 @@ _Avoid_: blacklist, do-not-cache, exclusions
 **Worker swap**:
 The moment a newly installed service worker takes control of a document the previous one served. It
 happens once the previous worker's clients are gone, so it lands on a client's next launch (inside the
-Android shell, its next cold start) rather than on a refresh. The document replaces itself instead of
-asking, so a client is never left running a build whose caches `activate` has already deleted
-(ADR-0039).
-_Avoid_: update, SW update, version prompt
+Android shell, its next cold start) rather than on a refresh. The document replaces itself when it
+happens, so a client is never left running a build whose caches `activate` has already deleted
+(ADR-0039); while a build is only _waiting_ — downloaded, not yet in control — the page offers it
+instead of applying it silently (ADR-0042).
+_Avoid_: update, SW update, auto-update
 
 **Tombstone**:
 A soft delete (`deleted_at`) that records a removal so it can sync to other devices without losing

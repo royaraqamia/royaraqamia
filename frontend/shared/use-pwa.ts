@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { requestPersistentStorage } from './persistent-storage';
-import { watchWorkerUpdates } from './sw-update';
+import { applyWorkerUpdate, watchWorkerUpdates } from './sw-update';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -14,6 +14,8 @@ export interface PWAState {
   isInstalled: boolean;
   isOnline: boolean;
   registration: ServiceWorkerRegistration | null;
+  /** A newer build is installed and waiting; `applyUpdate` moves onto it. */
+  updateAvailable: boolean;
 }
 
 export function usePWA() {
@@ -22,6 +24,7 @@ export function usePWA() {
     isInstalled: false,
     isOnline: true,
     registration: null,
+    updateAvailable: false,
   });
 
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -78,13 +81,24 @@ export function usePWA() {
   }, []);
 
   /**
-   * Keeps the document on the build its worker serves, with no prompt and no
-   * gesture: see `sw-update.ts` and ADR-0039 for why that is the only option
-   * inside the Android shell.
+   * Announces a waiting build and keeps the document on the build its worker
+   * serves: see `sw-update.ts`, ADR-0039 for the swap and ADR-0042 for the
+   * prompt. Both matter inside the Android shell, which has no reload control.
    */
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return;
-    return watchWorkerUpdates(navigator.serviceWorker);
+    return watchWorkerUpdates(navigator.serviceWorker, {
+      onUpdateAvailable: (available) =>
+        setState((prev) =>
+          prev.updateAvailable === available ? prev : { ...prev, updateAvailable: available }
+        ),
+    });
+  }, []);
+
+  /** Moves this document onto the waiting build, replacing it once. */
+  const applyUpdate = useCallback(() => {
+    if (!('serviceWorker' in navigator)) return;
+    void applyWorkerUpdate(navigator.serviceWorker);
   }, []);
 
   const promptInstall = useCallback(async () => {
@@ -96,5 +110,5 @@ export function usePWA() {
     return outcome === 'accepted';
   }, [installPrompt]);
 
-  return { ...state, promptInstall };
+  return { ...state, promptInstall, applyUpdate };
 }

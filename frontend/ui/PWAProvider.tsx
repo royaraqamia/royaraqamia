@@ -8,6 +8,8 @@ const SW_PATH = '/sw.js';
 
 interface PWAContextValue extends PWAState {
   promptInstall: () => Promise<boolean | undefined>;
+  /** Moves this document onto the waiting build (ADR-0042). */
+  applyUpdate: () => void;
 }
 
 const PWAContext = createContext<PWAContextValue | null>(null);

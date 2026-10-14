@@ -1,9 +1,10 @@
 name: 'E2E: Worker Swap'
 
-# The only automated check that the app lands on a new build by itself (ADR-0039).
-# It needs a production build and a real browser, so it runs on the surfaces that
-# can break it instead of on every pull request. Playwright's `webServer` builds
-# and starts the app because GitHub sets CI.
+# The only automated check that the app lands on a new build by itself (ADR-0039)
+# and that a waiting one is announced (ADR-0042). It needs a production build and
+# a real browser, so it runs on the surfaces that can break it instead of on every
+# pull request. Playwright's `webServer` builds and starts the app because GitHub
+# sets CI.
 #
 # NOTE: a path-filtered workflow reports no check when nothing matches, so this
 # must not be made a required status check on `main`.
@@ -19,7 +20,9 @@ on:
       - 'public/sw-routing.js'
       - 'frontend/shared/sw-update.ts'
       - 'frontend/shared/use-pwa.ts'
+      - 'frontend/shared/shell-update.ts'
       - 'frontend/ui/PWAProvider.tsx'
+      - 'frontend/ui/shared/update-prompt.tsx'
       - 'scripts/generate-icons.mjs'
       - 'e2e/sw-update.spec.ts'
       - 'playwright.config.ts'
@@ -35,7 +38,7 @@ concurrency:
 
 jobs:
   sw-update:
-    name: Worker swap reloads the document
+    name: New builds reach a running document
     runs-on: ubuntu-latest
     timeout-minutes: 25
 
