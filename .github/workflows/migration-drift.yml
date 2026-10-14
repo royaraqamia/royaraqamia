@@ -16,8 +16,10 @@
 # On main the order is: plan, vet, apply, verify. `scripts/check-migration-safety.mjs`
 # refuses to apply anything destructive unattended (see its header), so those
 # migrations stay pending and the verify step reports them until a person applies
-# them by hand. Applying itself needs SUPABASE_DB_PASSWORD; without it the job
-# skips the apply and says so, and a merged migration shows up as drift.
+# them by hand. The apply itself uses the same credentials the plan already used
+# — the access token, plus SUPABASE_DB_PASSWORD when the repository has one: the
+# CLI can mint its own login role for a linked project, which is what "Finished
+# supabase link" plus a dry run that connects proves.
 #
 # A pull-request run only checks, and is relaxed about being ahead: the migration
 # it adds is applied by main after the merge.
@@ -66,7 +68,6 @@ concurrency:
   cancel-in-progress: ${{ github.event_name != 'schedule' }}
 
 env:
-  HAS_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD != '' }}
   APPLY_REQUESTED: ${{ github.event_name == 'push' || inputs.apply == true }}
 
 jobs:
@@ -115,7 +116,7 @@ jobs:
         run: node scripts/check-migration-safety.mjs
 
       - name: Apply them
-        if: github.event_name != 'pull_request' && env.APPLY_REQUESTED == 'true' && env.HAS_DB_PASSWORD == 'true' && steps.guard.outcome == 'success'
+        if: github.event_name != 'pull_request' && env.APPLY_REQUESTED == 'true' && steps.guard.outcome == 'success'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -123,13 +124,6 @@ jobs:
         run: |
           supabase link --project-ref "$SUPABASE_PROJECT_REF"
           supabase db push --linked --yes
-
-      # Nothing was applied unattended, so the merged migration is still pending.
-      # Loud on purpose: it is the reason to add SUPABASE_DB_PASSWORD.
-      - name: Say why nothing was applied
-        if: github.event_name != 'pull_request' && env.HAS_DB_PASSWORD != 'true'
-        run: |
-          echo "::warning::SUPABASE_DB_PASSWORD is not set, so pending migrations are not applied automatically; they will be reported as drift below."
 
       - name: Compare supabase/migrations with the linked project
         id: drift

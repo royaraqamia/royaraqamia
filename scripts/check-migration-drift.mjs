@@ -172,7 +172,9 @@ export async function main({
       const file = local.find((m) => m.version === version)?.file ?? `${version}_*.sql`;
       log(`  - ${file}`);
     }
-    if (strict) log('  Fix: supabase db push (then re-run this check).');
+    if (strict) {
+      log('  Fix: let main apply it (it does, after the merge), or run supabase db push yourself.');
+    }
   }
 
   if (extraRemotely.length > 0) {

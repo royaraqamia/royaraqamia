@@ -40,7 +40,7 @@ It fails in both directions, and says which one it found:
 
 | Finding                                                | What it means                                                                                                                                                     | What to do                                                                                                                                                         |
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A file the project has no version for                  | Production is behind the repo, so deployed code may expect schema that is not there. On a pull request this is a notice — main applies what the pull request adds | On `main`, `SUPABASE_DB_PASSWORD` lets the job apply it; by hand, `supabase db push`, then re-run the check                                                        |
+| A file the project has no version for                  | Production is behind the repo, so deployed code may expect schema that is not there. On a pull request this is a notice — main applies what the pull request adds | On `main` the job applies it (the CLI mints its own login role from the access token); by hand, `supabase db push`, then re-run the check                          |
 | A recorded version with no file                        | Production is ahead: schema or a policy was applied out of band, unreviewed, with no migration file to roll it back                                               | Add the file the project is missing, or, once you have decided production is wrong, revert the record with `supabase migration repair --status reverted <version>` |
 | It cannot read the history (non-2xx, or an empty list) | Wrong `SUPABASE_PROJECT_REF`, an expired token, or a changed API shape                                                                                            | Fix the credential. The check deliberately refuses to report "in sync" when it cannot look                                                                         |
 
@@ -56,9 +56,7 @@ therefore reviewed) still lands in production without anyone driving it:
   or Storage, drops an object it does not recreate, or deletes rows without a `WHERE`. Those are the
   entries in "Forbidden without explicit human approval" below, and they stay pending: a person reads
   the file and applies it with `supabase db push` after approving it.
-- **Apply:** `supabase db push --linked --yes`, which needs `SUPABASE_DB_PASSWORD` (the secret the CLI
-  documents for CI). Without it the job skips the apply with a warning, and what a merge left pending
-  shows up as drift instead — the reason to add the secret.
+- **Apply:** `supabase db push --linked --yes`. It runs on `SUPABASE_ACCESS_TOKEN`, which is enough for the CLI to mint a login role for the linked project — the plan step above proves that connection with the same credentials on every push. `SUPABASE_DB_PASSWORD` is passed through when the repository has one, which is the path the CLI's own documentation recommends for CI. If the apply cannot connect or write, the verify step below reports the migration as still pending and the alert issue links to the run.
 - **Verify:** the drift check runs strictly afterwards, so "it applied" is not a claim: the project's
   recorded versions are read back and compared.
 
