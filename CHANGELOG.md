@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.89.5] - 2026-10-14
+
+### Changed
+- apply merged migrations on main, and refuse the destructive ones
+
 ## [1.89.4] - 2026-10-14
 
 ### Changed
