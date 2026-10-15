@@ -288,9 +288,24 @@ lives. The sequence when the shell changes:
 
 ```powershell
 npm run android:shell-version -- --bump   # moves android/shell-version.properties
-npm run android:release                   # signed APK
-# attach it to the release named by public/android/latest.json's apkUrl,
-# then set that manifest's versionCode / versionName to match
+npm run android:release                   # signed release APK
+
+# The manifest's apkUrl names a *channel* release, not a version: its tag is
+# literally `shell`. Nothing derives it from a version number, so it has to be
+# created once — and until it was, the published manifest named a URL that 404s
+# with no check noticing, because a URL's shape is all the tests can see.
+# `--latest=false` leaves "Latest" on the version releases, where a reader
+# expects it; the asset's name must match apkUrl's last segment, so rename the
+# build on the way in.
+Copy-Item android\app\build\outputs\apk\release\app-release.apk $env:TEMP\royaraqamia-shell.apk
+gh release create shell $env:TEMP\royaraqamia-shell.apk `
+  --title "Android shell (latest)" --latest=false --target main
+# a later publish replaces the asset on the same release:
+gh release upload shell $env:TEMP\royaraqamia-shell.apk --clobber
+
+# Then set public/android/latest.json's versionCode / versionName to what the
+# APK reports (`aapt2 dump badging app-release.apk`), and fill sha256 and
+# sizeBytes from the file itself — Stage 2 verifies a download against those.
 ```
 
 The counter is what the check compares, so a bump with no published APK tells shells nothing (the
