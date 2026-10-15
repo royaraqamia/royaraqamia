@@ -75,7 +75,7 @@ export async function listLinksHandler(
   try {
     requireAnyScope(ctx, ['linksnap.read']);
     const userId = requireUserId(ctx, 'Listing short links');
-    const repo = new SupabaseShortLinkRepository(ctx.supabase as never, ctx.supabase as never);
+    const repo = new SupabaseShortLinkRepository(ctx.supabase as never);
     const links = await repo.listByUserId(userId);
 
     const start = params.offset;
@@ -280,7 +280,7 @@ export async function createLinkHandler(
   try {
     requireAnyScope(ctx, ['linksnap.write']);
     const userId = requireUserId(ctx, 'Creating a short link');
-    const repo = new SupabaseShortLinkRepository(ctx.supabase as never, ctx.supabase as never);
+    const repo = new SupabaseShortLinkRepository(ctx.supabase as never);
     const service = new ShortenUrlService(repo);
 
     const link = await service.execute(
@@ -316,7 +316,7 @@ export async function updateLinkHandler(
   try {
     requireAnyScope(ctx, ['linksnap.write']);
     const userId = requireUserId(ctx, 'Updating a short link');
-    const repo = new SupabaseShortLinkRepository(ctx.supabase as never, ctx.supabase as never);
+    const repo = new SupabaseShortLinkRepository(ctx.supabase as never);
     const service = new UpdateLinkService(repo);
 
     const link = await service.execute(params.code, userId, {
@@ -355,7 +355,7 @@ export async function deleteLinkHandler(
   try {
     requireAnyScope(ctx, ['linksnap.write']);
     const userId = requireUserId(ctx, 'Deleting a short link');
-    const repo = new SupabaseShortLinkRepository(ctx.supabase as never, ctx.supabase as never);
+    const repo = new SupabaseShortLinkRepository(ctx.supabase as never);
     const service = new DeleteLinkService(repo);
 
     await service.execute(params.code, userId);

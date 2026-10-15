@@ -35,20 +35,20 @@ const TABS: BottomTab[] = [
 ];
 
 /**
- * App-style bottom tab bar for tablet/mobile (`< lg`). Pairs with the fixed
- * top navbar; the top inline nav links and desktop action cluster take over at
- * `lg`.
+ * App-style bottom tab bar, shown at every width. It pairs with the fixed top
+ * navbar: phone and tablet get it flush to the viewport edge, `lg` and up get
+ * the same bar floating clear of the page as a rounded pill.
  */
 export function BottomTabBar() {
   const pathname = usePathname();
 
   return (
     <nav
-      data-mobile-tabbar
+      data-bottom-tabbar
       aria-label="التَّنقُّل السُّفليّ"
-      className="safe-area-inset-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800/80 bg-neutral-950/95 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.6)] print:hidden lg:hidden"
+      className="safe-area-inset-bottom fixed inset-x-0 bottom-0 z-40 border-t border-neutral-800/80 bg-neutral-950/95 shadow-[0_-8px_24px_-12px_rgba(0,0,0,0.6)] print:hidden lg:bottom-6 lg:mx-auto lg:w-[32rem] lg:max-w-[calc(100vw-3rem)] lg:rounded-2xl lg:border lg:bg-neutral-900 lg:shadow-2xl lg:shadow-neutral-950/70"
     >
-      <ul className="mx-auto flex max-w-md items-stretch">
+      <ul className="mx-auto flex max-w-md items-stretch lg:max-w-none">
         {TABS.map((tab) => {
           const isActive = tab.isActive(pathname ?? '');
           const Icon = tab.icon;

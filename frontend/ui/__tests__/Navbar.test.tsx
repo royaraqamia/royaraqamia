@@ -12,10 +12,6 @@ vi.mock('../shared/notification-dropdown', () => ({
   NotificationDropdown: () => null,
 }));
 
-vi.mock('../shared/user-dropdown', () => ({
-  UserDropdown: () => null,
-}));
-
 function renderWithProviders(ui: React.ReactElement) {
   return render(<UIProvider>{ui}</UIProvider>);
 }
@@ -39,8 +35,12 @@ describe('Navbar', () => {
     expect(screen.queryByLabelText('فتح القائمة')).not.toBeInTheDocument();
   });
 
-  it('renders the main nav link', () => {
+  it('renders the logo and the notification control, without inline nav links', () => {
     renderWithProviders(<Navbar />);
-    expect(screen.getByRole('link', { name: 'الرَّئيسيَّة' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /رؤيَة رقَميَّة/ })).toHaveAttribute('href', '#home');
+    // The shell keeps one top bar at every width: account and section links live
+    // in the floating `BottomTabBar`, not here.
+    expect(screen.queryByRole('link', { name: 'الرَّئيسيَّة' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'المجتمع' })).not.toBeInTheDocument();
   });
 });
