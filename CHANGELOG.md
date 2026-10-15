@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.0] - 2026-10-15
+
+### Added
+- serve the APK from our own origin, so an update survives any network
+
 ## [1.100.2] - 2026-10-15
 
 ### Fixed
