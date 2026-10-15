@@ -38,8 +38,10 @@ npm run android:test      # the shell's JVM tests: the update decision and the d
 npm run android:verify-bridge   # on a connected device: is the native bridge live?
 ```
 
-The launcher icon is generated from `public/icons/icon-1024x1024.png`, the
+The launcher icon is generated from `public/icons/icon-maskable-1024x1024.png`, the
 same artwork the PWA ships, so the two installs look like one product: one purple, one logo.
+That is the PWA's _full-bleed_ tile — the layer an adaptive icon is cut from — rather than its
+`any` icon, which is circle-cropped for the desktop install UI (below).
 How large the logo _reads_ is a chosen number, `TARGET_DISC_RATIO` (0.64) — the middle the owner
 picked after being shown the two extremes on the emulator: 76% with the artwork drawn across the
 adaptive canvas, 52% inset to the 72dp safe zone. The extremes exist because the launcher draws
@@ -48,8 +50,21 @@ Launcher, so that one surface divides the magnification out (`ADAPTIVE_ARTWORK_S
 notification icon and the legacy and round launcher icons scale the artwork
 instead, cropping purple — the launch theme's icon divides the splash mask out the same way
 (`SPLASH_ARTWORK_SCALE`). The PWA's own icon set keeps the artwork's 51.7%, since that is what
-the installed PWA's icon is drawn from. The notification icon and the round launcher icon are
-circle-cropped (transparent corners), the badge is the mark alone.
+the installed PWA's icon is drawn from.
+
+**Shape follows the same question: who draws the file.** A surface that draws it as it is gets the
+logo's own shape — the `any` icon set and the favicons are discs with transparent corners, which is
+what a desktop install UI and a browser tab render. Nothing on Windows or macOS crops a PWA icon, so
+a full-bleed square there reads as a purple sticker beside icons that are not square (Telegram's disc
+and Proton VPN's triangle are their files' own shapes; nothing on the desktop shaped them). A surface
+that crops it gets a full-bleed square and is shaped by that crop: the maskable set (a launcher's
+mask) and `apple-touch-icon` (iOS's squircle). The notification icon and the round launcher icon are
+circle-cropped the same way, and the badge is the mark alone.
+
+The one asset that does not follow the master's proportion is the **16px favicon**: at 60% its disc is
+9.6px and the mark inside it lands under a pixel of stroke, so the tab reads as a smudge in a white
+circle. It carries the artwork 1.3x larger — a 78% disc — and it is the only entry that does: 32, 48
+and the standalone favicon PNGs stay on the master.
 `scripts/generate-android-assets.mjs` does this by hand rather than through
 `@capacitor/assets`, whose transitive `tar` carries a critical advisory that would fail
 `security-scan.yml`'s `npm audit --audit-level=high`. It measures every asset it writes

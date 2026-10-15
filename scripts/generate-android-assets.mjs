@@ -29,7 +29,14 @@ import {
 } from './logo-shape.mjs';
 
 const BRAND_PURPLE = '#7868ea';
-const SOURCE = 'public/icons/icon-1024x1024.png';
+/**
+ * The PWA's full-bleed tile, not its `any` icon: the maskable set is the artwork
+ * inset into an opaque square, which is the layer every surface here is cut from.
+ * The `any` set is circle-cropped for the desktop install UI (see
+ * `scripts/generate-icons.mjs`), so cutting these from it would drop transparent
+ * corners inside the adaptive canvas and the legacy launcher icon.
+ */
+const SOURCE = 'public/icons/icon-maskable-1024x1024.png';
 const RES = 'android/app/src/main/res';
 
 const DENSITIES = { mdpi: 1, hdpi: 1.5, xhdpi: 2, xxhdpi: 3, xxxhdpi: 4 };

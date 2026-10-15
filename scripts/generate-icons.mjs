@@ -3,7 +3,13 @@ import fs from 'fs';
 import crypto from 'crypto';
 import path from 'path';
 import { execSync } from 'child_process';
-import { TARGET_DISC_RATIO, artworkDiscRatio, artworkScaleFor, measure } from './logo-shape.mjs';
+import {
+  TARGET_DISC_RATIO,
+  DISC_TOLERANCE_PX,
+  artworkDiscRatio,
+  artworkScaleFor,
+  measure,
+} from './logo-shape.mjs';
 
 const PURPLE = { r: 120, g: 104, b: 234 };
 const OUT_DIR = 'public/icons';
@@ -19,17 +25,21 @@ const ARTWORK_RATIO = await artworkDiscRatio(MASTER, PURPLE);
 /** The scale that puts the notification icon's disc at the app's `TARGET_DISC_RATIO`. */
 const NOTIFICATION_ARTWORK_SCALE = artworkScaleFor(ARTWORK_RATIO);
 
-// "any" icons: full-bleed purple tile carrying the same artwork as the maskable
-// set. Desktop install UIs render these unmasked, so a border or inner circle
-// baked into the file would make desktop read differently from mobile. Includes
+// "any" icons: the same artwork, circle-cropped to a disc. These are the ones a
+// surface draws *as they are* — a desktop install UI hands the file to the shell
+// unmasked, so a full-bleed square reads as a purple sticker beside icons that are
+// not square (Telegram's disc and Proton VPN's triangle are their files' own
+// shapes; nothing on the desktop shaped them). Cropping the corners is what makes
+// the desktop icon read like the tab icon, which already ships this way. Includes
 // 192 and 512 so the manifest always exposes a large "any" icon (PWA installability),
 // plus 1024 for high-DPI rendering, and keeps the favicon/service-worker paths resolving.
 const ANY_SIZES = [72, 96, 128, 144, 152, 192, 384, 512, 1024];
-// Apple-touch icons: same full-bleed purple tile, so iOS rounds it into the same
-// squircle the Android launcher and desktop install UI show.
+// Apple-touch icons: a full-bleed purple tile, so iOS's squircle is what shapes
+// them — the same reason the maskable set stays square.
 const APPLE_TOUCH_SIZES = [152, 167, 180];
 // Maskable icons: full-bleed purple square (glyph inside the ~80% safe zone).
-// Android's adaptive mask crops these into a clean circle.
+// Android's adaptive mask crops these into a clean circle, so a shape baked into
+// the file would only fight the one the launcher applies.
 const MASKABLE_SIZES = [192, 512, 1024];
 const NOTIFICATION_SIZE = 192;
 const BADGE_SIZE = 96;
@@ -40,6 +50,16 @@ const BADGE_SCALE = 0.86;
 // Tab favicons only ever need small raster sizes, so the .ico stays lean; the
 // crisp HiDPI tab icon comes from the standalone favicon PNGs below.
 const FAVICON_SIZES = [16, 32, 48];
+/**
+ * The 16px entry is the one that needs help. At the master's own proportion its
+ * white disc is 9.6px, and the mark inside it — a diamond outline with a dot —
+ * lands under a pixel of stroke, so the tab reads as a smudge in a white circle.
+ * Drawing the artwork 1.3x larger puts the disc at ~78% of the canvas and the
+ * mark at a stroke that survives 16px, with the purple rim still ~2px wide. 32
+ * and 48 are legible as they are, so only this one moves.
+ */
+const FAVICON_SMALL_SIZE = 16;
+const FAVICON_SMALL_SCALE = 1.3;
 // Standalone favicon PNGs. Circle-cropped to fully transparent corners (a purple
 // disc) so the tab icon never paints a square behind it, light theme or dark.
 const FAVICON_PNG_SIZES = [192, 512];
@@ -51,15 +71,35 @@ if (!fs.existsSync(MASTER)) {
   process.exit(1);
 }
 
-// Full-bleed tiles stay an opaque square (no border, no circle baked in) so
-// Android's launcher mask and iOS's squircle can crop them into a clean shape,
-// and desktop install UIs can render them as-is — all showing the same purple
-// tile with the glyph safely inside the ~80% safe zone.
-async function tileFullBleed(file, size) {
+/** The artwork inset to `TILE_SCALE` of an opaque purple `size` square. */
+async function tileBuffer(size) {
   const tile = Math.round(size * TILE_SCALE);
   const logo = await sharp(MASTER).resize(tile, tile, { fit: 'fill' }).toBuffer();
-  await sharp({ create: { width: size, height: size, channels: 3, background: PURPLE } })
+  return sharp({ create: { width: size, height: size, channels: 3, background: PURPLE } })
     .composite([{ input: logo, gravity: 'center' }])
+    .png()
+    .toBuffer();
+}
+
+// Full-bleed tiles stay an opaque square (no border, no circle baked in) so
+// Android's launcher mask and iOS's squircle can crop them into a clean shape —
+// the tile with the glyph safely inside the ~80% safe zone.
+async function tileFullBleed(file, size) {
+  await sharp(await tileBuffer(size)).toFile(file);
+}
+
+// The same tile cut to an inscribed disc: transparent corners, so a surface that
+// draws the file as it is (a desktop install UI) shows the logo's own shape rather
+// than a purple square. A masked surface loses nothing by this, which is why the
+// maskable set does not need it.
+async function tileDisc(file, size) {
+  const mask = Buffer.from(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
+      `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/></svg>`
+  );
+  await sharp(await tileBuffer(size))
+    .ensureAlpha()
+    .composite([{ input: mask, blend: 'dest-in' }])
     .png()
     .toFile(file);
 }
@@ -202,12 +242,19 @@ function buildIco(pngs) {
 
 // Circle-cropped logo: a purple disc with fully transparent corners, so the tab
 // icon sits cleanly on any backdrop (light or dark) with no square behind it.
-async function circleCroppedPng(size) {
+// `scale` > 1 draws the artwork larger and crops its purple edges, which is how
+// the 16px entry gets a disc big enough to read (see `FAVICON_SMALL_SCALE`).
+async function circleCroppedPng(size, scale = 1) {
+  const art = Math.round(size * scale);
+  const inset = Math.round((art - size) / 2);
   const mask = Buffer.from(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">` +
       `<circle cx="${size / 2}" cy="${size / 2}" r="${size / 2}" fill="#fff"/></svg>`
   );
-  const logo = await sharp(MASTER).resize(size, size, { fit: 'fill' }).toBuffer();
+  const logo = await sharp(MASTER)
+    .resize(art, art, { fit: 'fill' })
+    .extract({ left: inset, top: inset, width: size, height: size })
+    .toBuffer();
   return sharp(logo)
     .composite([{ input: mask, blend: 'dest-in' }])
     .png()
@@ -217,7 +264,8 @@ async function circleCroppedPng(size) {
 async function generateFavicon() {
   const pngs = [];
   for (const size of FAVICON_SIZES) {
-    pngs.push({ size, buf: await circleCroppedPng(size) });
+    const scale = size === FAVICON_SMALL_SIZE ? FAVICON_SMALL_SCALE : 1;
+    pngs.push({ size, buf: await circleCroppedPng(size, scale) });
   }
   fs.writeFileSync('public/favicon.ico', buildIco(pngs));
 
@@ -261,14 +309,43 @@ async function validateTile(fp, size, predicate, label) {
   return errors;
 }
 
+/** The share of a square an inscribed disc covers. */
+const DISC_COVERAGE = Math.PI / 4;
+
+/**
+ * A circle-cropped icon: transparent corners, an opaque centre, and an opaque area
+ * that is a disc rather than a square with its corners shaved off — the shape a
+ * surface that draws the file as it is (a desktop install UI) will show.
+ */
+async function validateDisc(fp, size, label) {
+  const errors = await validateTile(fp, size, TRANSPARENT_PX, label);
+  if (!fs.existsSync(fp)) return errors;
+  const { data, info } = await sharp(fp).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  let opaque = 0;
+  for (let i = 3; i < data.length; i += info.channels) if (data[i] > 128) opaque++;
+  const coverage = opaque / (size * size);
+  if (Math.abs(coverage - DISC_COVERAGE) > 0.02) {
+    console.error(
+      `  ✗ ${label}: ${(100 * coverage).toFixed(1)}% of the canvas is opaque, expected ` +
+        `~${(100 * DISC_COVERAGE).toFixed(1)}% — it has to be a disc`
+    );
+    return errors + 1;
+  }
+  const centre = data[((size / 2) * size + size / 2) * info.channels + 3];
+  if (centre !== 255) {
+    console.error(`  ✗ ${label}: the centre must be opaque`);
+    return errors + 1;
+  }
+  return errors;
+}
+
 async function validate() {
   let errors = 0;
 
   for (const size of ANY_SIZES) {
-    errors += await validateTile(
+    errors += await validateDisc(
       `${OUT_DIR}/icon-${size}x${size}.png`,
       size,
-      PURPLE_PX,
       `icon-${size}x${size}`
     );
   }
@@ -364,27 +441,36 @@ async function validate() {
       const size = ico[o] === 0 ? 256 : ico[o];
       const len = ico.readUInt32LE(o + 8);
       const off = ico.readUInt32LE(o + 12);
-      const corners = await cornerPixels(ico.subarray(off, off + len), size);
+      const frame = ico.subarray(off, off + len);
+      const corners = await cornerPixels(frame, size);
       for (const [ck, p] of Object.entries(corners)) {
         if (p.a !== 0) {
           console.error(`  ✗ favicon.ico ${size}x${size}: ${ck} must be transparent`);
           errors++;
         }
       }
+      // The 16px entry carries the artwork scaled up; every other size is the
+      // master's own proportion (see `FAVICON_SMALL_SCALE`).
+      const ratio =
+        size === FAVICON_SMALL_SIZE ? ARTWORK_RATIO * FAVICON_SMALL_SCALE : ARTWORK_RATIO;
+      const expected = Math.round(size * ratio);
+      const { disc } = await measure(frame, PURPLE);
+      if (Math.abs(disc - expected) > DISC_TOLERANCE_PX) {
+        console.error(
+          `  ✗ favicon.ico ${size}x${size}: the disc is ${disc}px, expected ${expected}px ` +
+            `(${(100 * ratio).toFixed(0)}% of the canvas)`
+        );
+        errors++;
+      }
     }
   }
 
   for (const size of FAVICON_PNG_SIZES) {
-    const fp = `public/favicon-${size}x${size}.png`;
-    errors += await validateTile(fp, size, TRANSPARENT_PX, `favicon-${size}x${size}`);
-    if (fs.existsSync(fp)) {
-      const { data, info } = await sharp(fp).raw().toBuffer({ resolveWithObject: true });
-      const centerAlpha = data[((size / 2) * size + size / 2) * info.channels + info.channels - 1];
-      if (centerAlpha !== 255) {
-        console.error(`  ✗ favicon-${size}x${size}: center must be opaque`);
-        errors++;
-      }
-    }
+    errors += await validateDisc(
+      `public/favicon-${size}x${size}.png`,
+      size,
+      `favicon-${size}x${size}`
+    );
   }
 
   return errors;
@@ -495,8 +581,8 @@ function generateSwVersion(assetVersion) {
 async function main() {
   console.log('Generating icons...');
   for (const size of ANY_SIZES) {
-    await tileFullBleed(`${OUT_DIR}/icon-${size}x${size}.png`, size);
-    console.log(`  ✓ icon-${size}x${size} (full-bleed purple tile)`);
+    await tileDisc(`${OUT_DIR}/icon-${size}x${size}.png`, size);
+    console.log(`  ✓ icon-${size}x${size} (circle-cropped disc)`);
   }
   for (const size of MASKABLE_SIZES) {
     await tileFullBleed(`${OUT_DIR}/icon-maskable-${size}x${size}.png`, size);
