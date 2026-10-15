@@ -14,6 +14,7 @@ async function loadModule() {
 const BROWSER_UA =
   'Mozilla/5.0 (Linux; Android 11; sdk_gphone_x86) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.106 Mobile Safari/537.36';
 const SHELL_UA = `${BROWSER_UA} RoyaraqamiaShell/20000`;
+const NAMED_SHELL_UA = `${BROWSER_UA} RoyaraqamiaShell/1.0.3+20003`;
 
 const respond = (payload: unknown, ok = true, status = 200) =>
   vi.fn(async () => ({
@@ -43,6 +44,42 @@ describe('shellVersionFromUserAgent', () => {
     expect(shellVersionFromUserAgent('RoyaraqamiaShell/abc')).toBeNull();
     // Another product is not this shell.
     expect(shellVersionFromUserAgent('SomethingElse/20000')).toBeNull();
+  });
+});
+
+describe('the version a shell names itself by (ADR-0046)', () => {
+  it('reads the name and the counter from the newer spelling', async () => {
+    const { shellVersionFromUserAgent, shellVersionNameFromUserAgent } = await loadModule();
+
+    expect(shellVersionNameFromUserAgent(NAMED_SHELL_UA)).toBe('1.0.3');
+    expect(shellVersionFromUserAgent(NAMED_SHELL_UA)).toBe(20003);
+  });
+
+  it('still reads what every already-installed shell sends', async () => {
+    // The one spelling that cannot be replaced: a phone in someone's hand sends
+    // `RoyaraqamiaShell/20000` until they install a shell built after this change.
+    const { shellVersionFromUserAgent, shellVersionNameFromUserAgent } = await loadModule();
+
+    expect(shellVersionFromUserAgent(SHELL_UA)).toBe(20000);
+    expect(shellVersionNameFromUserAgent(SHELL_UA)).toBeNull();
+  });
+
+  it('never mistakes the name for the counter', async () => {
+    // The bug this pattern exists to avoid: `(\d+)` alone answers "1" for the
+    // counter here, and a shell at 1.0.3 would look ancient.
+    const { shellVersionFromUserAgent } = await loadModule();
+
+    expect(shellVersionFromUserAgent('RoyaraqamiaShell/1.0.3+20003')).toBe(20003);
+    expect(shellVersionFromUserAgent('RoyaraqamiaShell/1.0.3')).toBeNull();
+  });
+
+  it('shows what a user reads, and the counter when that is all there is', async () => {
+    const { shellDisplayVersion } = await loadModule();
+
+    expect(shellDisplayVersion(NAMED_SHELL_UA)).toBe('1.0.3 (20003)');
+    expect(shellDisplayVersion(SHELL_UA)).toBe('20000');
+    // What keeps it out of the web entirely: a browser has nothing to render.
+    expect(shellDisplayVersion(BROWSER_UA)).toBeNull();
   });
 });
 

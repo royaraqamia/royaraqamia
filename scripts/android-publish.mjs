@@ -25,10 +25,10 @@
  *   npm run android:publish -- --json       # one JSON line on stdout; the rest on stderr
  *   npm run android:publish -- --verdict    # just: is there anything to publish? (JSON, no build)
  *
- * The asset name comes from the version code — `royaraqamia-shell-20002.apk` — so
- * every publish is a new, immutable file and the URL in the manifest names exactly
- * the bytes it hashed. The release tag stays `shell`: a channel everything is
- * attached to, not a per-version release.
+ * The asset name and the release tag come from the version the APK carries — the
+ * release is `android-1.0.3`, the asset `royaraqamia-shell-1.0.3.apk` — so every
+ * publish is a new, immutable release and the URL in the manifest names exactly
+ * the bytes it hashed. `android-` keeps shell tags apart from the web train's.
  *
  * Two callers use this. `.github/workflows/shell-release.yml` runs it on a push to
  * main that touches the shell, with `--json`, and does the upload, the re-download
@@ -49,7 +49,14 @@ import {
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { MANIFEST_PATH, parseShellVersion, SHELL_VERSION_PATH } from './android-shell-version.mjs';
+import {
+  MANIFEST_PATH,
+  parseShellVersion,
+  parseShellVersionName,
+  SHELL_VERSION_PATH,
+  shellVersionNameFor,
+  versionNameVerdict,
+} from './android-shell-version.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const ASSETLINKS_PATH = join(ROOT, 'public/.well-known/assetlinks.json');
@@ -198,34 +205,60 @@ export function releaseTagFromUrl(apkUrl) {
 }
 
 /**
- * What the published asset is called for a version: `royaraqamia-shell-20002.apk`.
+ * What the published asset is called: `royaraqamia-shell-1.0.3.apk`.
  *
- * One file per version code, and the manifest points at that exact file. The
+ * One file per version, and the manifest points at that exact file. The
  * alternative — one name that each publish overwrites — means a device that read
  * a manifest can download bytes that no longer match the hash in it. They would be
  * refused, so it fails safe, but "sometimes the update just does not work" is not
- * a failure mode a release channel should have. Per-version files also mean an
- * older manifest keeps working forever.
+ * a failure mode a release channel should have.
+ *
+ * The name is the shell's own version rather than the counter, because it is what
+ * a person reads: `royaraqamia-shell-1.0.3.apk` says which app version it is.
  */
-export function shellAssetName(versionCode) {
-  if (!Number.isInteger(versionCode) || versionCode <= 0) {
-    throw new Error(`a version code is a positive integer, got ${JSON.stringify(versionCode)}`);
+export function shellAssetName(versionName) {
+  validateVersionName(versionName);
+  return `royaraqamia-shell-${versionName}.apk`;
+}
+
+/**
+ * The release each version lives in: `android-1.0.3`.
+ *
+ * A channel release (`shell`) needed a `--clobber` upload that raced a device
+ * mid-download; a release per version means the tag in a published URL can never
+ * be rewritten to other bytes, and the releases list reads as a version list.
+ * `android-` next to the web train's `web-` prefix says which app a tag belongs to.
+ */
+export function shellReleaseTag(versionName) {
+  validateVersionName(versionName);
+  return `android-${versionName}`;
+}
+
+function validateVersionName(versionName) {
+  if (!/^\d+\.\d+\.\d+$/.test(String(versionName))) {
+    throw new Error(`a shell version is major.minor.patch, got ${JSON.stringify(versionName)}`);
   }
-  return `royaraqamia-shell-${versionCode}.apk`;
+}
+
+/** What the release is called: `Android shell 1.0.3 (20003)`. */
+export function shellReleaseTitle(versionName, versionCode) {
+  return `Android shell ${versionName} (${versionCode})`;
 }
 
 /**
  * The URL the next publish should name, derived from the one that is published
- * now: same host, same repository, same release tag, and the asset name for the
- * new version code.
+ * now: same host, same repository, and the tag and asset name for the new
+ * version.
  *
- * Derived rather than typed, because the two things that matter about it — that it
- * ends in the asset's name, and that it is where the file will be uploaded — are
- * the kind of detail a person gets wrong exactly once, silently. The old name is
- * ignored on purpose: `royaraqamia-shell.apk` was the first spelling, and a
- * manifest that still carries it has to move to the per-version name too.
+ * Derived rather than typed, because the three things that matter about it — the
+ * tag, the asset's name, and that the two agree — are the kind of detail a person
+ * gets wrong exactly once, silently. Only the repository is carried over from the
+ * old URL: the tag is a function of the new version, and the old asset's name is
+ * ignored on purpose, since a manifest still carrying `royaraqamia-shell.apk`
+ * (the first spelling) or `royaraqamia-shell-20002.apk` has to move to a version
+ * name as well.
  */
-export function nextApkUrl(previousUrl, versionCode) {
+export function nextApkUrl(previousUrl, versionName) {
   let url;
   try {
     url = new URL(previousUrl);
@@ -244,8 +277,7 @@ export function nextApkUrl(previousUrl, versionCode) {
   }
 
   const [owner, repo] = segments;
-  const tag = segments[downloadAt + 1];
-  return `https://github.com/${owner}/${repo}/releases/download/${tag}/${shellAssetName(versionCode)}`;
+  return `https://github.com/${owner}/${repo}/releases/download/${shellReleaseTag(versionName)}/${shellAssetName(versionName)}`;
 }
 
 /**
@@ -292,11 +324,13 @@ export const PACKAGE_NAME = 'com.royaraqamia.app';
  * Whether the APK is the one this tree means to publish, as a thrown reason when
  * it is not, and the signing keys that passed.
  *
- * These are the three ways a publish goes wrong without anyone noticing: an APK
- * built from another package, an APK whose version code disagrees with the counter
- * CI checks, and an APK signed with a key that is not the one Android has for the
- * installed app — which is unrecoverable for any device that has it, because the
- * signature can never change.
+ * These are the ways a publish goes wrong without anyone noticing: an APK built
+ * from another package, an APK whose version code disagrees with the counter CI
+ * checks, an APK whose name disagrees with the name derived from that same
+ * counter (which is what a user reads in their settings), and an APK signed with
+ * a key that is not the one Android has for the installed app — which is
+ * unrecoverable for any device that has it, because the signature can never
+ * change.
  */
 export function checkApkAgainstTree({ badging, fingerprints, counter, assetlinksText }) {
   if (badging.packageName !== PACKAGE_NAME) {
@@ -306,6 +340,15 @@ export function checkApkAgainstTree({ badging, fingerprints, counter, assetlinks
     throw new Error(
       `the APK says versionCode ${badging.versionCode}, android/shell-version.properties says ${counter}.\n` +
         'Rebuild after bumping the counter (npm run android:shell-version -- --bump).'
+    );
+  }
+
+  const expectedName = shellVersionNameFor(counter);
+  if (badging.versionName !== expectedName) {
+    throw new Error(
+      `the APK says versionName ${JSON.stringify(badging.versionName)}, but counter ${counter} means ${expectedName}.\n` +
+        'Both numbers come from android/shell-version.properties, so this build did not read the file\n' +
+        'this tree has. Rebuild after bumping: npm run android:shell-version -- --bump.'
     );
   }
 
@@ -383,7 +426,21 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   };
 
   const previous = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8').replace(/^\uFEFF/, ''));
-  const counter = parseShellVersion(readFileSync(SHELL_VERSION_PATH, 'utf8'));
+  const versionText = readFileSync(SHELL_VERSION_PATH, 'utf8');
+  const counter = parseShellVersion(versionText);
+  const versionName = parseShellVersionName(versionText);
+
+  // The name is derived from the counter, so a mismatch means the file was
+  // hand-edited. Said here, before a build: it is cheaper than signing 7 MB and
+  // then refusing it.
+  const nameCheck = versionNameVerdict({ code: counter, name: versionName });
+  if (!nameCheck.matches) {
+    throw new Error(
+      `android/shell-version.properties says shellVersionName=${versionName} for counter ${counter},\n` +
+        `but that counter means ${nameCheck.expected}. The name is derived, not typed — write both with:\n` +
+        '  npm run android:shell-version -- --bump'
+    );
+  }
 
   // The cheapest question first, and the only one a push that changed nothing
   // native needs answered: is there a publish here at all? No build, no keystore.
@@ -422,7 +479,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     assetlinksText: readFileSync(ASSETLINKS_PATH, 'utf8'),
   });
 
-  const apkUrl = valueOf('--url') ?? nextApkUrl(previous.apkUrl, badging.versionCode);
+  const apkUrl = valueOf('--url') ?? nextApkUrl(previous.apkUrl, versionName);
   const min =
     valueOf('--min') === undefined ? previous.minSupportedVersionCode : Number(valueOf('--min'));
   const manifest = stampManifest({
@@ -441,6 +498,7 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   const staged = join(STAGING_DIR, asset);
   const megabytes = (manifest.sizeBytes / (1024 * 1024)).toFixed(1);
   const tag = releaseTagFromUrl(manifest.apkUrl);
+  const releaseTitle = shellReleaseTitle(versionName, manifest.versionCode);
 
   const summary = {
     versionCode: manifest.versionCode,
@@ -454,15 +512,17 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
     signedBy: trusted[0],
     tag,
     asset,
+    releaseTitle,
     apkPath,
   };
 
   if (!json) {
     log('');
     log(`signed by      ${trusted[0]}`);
-    log(`versionCode    ${manifest.versionCode} (${manifest.versionName})`);
+    log(`version        ${manifest.versionName} (versionCode ${manifest.versionCode})`);
     log(`sha256         ${manifest.sha256}`);
     log(`size           ${manifest.sizeBytes} bytes (${megabytes} MB)`);
+    log(`release        ${tag} — "${releaseTitle}"`);
     log(`published URL  ${manifest.apkUrl}`);
     if (manifest.versionCode === previous.versionCode) {
       log('');
@@ -490,22 +550,18 @@ export function main({ argv = process.argv.slice(2), log = console.log } = {}) {
   log(`staged   ${staged}`);
   log(`stamped  ${MANIFEST_PATH}`);
   log('');
-  log('Upload it — the asset name is what the published URL ends in, so it is not a rename');
-  log('that can be skipped. There is no --clobber: this name belongs to this version code,');
-  log('and an upload that finds it already there is a publish that has already happened:');
-  log(`  gh release upload ${tag} "${staged}"`);
+  log(`This version is its own release (${tag}) — one APK per version, never overwritten, so a`);
+  log('device that read a manifest can never fetch bytes that disagree with the hash in it:');
+  log(`  gh release create ${tag} "${staged}" --latest --target main \\`);
+  log(`    --title "${releaseTitle}" --notes "<what changed>"`);
   log('');
-  log(`The tag is a channel, not a version (it is "${tag}" for every publish), so the first`);
-  log('publish has to create the release once — with --latest=false, so "Latest" stays on the');
-  log('version releases where a reader expects it:');
-  log(
-    `  gh release create ${tag} "${staged}" --title "Android shell (latest)" --latest=false --target main`
-  );
+  log('Re-running a publish that already happened is not an upload: the name belongs to this');
+  log('version, and the bytes are checked against what is already there.');
   log('');
   log('Then land the manifest so the site serves it — the asset has to be up first, because');
   log('the manifest names the hash of what it points at:');
   log(
-    `  git add public/android/latest.json && git commit -m "chore(android): publish shell ${manifest.versionCode}"`
+    `  git add public/android/latest.json && git commit -m "chore(android): publish shell ${versionName} (${manifest.versionCode})"`
   );
   return 0;
 }

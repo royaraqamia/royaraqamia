@@ -334,7 +334,9 @@ Measured on the API 30 emulator (`Pixel_5`, 1080x2340), shell at `20002`, manife
 | A manifest with a wrong hash | `the update did not verify: the download hashes to 8a23f313…, the manifest says abab…`; nothing installed, `updates/` left empty, the prompt came back |
 
 **Publishing releases itself.** `.github/workflows/shell-release.yml` runs on any push to `main` that
-touches `android/**` or `capacitor.config.ts`, and on a manual dispatch. In order:
+touches `android/**`, `capacitor.config.ts`, `package.json` or `package-lock.json`, and on a manual
+dispatch. A Capacitor plugin dependency is a shell change (ADR-0043), so without those last two a plugin
+bump could be required to move the counter and then never publish it. In order:
 
 1. **A verdict** — the counter in `android/shell-version.properties` against the manifest that is
    published. A push that changed nothing native, or a re-run, stops here in about ten seconds with
@@ -343,19 +345,35 @@ touches `android/**` or `capacitor.config.ts`, and on a manual dispatch. In orde
 3. **The build and the stamp** — `npm run android:publish --json`, signing the release APK with the
    keystore from repository secrets and writing the file's real `versionCode`, size and SHA-256 into
    `public/android/latest.json`.
-4. **The asset** — `royaraqamia-shell-<versionCode>.apk` on the release tagged `shell`: one file per
-   version code, never overwritten. An asset that already exists is only reused when it is byte-identical
-   to this build; if a _committed_ manifest already names it with a different hash, the run fails instead,
-   because that is the one thing that may not happen.
+4. **The release** — `android-1.0.3`, one release per version, holding
+   `royaraqamia-shell-1.0.3.apk`. The tag in a published URL belongs to one version and is never repointed
+   at other bytes. A release that already exists is a re-run: identical content is reused, different
+   content fails when a _committed_ manifest names that asset, and is replaced only when none ever has.
 5. **The re-download** — the asset is fetched back and hashed against the manifest before anything is
    announced. Until this step existed, the only thing that had ever seen the uploaded file was the machine
    that uploaded it.
-6. **The manifest commit** — `chore(android): publish shell <code>`, pushed by CI, so the deploy serves it.
+6. **The manifest commit** — `chore(android): publish shell 1.0.3 (20003)`, pushed by CI, so the deploy
+   serves it.
 
 Failing at 3–5 leaves the published channel exactly as it was. Failing at 6 leaves the asset uploaded and
 the manifest stale — the safe direction, because nobody is told about an APK whose bytes were not
 verified, and re-running finishes it. Only `main` publishes; a dispatch on a branch can rehearse with
 `dry_run` (build and sign, upload nothing).
+
+**The version, and where a user sees it.** `shellVersionName` sits beside the counter and is _derived_ from
+it — `1.<minor>.<patch>` from `(counter − 20000)`, so counter 20003 is version `1.0.3` — which means
+`npm run android:shell-version -- --bump` writes it and nobody types it. `--check` fails a tree where the
+two disagree, and publishing refuses an APK whose own `versionName` is not the derived name, so Gradle and
+the script cannot drift. It reaches a user in two places, both only inside the app (ADR-0046):
+
+| Where                     | How                                                                                                              |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Android's app info screen | the APK's `versionName`, so the platform shows it for free                                                       |
+| The account area's footer | the shell's user agent, `RoyaraqamiaShell/1.0.3+20003` — a browser sends no token, so the footer renders nothing |
+
+The user agent carries both facts on purpose: the counter is what the update check compares, and every shell
+already installed sends the older spelling (`RoyaraqamiaShell/20003`) and always will, because a phone can
+only send what it was built with.
 
 **The secrets it needs** (Settings → Secrets and variables → Actions):
 
