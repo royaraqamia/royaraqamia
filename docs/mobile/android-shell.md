@@ -340,6 +340,23 @@ Measured on the API 30 emulator (`Pixel_5`, 1080x2340), shell at `20002`, manife
 | The state after it           | `installed=20003 latest=20003 pending=false`, and no prompt                                                                                            |
 | A manifest with a wrong hash | `the update did not verify: the download hashes to 8a23f313…, the manifest says abab…`; nothing installed, `updates/` left empty, the prompt came back |
 
+**Measured again against our own origin.** The rows above were taken while the APK still came from a GitHub
+release asset, and that host is not reachable everywhere this app has users. After ADR-0047 moved the
+download to `royaraqamia.com/android/`, the same drill was run end to end: an API 30 emulator carrying a
+build signed by the repository's keystore with a counter of 20002, updating itself to the published 1.0.3.
+
+| Step                      | What the device showed                                                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| The check                 | `ShellUpdater: checked https://royaraqamia.com/android/latest.json: installed=20002 latest=20003 pending=true`                       |
+| The prompt                | «تحديث التطبيق», «يتوفّر إصدار جديد من التطبيق. تنزيله الآن؟», «تنزيل التحديث» / «لاحقًا»                                            |
+| The download              | `files/updates/royaraqamia-shell-20003.apk`, `-rw-------`, 7447105 bytes — internal storage, renamed into place only once it matched |
+| The install               | the platform installer opened on the FileProvider URI; the tap produced `PACKAGE_REPLACED` and `versionCode=20003`                   |
+| Where the bytes came from | `https://royaraqamia.com/android/royaraqamia-1.0.3.apk` — the site's own path rewritten to the bucket; no GitHub host was involved   |
+
+The drill above runs on a machine whose network is not Syria's, so it proves the app's own path, not that
+country's reachability. That half is measured separately and only there: the same URL, fetched from Syria
+without a VPN, returned all 7,447,105 bytes with the sha256 the manifest publishes.
+
 **Publishing releases itself.** `.github/workflows/shell-release.yml` runs on any push to `main` that
 touches `android/**`, `capacitor.config.ts`, `package.json` or `package-lock.json`, and on a manual
 dispatch. A Capacitor plugin dependency is a shell change (ADR-0043), so without those last two a plugin
