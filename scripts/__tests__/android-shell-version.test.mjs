@@ -215,6 +215,12 @@ describe('the published manifest', () => {
   });
 
   it('names itself the way the build names the APK', () => {
-    expect(manifest.versionName).toMatch(new RegExp(`\\+shell\\.${manifest.versionCode}$`));
+    // `versionName` is the shell's own version, derived from the same counter the
+    // update check compares (ADR-0046), so the two can never disagree. This used
+    // to assert the old spelling (`1.94.2+shell.20003`), which the web version at
+    // build time put there — and which stopped being true the moment a release
+    // published a manifest under the new naming. It passed then only because the
+    // manifest had not been republished yet.
+    expect(manifest.versionName).toBe(shellVersionNameFor(manifest.versionCode));
   });
 });
