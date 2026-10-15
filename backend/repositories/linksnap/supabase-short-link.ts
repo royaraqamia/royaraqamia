@@ -21,10 +21,7 @@ interface ShortLinkDbRow {
 }
 
 export class SupabaseShortLinkRepository implements ShortLinkRepository {
-  constructor(
-    private readonly adminClient: SupabaseClient<Database>,
-    private readonly publicClient: SupabaseClient<Database>
-  ) {}
+  constructor(private readonly adminClient: SupabaseClient<Database>) {}
 
   private toDomain(row: ShortLinkDbRow): ShortLink {
     return {
@@ -57,7 +54,13 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
   }
 
   async findByCode(code: string): Promise<ShortLink | null> {
-    const supabase = this.publicClient;
+    // The anonymous redirect and the password unlock resolve through the service
+    // role: `anon` has no SELECT on short_links (the hash and owner must never
+    // leave the server), and the redirect needs the owner id for the click
+    // notification while the unlock needs the hash to verify in-process
+    // (scrypt cannot be checked in Postgres). See
+    // supabase/migrations/*_narrow_short_links_public_read.sql.
+    const supabase = this.adminClient;
     const { data, error } = await supabase
       .from('short_links')
       .select('*')
@@ -254,7 +257,7 @@ export class SupabaseShortLinkRepository implements ShortLinkRepository {
   }
 
   async exists(code: string): Promise<boolean> {
-    const supabase = this.publicClient;
+    const supabase = this.adminClient;
     const { count, error } = await supabase
       .from('short_links')
       .select('*', { count: 'exact', head: true })

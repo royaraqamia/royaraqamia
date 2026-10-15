@@ -75,7 +75,7 @@ const linkRow = {
 describe('SupabaseShortLinkRepository — offline last-write-wins', () => {
   it('update is guarded by updated_at (a stale replay cannot revive a newer delete)', async () => {
     const { client, calls } = makeClient({ short_links: { data: [linkRow], error: null } });
-    const repo = new SupabaseShortLinkRepository(client, client);
+    const repo = new SupabaseShortLinkRepository(client);
     const updatedAt = '2026-08-05T00:00:00.000Z';
 
     await repo.update('abc123', { originalUrl: 'https://y.example' }, { updatedAt });
@@ -84,9 +84,25 @@ describe('SupabaseShortLinkRepository — offline last-write-wins', () => {
     expect(calls.find((c) => c.includes('update'))).toContain(`"updated_at":"${updatedAt}"`);
   });
 
+  it('findByCode resolves a password-protected link through the privileged client', async () => {
+    const protectedRow = { ...linkRow, password_hash: 'scrypt:salt:hash' };
+    const { client, calls } = makeClient({ short_links: { data: protectedRow, error: null } });
+    const repo = new SupabaseShortLinkRepository(client);
+
+    const link = await repo.findByCode('abc123');
+
+    // The hash is read server-side (service role); `anon` no longer holds SELECT
+    // on short_links, so it can never reach the Data API (see the
+    // *_narrow_short_links_public_read.sql migration).
+    expect(link?.passwordHash).toBe('scrypt:salt:hash');
+    expect(calls).toContain('short_links:select');
+    expect(calls).toContain('short_links:eq code=abc123');
+    expect(calls).toContain('short_links:single');
+  });
+
   it('delete tombstones with last-write-wins on updated_at', async () => {
     const { client, calls } = makeClient({ short_links: { data: [], error: null } });
-    const repo = new SupabaseShortLinkRepository(client, client);
+    const repo = new SupabaseShortLinkRepository(client);
     const updatedAt = '2026-08-05T00:00:00.000Z';
 
     await repo.delete('abc123', 'u-1', { updatedAt });
