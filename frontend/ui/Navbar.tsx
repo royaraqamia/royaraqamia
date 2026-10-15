@@ -1,18 +1,11 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
-import { House, Users } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useUI } from '../state/UIContext';
-import { DesktopNav } from './navbar/DesktopNav';
+import { TopNav } from './navbar/TopNav';
 import { SERVICES_LINK } from './navbar/services-link';
 import { scrollToSectionWithRetry, scrollToSectionAfterNavigation } from '@/frontend/shared/scroll';
-
-const NotificationDropdown = dynamic(
-  () => import('./shared/notification-dropdown').then((m) => m.NotificationDropdown),
-  { ssr: false, loading: () => null }
-);
 
 export function Navbar() {
   const { isReviewSheetOpen } = useUI();
@@ -99,23 +92,8 @@ export function Navbar() {
         (pathname === item.href || pathname.startsWith(item.href + '/'))
     ) ?? false;
 
-  const navLinks = [
-    {
-      href: isHomePage ? '#home' : '/#home',
-      label: 'الرَّئيسيَّة',
-      icon: House,
-      isRoute: false,
-      visible: true,
-    },
-    SERVICES_LINK,
-    {
-      href: '/community',
-      label: 'المجتمع',
-      icon: Users,
-      isRoute: true,
-      visible: true,
-    },
-  ];
+  const isServicesActive =
+    isLinkActive(SERVICES_LINK.href) || isSubItemActive(SERVICES_LINK.subItems);
 
   // Glassmorphism & elevation generator.
   // Perf note: the two persistent states (scrolled / menu-open) sit above
@@ -156,19 +134,13 @@ export function Navbar() {
               isScrolled ? 'h-16' : 'h-16 lg:h-20'
             }`}
           >
-            <DesktopNav
-              navLinks={navLinks}
-              isLinkActive={isLinkActive}
-              isSubItemActive={isSubItemActive}
+            <TopNav
+              servicesLink={SERVICES_LINK}
+              isServicesActive={isServicesActive}
               handleHashClick={handleHashClick}
               logo="/logo.webp"
               isHomePage={isHomePage}
             />
-
-            {/* Mobile Navigation Controls (tablet/mobile) */}
-            <div className="flex items-center gap-1.5 sm:gap-2.5 lg:hidden">
-              <NotificationDropdown />
-            </div>
           </div>
         </div>
       </nav>
