@@ -16,15 +16,16 @@ import java.nio.charset.StandardCharsets;
  * The shell's side of update handling (ADR-0043).
  *
  * The shell is a remote-URL app (ADR-0036), so its web half updates the way the
- * site does, while the installed APK never moves on its own. What the page can
- * be told is whether a newer APK exists: this reads `public/android/latest.json`
+ * site does, while the installed APK never moves on its own. What the shell can
+ * know is whether a newer APK exists: this reads `public/android/latest.json`
  * from the same origin the shell loads, compares its `versionCode` with the
- * installed one, and hands the answer to {@link ShellUpdaterPlugin}.
+ * installed one, and hands the answer to {@link ShellUpdatePrompt}, which asks
+ * the user and — since ADR-0044 — installs it.
  *
  * Everything here is deliberately pure and blocking-free at the edges — parsing,
- * the URL it fetches, and the comparison take strings and numbers — so it can be
- * tested on the JVM (`ShellUpdateTest`) without a device, a manifest server, or a
- * WebView. Only {@link #check} touches the network, and its caller does that off
+ * the URL it fetches, the comparison, and which URLs may be trusted — so it can
+ * be tested on the JVM (`ShellUpdateTest`) without a device, a manifest server, or
+ * a WebView. Only {@link #check} touches the network, and its caller does that off
  * the main thread.
  */
 final class ShellUpdate {
@@ -43,14 +44,27 @@ final class ShellUpdate {
         final int minSupportedCode;
         final String versionName;
         final String apkUrl;
+        /** What the published APK must hash to, and how big it is. */
+        final String sha256;
+        final long sizeBytes;
         final String notes;
 
-        Status(int installedCode, int latestCode, int minSupportedCode, String versionName, String apkUrl, String notes) {
+        Status(
+                int installedCode,
+                int latestCode,
+                int minSupportedCode,
+                String versionName,
+                String apkUrl,
+                String sha256,
+                long sizeBytes,
+                String notes) {
             this.installedCode = installedCode;
             this.latestCode = latestCode;
             this.minSupportedCode = minSupportedCode;
             this.versionName = versionName;
             this.apkUrl = apkUrl;
+            this.sha256 = sha256;
+            this.sizeBytes = sizeBytes;
             this.notes = notes;
         }
 
@@ -63,29 +77,10 @@ final class ShellUpdate {
         boolean unsupported() {
             return minSupportedCode > installedCode;
         }
-
-        JSONObject toJson() {
-            JSONObject json = new JSONObject();
-            try {
-                json.put("installedCode", installedCode);
-                json.put("latestCode", latestCode);
-                json.put("minSupportedCode", minSupportedCode);
-                json.put("versionName", versionName);
-                json.put("apkUrl", apkUrl);
-                json.put("notes", notes);
-                json.put("updatePending", updatePending());
-                json.put("unsupported", unsupported());
-            } catch (JSONException e) {
-                // JSONObject.put only throws for non-JSON values, and every value
-                // here is a number or a String; nothing to do but report empty.
-                return new JSONObject();
-            }
-            return json;
-        }
     }
 
     static Status idle(int installedCode) {
-        return new Status(installedCode, installedCode, 0, "", "", "");
+        return new Status(installedCode, installedCode, 0, "", "", "", 0, "");
     }
 
     /**
@@ -122,25 +117,43 @@ final class ShellUpdate {
             manifest.optInt("minSupportedVersionCode", 0),
             manifest.optString("versionName", ""),
             manifest.optString("apkUrl", ""),
+            manifest.optString("sha256", ""),
+            manifest.optLong("sizeBytes", 0),
             manifest.optString("notes", "")
         );
     }
 
     /**
-     * Whether `apkUrl` is something to hand to a browser. The manifest is ours
-     * and served from our own origin, but a URL that says `file://` or
-     * `intent://` is how a document would try to make the shell open something
-     * local, so the two schemes that mean "a download over the network" are the
-     * only ones allowed through.
+     * Whether an update URL may be fetched and handed to the installer. The
+     * manifest is ours and served from our own origin, but it is also a document
+     * that arrives over the network: a URL that says `file://` or `intent://` is
+     * how one would try to make the shell install something already on the device,
+     * so only the two schemes that mean "a download" are allowed.
+     *
+     * Plain http is allowed only for the addresses a development server runs on,
+     * and only in a debug build. The emulator reaches its host on 10.0.2.2, so
+     * without that exception the install path could not be exercised on a device
+     * before publishing to GitHub — and the drill is what has caught every real
+     * defect in this feature so far. A release build never allows it.
      */
-    static boolean isOpenableApkUrl(String apkUrl) {
-        if (apkUrl == null || apkUrl.isEmpty()) return false;
+    static boolean isAllowedUpdateUrl(String url, boolean debug) {
+        if (url == null || url.isEmpty()) return false;
         try {
-            String scheme = new URL(apkUrl).getProtocol();
-            return "https".equals(scheme) || "http".equals(scheme);
+            URL parsed = new URL(url);
+            String scheme = parsed.getProtocol();
+            if ("https".equals(scheme)) return true;
+            return debug && "http".equals(scheme) && isDevelopmentHost(parsed.getHost());
         } catch (MalformedURLException e) {
             return false;
         }
+    }
+
+    private static boolean isDevelopmentHost(String host) {
+        if (host == null) return false;
+        return "10.0.2.2".equals(host)
+                || "localhost".equals(host)
+                || "127.0.0.1".equals(host)
+                || "::1".equals(host);
     }
 
     /** Fetches the manifest and compares it with the installed shell. */

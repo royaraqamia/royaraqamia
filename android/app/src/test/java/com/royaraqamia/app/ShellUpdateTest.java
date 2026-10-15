@@ -45,7 +45,9 @@ public class ShellUpdateTest {
     public void aHigherPublishedCodeIsAnUpdate() throws JSONException {
         ShellUpdate.Status status = ShellUpdate.parse(
             "{\"versionCode\": 2, \"versionName\": \"1.92.0+shell.2\", "
-                + "\"apkUrl\": \"https://example.test/shell-2.apk\", \"minSupportedVersionCode\": 1}",
+                + "\"apkUrl\": \"https://example.test/shell-2.apk\", \"minSupportedVersionCode\": 1, "
+                + "\"sha256\": \"abababababababababababababababababababababababababababababababab\", "
+                + "\"sizeBytes\": 10700000}",
             1
         );
 
@@ -54,6 +56,13 @@ public class ShellUpdateTest {
         assertEquals(1, status.installedCode);
         assertEquals(2, status.latestCode);
         assertEquals("https://example.test/shell-2.apk", status.apkUrl);
+        // The install half needs both of these: the file that arrives has to be
+        // the file the manifest described (ADR-0044).
+        assertEquals(
+            "abababababababababababababababababababababababababababababababab",
+            status.sha256
+        );
+        assertEquals(10700000L, status.sizeBytes);
     }
 
     @Test
@@ -106,6 +115,8 @@ public class ShellUpdateTest {
         assertFalse(status.updatePending());
         assertFalse(status.unsupported());
         assertEquals("", status.apkUrl);
+        assertEquals("", status.sha256);
+        assertEquals(0L, status.sizeBytes);
     }
 
     @Test
@@ -118,17 +129,38 @@ public class ShellUpdateTest {
     }
 
     @Test
-    public void onlyNetworkUrlsAreOpenable() {
-        assertTrue(ShellUpdate.isOpenableApkUrl("https://example.test/shell-2.apk"));
-        // The dev drill serves the APK over cleartext from the host.
-        assertTrue(ShellUpdate.isOpenableApkUrl("http://10.0.2.2:3000/shell-2.apk"));
+    public void httpsIsAlwaysAllowed() {
+        assertTrue(ShellUpdate.isAllowedUpdateUrl("https://example.test/shell-2.apk", false));
+        assertTrue(ShellUpdate.isAllowedUpdateUrl("https://example.test/shell-2.apk", true));
+        assertTrue(ShellUpdate.isAllowedUpdateUrl(
+            "https://github.com/royaraqamia/royaraqamia/releases/download/shell/royaraqamia-shell.apk",
+            false
+        ));
+    }
 
-        assertFalse(ShellUpdate.isOpenableApkUrl(""));
-        assertFalse(ShellUpdate.isOpenableApkUrl(null));
-        // A manifest that named one of these would be asking the shell to open
-        // something on the device rather than a download.
-        assertFalse(ShellUpdate.isOpenableApkUrl("file:///data/local/tmp/shell-2.apk"));
-        assertFalse(ShellUpdate.isOpenableApkUrl("intent://install#Intent;scheme=https;end"));
-        assertFalse(ShellUpdate.isOpenableApkUrl("not a url"));
+    @Test
+    public void cleartextIsAllowedOnlyForADevServerAndOnlyInDebug() {
+        // The emulator reaches its host on 10.0.2.2, which is how the install path
+        // is exercised on a device before anything is published.
+        assertTrue(ShellUpdate.isAllowedUpdateUrl("http://10.0.2.2:3000/shell-2.apk", true));
+        assertTrue(ShellUpdate.isAllowedUpdateUrl("http://localhost:3000/shell-2.apk", true));
+
+        // Never in a build a user has.
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("http://10.0.2.2:3000/shell-2.apk", false));
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("http://localhost:3000/shell-2.apk", false));
+        // And not for an address that is not a dev server, debug or not.
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("http://example.test/shell-2.apk", true));
+    }
+
+    @Test
+    public void onlyNetworkUrlsAreInstallable() {
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("", true));
+        assertFalse(ShellUpdate.isAllowedUpdateUrl(null, true));
+        // A manifest that named one of these would be asking the shell to install
+        // something already on the device rather than a download.
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("file:///data/local/tmp/shell-2.apk", true));
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("intent://install#Intent;scheme=https;end", true));
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("content://example/shell-2.apk", true));
+        assertFalse(ShellUpdate.isAllowedUpdateUrl("not a url", true));
     }
 }

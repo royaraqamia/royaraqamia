@@ -54,8 +54,13 @@ public class MainActivity extends BridgeActivity {
     public void onResume() {
         super.onResume();
         // A shell that was in the background for a day should have another look;
-        // `ShellUpdatePrompt` throttles this to once every few hours.
-        if (shellUpdate != null) shellUpdate.maybeCheck(false);
+        // `ShellUpdatePrompt` throttles this to once every few hours. The second
+        // call lets an install that was waiting on a permission continue, which is
+        // the state the user returns in after granting it.
+        if (shellUpdate != null) {
+            shellUpdate.maybeCheck(false);
+            shellUpdate.resume();
+        }
     }
 
     @Override

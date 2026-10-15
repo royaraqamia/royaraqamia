@@ -75,6 +75,13 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!--
+      Installing the shell's own update (ADR-0044) means handing an APK to the
+      platform installer, which Android only allows an app that holds this. It is
+      not a Play-style updater: the shell distributes its APK directly, and the
+      installer still asks the user before anything is installed.
+    -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <!-- Required from Android 13 to show any notification, including FCM pushes. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>

@@ -313,9 +313,11 @@ changes nothing about the installed app (ADR-0043).
 _Avoid_: app version, build number, versionCode
 
 **Shell update**:
-A newer APK published at `public/android/latest.json`, announced by the shell's own native prompt while
-the site holds its web offer back. Distinct from a worker swap, which is the web build updating itself
-within the same install (ADR-0042).
+A newer APK published at `public/android/latest.json`, announced by the shell's own native prompt and
+installed by it — downloaded into the app's own storage, checked against the manifest's size and
+SHA-256, then handed to the system installer, which is what asks the user (ADR-0044). While it is
+pending, the site holds its web offer back. Distinct from a worker swap, which is the web build
+updating itself within the same install (ADR-0042).
 _Avoid_: app update, force update
 
 **Tombstone**:
