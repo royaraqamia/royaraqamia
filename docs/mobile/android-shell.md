@@ -29,24 +29,25 @@ Nothing is installed by the build: no Android Studio, no extra SDK packages.
 
 ```powershell
 npm run android:sync      # cap sync android — copies config + native plugin list
-npm run android:assets    # regenerate launcher icon + splash from public/icons (after `npm run icons`)
+npm run android:assets    # regenerate the launcher icon from public/icons (after `npm run icons`)
 npm run android:apk       # debug APK   → android/app/build/outputs/apk/debug/app-debug.apk
 npm run android:release   # signed APK  → android/app/build/outputs/apk/release/app-release.apk
 npm run android:aab       # signed AAB  → android/app/build/outputs/bundle/release/app-release.aab
 npm run android:verify-bridge   # on a connected device: is the native bridge live?
 ```
 
-The launcher icon and splash are generated from `public/icons/icon-1024x1024.png`, the
+The launcher icon is generated from `public/icons/icon-1024x1024.png`, the
 same artwork the PWA ships, so the two installs look like one product: one purple, one logo.
 How large the logo _reads_ is a chosen number, `TARGET_DISC_RATIO` (0.64) — the middle the owner
 picked after being shown the two extremes on the emulator: 76% with the artwork drawn across the
 adaptive canvas, 52% inset to the 72dp safe zone. The extremes exist because the launcher draws
 the adaptive canvas's visible centre magnified, measured at **1.47x** on the API 30 Pixel
 Launcher, so that one surface divides the magnification out (`ADAPTIVE_ARTWORK_SCALE`) while the
-notification icon, the legacy and round launcher icons and the splash logo scale the artwork
-instead, cropping purple. The PWA's own icon set keeps the artwork's 51.7%, since that is what
-the installed PWA's icon is drawn from. The splash draws the disc on `#0f172a`, because nothing
-masks a splash and the square tile was the one place the logo appeared square.
+notification icon and the legacy and round launcher icons scale the artwork
+instead, cropping purple — the launch theme's icon divides the splash mask out the same way
+(`SPLASH_ARTWORK_SCALE`). The PWA's own icon set keeps the artwork's 51.7%, since that is what
+the installed PWA's icon is drawn from. The notification icon and the round launcher icon are
+circle-cropped (transparent corners), the badge is the mark alone.
 `scripts/generate-android-assets.mjs` does this by hand rather than through
 `@capacitor/assets`, whose transitive `tar` carries a critical advisory that would fail
 `security-scan.yml`'s `npm audit --audit-level=high`. It measures every asset it writes
@@ -54,19 +55,39 @@ against its surface's target and exits non-zero on a miss, and
 `scripts/__tests__/icon-shape.test.mjs` holds the committed files to the same proportions in
 `npm test` (`scripts/logo-shape.mjs` is the measurement both use).
 
-The splash is **one logo drawable and an XML layer-list**, not a bitmap per screen
-(`drawable/splash.xml` + `drawable-xxxhdpi/splash_logo.png`). That is forced by the plugin, not
-chosen: on launch it hands the drawable to `setBackground` on a view
-(`SplashScreen.java`), so a bitmap is stretched to fill, `androidScaleType` never applies
-([its docs say so](https://github.com/ionic-team/capacitor-plugins)), and our 1:2 frames came
-out 190x180px on the API 30 emulator. A layer-list draws its item by gravity at a declared dp
-size instead, so the disc cannot be stretched by any screen shape — and the launch theme uses
-the same resource as the starting window, which is the surface a cold start actually shows
-first. It is 96dp, the size the frames were designed around. On **Android 12+ none of this
-renders at launch**: the platform splash draws the launcher icon itself in a **160dp**
-visible circle, so the two OS families show different splash sizes rather than two logos in a
-row. Removing the plugin entirely settles that and drops the last splash-specific asset —
-[#212](https://github.com/royaraqamia/royaraqamia/issues/212).
+The splash is the launch theme — one `AppTheme.NoActionBarLaunch` in
+`android/app/src/main/res/values/styles.xml` declaring three items: `windowSplashScreenBackground`
+(`#0f172a`, the colour the WebView paints, so the handover shows no colour change),
+`windowSplashScreenAnimatedIcon` (`@drawable/splash_icon`) and `postSplashScreenTheme`. Android 12+
+draws that natively; `androidx.core:core-splashscreen` draws the same theme below it, which is why
+`MainActivity` calls `installSplashScreen()` before `super.onCreate`. Neither family leaves a
+duration of ours to keep in step: the platform dismisses the splash when the app draws its first
+frame — this shell loads a remote URL, so a fixed duration had no relationship to when the WebView
+was ready.
+
+`@drawable/splash_icon` is **generated from the launcher artwork** at `SPLASH_ICON_DP` (288dp)
+rather than being the launcher icon itself, and that difference is the one number worth knowing.
+Both implementations draw the icon across an area and mask it down to a circle **two thirds** of
+that area — `core-splashscreen`'s layer-list draws it at 288dp and strokes the mask in to 192dp,
+and Android 12+ pairs the documented 240dp area with a 160dp visible circle — while an adaptive
+drawable magnifies its canvas inside its bounds as well. Point the theme at the launcher icon and
+those two magnifications multiply: measured on the API 30 emulator, its disc filled **186px of the
+192px** circle (97%), the artwork full-bleed with only a thin purple rim of the tile left. The
+generated icon is authored against the mask instead — the artwork at `SPLASH_ARTWORK_SCALE`
+(`TARGET_DISC_RATIO / (ARTWORK_RATIO * 1.5)`, i.e. the same construction as the adaptive foreground,
+one mask ratio apart) — so the disc lands on the launcher icon's own `TARGET_DISC_RATIO`. Measured
+the same way it fills **122px of the 192px** circle, **63.5%**, against the launcher icon's 64.0% on
+the same emulator. It is 288dp rather than 240dp so that whichever area the platform picks, the
+icon is scaled down rather than up.
+
+Before [#212](https://github.com/royaraqamia/royaraqamia/issues/212) there were two splash
+implementations by OS version: the plugin's dialog on API ≤ 30, drawing `drawable/splash.xml` (a
+layer-list over a 96dp `splash_logo.png`) for `launchShowDuration: 1200`, and the platform splash
+on 31+, which ignores all of it. The plugin's drawable was handed to `setBackground`
+(`SplashScreen.java`), so a bitmap was stretched to fill and `androidScaleType` never applied — our
+1:2 frames came out 190x180px on the API 30 emulator — and the two families showed different
+sizes, 96dp against 160dp. The plugin, its config, its layer-list and its colour file are gone;
+`scripts/__tests__/icon-shape.test.mjs` fails if any of them returns.
 
 Install on a device or emulator:
 
@@ -90,20 +111,20 @@ deploy look like a new APK to the update check that compares it against `public/
 
 ## What the shell wires up
 
-| Capability                           | Where                                                 | State                                                                                  |
-| ------------------------------------ | ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| capability                           | where                                                 | state                                                                                  |
-| ------------------------------------ | ----------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Load the live site                   | `capacitor.config.ts` `server.url`                    | Working                                                                                |
-| Announcing web updates               | `frontend/ui/shared/update-prompt.tsx`                | Working — in-page, so it shows in the shell too                                        |
-| Announcing a new APK                 | `ShellUpdatePrompt`, `public/android/latest.json`     | Working — a native dialog; installing it in place is Stage 2                           |
-| Deep links (App Links + `royar://`)  | manifest intent filters, `MainActivity.webUrlFor`     | Working                                                                                |
-| Custom-scheme OAuth return           | manifest + `MainActivity`                             | Working — needs two Supabase allowlist entries (below)                                 |
-| Splash, status bar, RTL, back button | `capacitor.config.ts` plugins, `MainActivity`         | Working                                                                                |
-| Native file save / share             | `@capacitor/filesystem`, `@capacitor/share` installed | Installed, unused by app code yet                                                      |
-| Biometric lock                       | `@capgo/capacitor-native-biometric` installed         | Installed, unused by app code yet                                                      |
-| Bluetooth LE + Contacts              | plugins installed, **no manifest permissions**        | Scaffolding only, by decision                                                          |
-| Push (FCM)                           | `@capacitor/push-notifications` + manifest            | Native side ready; server side blocked on credentials — see "Push notifications" below |
+| Capability                                      | Where                                                       | State                                                                                  |
+| ----------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| capability                                      | where                                                       | state                                                                                  |
+| ------------------------------------            | -----------------------------------------------------       | -------------------------------------------------------------------------------------- |
+| Load the live site                              | `capacitor.config.ts` `server.url`                          | Working                                                                                |
+| Announcing web updates                          | `frontend/ui/shared/update-prompt.tsx`                      | Working — in-page, so it shows in the shell too                                        |
+| Announcing a new APK                            | `ShellUpdatePrompt`, `public/android/latest.json`           | Working — a native dialog; installing it in place is Stage 2                           |
+| Deep links (App Links + `royar://`)             | manifest intent filters, `MainActivity.webUrlFor`           | Working                                                                                |
+| Custom-scheme OAuth return                      | manifest + `MainActivity`                                   | Working — needs two Supabase allowlist entries (below)                                 |
+| Splash (platform), status bar, RTL, back button | launch theme, `capacitor.config.ts` plugins, `MainActivity` | Working                                                                                |
+| Native file save / share                        | `@capacitor/filesystem`, `@capacitor/share` installed       | Installed, unused by app code yet                                                      |
+| Biometric lock                                  | `@capgo/capacitor-native-biometric` installed               | Installed, unused by app code yet                                                      |
+| Bluetooth LE + Contacts                         | plugins installed, **no manifest permissions**              | Scaffolding only, by decision                                                          |
+| Push (FCM)                                      | `@capacitor/push-notifications` + manifest                  | Native side ready; server side blocked on credentials — see "Push notifications" below |
 
 ### The native bridge on a remote origin
 

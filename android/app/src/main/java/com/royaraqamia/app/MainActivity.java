@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.webkit.WebView;
 
 import androidx.annotation.Nullable;
+import androidx.core.splashscreen.SplashScreen;
 
 import com.getcapacitor.Bridge;
 import com.getcapacitor.BridgeActivity;
@@ -33,6 +34,12 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
+        // The launch theme (`AppTheme.NoActionBarLaunch`) declares the platform
+        // splash's `windowSplashScreen*` items, and this is what reads them below
+        // API 31: `androidx.core:core-splashscreen` draws the same splash there and
+        // hands the activity to `postSplashScreenTheme`. It has to run before
+        // `super.onCreate`, which is where the starting window is replaced.
+        SplashScreen.installSplashScreen(this);
         super.onCreate(savedInstanceState);
         openFromIntent(getIntent(), false);
         // Both of these need the bridge, so they run after Capacitor has created
