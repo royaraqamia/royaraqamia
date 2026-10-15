@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.101.2] - 2026-10-15
+
+### Changed
+- record the drill that updated a shell from our own origin
+
 ## [1.101.1] - 2026-10-15
 
 ### Changed
